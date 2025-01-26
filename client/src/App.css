@@ -1,0 +1,394 @@
+#root {
+  max-width: 100%;
+  margin: 0;
+  padding: 1rem;
+  text-align: center;
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+.game-container {
+  max-width: 100%;
+  margin: 0;
+  padding: 10px;
+}
+
+.main-area {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(600px, 2fr) minmax(300px, 1fr);
+  grid-template-rows: 300px 1fr 300px;
+  gap: 0;
+  min-height: 800px;
+  padding: 0;
+}
+
+.game-board {
+  grid-column: 2;
+  grid-row: 1 / 4;
+  background-color: #d4b16a;
+  padding: 20px;
+  border-radius: 8px;
+  z-index: 0;
+}
+
+.spaces-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.board-space {
+  border: 2px solid #8b4513;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #f4d03f;
+}
+
+.players-area {
+  display: contents; /* This allows children to be positioned in the grid */
+}
+
+.player-area {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f4e4bc;
+  width: 100%;
+  min-width: 300px;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+  color: #000;
+}
+
+/* Position each player */
+.player-area:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: end;
+  align-self: end;
+  margin-right: -1px;
+  margin-bottom: -1px;
+  border-color: #d32f2f;
+}
+
+.player-area:nth-child(2) {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: start;
+  align-self: end;
+  margin-left: -1px;
+  margin-bottom: -1px;
+  border-color: #388e3c;
+}
+
+.player-area:nth-child(3) {
+  grid-column: 3;
+  grid-row: 2;
+  justify-self: start;
+  align-self: start;
+  margin-left: -1px;
+  margin-top: -1px;
+  border-color: #fbc02d;
+}
+
+.player-area:nth-child(4) {
+  grid-column: 1;
+  grid-row: 2;
+  justify-self: end;
+  align-self: start;
+  margin-right: -1px;
+  margin-top: -1px;
+  border-color: #1976d2;
+}
+
+/* Make player areas more compact */
+.player-area h3 {
+  margin: 0 0 8px 0;
+  font-size: 1em;
+}
+
+.player-area .resources {
+  font-size: 0.8em;
+  gap: 4px;
+  margin-bottom: 5px;
+  color: #000;
+}
+
+.player-area.active {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.resources {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.space-content {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.card-hand {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 5px;
+  display: flex;
+  gap: 2px;
+  align-items: flex-start;
+}
+
+/* For Webkit browsers (Chrome, Safari) */
+.card-hand::-webkit-scrollbar {
+  height: 8px;
+}
+
+.card-hand::-webkit-scrollbar-track {
+  background: #f4e4bc;
+  border-radius: 4px;
+}
+
+.card-hand::-webkit-scrollbar-thumb {
+  background: #8b4513;
+  border-radius: 4px;
+}
+
+.game-card {
+  transform: scale(0.7);
+  transform-origin: top left;
+  margin-right: -150px;
+  flex: 0 0 150px;
+  min-height: 200px;
+  border: 2px solid #8b4513;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #f4e4bc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #000;
+}
+/* TODO make it a setting */
+.game-card:hover {
+  transform: scale(0.9);
+  z-index: 1;
+  margin-right: -20px;
+}
+
+.game-card.selected {
+  transform: scale(0.9);
+  z-index: 2;
+  margin-right: -20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #8b4513;
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+}
+
+.card-header h4 {
+  margin: 0;
+  font-size: 12px;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-resources {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: #000;
+}
+
+.card-effect {
+  font-size: 10px;
+  font-style: italic;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #8b4513;
+  color: #000;
+}
+
+.agent-placement {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.placement-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid #333;
+}
+
+.placement-dot[style*="blue"] {
+  border-color: #1976d2;
+  background-color: #1976d2;
+}
+
+.placement-dot[style*="green"] {
+  border-color: #388e3c;
+  background-color: #388e3c;
+}
+
+.placement-dot[style*="yellow"] {
+  border-color: #fbc02d;
+  background-color: #fbc02d;
+}
+
+.placement-dot[style*="gray"] {
+  border-color: #757575;
+  background-color: #757575;
+}
+
+.placement-dot[style*="lightblue"] {
+  border-color: #03a9f4;
+  background-color: #03a9f4;
+}
+
+.placement-dot[style*="red"] {
+  border-color: #d32f2f;
+  background-color: #d32f2f;
+}
+
+.placement-dot[style*="purple"] {
+  border-color: #7b1fa2;
+  background-color: #7b1fa2;
+}
+
+.player-header {
+  margin-bottom: 8px;
+}
+
+.player-header h3 {
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+.player-title {
+  font-size: 0.8em;
+  font-style: italic;
+  color: #666;
+  margin-top: 2px;
+}
+
+.leader-ability {
+  font-size: 0.75em;
+  margin-top: 4px;
+  padding: 4px;
+  background-color: rgba(139, 69, 19, 0.1);
+  border-radius: 4px;
+  text-align: left;
+}
+
+.ability-name {
+  font-weight: bold;
+  color: #8b4513;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.ability-description {
+  color: #000;
+}
+
+.signet-ring {
+  font-size: 0.75em;
+  margin-top: 4px;
+  padding: 4px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  text-align: left;
+}
+
+.name-with-color {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+.color-indicator.red {
+  background-color: #d32f2f;
+}
+
+.color-indicator.green {
+  background-color: #388e3c;
+}
+
+.color-indicator.yellow {
+  background-color: #fbc02d;
+}
+
+.color-indicator.blue {
+  background-color: #1976d2;
+}
+
+.name-with-indicators {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.starting-player-indicator {
+  font-size: 1.2em;
+  background-color: #b8860b;
+  width: 1.8em;
+  height: 1.8em;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
+}
+
+.player-indicators {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.end-turn-button {
+  padding: 4px 8px;
+  background-color: #8b4513;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.8em;
+  transition: background-color 0.2s;
+}
+
+.end-turn-button:hover {
+  background-color: #a0522d;
+}
