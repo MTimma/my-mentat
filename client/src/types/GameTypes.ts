@@ -28,27 +28,32 @@ export interface Player {
 }
 
 export interface SpaceProps {
+  id: number
   name: string
-  type: 'conflict' | 'resource' | 'influence'
+  agentPlacementArea: AgentSpaceType
   resources?: {
     spice?: number
     water?: number
     solari?: number
     troops?: number
   }
-  influence?: string // CHOAM, Spacing Guild, Bene Gesserit, Emperor
+  influence?: {
+    faction: 'emperor' | 'spacing-guild' | 'bene-gesserit' | 'fremen'
+    amount: number
+  }
   maxAgents?: number
-  occupied?: number[]
+  occupiedBy?: number[]  // Player IDs who have placed agents here
+  conflictMarker: boolean
 }
 
-export enum AgentPlacementColor {
-  BLUE = 'blue',
-  GREEN = 'green',
-  YELLOW = 'yellow',
-  GRAY = 'gray',
-  LIGHT_BLUE = 'lightblue',
-  RED = 'red',
-  PURPLE = 'purple'
+export enum AgentSpaceType {
+  POPULATED_AREAS = 'populated-areas',
+  LANDSRAAD = 'landsraad',
+  DESERTS = 'deserts',
+  EMPEROR = 'emperor',
+  FREMEN = 'fremen',
+  SPACING_GUILD = 'spacing-guild',
+  BENE_GESSERIT = 'bene-gesserit'
 }
 
 export interface Card {
@@ -63,7 +68,7 @@ export interface Card {
     troops?: number
   }
   effect?: string
-  agentPlacement: AgentPlacementColor[]
+  agentSpaceTypes: AgentSpaceType[]
 }
 
 export enum TurnType {
@@ -73,9 +78,9 @@ export enum TurnType {
 
 export interface ActionTurn {
   type: TurnType.ACTION
-  playerId: number
   cardId: number
-  agentFieldId: number
+  agentSpaceId: number
+  agentSpaceType: AgentSpaceType
   specialEffectDecisions?: {
     [key: string]: any  // For flexibility with different card effects
   }
@@ -83,7 +88,6 @@ export interface ActionTurn {
 
 export interface PassTurn {
   type: TurnType.PASS
-  playerId: number
   persuasionCount: number
   gainedEffects: string[]
   acquiredCards: number[]  // Card IDs from Imperium Row
@@ -98,8 +102,11 @@ export interface IntrigueCardPlay {
 }
 
 export type GameTurn = {
+  playerId: number,
+  canDeployTroops: boolean,
+  troopLimit: number,
   playedIntrigueCards?: IntrigueCardPlay[]
-} & (ActionTurn | PassTurn)
+} & Partial<ActionTurn | PassTurn>
 
 export interface GameState {
   startingPlayerId: number

@@ -1,24 +1,52 @@
 import React from 'react'
 import { SpaceProps } from '../types/GameTypes'
 
-interface BoardSpaceProps {
-  space: SpaceProps
+interface BoardSpaceProps extends SpaceProps {
+  isHighlighted?: boolean
+  onSpaceClick?: () => void
+  activePlayerId?: number
+  isDisabled?: boolean
 }
 
-const BoardSpace: React.FC<BoardSpaceProps> = ({ space }) => {
+const BoardSpace: React.FC<BoardSpaceProps> = ({ 
+  name, 
+  type, 
+  resources, 
+  influence,
+  agentPlacementArea,
+  isHighlighted,
+  onSpaceClick,
+  activePlayerId,
+  occupiedBy = [],
+  isDisabled
+}) => {
   return (
-    <div className={`board-space ${space.type}`}>
-      <h3>{space.name}</h3>
-      <div className="space-content">
-        {space.resources && (
-          <div className="resources">
-            {space.resources.spice && <div className="resource spice">{space.resources.spice}🌶️</div>}
-            {space.resources.water && <div className="resource water">{space.resources.water}💧</div>}
-            {space.resources.solari && <div className="resource solari">{space.resources.solari}💰</div>}
-            {space.resources.troops && <div className="resource troops">{space.resources.troops}⚔️</div>}
+    <div 
+      className={`board-space ${isHighlighted ? 'highlighted' : ''} ${isDisabled ? 'disabled' : ''}`}
+      onClick={() => !isDisabled && onSpaceClick?.()}
+    >
+      <div className="board-space-name">{name}</div>
+      <div className="board-space-content">
+        <div className={`placement-dot ${agentPlacementArea}`}></div>
+        {resources && (
+          <div className="board-space-resources">
+            {resources.spice && <div>🌶️ {resources.spice}</div>}
+            {resources.water && <div>💧 {resources.water}</div>}
+            {resources.solari && <div>💰 {resources.solari}</div>}
+            {resources.troops && <div>⚔️ {resources.troops}</div>}
           </div>
         )}
-        {space.influence && <div className="influence">{space.influence}</div>}
+        {influence && (
+          <div className="board-space-influence">
+            {influence.amount} influence with {influence.faction}
+          </div>
+        )}
+        <div className="board-space-type">{type}</div>
+        <div className="agent-markers">
+          {occupiedBy.map((playerId, index) => (
+            <div key={index} className={`agent-marker player-${playerId}`} />
+          ))}
+        </div>
       </div>
     </div>
   )

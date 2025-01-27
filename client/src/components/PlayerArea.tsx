@@ -44,7 +44,9 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({ player, isActive, isStartingPla
         <div>Water: {player.water}💧</div>
         <div>Solari: {player.solari}💰</div>
         <div>Troops: {player.troops}⚔️</div>
-        <div>Agents: {player.agents}👥</div>
+        <div className={`agents ${player.agents === 0 ? 'depleted' : ''}`}>
+          Agents: {player.agents}👥
+        </div>
       </div>
       <CardHand 
         cards={player.hand}
