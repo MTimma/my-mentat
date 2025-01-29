@@ -136,7 +136,8 @@ function App() {
       spice: 0, 
       water: 0, 
       solari: 0, 
-      troops: 3, 
+      troops: 3,
+      combatValue: 0,
       agents: 2, 
       hand: [...startingCards], 
       selectedCard: null 
@@ -148,7 +149,8 @@ function App() {
       spice: 0, 
       water: 0, 
       solari: 0, 
-      troops: 3, 
+      troops: 3,
+      combatValue: 0,
       agents: 2, 
       hand: [...startingCards], 
       selectedCard: null 
@@ -160,7 +162,8 @@ function App() {
       spice: 0, 
       water: 0, 
       solari: 0, 
-      troops: 3, 
+      troops: 3,
+      combatValue: 0,
       agents: 2, 
       hand: [...startingCards], 
       selectedCard: null 
@@ -172,7 +175,8 @@ function App() {
       spice: 0, 
       water: 0, 
       solari: 0, 
-      troops: 3, 
+      troops: 3,
+      combatValue: 0,
       agents: 2, 
       hand: [...startingCards], 
       selectedCard: null 
@@ -192,7 +196,12 @@ function App() {
   const [currentTurnIndex, setCurrentTurnIndex] = useState<number>(0)
   const [occupiedSpaces, setOccupiedSpaces] = useState<Record<number, number[]>>({})
 
-  const [currentTurn, setCurrentTurn] = useState<GameTurn>({playerId: 1, canDeployTroops: false, troopLimit: 0})
+  const [currentTurn, setCurrentTurn] = useState<GameTurn>({
+    playerId: 1, 
+    canDeployTroops: false, 
+    troopLimit: 0,
+    removableTroops: 0
+  })
 
   const [combatTroops, setCombatTroops] = useState<Record<number, number>>({})
 
@@ -201,7 +210,8 @@ function App() {
     setCurrentTurn({
       playerId: gameState.activePlayerId,
       canDeployTroops: false,
-      troopLimit: 0
+      troopLimit: 0,
+      removableTroops: 0
     })
   }, [gameState.activePlayerId])
 
@@ -249,7 +259,6 @@ function App() {
     const space = boardSpaces.find(s => s.id === spaceId)
     if (!space) return
 
-
     setCurrentTurn(prev => {
       const baseTurn = {
         ...prev,
@@ -294,7 +303,6 @@ function App() {
     const activePlayer = players.find(p => p.id === playerId)
     if (!activePlayer || activePlayer.troops <= 0) return
 
-    // Add troop to combat
     setCombatTroops(prev => ({
       ...prev,
       [playerId]: (prev[playerId] || 0) + 1
@@ -302,9 +310,45 @@ function App() {
 
     setPlayers(players.map(p => {
       if (p.id === playerId) {
-        return { ...p, troops: p.troops - 1 }
+        return { 
+          ...p, 
+          troops: p.troops - 1,
+          combatValue: p.combatValue + 2
+        }
       }
       return p
+    }))
+
+    setCurrentTurn(prev => ({
+      ...prev,
+      removableTroops: (prev.removableTroops || 0) + 1
+    }))
+  }
+
+  const handleRemoveTroop = () => {
+    const playerId = gameState.activePlayerId;
+    const activePlayer = players.find(p => p.id === playerId)
+    if (!activePlayer || !currentTurn.removableTroops) return
+
+    setCombatTroops(prev => ({
+      ...prev,
+      [playerId]: prev[playerId] - 1
+    }))
+
+    setPlayers(players.map(p => {
+      if (p.id === playerId) {
+        return { 
+          ...p, 
+          troops: p.troops + 1,
+          combatValue: p.combatValue - 2
+        }
+      }
+      return p
+    }))
+
+    setCurrentTurn(prev => ({
+      ...prev,
+      removableTroops: prev.removableTroops - 1
     }))
   }
 
@@ -328,9 +372,7 @@ function App() {
           occupiedSpaces={occupiedSpaces}
           hasAgents={hasAgents}
           combatTroops={combatTroops}
-          onAddTroop={handleAddTroop}
           players={players}
-          canDeploy={currentTurn.canDeployTroops}
         />
         <div className="players-area">
           {players.map((player) => (
@@ -341,6 +383,11 @@ function App() {
               isStartingPlayer={gameState.startingPlayerId === player.id}
               onSelectCard={handleCardSelect}
               onEndTurn={handleEndTurn}
+              onAddTroop={handleAddTroop}
+              onRemoveTroop={handleRemoveTroop}
+              canDeployTroops={currentTurn.canDeployTroops}
+              removableTroops={currentTurn.removableTroops}
+              troopLimit={currentTurn.troopLimit}
             />
           ))}
         </div>

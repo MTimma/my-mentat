@@ -90,9 +90,7 @@ interface GameBoardProps {
   occupiedSpaces: Record<number, number[]>
   hasAgents: boolean
   combatTroops: Record<number, number>
-  onAddTroop?: () => void
   players: Player[]
-  canDeploy: boolean
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -102,8 +100,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   occupiedSpaces,
   hasAgents,
   combatTroops,
-  onAddTroop,
-  canDeploy
+  players,
 }) => {
   return (
     <div className="game-board">
@@ -122,8 +119,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
       </div>
       <CombatArea 
         troops={combatTroops}
-        onAddTroop={onAddTroop}
-        canDeploy={canDeploy}
+        players={players}
       />
     </div>
   )

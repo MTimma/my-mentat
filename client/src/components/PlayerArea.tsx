@@ -8,9 +8,27 @@ interface PlayerAreaProps {
   isStartingPlayer: boolean
   onSelectCard: (playerId: number, cardId: number) => void
   onEndTurn: (playerId: number) => void
+  onAddTroop?: () => void
+  onRemoveTroop?: () => void
+  canDeployTroops: boolean
+  removableTroops: number
+  troopLimit: number
 }
 
-const PlayerArea: React.FC<PlayerAreaProps> = ({ player, isActive, isStartingPlayer, onSelectCard, onEndTurn }) => {
+const PlayerArea: React.FC<PlayerAreaProps> = ({ 
+  player, 
+  isActive, 
+  isStartingPlayer, 
+  onSelectCard, 
+  onEndTurn,
+  onAddTroop,
+  onRemoveTroop,
+  canDeployTroops,
+  removableTroops,
+  troopLimit
+}) => {
+  const remainingTroops = troopLimit - removableTroops;
+
   return (
     <div className={`player-area ${isActive ? 'active' : ''}`}>
       <div className="player-header">
@@ -22,12 +40,35 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({ player, isActive, isStartingPla
           <div className="player-indicators">
             {isStartingPlayer && <div className="starting-player-indicator">🪱</div>}
             {isActive && (
-              <button 
-                className="end-turn-button"
-                onClick={() => onEndTurn(player.id)}
-              >
-                End Turn
-              </button>
+              <>
+                <button 
+                  className="end-turn-button"
+                  onClick={() => onEndTurn(player.id)}
+                >
+                  End Turn
+                </button>
+                {onAddTroop && (
+                  <>
+                    <button 
+                      className="add-troop-button"
+                      onClick={onAddTroop}
+                      disabled={!canDeployTroops || 
+                               player.troops <= 0 || 
+                               removableTroops >= troopLimit}
+                    >
+                      Add Troop ({remainingTroops})
+                    </button>
+                    {removableTroops > 0 && (
+                      <button 
+                        className="remove-troop-button"
+                        onClick={onRemoveTroop}
+                      >
+                        Remove Troop
+                      </button>
+                    )}
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -44,6 +85,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({ player, isActive, isStartingPla
         <div>Water: {player.water}💧</div>
         <div>Solari: {player.solari}💰</div>
         <div>Troops: {player.troops}⚔️</div>
+        <div>Combat: {player.combatValue}⚔️</div>
         <div className={`agents ${player.agents === 0 ? 'depleted' : ''}`}>
           Agents: {player.agents}👥
         </div>

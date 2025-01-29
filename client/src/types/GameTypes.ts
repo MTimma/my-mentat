@@ -22,6 +22,7 @@ export interface Player {
   water: number
   solari: number
   troops: number
+  combatValue: number
   agents: number
   hand: Card[]
   selectedCard: number | null
@@ -105,6 +106,7 @@ export type GameTurn = {
   playerId: number,
   canDeployTroops: boolean,
   troopLimit: number,
+  removableTroops: number,
   playedIntrigueCards?: IntrigueCardPlay[]
 } & Partial<ActionTurn | PassTurn>
 
