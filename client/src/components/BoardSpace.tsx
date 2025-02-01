@@ -1,52 +1,102 @@
 import React from 'react'
-import { SpaceProps } from '../types/GameTypes'
+import { SpaceProps, FactionType } from '../types/GameTypes'
 
 interface BoardSpaceProps extends SpaceProps {
-  isHighlighted?: boolean
-  onSpaceClick?: () => void
-  activePlayerId?: number
-  isDisabled?: boolean
+  isHighlighted: boolean
+  onSpaceClick: () => void
+  occupiedBy: number[]
 }
 
-const BoardSpace: React.FC<BoardSpaceProps> = ({ 
-  name, 
-  type, 
-  resources, 
+const BoardSpace: React.FC<BoardSpaceProps> = ({
+  name,
+  agentIcon,
+  resources,
   influence,
-  agentPlacementArea,
+  cost,
+  bonusSpice,
+  requiresInfluence,
   isHighlighted,
   onSpaceClick,
-  activePlayerId,
-  occupiedBy = [],
-  isDisabled
+  occupiedBy,
+  conflictMarker
 }) => {
+  const renderCost = () => {
+    if (!cost) return null
+    return (
+      <div className="space-cost">
+        {cost.solari && <span className="solari-cost">{cost.solari}💰</span>}
+        {cost.spice && <span className="spice-cost">{cost.spice}🌶️</span>}
+        {cost.water && <span className="water-cost">{cost.water}💧</span>}
+      </div>
+    )
+  }
+
+  const renderResources = () => {
+    if (!resources) return null
+    return (
+      <div className="space-resources">
+        {resources.solari && <span className="solari">{resources.solari}💰</span>}
+        {resources.spice && <span className="spice">{resources.spice}🌶️</span>}
+        {resources.water && <span className="water">{resources.water}💧</span>}
+        {resources.troops && <span className="troops">{resources.troops}⚔️</span>}
+      </div>
+    )
+  }
+
+  const renderInfluence = () => {
+    if (!influence) return null
+    return (
+      <div className="space-influence">
+        <span className={`influence-icon ${influence.faction}`}>
+          {influence.amount}
+        </span>
+      </div>
+    )
+  }
+
+  const renderBonusSpice = () => {
+    if (typeof bonusSpice !== 'number') return null
+    return bonusSpice > 0 ? (
+      <div className="bonus-spice">
+        +{bonusSpice}🌶️
+      </div>
+    ) : null
+  }
+
+  const renderRequirement = () => {
+    if (!requiresInfluence) return null
+    return (
+      <div className="space-requirement">
+        Requires {requiresInfluence.amount} {requiresInfluence.faction} influence
+      </div>
+    )
+  }
+
   return (
     <div 
-      className={`board-space ${isHighlighted ? 'highlighted' : ''} ${isDisabled ? 'disabled' : ''}`}
-      onClick={() => !isDisabled && onSpaceClick?.()}
+      className={`
+        board-space 
+        ${agentIcon} 
+        ${isHighlighted ? 'highlighted' : ''} 
+        ${conflictMarker ? 'combat-space' : ''}
+      `}
+      onClick={onSpaceClick}
     >
-      <div className="board-space-name">{name}</div>
-      <div className="board-space-content">
-        <div className={`placement-dot ${agentPlacementArea}`}></div>
-        {resources && (
-          <div className="board-space-resources">
-            {resources.spice && <div>🌶️ {resources.spice}</div>}
-            {resources.water && <div>💧 {resources.water}</div>}
-            {resources.solari && <div>💰 {resources.solari}</div>}
-            {resources.troops && <div>⚔️ {resources.troops}</div>}
-          </div>
-        )}
-        {influence && (
-          <div className="board-space-influence">
-            {influence.amount} influence with {influence.faction}
-          </div>
-        )}
-        <div className="board-space-type">{type}</div>
-        <div className="agent-markers">
-          {occupiedBy.map((playerId, index) => (
-            <div key={index} className={`agent-marker player-${playerId}`} />
-          ))}
-        </div>
+      <div className="space-header">
+        <span className="space-name">{name}</span>
+        {renderCost()}
+      </div>
+      {renderRequirement()}
+      {renderResources()}
+      {renderInfluence()}
+      {renderBonusSpice()}
+      <div className="agents-container">
+        {occupiedBy.map((playerId) => (
+          <div 
+            key={playerId} 
+            className={`agent player-${playerId}`} 
+          />
+        ))}
       </div>
     </div>
   )

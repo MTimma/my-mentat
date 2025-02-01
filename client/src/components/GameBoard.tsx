@@ -1,96 +1,104 @@
 import React from 'react'
-import { SpaceProps, AgentSpaceType, Player } from '../types/GameTypes'
+import { SpaceProps, AgentIcon, Player, ConflictCard, FactionType } from '../types/GameTypes'
 import BoardSpace from './BoardSpace'
 import CombatArea from './CombatArea'
 
 export const boardSpaces: SpaceProps[] = [
-  // City Spaces (Populated Areas)
+  // City Spaces
   {
     id: 1,
     name: "Carthag",
     conflictMarker: false,
-    agentPlacementArea: AgentSpaceType.POPULATED_AREAS,
+    agentIcon: AgentIcon.CITY,
     resources: { solari: 2 }
   },
   {
     id: 2,
     name: "Arrakeen",
     conflictMarker: false,
-    agentPlacementArea: AgentSpaceType.POPULATED_AREAS,
+    agentIcon: AgentIcon.CITY,
     resources: { water: 1, troops: 1 }
   },
 
-  // Desert Spaces
+  // Spice Trade Spaces
   {
     id: 3,
     name: "Imperial Basin",
     conflictMarker: true,
-    agentPlacementArea: AgentSpaceType.DESERTS,
+    agentIcon: AgentIcon.SPICE_TRADE,
     resources: { spice: 1 },
+    bonusSpice: 0
   },
   {
     id: 4,
     name: "The Great Flat",
     conflictMarker: true,
-    agentPlacementArea: AgentSpaceType.DESERTS,
+    agentIcon: AgentIcon.SPICE_TRADE,
     resources: { spice: 2 },
+    bonusSpice: 0
   },
 
   // Landsraad Spaces
   {
     id: 5,
-    name: "Landsraad Council",
+    name: "High Council",
     conflictMarker: false,
-    agentPlacementArea: AgentSpaceType.LANDSRAAD,
-    resources: { solari: 2 }
+    agentIcon: AgentIcon.LANDSRAAD,
+    cost: { solari: 5 },
+    oneTimeUse: true
   },
   {
     id: 6,
-    name: "Conspire",
+    name: "Mentat",
     conflictMarker: false,
-    agentPlacementArea: AgentSpaceType.LANDSRAAD,
-    resources: { troops: 1 }
+    agentIcon: AgentIcon.LANDSRAAD,
+    cost: { solari: 2 }
   },
 
   // Faction Spaces
   {
     id: 7,
-    name: "Emperor",
+    name: "Conspire",
     conflictMarker: false,
-    agentPlacementArea: AgentSpaceType.EMPEROR,
-    influence: { faction: "emperor", amount: 2 }
+    agentIcon: AgentIcon.EMPEROR,
+    cost: { spice: 4 },
+    influence: { faction: FactionType.EMPEROR, amount: 1 }
   },
   {
     id: 8,
-    name: "Spacing Guild",
-    conflictMarker: false,
-    agentPlacementArea: AgentSpaceType.SPACING_GUILD,
-    influence: { faction: "spacing-guild", amount: 2 }
+    name: "Heighliner",
+    conflictMarker: true,
+    agentIcon: AgentIcon.SPACING_GUILD,
+    cost: { spice: 6 },
+    influence: { faction: FactionType.SPACING_GUILD, amount: 1 }
   },
   {
     id: 9,
-    name: "Bene Gesserit",
+    name: "Selective Breeding",
     conflictMarker: false,
-    agentPlacementArea: AgentSpaceType.BENE_GESSERIT,
-    influence: { faction: "bene-gesserit", amount: 2 }
+    agentIcon: AgentIcon.BENE_GESSERIT,
+    cost: { spice: 2 },
+    influence: { faction: FactionType.BENE_GESSERIT, amount: 1 }
   },
   {
     id: 10,
-    name: "Fremen",
-    conflictMarker: false,
-    agentPlacementArea: AgentSpaceType.FREMEN,
-    influence: { faction: "fremen", amount: 2 }
+    name: "Sietch Tabr",
+    conflictMarker: true,
+    agentIcon: AgentIcon.FREMEN,
+    requiresInfluence: { faction: FactionType.FREMEN, amount: 2 },
+    influence: { faction: FactionType.FREMEN, amount: 1 }
   }
 ]
 
 interface GameBoardProps {
   currentPlayer: number
-  highlightedAreas: AgentSpaceType[] | null
+  highlightedAreas: AgentIcon[] | null
   onSpaceClick: (spaceId: number) => void
   occupiedSpaces: Record<number, number[]>
   hasAgents: boolean
   combatTroops: Record<number, number>
   players: Player[]
+  currentConflict: ConflictCard | null
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -101,7 +109,38 @@ const GameBoard: React.FC<GameBoardProps> = ({
   hasAgents,
   combatTroops,
   players,
+  currentConflict
 }) => {
+  const canPlaceAgent = (space: SpaceProps): boolean => {
+    // Check if space is already occupied
+    if (occupiedSpaces[space.id]?.length > 0) return false
+    
+    // Check if player has required influence
+    if (space.requiresInfluence) {
+      const player = players.find(p => p.id === currentPlayer)
+      // This will need to access the actual influence value from GameState
+      return false // Placeholder
+    }
+
+    // Check if one-time use space has been used
+    if (space.oneTimeUse) {
+      const player = players.find(p => p.id === currentPlayer)
+      if (space.name === "High Council" && player?.hasHighCouncilSeat) return false
+    }
+
+    // Check if player can pay the cost
+    if (space.cost) {
+      const player = players.find(p => p.id === currentPlayer)
+      if (!player) return false
+      
+      if (space.cost.solari && player.solari < space.cost.solari) return false
+      if (space.cost.spice && player.spice < space.cost.spice) return false
+      if (space.cost.water && player.water < space.cost.water) return false
+    }
+
+    return true
+  }
+
   return (
     <div className="game-board">
       <div className="board-spaces">
@@ -109,11 +148,11 @@ const GameBoard: React.FC<GameBoardProps> = ({
           <BoardSpace 
             key={space.id}
             {...space}
-            isHighlighted={highlightedAreas?.includes(space.agentPlacementArea)}
+            isHighlighted={highlightedAreas?.includes(space.agentIcon)}
             onSpaceClick={() => onSpaceClick(space.id)}
             activePlayerId={currentPlayer}
             occupiedBy={occupiedSpaces[space.id] || []}
-            isDisabled={!!occupiedSpaces[space.id]?.length || !hasAgents}
+            isDisabled={!canPlaceAgent(space) || !hasAgents}
           />
         ))}
       </div>

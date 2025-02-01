@@ -46,64 +46,104 @@
 }
 
 .board-space {
-  background-color: #f4e4bc;
+  position: relative;
   border: 2px solid #8b4513;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 8px;
+  margin: 4px;
+  background-color: #f4e4bc;
+  min-width: 120px;
   min-height: 80px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  transition: all 0.2s ease;
-  cursor: pointer;
 }
 
 .board-space.highlighted {
-  background-color: #e6d5a7;
   border-color: #ffd700;
-  box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
-  transform: scale(1.02);
+  box-shadow: 0 0 10px #ffd700;
 }
 
-.board-space.highlighted .placement-dot {
-  transform: scale(1.2);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+.board-space.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.board-space-name {
+.board-space.combat-space {
+  background-color: #fff3e0;
+  border-color: #bf360c;
+}
+
+.space-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.space-name {
   font-weight: bold;
   font-size: 0.9em;
-  color: #8b4513;
-  text-align: center;
-  margin-bottom: 4px;
 }
 
-.board-space-content {
+.space-cost {
   display: flex;
-  flex-direction: column;
   gap: 4px;
   font-size: 0.8em;
 }
 
-.board-space-resources {
+.space-resources {
   display: flex;
-  gap: 4px;
-  justify-content: center;
+  gap: 8px;
+  font-size: 0.9em;
 }
 
-.board-space-influence {
+.space-influence {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.influence-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  font-size: 0.8em;
+  color: white;
 }
 
-.board-space-type {
-  font-size: 0.7em;
-  color: #666;
-  text-align: center;
-  font-style: italic;
+.bonus-spice {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.8em;
+  color: #d32f2f;
 }
+
+.space-requirement {
+  font-size: 0.7em;
+  color: #d32f2f;
+}
+
+.agents-container {
+  display: flex;
+  gap: 4px;
+  margin-top: auto;
+}
+
+.agent {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+.agent.player-1 { background-color: #d32f2f; }
+.agent.player-2 { background-color: #388e3c; }
+.agent.player-3 { background-color: #fbc02d; }
+.agent.player-4 { background-color: #1976d2; }
 
 .players-area {
   display: contents; /* This allows children to be positioned in the grid */
@@ -735,15 +775,22 @@
   padding: 15px;
   background-color: #8b4513;
   border-radius: 8px;
+  color: white;
+}
+
+.combat-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
 }
 
 .combat-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: auto;
   gap: 10px;
-  min-height: 200px;
-  position: relative;
+  margin-bottom: 15px;
 }
 
 .combat-cell {
@@ -751,49 +798,57 @@
   border-radius: 4px;
   padding: 10px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  position: relative;  /* For combat counter positioning */
+  align-items: center;
+  gap: 10px;
 }
 
 .troop-marker {
   width: 30px;
   height: 30px;
-  border: 2px solid rgba(0, 0, 0, 0.2);
-  position: relative;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.troop-count {
-  color: white;
   font-weight: bold;
-  font-size: 1.2em;
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
 }
 
-.troop-marker.player-1 {
-  background-color: #d32f2f;
+.combat-strength {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
-.troop-marker.player-2 {
-  background-color: #388e3c;
+.combat-rewards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background-color: rgba(244, 228, 188, 0.1);
+  border-radius: 4px;
 }
 
-.troop-marker.player-3 {
-  background-color: #fbc02d;
+.first-place, .second-place, .third-place {
+  display: flex;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 4px;
 }
 
-.troop-marker.player-4 {
-  background-color: #1976d2;
+.first-place {
+  background-color: rgba(255, 215, 0, 0.2);
 }
 
-.add-troop-button:hover {
-  background-color: #e6d5a7;
+.second-place {
+  background-color: rgba(192, 192, 192, 0.2);
 }
 
-.add-troop-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.third-place {
+  background-color: rgba(205, 127, 50, 0.2);
+}
+
+.reward {
+  padding: 2px 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 0.9em;
 }

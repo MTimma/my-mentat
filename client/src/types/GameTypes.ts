@@ -1,3 +1,22 @@
+export enum CardType {
+  PLOT = 'plot',
+  COMBAT = 'combat',
+  ENDGAME = 'endgame'
+}
+
+export interface IntrigueCard {
+  id: number
+  name: string
+  type: CardType
+  effect: string
+  playCondition?: string
+  cost?: {
+    spice?: number
+    water?: number
+    solari?: number
+  }
+}
+
 export interface Leader {
   name: string
   ability: {
@@ -5,6 +24,7 @@ export interface Leader {
     description: string
   }
   signetRing: string
+  complexity: 1 | 2 | 3  // Number of icons after name
 }
 
 export enum PlayerColor {
@@ -26,12 +46,27 @@ export interface Player {
   agents: number
   hand: Card[]
   selectedCard: number | null
+  intrigueCards: IntrigueCard[]
+  deck: Card[]
+  discardPile: Card[]
+  hasHighCouncilSeat: boolean
+  hasSwordmaster: boolean
+}
+
+export enum AgentIcon {
+  CITY = 'city',
+  SPICE_TRADE = 'spice-trade',
+  LANDSRAAD = 'landsraad',
+  EMPEROR = 'emperor',
+  FREMEN = 'fremen',
+  SPACING_GUILD = 'spacing-guild',
+  BENE_GESSERIT = 'bene-gesserit'
 }
 
 export interface SpaceProps {
   id: number
   name: string
-  agentPlacementArea: AgentSpaceType
+  agentIcon: AgentIcon
   resources?: {
     spice?: number
     water?: number
@@ -39,28 +74,29 @@ export interface SpaceProps {
     troops?: number
   }
   influence?: {
-    faction: 'emperor' | 'spacing-guild' | 'bene-gesserit' | 'fremen'
+    faction: FactionType
     amount: number
   }
   maxAgents?: number
-  occupiedBy?: number[]  // Player IDs who have placed agents here
+  occupiedBy?: number[]
   conflictMarker: boolean
-}
-
-export enum AgentSpaceType {
-  POPULATED_AREAS = 'populated-areas',
-  LANDSRAAD = 'landsraad',
-  DESERTS = 'deserts',
-  EMPEROR = 'emperor',
-  FREMEN = 'fremen',
-  SPACING_GUILD = 'spacing-guild',
-  BENE_GESSERIT = 'bene-gesserit'
+  cost?: {
+    spice?: number
+    water?: number
+    solari?: number
+  }
+  bonusSpice?: number
+  requiresInfluence?: {
+    faction: FactionType
+    amount: number
+  }
+  oneTimeUse?: boolean
 }
 
 export interface Card {
   id: number
   name: string
-  persuasion?: number // Influence cost
+  persuasion?: number
   swordIcon?: boolean
   resources?: {
     spice?: number
@@ -69,7 +105,21 @@ export interface Card {
     troops?: number
   }
   effect?: string
-  agentSpaceTypes: AgentSpaceType[]
+  agentIcons: AgentIcon[]
+  fremenBond?: boolean
+  acquireEffect?: string
+  influenceRequirement?: {
+    faction: FactionType
+    amount: number
+  }
+  allianceRequirement?: FactionType
+}
+
+export enum FactionType {
+  EMPEROR = 'emperor',
+  SPACING_GUILD = 'spacing-guild',
+  BENE_GESSERIT = 'bene-gesserit',
+  FREMEN = 'fremen'
 }
 
 export enum TurnType {
@@ -81,32 +131,45 @@ export interface ActionTurn {
   type: TurnType.ACTION
   cardId: number
   agentSpaceId: number
-  agentSpaceType: AgentSpaceType
-  specialEffectDecisions?: {
-    [key: string]: any  // For flexibility with different card effects
-  }
+  agentIcon: AgentIcon
+  specialEffectDecisions?: Record<string, any>
 }
 
 export interface PassTurn {
   type: TurnType.PASS
   persuasionCount: number
   gainedEffects: string[]
-  acquiredCards: number[]  // Card IDs from Imperium Row
+  acquiredCards: number[]
 }
 
 export interface IntrigueCardPlay {
   cardId: number
-  playedBefore: boolean  // Whether played before or after the main action
-  effectDecisions?: {
-    [key: string]: any
+  playedBefore: boolean
+  effectDecisions?: Record<string, any>
+}
+
+export interface ConflictCard {
+  id: number
+  name: string
+  rewards: {
+    first: Reward[]
+    second: Reward[]
+    third?: Reward[]  // Only in 4-player game
   }
+  controlSpace?: 'arrakeen' | 'carthag' | 'imperial-basin'
+}
+
+export type Reward = {
+  type: 'victory-points' | 'spice' | 'water' | 'solari' | 'troops' | 'cards' | 'intrigue' | 'influence' | 'control'
+  amount: number
+  faction?: FactionType
 }
 
 export type GameTurn = {
-  playerId: number,
-  canDeployTroops: boolean,
-  troopLimit: number,
-  removableTroops: number,
+  playerId: number
+  canDeployTroops: boolean
+  troopLimit: number
+  removableTroops: number
   playedIntrigueCards?: IntrigueCardPlay[]
 } & Partial<ActionTurn | PassTurn>
 
@@ -114,6 +177,26 @@ export interface GameState {
   startingPlayerId: number
   currentRound: number
   activePlayerId: number
+  phase: GamePhase
   combatCardId: number | null
   lastTurn: GameTurn | null
+  mentatOwner: number | null
+  factionInfluence: Record<FactionType, Record<number, number>>
+  factionAlliances: Record<FactionType, number | null>
+  controlMarkers: {
+    arrakeen: number | null
+    carthag: number | null
+    imperialBasin: number | null
+  }
+  combatStrength: Record<number, number>
+  combatTroops: Record<number, number>
+  currentConflict: ConflictCard | null
+}
+
+export enum GamePhase {
+  ROUND_START = 'round-start',
+  PLAYER_TURNS = 'player-turns',
+  COMBAT = 'combat',
+  MAKERS = 'makers',
+  RECALL = 'recall'
 } 
