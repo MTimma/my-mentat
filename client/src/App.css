@@ -20,17 +20,16 @@
 }
 
 .main-area {
-  display: grid;
-  grid-template-columns: minmax(300px, 1fr) minmax(600px, 2fr) minmax(300px, 1fr);
-  grid-template-rows: 300px 1fr 300px;
-  gap: 0;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   min-height: 800px;
-  padding: 0;
+  padding: 20px;
 }
 
 .game-board {
-  grid-column: 2;
-  grid-row: 1 / 4;
+  width: 600px;
   background-color: #d4b16a;
   padding: 15px;
   border-radius: 8px;
@@ -146,62 +145,50 @@
 .agent.player-4 { background-color: #1976d2; }
 
 .players-area {
-  display: contents; /* This allows children to be positioned in the grid */
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none; /* Allow clicking through to board */
 }
 
 .player-area {
-  padding: 10px;
+  position: absolute;
+  width: 300px;
+  background-color: #f4e4bc;
   border: 1px solid #ccc;
   border-radius: 4px;
-  background-color: #f4e4bc;
-  width: 100%;
-  min-width: 300px;
-  height: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  z-index: 1;
-  color: #000;
+  padding: 10px;
+  pointer-events: auto; /* Re-enable clicking on player areas */
 }
 
 /* Position each player */
 .player-area:nth-child(1) {
-  grid-column: 1;
-  grid-row: 1;
-  justify-self: end;
-  align-self: end;
-  margin-right: -1px;
-  margin-bottom: -1px;
+  /* First player - top left */
+  top: 20px;
+  left: 20px;
   border-color: #d32f2f;
 }
 
 .player-area:nth-child(2) {
-  grid-column: 3;
-  grid-row: 1;
-  justify-self: start;
-  align-self: end;
-  margin-left: -1px;
-  margin-bottom: -1px;
+  /* Second player - top right */
+  top: 20px;
+  right: 20px;
   border-color: #388e3c;
 }
 
 .player-area:nth-child(3) {
-  grid-column: 3;
-  grid-row: 2;
-  justify-self: start;
-  align-self: start;
-  margin-left: -1px;
-  margin-top: -1px;
+  /* Third player - bottom right */
+  bottom: 20px;
+  right: 20px;
   border-color: #fbc02d;
 }
 
 .player-area:nth-child(4) {
-  grid-column: 1;
-  grid-row: 2;
-  justify-self: end;
-  align-self: start;
-  margin-right: -1px;
-  margin-top: -1px;
+  /* Fourth player - bottom left */
+  bottom: 20px;
+  left: 20px;
   border-color: #1976d2;
 }
 
@@ -851,4 +838,544 @@
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   font-size: 0.9em;
+}
+
+.combat-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  background-color: #f4e4bc;
+  border: 2px solid #8b4513;
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 300px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  animation: dialogEnter 0.3s ease-out forwards;
+}
+
+.combat-dialog h3 {
+  color: #8b4513;
+  margin: 0 0 16px 0;
+  text-align: center;
+  font-size: 1.2em;
+}
+
+.combat-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.combat-options p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9em;
+}
+
+.combat-options button {
+  background-color: #d4b16a;
+  border: 1px solid #8b4513;
+  border-radius: 4px;
+  padding: 8px 16px;
+  color: #000;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.combat-options button:hover {
+  background-color: #c19b55;
+}
+
+.combat-options button:last-child {
+  margin-top: 8px;
+  background-color: #8b4513;
+  color: white;
+}
+
+.combat-options button:last-child:hover {
+  background-color: #723a0f;
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialogEnter {
+  from { 
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.dialog-exit {
+  animation: dialogExit 0.2s ease-in forwards;
+}
+
+@keyframes dialogExit {
+  from { 
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to { 
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.95);
+  }
+}
+
+.combat-phase {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: rgba(139, 69, 19, 0.1);
+  border-radius: 8px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.combat-phase-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.combat-phase-title {
+  font-size: 1.4em;
+  color: #8b4513;
+  font-weight: bold;
+}
+
+.combat-phase-status {
+  font-size: 0.9em;
+  color: #666;
+  font-style: italic;
+}
+
+.combat-phase-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.combat-phase .combat-area {
+  margin-top: 0;
+  background-color: rgba(139, 69, 19, 0.9);
+}
+
+/* Combat phase transitions */
+.combat-phase-enter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.combat-phase-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.combat-phase-exit {
+  opacity: 1;
+}
+
+.combat-phase-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Combat strength indicators */
+.combat-strength-change {
+  animation: strengthPulse 0.5s ease-out;
+}
+
+@keyframes strengthPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+    color: #ffd700;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Current player indicator */
+.current-player-indicator {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ffd700;
+  color: #8b4513;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.intrigue-cards {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.intrigue-card {
+  width: 200px;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #f4e4bc;
+  border: 2px solid #8b4513;
+}
+
+.intrigue-card.combat {
+  border-color: #d32f2f;
+  background-color: #ffebee;
+}
+
+.intrigue-card.plot {
+  border-color: #388e3c;
+  background-color: #e8f5e9;
+}
+
+.intrigue-card.endgame {
+  border-color: #fbc02d;
+  background-color: #fff8e1;
+}
+
+.intrigue-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.intrigue-card-header h4 {
+  margin: 0;
+  font-size: 1em;
+}
+
+.card-type {
+  font-size: 0.8em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.card-description {
+  font-size: 0.9em;
+  margin: 8px 0;
+  color: #333;
+}
+
+.play-intrigue-button {
+  width: 100%;
+  padding: 6px;
+  background-color: #8b4513;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.play-intrigue-button:hover {
+  background-color: #723a0f;
+}
+
+.target-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #f4e4bc;
+  border: 2px solid #8b4513;
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 300px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+}
+
+.target-dialog h3 {
+  color: #8b4513;
+  margin: 0 0 12px 0;
+  text-align: center;
+  font-size: 1.2em;
+}
+
+.target-description {
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.target-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.target-button {
+  background-color: #fff;
+  border: 1px solid #8b4513;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.target-button:hover {
+  transform: translateX(4px);
+}
+
+.target-player-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.target-button.player-red:hover { background-color: #ffebee; }
+.target-button.player-green:hover { background-color: #e8f5e9; }
+.target-button.player-yellow:hover { background-color: #fff8e1; }
+.target-button.player-blue:hover { background-color: #e3f2fd; }
+
+.cancel-button {
+  width: 100%;
+  padding: 8px;
+  background-color: #8b4513;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancel-button:hover {
+  background-color: #723a0f;
+}
+
+.game-setup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(139, 69, 19, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.player-count-selection,
+.player-setup {
+  background-color: #f4e4bc;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 800px;
+  width: 90%;
+}
+
+.count-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.count-button {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  background-color: #8b4513;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.count-button:hover {
+  transform: translateY(-2px);
+  background-color: #723a0f;
+}
+
+.leader-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.leader-button {
+  background-color: white;
+  border: 2px solid #8b4513;
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+  text-align: left;
+}
+
+.leader-button:hover {
+  transform: translateY(-4px);
+}
+
+.complexity {
+  color: #fbc02d;
+  margin-top: 0.5rem;
+}
+
+.deck-setup {
+  background-color: #f4e4bc;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 1000px;
+  margin: 2rem auto;
+}
+
+.card-selection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.card-option {
+  background-color: white;
+  border: 2px solid #8b4513;
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.card-option.selected {
+  border-color: #fbc02d;
+  background-color: #fff8e1;
+  transform: translateY(-4px);
+}
+
+.card-details {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.agent-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-button {
+  margin-top: 2rem;
+  padding: 1rem 2rem;
+  background-color: #8b4513;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.confirm-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-setup-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+}
+
+.setup-step-indicator {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #f4e4bc;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  color: #8b4513;
+}
+
+.player-indicator {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 1.1em;
+  color: #333;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.current-conflict {
+  background-color: #fff3e0;
+  border: 2px solid #bf360c;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.conflict-rewards {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.first-place {
+  color: #ffd700;
+}
+
+.reward {
+  margin-right: 8px;
 }

@@ -1,4 +1,5 @@
 import { useGame } from '../contexts/GameContext'
+import { GamePhase, CardType } from '../types/GameTypes'
 
 export function useCombat() {
   const { gameState, dispatch, currentConflict } = useGame()
@@ -33,6 +34,42 @@ export function useCombat() {
     return index === -1 ? null : index + 1
   }
 
+  const getEligiblePlayers = () => {
+    return gameState.players.filter(p => 
+      (gameState.combatTroops[p.id] || 0) > 0
+    )
+  }
+
+  const getCurrentCombatPlayer = () => {
+    const eligible = getEligiblePlayers()
+    if (eligible.length === 0) return null
+
+    // Start with first player
+    let currentIndex = eligible.findIndex(p => p.id === gameState.firstPlayer)
+    if (currentIndex === -1) currentIndex = 0
+
+    // Find next player who hasn't passed consecutively
+    for (let i = 0; i < eligible.length; i++) {
+      const playerIndex = (currentIndex + i) % eligible.length
+      const player = eligible[playerIndex]
+      if (!gameState.combatPasses.includes(player.id)) {
+        return player
+      }
+    }
+
+    return null
+  }
+
+  const hasConsecutivePasses = () => {
+    const eligible = getEligiblePlayers()
+    return eligible.every(p => gameState.combatPasses.includes(p.id))
+  }
+
+  const getAvailableCombatCards = (playerId: number) => {
+    const player = gameState.players.find(p => p.id === playerId)
+    return player?.intrigueCards.filter(c => c.type === CardType.COMBAT) || []
+  }
+
   return {
     currentConflict,
     addCombatStrength,
@@ -41,6 +78,11 @@ export function useCombat() {
     getCombatStrength,
     getPlayerRank,
     isInCombat: gameState.phase === GamePhase.COMBAT,
-    combatTroops: gameState.combatTroops
+    combatTroops: gameState.combatTroops,
+    currentCombatPlayer: getCurrentCombatPlayer(),
+    eligiblePlayers: getEligiblePlayers(),
+    hasConsecutivePasses: hasConsecutivePasses(),
+    getAvailableCombatCards,
+    passCombat: (playerId: number) => dispatch({ type: 'PASS_COMBAT', playerId })
   }
 } 

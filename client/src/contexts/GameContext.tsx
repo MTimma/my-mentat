@@ -7,8 +7,11 @@ import {
   ConflictCard,
   IntrigueCard,
   Card,
-  Reward
+  Reward,
+  IntrigueCardEffect,
+  PlayerColor
 } from '../types/GameTypes'
+import { LEADERS } from '../data/leaders'
 
 interface GameContextType {
   gameState: GameState
@@ -16,17 +19,20 @@ interface GameContextType {
   currentConflict: ConflictCard | null
   imperiumRow: Card[]
   intrigueDeck: IntrigueCard[]
+  conflictDeck: ConflictCard[]
   dispatch: React.Dispatch<GameAction>
 }
 
 type GameAction = 
   | { type: 'START_ROUND' }
+  | { type: 'REVEAL_CONFLICT' }
+  | { type: 'DRAW_HAND'; playerId: number }
   | { type: 'END_TURN'; playerId: number }
   | { type: 'PLAY_CARD'; playerId: number; cardId: number }
   | { type: 'DEPLOY_AGENT'; playerId: number; spaceId: number }
   | { type: 'ADD_TROOP'; playerId: number }
   | { type: 'REMOVE_TROOP'; playerId: number }
-  | { type: 'PLAY_INTRIGUE'; playerId: number; cardId: number }
+  | { type: 'PLAY_INTRIGUE'; cardId: number; playerId: number; targetPlayerId?: number }
   | { type: 'GAIN_INFLUENCE'; playerId: number; faction: FactionType; amount: number }
   | { type: 'ACQUIRE_CARD'; playerId: number; cardId: number }
   | { type: 'DRAW_CARD'; playerId: number }
@@ -35,6 +41,9 @@ type GameAction =
   | { type: 'ADD_COMBAT_STRENGTH'; playerId: number; amount: number }
   | { type: 'PLAY_COMBAT_INTRIGUE'; playerId: number; cardId: number }
   | { type: 'RESOLVE_COMBAT' }
+  | { type: 'START_COMBAT_PHASE' }
+  | { type: 'PASS_COMBAT'; playerId: number }
+  | { type: 'DRAW_INTRIGUE'; playerId: number }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
@@ -71,7 +80,9 @@ const initialGameState: GameState = {
     arrakeen: null,
     carthag: null,
     imperialBasin: null
-  }
+  },
+  combatPasses: [],
+  firstPlayer: 1
 }
 
 function calculateCombatStrength(
@@ -158,53 +169,38 @@ function applyReward(state: GameState, reward: Reward, playerId: number): GameSt
   return newState
 }
 
-interface CombatIntrigueEffect {
-  strengthBonus?: number
-  troopBonus?: number
-  removeEnemyTroops?: number
-  stealResource?: {
-    type: 'spice' | 'water' | 'solari'
-    amount: number
-  }
-}
-
-function handleCombatIntrigue(
+function handleIntrigueEffect(
   state: GameState,
+  effect: IntrigueCardEffect,
   playerId: number,
-  cardId: number
+  targetPlayerId?: number
 ): GameState {
-  const player = state.players.find(p => p.id === playerId)
-  const card = player?.intrigueCards.find(c => c.id === cardId)
-
-  if (!card || card.type !== 'COMBAT') return state
-
   let newState = { ...state }
-  const effect = card.effect as CombatIntrigueEffect // You'll need to parse the effect string or store it as an object
 
-  if (effect.strengthBonus) {
-    newState = gameReducer(newState, {
-      type: 'ADD_COMBAT_STRENGTH',
-      playerId,
-      amount: effect.strengthBonus
-    })
+  if (effect.gainResource) {
+    const { type, amount } = effect.gainResource
+    newState.players = newState.players.map(player =>
+      player.id === playerId
+        ? { ...player, [type]: player[type] + amount }
+        : player
+    )
   }
 
-  if (effect.troopBonus) {
-    newState.combatTroops = {
-      ...newState.combatTroops,
-      [playerId]: (newState.combatTroops[playerId] || 0) + effect.troopBonus
+  if (effect.gainInfluence && effect.gainInfluence.faction) {
+    const { faction, amount } = effect.gainInfluence
+    const currentInfluence = state.factionInfluence[faction][playerId] || 0
+    newState.factionInfluence = {
+      ...state.factionInfluence,
+      [faction]: {
+        ...state.factionInfluence[faction],
+        [playerId]: currentInfluence + amount
+      }
     }
   }
 
-  // Remove card from player's hand
-  newState.players = newState.players.map(p =>
-    p.id === playerId
-      ? {
-          ...p,
-          intrigueCards: p.intrigueCards.filter(c => c.id !== cardId)
-        }
-      : p
-  )
+  if (effect.drawCards) {
+    // Implement card drawing logic
+  }
 
   return newState
 }
@@ -212,31 +208,74 @@ function handleCombatIntrigue(
 // Game reducer
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-    case 'START_ROUND':
-      return {
-        ...state,
-        phase: GamePhase.PLAYER_TURNS
-      }
-    case 'START_COMBAT':
-      return {
-        ...state,
-        phase: GamePhase.COMBAT
-      }
-    case 'ADD_COMBAT_STRENGTH': {
-      const { playerId, amount } = action
-      const newStrength = {
-        ...state.combatStrength,
-        [playerId]: (state.combatStrength[playerId] || 0) + amount
-      }
+    case 'START_ROUND': {
+      // First reveal a conflict card
+      const [newConflict, ...remainingConflicts] = state.conflictDeck
       
+      // Then have each player draw their hand
+      const updatedPlayers = state.players.map(player => {
+        const cardsToAdd = player.deck.slice(0, 5)
+        const remainingDeck = player.deck.slice(5)
+        
+        return {
+          ...player,
+          hand: cardsToAdd,
+          deck: remainingDeck
+        }
+      })
+
       return {
         ...state,
-        combatStrength: newStrength
+        currentRound: state.currentRound + 1,
+        phase: GamePhase.PLAYER_TURNS,
+        currentConflict: newConflict,
+        conflictDeck: remainingConflicts,
+        players: updatedPlayers
+      }
+    }
+    case 'START_COMBAT_PHASE':
+      return {
+        ...state,
+        phase: GamePhase.COMBAT,
+        combatPasses: []
+      }
+    case 'PASS_COMBAT': {
+      return {
+        ...state,
+        combatPasses: [...state.combatPasses, action.playerId]
       }
     }
     case 'PLAY_COMBAT_INTRIGUE': {
-      // Handle combat intrigue card effects
-      return state
+      const { playerId, cardId } = action
+      const player = state.players.find(p => p.id === playerId)
+      const card = player?.intrigueCards.find(c => c.id === cardId)
+
+      if (!card || card.type !== CardType.COMBAT) return state
+
+      // Reset passes when someone plays a card
+      let newState = {
+        ...state,
+        combatPasses: []
+      }
+
+      // Apply card effect
+      const effect = JSON.parse(card.effect) as CombatIntrigueEffect
+      if (effect.strengthBonus) {
+        newState.combatStrength[playerId] = 
+          (newState.combatStrength[playerId] || 0) + effect.strengthBonus
+      }
+
+      // Remove card from player's hand
+      newState.players = newState.players.map(p =>
+        p.id === playerId
+          ? {
+              ...p,
+              intrigueCards: p.intrigueCards.filter(c => c.id !== cardId)
+            }
+          : p
+      )
+
+      return newState
     }
     case 'RESOLVE_COMBAT': {
       if (!state.currentConflict) return state
@@ -278,21 +317,116 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         currentConflict: null
       }
     }
+    case 'PLAY_INTRIGUE': {
+      const { cardId, playerId, targetPlayerId } = action
+      const player = state.players.find(p => p.id === playerId)
+      const card = player?.intrigueCards.find(c => c.id === cardId)
+
+      if (!card) return state
+
+      // Apply effect
+      let newState = handleIntrigueEffect(state, card.effect, playerId, targetPlayerId)
+
+      // Remove card from player's hand
+      newState.players = newState.players.map(p =>
+        p.id === playerId
+          ? {
+              ...p,
+              intrigueCards: p.intrigueCards.filter(c => c.id !== cardId)
+            }
+          : p
+      )
+
+      return newState
+    }
+    case 'REVEAL_CONFLICT':
+      // Implementation needed
+      return state
+    case 'DRAW_HAND':
+      // Implementation needed
+      return state
     // Add other cases
     default:
       return state
   }
 }
 
-export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [gameState, dispatch] = useReducer(gameReducer, initialGameState)
-  
-  // Add other state management here
+interface GameProviderProps {
+  initialState?: Partial<GameState>
+  children: React.ReactNode
+}
+
+export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, children }) => {
+  // Initialize with some test players for now
+  const initialPlayers: Player[] = [
+    {
+      id: 1,
+      leader: LEADERS[0],
+      color: PlayerColor.RED,
+      spice: 0,
+      water: 0,
+      solari: 0,
+      troops: 2,
+      combatValue: 0,
+      agents: 2,
+      hand: [],
+      selectedCard: null,
+      intrigueCards: [],
+      deck: [],
+      discardPile: [],
+      hasHighCouncilSeat: false,
+      hasSwordmaster: false
+    },
+    {
+      id: 2,
+      leader: LEADERS[1],
+      color: PlayerColor.GREEN,
+      spice: 0,
+      water: 0,
+      solari: 0,
+      troops: 2,
+      combatValue: 0,
+      agents: 2,
+      hand: [],
+      selectedCard: null,
+      intrigueCards: [],
+      deck: [],
+      discardPile: [],
+      hasHighCouncilSeat: false,
+      hasSwordmaster: false
+    }
+  ]
+
+  // Add initial conflict cards
+  const initialConflictDeck: ConflictCard[] = [
+    {
+      id: 1,
+      name: "Control of Arrakeen",
+      rewards: {
+        first: [
+          { type: 'victory-points', amount: 2 },
+          { type: 'control', amount: 1 }
+        ],
+        second: [
+          { type: 'victory-points', amount: 1 }
+        ]
+      },
+      controlSpace: 'arrakeen'
+    },
+    // Add more conflict cards as needed
+  ]
+
+  const [gameState, dispatch] = useReducer(gameReducer, {
+    ...initialGameState,
+    conflictDeck: initialConflictDeck,
+    ...initialState
+  })
 
   const value = {
     gameState,
-    players: [], // Initialize with players
-    currentConflict: null,
+    players: initialPlayers,
+    currentConflict: gameState.currentConflict,
+    conflictDeck: gameState.conflictDeck,
     imperiumRow: [],
     intrigueDeck: [],
     dispatch

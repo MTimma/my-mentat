@@ -4,17 +4,45 @@ export enum CardType {
   ENDGAME = 'endgame'
 }
 
+export enum IntrigueCardType {
+  COMBAT = 'combat',
+  PLOT = 'plot',
+  ENDGAME = 'endgame'
+}
+
+export interface IntrigueCardEffect {
+  // Combat effects
+  strengthBonus?: number
+  troopBonus?: number
+  removeEnemyTroops?: number
+  stealResource?: {
+    type: 'spice' | 'water' | 'solari'
+    amount: number
+  }
+  
+  // Plot effects
+  gainResource?: {
+    type: 'spice' | 'water' | 'solari' | 'troops'
+    amount: number
+  }
+  gainInfluence?: {
+    faction: FactionType
+    amount: number
+  }
+  drawCards?: number
+  
+  // Special conditions
+  playCondition?: 'onWinCombat' | 'onLoseCombat' | 'onReveal' | 'immediate'
+  targetPlayer?: boolean  // Whether effect needs a target player
+}
+
 export interface IntrigueCard {
   id: number
   name: string
-  type: CardType
-  effect: string
-  playCondition?: string
-  cost?: {
-    spice?: number
-    water?: number
-    solari?: number
-  }
+  type: IntrigueCardType
+  effect: IntrigueCardEffect
+  description: string
+  oneTimeUse: boolean
 }
 
 export interface Leader {
@@ -199,4 +227,25 @@ export enum GamePhase {
   COMBAT = 'combat',
   MAKERS = 'makers',
   RECALL = 'recall'
+}
+
+export interface PlayerSetup {
+  leaderId: string
+  color: PlayerColor
+  playerNumber: number
+  leaderChoices?: LeaderChoices
+  startingDeck?: Card[]
+}
+
+export interface LeaderChoices {
+  startingResources?: {
+    spice?: number
+    water?: number
+    solari?: number
+  }
+  startingInfluence?: {
+    faction: FactionType
+    amount: number
+  }
+  specialAbilityChoice?: string
 } 

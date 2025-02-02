@@ -1,4 +1,4 @@
-
+import React, { useState } from 'react'
 import './App.css'
 import GameBoard from './components/GameBoard'
 import PlayerArea from './components/PlayerArea'
@@ -6,6 +6,10 @@ import ImperiumRow from './components/ImperiumRow'
 import TurnHistory from './components/TurnHistory'
 import { GameProvider } from './contexts/GameContext'
 import { useGame } from './contexts/GameContext'
+import GameSetup from './components/GameSetup'
+import DeckSetup from './components/DeckSetup'
+import LeaderSetupChoices from './components/LeaderSetupChoices'
+import { LEADERS } from './data/leaders'
 
 const GameContent = () => {
   const { 
@@ -15,6 +19,8 @@ const GameContent = () => {
     currentConflict,
     imperiumRow
   } = useGame()
+
+  console.log('Players:', players)
 
   const handleCardSelect = (playerId: number, cardId: number) => {
     dispatch({ type: 'PLAY_CARD', playerId, cardId })
@@ -77,9 +83,9 @@ const GameContent = () => {
               onEndTurn={handleEndTurn}
               onAddTroop={() => handleAddTroop(player.id)}
               onRemoveTroop={() => handleRemoveTroop(player.id)}
-              canDeployTroops={true} // Will be computed
-              removableTroops={0} // Will be computed
-              troopLimit={2} // Will be computed
+              canDeployTroops={true}
+              removableTroops={0}
+              troopLimit={2}
             />
           ))}
         </div>
@@ -89,10 +95,64 @@ const GameContent = () => {
 }
 
 function App() {
+  const [gameState, setGameState] = useState<'setup' | 'leaderChoices' | 'deckSetup' | 'game'>('setup')
+  const [playerSetups, setPlayerSetups] = useState<PlayerSetup[]>([])
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
+
+  const handleSetupComplete = (setups: PlayerSetup[]) => {
+    setPlayerSetups(setups)
+    setGameState('leaderChoices')
+  }
+
+  const handleLeaderChoicesComplete = (choices: LeaderChoices) => {
+    // Save leader choices and move to next player or deck setup
+    if (currentPlayerIndex < playerSetups.length - 1) {
+      setCurrentPlayerIndex(prev => prev + 1)
+    } else {
+      setGameState('deckSetup')
+      setCurrentPlayerIndex(0)
+    }
+  }
+
+  const handleDeckSetupComplete = (selectedCards: Card[]) => {
+    // Save deck choices and move to next player or start game
+    if (currentPlayerIndex < playerSetups.length - 1) {
+      setCurrentPlayerIndex(prev => prev + 1)
+    } else {
+      setGameState('game')
+    }
+  }
+
   return (
-    <GameProvider>
-      <GameContent />
-    </GameProvider>
+    <div className="app">
+      {gameState === 'setup' && (
+        <GameSetup onComplete={handleSetupComplete} />
+      )}
+
+      {gameState === 'leaderChoices' && playerSetups[currentPlayerIndex] && (
+        <LeaderSetupChoices
+          leader={LEADERS.find(l => l.name === playerSetups[currentPlayerIndex].leaderId)!}
+          onComplete={handleLeaderChoicesComplete}
+        />
+      )}
+
+      {gameState === 'deckSetup' && playerSetups[currentPlayerIndex] && (
+        <DeckSetup
+          player={{
+            id: currentPlayerIndex + 1,
+            leader: LEADERS.find(l => l.name === playerSetups[currentPlayerIndex].leaderId)!,
+            color: playerSetups[currentPlayerIndex].color
+          }}
+          onComplete={handleDeckSetupComplete}
+        />
+      )}
+
+      {gameState === 'game' && (
+        <GameProvider>
+          <GameContent />
+        </GameProvider>
+      )}
+    </div>
   )
 }
 
