@@ -1,5 +1,6 @@
 import React from 'react'
 import { Player } from '../types/GameTypes'
+import CardHand from './CardHand'
 
 interface PlayerAreaProps {
   player: Player
@@ -7,18 +8,18 @@ interface PlayerAreaProps {
   isStartingPlayer: boolean
   onSelectCard: (playerId: number, cardId: number) => void
   onEndTurn: (playerId: number) => void
-  onAddTroop: () => void
-  onRemoveTroop: () => void
+  onAddTroop?: () => void
+  onRemoveTroop?: () => void
   canDeployTroops: boolean
   removableTroops: number
   troopLimit: number
 }
 
-const PlayerArea: React.FC<PlayerAreaProps> = ({
-  player,
-  isActive,
-  isStartingPlayer,
-  onSelectCard,
+const PlayerArea: React.FC<PlayerAreaProps> = ({ 
+  player, 
+  isActive, 
+  isStartingPlayer, 
+  onSelectCard, 
   onEndTurn,
   onAddTroop,
   onRemoveTroop,
@@ -26,59 +27,74 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
   removableTroops,
   troopLimit
 }) => {
+  const remainingTroops = troopLimit - removableTroops;
+
   return (
     <div className={`player-area ${isActive ? 'active' : ''}`}>
       <div className="player-header">
-        <h3>{player.leader.name}</h3>
-        {isStartingPlayer && <span className="starting-player">★</span>}
-      </div>
-      
-      <div className="player-resources">
-        <div className="resource-item">
-          <span>💧</span>
-          <span>{player.water}</span>
-        </div>
-        <div className="resource-item">
-          <span>🌶️</span>
-          <span>{player.spice}</span>
-        </div>
-        <div className="resource-item">
-          <span>💰</span>
-          <span>{player.solari}</span>
-        </div>
-        <div className="resource-item">
-          <span>⚔️</span>
-          <span>{player.troops}</span>
-        </div>
-      </div>
-
-      <div className="player-hand">
-        {player.hand.map(card => (
-          <div 
-            key={card.id}
-            className="card-preview"
-            onClick={() => onSelectCard(player.id, card.id)}
-          >
-            {card.name}
+        <div className="name-with-indicators">
+          <div className="name-with-color">
+            <div className={`color-indicator ${player.color}`}></div>
+            <h3>{player.leader.name}</h3>
           </div>
-        ))}
-      </div>
-
-      {isActive && (
-        <div className="player-actions">
-          <button onClick={() => onEndTurn(player.id)}>End Turn</button>
-          {canDeployTroops && (
-            <button onClick={onAddTroop} disabled={player.troops >= troopLimit}>
-              Deploy Troop
-            </button>
-          )}
-          {removableTroops > 0 && (
-            <button onClick={onRemoveTroop}>
-              Remove Troop
-            </button>
-          )}
+          <div className="player-indicators">
+            {isStartingPlayer && <div className="starting-player-indicator">🪱</div>}
+            {isActive && (
+              <>
+                <button 
+                  className="end-turn-button"
+                  onClick={() => onEndTurn(player.id)}
+                >
+                  End Turn
+                </button>
+                {onAddTroop && (
+                  <>
+                    <button 
+                      className="add-troop-button"
+                      onClick={onAddTroop}
+                      disabled={!canDeployTroops || 
+                               player.troops <= 0 || 
+                               removableTroops >= troopLimit}
+                    >
+                      Add Troop ({remainingTroops})
+                    </button>
+                    {removableTroops > 0 && (
+                      <button 
+                        className="remove-troop-button"
+                        onClick={onRemoveTroop}
+                      >
+                        Remove Troop
+                      </button>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
-      )}
+        <div className="leader-ability">
+          <span className="ability-name">{player.leader.ability.name}</span>
+          <div className="ability-description">{player.leader.ability.description}</div>
+        </div>
+        <div className="signet-ring">
+          <span className="ability-label">Signet Ring:</span> {player.leader.signetRing}
+        </div>
+      </div>
+      <div className="resources">
+        <div>Spice: {player.spice}🌶️</div>
+        <div>Water: {player.water}💧</div>
+        <div>Solari: {player.solari}💰</div>
+        <div>Troops: {player.troops}⚔️</div>
+        <div>Combat: {player.combatValue}⚔️</div>
+        <div className={`agents ${player.agents === 0 ? 'depleted' : ''}`}>
+          Agents: {player.agents}👥
+        </div>
+      </div>
+      <CardHand 
+        cards={player.hand}
+        selectedCard={player.selectedCard}
+        onSelectCard={(cardId) => onSelectCard(player.id, cardId)}
+      />
     </div>
   )
 }

@@ -143,22 +143,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
   return (
     <div className="game-board">
-      {currentConflict && (
-        <div className="current-conflict">
-          <h3>{currentConflict.name}</h3>
-          <div className="conflict-rewards">
-            <div className="first-place">
-              {currentConflict.rewards.first.map((reward, i) => (
-                <span key={i} className="reward">
-                  {reward.type === 'victory-points' && `${reward.amount}VP`}
-                  {reward.type === 'control' && '🏰'}
-                </span>
-              ))}
-            </div>
-            {/* Add second and third place rewards */}
-          </div>
-        </div>
-      )}
       <div className="board-spaces">
         {boardSpaces.map((space) => (
           <BoardSpace 

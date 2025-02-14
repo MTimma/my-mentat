@@ -8,10 +8,8 @@ import {
   IntrigueCard,
   Card,
   Reward,
-  IntrigueCardEffect,
-  PlayerColor
+  IntrigueCardEffect
 } from '../types/GameTypes'
-import { LEADERS } from '../data/leaders'
 
 interface GameContextType {
   gameState: GameState
@@ -19,14 +17,11 @@ interface GameContextType {
   currentConflict: ConflictCard | null
   imperiumRow: Card[]
   intrigueDeck: IntrigueCard[]
-  conflictDeck: ConflictCard[]
   dispatch: React.Dispatch<GameAction>
 }
 
 type GameAction = 
   | { type: 'START_ROUND' }
-  | { type: 'REVEAL_CONFLICT' }
-  | { type: 'DRAW_HAND'; playerId: number }
   | { type: 'END_TURN'; playerId: number }
   | { type: 'PLAY_CARD'; playerId: number; cardId: number }
   | { type: 'DEPLOY_AGENT'; playerId: number; spaceId: number }
@@ -208,31 +203,11 @@ function handleIntrigueEffect(
 // Game reducer
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-    case 'START_ROUND': {
-      // First reveal a conflict card
-      const [newConflict, ...remainingConflicts] = state.conflictDeck
-      
-      // Then have each player draw their hand
-      const updatedPlayers = state.players.map(player => {
-        const cardsToAdd = player.deck.slice(0, 5)
-        const remainingDeck = player.deck.slice(5)
-        
-        return {
-          ...player,
-          hand: cardsToAdd,
-          deck: remainingDeck
-        }
-      })
-
+    case 'START_ROUND':
       return {
         ...state,
-        currentRound: state.currentRound + 1,
-        phase: GamePhase.PLAYER_TURNS,
-        currentConflict: newConflict,
-        conflictDeck: remainingConflicts,
-        players: updatedPlayers
+        phase: GamePhase.PLAYER_TURNS
       }
-    }
     case 'START_COMBAT_PHASE':
       return {
         ...state,
@@ -339,12 +314,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       return newState
     }
-    case 'REVEAL_CONFLICT':
-      // Implementation needed
-      return state
-    case 'DRAW_HAND':
-      // Implementation needed
-      return state
     // Add other cases
     default:
       return state
@@ -357,76 +326,17 @@ interface GameProviderProps {
 }
 
 export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, children }) => {
-  // Initialize with some test players for now
-  const initialPlayers: Player[] = [
-    {
-      id: 1,
-      leader: LEADERS[0],
-      color: PlayerColor.RED,
-      spice: 0,
-      water: 0,
-      solari: 0,
-      troops: 2,
-      combatValue: 0,
-      agents: 2,
-      hand: [],
-      selectedCard: null,
-      intrigueCards: [],
-      deck: [],
-      discardPile: [],
-      hasHighCouncilSeat: false,
-      hasSwordmaster: false
-    },
-    {
-      id: 2,
-      leader: LEADERS[1],
-      color: PlayerColor.GREEN,
-      spice: 0,
-      water: 0,
-      solari: 0,
-      troops: 2,
-      combatValue: 0,
-      agents: 2,
-      hand: [],
-      selectedCard: null,
-      intrigueCards: [],
-      deck: [],
-      discardPile: [],
-      hasHighCouncilSeat: false,
-      hasSwordmaster: false
-    }
-  ]
-
-  // Add initial conflict cards
-  const initialConflictDeck: ConflictCard[] = [
-    {
-      id: 1,
-      name: "Control of Arrakeen",
-      rewards: {
-        first: [
-          { type: 'victory-points', amount: 2 },
-          { type: 'control', amount: 1 }
-        ],
-        second: [
-          { type: 'victory-points', amount: 1 }
-        ]
-      },
-      controlSpace: 'arrakeen'
-    },
-    // Add more conflict cards as needed
-  ]
-
   const [gameState, dispatch] = useReducer(gameReducer, {
     ...initialGameState,
-    conflictDeck: initialConflictDeck,
     ...initialState
   })
+  
+  // Add other state management here
 
   const value = {
     gameState,
-    players: initialPlayers,
-    currentConflict: gameState.currentConflict,
-    conflictDeck: gameState.conflictDeck,
+    players: [], // Initialize with players
+    currentConflict: null,
     imperiumRow: [],
     intrigueDeck: [],
     dispatch

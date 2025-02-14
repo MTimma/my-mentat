@@ -20,8 +20,6 @@ const GameContent = () => {
     imperiumRow
   } = useGame()
 
-  console.log('Players:', players)
-
   const handleCardSelect = (playerId: number, cardId: number) => {
     dispatch({ type: 'PLAY_CARD', playerId, cardId })
   }
@@ -83,9 +81,9 @@ const GameContent = () => {
               onEndTurn={handleEndTurn}
               onAddTroop={() => handleAddTroop(player.id)}
               onRemoveTroop={() => handleRemoveTroop(player.id)}
-              canDeployTroops={true}
-              removableTroops={0}
-              troopLimit={2}
+              canDeployTroops={true} // Will be computed
+              removableTroops={0} // Will be computed
+              troopLimit={2} // Will be computed
             />
           ))}
         </div>
