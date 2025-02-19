@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Leader, FactionType } from '../types/GameTypes'
 import { motion } from 'framer-motion'
+import { LEADERS } from './data/leaders'
 
 interface LeaderSetupChoicesProps {
   leader: Leader
@@ -8,31 +9,12 @@ interface LeaderSetupChoicesProps {
 }
 
 interface LeaderChoices {
-  startingResources?: {
-    spice?: number
-    water?: number
-    solari?: number
-  }
-  startingInfluence?: {
-    faction: FactionType
-    amount: number
-  }
+
   specialAbilityChoice?: string
 }
 
 const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onComplete }) => {
   const [choices, setChoices] = useState<LeaderChoices>({})
-
-  const handleResourceChoice = (resource: 'spice' | 'water' | 'solari', amount: number) => {
-    setChoices(prev => ({
-      ...prev,
-      startingResources: {
-        ...prev.startingResources,
-        [resource]: amount
-      }
-    }))
-  }
-
   const handleInfluenceChoice = (faction: FactionType) => {
     setChoices(prev => ({
       ...prev,
@@ -52,7 +34,7 @@ const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onCompl
       <h3>{leader.name}'s Setup Choices</h3>
       
       {/* Resource choices if applicable */}
-      {leader.name === "Count Ilban Richese" && (
+      {leader.name === "BARON VLADIMIR HARKONNEN" && (
         <div className="resource-choice">
           <h4>Choose your starting bonus:</h4>
           <div className="choice-buttons">
@@ -66,23 +48,6 @@ const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onCompl
         </div>
       )}
 
-      {/* Influence choices if applicable */}
-      {leader.name === "Countess Ariana Thorvald" && (
-        <div className="influence-choice">
-          <h4>Choose a faction to start with 1 influence:</h4>
-          <div className="faction-buttons">
-            {Object.values(FactionType).map(faction => (
-              <button 
-                key={faction}
-                onClick={() => handleInfluenceChoice(faction)}
-                className={`faction-button ${faction.toLowerCase()}`}
-              >
-                {faction}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       <button 
         className="confirm-button"

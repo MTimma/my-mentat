@@ -36,5 +36,14 @@ export const LEADERS: Leader[] = [
     },
     signetRing: "Pay 2 Spice to gain 2 Solari and 1 Water.",
     complexity: 2
+  },
+  {
+    name: "BARON VLADIMIR HARKONNEN",
+    ability: {
+      name: "Masterstroke",
+      description: "At start of game, secretly choose 2 Factions. When you deploy 4+ troops to the Conflict in a turn, reveal your choices and gain one Influence with each."
+    },
+    signetRing: "Pay 2 Spice to gain 2 Solari and 1 Water.",
+    complexity: 2
   }
 ] 

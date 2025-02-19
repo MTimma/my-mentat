@@ -10,6 +10,7 @@ import GameSetup from './components/GameSetup'
 import DeckSetup from './components/DeckSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices'
 import { LEADERS } from './data/leaders'
+import { PlayerSetup } from './types/GameTypes'
 
 const GameContent = () => {
   const { 
@@ -103,7 +104,6 @@ function App() {
   }
 
   const handleLeaderChoicesComplete = (choices: LeaderChoices) => {
-    // Save leader choices and move to next player or deck setup
     if (currentPlayerIndex < playerSetups.length - 1) {
       setCurrentPlayerIndex(prev => prev + 1)
     } else {
@@ -127,7 +127,7 @@ function App() {
         <GameSetup onComplete={handleSetupComplete} />
       )}
 
-      {gameState === 'leaderChoices' && playerSetups[currentPlayerIndex] && (
+      {gameState === 'leaderChoices' && playerSetups[currentPlayerIndex] && playerSetups[currentPlayerIndex]. && (
         <LeaderSetupChoices
           leader={LEADERS.find(l => l.name === playerSetups[currentPlayerIndex].leaderId)!}
           onComplete={handleLeaderChoicesComplete}

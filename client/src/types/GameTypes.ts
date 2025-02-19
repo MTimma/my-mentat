@@ -219,6 +219,7 @@ export interface GameState {
   combatStrength: Record<number, number>
   combatTroops: Record<number, number>
   currentConflict: ConflictCard | null
+  masterStroke?: MasterStroke | null
 }
 
 export enum GamePhase {
@@ -249,3 +250,9 @@ export interface LeaderChoices {
   }
   specialAbilityChoice?: string
 } 
+
+export interface MasterStroke {
+  faction1: FactionType
+  faction2: FactionType
+  triggered: boolean
+}
