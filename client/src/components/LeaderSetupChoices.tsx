@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { Leader, FactionType } from '../types/GameTypes'
 import { motion } from 'framer-motion'
-import { LEADERS } from './data/leaders'
+import '../css/LeaderSetupChoices.css'
+
+const FACTIONS = Object.values(FactionType);
 
 interface LeaderSetupChoicesProps {
   leader: Leader
@@ -9,20 +11,33 @@ interface LeaderSetupChoicesProps {
 }
 
 interface LeaderChoices {
-
   specialAbilityChoice?: string
+  selectedFactions?: FactionType[]
 }
 
+
 const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onComplete }) => {
-  const [choices, setChoices] = useState<LeaderChoices>({})
-  const handleInfluenceChoice = (faction: FactionType) => {
-    setChoices(prev => ({
-      ...prev,
-      startingInfluence: {
-        faction,
-        amount: 1
+  const [choices, setChoices] = useState<LeaderChoices>({
+    selectedFactions: []
+  })
+
+  const handleFactionChoice = (faction: FactionType) => {
+    setChoices(prev => {
+      const currentFactions = prev.selectedFactions || []
+      
+      if (currentFactions.includes(faction)) {
+        return {
+          ...prev,
+          selectedFactions: currentFactions.filter(f => f !== faction)
+        }
+      } else if (currentFactions.length < 2) {
+        return {
+          ...prev,
+          selectedFactions: [...currentFactions, faction]
+        }
       }
-    }))
+      return prev
+    })
   }
 
   return (
@@ -35,24 +50,27 @@ const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onCompl
       
       {/* Resource choices if applicable */}
       {leader.name === "BARON VLADIMIR HARKONNEN" && (
-        <div className="resource-choice">
-          <h4>Choose your starting bonus:</h4>
+        <div className="faction-choice">
+          <h4>Choose 2 Factions for Masterstroke:</h4>
           <div className="choice-buttons">
-            <button onClick={() => handleResourceChoice('solari', 2)}>
-              2 Solari
-            </button>
-            <button onClick={() => handleResourceChoice('water', 1)}>
-              1 Water
-            </button>
+            {FACTIONS.map((faction: FactionType) => (
+              <button
+                key={faction}
+                onClick={() => handleFactionChoice(faction)}
+                className={choices.selectedFactions?.includes(faction) ? 'selected' : ''}
+                disabled={choices.selectedFactions?.length === 2 && !choices.selectedFactions?.includes(faction)}
+              >
+                {faction.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+              </button>
+            ))}
           </div>
         </div>
       )}
 
-
       <button 
         className="confirm-button"
         onClick={() => onComplete(choices)}
-        disabled={!Object.keys(choices).length}
+        disabled={!choices.selectedFactions || choices.selectedFactions.length !== 2}
       >
         Confirm Choices
       </button>

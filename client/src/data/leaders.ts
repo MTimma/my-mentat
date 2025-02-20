@@ -31,10 +31,10 @@ export const LEADERS: Leader[] = [
   {
     name: "Helena Richese",
     ability: {
-      name: "Supply Master",
-      description: "When you acquire a card, you may pay 2 Spice to gain 2 Solari and 1 Water."
+      name: "Eyes Everywhere",
+      description: "Enemy agents do not block your Agents at Landsraaad or City board spaces"
     },
-    signetRing: "Pay 2 Spice to gain 2 Solari and 1 Water.",
+    signetRing: "Remove and replace a card in the Imperium Row. During you reveal this round, you may acquire the removed card for 1 Persuasion less.",
     complexity: 2
   },
   {
@@ -43,7 +43,7 @@ export const LEADERS: Leader[] = [
       name: "Masterstroke",
       description: "At start of game, secretly choose 2 Factions. When you deploy 4+ troops to the Conflict in a turn, reveal your choices and gain one Influence with each."
     },
-    signetRing: "Pay 2 Spice to gain 2 Solari and 1 Water.",
+    signetRing: "Pay 1 Solari to gain 1 Intrigue card",
     complexity: 2
   }
 ] 

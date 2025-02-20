@@ -1,0 +1,37 @@
+.choice-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.choice-buttons button {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  background: transparent;
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.choice-buttons button:hover:not(:disabled) {
+  border-color: #fff;
+  color: #fff;
+}
+
+.choice-buttons button.selected {
+  border-color: #ffd700;
+  color: #ffd700;
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.choice-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirm-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+} 
