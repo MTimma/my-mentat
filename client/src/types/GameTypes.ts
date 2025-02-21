@@ -234,25 +234,15 @@ export interface PlayerSetup {
   leaderId: string
   color: PlayerColor
   playerNumber: number
-  leaderChoices?: LeaderChoices
+  leaderChoices?: StartOfGameChoice
   startingDeck?: Card[]
 }
 
-export interface LeaderChoices {
-  startingResources?: {
-    spice?: number
-    water?: number
-    solari?: number
-  }
-  startingInfluence?: {
-    faction: FactionType
-    amount: number
-  }
-  specialAbilityChoice?: string
+export interface StartOfGameChoice {
+    choice?: MasterStroke
 } 
 
 export interface MasterStroke {
-  faction1: FactionType
-  faction2: FactionType
+  factions?: FactionType[]
   triggered: boolean
 }

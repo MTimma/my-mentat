@@ -1,39 +1,31 @@
 import React, { useState } from 'react'
-import { Leader, FactionType } from '../types/GameTypes'
+import { Leader, FactionType, StartOfGameChoice } from '../../types/GameTypes'
 import { motion } from 'framer-motion'
-import '../css/LeaderSetupChoices.css'
-
+import './LeaderSetupChoices.css'
 const FACTIONS = Object.values(FactionType);
 
 interface LeaderSetupChoicesProps {
   leader: Leader
-  onComplete: (choices: LeaderChoices) => void
-}
-
-interface LeaderChoices {
-  specialAbilityChoice?: string
-  selectedFactions?: FactionType[]
+  onComplete: (choice: StartOfGameChoice) => void
 }
 
 
 const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onComplete }) => {
-  const [choices, setChoices] = useState<LeaderChoices>({
-    selectedFactions: []
+  const [choices, setChoice] = useState<StartOfGameChoice>({
+    masterStrokeFactions: []
   })
 
-  const handleFactionChoice = (faction: FactionType) => {
-    setChoices(prev => {
-      const currentFactions = prev.selectedFactions || []
+  const handleMasterStroke = (faction: FactionType) => {
+    setChoice(prev => {
+      const currentFactions = prev.masterStrokeFactions || []
       
       if (currentFactions.includes(faction)) {
         return {
-          ...prev,
-          selectedFactions: currentFactions.filter(f => f !== faction)
+          masterStrokeFactions: currentFactions.filter(f => f !== faction)
         }
       } else if (currentFactions.length < 2) {
         return {
-          ...prev,
-          selectedFactions: [...currentFactions, faction]
+          masterStrokeFactions: [...currentFactions, faction]
         }
       }
       return prev
@@ -48,7 +40,6 @@ const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onCompl
     >
       <h3>{leader.name}'s Setup Choices</h3>
       
-      {/* Resource choices if applicable */}
       {leader.name === "BARON VLADIMIR HARKONNEN" && (
         <div className="faction-choice">
           <h4>Choose 2 Factions for Masterstroke:</h4>
@@ -56,9 +47,9 @@ const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onCompl
             {FACTIONS.map((faction: FactionType) => (
               <button
                 key={faction}
-                onClick={() => handleFactionChoice(faction)}
-                className={choices.selectedFactions?.includes(faction) ? 'selected' : ''}
-                disabled={choices.selectedFactions?.length === 2 && !choices.selectedFactions?.includes(faction)}
+                onClick={() => handleMasterStroke(faction)}
+                className={choices.masterStrokeFactions?.includes(faction) ? 'selected' : ''}
+                disabled={choices.masterStrokeFactions?.length === 2 && !choices.masterStrokeFactions?.includes(faction)}
               >
                 {faction.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
               </button>
@@ -70,7 +61,7 @@ const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onCompl
       <button 
         className="confirm-button"
         onClick={() => onComplete(choices)}
-        disabled={!choices.selectedFactions || choices.selectedFactions.length !== 2}
+        disabled={!choices.masterStrokeFactions || choices.masterStrokeFactions.length !== 2}
       >
         Confirm Choices
       </button>
