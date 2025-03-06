@@ -33,7 +33,7 @@ export interface IntrigueCardEffect {
   
   // Special conditions
   playCondition?: 'onWinCombat' | 'onLoseCombat' | 'onReveal' | 'immediate'
-  targetPlayer?: boolean  // Whether effect needs a target player
+  targetPlayer?: boolean 
 }
 
 export interface IntrigueCard {
@@ -45,14 +45,23 @@ export interface IntrigueCard {
   oneTimeUse: boolean
 }
 
-export interface Leader {
-  name: string
-  ability: {
-    name: string
-    description: string
-  }
-  signetRing: string
-  complexity: 1 | 2 | 3  // Number of icons after name
+// Contains display values for the leader
+export class Leader {
+  constructor(
+    public name: string,
+    public ability: {
+      name: string
+      description: string
+    },
+    public signetRingText: string,
+    public complexity: 1 | 2 | 3 // Number of icons after name
+  ) {} 
+}
+
+
+export interface MasterStroke {
+  factions?: FactionType[]
+  triggered: boolean
 }
 
 export enum PlayerColor {
@@ -234,15 +243,15 @@ export interface PlayerSetup {
   leaderId: string
   color: PlayerColor
   playerNumber: number
-  leaderChoices?: StartOfGameChoice
+  startOfGameChoice?: StartOfGameAbility
   startingDeck?: Card[]
 }
 
-export interface StartOfGameChoice {
-    choice?: MasterStroke
+export interface StartOfGameAbility {
+    name?: MasterStroke //in the Base Game only Baron Harkonnen has a "start of game" ability - MasterStroke
 } 
 
-export interface MasterStroke {
+export interface MasterStroke extends StartOfGameAbility {
   factions?: FactionType[]
   triggered: boolean
 }

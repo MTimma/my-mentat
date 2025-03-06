@@ -1,19 +1,18 @@
-import React, { useState } from 'react'
-import { Leader, FactionType, StartOfGameChoice } from '../../types/GameTypes'
+import React from 'react'
+import { Leader, FactionType} from '../../types/GameTypes'
 import { motion } from 'framer-motion'
+import { Baron } from '../../data/leaders'
 import './LeaderSetupChoices.css'
 const FACTIONS = Object.values(FactionType);
 
 interface LeaderSetupChoicesProps {
   leader: Leader
-  onComplete: (choice: StartOfGameChoice) => void
+  onComplete: (leader: Leader) => void
 }
 
 
 const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onComplete }) => {
-  const [choices, setChoice] = useState<StartOfGameChoice>({
-    masterStrokeFactions: []
-  })
+
 
   const handleMasterStroke = (faction: FactionType) => {
     setChoice(prev => {
@@ -40,7 +39,7 @@ const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onCompl
     >
       <h3>{leader.name}'s Setup Choices</h3>
       
-      {leader.name === "BARON VLADIMIR HARKONNEN" && (
+      {leader instanceof Baron && (
         <div className="faction-choice">
           <h4>Choose 2 Factions for Masterstroke:</h4>
           <div className="choice-buttons">
@@ -48,8 +47,8 @@ const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onCompl
               <button
                 key={faction}
                 onClick={() => handleMasterStroke(faction)}
-                className={choices.masterStrokeFactions?.includes(faction) ? 'selected' : ''}
-                disabled={choices.masterStrokeFactions?.length === 2 && !choices.masterStrokeFactions?.includes(faction)}
+                className={(leader as Baron).masterStroke.factions?.includes(faction) ? 'selected' : ''}
+                disabled={(leader as Baron).masterStroke.factions?.length === 2 && !(leader as Baron).masterStroke.factions?.includes(faction)}
               >
                 {faction.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
               </button>
@@ -60,8 +59,8 @@ const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ leader, onCompl
 
       <button 
         className="confirm-button"
-        onClick={() => onComplete(choices)}
-        disabled={!choices.masterStrokeFactions || choices.masterStrokeFactions.length !== 2}
+        onClick={() => onComplete(leader)}
+        disabled={!(leader as Baron).masterStroke.factions|| (leader as Baron).masterStroke.factions?.length !== 2}
       >
         Confirm Choices
       </button>
