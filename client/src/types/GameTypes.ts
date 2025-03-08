@@ -240,7 +240,7 @@ export enum GamePhase {
 }
 
 export interface PlayerSetup {
-  leaderId: string
+  leader: Leader
   color: PlayerColor
   playerNumber: number
   startOfGameChoice?: StartOfGameAbility

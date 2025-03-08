@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import './App.css'
 import GameBoard from './components/GameBoard'
 import PlayerArea from './components/PlayerArea'
@@ -10,7 +10,7 @@ import GameSetup from './components/GameSetup'
 import DeckSetup from './components/DeckSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
 import { LEADERS } from './data/leaders'
-import { PlayerSetup, StartOfGameChoice, Card } from './types/GameTypes'
+import { PlayerSetup,Card, Leader } from './types/GameTypes'
 
 const GameContent = () => {
   const { 
@@ -103,8 +103,8 @@ function App() {
     setGameState('leaderChoices')
   }
 
-  const handleLeaderChoicesComplete = (choice: StartOfGameChoice) => {
-    playerSetups[currentPlayerIndex].startOfGameChoice = choice;
+  const handleLeaderChoicesComplete = (leader: Leader) => {
+    playerSetups[currentPlayerIndex].leader = leader;
     if (currentPlayerIndex < playerSetups.length - 1) {
       setCurrentPlayerIndex(prev => prev + 1)
     } else {
@@ -114,7 +114,7 @@ function App() {
   }
 
   const handleDeckSetupComplete = (selectedCards: Card[]) => {
-    
+
     // Save deck choices and move to next player or start game
     if (currentPlayerIndex < playerSetups.length - 1) {
       setCurrentPlayerIndex(prev => prev + 1)
@@ -131,7 +131,7 @@ function App() {
 
       {gameState === 'leaderChoices' && playerSetups[currentPlayerIndex] && (
         <LeaderSetupChoices
-          leader={LEADERS.find(l => l.name === playerSetups[currentPlayerIndex].leaderId)!}
+          selectedLeader={playerSetups[currentPlayerIndex].leader}
           onComplete={handleLeaderChoicesComplete}
         />
       )}

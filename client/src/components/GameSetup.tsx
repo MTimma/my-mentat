@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Leader, PlayerColor } from '../types/GameTypes'
+import { Leader, PlayerColor, PlayerSetup } from '../types/GameTypes'
 import { LEADERS } from '../data/leaders'
 import { motion } from 'framer-motion'
 
@@ -11,8 +11,8 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
   const [gameName, setGameName] = useState('')
   const [playerCount, setPlayerCount] = useState<number>(2)
   const [players, setPlayers] = useState<PlayerSetup[]>([
-    { playerNumber: 1, color: PlayerColor.RED, leaderId: '' },
-    { playerNumber: 2, color: PlayerColor.GREEN, leaderId: '' }
+    { playerNumber: 1, color: PlayerColor.RED, leader: LEADERS[0] },
+    { playerNumber: 2, color: PlayerColor.GREEN, leader: LEADERS[1] }
   ])
 
   const handlePlayerCountChange = (count: number) => {
@@ -20,7 +20,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
     const newPlayers = Array.from({ length: count }, (_, i) => ({
       playerNumber: i + 1,
       color: Object.values(PlayerColor)[i],
-      leaderId: ''
+      leader: LEADERS[i]
     }))
     setPlayers(newPlayers)
   }
@@ -40,7 +40,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
 
   const isSetupComplete = () => {
     return gameName.trim() !== '' && 
-           players.every(p => p.color && p.leaderId)
+           players.every(p => p.color && p.leader)
   }
 
   return (
@@ -103,11 +103,15 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
                 </select>
 
                 <select
-                  value={player.leaderId}
-                  onChange={(e) => handlePlayerChange(index, 'leaderId', e.target.value)}
+                  value={player.leader.name}
+                  onChange={(e) => {
+                    const selectedLeader = LEADERS.find(l => l.name === e.target.value)
+                    if (selectedLeader) {
+                      handlePlayerChange(index, 'leader', selectedLeader)
+                    }
+                  }}
                   className="leader-select"
                 >
-                  <option value="">Select a Leader</option>
                   {LEADERS.map(leader => (
                     <option key={leader.name} value={leader.name}>
                       {leader.name} ({leader.ability.name})
