@@ -9,7 +9,6 @@ import { useGame } from './contexts/GameContext'
 import GameSetup from './components/GameSetup'
 import DeckSetup from './components/DeckSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { LEADERS } from './data/leaders'
 import { PlayerSetup,Card, Leader } from './types/GameTypes'
 
 const GameContent = () => {
@@ -113,14 +112,32 @@ function App() {
     }
   }
 
-  const handleDeckSetupComplete = (selectedCards: Card[]) => {
+  const renderLeaderChoices = () => {
+    if (!playerSetups[currentPlayerIndex]) return null;
 
-    // Save deck choices and move to next player or start game
+    const currentPlayer = playerSetups[currentPlayerIndex];
+    
+    if (!currentPlayer.leader.sogChoice) {
+      handleLeaderChoicesComplete(currentPlayer.leader);
+      return null;
+    }
+
+    return (
+      <LeaderSetupChoices
+        selectedLeader={currentPlayer.leader}
+        onComplete={handleLeaderChoicesComplete}
+      />
+    );
+  };
+
+  const handleDeckSetupComplete = (selectedCards: Card[]) => {
+    playerSetups[currentPlayerIndex].startingDeck = selectedCards
     if (currentPlayerIndex < playerSetups.length - 1) {
       setCurrentPlayerIndex(prev => prev + 1)
     } else {
       setGameState('game')
     }
+
   }
 
   return (
@@ -129,26 +146,36 @@ function App() {
         <GameSetup onComplete={handleSetupComplete} />
       )}
 
-      {gameState === 'leaderChoices' && playerSetups[currentPlayerIndex] && (
-        <LeaderSetupChoices
-          selectedLeader={playerSetups[currentPlayerIndex].leader}
-          onComplete={handleLeaderChoicesComplete}
-        />
-      )}
+      {gameState === 'leaderChoices' && renderLeaderChoices()}
 
       {gameState === 'deckSetup' && playerSetups[currentPlayerIndex] && (
         <DeckSetup
-          player={{
-            id: currentPlayerIndex + 1,
-            leader: LEADERS.find(l => l.name === playerSetups[currentPlayerIndex].leaderId)!,
-            color: playerSetups[currentPlayerIndex].color
-          }}
+          playerName={playerSetups[currentPlayerIndex].leader.name}
           onComplete={handleDeckSetupComplete}
         />
       )}
 
       {gameState === 'game' && (
-        <GameProvider>
+        <GameProvider initialState={{
+          players: playerSetups.map((setup, index) => ({
+            id: index + 1,
+            leader: setup.leader,
+            color: setup.color,
+            spice: 0,
+            water: 0,
+            solari: 0,
+            troops: 0,
+            combatValue: 0,
+            agents: 0,
+            hand: setup.startingDeck?.slice(0,5) || [],
+            selectedCard: null,
+            intrigueCards: [],
+            deck: setup.startingDeck || [],
+            discardPile: [],
+            hasHighCouncilSeat: false,
+            hasSwordmaster: false
+          }))
+        }}>
           <GameContent />
         </GameProvider>
       )}

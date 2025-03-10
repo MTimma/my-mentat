@@ -56,7 +56,6 @@ const initialGameState: GameState = {
   currentRound: 1,
   activePlayerId: 1,
   phase: GamePhase.ROUND_START,
-  combatCardId: null,
   lastTurn: null,
   mentatOwner: null,
   factionInfluence: {
@@ -76,8 +75,10 @@ const initialGameState: GameState = {
     carthag: null,
     imperialBasin: null
   },
-  combatPasses: [],
-  firstPlayer: 1
+  combatStrength: {},
+  combatTroops: {},
+  currentConflict: null,
+  players: []
 }
 
 function calculateCombatStrength(
@@ -335,8 +336,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, c
 
   const value = {
     gameState,
-    players: [], // Initialize with players
-    currentConflict: null,
+    players: gameState.players,
+    currentConflict: gameState.currentConflict,
     imperiumRow: [],
     intrigueDeck: [],
     dispatch

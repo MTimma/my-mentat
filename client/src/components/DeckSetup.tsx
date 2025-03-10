@@ -1,14 +1,19 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, Player } from '../types/GameTypes'
 import { STARTING_CARDS } from '../data/cards'
 
 interface DeckSetupProps {
-  player: Player
+  playerName: string
   onComplete: (selectedCards: Card[]) => void
 }
 
-const DeckSetup: React.FC<DeckSetupProps> = ({ player, onComplete }) => {
+const DeckSetup: React.FC<DeckSetupProps> = ({ playerName, onComplete }) => {
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
+
+  // Reset selected cards when playerName changes
+  useEffect(() => {
+    setSelectedCards([])
+  }, [playerName])
 
   const handleCardSelect = (card: Card) => {
     if (selectedCards.find(c => c.id === card.id)) {
@@ -26,7 +31,7 @@ const DeckSetup: React.FC<DeckSetupProps> = ({ player, onComplete }) => {
 
   return (
     <div className="deck-setup">
-      <h2>{player.leader.name}'s Starting Hand</h2>
+      <h2>{playerName}'s Starting Hand</h2>
       <p>Select 5 cards from your starting deck</p>
       
       <div className="card-selection">

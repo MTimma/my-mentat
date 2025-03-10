@@ -54,10 +54,10 @@ export class Leader {
       description: string
     },
     public signetRingText: string,
-    public complexity: 1 | 2 | 3 // Number of icons after name
+    public complexity: 1 | 2 | 3, // Number of icons after name
+    public sogChoice: boolean = false
   ) {} 
 }
-
 
 export interface MasterStroke {
   factions?: FactionType[]
@@ -215,7 +215,6 @@ export interface GameState {
   currentRound: number
   activePlayerId: number
   phase: GamePhase
-  combatCardId: number | null
   lastTurn: GameTurn | null
   mentatOwner: number | null
   factionInfluence: Record<FactionType, Record<number, number>>
@@ -228,7 +227,7 @@ export interface GameState {
   combatStrength: Record<number, number>
   combatTroops: Record<number, number>
   currentConflict: ConflictCard | null
-  masterStroke?: MasterStroke | null
+  players: Player[]
 }
 
 export enum GamePhase {

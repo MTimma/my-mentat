@@ -14,6 +14,7 @@ export class Baron extends Leader {
     )
     this.masterStroke = { factions: [], triggered: false }
     this.signetRing = null
+    this.sogChoice = true
   }
   
   masterStroke: MasterStroke
