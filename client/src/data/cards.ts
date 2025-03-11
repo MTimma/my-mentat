@@ -1,6 +1,6 @@
 import { Card, AgentIcon } from '../types/GameTypes'
 
-export const STARTING_CARDS: Card[] = [
+export const STARTING_DECK: Card[] = [
   {
     id: 1,
     name: "Convincing Argument",

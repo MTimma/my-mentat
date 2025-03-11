@@ -1275,11 +1275,15 @@
   margin: 2rem auto;
 }
 
-.card-selection {
+.card-selection-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(2, 1fr);
   gap: 1rem;
   margin: 2rem 0;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .card-option {
@@ -1288,13 +1292,19 @@
   border-radius: 8px;
   padding: 1rem;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.2s ease;
+}
+
+.card-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .card-option.selected {
-  border-color: #fbc02d;
-  background-color: #fff8e1;
-  transform: translateY(-4px);
+  background-color: #f0e6d9;
+  border-color: #5c2d0c;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .card-details {

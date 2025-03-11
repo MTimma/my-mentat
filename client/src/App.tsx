@@ -10,6 +10,7 @@ import GameSetup from './components/GameSetup'
 import DeckSetup from './components/DeckSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
 import { PlayerSetup,Card, Leader } from './types/GameTypes'
+import { STARTING_DECK } from './data/cards'
 
 const GameContent = () => {
   const { 
@@ -131,7 +132,8 @@ function App() {
   };
 
   const handleDeckSetupComplete = (selectedCards: Card[]) => {
-    playerSetups[currentPlayerIndex].startingDeck = selectedCards
+    playerSetups[currentPlayerIndex].deck = STARTING_DECK
+    playerSetups[currentPlayerIndex].startingHand = selectedCards
     if (currentPlayerIndex < playerSetups.length - 1) {
       setCurrentPlayerIndex(prev => prev + 1)
     } else {

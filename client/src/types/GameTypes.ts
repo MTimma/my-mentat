@@ -242,15 +242,6 @@ export interface PlayerSetup {
   leader: Leader
   color: PlayerColor
   playerNumber: number
-  startOfGameChoice?: StartOfGameAbility
-  startingDeck?: Card[]
-}
-
-export interface StartOfGameAbility {
-    name?: MasterStroke //in the Base Game only Baron Harkonnen has a "start of game" ability - MasterStroke
-} 
-
-export interface MasterStroke extends StartOfGameAbility {
-  factions?: FactionType[]
-  triggered: boolean
+  deck: Card[]
+  startingHand: Card[]
 }

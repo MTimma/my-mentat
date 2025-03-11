@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Card, Player } from '../types/GameTypes'
-import { STARTING_CARDS } from '../data/cards'
+import { Card } from '../types/GameTypes'
+import { STARTING_DECK } from '../data/cards'
 
 interface DeckSetupProps {
   playerName: string
@@ -34,8 +34,8 @@ const DeckSetup: React.FC<DeckSetupProps> = ({ playerName, onComplete }) => {
       <h2>{playerName}'s Starting Hand</h2>
       <p>Select 5 cards from your starting deck</p>
       
-      <div className="card-selection">
-        {STARTING_CARDS.map(card => (
+      <div className="card-selection-grid">
+        {STARTING_DECK.map(card => (
           <div 
             key={card.id}
             className={`card-option ${
@@ -62,7 +62,7 @@ const DeckSetup: React.FC<DeckSetupProps> = ({ playerName, onComplete }) => {
         disabled={selectedCards.length !== 5}
         onClick={handleConfirm}
       >
-        Confirm Selection
+        Confirm Selection ({selectedCards.length}/5)
       </button>
     </div>
   )
