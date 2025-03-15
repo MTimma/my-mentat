@@ -5,6 +5,7 @@ interface BoardSpaceProps extends SpaceProps {
   isHighlighted: boolean
   onSpaceClick: () => void
   occupiedBy: number[]
+  isDisabled: boolean
 }
 
 const BoardSpace: React.FC<BoardSpaceProps> = ({
@@ -18,7 +19,8 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
   isHighlighted,
   onSpaceClick,
   occupiedBy,
-  conflictMarker
+  conflictMarker,
+  isDisabled
 }) => {
   const renderCost = () => {
     if (!cost) return null
@@ -79,6 +81,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         ${agentIcon} 
         ${isHighlighted ? 'highlighted' : ''} 
         ${conflictMarker ? 'combat-space' : ''}
+        ${isDisabled ? 'disabled' : ''}
       `}
       onClick={onSpaceClick}
     >

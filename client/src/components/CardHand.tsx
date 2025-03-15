@@ -1,5 +1,5 @@
 import React from 'react'
-import { Card} from '../types/GameTypes'
+import {Card} from '../types/GameTypes'
 
 interface CardHandProps {
   cards: Card[]
@@ -22,7 +22,7 @@ const CardHand: React.FC<CardHandProps> = ({ cards, selectedCard, onSelectCard }
           </div>
           <div className="card-content">
             <div className="agent-placement">
-              {card.agentSpaceTypes.map((area, index) => (
+              {card.agentIcons.map((area, index) => (
                 <div 
                   key={index} 
                   className={`placement-dot ${area}`}

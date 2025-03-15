@@ -148,9 +148,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
           <BoardSpace 
             key={space.id}
             {...space}
-            isHighlighted={highlightedAreas?.includes(space.agentIcon)}
+            isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
             onSpaceClick={() => onSpaceClick(space.id)}
-            activePlayerId={currentPlayer}
             occupiedBy={occupiedSpaces[space.id] || []}
             isDisabled={!canPlaceAgent(space) || !hasAgents}
           />
