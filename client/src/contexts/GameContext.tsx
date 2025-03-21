@@ -8,8 +8,15 @@ import {
   IntrigueCard,
   Card,
   Reward,
-  IntrigueCardEffect
+  IntrigueCardEffect,
+  Winners,
+  IntrigueCardType,
+  GameTurn,
+  TurnType,
+  AgentIcon,
+  SpaceProps
 } from '../types/GameTypes'
+import { boardSpaces } from '../components/GameBoard'
 
 interface GameContextType {
   gameState: GameState
@@ -39,6 +46,7 @@ type GameAction =
   | { type: 'START_COMBAT_PHASE' }
   | { type: 'PASS_COMBAT'; playerId: number }
   | { type: 'DRAW_INTRIGUE'; playerId: number }
+  | { type: 'PLACE_AGENT'; playerId: number; spaceId: number }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
@@ -78,7 +86,11 @@ const initialGameState: GameState = {
   combatStrength: {},
   combatTroops: {},
   currentConflict: null,
-  players: []
+  players: [],
+  combatPasses: [],
+  turns: [],
+  occupiedSpaces: {},
+  playArea: {} as Record<number, Card[]>
 }
 
 function calculateCombatStrength(
@@ -112,10 +124,10 @@ function determineWinners(
 }
 
 function applyReward(state: GameState, reward: Reward, playerId: number): GameState {
-  let newState = { ...state }
+  const newState = { ...state }
   
   switch (reward.type) {
-    case 'victory-points':
+    case 'victoryPoints':
       // Update victory points in player state
       newState.players = newState.players.map(player => 
         player.id === playerId 
@@ -144,11 +156,25 @@ function applyReward(state: GameState, reward: Reward, playerId: number): GameSt
       break
 
     case 'spice':
+      newState.players = newState.players.map(player =>
+        player.id === playerId
+          ? { ...player, spice: player.spice + reward.amount }
+          : player
+      )
+      break
+
     case 'water':
+      newState.players = newState.players.map(player =>
+        player.id === playerId
+          ? { ...player, water: player.water + reward.amount }
+          : player
+      )
+      break
+
     case 'solari':
       newState.players = newState.players.map(player =>
         player.id === playerId
-          ? { ...player, [reward.type]: player[reward.type] + reward.amount }
+          ? { ...player, solari: player.solari + reward.amount }
           : player
       )
       break
@@ -168,10 +194,9 @@ function applyReward(state: GameState, reward: Reward, playerId: number): GameSt
 function handleIntrigueEffect(
   state: GameState,
   effect: IntrigueCardEffect,
-  playerId: number,
-  targetPlayerId?: number
+  playerId: number
 ): GameState {
-  let newState = { ...state }
+  const newState = { ...state }
 
   if (effect.gainResource) {
     const { type, amount } = effect.gainResource
@@ -209,6 +234,89 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         phase: GamePhase.PLAYER_TURNS
       }
+    case 'END_TURN': {
+      const { playerId } = action
+      if (playerId !== state.activePlayerId) return state
+
+      const player = state.players.find(p => p.id === playerId)
+      if (!player) return state
+
+      // Only allow ending turn if a card has been played
+      if (!player.selectedCard) return state
+
+      // Find next player
+      const currentIndex = state.players.findIndex(p => p.id === playerId)
+      const nextIndex = (currentIndex + 1) % state.players.length
+      const nextPlayer = state.players[nextIndex]
+
+      // Create new turn
+      const newTurn: GameTurn = {
+        playerId,
+        type: TurnType.ACTION,
+        cardId: player.selectedCard,
+        agentSpaceTypes: [],
+        canDeployTroops: false,
+        troopLimit: 0,
+        removableTroops: 0,
+        persuasionCount: 0,
+        gainedEffects: [],
+        acquiredCards: []
+      }
+
+      return {
+        ...state,
+        players: state.players.map(p =>
+          p.id === playerId
+            ? {
+                ...p,
+                selectedCard: null
+              }
+            : p
+        ),
+        activePlayerId: nextPlayer.id,
+        turns: [...state.turns, newTurn],
+        lastTurn: newTurn
+      }
+    }
+    case 'ADD_TROOP': {
+      const player = state.players.find(p => p.id === action.playerId)
+      if (!player || player.troops <= 0) return state
+
+      const currentTroops = state.combatTroops[action.playerId] || 0
+      const newState = {
+        ...state,
+        combatTroops: {
+          ...state.combatTroops,
+          [action.playerId]: currentTroops + 1
+        },
+        players: state.players.map(p =>
+          p.id === action.playerId
+            ? { ...p, troops: p.troops - 1 }
+            : p
+        )
+      }
+
+      return newState
+    }
+    case 'REMOVE_TROOP': {
+      const currentTroops = state.combatTroops[action.playerId] || 0
+      if (currentTroops <= 0) return state
+
+      const newState = {
+        ...state,
+        combatTroops: {
+          ...state.combatTroops,
+          [action.playerId]: currentTroops - 1
+        },
+        players: state.players.map(p =>
+          p.id === action.playerId
+            ? { ...p, troops: p.troops + 1 }
+            : p
+        )
+      }
+
+      return newState
+    }
     case 'START_COMBAT_PHASE':
       return {
         ...state,
@@ -226,16 +334,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const player = state.players.find(p => p.id === playerId)
       const card = player?.intrigueCards.find(c => c.id === cardId)
 
-      if (!card || card.type !== CardType.COMBAT) return state
+      if (!card || card.type !== IntrigueCardType.COMBAT) return state
 
-      // Reset passes when someone plays a card
-      let newState = {
+
+      const newState = {
         ...state,
         combatPasses: []
       }
 
-      // Apply card effect
-      const effect = JSON.parse(card.effect) as CombatIntrigueEffect
+      const effect = (typeof card.effect === 'string') ? JSON.parse(card.effect) : card.effect
       if (effect.strengthBonus) {
         newState.combatStrength[playerId] = 
           (newState.combatStrength[playerId] || 0) + effect.strengthBonus
@@ -261,32 +368,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         state.combatStrength
       )
 
-      const winners = determineWinners(strength, state.players.length)
+      const winners = determineWinners(strength, state.players.length) as Winners
 
-      // Apply rewards
-      let newState = { ...state }
+      let currentState = { ...state }
 
-      if (winners.first) {
+      if (winners.first !== null) {
         state.currentConflict.rewards.first.forEach(reward => {
-          newState = applyReward(newState, reward, winners.first)
+          currentState = applyReward(currentState, reward, winners.first as number)
         })
       }
 
-      if (winners.second) {
+      if (winners.second !== null) {
         state.currentConflict.rewards.second.forEach(reward => {
-          newState = applyReward(newState, reward, winners.second)
+          currentState = applyReward(currentState, reward, winners.second as number)
         })
       }
 
-      if (winners.third && state.players.length === 4) {
+      if (winners.third !== null && state.players.length === 4) {
         state.currentConflict.rewards.third?.forEach(reward => {
-          newState = applyReward(newState, reward, winners.third)
+          currentState = applyReward(currentState, reward, winners.third as number)
         })
       }
 
       // Reset combat state
       return {
-        ...newState,
+        ...currentState,
         phase: GamePhase.MAKERS,
         combatStrength: {},
         combatTroops: {},
@@ -294,16 +400,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
     case 'PLAY_INTRIGUE': {
-      const { cardId, playerId, targetPlayerId } = action
+      const { cardId, playerId } = action
       const player = state.players.find(p => p.id === playerId)
       const card = player?.intrigueCards.find(c => c.id === cardId)
 
       if (!card) return state
 
-      // Apply effect
-      let newState = handleIntrigueEffect(state, card.effect, playerId, targetPlayerId)
+      const newState = handleIntrigueEffect(state, card.effect, playerId)
 
-      // Remove card from player's hand
       newState.players = newState.players.map(p =>
         p.id === playerId
           ? {
@@ -315,7 +419,118 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       return newState
     }
-    // Add other cases
+    case 'PLAY_CARD': {
+      const { playerId, cardId } = action
+      const player = state.players.find(p => p.id === playerId)
+      const card = player?.hand.find(c => c.id === cardId)
+
+      if (!card || playerId !== state.activePlayerId) return state
+
+      return {
+        ...state,
+        players: state.players.map(p =>
+          p.id === playerId
+            ? {
+                ...p,
+                selectedCard: cardId
+              }
+            : p
+        )
+      }
+    }
+    case 'PLACE_AGENT': {
+      const { playerId, spaceId } = action
+      const player = state.players.find(p => p.id === playerId)
+      const card = player?.hand.find(c => c.id === player?.selectedCard)
+      const space = boardSpaces.find((s: SpaceProps) => s.id === spaceId)
+
+      if (!player || !card || !space || playerId !== state.activePlayerId) return state
+
+      // Check if player has any agents left
+      if (player.agents <= 0) return state
+
+      // Check if player can afford the space
+      if (space.cost) {
+        if (space.cost.solari && player.solari < space.cost.solari) return state
+        if (space.cost.spice && player.spice < space.cost.spice) return state
+        if (space.cost.water && player.water < space.cost.water) return state
+      }
+
+      // Check if space is already occupied
+      if (state.occupiedSpaces[spaceId]?.length > 0) return state
+
+      // Check if player has required influence
+      if (space.requiresInfluence) {
+        const playerInfluence = state.factionInfluence[space.requiresInfluence.faction]?.[playerId] || 0
+        if (playerInfluence < space.requiresInfluence.amount) return state
+      }
+
+      // Deduct costs
+      const updatedPlayer = { ...player }
+      if (space.cost) {
+        if (space.cost.solari) updatedPlayer.solari -= space.cost.solari
+        if (space.cost.spice) updatedPlayer.spice -= space.cost.spice
+        if (space.cost.water) updatedPlayer.water -= space.cost.water
+      }
+
+      // Add resources
+      if (space.resources) {
+        if (space.resources.solari) updatedPlayer.solari += space.resources.solari
+        if (space.resources.spice) updatedPlayer.spice += space.resources.spice
+        if (space.resources.water) updatedPlayer.water += space.resources.water
+        if (space.resources.troops) updatedPlayer.troops += space.resources.troops
+      }
+
+      // Add influence
+      if (space.influence) {
+        const currentInfluence = state.factionInfluence[space.influence.faction]?.[playerId] || 0
+        state.factionInfluence = {
+          ...state.factionInfluence,
+          [space.influence.faction]: {
+            ...state.factionInfluence[space.influence.faction],
+            [playerId]: currentInfluence + space.influence.amount
+          }
+        }
+      }
+
+      // Update occupied spaces
+      const updatedOccupiedSpaces = {
+        ...state.occupiedSpaces,
+        [spaceId]: [...(state.occupiedSpaces[spaceId] || []), playerId]
+      }
+
+      // Move card to play area and remove from hand
+      const updatedHand = player.hand.filter(c => c.id !== card.id)
+      const updatedPlayArea = [...player.playArea, card]
+
+      return {
+        ...state,
+        players: state.players.map(p =>
+          p.id === playerId
+            ? {
+                ...updatedPlayer,
+                hand: updatedHand,
+                playArea: updatedPlayArea,
+                agents: p.agents - 1,
+                selectedCard: null
+              }
+            : p
+        ),
+        occupiedSpaces: updatedOccupiedSpaces,
+        lastTurn: {
+          playerId,
+          type: TurnType.ACTION,
+          cardId: card.id,
+          agentSpaceTypes: [space.agentIcon],
+          canDeployTroops: card.swordIcon || false,
+          troopLimit: card.swordIcon ? 2 : 0,
+          removableTroops: 0,
+          persuasionCount: card.persuasion || 0,
+          gainedEffects: [],
+          acquiredCards: []
+        }
+      }
+    }
     default:
       return state
   }

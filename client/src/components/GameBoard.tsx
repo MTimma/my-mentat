@@ -87,6 +87,14 @@ export const boardSpaces: SpaceProps[] = [
     agentIcon: AgentIcon.FREMEN,
     requiresInfluence: { faction: FactionType.FREMEN, amount: 2 },
     influence: { faction: FactionType.FREMEN, amount: 1 }
+  },
+  {
+    id: 11,
+    name: "Stillwater",
+    conflictMarker: true,
+    agentIcon: AgentIcon.FREMEN,
+    resources: { water: 1 },
+    influence: { faction: FactionType.FREMEN, amount: 1 }
   }
 ]
 

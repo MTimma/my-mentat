@@ -48,8 +48,8 @@ const GameContent = () => {
     <div className="game-container">
       <div className="turn-history-container">
         <TurnHistory 
-          turns={[]} // Will be implemented
-          currentTurn={0}
+          turns={gameState.turns}
+          currentTurn={gameState.turns.length}
           players={players}
         />
       </div>
@@ -175,7 +175,8 @@ function App() {
             deck: setup.deck|| [],
             discardPile: [],
             hasHighCouncilSeat: false,
-            hasSwordmaster: false
+            hasSwordmaster: false,
+            playArea: []
           }))
         }}>
           <GameContent />

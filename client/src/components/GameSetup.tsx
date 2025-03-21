@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Leader, PlayerColor, PlayerSetup } from '../types/GameTypes'
+import { PlayerColor, PlayerSetup } from '../types/GameTypes'
 import { LEADERS } from '../data/leaders'
 import { motion } from 'framer-motion'
 
@@ -8,11 +8,13 @@ interface GameSetupProps {
 }
 
 const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
-  const [gameName, setGameName] = useState('')
-  const [playerCount, setPlayerCount] = useState<number>(2)
+  const [gameName, setGameName] = useState('Test Game')
+  const [playerCount, setPlayerCount] = useState<number>(4)
   const [players, setPlayers] = useState<PlayerSetup[]>([
-    { playerNumber: 1, color: PlayerColor.RED, leader: LEADERS[0] },
-    { playerNumber: 2, color: PlayerColor.GREEN, leader: LEADERS[1] }
+    { playerNumber: 1, color: PlayerColor.RED, leader: LEADERS[4], deck: [], startingHand: [] },
+    { playerNumber: 2, color: PlayerColor.GREEN, leader: LEADERS[0], deck: [], startingHand: [] },
+    { playerNumber: 3, color: PlayerColor.YELLOW, leader: LEADERS[1], deck: [], startingHand: [] },
+    { playerNumber: 4, color: PlayerColor.BLUE, leader: LEADERS[2], deck: [], startingHand: [] }
   ])
 
   const handlePlayerCountChange = (count: number) => {
@@ -20,12 +22,14 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
     const newPlayers = Array.from({ length: count }, (_, i) => ({
       playerNumber: i + 1,
       color: Object.values(PlayerColor)[i],
-      leader: LEADERS[i]
+      leader: i === 0 ? LEADERS[4] : LEADERS[i - 1], //TODO test purpos Baron
+      deck: [],
+      startingHand: []
     }))
     setPlayers(newPlayers)
   }
 
-  const handlePlayerChange = (index: number, field: keyof PlayerSetup, value: any) => {
+  const handlePlayerChange = (index: number, field: keyof PlayerSetup, value: PlayerSetup[keyof PlayerSetup]) => {
     const newPlayers = [...players]
     newPlayers[index] = { ...newPlayers[index], [field]: value }
     setPlayers(newPlayers)
@@ -36,6 +40,13 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
       .filter((_, i) => i !== currentIndex)
       .map(p => p.color)
     return Object.values(PlayerColor).filter(color => !usedColors.includes(color))
+  }
+
+  const getAvailableLeaders = (currentIndex: number) => {
+    const usedLeaders = players
+      .filter((_, i) => i !== currentIndex)
+      .map(p => p.leader.name)
+    return LEADERS.filter(leader => !usedLeaders.includes(leader.name))
   }
 
   const isSetupComplete = () => {
@@ -92,7 +103,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
               <div className="player-options">
                 <select
                   value={player.color}
-                  onChange={(e) => handlePlayerChange(index, 'color', e.target.value)}
+                  onChange={(e) => handlePlayerChange(index, 'color', e.target.value as PlayerColor)}
                   className={`color-select ${player.color.toLowerCase()}`}
                 >
                   {getAvailableColors(index).map(color => (
@@ -112,7 +123,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
                   }}
                   className="leader-select"
                 >
-                  {LEADERS.map(leader => (
+                  {getAvailableLeaders(index).map(leader => (
                     <option key={leader.name} value={leader.name}>
                       {leader.name} ({leader.ability.name})
                     </option>

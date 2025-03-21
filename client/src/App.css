@@ -157,6 +157,7 @@
   width: 100%;
   min-width: 300px;
   height: 100%;
+  min-height: 400px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -243,6 +244,7 @@
   display: flex;
   gap: 2px;
   align-items: flex-start;
+  min-height: 200px;
 }
 
 /* For Webkit browsers (Chrome, Safari) */
@@ -1461,4 +1463,56 @@
 .start-game-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.play-area {
+  margin-top: 10px;
+  padding: 5px;
+  border-top: 1px solid #8b4513;
+  min-height: 150px;
+}
+
+.play-area h4 {
+  margin: 0 0 5px 0;
+  font-size: 0.9em;
+  color: #8b4513;
+}
+
+.played-cards {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 5px;
+  min-height: 120px;
+}
+
+.played-cards::-webkit-scrollbar {
+  height: 8px;
+}
+
+.played-cards::-webkit-scrollbar-track {
+  background: #f4e4bc;
+  border-radius: 4px;
+}
+
+.played-cards::-webkit-scrollbar-thumb {
+  background: #8b4513;
+  border-radius: 4px;
+}
+
+.game-card.played {
+  transform: scale(0.6);
+  transform-origin: top left;
+  margin-right: -120px;
+  flex: 0 0 120px;
+  min-height: 160px;
+  opacity: 0.8;
+  cursor: default;
+  margin-bottom: 5px;
+}
+
+.game-card.played:hover {
+  transform: scale(0.6);
+  margin-right: -120px;
+  z-index: 1;
 }

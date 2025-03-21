@@ -95,6 +95,42 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
         selectedCard={player.selectedCard}
         onSelectCard={(cardId) => onSelectCard(player.id, cardId)}
       />
+      <div className="play-area">
+        <h4>Play Area</h4>
+        <div className="played-cards">
+          {player.playArea.map((card) => (
+            <div
+              key={card.id}
+              className="game-card played"
+            >
+              <div className="card-header">
+                <h4>{card.name}</h4>
+                {card.persuasion && <div className="persuasion">⚖️ {card.persuasion}</div>}
+              </div>
+              <div className="card-content">
+                <div className="agent-placement">
+                  {card.agentIcons.map((area, index) => (
+                    <div 
+                      key={index} 
+                      className={`placement-dot ${area}`}
+                    />
+                  ))}
+                </div>
+                {card.swordIcon && <div className="sword-icon">⚔️</div>}
+                {card.resources && (
+                  <div className="card-resources">
+                    {card.resources.spice && <div>🌶️ {card.resources.spice}</div>}
+                    {card.resources.water && <div>💧 {card.resources.water}</div>}
+                    {card.resources.solari && <div>💰 {card.resources.solari}</div>}
+                    {card.resources.troops && <div>⚔️ {card.resources.troops}</div>}
+                  </div>
+                )}
+                {card.effect && <div className="card-effect">{card.effect}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

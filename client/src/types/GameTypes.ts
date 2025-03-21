@@ -73,21 +73,24 @@ export enum PlayerColor {
 
 export interface Player {
   id: number
-  leader: Leader
   color: PlayerColor
+  leader: Leader
+  hand: Card[]
+  selectedCard: number | null
+  troops: number
   spice: number
   water: number
   solari: number
-  troops: number
-  combatValue: number
-  agents: number
-  hand: Card[]
-  selectedCard: number | null
+  victoryPoints: number
   intrigueCards: IntrigueCard[]
+  influence?: number
+  agents: number
+  combatValue: number
+  hasSwordmaster: boolean
   deck: Card[]
   discardPile: Card[]
   hasHighCouncilSeat: boolean
-  hasSwordmaster: boolean
+  playArea: Card[]
 }
 
 export enum AgentIcon {
@@ -143,6 +146,7 @@ export interface Card {
   }
   effect?: string
   agentIcons: AgentIcon[]
+  agentSpaceTypes?: AgentIcon[]
   fremenBond?: boolean
   acquireEffect?: string
   influenceRequirement?: {
@@ -161,7 +165,8 @@ export enum FactionType {
 
 export enum TurnType {
   ACTION = 'action',
-  PASS = 'pass'
+  PASS = 'pass',
+  REVEAL = 'reveal'
 }
 
 export interface ActionTurn {
@@ -185,30 +190,56 @@ export interface IntrigueCardPlay {
   effectDecisions?: Record<string, any>
 }
 
-export interface ConflictCard {
-  id: number
-  name: string
-  rewards: {
-    first: Reward[]
-    second: Reward[]
-    third?: Reward[]  // Only in 4-player game
-  }
-  controlSpace?: 'arrakeen' | 'carthag' | 'imperial-basin'
-}
-
-export type Reward = {
-  type: 'victory-points' | 'spice' | 'water' | 'solari' | 'troops' | 'cards' | 'intrigue' | 'influence' | 'control'
+export interface Reward {
+  type: 'spice' | 'water' | 'solari' | 'troops' | 'influence' | 'control' | 'victoryPoints'
   amount: number
   faction?: FactionType
 }
 
-export type GameTurn = {
+export interface Winners {
+  first: number | null
+  second: number | null
+  third: number | null
+}
+
+export interface ConflictCard {
+  name: string
+  controlSpace: 'arrakeen' | 'carthag' | 'imperialBasin'
+  rewards: {
+    first: Reward[]
+    second: Reward[]
+    third?: Reward[]
+  }
+}
+
+export interface GameTurn {
   playerId: number
-  canDeployTroops: boolean
-  troopLimit: number
-  removableTroops: number
-  playedIntrigueCards?: IntrigueCardPlay[]
-} & Partial<ActionTurn | PassTurn>
+  type: TurnType
+  cardId?: number
+  agentSpaceTypes?: AgentIcon[]
+  canDeployTroops?: boolean
+  troopLimit?: number
+  removableTroops?: number
+  persuasionCount?: number
+  gainedEffects?: string[]
+  acquiredCards?: Card[]
+}
+
+export enum GamePhase {
+  ROUND_START = 'round-start',
+  PLAYER_TURNS = 'player-turns',
+  COMBAT = 'combat',
+  MAKERS = 'makers',
+  RECALL = 'recall'
+}
+
+export interface PlayerSetup {
+  leader: Leader
+  color: PlayerColor
+  playerNumber: number
+  deck: Card[]
+  startingHand: Card[]
+}
 
 export interface GameState {
   startingPlayerId: number
@@ -228,20 +259,8 @@ export interface GameState {
   combatTroops: Record<number, number>
   currentConflict: ConflictCard | null
   players: Player[]
-}
-
-export enum GamePhase {
-  ROUND_START = 'round-start',
-  PLAYER_TURNS = 'player-turns',
-  COMBAT = 'combat',
-  MAKERS = 'makers',
-  RECALL = 'recall'
-}
-
-export interface PlayerSetup {
-  leader: Leader
-  color: PlayerColor
-  playerNumber: number
-  deck: Card[]
-  startingHand: Card[]
+  combatPasses: number[]
+  turns: GameTurn[]
+  occupiedSpaces: Record<number, number[]>
+  playArea: Record<number, Card[]>
 }

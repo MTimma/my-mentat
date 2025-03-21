@@ -8,11 +8,13 @@ interface DeckSetupProps {
 }
 
 const DeckSetup: React.FC<DeckSetupProps> = ({ playerName, onComplete }) => {
-  const [selectedCards, setSelectedCards] = useState<Card[]>([])
+  const defaultSelectedIds = [1, 2, 3, 4, 5]
+  const [selectedCards, setSelectedCards] = useState<Card[]>(() => 
+    STARTING_DECK.filter(card => defaultSelectedIds.includes(card.id))
+  )
 
-  // Reset selected cards when playerName changes
   useEffect(() => {
-    setSelectedCards([])
+    setSelectedCards(STARTING_DECK.filter(card => defaultSelectedIds.includes(card.id)))
   }, [playerName])
 
   const handleCardSelect = (card: Card) => {
