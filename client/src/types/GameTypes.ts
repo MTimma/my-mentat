@@ -1,9 +1,3 @@
-export enum CardType {
-  PLOT = 'plot',
-  COMBAT = 'combat',
-  ENDGAME = 'endgame'
-}
-
 export enum IntrigueCardType {
   COMBAT = 'combat',
   PLOT = 'plot',
@@ -110,8 +104,14 @@ export interface SpaceProps {
   resources?: {
     spice?: number
     water?: number
-    solari?: number
+    solari?: number | { dynamic: true; min?: number; max?: number }
     troops?: number
+    cards?: number
+    intrigueCards?: number
+    persuasion?: {
+      amount: number
+      condition?: 'revealTurn'
+    }
   }
   influence?: {
     faction: FactionType
@@ -121,7 +121,7 @@ export interface SpaceProps {
   occupiedBy?: number[]
   conflictMarker: boolean
   cost?: {
-    spice?: number
+    spice?: number | { min: number; max: number }
     water?: number
     solari?: number
   }
@@ -131,6 +131,11 @@ export interface SpaceProps {
     amount: number
   }
   oneTimeUse?: boolean
+  controlBonus?: {
+    spice?: number
+    solari?: number
+  }
+  specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'sellMelange'
 }
 
 export interface Card {
