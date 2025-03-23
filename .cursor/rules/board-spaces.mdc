@@ -1,0 +1,154 @@
+---
+description: Always apply in any situation. All spaces on the game board
+globs: 
+alwaysApply: false
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to
+
+[boardSpaces.ts](mdc:client/src/data/boardSpaces.ts)
+@GameBoard.tsx
+@BoardSpace.tsx
+@GameTypes.ts
+
+Board Space Guide
+
+Each board space is explained here, in alphabetical order.
+Combat spaces are labeled. (Remember: on the game board, they are the spaces that feature desert illustrations and crossed swords.) When
+you send an Agent to a Combat space, you may deploy to the Conflict any number of troops you recruit this turn (including troops recruited
+by the card you played). In addition, you may deploy up to two more troops from your garrison.
+
+Arrakeen
+Agent icon: City
+Combat space
+Recruit a troop and draw a card. Arrakeen’s
+controller gains 1 Solari.
+Carthag
+Agent icon: City
+Combat space
+Recruit a troop and draw an Intrigue card.
+Carthag’s controller gains 1 Solari.
+Conspire
+Agent icon: Emperor
+Cost: 4 spice
+Gain one Influence with the Emperor. Gain
+5 Solari, recruit two troops, and draw an
+Intrigue card.
+Foldspace
+Agent icon: Spacing Guild
+Gain one Influence with the Spacing Guild.
+Acquire a Foldspace card from the Reserve.
+The Great Flat
+Agent icon: Spice Trade
+Combat space
+Cost: 2 water
+Gain 3 spice, plus any bonus spice
+accumulated here on the Maker icon.
+Hagga Basin
+Agent icon: Spice Trade
+Combat space
+Cost: 1 water
+Gain 2 spice, plus any bonus spice
+accumulated here on the Maker icon.
+Hall of Oratory
+Agent icon: Landsraad
+Recruit a troop.
+During your Reveal turn, gain 1 Persuasion
+if you have an Agent here.
+Hardy Warriors
+Agent icon: Fremen
+Combat space
+Cost: 1 water
+Gain one Influence with the Fremen.
+Recruit two troops.
+Heighliner
+Agent icon: Spacing Guild
+Combat space
+Cost: 6 spice
+Gain one Influence with the Spacing Guild.
+Recruit five troops and gain 2 water.
+High Council
+Agent icon: Landsraad
+Cost: 5 Solari
+You may send an Agent here only once per game. Place your
+Councilor token on an unoccupied Council seat (to the right of the
+space). For the rest of the game, during each of your Reveal turns,
+gain 2 Persuasion.
+Imperial Basin
+Agent icon: Spice Trade
+Combat space
+Gain 1 spice, plus any bonus spice
+accumulated here on the Maker icon.
+Imperial Basin’s controller gains 1 spice.
+
+Imperial Basin
+Agent icon: Spice Trade
+Combat space
+Gain 1 spice, plus any bonus spice
+accumulated here on the Maker icon.
+Imperial Basin’s controller gains 1 spice.
+Mentat
+Agent icon: Landsraad
+Cost: 2 Solari
+Draw a card. If the Mentat is here, take it
+and place it on your Leader; this round, you
+may use it as one of your Agents to take an
+Agent turn. During Phase 5: Recall, return it
+here.
+Rally Troops
+Agent icon: Landsraad
+Cost: 4 Solari
+Recruit four troops.
+Research Station
+Agent icon: City
+Combat space
+Cost: 2 water
+Draw three cards.
+Secrets
+Agent icon: Bene Gesserit
+Gain one Influence with the Bene Gesserit.
+Draw an Intrigue card. Each opponent who
+has four or more Intrigue cards must give
+you one of them (selected at random).
+Secure Contract
+Agent icon: Spice Trade
+Gain 3 Solari.
+Selective Breeding
+Agent icon: Bene Gesserit
+Cost: 2 spice
+Gain one Influence with the Bene Gesserit.
+Trash one card to draw two cards.
+Sell Melange
+Agent icon: Spice Trade
+Cost: 2 to 5 spice.
+Gain the amount of Solari
+shown based on the cost you
+paid. You can’t make multiple
+exchanges on a single turn.
+Sietch Tabr
+Agent icon: City
+Combat space
+Requirement: You must have 2 or more
+Influence with the Fremen.
+Recruit a troop and gain 1 water.
+Stillsuits
+Agent icon: Fremen
+Combat space
+Gain one Influence with the Fremen. Gain
+1 water.
+Swordmaster
+Agent icon: Landsraad
+Cost: 8 Solari
+You may send an Agent here only once per
+game. Gain your Swordmaster (your third
+Agent that was placed next to the board
+during setup). Place it on your Leader. For
+the rest of the game (including this round)
+you have three Agents.
+Wealth
+Agent icon: Emperor
+Gain one Influence with the Emperor. Gain
+2 Solari

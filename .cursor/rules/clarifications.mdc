@@ -1,0 +1,50 @@
+---
+description: Always apply in any situation. Additional clarifications andd corner cases
+globs:
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to
+
+Clarifications
+Baron Vladimir Harkonnen — To use the Masterstroke ability,
+choose two of the four Baron Harkonnen tokens and place them on
+your Leader with the Faction side face down. (Return the other two
+to the box without letting any opponents see them.) Later, reveal
+your choices as described to gain your reward.
+Bindu Suspension — You must play this Intrigue card at the start of
+your Agent turn, before doing anything else. When you do, draw a
+card, then immediately end your turn.
+Calculated Hire — This Intrigue card can only take the Mentat from
+its starting position in the Landsraad.
+Demand Respect — If you win a Conflict that rewards you with
+spice, you may take that spice first, then use it to play this Intrigue
+card. (You may also play To the Victor… to gain the spice to then
+play Demand Respect.)
+Kwisatz Haderach — You may play this card to take an Agent turn
+even if you have no Agents left in your supply, as it lets you send
+an Agent that is already on a board space. You may send an Agent
+back to the space that it was just on.
+If a board space can be used only once per game (High Council,
+Swordmaster), you can’t use Kwisatz Haderach to send an Agent
+there more than once. You can’t overcome The Voice and send an
+Agent to a board space where you can’t send an Agent.
+If you move an agent away from a space with a Maker icon,
+and that space remains empty until Phase 4, bonus spice does
+accumulate there.
+Paul Atreides / Poison Snooper — You can’t look at the top card of
+your deck if it is empty. (You can’t reshuffle your discard pile and
+form a new deck until you need to draw a card.)
+Test of Humanity — Opponents make their choices starting from
+your left and proceeding clockwise. Each opponent must choose
+something they can do; they can’t discard if their hand is empty, or
+lose a deployed troop if they have none. An opponent who decides
+to discard chooses which card; it is not random.
+The Voice — Use one of your available Control markers to mark
+the board space you choose, then remove it on your next turn.
+(The Voice only stops opponents from sending Agents to that
+board space for one turn.)
+This does prevent Kwisatz Haderach from sending an Agent to the
+board space you chose.

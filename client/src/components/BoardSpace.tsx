@@ -1,5 +1,5 @@
 import React from 'react'
-import { SpaceProps, FactionType } from '../types/GameTypes'
+import { SpaceProps} from '../types/GameTypes'
 
 interface BoardSpaceProps extends SpaceProps {
   isHighlighted: boolean
