@@ -79,6 +79,7 @@ export interface Player {
   intrigueCards: IntrigueCard[]
   influence?: number
   agents: number
+  persuasion: number
   combatValue: number
   hasSwordmaster: boolean
   deck: Card[]
@@ -101,17 +102,14 @@ export interface SpaceProps {
   id: number
   name: string
   agentIcon: AgentIcon
-  resources?: {
+  reward?: {
     spice?: number
     water?: number
-    solari?: number | { dynamic: true; min?: number; max?: number }
+    solari?: number
     troops?: number
     cards?: number
     intrigueCards?: number
-    persuasion?: {
-      amount: number
-      condition?: 'revealTurn'
-    }
+    persuasion?: number
   }
   influence?: {
     faction: FactionType
@@ -121,7 +119,7 @@ export interface SpaceProps {
   occupiedBy?: number[]
   conflictMarker: boolean
   cost?: {
-    spice?: number | { min: number; max: number }
+    spice?: number
     water?: number
     solari?: number
   }
@@ -131,10 +129,7 @@ export interface SpaceProps {
     amount: number
   }
   oneTimeUse?: boolean
-  controlBonus?: {
-    spice?: number
-    solari?: number
-  }
+  controlBonus?: 'spice' | 'solari'
   specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'sellMelange'
 }
 
@@ -221,7 +216,7 @@ export interface GameTurn {
   playerId: number
   type: TurnType
   cardId?: number
-  agentSpaceTypes?: AgentIcon[]
+  agentSpace?: AgentIcon
   canDeployTroops?: boolean
   troopLimit?: number
   removableTroops?: number
@@ -251,7 +246,7 @@ export interface GameState {
   currentRound: number
   activePlayerId: number
   phase: GamePhase
-  lastTurn: GameTurn | null
+  currTurn: GameTurn | null
   mentatOwner: number | null
   factionInfluence: Record<FactionType, Record<number, number>>
   factionAlliances: Record<FactionType, number | null>

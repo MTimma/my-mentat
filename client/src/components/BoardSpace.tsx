@@ -11,7 +11,7 @@ interface BoardSpaceProps extends SpaceProps {
 const BoardSpace: React.FC<BoardSpaceProps> = ({
   name,
   agentIcon,
-  resources,
+  reward: resources,
   influence,
   cost,
   bonusSpice,

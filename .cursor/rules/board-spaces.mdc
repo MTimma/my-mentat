@@ -18,8 +18,7 @@ Board Space Guide
 
 Each board space is explained here, in alphabetical order.
 Combat spaces are labeled. (Remember: on the game board, they are the spaces that feature desert illustrations and crossed swords.) When
-you send an Agent to a Combat space, you may deploy to the Conflict any number of troops you recruit this turn (including troops recruited
-by the card you played). In addition, you may deploy up to two more troops from your garrison.
+you send an Agent to a Combat space, you may deploy to the Conflict any number of troops you recruit this turn (including troops recruited by the card you played). In addition, you may deploy up to two more troops from your garrison.
 
 Arrakeen
 Agent icon: City
@@ -124,9 +123,11 @@ Trash one card to draw two cards.
 Sell Melange
 Agent icon: Spice Trade
 Cost: 2 to 5 spice.
-Gain the amount of Solari
-shown based on the cost you
-paid. You can’t make multiple
+Gain the amount of Solari based on the cost you
+paid.
+Formula is (spice * 2 + 2 = solari)
+For example, 4 spice gains 10 solari.
+You can’t make multiple
 exchanges on a single turn.
 Sietch Tabr
 Agent icon: City

@@ -7,16 +7,16 @@ export const boardSpaces: SpaceProps[] = [
     name: "Arrakeen",
     conflictMarker: true,
     agentIcon: AgentIcon.CITY,
-    resources: { troops: 1, cards: 1 },
-    controlBonus: { solari: 1 }
+    reward: { troops: 1, cards: 1 },
+    controlBonus: 'solari'
   },
   {
     id: 2,
     name: "Carthag",
     conflictMarker: true,
     agentIcon: AgentIcon.CITY,
-    resources: { troops: 1, intrigueCards: 1 },
-    controlBonus: { solari: 1 }
+    reward: { troops: 1, intrigueCards: 1 },
+    controlBonus: 'solari'
   },
   {
     id: 3,
@@ -24,7 +24,7 @@ export const boardSpaces: SpaceProps[] = [
     conflictMarker: true,
     agentIcon: AgentIcon.CITY,
     cost: { water: 2 },
-    resources: { cards: 3 }
+    reward: { cards: 3 }
   },
 
   // Spice Trade Spaces
@@ -33,9 +33,9 @@ export const boardSpaces: SpaceProps[] = [
     name: "Imperial Basin",
     conflictMarker: true,
     agentIcon: AgentIcon.SPICE_TRADE,
-    resources: { spice: 1 },
+    reward: { spice: 1 },
     bonusSpice: 0,
-    controlBonus: { spice: 1 }
+    controlBonus: 'spice'
   },
   {
     id: 5,
@@ -43,7 +43,7 @@ export const boardSpaces: SpaceProps[] = [
     conflictMarker: true,
     agentIcon: AgentIcon.SPICE_TRADE,
     cost: { water: 2 },
-    resources: { spice: 3 },
+    reward: { spice: 3 },
     bonusSpice: 0
   },
   {
@@ -52,7 +52,7 @@ export const boardSpaces: SpaceProps[] = [
     conflictMarker: true,
     agentIcon: AgentIcon.SPICE_TRADE,
     cost: { water: 1 },
-    resources: { spice: 2 },
+    reward: { spice: 2 },
     bonusSpice: 0
   },
   {
@@ -60,15 +60,15 @@ export const boardSpaces: SpaceProps[] = [
     name: "Secure Contract",
     conflictMarker: false,
     agentIcon: AgentIcon.SPICE_TRADE,
-    resources: { solari: 3 }
+    reward: { solari: 3 }
   },
   {
     id: 8,
     name: "Sell Melange",
     conflictMarker: false,
     agentIcon: AgentIcon.SPICE_TRADE,
-    cost: { spice: { min: 2, max: 5 } },
-    resources: { solari: { dynamic: true, min: 2, max: 5 } },
+    cost: { spice: 2 },
+    reward: { solari: 0 },
     specialEffect: 'sellMelange'
   },
 
@@ -80,7 +80,7 @@ export const boardSpaces: SpaceProps[] = [
     agentIcon: AgentIcon.LANDSRAAD,
     cost: { solari: 5 },
     oneTimeUse: true,
-    resources: { persuasion: { amount: 2, condition: 'revealTurn' } }
+    reward: { persuasion: 2 }
   },
   {
     id: 10,
@@ -88,7 +88,7 @@ export const boardSpaces: SpaceProps[] = [
     conflictMarker: false,
     agentIcon: AgentIcon.LANDSRAAD,
     cost: { solari: 2 },
-    resources: { cards: 1 },
+    reward: { cards: 1 },
     specialEffect: 'mentat'
   },
   {
@@ -97,14 +97,14 @@ export const boardSpaces: SpaceProps[] = [
     conflictMarker: false,
     agentIcon: AgentIcon.LANDSRAAD,
     cost: { solari: 4 },
-    resources: { troops: 4 }
+    reward: { troops: 4 }
   },
   {
     id: 12,
     name: "Hall of Oratory",
     conflictMarker: false,
     agentIcon: AgentIcon.LANDSRAAD,
-    resources: { troops: 1, persuasion: { amount: 1, condition: 'revealTurn' } }
+    reward: { troops: 1, persuasion: 1 }
   },
   {
     id: 13,
@@ -124,7 +124,7 @@ export const boardSpaces: SpaceProps[] = [
     agentIcon: AgentIcon.EMPEROR,
     cost: { spice: 4 },
     influence: { faction: FactionType.EMPEROR, amount: 1 },
-    resources: { solari: 5, troops: 2, intrigueCards: 1 }
+    reward: { solari: 5, troops: 2, intrigueCards: 1 }
   },
   {
     id: 15,
@@ -132,7 +132,7 @@ export const boardSpaces: SpaceProps[] = [
     conflictMarker: false,
     agentIcon: AgentIcon.EMPEROR,
     influence: { faction: FactionType.EMPEROR, amount: 1 },
-    resources: { solari: 2 }
+    reward: { solari: 2 }
   },
   {
     id: 16,
@@ -149,7 +149,7 @@ export const boardSpaces: SpaceProps[] = [
     agentIcon: AgentIcon.SPACING_GUILD,
     cost: { spice: 6 },
     influence: { faction: FactionType.SPACING_GUILD, amount: 1 },
-    resources: { troops: 5, water: 2 }
+    reward: { troops: 5, water: 2 }
   },
   {
     id: 18,
@@ -157,7 +157,7 @@ export const boardSpaces: SpaceProps[] = [
     conflictMarker: false,
     agentIcon: AgentIcon.BENE_GESSERIT,
     influence: { faction: FactionType.BENE_GESSERIT, amount: 1 },
-    resources: { intrigueCards: 1 },
+    reward: { intrigueCards: 1 },
     specialEffect: 'secrets'
   },
   {
@@ -176,7 +176,7 @@ export const boardSpaces: SpaceProps[] = [
     agentIcon: AgentIcon.FREMEN,
     cost: { water: 1 },
     influence: { faction: FactionType.FREMEN, amount: 1 },
-    resources: { troops: 2 }
+    reward: { troops: 2 }
   },
   {
     id: 21,
@@ -185,7 +185,7 @@ export const boardSpaces: SpaceProps[] = [
     agentIcon: AgentIcon.FREMEN,
     requiresInfluence: { faction: FactionType.FREMEN, amount: 2 },
     influence: { faction: FactionType.FREMEN, amount: 1 },
-    resources: { troops: 1, water: 1 }
+    reward: { troops: 1, water: 1 }
   },
   {
     id: 22,
@@ -193,6 +193,6 @@ export const boardSpaces: SpaceProps[] = [
     conflictMarker: true,
     agentIcon: AgentIcon.FREMEN,
     influence: { faction: FactionType.FREMEN, amount: 1 },
-    resources: { water: 1 }
+    reward: { water: 1 }
   }
 ] 

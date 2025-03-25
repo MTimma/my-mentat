@@ -64,7 +64,7 @@ const initialGameState: GameState = {
   currentRound: 1,
   activePlayerId: 1,
   phase: GamePhase.ROUND_START,
-  lastTurn: null,
+  currTurn: null,
   mentatOwner: null,
   factionInfluence: {
     [FactionType.EMPEROR]: {},
@@ -249,19 +249,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const nextIndex = (currentIndex + 1) % state.players.length
       const nextPlayer = state.players[nextIndex]
 
-      // Create new turn
-      const newTurn: GameTurn = {
-        playerId,
-        type: TurnType.ACTION,
-        cardId: player.selectedCard,
-        agentSpaceTypes: [],
-        canDeployTroops: false,
-        troopLimit: 0,
-        removableTroops: 0,
-        persuasionCount: 0,
-        gainedEffects: [],
-        acquiredCards: []
-      }
+      // Add the current turn to history
+      const currentTurn = state.currTurn
+      if (!currentTurn) return state
 
       return {
         ...state,
@@ -274,8 +264,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             : p
         ),
         activePlayerId: nextPlayer.id,
-        turns: [...state.turns, newTurn],
-        lastTurn: newTurn
+        turns: [...state.turns, currentTurn],
+        currTurn: null
       }
     }
     case 'ADD_TROOP': {
@@ -426,6 +416,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (!card || playerId !== state.activePlayerId) return state
 
+      // Create or update the current turn
+      const currentTurn = state.currTurn?.playerId === playerId 
+        ? { ...state.currTurn }
+        : {
+            playerId,
+            type: TurnType.ACTION,
+            cardId,
+            agentSpace: undefined,
+            canDeployTroops: false,
+            troopLimit: 0,
+            removableTroops: 0,
+            persuasionCount: 0,
+            gainedEffects: [],
+            acquiredCards: []
+          }
+
       return {
         ...state,
         players: state.players.map(p =>
@@ -435,7 +441,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 selectedCard: cardId
               }
             : p
-        )
+        ),
+        currTurn: currentTurn
       }
     }
     case 'PLACE_AGENT': {
@@ -461,7 +468,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Check if player has required influence
       if (space.requiresInfluence) {
-        const playerInfluence = state.factionInfluence[space.requiresInfluence.faction]?.[playerId] || 0
+        const playerInfluence = state.factionInfluence[space.requiresInfluence.faction as FactionType]?.[playerId] || 0
         if (playerInfluence < space.requiresInfluence.amount) return state
       }
 
@@ -479,15 +486,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (space.resources.spice) updatedPlayer.spice += space.resources.spice
         if (space.resources.water) updatedPlayer.water += space.resources.water
         if (space.resources.troops) updatedPlayer.troops += space.resources.troops
+        if (space.resources.persuasion) updatedPlayer.persuasion += space.resources.persuasion
       }
 
+      // TODO implement card draw
+      
       // Add influence
       if (space.influence) {
-        const currentInfluence = state.factionInfluence[space.influence.faction]?.[playerId] || 0
+        const currentInfluence = state.factionInfluence[space.influence.faction as FactionType]?.[playerId] || 0
         state.factionInfluence = {
           ...state.factionInfluence,
-          [space.influence.faction]: {
-            ...state.factionInfluence[space.influence.faction],
+          [space.influence.faction as FactionType]: {
+            ...state.factionInfluence[space.influence.faction as FactionType],
             [playerId]: currentInfluence + space.influence.amount
           }
         }
@@ -503,6 +513,85 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedHand = player.hand.filter(c => c.id !== card.id)
       const updatedPlayArea = [...player.playArea, card]
 
+      const canDeployTroops = card.swordIcon || space.combatMarker || false
+      const troopLimit = canDeployTroops ? 2 + (space.resources.troops || 0): 0
+
+      // Update the current turn
+      const currentTurn = state.currTurn?.playerId === playerId 
+        ? {
+            ...state.currTurn,
+            agentSpace: space.agentIcon,
+            canDeployTroops: canDeployTroops,
+            troopLimit: troopLimit,
+            removableTroops: 0,
+            persuasionCount: space.persuasion || 0
+          }
+        : {
+            playerId,
+            type: TurnType.ACTION,
+            cardId: card.id,
+            agentSpace: space.agentIcon,
+            canDeployTroops: canDeployTroops,
+            troopLimit: troopLimit,
+            removableTroops: 0,
+            persuasionCount: space.persuasion || 0,
+            gainedEffects: [],
+            acquiredCards: []
+          }
+
+      // Handle special effects
+      if (space.specialEffect) {
+        currentTurn.gainedEffects = [...(currentTurn.gainedEffects || []), space.specialEffect]
+        switch (space.specialEffect) {
+          case 'mentat':
+            // Set the current player as the Mentat owner
+            state.mentatOwner = playerId
+            // Don't reduce agents when using Mentat
+            updatedPlayer.agents += 1
+            // Add Mentat to player's gained effects
+            break
+
+          case 'swordmaster':
+            // Add Swordmaster to player's gained effects
+            // Update player's agent count permanently
+            updatedPlayer.hasSwordmaster = true
+            updatedPlayer.agents += 1
+            break
+
+          case 'foldspace':
+            // TODO: Implement Foldspace card acquisition from Reserve
+
+            // TODO Add foldspace to player's gained effects
+
+            // This will require adding a new action type and handling in the reducer
+            break
+
+          case 'secrets':
+            // Check each opponent for 4+ Intrigue cards
+            state.players.forEach(opponent => {
+              if (opponent.id !== playerId && opponent.intrigueCards.length >= 4) {
+                // TODO: Implement random Intrigue card selection and transfer
+                // This will require adding a new action type and handling in the reducer
+              }
+            })
+            break
+
+          case 'selectiveBreeding':
+            // TODO: Implement card trashing and drawing
+            // This will require adding a new action type and handling in the reducer
+            break
+
+          case 'sellMelange':
+            if (space.cost?.spice) {
+              const solariGain = (space.cost.spice * 2) + 2
+              updatedPlayer.solari += solariGain
+            }
+            break
+        }
+      }
+
+      updatedPlayer.agents -= 1
+
       return {
         ...state,
         players: state.players.map(p =>
@@ -511,24 +600,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 ...updatedPlayer,
                 hand: updatedHand,
                 playArea: updatedPlayArea,
-                agents: p.agents - 1,
                 selectedCard: null
               }
             : p
         ),
         occupiedSpaces: updatedOccupiedSpaces,
-        lastTurn: {
-          playerId,
-          type: TurnType.ACTION,
-          cardId: card.id,
-          agentSpaceTypes: [space.agentIcon],
-          canDeployTroops: card.swordIcon || false,
-          troopLimit: card.swordIcon ? 2 : 0,
-          removableTroops: 0,
-          persuasionCount: card.persuasion || 0,
-          gainedEffects: [],
-          acquiredCards: []
-        }
+        currTurn: currentTurn
       }
     }
     default:
