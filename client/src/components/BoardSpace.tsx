@@ -11,7 +11,7 @@ interface BoardSpaceProps extends SpaceProps {
 const BoardSpace: React.FC<BoardSpaceProps> = ({
   name,
   agentIcon,
-  reward: resources,
+  reward,
   influence,
   cost,
   bonusSpice,
@@ -33,14 +33,14 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
     )
   }
 
-  const renderResources = () => {
-    if (!resources) return null
+  const renderRewards = () => {
+    if (!reward) return null
     return (
-      <div className="space-resources">
-        {resources.solari && <span className="solari">{resources.solari}💰</span>}
-        {resources.spice && <span className="spice">{resources.spice}🌶️</span>}
-        {resources.water && <span className="water">{resources.water}💧</span>}
-        {resources.troops && <span className="troops">{resources.troops}⚔️</span>}
+      <div className="space-rewards">
+        {reward.solari && <span className="solari">{reward.solari}💰</span>}
+        {reward.spice && <span className="spice">{reward.spice}🌶️</span>}
+        {reward.water && <span className="water">{reward.water}💧</span>}
+        {reward.troops && <span className="troops">{reward.troops}⚔️</span>}
       </div>
     )
   }
@@ -90,7 +90,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         {renderCost()}
       </div>
       {renderRequirement()}
-      {renderResources()}
+      {renderRewards()}
       {renderInfluence()}
       {renderBonusSpice()}
       <div className="agents-container">
