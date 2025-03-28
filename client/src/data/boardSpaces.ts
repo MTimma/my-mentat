@@ -79,8 +79,8 @@ export const boardSpaces: SpaceProps[] = [
     conflictMarker: false,
     agentIcon: AgentIcon.LANDSRAAD,
     cost: { solari: 5 },
-    oneTimeUse: true,
-    reward: { persuasion: 2 }
+    reward: { persuasion: 2 },
+    specialEffect: 'highCouncil'
   },
   {
     id: 10,
@@ -104,7 +104,7 @@ export const boardSpaces: SpaceProps[] = [
     name: "Hall of Oratory",
     conflictMarker: false,
     agentIcon: AgentIcon.LANDSRAAD,
-    reward: { troops: 1, persuasion: 1 }
+    reward: { persuasion: 1 }
   },
   {
     id: 13,
@@ -112,7 +112,6 @@ export const boardSpaces: SpaceProps[] = [
     conflictMarker: false,
     agentIcon: AgentIcon.LANDSRAAD,
     cost: { solari: 8 },
-    oneTimeUse: true,
     specialEffect: 'swordmaster'
   },
 

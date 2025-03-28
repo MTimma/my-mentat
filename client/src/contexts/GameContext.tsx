@@ -11,16 +11,13 @@ import {
   IntrigueCardEffect,
   Winners,
   IntrigueCardType,
-  GameTurn,
   TurnType,
-  AgentIcon,
   SpaceProps
 } from '../types/GameTypes'
-import { boardSpaces } from '../components/GameBoard'
+import boardSpaces from '../components/GameBoard'
 
 interface GameContextType {
   gameState: GameState
-  players: Player[]
   currentConflict: ConflictCard | null
   imperiumRow: Card[]
   intrigueDeck: IntrigueCard[]
@@ -58,7 +55,6 @@ export const useGame = () => {
   return context
 }
 
-// Initial state setup
 const initialGameState: GameState = {
   startingPlayerId: 1,
   currentRound: 1,
@@ -128,7 +124,6 @@ function applyReward(state: GameState, reward: Reward, playerId: number): GameSt
   
   switch (reward.type) {
     case 'victoryPoints':
-      // Update victory points in player state
       newState.players = newState.players.map(player => 
         player.id === playerId 
           ? { ...player, victoryPoints: player.victoryPoints + reward.amount }
@@ -226,7 +221,6 @@ function handleIntrigueEffect(
   return newState
 }
 
-// Game reducer
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'START_ROUND':
@@ -244,12 +238,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Only allow ending turn if a card has been played
       if (!player.selectedCard) return state
 
-      // Find next player
       const currentIndex = state.players.findIndex(p => p.id === playerId)
       const nextIndex = (currentIndex + 1) % state.players.length
       const nextPlayer = state.players[nextIndex]
 
-      // Add the current turn to history
       const currentTurn = state.currTurn
       if (!currentTurn) return state
 
@@ -539,21 +531,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             acquiredCards: []
           }
 
-      // Handle special effects
       if (space.specialEffect) {
         currentTurn.gainedEffects = [...(currentTurn.gainedEffects || []), space.specialEffect]
         switch (space.specialEffect) {
           case 'mentat':
-            // Set the current player as the Mentat owner
             state.mentatOwner = playerId
-            // Don't reduce agents when using Mentat
             updatedPlayer.agents += 1
-            // Add Mentat to player's gained effects
             break
 
           case 'swordmaster':
-            // Add Swordmaster to player's gained effects
-            // Update player's agent count permanently
             updatedPlayer.hasSwordmaster = true
             updatedPlayer.agents += 1
             break
@@ -561,24 +547,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           case 'foldspace':
             // TODO: Implement Foldspace card acquisition from Reserve
 
-            // TODO Add foldspace to player's gained effects
-
-            // This will require adding a new action type and handling in the reducer
             break
 
           case 'secrets':
-            // Check each opponent for 4+ Intrigue cards
             state.players.forEach(opponent => {
               if (opponent.id !== playerId && opponent.intrigueCards.length >= 4) {
                 // TODO: Implement random Intrigue card selection and transfer
-                // This will require adding a new action type and handling in the reducer
               }
             })
             break
 
           case 'selectiveBreeding':
             // TODO: Implement card trashing and drawing
-            // This will require adding a new action type and handling in the reducer
             break
 
           case 'sellMelange':
@@ -623,12 +603,9 @@ export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, c
     ...initialGameState,
     ...initialState
   })
-  
-  // Add other state management here
 
   const value = {
     gameState,
-    players: gameState.players,
     currentConflict: gameState.currentConflict,
     imperiumRow: [],
     intrigueDeck: [],

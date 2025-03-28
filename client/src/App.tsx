@@ -15,7 +15,6 @@ import { STARTING_DECK } from './data/cards'
 const GameContent = () => {
   const { 
     gameState, 
-    players, 
     dispatch,
     currentConflict,
     imperiumRow
@@ -38,7 +37,7 @@ const GameContent = () => {
   }
 
   const getSelectedCardPlacement = (playerId: number) => {
-    const player = players.find(p => p.id === playerId)
+    const player = gameState.players.find(p => p.id === playerId)
     if (!player?.selectedCard) return null
     const selectedCard = player.hand.find(c => c.id === player.selectedCard)
     return selectedCard?.agentSpaceTypes || null
@@ -50,7 +49,7 @@ const GameContent = () => {
         <TurnHistory 
           turns={gameState.turns}
           currentTurn={gameState.turns.length}
-          players={players}
+          players={gameState.players}
         />
       </div>
       <div className="imperium-row-container">
@@ -65,14 +64,15 @@ const GameContent = () => {
             playerId: gameState.activePlayerId, 
             spaceId 
           })}
-          occupiedSpaces={{}} // Will be tracked in GameState
-          hasAgents={true} // Will be computed
-          combatTroops={{}} // Will be tracked in GameState
-          players={players}
+          occupiedSpaces={gameState.occupiedSpaces} 
+          hasAgents={true} 
+          combatTroops={gameState.combatTroops}
+          players={gameState.players}
+          factionInfluence={gameState.factionInfluence}
           currentConflict={currentConflict}
         />
         <div className="players-area">
-          {players.map((player) => (
+          {gameState.players.map((player) => (
             <PlayerArea 
               key={player.id} 
               player={player} 
@@ -82,9 +82,9 @@ const GameContent = () => {
               onEndTurn={handleEndTurn}
               onAddTroop={() => handleAddTroop(player.id)}
               onRemoveTroop={() => handleRemoveTroop(player.id)}
-              canDeployTroops={true} // Will be computed
-              removableTroops={0} // Will be computed
-              troopLimit={2} // Will be computed
+              canDeployTroops={false} 
+              removableTroops={0} 
+              troopLimit={2}  
             />
           ))}
         </div>
@@ -176,7 +176,9 @@ function App() {
             discardPile: [],
             hasHighCouncilSeat: false,
             hasSwordmaster: false,
-            playArea: []
+            playArea: [],
+            persuasion: 0,
+            victoryPoints: 0
           }))
         }}>
           <GameContent />

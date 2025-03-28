@@ -41,6 +41,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         {reward.spice && <span className="spice">{reward.spice}🌶️</span>}
         {reward.water && <span className="water">{reward.water}💧</span>}
         {reward.troops && <span className="troops">{reward.troops}⚔️</span>}
+        {reward.persuasion && <span className="persuasion">{reward.persuasion}💠</span>}
       </div>
     )
   }

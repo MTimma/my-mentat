@@ -1,5 +1,5 @@
 import React from 'react'
-import { SpaceProps, AgentIcon, Player, ConflictCard, FactionType } from '../types/GameTypes'
+import { SpaceProps, AgentIcon, Player, FactionType, ConflictCard } from '../types/GameTypes'
 import BoardSpace from './BoardSpace'
 import CombatArea from './CombatArea'
 import { boardSpaces } from '../data/boardSpaces'
@@ -12,6 +12,7 @@ interface GameBoardProps {
   hasAgents: boolean
   combatTroops: Record<number, number>
   players: Player[]
+  factionInfluence: Record<FactionType, Record<number, number>>
   currentConflict: ConflictCard | null
 }
 
@@ -23,26 +24,23 @@ const GameBoard: React.FC<GameBoardProps> = ({
   hasAgents,
   combatTroops,
   players,
-  currentConflict
+  factionInfluence
 }) => {
   const canPlaceAgent = (space: SpaceProps): boolean => {
-    // Check if space is already occupied
     if (occupiedSpaces[space.id]?.length > 0) return false
     
-    // Check if player has required influence
     if (space.requiresInfluence) {
       const player = players.find(p => p.id === currentPlayer)
-      // This will need to access the actual influence value from GameState
-      return false // Placeholder
+      if (!player) return false
+      const playerInfluence = factionInfluence[space.requiresInfluence.faction]?.[currentPlayer] || 0
+      if (playerInfluence < space.requiresInfluence.amount) return false
     }
 
-    // Check if one-time use space has been used
-    if (space.oneTimeUse) {
+    if (space.name === "High Council") {
       const player = players.find(p => p.id === currentPlayer)
-      if (space.name === "High Council" && player?.hasHighCouncilSeat) return false
+      if (player?.hasHighCouncilSeat) return false
     }
 
-    // Check if player can pay the cost
     if (space.cost) {
       const player = players.find(p => p.id === currentPlayer)
       if (!player) return false

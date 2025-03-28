@@ -9,7 +9,6 @@ export const intrigueCards: IntrigueCard[] = [
     effect: {
       strengthBonus: 4
     },
-    oneTimeUse: true
   },
   {
     id: 2,
@@ -22,7 +21,6 @@ export const intrigueCards: IntrigueCard[] = [
         amount: 2
       }
     },
-    oneTimeUse: true
   },
   {
     id: 3,
@@ -33,7 +31,6 @@ export const intrigueCards: IntrigueCard[] = [
       removeEnemyTroops: 2,
       targetPlayer: true
     },
-    oneTimeUse: true
   },
   {
     id: 4,
@@ -46,7 +43,6 @@ export const intrigueCards: IntrigueCard[] = [
         amount: 3
       }
     },
-    oneTimeUse: true
   },
   {
     id: 5,
@@ -60,7 +56,6 @@ export const intrigueCards: IntrigueCard[] = [
       },
       targetPlayer: true
     },
-    oneTimeUse: true
   },
   {
     id: 6,
@@ -71,9 +66,8 @@ export const intrigueCards: IntrigueCard[] = [
       drawCards: 2,
       playCondition: 'onWinCombat'
     },
-    oneTimeUse: true
   },
-  // Add more cards...
+  // TODO Add more cards...
 ]
 
 export class IntrigueDeckService {

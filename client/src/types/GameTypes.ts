@@ -7,12 +7,8 @@ export enum IntrigueCardType {
 export interface IntrigueCardEffect {
   // Combat effects
   strengthBonus?: number
-  troopBonus?: number
+  deployTroops?: number
   removeEnemyTroops?: number
-  stealResource?: {
-    type: 'spice' | 'water' | 'solari'
-    amount: number
-  }
   
   // Plot effects
   gainResource?: {
@@ -36,7 +32,6 @@ export interface IntrigueCard {
   type: IntrigueCardType
   effect: IntrigueCardEffect
   description: string
-  oneTimeUse: boolean
 }
 
 // Contains display values for the leader
@@ -128,9 +123,8 @@ export interface SpaceProps {
     faction: FactionType
     amount: number
   }
-  oneTimeUse?: boolean
   controlBonus?: 'spice' | 'solari'
-  specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'sellMelange'
+  specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'sellMelange' | 'highCouncil'
 }
 
 export interface Card {
@@ -186,7 +180,6 @@ export interface PassTurn {
 
 export interface IntrigueCardPlay {
   cardId: number
-  playedBefore: boolean
   effectDecisions?: Record<string, any>
 }
 
@@ -223,6 +216,7 @@ export interface GameTurn {
   persuasionCount?: number
   gainedEffects?: string[]
   acquiredCards?: Card[]
+  playedIntrigueCard?: IntrigueCardPlay[]
 }
 
 export enum GamePhase {
