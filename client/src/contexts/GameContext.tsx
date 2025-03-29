@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useReducer } from 'react'
 import { 
   GameState, 
-  Player, 
-  GamePhase,
   FactionType,
   ConflictCard,
   IntrigueCard,
@@ -12,9 +10,10 @@ import {
   Winners,
   IntrigueCardType,
   TurnType,
-  SpaceProps
+  SpaceProps,
+  GamePhase
 } from '../types/GameTypes'
-import boardSpaces from '../components/GameBoard'
+import { boardSpaces } from '../data/boardSpaces'
 
 interface GameContextType {
   gameState: GameState
@@ -44,6 +43,7 @@ type GameAction =
   | { type: 'PASS_COMBAT'; playerId: number }
   | { type: 'DRAW_INTRIGUE'; playerId: number }
   | { type: 'PLACE_AGENT'; playerId: number; spaceId: number }
+  | { type: 'REVEAL_CARDS'; playerId: number; cardIds: number[] }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
@@ -473,12 +473,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       // Add resources
-      if (space.resources) {
-        if (space.resources.solari) updatedPlayer.solari += space.resources.solari
-        if (space.resources.spice) updatedPlayer.spice += space.resources.spice
-        if (space.resources.water) updatedPlayer.water += space.resources.water
-        if (space.resources.troops) updatedPlayer.troops += space.resources.troops
-        if (space.resources.persuasion) updatedPlayer.persuasion += space.resources.persuasion
+      if (space.reward) {
+        if (space.reward.solari) updatedPlayer.solari += space.reward.solari
+        if (space.reward.spice) updatedPlayer.spice += space.reward.spice
+        if (space.reward.water) updatedPlayer.water += space.reward.water
+        if (space.reward.troops) updatedPlayer.troops += space.reward.troops
+        if (space.reward.persuasion) updatedPlayer.persuasion += space.reward.persuasion
       }
 
       // TODO implement card draw
@@ -505,8 +505,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedHand = player.hand.filter(c => c.id !== card.id)
       const updatedPlayArea = [...player.playArea, card]
 
-      const canDeployTroops = card.swordIcon || space.combatMarker || false
-      const troopLimit = canDeployTroops ? 2 + (space.resources.troops || 0): 0
+      const canDeployTroops = card.swordIcon || space.conflictMarker || false
+      const troopLimit = canDeployTroops ? 2 + (space.reward?.troops || 0): 0
 
       // Update the current turn
       const currentTurn = state.currTurn?.playerId === playerId 
@@ -516,7 +516,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             canDeployTroops: canDeployTroops,
             troopLimit: troopLimit,
             removableTroops: 0,
-            persuasionCount: space.persuasion || 0
+            persuasionCount: space.reward?.persuasion || 0
           }
         : {
             playerId,
@@ -526,7 +526,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             canDeployTroops: canDeployTroops,
             troopLimit: troopLimit,
             removableTroops: 0,
-            persuasionCount: space.persuasion || 0,
+            persuasionCount: space.reward?.persuasion || 0,
             gainedEffects: [],
             acquiredCards: []
           }
@@ -585,6 +585,56 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             : p
         ),
         occupiedSpaces: updatedOccupiedSpaces,
+        currTurn: currentTurn
+      }
+    }
+    case 'REVEAL_CARDS': {
+      const { playerId, cardIds } = action
+      const player = state.players.find(p => p.id === playerId)
+      
+      if (!player || playerId !== state.activePlayerId) return state
+
+      // Move selected cards to play area
+      const revealedCards = cardIds
+        .map(id => player.hand.find(card => card.id === id))
+        .filter((card): card is Card => card !== undefined)
+
+      const updatedHand = player.hand.filter(card => !cardIds.includes(card.id))
+      const updatedPlayArea = [...player.playArea, ...revealedCards]
+
+      // Calculate total persuasion and sword icons from revealed cards
+      const persuasionCount = revealedCards.reduce((total, card) => total + (card.persuasion || 0), 0)
+      const swordCount = revealedCards.filter(card => card.swordIcon).length
+
+      // Update combat strength if player has troops in combat
+      const hasTroopsInCombat = (state.combatTroops[playerId] || 0) > 0
+      const updatedCombatStrength = hasTroopsInCombat
+        ? { ...state.combatStrength, [playerId]: (state.combatStrength[playerId] || 0) + swordCount }
+        : state.combatStrength
+
+      // Create or update the current turn
+      const currentTurn = {
+        playerId,
+        type: TurnType.REVEAL,
+        persuasionCount,
+        gainedEffects: [],
+        acquiredCards: []
+      }
+
+      return {
+        ...state,
+        players: state.players.map(p =>
+          p.id === playerId
+            ? {
+                ...p,
+                hand: updatedHand,
+                playArea: updatedPlayArea,
+                selectedCard: null,
+                persuasion: persuasionCount
+              }
+            : p
+        ),
+        combatStrength: updatedCombatStrength,
         currTurn: currentTurn
       }
     }

@@ -11,6 +11,7 @@ import DeckSetup from './components/DeckSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
 import { PlayerSetup,Card, Leader } from './types/GameTypes'
 import { STARTING_DECK } from './data/cards'
+import TurnControls from './components/TurnControls'
 
 const GameContent = () => {
   const { 
@@ -22,6 +23,10 @@ const GameContent = () => {
 
   const handleCardSelect = (playerId: number, cardId: number) => {
     dispatch({ type: 'PLAY_CARD', playerId, cardId })
+  }
+
+  const handleRevealCards = (playerId: number, cardIds: number[]) => {
+    dispatch({ type: 'REVEAL_CARDS', playerId, cardIds })
   }
 
   const handleEndTurn = (playerId: number) => {
@@ -42,6 +47,8 @@ const GameContent = () => {
     const selectedCard = player.hand.find(c => c.id === player.selectedCard)
     return selectedCard?.agentSpaceTypes || null
   }
+
+  const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
 
   return (
     <div className="game-container">
@@ -78,8 +85,6 @@ const GameContent = () => {
               player={player} 
               isActive={gameState.activePlayerId === player.id}
               isStartingPlayer={gameState.startingPlayerId === player.id}
-              onSelectCard={handleCardSelect}
-              onEndTurn={handleEndTurn}
               onAddTroop={() => handleAddTroop(player.id)}
               onRemoveTroop={() => handleRemoveTroop(player.id)}
               canDeployTroops={false} 
@@ -88,6 +93,15 @@ const GameContent = () => {
             />
           ))}
         </div>
+      </div>
+      <div className="turn-controls-container">
+        <TurnControls
+          activePlayer={activePlayer}
+          canEndTurn={false}
+          onPlayCard={handleCardSelect}
+          onReveal={handleRevealCards}
+          onEndTurn={handleEndTurn}
+        />
       </div>
     </div>
   )
