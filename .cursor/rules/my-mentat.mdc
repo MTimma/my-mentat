@@ -1,0 +1,41 @@
+---
+description: Always apply in any situation.
+globs: 
+alwaysApply: false
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to
+
+My Mentat manifesto
+
+My Mentat is a web application for analysing Dune: Imperium games
+
+Features:
+Input and save game turns of a Dune: Imperium game
+See the probability of:
+ * player is holding a specific card in their hand
+ * next intrigue card will be from a group of user selected cards
+ * next imperium row card will be from a group of user selected cards
+
+Use case scenarios:
+As a player with troops in the combat I want to know how likely it is that the enemy has a combat intrigue in their hand
+As a ranked game player I want to know how efficiently I played my last game
+As a tournament host I want to know how lucky was the player to pull off their winning move
+As a Youtuber I want to set up a scenario to showcase an amazing combo
+
+IMPORTANT:
+It has some turn eligibility validation and game engine implemented but it is not the primary aspect and should not be limited to.
+My Mentat is not a playable game implementation of Dune: Imperium
+
+User should not have to input all the hidden information for other players, game deck etc
+Only visible information to all players like played cards, imperium row, etc, should be the input
+In perfect case hand size, influence, resources, victory points should be calculated by the app. Adjusting by user should be possible.
+User should be able to input the played cards in the turn of the active player
+
+Choose to do in turn:
+Play intrigue card (can be done at any time of the turn)
+Play a card (choose 1 from deck) OR Reveal (choose n from deck where n is the size of hand)
+
