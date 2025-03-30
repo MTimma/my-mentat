@@ -89,21 +89,25 @@
   display: flex;
   gap: 4px;
   font-size: 0.8em;
+  color: #000;
 }
 
 .space-rewards {
   display: flex;
   gap: 8px;
   font-size: 0.9em;
+  color: #45f948;
 }
 
 .space-influence {
   display: flex;
-  align-items: center;
+  /* align-items: center; */
   gap: 4px;
+  font-size: 0.9em;
+  color: #45f948;
 }
 
-.influence-icon {
+/* .influence-icon {
   width: 20px;
   height: 20px;
   border-radius: 50%;
@@ -111,8 +115,7 @@
   align-items: center;
   justify-content: center;
   font-size: 0.8em;
-  color: white;
-}
+} */
 
 .bonus-spice {
   position: absolute;

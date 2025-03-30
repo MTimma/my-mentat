@@ -66,15 +66,15 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
         </div>
       </div>
       <div className="resources">
-        <div>Spice: {player.spice}🌶️</div>
-        <div>Water: {player.water}💧</div>
-        <div>Solari: {player.solari}💰</div>
-        <div>Troops: {player.troops}⚔️</div>
-        <div>Combat: {player.combatValue}⚔️</div>
+        <div>Spice: {player.spice}</div>
+        <div>Water: {player.water}</div>
+        <div>Solari: {player.solari}</div>
+        <div>Troops: {player.troops}</div>
+        <div>Combat: {player.combatValue}</div>
         <div className={`agents ${player.agents === 0 ? 'depleted' : ''}`}>
-          Agents: {player.agents}👥
+          Agents: {player.agents}
         </div>
-        <div>Hand Size: {player.hand.length}📜</div>
+        <div>Hand Size: {player.hand.length}</div>
       </div>
       <div className="play-area">
         <h4>Play Area</h4>

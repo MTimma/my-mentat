@@ -26,9 +26,9 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
     if (!cost) return null
     return (
       <div className="space-cost">
-        {cost.solari && <span className="solari-cost">{cost.solari}💰</span>}
-        {cost.spice && <span className="spice-cost">{cost.spice}🌶️</span>}
-        {cost.water && <span className="water-cost">{cost.water}💧</span>}
+        {cost.solari && <span className="solari-cost">Solari: {cost.solari}</span>}
+        {cost.spice && <span className="spice-cost">Spice: {cost.spice}</span>}
+        {cost.water && <span className="water-cost">Water: {cost.water}</span>}
       </div>
     )
   }
@@ -37,11 +37,11 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
     if (!reward) return null
     return (
       <div className="space-rewards">
-        {reward.solari && <span className="solari">{reward.solari}💰</span>}
-        {reward.spice && <span className="spice">{reward.spice}🌶️</span>}
-        {reward.water && <span className="water">{reward.water}💧</span>}
-        {reward.troops && <span className="troops">{reward.troops}⚔️</span>}
-        {reward.persuasion && <span className="persuasion">{reward.persuasion}💠</span>}
+        {reward.solari && <span className="solari">Solari:{reward.solari}</span>}
+        {reward.spice && <span className="spice">Spice: {reward.spice}</span>}
+        {reward.water && <span className="water">Water: {reward.water}</span>}
+        {reward.troops && <span className="troops">Troops: {reward.troops}</span>}
+        {reward.persuasion && <span className="persuasion">Persuasion: {reward.persuasion}</span>}
       </div>
     )
   }
@@ -51,7 +51,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
     return (
       <div className="space-influence">
         <span className={`influence-icon ${influence.faction}`}>
-          {influence.amount}
+          Influence: {influence.amount}
         </span>
       </div>
     )
@@ -61,7 +61,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
     if (typeof bonusSpice !== 'number') return null
     return bonusSpice > 0 ? (
       <div className="bonus-spice">
-        +{bonusSpice}🌶️
+        + Bonus Spice: {bonusSpice}
       </div>
     ) : null
   }

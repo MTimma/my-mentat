@@ -27,7 +27,6 @@ type GameAction =
   | { type: 'START_ROUND' }
   | { type: 'END_TURN'; playerId: number }
   | { type: 'PLAY_CARD'; playerId: number; cardId: number }
-  | { type: 'DEPLOY_AGENT'; playerId: number; spaceId: number }
   | { type: 'ADD_TROOP'; playerId: number }
   | { type: 'REMOVE_TROOP'; playerId: number }
   | { type: 'PLAY_INTRIGUE'; cardId: number; playerId: number; targetPlayerId?: number }
@@ -245,6 +244,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const currentTurn = state.currTurn
       if (!currentTurn) return state
 
+
+      
       return {
         ...state,
         players: state.players.map(p =>
@@ -263,8 +264,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'ADD_TROOP': {
       const player = state.players.find(p => p.id === action.playerId)
       if (!player || player.troops <= 0) return state
+      
 
       const currentTroops = state.combatTroops[action.playerId] || 0
+
+      const currentTurn = state.activePlayerId === action.playerId ? 
+        {
+            ...state.currTurn,
+            removableTroops: state.currTurn?.removableTroops ? state.currTurn.removableTroops + 1 : 1,
+        } : state.currTurn;
+
+      
       const newState = {
         ...state,
         combatTroops: {
@@ -275,7 +285,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           p.id === action.playerId
             ? { ...p, troops: p.troops - 1 }
             : p
-        )
+        ),
+        currentTurn
       }
 
       return newState
@@ -283,9 +294,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'REMOVE_TROOP': {
       const currentTroops = state.combatTroops[action.playerId] || 0
       if (currentTroops <= 0) return state
-
+      const currentTurn = state.activePlayerId === action.playerId ? 
+      {
+          ...state.currTurn,
+          removableTroops: state.currTurn?.removableTroops ? state.currTurn.removableTroops -1 : 0,
+      } : state.currTurn;
       const newState = {
         ...state,
+        currentTurn,
         combatTroops: {
           ...state.combatTroops,
           [action.playerId]: currentTroops - 1

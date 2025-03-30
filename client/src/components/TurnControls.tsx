@@ -4,10 +4,15 @@ import { Player, Card } from '../types/GameTypes'
 
 interface TurnControlsProps {
   activePlayer: Player | null
-  canEndTurn: boolean
   onPlayCard: (playerId: number, cardId: number) => void
   onReveal: (playerId: number, cardIds: number[]) => void
+  canEndTurn: boolean
   onEndTurn: (playerId: number) => void
+  canDeployTroops: boolean
+  onAddTroop: (playerId: number) => void
+  onRemoveTroop: (playerId: number) => void
+  removableTroops: number
+  troopLimit: number
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -15,7 +20,12 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   canEndTurn,
   onPlayCard,
   onReveal,
-  onEndTurn
+  onEndTurn,
+  canDeployTroops,
+  onAddTroop,
+  onRemoveTroop,
+  removableTroops,
+  troopLimit
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -67,6 +77,25 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         >
           Reveal Turn
         </button>
+        <>
+          <button 
+            className="add-troop-button"
+            onClick={() => onAddTroop(activePlayer.id)}
+            disabled={!canDeployTroops || 
+                      activePlayer.troops <= 0 || 
+                      removableTroops >= troopLimit}
+          >
+            Add Troop ({remainingTroops})
+          </button>
+          {removableTroops > 0 && (
+            <button 
+              className="remove-troop-button"
+              onClick={() => onRemoveTroop(activePlayer.id)}
+            >
+              Remove Troop
+            </button>
+          )}
+        </>
         <button 
           className="end-turn-button"
           onClick={() => onEndTurn(activePlayer.id)}

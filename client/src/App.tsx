@@ -67,7 +67,7 @@ const GameContent = () => {
           currentPlayer={gameState.activePlayerId}
           highlightedAreas={getSelectedCardPlacement(gameState.activePlayerId)}
           onSpaceClick={(spaceId) => dispatch({ 
-            type: 'DEPLOY_AGENT', 
+            type: 'PLACE_AGENT',
             playerId: gameState.activePlayerId, 
             spaceId 
           })}
@@ -101,6 +101,11 @@ const GameContent = () => {
           onPlayCard={handleCardSelect}
           onReveal={handleRevealCards}
           onEndTurn={handleEndTurn}
+          canDeployTroops={gameState.currTurn?.canDeployTroops || false}
+          onAddTroop={handleAddTroop}
+          onRemoveTroop={handleRemoveTroop}
+          removableTroops={gameState.currTurn?.removableTroops || 0}
+          troopLimit={gameState.currTurn?.troopLimit || 2}
         />
       </div>
     </div>
