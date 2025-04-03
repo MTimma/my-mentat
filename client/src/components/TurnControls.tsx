@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Player, Card } from '../types/GameTypes'
-// import CardSelectionDialog from './CardSelectionDialog'
+import CardSearch from './CardSearch/CardSearch'
 
 interface TurnControlsProps {
   activePlayer: Player | null
@@ -85,7 +85,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                       activePlayer.troops <= 0 || 
                       removableTroops >= troopLimit}
           >
-            Add Troop ({remainingTroops})
+            Add Troop ({troopLimit - removableTroops})
           </button>
           {removableTroops > 0 && (
             <button 
@@ -105,14 +105,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         </button>
       </div>
 
-      {/* <CardSelectionDialog
+      <CardSearch
         isOpen={isCardSelectionOpen}
         cards={activePlayer.deck}
         selectionCount={isRevealTurn ? activePlayer.hand.length : 1}
         onSelect={handleCardSelection}
         onCancel={() => setIsCardSelectionOpen(false)}
         isRevealTurn={isRevealTurn}
-      /> */}
+      />
     </div>
   )
 }

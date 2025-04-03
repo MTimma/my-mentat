@@ -1428,7 +1428,9 @@
 
 .player-setup-row {
   background-color: white;
-  padding: 1rem;
+  padding-bottom: 5px;
+  padding-right: 5px;
+  padding-left: 5px;
   border-radius: 8px;
   margin-bottom: 1rem;
 }

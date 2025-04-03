@@ -85,11 +85,6 @@ const GameContent = () => {
               player={player} 
               isActive={gameState.activePlayerId === player.id}
               isStartingPlayer={gameState.startingPlayerId === player.id}
-              onAddTroop={() => handleAddTroop(player.id)}
-              onRemoveTroop={() => handleRemoveTroop(player.id)}
-              canDeployTroops={false} 
-              removableTroops={0} 
-              troopLimit={2}  
             />
           ))}
         </div>

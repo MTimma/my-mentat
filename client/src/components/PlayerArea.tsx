@@ -5,24 +5,13 @@ interface PlayerAreaProps {
   player: Player
   isActive: boolean
   isStartingPlayer: boolean
-  onAddTroop?: () => void
-  onRemoveTroop?: () => void
-  canDeployTroops: boolean
-  removableTroops: number
-  troopLimit: number
 }
 
 const PlayerArea: React.FC<PlayerAreaProps> = ({ 
   player, 
   isActive, 
-  isStartingPlayer, 
-  onAddTroop,
-  onRemoveTroop,
-  canDeployTroops,
-  removableTroops,
-  troopLimit
+  isStartingPlayer
 }) => {
-  const remainingTroops = troopLimit - removableTroops;
 
   return (
     <div className={`player-area ${isActive ? 'active' : ''}`}>
@@ -34,27 +23,6 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
           </div>
           <div className="player-indicators">
             {isStartingPlayer && <div className="starting-player-indicator">🪱</div>}
-            {isActive && onAddTroop && (
-              <>
-                <button 
-                  className="add-troop-button"
-                  onClick={onAddTroop}
-                  disabled={!canDeployTroops || 
-                           player.troops <= 0 || 
-                           removableTroops >= troopLimit}
-                >
-                  Add Troop ({remainingTroops})
-                </button>
-                {removableTroops > 0 && (
-                  <button 
-                    className="remove-troop-button"
-                    onClick={onRemoveTroop}
-                  >
-                    Remove Troop
-                  </button>
-                )}
-              </>
-            )}
           </div>
         </div>
         <div className="leader-ability">
