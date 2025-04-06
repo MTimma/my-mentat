@@ -170,11 +170,15 @@ export interface ActionTurn {
   specialEffectDecisions?: Record<string, any>
 }
 
-export interface PassTurn {
-  type: TurnType.PASS
+export interface RevealTurn {
+  type: TurnType.REVEAL
   persuasionCount: number
   gainedEffects: string[]
   acquiredCards: number[]
+}
+
+export interface PassTurn {
+  type: TurnType.PASS
 }
 
 export interface IntrigueCardPlay {
