@@ -56,6 +56,7 @@ export const useGame = () => {
 
 const initialGameState: GameState = {
   startingPlayerId: 1,
+  selectedCard: null,
   currentRound: 1,
   activePlayerId: 1,
   phase: GamePhase.ROUND_START,
@@ -85,7 +86,8 @@ const initialGameState: GameState = {
   combatPasses: [],
   turns: [],
   occupiedSpaces: {},
-  playArea: {} as Record<number, Card[]>
+  playArea: {} as Record<number, Card[]>,
+  canEndTurn: false
 }
 
 function calculateCombatStrength(
@@ -234,8 +236,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const player = state.players.find(p => p.id === playerId)
       if (!player) return state
 
-      // Only allow ending turn if a card has been played
-      if (!player.selectedCard) return state
+      if (!state.selectedCard) return state
 
       const currentIndex = state.players.findIndex(p => p.id === playerId)
       const nextIndex = (currentIndex + 1) % state.players.length
@@ -433,7 +434,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             cardId,
             agentSpace: undefined,
             canDeployTroops: false,
-            troopLimit: 0,
+            troopLimit: 2,
             removableTroops: 0,
             persuasionCount: 0,
             gainedEffects: [],
@@ -442,21 +443,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        players: state.players.map(p =>
-          p.id === playerId
-            ? {
-                ...p,
-                selectedCard: cardId
-              }
-            : p
-        ),
+        selectedCard: cardId,
         currTurn: currentTurn
       }
     }
     case 'PLACE_AGENT': {
       const { playerId, spaceId } = action
       const player = state.players.find(p => p.id === playerId)
-      const card = player?.hand.find(c => c.id === player?.selectedCard)
+      const card = player?.deck.find(c => c.id === state.selectedCard)
       const space = boardSpaces.find((s: SpaceProps) => s.id === spaceId)
 
       if (!player || !card || !space || playerId !== state.activePlayerId) return state
@@ -601,7 +595,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             : p
         ),
         occupiedSpaces: updatedOccupiedSpaces,
-        currTurn: currentTurn
+        currTurn: currentTurn,
+        canEndTurn: true
       }
     }
     case 'REVEAL_CARDS': {
@@ -651,7 +646,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             : p
         ),
         combatStrength: updatedCombatStrength,
-        currTurn: currentTurn
+        currTurn: currentTurn,
+        canEndTurn: true
       }
     }
     default:

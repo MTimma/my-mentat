@@ -65,7 +65,6 @@ export interface Player {
   color: PlayerColor
   leader: Leader
   hand: Card[]
-  selectedCard: number | null
   troops: number
   spice: number
   water: number
@@ -239,6 +238,7 @@ export interface GameState {
   startingPlayerId: number
   currentRound: number
   activePlayerId: number
+  selectedCard: number | null
   phase: GamePhase
   currTurn: GameTurn | null
   mentatOwner: number | null
@@ -257,4 +257,5 @@ export interface GameState {
   turns: GameTurn[]
   occupiedSpaces: Record<number, number[]>
   playArea: Record<number, Card[]>
+  canEndTurn: boolean
 }

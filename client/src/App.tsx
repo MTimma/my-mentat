@@ -43,8 +43,8 @@ const GameContent = () => {
 
   const getSelectedCardPlacement = (playerId: number) => {
     const player = gameState.players.find(p => p.id === playerId)
-    if (!player?.selectedCard) return null
-    const selectedCard = player.hand.find(c => c.id === player.selectedCard)
+    if (!gameState.selectedCard || !player) return null
+    const selectedCard = player.deck.find(c => c.id === gameState.selectedCard)
     return selectedCard?.agentSpaceTypes || null
   }
 
@@ -184,7 +184,6 @@ function App() {
             combatValue: 0,
             agents: 2,
             hand: setup.startingHand || [],
-            selectedCard: null,
             intrigueCards: [],
             deck: setup.deck|| [],
             discardPile: [],
