@@ -9,7 +9,7 @@ interface GameBoardProps {
   highlightedAreas: AgentIcon[] | null
   onSpaceClick: (spaceId: number) => void
   occupiedSpaces: Record<number, number[]>
-  hasAgents: boolean
+  canPlaceAgent: boolean
   combatTroops: Record<number, number>
   players: Player[]
   factionInfluence: Record<FactionType, Record<number, number>>
@@ -21,12 +21,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
   highlightedAreas,
   onSpaceClick,
   occupiedSpaces,
-  hasAgents,
+  canPlaceAgent,
   combatTroops,
   players,
   factionInfluence
 }) => {
-  const canPlaceAgent = (space: SpaceProps): boolean => {
+  const canPayCosts = (space: SpaceProps): boolean => {
     if (occupiedSpaces[space.id]?.length > 0) return false
     
     if (space.requiresInfluence) {
@@ -63,7 +63,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
             onSpaceClick={() => onSpaceClick(space.id)}
             occupiedBy={occupiedSpaces[space.id] || []}
-            isDisabled={!canPlaceAgent(space) || !hasAgents}
+            isDisabled={!canPayCosts(space) || !canPlaceAgent}
           />
         ))}
       </div>

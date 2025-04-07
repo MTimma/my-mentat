@@ -72,7 +72,7 @@ const GameContent = () => {
             spaceId 
           })}
           occupiedSpaces={gameState.occupiedSpaces} 
-          hasAgents={true} 
+          canPlaceAgent={!gameState.canEndTurn} 
           combatTroops={gameState.combatTroops}
           players={gameState.players}
           factionInfluence={gameState.factionInfluence}
@@ -92,7 +92,7 @@ const GameContent = () => {
       <div className="turn-controls-container">
         <TurnControls
           activePlayer={activePlayer}
-          canEndTurn={false}
+          canEndTurn={gameState.canEndTurn}
           onPlayCard={handleCardSelect}
           onReveal={handleRevealCards}
           onEndTurn={handleEndTurn}
