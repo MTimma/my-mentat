@@ -64,21 +64,23 @@ export interface Player {
   id: number
   color: PlayerColor
   leader: Leader
-  hand: Card[]
   troops: number
   spice: number
   water: number
   solari: number
   victoryPoints: number
-  intrigueCards: IntrigueCard[]
   influence?: number
   agents: number
   persuasion: number
   combatValue: number
   hasSwordmaster: boolean
+  hasHighCouncilSeat: boolean
+  handCount: number
+  intrigueCount: number
+  intrigueCards: IntrigueCard[]
+  hand: Card[]
   deck: Card[]
   discardPile: Card[]
-  hasHighCouncilSeat: boolean
   playArea: Card[]
 }
 

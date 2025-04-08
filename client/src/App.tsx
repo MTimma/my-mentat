@@ -183,6 +183,8 @@ function App() {
             troops: 3,
             combatValue: 0,
             agents: 2,
+            intrigueCount: 0,
+            handCount: 5,
             hand: setup.startingHand || [],
             intrigueCards: [],
             deck: setup.deck|| [],

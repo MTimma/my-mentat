@@ -245,7 +245,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const currentTurn = state.currTurn
       if (!currentTurn) return state
 
-
       
       return {
         ...state,
@@ -259,22 +258,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ),
         activePlayerId: nextPlayer.id,
         turns: [...state.turns, currentTurn],
-        currTurn: null
+        currTurn: null,
+        canEndTurn: false
       }
     }
     case 'ADD_TROOP': {
       const player = state.players.find(p => p.id === action.playerId)
       if (!player || player.troops <= 0) return state
       
-
       const currentTroops = state.combatTroops[action.playerId] || 0
 
       const currentTurn = state.activePlayerId === action.playerId ? 
         {
             ...state.currTurn,
+            playerId: state.activePlayerId,
+            type: state.currTurn?.type || TurnType.ACTION,
             removableTroops: state.currTurn?.removableTroops ? state.currTurn.removableTroops + 1 : 1,
         } : state.currTurn;
-
+      if (!currentTurn) return state
       
       const newState = {
         ...state,
@@ -287,7 +288,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             ? { ...p, troops: p.troops - 1 }
             : p
         ),
-        currentTurn
+        currTurn: currentTurn
       }
 
       return newState
@@ -295,14 +296,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'REMOVE_TROOP': {
       const currentTroops = state.combatTroops[action.playerId] || 0
       if (currentTroops <= 0) return state
-      const currentTurn = state.activePlayerId === action.playerId ? 
+      const currentTurn= state.activePlayerId === action.playerId ? 
       {
           ...state.currTurn,
+          playerId: state.activePlayerId,
+          type: state.currTurn?.type || TurnType.ACTION,
           removableTroops: state.currTurn?.removableTroops ? state.currTurn.removableTroops -1 : 0,
       } : state.currTurn;
       const newState = {
         ...state,
-        currentTurn,
+        currTurn: currentTurn,
         combatTroops: {
           ...state.combatTroops,
           [action.playerId]: currentTroops - 1
@@ -421,10 +424,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'PLAY_CARD': {
       const { playerId, cardId } = action
       const player = state.players.find(p => p.id === playerId)
-      const card = player?.hand.find(c => c.id === cardId)
+      const card = player?.deck.find(c => c.id === cardId)
 
-      if (!card || playerId !== state.activePlayerId) return state
-
+      if (!card || playerId !== state.activePlayerId || !player) return state
       // Create or update the current turn
       const currentTurn = state.currTurn?.playerId === playerId 
         ? { ...state.currTurn }
@@ -581,6 +583,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       updatedPlayer.agents -= 1
+      updatedPlayer.handCount -= 1
 
       return {
         ...state,

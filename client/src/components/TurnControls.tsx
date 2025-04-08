@@ -67,7 +67,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         <button 
           className="play-card-button"
           onClick={handlePlayCard}
-          disabled={activePlayer.agents === 0}
+          disabled={activePlayer.agents === 0 || canEndTurn}
         >
           Play Card
         </button>

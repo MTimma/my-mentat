@@ -42,7 +42,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
         <div className={`agents ${player.agents === 0 ? 'depleted' : ''}`}>
           Agents: {player.agents}
         </div>
-        <div>Hand Size: {player.hand.length}</div>
+        <div>Hand Size: {player.handCount}</div>
       </div>
       <div className="play-area">
         <h4>Play Area</h4>
