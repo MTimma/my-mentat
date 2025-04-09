@@ -11,7 +11,7 @@ import DeckSetup from './components/DeckSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
 import { PlayerSetup,Card, Leader } from './types/GameTypes'
 import { STARTING_DECK } from './data/cards'
-import TurnControls from './components/TurnControls'
+import TurnControls from './components/TurnControls/TurnControls'
 
 const GameContent = () => {
   const { 

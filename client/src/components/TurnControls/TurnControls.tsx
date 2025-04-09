@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Player, Card } from '../types/GameTypes'
-import CardSearch from './CardSearch/CardSearch'
+import { Player, Card } from '../../types/GameTypes'
+import CardSearch from '../CardSearch/CardSearch'
+import './TurnControls.css'
 
 interface TurnControlsProps {
   activePlayer: Player | null
@@ -29,6 +30,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
+  const [selectedCards, setSelectedCards] = useState<Card[]>([])
 
   if (!activePlayer) return null
 
@@ -41,9 +43,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     setIsRevealTurn(true)
     setIsCardSelectionOpen(true)
   }
+  const handleEndTurn = () => {
+    setSelectedCards([])
+    onEndTurn(activePlayer.id)
+  }
 
   const handleCardSelection = (selectedCards: Card[]) => {
     setIsCardSelectionOpen(false)
+    setSelectedCards(selectedCards)
     if (isRevealTurn) {
       onReveal(activePlayer.id, selectedCards.map(card => card.id))
     } else if (selectedCards.length === 1) {
@@ -54,16 +61,23 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   return (
     <div className="turn-controls">
       <div className="active-player-info">
-        Active Player: {activePlayer.leader.name}
+        <div className={`color-indicator ${activePlayer.color}`}></div>
+        {activePlayer.leader.name}
+      </div>
+      <div className="selected-cards">
+        {selectedCards.length > 0 && (
+          <div>
+            {selectedCards.map(card => card.name).join(', ')}
+          </div>
+        )}
+        {selectedCards.length === 0 && (
+          <div>
+            No card selected
+          </div>
+        )}
       </div>
       <div className="control-buttons">
-      <button 
-          className="play-intrigue-button"
-          onClick={handlePlayCard}
-          disabled={activePlayer.agents === 0}
-        >
-          Play Intrigue
-        </button>
+      
         <button 
           className="play-card-button"
           onClick={handlePlayCard}
@@ -74,6 +88,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         <button 
           className="reveal-turn-button"
           onClick={handleRevealTurn}
+          disabled={canEndTurn}
         >
           Reveal Turn
         </button>
@@ -87,18 +102,24 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           >
             Add Troop ({troopLimit - removableTroops})
           </button>
-          {removableTroops > 0 && (
-            <button 
-              className="remove-troop-button"
-              onClick={() => onRemoveTroop(activePlayer.id)}
-            >
-              Remove Troop
-            </button>
-          )}
+          <button 
+            className="remove-troop-button"
+            onClick={() => onRemoveTroop(activePlayer.id)}
+            disabled={!canDeployTroops || removableTroops <= 0 }
+          >
+            Remove Troop ({removableTroops})
+          </button>
         </>
         <button 
+          className="play-intrigue-button"
+          onClick={handlePlayCard}
+          disabled={activePlayer.intrigueCount === 0}
+        >
+          Play Intrigue ({activePlayer.intrigueCount})
+        </button>
+        <button 
           className="end-turn-button"
-          onClick={() => onEndTurn(activePlayer.id)}
+          onClick={handleEndTurn}
           disabled={!canEndTurn}
         >
           End Turn

@@ -259,7 +259,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         activePlayerId: nextPlayer.id,
         turns: [...state.turns, currentTurn],
         currTurn: null,
-        canEndTurn: false
+        canEndTurn: false,
+        selectedCard: null
       }
     }
     case 'ADD_TROOP': {
@@ -515,6 +516,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Move card to play area and remove from hand
       const updatedHand = player.hand.filter(c => c.id !== card.id)
+      const updatedDeck = player.deck.filter(c => c.id !== card.id)
       const updatedPlayArea = [...player.playArea, card]
 
       const canDeployTroops = card.swordIcon || space.conflictMarker || false
@@ -592,6 +594,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             ? {
                 ...updatedPlayer,
                 hand: updatedHand,
+                deck: updatedDeck,
                 playArea: updatedPlayArea,
                 selectedCard: null
               }

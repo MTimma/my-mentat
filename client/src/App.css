@@ -477,38 +477,6 @@
   align-items: center;
 }
 
-.end-turn-button,
-.add-troop-button,
-.remove-troop-button {
-  padding: 4px 8px;
-  border: 2px solid #8b4513;
-  border-radius: 4px;
-  background-color: #f4e4bc;
-  color: #8b4513;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 0.8em;
-}
-
-.end-turn-button:hover,
-.add-troop-button:hover,
-.remove-troop-button:hover {
-  background-color: #e6d5a7;
-}
-
-.remove-troop-button {
-  border-color: #d32f2f;
-  color: #d32f2f;
-}
-
-.remove-troop-button:hover {
-  background-color: #ffebee;
-}
-
-.add-troop-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 
 .imperium-section {
   display: flex;
@@ -1111,21 +1079,6 @@
   color: #333;
 }
 
-.play-intrigue-button {
-  width: 100%;
-  padding: 6px;
-  background-color: #8b4513;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.play-intrigue-button:hover {
-  background-color: #723a0f;
-}
-
 .target-dialog {
   position: fixed;
   top: 50%;
@@ -1530,57 +1483,4 @@
   background-color: rgba(0, 0, 0, 0.9);
   padding: 1rem;
   z-index: 1000;
-}
-
-.turn-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.active-player-info {
-  color: white;
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-.control-buttons {
-  display: flex;
-  gap: 1rem;
-}
-
-.control-buttons button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: bold;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.play-card-button {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.play-card-button:disabled {
-  background-color: #808080;
-  cursor: not-allowed;
-}
-
-.reveal-turn-button {
-  background-color: #2196F3;
-  color: white;
-}
-
-.end-turn-button {
-  background-color: #f44336;
-  color: white;
-}
-
-.control-buttons button:hover:not(:disabled) {
-  filter: brightness(1.1);
 }

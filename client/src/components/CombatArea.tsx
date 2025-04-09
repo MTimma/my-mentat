@@ -82,12 +82,22 @@ const CombatArea: React.FC<CombatAreaProps> = ({
         {currentConflict ? currentConflict.name : 'No Active Conflict'}
       </div>
       <div className="combat-grid">
-        {players.map((player) => (
-          <div key={player.id} className="combat-cell">
-            {renderTroops(player.id)}
-            {renderStrength(player.id)}
+          <div key={players[0].id} className="combat-cell">
+            {renderTroops(players[0].id)}
+            {renderStrength(players[0].id)}
           </div>
-        ))}
+          <div key={players[1].id} className="combat-cell">
+            {renderTroops(players[1].id)}
+            {renderStrength(players[1].id)}
+          </div>  
+          <div key={players[3].id} className="combat-cell">
+            {renderTroops(players[3].id)}
+            {renderStrength(players[3].id)}
+          </div>  
+          <div key={players[2].id} className="combat-cell">
+            {renderTroops(players[2].id)}
+            {renderStrength(players[2].id)}
+          </div>  
       </div>
       {renderRewards()}
     </div>
