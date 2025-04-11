@@ -18,14 +18,14 @@ export const STARTING_DECK: Card[] = [
   {
     id: 3,
     name: "Dagger",
-    swordIcon: true,
+    combat: 1,
     agentIcons: [AgentIcon.LANDSRAAD],
     effect: "Reveal: Add 1 combat strength"
   },
   {
     id: 4,
     name: "Dagger",
-    swordIcon: true,
+    combat: 1,
     agentIcons: [AgentIcon.LANDSRAAD],
     effect: "Reveal: Add 1 combat strength"
   },

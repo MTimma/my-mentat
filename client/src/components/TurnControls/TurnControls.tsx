@@ -44,6 +44,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     setIsCardSelectionOpen(true)
   }
   const handleEndTurn = () => {
+    setIsRevealTurn(false)
     setSelectedCards([])
     onEndTurn(activePlayer.id)
   }
@@ -68,6 +69,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         {selectedCards.length > 0 && (
           <div>
             {selectedCards.map(card => card.name).join(', ')}
+          </div>
+        )}
+        {isRevealTurn && (
+          <div>
+            Persuasion: {selectedCards.reduce((acc, card) => acc + (card.persuasion ? card.persuasion : 0), 0)}
+            Combat: {selectedCards.reduce((acc, card) => acc + (card.combat? card.combat : 0), 0)}
+            Spice: {selectedCards.reduce((acc, card) => acc + (card.resources?.spice ? card.resources.spice : 0), 0)}
+            Water: {selectedCards.reduce((acc, card) => acc + (card.resources?.water ? card.resources.water : 0), 0)}
+            Solari: {selectedCards.reduce((acc, card) => acc + (card.resources?.solari ? card.resources.solari : 0), 0)}
           </div>
         )}
         {selectedCards.length === 0 && (
@@ -129,7 +139,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       <CardSearch
         isOpen={isCardSelectionOpen}
         cards={activePlayer.deck}
-        selectionCount={isRevealTurn ? activePlayer.hand.length : 1}
+        selectionCount={isRevealTurn ? activePlayer.handCount: 1}
         onSelect={handleCardSelection}
         onCancel={() => setIsCardSelectionOpen(false)}
         isRevealTurn={isRevealTurn}

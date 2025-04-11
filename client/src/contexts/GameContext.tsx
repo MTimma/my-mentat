@@ -32,10 +32,10 @@ type GameAction =
   | { type: 'PLAY_INTRIGUE'; cardId: number; playerId: number; targetPlayerId?: number }
   | { type: 'GAIN_INFLUENCE'; playerId: number; faction: FactionType; amount: number }
   | { type: 'ACQUIRE_CARD'; playerId: number; cardId: number }
-  | { type: 'DRAW_CARD'; playerId: number }
-  | { type: 'GAIN_RESOURCE'; playerId: number; resource: 'spice' | 'water' | 'solari'; amount: number }
-  | { type: 'START_COMBAT' }
-  | { type: 'ADD_COMBAT_STRENGTH'; playerId: number; amount: number }
+  // | { type: 'DRAW_CARD'; playerId: number }
+  // | { type: 'GAIN_RESOURCE'; playerId: number; resource: 'spice' | 'water' | 'solari'; amount: number }
+  // | { type: 'START_COMBAT' }
+  // | { type: 'ADD_COMBAT_STRENGTH'; playerId: number; amount: number }
   | { type: 'PLAY_COMBAT_INTRIGUE'; playerId: number; cardId: number }
   | { type: 'RESOLVE_COMBAT' }
   | { type: 'START_COMBAT_PHASE' }
@@ -235,15 +235,39 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       const player = state.players.find(p => p.id === playerId)
       if (!player) return state
-
-      if (!state.selectedCard) return state
-
-      const currentIndex = state.players.findIndex(p => p.id === playerId)
-      const nextIndex = (currentIndex + 1) % state.players.length
-      const nextPlayer = state.players[nextIndex]
-
+      if (!state.selectedCard && state.currTurn?.type !== TurnType.REVEAL) return state
       const currentTurn = state.currTurn
       if (!currentTurn) return state
+      if (!state.players.find(p => !p.revealed)) {
+        // All players have revealed
+        return {
+          ...state,
+          players: state.players.map(p =>
+            p.id === playerId
+              ? {
+                  ...p,
+                  selectedCard: null
+                }
+              : p
+          ),
+          activePlayerId: 0,
+          turns: [...state.turns, currentTurn],
+          currTurn: null,
+          canEndTurn: false,
+          selectedCard: null
+        }
+      }
+
+      const currentIndex = state.players.findIndex(p => p.id === playerId)
+      
+      let nextIndex = (currentIndex + 1) % state.players.length
+      let nextPlayer = state.players[nextIndex]
+      while(nextPlayer.revealed) {
+        nextIndex = (nextIndex + 1) % state.players.length
+        nextPlayer = state.players[nextIndex]
+      }
+
+      
 
       
       return {
@@ -521,16 +545,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       const canDeployTroops = card.swordIcon || space.conflictMarker || false
       const troopLimit = canDeployTroops ? 2 + (space.reward?.troops || 0): 0
+      const persuasionCount = space.reward?.persuasion || 0
 
-      // Update the current turn
       const currentTurn = state.currTurn?.playerId === playerId 
         ? {
             ...state.currTurn,
             agentSpace: space.agentIcon,
             canDeployTroops: canDeployTroops,
             troopLimit: troopLimit,
-            removableTroops: 0,
-            persuasionCount: space.reward?.persuasion || 0
+            removableTroops: state.currTurn?.removableTroops || 0,
+            persuasionCount: (state.currTurn?.persuasionCount || 0) + persuasionCount
           }
         : {
             playerId,
@@ -540,7 +564,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             canDeployTroops: canDeployTroops,
             troopLimit: troopLimit,
             removableTroops: 0,
-            persuasionCount: space.reward?.persuasion || 0,
+            persuasionCount: persuasionCount,
             gainedEffects: [],
             acquiredCards: []
           }
@@ -613,15 +637,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Move selected cards to play area
       const revealedCards = cardIds
-        .map(id => player.hand.find(card => card.id === id))
+        .map(id => player.deck.find(card => card.id === id))
         .filter((card): card is Card => card !== undefined)
 
-      const updatedHand = player.hand.filter(card => !cardIds.includes(card.id))
+      const updatedDeck = player.deck.filter(card => !cardIds.includes(card.id))
       const updatedPlayArea = [...player.playArea, ...revealedCards]
 
       // Calculate total persuasion and sword icons from revealed cards
       const persuasionCount = revealedCards.reduce((total, card) => total + (card.persuasion || 0), 0)
-      const swordCount = revealedCards.filter(card => card.swordIcon).length
+      const swordCount = revealedCards.reduce((total, card) => total + (card.combat || 0), 0)
+      const spiceCount = revealedCards.reduce((total, card) => total + (card.resources?.spice || 0), 0)
+      const waterCount = revealedCards.reduce((total, card) => total + (card.resources?.water || 0), 0)
+      const solariCount = revealedCards.reduce((total, card) => total + (card.resources?.solari || 0), 0)
 
       // Update combat strength if player has troops in combat
       const hasTroopsInCombat = (state.combatTroops[playerId] || 0) > 0
@@ -630,13 +657,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         : state.combatStrength
 
       // Create or update the current turn
-      const currentTurn = {
-        playerId,
-        type: TurnType.REVEAL,
-        persuasionCount,
-        gainedEffects: [],
-        acquiredCards: []
-      }
+      const currentTurn = state.currTurn?.playerId === playerId 
+        ? {
+            ...state.currTurn,
+            agentSpace: undefined,
+            canDeployTroops: undefined,
+            troopLimit: 2,
+            removableTroops: state.currTurn?.removableTroops || 0,
+            persuasionCount: (state.currTurn?.persuasionCount || 0) + persuasionCount,
+          }
+        : {
+            playerId,
+            type: TurnType.REVEAL,
+            cardId: undefined,
+            agentSpace: undefined,
+            canDeployTroops: undefined,
+            troopLimit: 2,
+            removableTroops: 0,
+            persuasionCount: persuasionCount,
+            gainedEffects: [],
+            acquiredCards: []
+          }
 
       return {
         ...state,
@@ -644,10 +685,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           p.id === playerId
             ? {
                 ...p,
-                hand: updatedHand,
+                deck: updatedDeck,
                 playArea: updatedPlayArea,
                 selectedCard: null,
-                persuasion: persuasionCount
+                handCount: 0,
+                persuasion: p.persuasion + persuasionCount,
+                spice: p.spice + spiceCount,
+                water: p.water + waterCount,
+                solari: p.solari + solariCount,
+                revealed: true
               }
             : p
         ),

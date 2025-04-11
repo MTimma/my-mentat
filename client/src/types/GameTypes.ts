@@ -76,6 +76,7 @@ export interface Player {
   hasSwordmaster: boolean
   hasHighCouncilSeat: boolean
   handCount: number
+  revealed: boolean
   intrigueCount: number
   intrigueCards: IntrigueCard[]
   hand: Card[]
@@ -132,6 +133,7 @@ export interface Card {
   id: number
   name: string
   persuasion?: number
+  combat?: number
   swordIcon?: boolean
   resources?: {
     spice?: number

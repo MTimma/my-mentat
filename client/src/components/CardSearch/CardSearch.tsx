@@ -20,7 +20,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
   selectionCount
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null)
+  const [selectedCards, setSelectedCards] = useState<Card[]>([])
 
   const filteredCards = useMemo(() => {
     if (!searchTerm) return cards
@@ -47,20 +47,26 @@ const CardSearch: React.FC<CardSearchProps> = ({
 
   const handleCardClick = (card: Card) => {
     if (!isRevealTurn) {
-      setSelectedCard(card)
+      setSelectedCards([card])
+    } else {
+      if (selectedCards.find(c => c.id === card.id)) {
+        setSelectedCards(selectedCards.filter(c => c.id !== card.id))
+      } else if (selectedCards.length < selectionCount) {
+        setSelectedCards([...selectedCards, card])
+      }
     }
   }
 
   const handleConfirm = () => {
-    if (selectedCard) {
-      onSelect([selectedCard])
-      setSelectedCard(null)
+    if (selectedCards.length === selectionCount) {
+      onSelect(selectedCards)
+      setSelectedCards([])
       setSearchTerm('')
     }
   }
 
   const handleCancel = () => {
-    setSelectedCard(null)
+    setSelectedCards([])
     setSearchTerm('')
     onCancel()
   }
@@ -82,7 +88,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
           {filteredCards.map(card => (
             <div
               key={card.id}
-              className={`card ${selectedCard?.id === card.id ? 'selected' : ''}`}
+              className={`card ${selectedCards?.find(c => c.id === card.id) ? 'selected' : ''}`}
               onClick={() => handleCardClick(card)}
             >
               <div className="card-header">
@@ -115,7 +121,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
           <button onClick={handleCancel}>Cancel</button>
           <button 
             onClick={handleConfirm}
-            disabled={!selectedCard}
+            disabled={selectedCards.length !== selectionCount}
           >
             Confirm
           </button>

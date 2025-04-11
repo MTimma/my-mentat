@@ -31,6 +31,9 @@ const GameContent = () => {
 
   const handleEndTurn = (playerId: number) => {
     dispatch({ type: 'END_TURN', playerId })
+    if(!gameState.players.find(p => !p.revealed)) {
+      dispatch({ type: 'START_COMBAT_PHASE' })
+    }
   }
 
   const handleAddTroop = (playerId: number) => {
@@ -193,7 +196,8 @@ function App() {
             hasSwordmaster: false,
             playArea: [],
             persuasion: 0,
-            victoryPoints: 0
+            victoryPoints: 0,
+            revealed: false
           }))
         }}>
           <GameContent />
