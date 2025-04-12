@@ -9,7 +9,7 @@ import { useGame } from './contexts/GameContext'
 import GameSetup from './components/GameSetup'
 import DeckSetup from './components/DeckSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup,Card, Leader } from './types/GameTypes'
+import { PlayerSetup,Card, Leader, FactionType } from './types/GameTypes'
 import { STARTING_DECK } from './data/cards'
 import TurnControls from './components/TurnControls/TurnControls'
 
@@ -18,7 +18,6 @@ const GameContent = () => {
     gameState, 
     dispatch,
     currentConflict,
-    imperiumRow
   } = useGame()
 
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
@@ -62,7 +61,7 @@ const GameContent = () => {
     const player = gameState.players.find(p => p.id === playerId)
     if (!gameState.selectedCard || !player) return null
     const selectedCard = player.deck.find(c => c.id === gameState.selectedCard)
-    return selectedCard?.agentSpaceTypes || null
+    return selectedCard?.agentIcons || null
   }
 
   return (
@@ -75,7 +74,15 @@ const GameContent = () => {
         />
       </div>
       <div className="imperium-row-container">
-        <ImperiumRow cards={imperiumRow} persuasion={activePlayer?.persuasion || 0} onAcquireArrakisLiaison={handleAcquireArrakisLiaison} onAcquireSpiceMustFlow={handleAcquireSpiceMustFlow} onAcquireCard={handleAcquireCard} />
+        <ImperiumRow 
+        canAcquire={gameState.canAcquireIR}
+        cards={gameState.imperiumRow} 
+        alCount={gameState.arrakisLiaisonDeck.length} 
+        smfCount={gameState.spiceMustFlowDeck.length} 
+        persuasion={activePlayer?.persuasion || 0} 
+        onAcquireArrakisLiaison={handleAcquireArrakisLiaison} 
+        onAcquireSpiceMustFlow={handleAcquireSpiceMustFlow} 
+        onAcquireCard={handleAcquireCard} />
       </div>
       <div className="main-area">
         <GameBoard 
@@ -189,7 +196,7 @@ function App() {
       {gameState === 'game' && (
         <GameProvider initialState={{
           players: playerSetups.map((setup, index) => ({
-            id: index + 1,
+            id: index,
             leader: setup.leader,
             color: setup.color,
             spice: 0,
@@ -198,20 +205,27 @@ function App() {
             troops: 3,
             combatValue: 0,
             agents: 2,
-            intrigueCount: 0,
             handCount: 5,
             hand: setup.startingHand || [],
+            intrigueCount: 0,
             intrigueCards: [],
             deck: setup.deck|| [],
             discardPile: [],
+            trash: [],
             hasHighCouncilSeat: false,
             hasSwordmaster: false,
             playArea: [],
             persuasion: 0,
             victoryPoints: 0,
             revealed: false
-          }))
-        }}>
+          })),
+        factionInfluence:{
+          [FactionType.EMPEROR]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
+          [FactionType.SPACING_GUILD]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
+          [FactionType.BENE_GESSERIT]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
+          [FactionType.FREMEN]: Object.fromEntries(playerSetups.map((p, i) => [i, 0]))
+        }
+      }}>
           <GameContent />
         </GameProvider>
       )}

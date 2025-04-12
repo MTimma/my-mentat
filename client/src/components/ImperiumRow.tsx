@@ -3,14 +3,17 @@ import { Card } from '../types/GameTypes'
 
 interface ImperiumRowProps {
   cards: Card[]
+  canAcquire: boolean
   persuasion: number
+  alCount: number
+  smfCount: number
   onAcquireArrakisLiaison: () => void
   onAcquireSpiceMustFlow: () => void
   onAcquireCard: (cardId: number) => void
 }
 
 
-const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, persuasion, onAcquireArrakisLiaison, onAcquireSpiceMustFlow, onAcquireCard }) => {
+const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion, alCount, smfCount, onAcquireArrakisLiaison, onAcquireSpiceMustFlow, onAcquireCard }) => {
   return (
     <div className="imperium-section">
       <div className="imperium-row">
@@ -22,7 +25,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, persuasion, onAcquireA
             </div>
             <div className="card-content">
               <div className="agent-placement">
-                {card.agentSpaceTypes?.map((area, index) => (
+                {card.agentIcons?.map((area, index) => (
                   <div 
                     key={index} 
                     className={`placement-dot ${area}`}
@@ -34,7 +37,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, persuasion, onAcquireA
             </div>
             <button 
               onClick={() => onAcquireCard?.(card.id)} 
-              disabled={!!(card.cost && card.cost > persuasion)}
+              disabled={!!(card.cost && card.cost > persuasion) || !canAcquire}
             >
               Acquire
             </button>
@@ -45,9 +48,12 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, persuasion, onAcquireA
         <div className="imperium-card fixed-card">
           <h4>Arrakis Liaison</h4>
           <div className="persuasion-cost">2💰</div>
+          <div className="count-display">
+            Count: {alCount}
+          </div>
           <button 
               onClick={() => onAcquireArrakisLiaison()} 
-              disabled={!!(2 > persuasion)}
+              disabled={!!(2 > persuasion) || !canAcquire || alCount === 0}
             >
               Acquire
             </button>
@@ -55,9 +61,12 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, persuasion, onAcquireA
         <div className="imperium-card fixed-card">
           <h4>The Spice Must Flow</h4>
           <div className="persuasion-cost">9💰</div>
+          <div className="count-display">
+            Count: {smfCount}
+          </div>
           <button 
               onClick={() => onAcquireSpiceMustFlow()} 
-              disabled={!!(9 > persuasion)}
+              disabled={!!(9 > persuasion) || !canAcquire || smfCount === 0}
             >
               Acquire
             </button>

@@ -83,6 +83,7 @@ export interface Player {
   deck: Card[]
   discardPile: Card[]
   playArea: Card[]
+  trash: Card[]
 }
 
 export enum AgentIcon {
@@ -93,6 +94,11 @@ export enum AgentIcon {
   FREMEN = 'fremen',
   SPACING_GUILD = 'spacing-guild',
   BENE_GESSERIT = 'bene-gesserit'
+}
+
+export interface InfluenceAmount {
+  faction: FactionType
+  amount: number
 }
 
 export interface SpaceProps {
@@ -108,10 +114,7 @@ export interface SpaceProps {
     intrigueCards?: number
     persuasion?: number
   }
-  influence?: {
-    faction: FactionType
-    amount: number
-  }
+  influence?: InfluenceAmount
   maxAgents?: number
   occupiedBy?: number[]
   conflictMarker: boolean
@@ -121,37 +124,95 @@ export interface SpaceProps {
     solari?: number
   }
   bonusSpice?: number
-  requiresInfluence?: {
-    faction: FactionType
-    amount: number
-  }
+  requiresInfluence?: InfluenceAmount
   controlBonus?: 'spice' | 'solari'
   specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'sellMelange' | 'highCouncil'
+}
+
+export interface PlayEffect {
+  requirement?: {
+    influence?: InfluenceAmount
+    alliance?: FactionType
+    bond?: FactionType
+  }
+  cost?: {
+    spice?: number
+    water?: number
+    solari?: number
+    trashThisCard?: boolean
+    discard?: number
+    influence?: InfluenceAmount
+  }
+  gain: {
+    spice?: number
+    water?: number
+    solari?: number
+    troops?: number
+    drawCards?: number
+    victoryPoints?: number
+    intrigueCards?: number
+    trash?: number
+    trashThisCard?: boolean
+    swordIcon?: boolean
+    retreatTroops?: number
+    deployTroops?: number
+  }
+  effectOR?: boolean
+}
+
+export interface RevealEffect {
+  requirement?: {
+    influence?: InfluenceAmount
+    alliance?: FactionType
+    bond?: FactionType
+  }
+  cost?: {
+    spice?: number
+    water?: number
+    solari?: number
+    trashThisCard?: boolean
+    discard?: number
+    influence?: InfluenceAmount
+    troops?: number
+    retreatTroops?: number
+    retreatUnits?: number
+    deployTroops?: number
+  }
+  gain: {
+    persuasion?: number
+    combat?: number
+    spice?: number
+    water?: number
+    solari?: number
+    troops?: number
+    drawCards?: number
+    victoryPoints?: number
+    intrigueCards?: number
+    trash?: number
+    trashThisCard?: boolean
+    retreatTroops?: number
+    retreatUnits?: number
+    deployTroops?: number
+  }
+  effectOR?: boolean
 }
 
 export interface Card {
   id: number
   name: string
+  faction?: FactionType
   cost?: number
-  persuasion?: number
-  combat?: number
-  swordIcon?: boolean
-  resources?: {
-    spice?: number
-    water?: number
-    solari?: number
-    troops?: number
-  }
-  effect?: string
   agentIcons: AgentIcon[]
-  agentSpaceTypes?: AgentIcon[]
-  fremenBond?: boolean
-  acquireEffect?: string
-  influenceRequirement?: {
-    faction: FactionType
-    amount: number
+  playEffect?: PlayEffect[]
+  revealEffect?: RevealEffect[]
+  acquireEffect?: {
+    victoryPoints?: number,
+    spice?: number,
+    troops?: number,
+    trash?: number,
+    influence?: InfluenceAmount[],
+    water?: number,
   }
-  allianceRequirement?: FactionType
 }
 
 export enum FactionType {
@@ -253,6 +314,12 @@ export interface GameState {
   mentatOwner: number | null
   factionInfluence: Record<FactionType, Record<number, number>>
   factionAlliances: Record<FactionType, number | null>
+  spiceMustFlowDeck: Card[]
+  arrakisLiaisonDeck: Card[]
+  foldspaceDeck: Card[]
+  imperiumRowDeck: Card[]
+  imperiumRow: Card[]
+  intrigueDeck: IntrigueCard[]
   controlMarkers: {
     arrakeen: number | null
     carthag: number | null
@@ -267,4 +334,5 @@ export interface GameState {
   occupiedSpaces: Record<number, number[]>
   playArea: Record<number, Card[]>
   canEndTurn: boolean
+  canAcquireIR: boolean
 }

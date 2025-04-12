@@ -11,10 +11,13 @@ import {
   IntrigueCardType,
   TurnType,
   SpaceProps,
-  GamePhase
+  GamePhase,
+  RevealEffect
 } from '../types/GameTypes'
 import { boardSpaces } from '../data/boardSpaces'
-
+import { ARRAKIS_LIAISON_DECK } from '../data/cards'
+import { SPICE_MUST_FLOW_DECK } from '../data/cards'
+import { FOLDSPACE_DECK } from '../data/cards'
 interface GameContextType {
   gameState: GameState
   currentConflict: ConflictCard | null
@@ -56,10 +59,10 @@ export const useGame = () => {
 }
 
 const initialGameState: GameState = {
-  startingPlayerId: 1,
+  startingPlayerId: 0,
   selectedCard: null,
   currentRound: 1,
-  activePlayerId: 1,
+  activePlayerId: 0,
   phase: GamePhase.ROUND_START,
   currTurn: null,
   mentatOwner: null,
@@ -75,6 +78,12 @@ const initialGameState: GameState = {
     [FactionType.BENE_GESSERIT]: null,
     [FactionType.FREMEN]: null
   },
+  spiceMustFlowDeck: SPICE_MUST_FLOW_DECK,
+  arrakisLiaisonDeck: ARRAKIS_LIAISON_DECK,
+  foldspaceDeck: FOLDSPACE_DECK,
+  imperiumRowDeck: [],
+  imperiumRow: [],
+  intrigueDeck: [],
   controlMarkers: {
     arrakeen: null,
     carthag: null,
@@ -88,7 +97,8 @@ const initialGameState: GameState = {
   turns: [],
   occupiedSpaces: {},
   playArea: {} as Record<number, Card[]>,
-  canEndTurn: false
+  canEndTurn: false,
+  canAcquireIR: false
 }
 
 function calculateCombatStrength(
@@ -223,6 +233,30 @@ function handleIntrigueEffect(
   return newState
 }
 
+function requirementSatisfied(effect: RevealEffect, state: GameState, playerId: number): boolean {
+  if(effect?.requirement) {
+    const req = effect.requirement
+    if(req.influence) {
+      const factionType = req.influence.faction;
+      const factionAmount = req.influence.amount;
+      if(state.factionInfluence[factionType]?.[playerId] < factionAmount) {
+        return false;
+      }
+    }
+    if(req.alliance) {
+      if(state.factionAlliances[req.alliance] !== playerId) {
+        return false;
+      }
+    }
+    if(req.bond) {
+      if(!state.playArea[playerId].find(card => card.faction === req.bond)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'START_ROUND':
@@ -247,7 +281,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             p.id === playerId
               ? {
                   ...p,
-                  selectedCard: null
+                  selectedCard: null,
+                  discardPile: [...p.discardPile, ...p.playArea]
                 }
               : p
           ),
@@ -255,29 +290,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           turns: [...state.turns, currentTurn],
           currTurn: null,
           canEndTurn: false,
+          canAcquireIR: false,
           selectedCard: null
         }
       }
-
-      const currentIndex = state.players.findIndex(p => p.id === playerId)
       
-      let nextIndex = (currentIndex + 1) % state.players.length
+      let nextIndex = (playerId + 1) % state.players.length
       let nextPlayer = state.players[nextIndex]
       while(nextPlayer.revealed) {
         nextIndex = (nextIndex + 1) % state.players.length
         nextPlayer = state.players[nextIndex]
       }
 
-      
-
-      
       return {
         ...state,
         players: state.players.map(p =>
           p.id === playerId
             ? {
                 ...p,
-                selectedCard: null
+                selectedCard: null,
+                discardPile: [...p.discardPile, ...p.playArea]
               }
             : p
         ),
@@ -285,7 +317,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         turns: [...state.turns, currentTurn],
         currTurn: null,
         canEndTurn: false,
-        selectedCard: null
+        selectedCard: null,
+        canAcquireIR: false
       }
     }
     case 'ADD_TROOP': {
@@ -544,7 +577,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedDeck = player.deck.filter(c => c.id !== card.id)
       const updatedPlayArea = [...player.playArea, card]
 
-      const canDeployTroops = card.swordIcon || space.conflictMarker || false
+      const canDeployTroops = space.conflictMarker || false
       const troopLimit = canDeployTroops ? 2 + (space.reward?.troops || 0): 0
       const persuasionCount = space.reward?.persuasion || 0
 
@@ -583,10 +616,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             updatedPlayer.agents += 1
             break
 
-          case 'foldspace':
-            // TODO: Implement Foldspace card acquisition from Reserve
-
+          case 'foldspace': {
+            const card = state.foldspaceDeck.pop()
+            if (card) {
+              updatedPlayer.discardPile.push(card)
+            }
             break
+          }
 
           case 'secrets':
             state.players.forEach(opponent => {
@@ -644,12 +680,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedDeck = player.deck.filter(card => !cardIds.includes(card.id))
       const updatedPlayArea = [...player.playArea, ...revealedCards]
 
-      // Calculate total persuasion and sword icons from revealed cards
-      const persuasionCount = revealedCards.reduce((total, card) => total + (card.persuasion || 0), 0)
-      const swordCount = revealedCards.reduce((total, card) => total + (card.combat || 0), 0)
-      const spiceCount = revealedCards.reduce((total, card) => total + (card.resources?.spice || 0), 0)
-      const waterCount = revealedCards.reduce((total, card) => total + (card.resources?.water || 0), 0)
-      const solariCount = revealedCards.reduce((total, card) => total + (card.resources?.solari || 0), 0)
+      // Calculate reveal effects
+      let persuasionCount = 0
+      let swordCount = 0
+      let spiceCount = 0
+      let waterCount = 0
+      let solariCount = 0
+
+      revealedCards.forEach(card => {
+        card.revealEffect?.filter((effect:RevealEffect) => {
+            if(effect.cost) {
+              return false;
+            }
+            return requirementSatisfied(effect, state, playerId);
+          })
+          .forEach(effect => {
+            persuasionCount += effect.gain?.persuasion || 0
+            swordCount += effect.gain?.combat || 0
+            spiceCount += effect.gain?.spice || 0
+            waterCount += effect.gain?.water || 0
+            solariCount += effect.gain?.solari || 0
+          })
+      })
 
       // Update combat strength if player has troops in combat
       const hasTroopsInCombat = (state.combatTroops[playerId] || 0) > 0
@@ -661,9 +713,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const currentTurn = state.currTurn?.playerId === playerId 
         ? {
             ...state.currTurn,
+            type: TurnType.REVEAL,
+            cardId: undefined,
             agentSpace: undefined,
-            canDeployTroops: undefined,
-            troopLimit: 2,
+            canDeployTroops: state.currTurn?.canDeployTroops || false,
+            troopLimit: state.currTurn?.troopLimit || 2,
             removableTroops: state.currTurn?.removableTroops || 0,
             persuasionCount: (state.currTurn?.persuasionCount || 0) + persuasionCount,
           }
@@ -703,9 +757,38 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         canEndTurn: true
       }
     }
+    case 'ACQUIRE_AL': {
+      const { playerId } = action
+      const player = state.players.find(p => p.id === playerId)
+      if (!player) return state
+      if (state.arrakisLiaisonDeck.length === 0) return state
+      if (player.persuasion < 2) return state
+      player.discardPile.push(state.arrakisLiaisonDeck.pop() as Card)
+      player.persuasion -= 2
+      return {
+        ...state,
+        players: state.players.map(p => p.id === playerId ? { ...p, discardPile: player.discardPile, persuasion: player.persuasion } : p)
+      }
+    }
+    case 'ACQUIRE_SMF': {
+      const { playerId } = action
+      const player = state.players.find(p => p.id === playerId)
+      if (!player) return state
+      if (state.spiceMustFlowDeck.length === 0) return state
+      if (player.persuasion < 9) return state
+      const card = state.spiceMustFlowDeck.pop() as Card
+      player.discardPile.push(card)
+      player.victoryPoints += card.acquireEffect?.victoryPoints || 0
+      player.persuasion -= 9
+      return {
+        ...state,
+        players: state.players.map(p => p.id === playerId ? { ...p,discardPile: player.discardPile, persuasion: player.persuasion } : p)
+      }
+    }
     default:
       return state
   }
+  
 }
 
 interface GameProviderProps {
