@@ -30,7 +30,7 @@ type GameAction =
   | { type: 'ADD_TROOP'; playerId: number }
   | { type: 'REMOVE_TROOP'; playerId: number }
   | { type: 'PLAY_INTRIGUE'; cardId: number; playerId: number; targetPlayerId?: number }
-  | { type: 'GAIN_INFLUENCE'; playerId: number; faction: FactionType; amount: number }
+  // | { type: 'GAIN_INFLUENCE'; playerId: number; faction: FactionType; amount: number }
   | { type: 'ACQUIRE_CARD'; playerId: number; cardId: number }
   // | { type: 'DRAW_CARD'; playerId: number }
   // | { type: 'GAIN_RESOURCE'; playerId: number; resource: 'spice' | 'water' | 'solari'; amount: number }
@@ -43,7 +43,8 @@ type GameAction =
   | { type: 'DRAW_INTRIGUE'; playerId: number }
   | { type: 'PLACE_AGENT'; playerId: number; spaceId: number }
   | { type: 'REVEAL_CARDS'; playerId: number; cardIds: number[] }
-
+  | { type: 'ACQUIRE_AL'; playerId: number }
+  | { type: 'ACQUIRE_SMF'; playerId: number }
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
 export const useGame = () => {

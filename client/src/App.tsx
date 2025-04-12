@@ -21,6 +21,8 @@ const GameContent = () => {
     imperiumRow
   } = useGame()
 
+  const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
+
   const handleCardSelect = (playerId: number, cardId: number) => {
     dispatch({ type: 'PLAY_CARD', playerId, cardId })
   }
@@ -44,14 +46,24 @@ const GameContent = () => {
     dispatch({ type: 'REMOVE_TROOP', playerId })
   }
 
+  const handleAcquireCard = (cardId: number) => {
+    dispatch({ type: 'ACQUIRE_CARD', playerId: activePlayer?.id || 0, cardId })
+  }
+
+  const handleAcquireArrakisLiaison = () => {
+    dispatch({ type: 'ACQUIRE_AL', playerId: activePlayer?.id || 0 })
+  }
+
+  const handleAcquireSpiceMustFlow = () => {
+    dispatch({ type: 'ACQUIRE_SMF', playerId: activePlayer?.id || 0 })
+  }
+
   const getSelectedCardPlacement = (playerId: number) => {
     const player = gameState.players.find(p => p.id === playerId)
     if (!gameState.selectedCard || !player) return null
     const selectedCard = player.deck.find(c => c.id === gameState.selectedCard)
     return selectedCard?.agentSpaceTypes || null
   }
-
-  const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
 
   return (
     <div className="game-container">
@@ -63,7 +75,7 @@ const GameContent = () => {
         />
       </div>
       <div className="imperium-row-container">
-        <ImperiumRow cards={imperiumRow} />
+        <ImperiumRow cards={imperiumRow} persuasion={activePlayer?.persuasion || 0} onAcquireArrakisLiaison={handleAcquireArrakisLiaison} onAcquireSpiceMustFlow={handleAcquireSpiceMustFlow} onAcquireCard={handleAcquireCard} />
       </div>
       <div className="main-area">
         <GameBoard 

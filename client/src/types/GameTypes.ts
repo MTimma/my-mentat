@@ -132,6 +132,7 @@ export interface SpaceProps {
 export interface Card {
   id: number
   name: string
+  cost?: number
   persuasion?: number
   combat?: number
   swordIcon?: boolean
