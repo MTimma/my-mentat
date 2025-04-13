@@ -38,7 +38,9 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
         <div>Water: {player.water}</div>
         <div>Solari: {player.solari}</div>
         <div>Troops: {player.troops}</div>
+        <div>Persuasion: {player.persuasion}</div>
         <div>Combat: {player.combatValue}</div>
+        <div>Intrigue: {player.intrigueCount}</div>
         <div className={`agents ${player.agents === 0 ? 'depleted' : ''}`}>
           Agents: {player.agents}
         </div>

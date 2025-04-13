@@ -80,6 +80,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             Solari: {selectedCards.reduce((acc, card) => acc + (card.resources?.solari ? card.resources.solari : 0), 0)}
           </div>
         )}
+        {/* TODO: add payment and OR choices */}
         {selectedCards.length === 0 && (
           <div>
             No card selected

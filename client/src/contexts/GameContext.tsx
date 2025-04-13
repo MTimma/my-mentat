@@ -403,32 +403,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'PLAY_COMBAT_INTRIGUE': {
       const { playerId, cardId } = action
-      const player = state.players.find(p => p.id === playerId)
-      const card = player?.intrigueCards.find(c => c.id === cardId)
+      const card = state.intrigueDeck.find(c => c.id === cardId)
 
       if (!card || card.type !== IntrigueCardType.COMBAT) return state
 
-
-      const newState = {
-        ...state,
-        combatPasses: []
-      }
-
-      const effect = (typeof card.effect === 'string') ? JSON.parse(card.effect) : card.effect
+      const newState = {...state}
+      const effect = card.effect
+      // TODO check effect requirements and timing
       if (effect.strengthBonus) {
         newState.combatStrength[playerId] = 
           (newState.combatStrength[playerId] || 0) + effect.strengthBonus
       }
 
-      // Remove card from player's hand
       newState.players = newState.players.map(p =>
         p.id === playerId
           ? {
               ...p,
-              intrigueCards: p.intrigueCards.filter(c => c.id !== cardId)
+              intrigueCount: p.intrigueCount - 1
             }
           : p
       )
+      newState.intrigueDeck = newState.intrigueDeck.filter(c => c.id !== cardId)
+      newState.intrigueDiscard.push(card)
 
       return newState
     }

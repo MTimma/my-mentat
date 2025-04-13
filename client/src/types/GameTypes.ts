@@ -197,6 +197,42 @@ export interface RevealEffect {
   effectOR?: boolean
 }
 
+export interface Gain {
+  name: string
+  amount: number
+}
+
+export interface CardGain extends Gain {
+  cardId: number
+}
+
+export interface FieldGain extends Gain {
+  fieldId: number
+}
+
+export interface IntrigueGain extends Gain {
+  intrigueId: number
+}
+
+export interface ConflictGain extends Gain {
+  conflictId: number
+}
+
+export interface Gains {
+  persuasionGains?: Gain[]
+  combatGains?: Gain[]
+  spiceGains?: Gain[]
+  waterGains?: Gain[]
+  solariGains?: Gain[]
+  troopsGains?: Gain[]
+  drawGains?: Gain[]
+  victoryPointsGains?: Gain[]
+  intrigueCardsGains?: Gain[]
+  trashGains?: Gain[]
+  influenceGains?: Gain[]
+
+}
+
 export interface Card {
   id: number
   name: string
@@ -321,6 +357,7 @@ export interface GameState {
   imperiumRowDeck: Card[]
   imperiumRow: Card[]
   intrigueDeck: IntrigueCard[]
+  intrigueDiscard: IntrigueCard[]
   controlMarkers: {
     arrakeen: number | null
     carthag: number | null
@@ -336,4 +373,5 @@ export interface GameState {
   playArea: Record<number, Card[]>
   canEndTurn: boolean
   canAcquireIR: boolean
+  gains: Gains
 }

@@ -14,8 +14,8 @@ import { STARTING_DECK } from './data/cards'
 import TurnControls from './components/TurnControls/TurnControls'
 
 const GameContent = () => {
-  const { 
-    gameState, 
+  const {
+    gameState,
     dispatch,
     currentConflict,
   } = useGame()
@@ -217,7 +217,8 @@ function App() {
             playArea: [],
             persuasion: 0,
             victoryPoints: 0,
-            revealed: false
+            revealed: false,
+            gains: {}
           })),
         factionInfluence:{
           [FactionType.EMPEROR]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
