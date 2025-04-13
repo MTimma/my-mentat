@@ -277,6 +277,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         // All players have revealed
         return {
           ...state,
+          phase: GamePhase.COMBAT,
+          combatPasses: [],
           players: state.players.map(p =>
             p.id === playerId
               ? {
@@ -378,12 +380,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       return newState
     }
-    case 'START_COMBAT_PHASE':
+    case 'START_COMBAT_PHASE': {
+      state.players.forEach(p => {if(p.intrigueCount<1){state.combatPasses.push(p.id)}})
+      const nextActive = state.players.find(p => !state.combatPasses.find(id => id === p.id))
+      if(!nextActive) {
+        return {
+          ...state,
+          phase: GamePhase.COMBAT_REWARDS
+        }
+      }
       return {
         ...state,
         phase: GamePhase.COMBAT,
-        combatPasses: []
+        activePlayerId: nextActive.id,
       }
+    }
     case 'PASS_COMBAT': {
       return {
         ...state,

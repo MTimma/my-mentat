@@ -292,6 +292,7 @@ export enum GamePhase {
   ROUND_START = 'round-start',
   PLAYER_TURNS = 'player-turns',
   COMBAT = 'combat',
+  COMBAT_REWARDS = 'combat-rewards',
   MAKERS = 'makers',
   RECALL = 'recall'
 }
