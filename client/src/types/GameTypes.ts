@@ -129,38 +129,7 @@ export interface SpaceProps {
   specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'sellMelange' | 'highCouncil'
 }
 
-export interface PlayEffect {
-  requirement?: {
-    influence?: InfluenceAmount
-    alliance?: FactionType
-    bond?: FactionType
-  }
-  cost?: {
-    spice?: number
-    water?: number
-    solari?: number
-    trashThisCard?: boolean
-    discard?: number
-    influence?: InfluenceAmount
-  }
-  gain: {
-    spice?: number
-    water?: number
-    solari?: number
-    troops?: number
-    drawCards?: number
-    victoryPoints?: number
-    intrigueCards?: number
-    trash?: number
-    trashThisCard?: boolean
-    swordIcon?: boolean
-    retreatTroops?: number
-    deployTroops?: number
-  }
-  effectOR?: boolean
-}
-
-export interface RevealEffect {
+export interface CardEffect {
   requirement?: {
     influence?: InfluenceAmount
     alliance?: FactionType
@@ -239,8 +208,8 @@ export interface Card {
   faction?: FactionType
   cost?: number
   agentIcons: AgentIcon[]
-  playEffect?: PlayEffect[]
-  revealEffect?: RevealEffect[]
+  playEffect?: CardEffect[]
+  revealEffect?: CardEffect[]
   acquireEffect?: {
     victoryPoints?: number,
     spice?: number,
