@@ -89,6 +89,7 @@ const initialGameState: GameState = {
   imperiumRowDeck: [],
   imperiumRow: [],
   intrigueDeck: [],
+  intrigueDiscard: [],
   controlMarkers: {
     arrakeen: null,
     carthag: null,
@@ -103,7 +104,8 @@ const initialGameState: GameState = {
   occupiedSpaces: {},
   playArea: {} as Record<number, Card[]>,
   canEndTurn: false,
-  canAcquireIR: false
+  canAcquireIR: false,
+  gains: {}
 }
 
 function calculateCombatStrength(

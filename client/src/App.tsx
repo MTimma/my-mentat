@@ -123,6 +123,7 @@ const GameContent = () => {
           onRemoveTroop={handleRemoveTroop}
           removableTroops={gameState.currTurn?.removableTroops || 0}
           troopLimit={gameState.currTurn?.troopLimit || 2}
+          gains={gameState.gains}
         />
       </div>
     </div>

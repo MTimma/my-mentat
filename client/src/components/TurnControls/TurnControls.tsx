@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Player, Card } from '../../types/GameTypes'
+import { Player, Card, Gains } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import './TurnControls.css'
 
@@ -14,6 +14,7 @@ interface TurnControlsProps {
   onRemoveTroop: (playerId: number) => void
   removableTroops: number
   troopLimit: number
+  gains: Gains
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -26,7 +27,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onAddTroop,
   onRemoveTroop,
   removableTroops,
-  troopLimit
+  troopLimit,
+  gains
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -71,13 +73,13 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             {selectedCards.map(card => card.name).join(', ')}
           </div>
         )}
-        {isRevealTurn && (
+        {isRevealTurn && gains && (
           <div>
-            Persuasion: {selectedCards.reduce((acc, card) => acc + (card.persuasion ? card.persuasion : 0), 0)}
-            Combat: {selectedCards.reduce((acc, card) => acc + (card.combat? card.combat : 0), 0)}
-            Spice: {selectedCards.reduce((acc, card) => acc + (card.resources?.spice ? card.resources.spice : 0), 0)}
-            Water: {selectedCards.reduce((acc, card) => acc + (card.resources?.water ? card.resources.water : 0), 0)}
-            Solari: {selectedCards.reduce((acc, card) => acc + (card.resources?.solari ? card.resources.solari : 0), 0)}
+            Persuasion: {gains.persuasionGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
+            Combat: {gains.troopsGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
+            Spice: {gains.spiceGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
+            Water: {gains.waterGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
+            Solari: {gains.solariGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
           </div>
         )}
         {/* TODO: add payment and OR choices */}
