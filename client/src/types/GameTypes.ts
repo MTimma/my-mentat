@@ -311,13 +311,7 @@ export interface PlayerSetup {
 }
 
 export interface GameState {
-  startingPlayerId: number
-  currentRound: number
-  activePlayerId: number
-  selectedCard: number | null
   phase: GamePhase
-  currTurn: GameTurn | null
-  mentatOwner: number | null
   factionInfluence: Record<FactionType, Record<number, number>>
   factionAlliances: Record<FactionType, number | null>
   spiceMustFlowDeck: Card[]
@@ -332,15 +326,21 @@ export interface GameState {
     carthag: number | null
     imperialBasin: number | null
   }
+  history: GameState[]
+  players: Player[]
+  startingPlayerId: number
+  currentRound: number
+  mentatOwner: number | null
+  activePlayerId: number
+  gains: Gains
+  selectedCard: number | null
+  currTurn: GameTurn | null
   combatStrength: Record<number, number>
   combatTroops: Record<number, number>
   currentConflict: ConflictCard | null
-  players: Player[]
   combatPasses: number[]
-  turns: GameTurn[]
   occupiedSpaces: Record<number, number[]>
   playArea: Record<number, Card[]>
   canEndTurn: boolean
   canAcquireIR: boolean
-  gains: Gains
 }

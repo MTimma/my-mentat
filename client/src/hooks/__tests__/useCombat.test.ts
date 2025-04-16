@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react-hooks'
-import { GameProvider } from '../../contexts/GameContext'
+import { GameProvider } from '../../components/GameContext/GameContext'
 import { useCombat } from '../useCombat'
 
 describe('useCombat', () => {

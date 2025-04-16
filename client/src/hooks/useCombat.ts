@@ -1,4 +1,4 @@
-import { useGame } from '../contexts/GameContext'
+import { useGame } from '../components/GameContext/GameContext'
 import { GamePhase, CardType } from '../types/GameTypes'
 
 export function useCombat() {

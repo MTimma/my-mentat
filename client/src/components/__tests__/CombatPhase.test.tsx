@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { GameProvider } from '../../contexts/GameContext'
+import { GameProvider } from '../GameContext/GameContext'
 import CombatPhase from '../CombatPhase'
 
 const mockGameState = {

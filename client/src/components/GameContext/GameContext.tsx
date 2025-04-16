@@ -17,12 +17,14 @@ import {
   CardGain,
   FieldGain,
   IntrigueGain,
-  ConflictGain
-} from '../types/GameTypes'
-import { boardSpaces } from '../data/boardSpaces'
-import { ARRAKIS_LIAISON_DECK } from '../data/cards'
-import { SPICE_MUST_FLOW_DECK } from '../data/cards'
-import { FOLDSPACE_DECK } from '../data/cards'
+  ConflictGain,
+  Gains,
+  Player
+} from '../../types/GameTypes'
+import { boardSpaces } from '../../data/boardSpaces'
+import { ARRAKIS_LIAISON_DECK } from '../../data/cards'
+import { SPICE_MUST_FLOW_DECK } from '../../data/cards'
+import { FOLDSPACE_DECK } from '../../data/cards'
 interface GameContextType {
   gameState: GameState
   currentConflict: ConflictCard | null
@@ -100,7 +102,7 @@ const initialGameState: GameState = {
   currentConflict: null,
   players: [],
   combatPasses: [],
-  turns: [],
+  history: [],
   occupiedSpaces: {},
   playArea: {} as Record<number, Card[]>,
   canEndTurn: false,
@@ -296,11 +298,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               : p
           ),
           activePlayerId: 0,
-          turns: [...state.turns, currentTurn],
+          history: [...state.history, state],
           currTurn: null,
           canEndTurn: false,
           canAcquireIR: false,
-          selectedCard: null
+          selectedCard: null,
+          gains: {}
         }
       }
       
@@ -323,11 +326,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             : p
         ),
         activePlayerId: nextPlayer.id,
-        turns: [...state.turns, currentTurn],
+        history: [...state.history, state],
         currTurn: null,
         canEndTurn: false,
         selectedCard: null,
-        canAcquireIR: false
+        canAcquireIR: false,
+        gains: {}
       }
     }
     case 'ADD_TROOP': {
@@ -524,20 +528,20 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'PLACE_AGENT': {
       const { playerId, spaceId } = action
-      const player = state.players.find(p => p.id === playerId)
-      const card = player?.deck.find(c => c.id === state.selectedCard)
+      const updatedPlayer: Player = {...state.players.find(p => p.id === playerId)} as Player
+      const card = updatedPlayer.deck.find(c => c.id === state.selectedCard)
       const space = boardSpaces.find((s: SpaceProps) => s.id === spaceId)
 
-      if (!player || !card || !space || playerId !== state.activePlayerId || !state.selectedCard) return state
+      if (!updatedPlayer || !card || !space || playerId !== state.activePlayerId || !state.selectedCard) return state
 
       // Check if player has any agents left
-      if (player.agents <= 0) return state
+      if (updatedPlayer.agents <= 0) return state
 
       // Check if player can afford the space
       if (space.cost) {
-        if (space.cost.solari && player.solari < space.cost.solari) return state
-        if (space.cost.spice && player.spice < space.cost.spice) return state
-        if (space.cost.water && player.water < space.cost.water) return state
+        if (space.cost.solari && updatedPlayer.solari < space.cost.solari) return state
+        if (space.cost.spice && updatedPlayer.spice < space.cost.spice) return state
+        if (space.cost.water && updatedPlayer.water < space.cost.water) return state
       }
 
       // Check if space is already occupied
@@ -550,53 +554,51 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       // Deduct costs
-      const updatedPlayer = { ...player }
       if (space.cost) {
         if (space.cost.solari) updatedPlayer.solari -= space.cost.solari
         if (space.cost.spice) updatedPlayer.spice -= space.cost.spice
         if (space.cost.water) updatedPlayer.water -= space.cost.water
       }
+      const updatedGains: Gains = {...state.gains}
 
       if (space.reward) {
         if (space.reward.solari) {
-          if(!state.gains.solariGains) {
-            state.gains.solariGains = []
+          if(!updatedGains.solariGains) {
+            updatedGains.solariGains = []
           }
-          state.gains.solariGains.push({ spaceId: space.id, name: space.name, amount: space.reward.solari } as SpaceGain)
+          updatedGains.solariGains.push({ spaceId: space.id, name: space.name, amount: space.reward.solari } as SpaceGain)
           updatedPlayer.solari += space.reward.solari
         } 
         if (space.reward.spice) {
-          if(!state.gains.spiceGains) {
-            state.gains.spiceGains = []
+          if(!updatedGains.spiceGains) {
+            updatedGains.spiceGains = []
           }
-          state.gains.spiceGains.push({ spaceId: space.id, name: space.name, amount: space.reward.spice } as SpaceGain)
+          updatedGains.spiceGains.push({ spaceId: space.id, name: space.name, amount: space.reward.spice } as SpaceGain)
           updatedPlayer.spice += space.reward.spice
         }
         if (space.reward.water) {
-          if(!state.gains.waterGains) {
-            state.gains.waterGains = []
+          if(!updatedGains.waterGains) {
+            updatedGains.waterGains = []
           }
-          state.gains.waterGains.push({ spaceId: space.id, name: space.name, amount: space.reward.water } as SpaceGain)
+          updatedGains.waterGains.push({ spaceId: space.id, name: space.name, amount: space.reward.water } as SpaceGain)
           updatedPlayer.water += space.reward.water
         }
         if (space.reward.troops) {
-          if(!state.gains.troopsGains) {
-            state.gains.troopsGains = []
+          if(!updatedGains.troopsGains) {
+            updatedGains.troopsGains = []
           }
-          state.gains.troopsGains.push({ spaceId: space.id, name: space.name, amount: space.reward.troops } as SpaceGain)
+          updatedGains.troopsGains.push({ spaceId: space.id, name: space.name, amount: space.reward.troops } as SpaceGain)
           updatedPlayer.troops += space.reward.troops
         }
         if (space.reward.persuasion) {
-          if(!state.gains.persuasionGains) {
-            state.gains.persuasionGains = []
+          if(!updatedGains.persuasionGains) {
+            updatedGains.persuasionGains = []
           }
-          state.gains.persuasionGains.push({ spaceId: space.id, name: space.name, amount: space.reward.persuasion } as SpaceGain)
+          updatedGains.persuasionGains.push({ spaceId: space.id, name: space.name, amount: space.reward.persuasion } as SpaceGain)
           updatedPlayer.persuasion += space.reward.persuasion
         }
       }
-      if(state.selectedCard) {
-        const card = player.playArea.find(c => c.id === state.selectedCard)
-        if(!card) return state
+      if(card.playEffect) {
         card.playEffect?.filter((effect:CardEffect) => {
             if(effect.cost) {
               return false;
@@ -605,38 +607,37 @@ function gameReducer(state: GameState, action: GameAction): GameState {
            }).forEach(effect => {
           if(effect.gain) {
               if(effect.gain.spice) {
-                if(!state.gains.spiceGains) {
-                  state.gains.spiceGains = []
+                if(!updatedGains.spiceGains) {
+                  updatedGains.spiceGains = []
                 }
-                state.gains.spiceGains.push({ cardId: card.id, name: card.name, amount: effect.gain.spice } as CardGain)
+                updatedGains.spiceGains.push({ cardId: card.id, name: card.name, amount: effect.gain.spice } as CardGain)
                 updatedPlayer.spice += effect.gain.spice
               }
               if(effect.gain.water) {
-                if(!state.gains.waterGains) {
-                  state.gains.waterGains = []
+                if(!updatedGains.waterGains) {
+                  updatedGains.waterGains = []
                 }
-                state.gains.waterGains.push({ cardId: card.id, name: card.name, amount: effect.gain.water } as CardGain)
+                updatedGains.waterGains.push({ cardId: card.id, name: card.name, amount: effect.gain.water } as CardGain)
                 updatedPlayer.water += effect.gain.water
               }
               if(effect.gain.solari) {
-                if(!state.gains.solariGains) {
-                  state.gains.solariGains = []
+                if(!updatedGains.solariGains) {
+                  updatedGains.solariGains = []
                 }
-                state.gains.solariGains.push({ cardId: card.id, name: card.name, amount: effect.gain.solari } as CardGain)
+                updatedGains.solariGains.push({ cardId: card.id, name: card.name, amount: effect.gain.solari } as CardGain)
                 updatedPlayer.solari += effect.gain.solari
               }
               if(effect.gain.troops) {
-                if(!state.gains.troopsGains) {
-                  state.gains.troopsGains = []
+                if(!updatedGains.troopsGains) {
+                  updatedGains.troopsGains = []
                 }
-                state.gains.troopsGains.push({ cardId: card.id, name: card.name, amount: effect.gain.troops } as CardGain)
+                updatedGains.troopsGains.push({ cardId: card.id, name: card.name, amount: effect.gain.troops } as CardGain)
                 updatedPlayer.troops += effect.gain.troops
               }
             }
         })
       }
       
-
       // TODO implement card draw
       
       // Add influence
@@ -658,9 +659,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       // Move card to play area and remove from hand
-      const updatedHand = player.hand.filter(c => c.id !== card.id)
-      const updatedDeck = player.deck.filter(c => c.id !== card.id)
-      const updatedPlayArea = [...player.playArea, card]
+      const updatedHand = updatedPlayer.hand.filter(c => c.id !== card.id)
+      const updatedDeck = updatedPlayer.deck.filter(c => c.id !== card.id)
+      const updatedPlayArea = [...updatedPlayer.playArea, card]
 
       const canDeployTroops = space.conflictMarker || false
       const troopLimit = canDeployTroops ? 2 + (space.reward?.troops || 0): 0
@@ -735,6 +736,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
+        gains: updatedGains,
         players: state.players.map(p =>
           p.id === playerId
             ? {
@@ -753,7 +755,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'REVEAL_CARDS': {
       const { playerId, cardIds } = action
-      const player = state.players.find(p => p.id === playerId)
+      const player: Player = {...state.players.find(p => p.id === playerId)} as Player
       
       if (!player || playerId !== state.activePlayerId) return state
 
@@ -772,6 +774,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       let waterCount = 0
       let solariCount = 0
 
+      const updatedGains: Gains = {...state.gains}
       revealedCards.forEach(card => {
         card.revealEffect?.filter((effect:CardEffect) => {
             if(effect.cost) {
@@ -781,38 +784,38 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           })
           .forEach(effect => {
             if(effect.gain?.persuasion) {
-              if(!state.gains.persuasionGains) {
-                state.gains.persuasionGains = []
+              if(!updatedGains.persuasionGains) {
+                updatedGains.persuasionGains = []
               }
-              state.gains.persuasionGains.push({ cardId: card.id, name: card.name, amount: effect.gain.persuasion } as CardGain)
+              updatedGains.persuasionGains.push({ cardId: card.id, name: card.name, amount: effect.gain.persuasion } as CardGain)
               persuasionCount += effect.gain.persuasion
             }
             if(effect.gain?.combat) {
-              if(!state.gains.combatGains) {
-                state.gains.combatGains = []
+              if(!updatedGains.combatGains) {
+                updatedGains.combatGains = []
               }
-              state.gains.combatGains.push({ cardId: card.id, name: card.name, amount: effect.gain.combat } as CardGain)
+              updatedGains.combatGains.push({ cardId: card.id, name: card.name, amount: effect.gain.combat } as CardGain)
               swordCount += effect.gain.combat
             }
             if(effect.gain?.spice) {
-              if(!state.gains.spiceGains) {
-                state.gains.spiceGains = []
+              if(!updatedGains.spiceGains) {
+                updatedGains.spiceGains = []
               }
-              state.gains.spiceGains.push({ cardId: card.id, name: card.name, amount: effect.gain.spice } as CardGain)
+              updatedGains.spiceGains.push({ cardId: card.id, name: card.name, amount: effect.gain.spice } as CardGain)
               spiceCount += effect.gain.spice
             }
             if(effect.gain?.water) {
-              if(!state.gains.waterGains) {
-                state.gains.waterGains = []
+              if(!updatedGains.waterGains) {
+                updatedGains.waterGains = []
               }
-              state.gains.waterGains.push({ cardId: card.id, name: card.name, amount: effect.gain.water } as CardGain)
+              updatedGains.waterGains.push({ cardId: card.id, name: card.name, amount: effect.gain.water } as CardGain)
               waterCount += effect.gain.water
             }
             if(effect.gain?.solari) {
-              if(!state.gains.solariGains) {
-                state.gains.solariGains = []
+              if(!updatedGains.solariGains) {
+                updatedGains.solariGains = []
               }
-              state.gains.solariGains.push({ cardId: card.id, name: card.name, amount: effect.gain.solari } as CardGain)
+              updatedGains.solariGains.push({ cardId: card.id, name: card.name, amount: effect.gain.solari } as CardGain)
               solariCount += effect.gain.solari
             }
           })
@@ -851,58 +854,66 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
+        gains: updatedGains,
         players: state.players.map(p =>
           p.id === playerId
             ? {
-                ...p,
+                ...player,
                 deck: updatedDeck,
                 playArea: updatedPlayArea,
                 selectedCard: null,
                 handCount: 0,
-                persuasion: p.persuasion + persuasionCount,
-                spice: p.spice + spiceCount,
-                water: p.water + waterCount,
-                solari: p.solari + solariCount,
+                persuasion: player.persuasion + persuasionCount,
+                spice: player.spice + spiceCount,
+                water: player.water + waterCount,
+                solari: player.solari + solariCount,
                 revealed: true
               }
             : p
         ),
         combatStrength: updatedCombatStrength,
         currTurn: currentTurn,
-        canEndTurn: true
+        canEndTurn: true,
+        canAcquireIR: true
       }
     }
     case 'ACQUIRE_AL': {
       const { playerId } = action
-      const player = state.players.find(p => p.id === playerId)
+      const player: Player = {...state.players.find(p => p.id === playerId)} as Player
       if (!player) return state
       if (state.arrakisLiaisonDeck.length === 0) return state
       if (player.persuasion < 2) return state
-      player.discardPile.push(state.arrakisLiaisonDeck.pop() as Card)
+      const alDeck = [...state.arrakisLiaisonDeck]
+      player.discardPile.push(alDeck.pop() as Card)
       player.persuasion -= 2
       return {
         ...state,
+        arrakisLiaisonDeck: alDeck,
         players: state.players.map(p => p.id === playerId ? { ...p, discardPile: player.discardPile, persuasion: player.persuasion } : p)
       }
     }
     case 'ACQUIRE_SMF': {
       const { playerId } = action
-      const player = state.players.find(p => p.id === playerId)
+      const player: Player = {...state.players.find(p => p.id === playerId)} as Player
       if (!player) return state
       if (state.spiceMustFlowDeck.length === 0) return state
       if (player.persuasion < 9) return state
-      const card = state.spiceMustFlowDeck.pop() as Card
+      const smfDeck = [...state.spiceMustFlowDeck]
+      const card = smfDeck.pop() as Card
+      const updatedGains: Gains = {...state.gains}
       if(card.acquireEffect?.victoryPoints) {
-        if(!state.gains.victoryPointsGains) {
-          state.gains.victoryPointsGains = []
+        if(!updatedGains.victoryPointsGains) {
+          updatedGains.victoryPointsGains = []
         }
-        state.gains.victoryPointsGains.push({ cardId: card.id, name: card.name, amount: card.acquireEffect.victoryPoints } as CardGain)
+        updatedGains.victoryPointsGains.push({ cardId: card.id, name: card.name, amount: card.acquireEffect.victoryPoints } as CardGain)
         player.victoryPoints += card.acquireEffect?.victoryPoints || 0
       }
       player.discardPile.push(card)
       player.persuasion -= 9
       return {
         ...state,
+        spiceMustFlowDeck: smfDeck,
+        gains: updatedGains,
         players: state.players.map(p => p.id === playerId ? { ...p,discardPile: player.discardPile, persuasion: player.persuasion } : p)
       }
     }

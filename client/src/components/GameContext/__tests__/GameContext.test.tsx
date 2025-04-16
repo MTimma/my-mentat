@@ -1,6 +1,6 @@
 import { render, fireEvent } from '@testing-library/react'
 import { GameProvider, useGame } from '../GameContext'
-import { IntrigueCardType } from '../../types/GameTypes'
+import { IntrigueCardType } from '../../../types/GameTypes'
 
 describe('Intrigue Card System', () => {
   it('handles combat intrigue cards correctly', () => {

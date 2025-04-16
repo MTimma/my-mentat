@@ -4,12 +4,12 @@ import GameBoard from './components/GameBoard'
 import PlayerArea from './components/PlayerArea'
 import ImperiumRow from './components/ImperiumRow'
 import TurnHistory from './components/TurnHistory'
-import { GameProvider } from './contexts/GameContext'
-import { useGame } from './contexts/GameContext'
+import { GameProvider } from './components/GameContext/GameContext'
+import { useGame } from './components/GameContext/GameContext'
 import GameSetup from './components/GameSetup'
 import DeckSetup from './components/DeckSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup,Card, Leader, FactionType } from './types/GameTypes'
+import { PlayerSetup,Card, Leader, FactionType, GameTurn, GamePhase } from './types/GameTypes'
 import { STARTING_DECK } from './data/cards'
 import TurnControls from './components/TurnControls/TurnControls'
 
@@ -68,8 +68,8 @@ const GameContent = () => {
     <div className="game-container">
       <div className="turn-history-container">
         <TurnHistory 
-          turns={gameState.turns}
-          currentTurn={gameState.turns.length}
+          turns={gameState.history.map(h => h.currTurn).filter((turn): turn is GameTurn => turn !== null)}
+          currentTurn={gameState.history.length}
           players={gameState.players}
         />
       </div>
@@ -176,7 +176,6 @@ function App() {
     } else {
       setGameState('game')
     }
-
   }
 
   return (
@@ -221,13 +220,14 @@ function App() {
             revealed: false,
             gains: {}
           })),
-        factionInfluence:{
-          [FactionType.EMPEROR]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
-          [FactionType.SPACING_GUILD]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
-          [FactionType.BENE_GESSERIT]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
-          [FactionType.FREMEN]: Object.fromEntries(playerSetups.map((p, i) => [i, 0]))
-        }
-      }}>
+          factionInfluence:{
+            [FactionType.EMPEROR]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
+            [FactionType.SPACING_GUILD]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
+            [FactionType.BENE_GESSERIT]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
+            [FactionType.FREMEN]: Object.fromEntries(playerSetups.map((p, i) => [i, 0]))
+          },
+          phase: GamePhase.PLAYER_TURNS
+        }}>
           <GameContent />
         </GameProvider>
       )}

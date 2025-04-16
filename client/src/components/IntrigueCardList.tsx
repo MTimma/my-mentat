@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { IntrigueCard } from '../types/GameTypes'
 import PlayerTargetDialog from './PlayerTargetDialog'
-import { useGame } from '../contexts/GameContext'
+import { useGame } from './GameContext/GameContext'
 
 interface IntrigueCardListProps {
   cards: IntrigueCard[]
