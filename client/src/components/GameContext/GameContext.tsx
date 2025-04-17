@@ -293,6 +293,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               ? {
                   ...p,
                   selectedCard: null,
+                  playArea: [],
                   discardPile: [...p.discardPile, ...p.playArea]
                 }
               : p
@@ -321,6 +322,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             ? {
                 ...p,
                 selectedCard: null,
+                playArea: [],
                 discardPile: [...p.discardPile, ...p.playArea]
               }
             : p

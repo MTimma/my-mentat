@@ -45,6 +45,8 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
           Agents: {player.agents}
         </div>
         <div>Hand Size: {player.handCount}</div>
+        <div>Deck Size: {player.deck.length}</div>
+        <div>Discard: {player.discardPile.length}</div>
       </div>
       <div className="play-area">
         <h4>Play Area</h4>
