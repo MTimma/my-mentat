@@ -38,11 +38,11 @@ const GameContent = () => {
   }
 
   const handleAddTroop = (playerId: number) => {
-    dispatch({ type: 'ADD_TROOP', playerId })
+    dispatch({ type: 'DEPLOY_TROOP', playerId })
   }
 
   const handleRemoveTroop = (playerId: number) => {
-    dispatch({ type: 'REMOVE_TROOP', playerId })
+    dispatch({ type: 'RETREAT_TROOP', playerId })
   }
 
   const handleAcquireCard = (cardId: number) => {

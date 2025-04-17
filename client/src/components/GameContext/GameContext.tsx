@@ -37,8 +37,8 @@ type GameAction =
   | { type: 'START_ROUND' }
   | { type: 'END_TURN'; playerId: number }
   | { type: 'PLAY_CARD'; playerId: number; cardId: number }
-  | { type: 'ADD_TROOP'; playerId: number }
-  | { type: 'REMOVE_TROOP'; playerId: number }
+  | { type: 'DEPLOY_TROOP'; playerId: number }
+  | { type: 'RETREAT_TROOP'; playerId: number }
   | { type: 'PLAY_INTRIGUE'; cardId: number; playerId: number; targetPlayerId?: number }
   // | { type: 'GAIN_INFLUENCE'; playerId: number; faction: FactionType; amount: number }
   | { type: 'ACQUIRE_CARD'; playerId: number; cardId: number }
@@ -334,12 +334,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         gains: {}
       }
     }
-    case 'ADD_TROOP': {
+    case 'DEPLOY_TROOP': {
       const player = state.players.find(p => p.id === action.playerId)
       if (!player || player.troops <= 0) return state
       
       const currentTroops = state.combatTroops[action.playerId] || 0
-
+      const updatedCombat = player.combatValue? player.combatValue + 2 : 2;
       const currentTurn = state.activePlayerId === action.playerId ? 
         {
             ...state.currTurn,
@@ -357,7 +357,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         },
         players: state.players.map(p =>
           p.id === action.playerId
-            ? { ...p, troops: p.troops - 1 }
+            ? { ...p, 
+              combatValue: updatedCombat, 
+              troops: p.troops - 1 }
             : p
         ),
         currTurn: currentTurn
@@ -365,7 +367,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       return newState
     }
-    case 'REMOVE_TROOP': {
+    case 'RETREAT_TROOP': {
       const currentTroops = state.combatTroops[action.playerId] || 0
       if (currentTroops <= 0) return state
       const currentTurn= state.activePlayerId === action.playerId ? 
@@ -378,13 +380,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const newState = {
         ...state,
         currTurn: currentTurn,
+        combatStrength: {
+          ...state.combatStrength,
+          [action.playerId]: state.combatStrength[action.playerId] ? state.combatStrength[action.playerId] - 2 : 0
+        },
         combatTroops: {
           ...state.combatTroops,
           [action.playerId]: currentTroops - 1
         },
         players: state.players.map(p =>
           p.id === action.playerId
-            ? { ...p, troops: p.troops + 1 }
+            ? { ...p, 
+              combatValue: p.combatValue ? p.combatValue - 2 : 0, 
+              troops: p.troops + 1 }
             : p
         )
       }
@@ -823,6 +831,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Update combat strength if player has troops in combat
       const hasTroopsInCombat = (state.combatTroops[playerId] || 0) > 0
+      const updatedCombatValue = hasTroopsInCombat ? 
+            (player.combatValue ? player.combatValue + swordCount : swordCount + (state.combatTroops[playerId] * 2)) 
+          : player.combatValue
       const updatedCombatStrength = hasTroopsInCombat
         ? { ...state.combatStrength, [playerId]: (state.combatStrength[playerId] || 0) + swordCount }
         : state.combatStrength
@@ -862,6 +873,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 deck: updatedDeck,
                 playArea: updatedPlayArea,
                 selectedCard: null,
+                combatValue: updatedCombatValue,
                 handCount: 0,
                 persuasion: player.persuasion + persuasionCount,
                 spice: player.spice + spiceCount,
