@@ -124,6 +124,8 @@ const GameContent = () => {
           removableTroops={gameState.currTurn?.removableTroops || 0}
           troopLimit={gameState.currTurn?.troopLimit || 2}
           gains={gameState.gains}
+          isCombatPhase={gameState.phase === GamePhase.COMBAT}
+          combatStrength={gameState.combatStrength}
         />
       </div>
     </div>

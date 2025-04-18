@@ -15,6 +15,8 @@ interface TurnControlsProps {
   removableTroops: number
   troopLimit: number
   gains: Gains
+  isCombatPhase: boolean
+  combatStrength: Record<number, number>
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -28,13 +30,26 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onRemoveTroop,
   removableTroops,
   troopLimit,
-  gains
+  gains,
+  isCombatPhase,
+  combatStrength
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
 
   if (!activePlayer) return null
+
+  const getRankings = () => {
+    const entries = Object.entries(combatStrength)
+      .map(([playerId, strength]) => ({ playerId: parseInt(playerId), strength }))
+      .sort((a, b) => b.strength - a.strength)
+
+    return entries.map((entry, index) => ({
+      ...entry,
+      rank: index + 1
+    }))
+  }
 
   const handlePlayCard = () => {
     setIsRevealTurn(false)
@@ -63,6 +78,20 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
   return (
     <div className="turn-controls">
+      {isCombatPhase && (
+        <>
+          <div className="combat-phase-indicator">
+            Combat Phase
+          </div>
+          <div className="combat-rankings">
+            {getRankings().map(({ playerId, strength, rank }) => (
+              <div key={playerId} className={`combat-rank rank-${rank}`}>
+                {rank}. Player {playerId}: {strength} strength
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       <div className="active-player-info">
         <div className={`color-indicator ${activePlayer.color}`}></div>
         {activePlayer.leader.name}
@@ -94,14 +123,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         <button 
           className="play-card-button"
           onClick={handlePlayCard}
-          disabled={activePlayer.agents === 0 || canEndTurn}
+          disabled={activePlayer.agents === 0 || canEndTurn || isCombatPhase}
         >
           Play Card
         </button>
         <button 
           className="reveal-turn-button"
           onClick={handleRevealTurn}
-          disabled={canEndTurn}
+          disabled={canEndTurn || isCombatPhase}
         >
           Reveal Turn
         </button>
@@ -130,13 +159,19 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         >
           Play Intrigue ({activePlayer.intrigueCount})
         </button>
-        <button 
+        {!isCombatPhase && <button 
           className="end-turn-button"
           onClick={handleEndTurn}
           disabled={!canEndTurn}
         >
           End Turn
-        </button>
+        </button>}
+        {isCombatPhase && <button 
+          className="pass-combat-button"
+          onClick={handleEndTurn}
+        >
+          Pass
+        </button>}
       </div>
 
       <CardSearch
