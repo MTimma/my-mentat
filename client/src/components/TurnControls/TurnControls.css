@@ -154,6 +154,12 @@ button:disabled {
   background-color: yellow;
 }
 
+.combat-container {
+  margin-bottom: 15px;
+  max-width: 1200px;
+  margin: 0 auto 15px auto;
+}
+
 .combat-phase-indicator {
   background-color: #f44336;
   color: white;
@@ -161,6 +167,7 @@ button:disabled {
   border-radius: 4px;
   margin-bottom: 10px;
   font-weight: bold;
+  text-align: center;
 }
 
 .combat-rankings {
@@ -168,12 +175,16 @@ button:disabled {
   gap: 20px;
   margin-bottom: 10px;
   color: white;
+  justify-content: center;
 }
 
 .combat-rank {
   display: flex;
   align-items: center;
   gap: 5px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 .rank-1 {
