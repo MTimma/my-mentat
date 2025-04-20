@@ -123,6 +123,7 @@ const GameContent = () => {
           onRemoveTroop={handleRemoveTroop}
           removableTroops={gameState.currTurn?.removableTroops || 0}
           troopLimit={gameState.currTurn?.troopLimit || 2}
+          // troopLimit={Math.min(gameState.currTurn?.troopLimit || 2, activePlayer?.troops || 0)}
           gains={gameState.gains}
           isCombatPhase={gameState.phase === GamePhase.COMBAT}
           combatStrength={gameState.combatStrength}
@@ -133,7 +134,7 @@ const GameContent = () => {
 }
 
 function App() {
-  const [gameState, setGameState] = useState<'setup' | 'leaderChoices' | 'deckSetup' | 'game'>('setup')
+  const [gameState, setGameState] = useState<'setup' | 'leaderChoices' | 'game'>('setup')
   const [playerSetups, setPlayerSetups] = useState<PlayerSetup[]>([])
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
 
@@ -147,7 +148,7 @@ function App() {
     if (currentPlayerIndex < playerSetups.length - 1) {
       setCurrentPlayerIndex(prev => prev + 1)
     } else {
-      setGameState('deckSetup')
+      setGameState('game')
       setCurrentPlayerIndex(0)
     }
   }
@@ -188,12 +189,13 @@ function App() {
 
       {gameState === 'leaderChoices' && renderLeaderChoices()}
 
-      {gameState === 'deckSetup' && playerSetups[currentPlayerIndex] && (
+      {/* TODO Remove
+       {gameState === 'deckSetup' && playerSetups[currentPlayerIndex] && (
         <DeckSetup
           playerName={playerSetups[currentPlayerIndex].leader.name}
           onComplete={handleDeckSetupComplete}
         />
-      )}
+      )} */}
 
       {gameState === 'game' && (
         <GameProvider initialState={{
@@ -208,10 +210,8 @@ function App() {
             combatValue: 0,
             agents: 2,
             handCount: 5,
-            hand: setup.startingHand || [],
             intrigueCount: 0,
-            intrigueCards: [],
-            deck: setup.deck|| [],
+            deck: setup.deck|| STARTING_DECK,
             discardPile: [],
             trash: [],
             hasHighCouncilSeat: false,

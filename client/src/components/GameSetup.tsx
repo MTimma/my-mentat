@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { PlayerColor, PlayerSetup } from '../types/GameTypes'
 import { LEADERS } from '../data/leaders'
 import { motion } from 'framer-motion'
+import { STARTING_DECK } from '../data/cards'
 
 interface GameSetupProps {
   onComplete: (playerSetups: PlayerSetup[]) => void
@@ -11,10 +12,10 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
   const [gameName, setGameName] = useState('Test Game')
   const [playerCount, setPlayerCount] = useState<number>(4)
   const [players, setPlayers] = useState<PlayerSetup[]>([
-    { playerNumber: 1, color: PlayerColor.RED, leader: LEADERS[4], deck: [], startingHand: [] },
-    { playerNumber: 2, color: PlayerColor.GREEN, leader: LEADERS[0], deck: [], startingHand: [] },
-    { playerNumber: 3, color: PlayerColor.YELLOW, leader: LEADERS[1], deck: [], startingHand: [] },
-    { playerNumber: 4, color: PlayerColor.BLUE, leader: LEADERS[2], deck: [], startingHand: [] }
+    { playerNumber: 1, color: PlayerColor.RED, leader: LEADERS[4], deck: STARTING_DECK, startingHand: [] },
+    { playerNumber: 2, color: PlayerColor.GREEN, leader: LEADERS[0], deck: STARTING_DECK, startingHand: [] },
+    { playerNumber: 3, color: PlayerColor.YELLOW, leader: LEADERS[1], deck: STARTING_DECK, startingHand: [] },
+    { playerNumber: 4, color: PlayerColor.BLUE, leader: LEADERS[2], deck: STARTING_DECK, startingHand: [] }
   ])
 
   const handlePlayerCountChange = (count: number) => {
@@ -23,7 +24,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
       playerNumber: i + 1,
       color: Object.values(PlayerColor)[i],
       leader: i === 0 ? LEADERS[4] : LEADERS[i - 1], //TODO test purpos Baron
-      deck: [],
+      deck: STARTING_DECK,
       startingHand: []
     }))
     setPlayers(newPlayers)

@@ -357,6 +357,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ...state.combatTroops,
           [action.playerId]: currentTroops + 1
         },
+        combatStrength: {
+          ...state.combatStrength,
+          [action.playerId]: state.combatStrength[action.playerId] ? state.combatStrength[action.playerId] + 2 : 2
+        },
         players: state.players.map(p =>
           p.id === action.playerId
             ? { ...p, 
@@ -491,7 +495,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'PLAY_INTRIGUE': {
       const { cardId, playerId } = action
       const player = state.players.find(p => p.id === playerId)
-      const card = player?.intrigueCards.find(c => c.id === cardId)
+      const card = state.intrigueDeck.find(c => c.id === cardId)
 
       if (!card) return state
 
@@ -501,7 +505,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         p.id === playerId
           ? {
               ...p,
-              intrigueCards: p.intrigueCards.filter(c => c.id !== cardId)
+              intrigueCount: p.intrigueCount - 1
             }
           : p
       )
@@ -538,12 +542,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'PLACE_AGENT': {
       const { playerId, spaceId } = action
-      const updatedPlayer: Player = {...state.players.find(p => p.id === playerId)} as Player
-      const card = updatedPlayer.deck.find(c => c.id === state.selectedCard)
+      const newState = {...state}
+      const updatedPlayer: Player = {...newState.players.find(p => p.id === playerId)} as Player
+      const card = updatedPlayer.deck.find(c => c.id === newState.selectedCard)
       const space = boardSpaces.find((s: SpaceProps) => s.id === spaceId)
-
-      if (!updatedPlayer || !card || !space || playerId !== state.activePlayerId || !state.selectedCard) return state
-
+      
+      if (!updatedPlayer || !card || !space || playerId !== newState.activePlayerId || !newState.selectedCard) return state
+      
       // Check if player has any agents left
       if (updatedPlayer.agents <= 0) return state
 
@@ -555,11 +560,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       // Check if space is already occupied
-      if (state.occupiedSpaces[spaceId]?.length > 0) return state
+      if (newState.occupiedSpaces[spaceId]?.length > 0) return state
 
       // Check if player has required influence
       if (space.requiresInfluence) {
-        const playerInfluence = state.factionInfluence[space.requiresInfluence.faction as FactionType]?.[playerId] || 0
+        const playerInfluence = newState.factionInfluence[space.requiresInfluence.faction as FactionType]?.[playerId] || 0
         if (playerInfluence < space.requiresInfluence.amount) return state
       }
 
@@ -569,7 +574,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (space.cost.spice) updatedPlayer.spice -= space.cost.spice
         if (space.cost.water) updatedPlayer.water -= space.cost.water
       }
-      const updatedGains: Gains = {...state.gains}
+      const updatedGains: Gains = {...newState.gains}
 
       if (space.reward) {
         if (space.reward.solari) {
@@ -652,11 +657,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Add influence
       if (space.influence) {
-        const currentInfluence = state.factionInfluence[space.influence.faction as FactionType]?.[playerId] || 0
-        state.factionInfluence = {
-          ...state.factionInfluence,
+        const currentInfluence = newState.factionInfluence[space.influence.faction as FactionType]?.[playerId] || 0
+        newState.factionInfluence = {
+          ...newState.factionInfluence,
           [space.influence.faction as FactionType]: {
-            ...state.factionInfluence[space.influence.faction as FactionType],
+            ...newState.factionInfluence[space.influence.faction as FactionType],
             [playerId]: currentInfluence + space.influence.amount
           }
         }
@@ -664,12 +669,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Update occupied spaces
       const updatedOccupiedSpaces = {
-        ...state.occupiedSpaces,
-        [spaceId]: [...(state.occupiedSpaces[spaceId] || []), playerId]
+        ...newState.occupiedSpaces,
+        [spaceId]: [...(newState.occupiedSpaces[spaceId] || []), playerId]
       }
 
-      // Move card to play area and remove from hand
-      const updatedHand = updatedPlayer.hand.filter(c => c.id !== card.id)
       const updatedDeck = updatedPlayer.deck.filter(c => c.id !== card.id)
       const updatedPlayArea = [...updatedPlayer.playArea, card]
 
@@ -677,14 +680,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const troopLimit = canDeployTroops ? 2 + (space.reward?.troops || 0): 0
       const persuasionCount = space.reward?.persuasion || 0
 
-      const currentTurn = state.currTurn?.playerId === playerId 
+      const currentTurn = newState.currTurn?.playerId === playerId 
         ? {
-            ...state.currTurn,
+            ...newState.currTurn,
             agentSpace: space.agentIcon,
             canDeployTroops: canDeployTroops,
             troopLimit: troopLimit,
-            removableTroops: state.currTurn?.removableTroops || 0,
-            persuasionCount: (state.currTurn?.persuasionCount || 0) + persuasionCount
+            removableTroops: newState.currTurn?.removableTroops || 0,
+            persuasionCount: (newState.currTurn?.persuasionCount || 0) + persuasionCount
           }
         : {
             playerId,
@@ -703,7 +706,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         currentTurn.gainedEffects = [...(currentTurn.gainedEffects || []), space.specialEffect]
         switch (space.specialEffect) {
           case 'mentat':
-            state.mentatOwner = playerId
+            newState.mentatOwner = playerId
             updatedPlayer.agents += 1
             break
 
@@ -713,7 +716,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             break
 
           case 'foldspace': {
-            const card = state.foldspaceDeck.pop()
+            const card = newState.foldspaceDeck.pop()
             if (card) {
               updatedPlayer.discardPile.push(card)
             }
@@ -721,9 +724,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
 
           case 'secrets':
-            state.players.forEach(opponent => {
-              if (opponent.id !== playerId && opponent.intrigueCards.length >= 4) {
-                // TODO: Implement random Intrigue card selection and transfer
+            newState.players.forEach(opponent => {
+              if (opponent.id !== playerId && opponent.intrigueCount >= 4) {
+                opponent.intrigueCount -= 1
+                updatedPlayer.intrigueCount += 1
               }
             })
             break
@@ -745,13 +749,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       updatedPlayer.handCount -= 1
 
       return {
-        ...state,
+        ...newState,
         gains: updatedGains,
-        players: state.players.map(p =>
+        players: newState.players.map(p =>
           p.id === playerId
             ? {
                 ...updatedPlayer,
-                hand: updatedHand,
                 deck: updatedDeck,
                 playArea: updatedPlayArea,
                 selectedCard: null

@@ -150,7 +150,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               onClick={() => onRemoveTroop(activePlayer.id)}
               disabled={!canDeployTroops || removableTroops <= 0 }
             >
-              Retrat Troop ({removableTroops})
+              Retreat Troop ({removableTroops})
             </button>
           </>
           <button 

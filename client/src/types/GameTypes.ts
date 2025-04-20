@@ -78,8 +78,6 @@ export interface Player {
   handCount: number
   revealed: boolean
   intrigueCount: number
-  intrigueCards: IntrigueCard[]
-  hand: Card[]
   deck: Card[]
   discardPile: Card[]
   playArea: Card[]
