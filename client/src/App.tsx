@@ -144,7 +144,12 @@ const GameContent = () => {
         />
       </div>
       <div className="combat-results-container" hidden={gameState.phase !== GamePhase.COMBAT_REWARDS}>
-        <CombatResults onConfirm={handleConfirmCombat} />
+        <CombatResults 
+          players={gameState.players}
+          combatStrength={gameState.combatStrength}
+          history={gameState.history}
+          onConfirm={handleConfirmCombat}
+        />
       </div>
     </div>
   )

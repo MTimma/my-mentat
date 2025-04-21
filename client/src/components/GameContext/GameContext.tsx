@@ -111,34 +111,60 @@ const initialGameState: GameState = {
   gains: {}
 }
 
-function calculateCombatStrength(
-  troops: Record<number, number>,
-  swordIcons: Record<number, number>
-): Record<number, number> {
-  const strength: Record<number, number> = {}
-  
-  Object.entries(troops).forEach(([playerId, troopCount]) => {
-    const id = Number(playerId)
-    strength[id] = (troopCount * 2) + (swordIcons[id] || 0)
-  })
-  
-  return strength
-}
-
 function determineWinners(
   strength: Record<number, number>,
   playerCount: number
-): { first: number | null, second: number | null, third: number | null } {
+): Winners {
   const entries = Object.entries(strength)
     .map(([id, str]) => ({ id: Number(id), strength: str }))
     .filter(entry => entry.strength > 0)
     .sort((a, b) => b.strength - a.strength)
-
-  return {
-    first: entries[0]?.id || null,
-    second: entries[1]?.id || null,
-    third: playerCount === 4 ? entries[2]?.id || null : null
+  if(playerCount === 4) {
+    return getPlacements4p(entries)
+  } else {
+    // return getPlacements3p(entries) TODO
+    return {
+      first: [],
+      second: [],
+      third: []
+    }
   }
+
+}
+
+function getPlacements4p(entries: {id: number, strength: number}[]): Winners {
+  const winners: Winners = {
+    first: [],
+    second: [],
+    third: []
+  }
+  if(entries[0]?.strength === entries[1]?.strength) {
+    winners.second = [entries[0]?.id, entries[1]?.id]
+    if(entries[1]?.strength === entries[2]?.strength) {
+      winners.second.push(entries[2]?.id)
+    } else if (entries[2]?.strength !== entries[3]?.strength) {
+      //3rd and 4th players not tied - third place is rewarded
+      winners.third = [entries[2]?.id]
+    }
+    if(entries[1]?.strength === entries[3]?.strength) {
+      winners.second.push(entries[3]?.id)
+    }
+  } else {
+    winners.first = [entries[0]?.id]
+    if(entries[1]?.strength === entries[2]?.strength) {
+      winners.third = [entries[1]?.id, entries[2]?.id]
+      if(entries[2]?.strength === entries[3]?.strength) {
+        winners.third.push(entries[3]?.id)
+      }
+    } else {
+      winners.second = [entries[1]?.id]
+      if(entries[2]?.strength !== entries[3]?.strength) {
+        //3rd and 4th players not tied - third place is rewarded
+        winners.third = [entries[2]?.id]
+      }
+    }
+  }
+  return winners
 }
 
 function applyReward(state: GameState, reward: Reward, playerId: number): GameState {
@@ -278,10 +304,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const { playerId } = action
       if (playerId !== state.activePlayerId) return state
 
-      const player = {...state.players.find(p => p.id === playerId)}
+      const newState = {...state}
+      const player = newState.players[playerId]
       if (!player) return state
       if (!state.selectedCard && state.currTurn?.type !== TurnType.REVEAL) return state
-      const currentTurn = state.currTurn
+      const currentTurn = newState.currTurn
       if (!currentTurn) return state
 
       if(player.revealed) {
@@ -289,13 +316,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         player.playArea = []
       }
 
-      if (!state.players.find(p => !p.revealed)) {
+      if (!newState.players.find(p => !p.revealed)) {
         // All players have revealed
         return {
-          ...state,
+          ...newState,
           phase: GamePhase.COMBAT,
           combatPasses: new Set(),
-          players: state.players.map(p =>
+          players: newState.players.map(p =>
             p.id === playerId
               ? {
                   ...p,
@@ -313,17 +340,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
       
-      let nextIndex = (playerId + 1) % state.players.length
-      let nextPlayer = state.players[nextIndex]
+      let nextIndex = (playerId + 1) % newState.players.length
+      let nextPlayer = newState.players[nextIndex]
       while(nextPlayer.revealed) {
-        nextIndex = (nextIndex + 1) % state.players.length
-        nextPlayer = state.players[nextIndex]
+        nextIndex = (nextIndex + 1) % newState.players.length
+        nextPlayer = newState.players[nextIndex]
       }
       
 
       return {
-        ...state,
-        players: state.players.map(p =>
+        ...newState,
+        players: newState.players.map(p =>
           p.id === playerId
             ? {
                 ...p,
@@ -332,7 +359,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             : p
         ),
         activePlayerId: nextPlayer.id,
-        history: [...state.history, state],
+        history: [...newState.history, newState],
         currTurn: null,
         canEndTurn: false,
         selectedCard: null,
@@ -387,13 +414,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           type: state.currTurn?.type || TurnType.ACTION,
           removableTroops: state.currTurn?.removableTroops ? state.currTurn.removableTroops -1 : 0,
       } : state.currTurn;
+      const newCombatStrength = {...state.combatStrength}
+      if(newCombatStrength[action.playerId]) {
+        const newPlayerCombatStrength = newCombatStrength[action.playerId] - 2
+        if(newPlayerCombatStrength <= 0) {
+          delete newCombatStrength[action.playerId]
+        } else {
+          newCombatStrength[action.playerId] = newPlayerCombatStrength
+        }
+      } else {
+        return state;
+      }
+
       const newState = {
         ...state,
         currTurn: currentTurn,
-        combatStrength: {
-          ...state.combatStrength,
-          [action.playerId]: state.combatStrength[action.playerId] ? state.combatStrength[action.playerId] - 2 : 0
-        },
+        combatStrength: newCombatStrength,
         combatTroops: {
           ...state.combatTroops,
           [action.playerId]: currentTroops - 1
@@ -492,16 +528,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'RESOLVE_COMBAT': {
       if (!state.currentConflict) return state
-
-      const strength = calculateCombatStrength(
-        state.combatTroops,
-        state.combatStrength
-      )
+      
+      const strength = {...state.combatStrength}
 
       const winners = determineWinners(strength, state.players.length) as Winners
 
       let currentState = { ...state }
 
+      //TODO handle choices
       if (winners.first !== null) {
         state.currentConflict.rewards.first.forEach(reward => {
           currentState = applyReward(currentState, reward, winners.first as number)

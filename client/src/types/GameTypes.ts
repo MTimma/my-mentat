@@ -275,9 +275,9 @@ export interface Reward {
 }
 
 export interface Winners {
-  first: number | null
-  second: number | null
-  third: number | null
+  first: number[] | null
+  second: number[] | null
+  third?: number[] | null
 }
 
 export interface ConflictCard {

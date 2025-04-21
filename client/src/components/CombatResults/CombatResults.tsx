@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useGame } from '../GameContext/GameContext';
+import { Player, GameState } from '../../types/GameTypes';
 import './CombatResults.css';
 
 interface PlayerResult {
@@ -9,16 +9,23 @@ interface PlayerResult {
 }
 
 interface CombatResultsProps {
+  players: Player[];
+  combatStrength: Record<number, number>;
+  history: GameState[];
   onConfirm: () => void;
 }
 
-const CombatResults: React.FC<CombatResultsProps> = ({ onConfirm }) => {
-  const { gameState } = useGame();
+const CombatResults: React.FC<CombatResultsProps> = ({ 
+  players, 
+  combatStrength, 
+  history, 
+  onConfirm 
+}) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
 
   const calculateResults = (): PlayerResult[] => {
     const results: PlayerResult[] = [];
-    const strengths = Object.entries(gameState.combatStrength)
+    const strengths = Object.entries(combatStrength)
       .map(([id, strength]) => ({
         playerId: parseInt(id),
         strength: strength || 0
@@ -74,7 +81,7 @@ const CombatResults: React.FC<CombatResultsProps> = ({ onConfirm }) => {
   const results = calculateResults();
 
   const getPlayerCombatGains = (playerId: number) => {
-    return gameState.gains.combatGains?.filter(gain => gain.playerId === playerId) || [];
+    return history.map(state => state.gains.combatGains).flatMap(gain => gain?.filter(g => g.playerId === playerId) || []) || [];
   };
 
   return (
@@ -92,7 +99,7 @@ const CombatResults: React.FC<CombatResultsProps> = ({ onConfirm }) => {
         <tbody>
           {results.map((result) => (
             <tr key={result.playerId}>
-              <td>{gameState.players.find(p => p.id === result.playerId)?.leader.name || `Player ${result.playerId + 1}`}</td>
+              <td>{players[result.playerId]?.leader.name || `Player ${result.playerId + 1}`}</td>
               <td>{result.strength}</td>
               <td>{result.place}</td>
               <td>
