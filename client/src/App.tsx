@@ -12,6 +12,7 @@ import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoic
 import { PlayerSetup,Card, Leader, FactionType, GameTurn, GamePhase } from './types/GameTypes'
 import { STARTING_DECK } from './data/cards'
 import TurnControls from './components/TurnControls/TurnControls'
+import CombatResults from './components/CombatResults/CombatResults'
 
 const GameContent = () => {
   const {
@@ -26,6 +27,10 @@ const GameContent = () => {
     dispatch({ type: 'PLAY_CARD', playerId, cardId })
   }
 
+  const handlePlayCombatIntrigue = (playerId: number, cardId: number) => {
+    dispatch({ type: 'PLAY_COMBAT_INTRIGUE', playerId, cardId })
+  }
+
   const handleRevealCards = (playerId: number, cardIds: number[]) => {
     dispatch({ type: 'REVEAL_CARDS', playerId, cardIds })
   }
@@ -37,6 +42,13 @@ const GameContent = () => {
     }
   }
 
+  const handlePassCombat = (playerId: number) => {
+    dispatch({ type: 'PASS_COMBAT', playerId })
+  }
+  const handleConfirmCombat = () => {
+    dispatch({ type: 'RESOLVE_COMBAT' });
+  }
+  
   const handleAddTroop = (playerId: number) => {
     dispatch({ type: 'DEPLOY_TROOP', playerId })
   }
@@ -106,28 +118,33 @@ const GameContent = () => {
               key={player.id} 
               player={player} 
               isActive={gameState.activePlayerId === player.id}
-              isStartingPlayer={gameState.startingPlayerId === player.id}
+              isStartingPlayer={gameState.firstPlayerMarker === player.id}
             />
           ))}
         </div>
       </div>
-      <div className="turn-controls-container">
+      <div className="turn-controls-container" hidden={gameState.phase !== GamePhase.PLAYER_TURNS && gameState.phase !== GamePhase.COMBAT}>
         <TurnControls
           activePlayer={activePlayer}
           canEndTurn={gameState.canEndTurn}
           onPlayCard={handleCardSelect}
+          // onPlayIntrigue={handlePlayIntrigue}
+          onPlayCombatIntrigue={handlePlayCombatIntrigue}
           onReveal={handleRevealCards}
           onEndTurn={handleEndTurn}
+          onPassCombat={handlePassCombat}
           canDeployTroops={gameState.currTurn?.canDeployTroops || false}
           onAddTroop={handleAddTroop}
           onRemoveTroop={handleRemoveTroop}
-          removableTroops={gameState.currTurn?.removableTroops || 0}
-          troopLimit={gameState.currTurn?.troopLimit || 2}
-          // troopLimit={Math.min(gameState.currTurn?.troopLimit || 2, activePlayer?.troops || 0)}
+          retreatableTroops={gameState.currTurn?.removableTroops || 0}
+          deployableTroops={Math.min((gameState.currTurn?.troopLimit || 2) - (gameState.currTurn?.removableTroops || 0), activePlayer?.troops || 0)}
           gains={gameState.gains}
           isCombatPhase={gameState.phase === GamePhase.COMBAT}
           combatStrength={gameState.combatStrength}
         />
+      </div>
+      <div className="combat-results-container" hidden={gameState.phase !== GamePhase.COMBAT_REWARDS}>
+        <CombatResults onConfirm={handleConfirmCombat} />
       </div>
     </div>
   )

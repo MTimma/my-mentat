@@ -6,14 +6,16 @@ import './TurnControls.css'
 interface TurnControlsProps {
   activePlayer: Player | null
   onPlayCard: (playerId: number, cardId: number) => void
+  onPlayCombatIntrigue: (playerId: number, cardId: number) => void
   onReveal: (playerId: number, cardIds: number[]) => void
   canEndTurn: boolean
   onEndTurn: (playerId: number) => void
+  onPassCombat: (playerId: number) => void
   canDeployTroops: boolean
   onAddTroop: (playerId: number) => void
   onRemoveTroop: (playerId: number) => void
-  removableTroops: number
-  troopLimit: number
+  retreatableTroops: number
+  deployableTroops: number
   gains: Gains
   isCombatPhase: boolean
   combatStrength: Record<number, number>
@@ -23,13 +25,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   activePlayer,
   canEndTurn,
   onPlayCard,
+  onPlayCombatIntrigue,
   onReveal,
   onEndTurn,
+  onPassCombat,
   canDeployTroops,
   onAddTroop,
   onRemoveTroop,
-  removableTroops,
-  troopLimit,
+  retreatableTroops,
+  deployableTroops,
   gains,
   isCombatPhase,
   combatStrength
@@ -56,6 +60,12 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     setIsCardSelectionOpen(true)
   }
 
+  const handlePlayCombatIntrigue = () => {
+    setIsRevealTurn(false)
+    setSelectedCards([])
+    onPlayCombatIntrigue(activePlayer.id, selectedCards[0].id)
+  }
+
   const handleRevealTurn = () => {
     setIsRevealTurn(true)
     setIsCardSelectionOpen(true)
@@ -64,6 +74,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     setIsRevealTurn(false)
     setSelectedCards([])
     onEndTurn(activePlayer.id)
+  }
+  const handlePassCombat = () => {
+    setIsRevealTurn(false)
+    setSelectedCards([])
+    onPassCombat(activePlayer.id)
   }
 
   const handleCardSelection = (selectedCards: Card[]) => {
@@ -75,6 +90,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       onPlayCard(activePlayer.id, selectedCards[0].id)
     }
   }
+
 
   return (
     <>
@@ -140,26 +156,32 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               className="add-troop-button"
               onClick={() => onAddTroop(activePlayer.id)}
               disabled={!canDeployTroops || 
-                        activePlayer.troops <= 0 || 
-                        removableTroops >= troopLimit}
+                        activePlayer.troops <= 0 || deployableTroops <= 0}
             >
-              Deploy Troop ({troopLimit - removableTroops})
+              Deploy Troop ({deployableTroops})
             </button>
             <button 
               className="remove-troop-button"
               onClick={() => onRemoveTroop(activePlayer.id)}
-              disabled={!canDeployTroops || removableTroops <= 0 }
+              disabled={!canDeployTroops || retreatableTroops <= 0 }
             >
-              Retreat Troop ({removableTroops})
+              Retreat Troop ({retreatableTroops})
             </button>
           </>
-          <button 
+          {!isCombatPhase && <button 
             className="play-intrigue-button"
-            onClick={handlePlayCard}
+            // onClick={}
             disabled={activePlayer.intrigueCount === 0}
           >
             Play Intrigue ({activePlayer.intrigueCount})
-          </button>
+          </button>}
+          {isCombatPhase && <button 
+            className="play-intrigue-button"
+            onClick={handlePlayCombatIntrigue}
+            disabled={activePlayer.intrigueCount === 0}
+          >
+            Play Combat Intrigue ({activePlayer.intrigueCount})
+          </button>}
           {!isCombatPhase && <button 
             className="end-turn-button"
             onClick={handleEndTurn}
@@ -169,9 +191,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           </button>}
           {isCombatPhase && <button 
             className="pass-combat-button"
-            onClick={handleEndTurn}
+            onClick={handlePassCombat}
           >
-            Pass
+            Pass Combat
           </button>}
         </div>
 

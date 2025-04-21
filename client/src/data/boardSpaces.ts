@@ -1,4 +1,4 @@
-import { SpaceProps, AgentIcon, FactionType } from '../types/GameTypes'
+import { SpaceProps, AgentIcon, FactionType, ControlMarkerType } from '../types/GameTypes'
 
 export const boardSpaces: SpaceProps[] = [
   // City Spaces
@@ -8,7 +8,8 @@ export const boardSpaces: SpaceProps[] = [
     conflictMarker: true,
     agentIcon: AgentIcon.CITY,
     reward: { troops: 1, cards: 1 },
-    controlBonus: 'solari'
+    controlBonus: { solari: 1 },
+    controlMarker: ControlMarkerType.ARRAKIN
   },
   {
     id: 2,
@@ -16,7 +17,8 @@ export const boardSpaces: SpaceProps[] = [
     conflictMarker: true,
     agentIcon: AgentIcon.CITY,
     reward: { troops: 1, intrigueCards: 1 },
-    controlBonus: 'solari'
+    controlBonus: { solari: 1 },
+    controlMarker: ControlMarkerType.CARTHAG
   },
   {
     id: 3,
@@ -35,7 +37,8 @@ export const boardSpaces: SpaceProps[] = [
     agentIcon: AgentIcon.SPICE_TRADE,
     reward: { spice: 1 },
     bonusSpice: 0,
-    controlBonus: 'spice'
+    controlBonus: { spice: 1 },
+    controlMarker: ControlMarkerType.IMPERIAL_BASIN
   },
   {
     id: 5,

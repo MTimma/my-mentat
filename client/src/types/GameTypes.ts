@@ -103,6 +103,11 @@ export interface SpaceProps {
   id: number
   name: string
   agentIcon: AgentIcon
+  cost?: {
+    spice?: number
+    water?: number
+    solari?: number
+  }
   reward?: {
     spice?: number
     water?: number
@@ -116,14 +121,14 @@ export interface SpaceProps {
   maxAgents?: number
   occupiedBy?: number[]
   conflictMarker: boolean
-  cost?: {
-    spice?: number
-    water?: number
-    solari?: number
-  }
+  
   bonusSpice?: number
   requiresInfluence?: InfluenceAmount
-  controlBonus?: 'spice' | 'solari'
+  controlMarker?: ControlMarkerType
+  controlBonus?: {
+    spice?: number
+    solari?: number
+  }
   specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'sellMelange' | 'highCouncil'
 }
 
@@ -145,7 +150,7 @@ export interface CardEffect {
     retreatUnits?: number
     deployTroops?: number
   }
-  gain: {
+  reward: {
     persuasion?: number
     combat?: number
     spice?: number
@@ -165,6 +170,8 @@ export interface CardEffect {
 }
 
 export interface Gain {
+  playerId: number
+  round: number
   name: string
   amount: number
 }
@@ -225,6 +232,12 @@ export enum FactionType {
   FREMEN = 'fremen'
 }
 
+export enum ControlMarkerType {
+  ARRAKIN = 'arrakin',
+  CARTHAG = 'carthag',
+  IMPERIAL_BASIN = 'imperial-basin'
+}
+
 export enum TurnType {
   ACTION = 'action',
   PASS = 'pass',
@@ -269,7 +282,7 @@ export interface Winners {
 
 export interface ConflictCard {
   name: string
-  controlSpace: 'arrakeen' | 'carthag' | 'imperialBasin'
+  controlSpace: ControlMarkerType
   rewards: {
     first: Reward[]
     second: Reward[]
@@ -319,14 +332,10 @@ export interface GameState {
   imperiumRow: Card[]
   intrigueDeck: IntrigueCard[]
   intrigueDiscard: IntrigueCard[]
-  controlMarkers: {
-    arrakeen: number | null
-    carthag: number | null
-    imperialBasin: number | null
-  }
+  controlMarkers: Record<ControlMarkerType, number | null>
   history: GameState[]
   players: Player[]
-  startingPlayerId: number
+  firstPlayerMarker: number
   currentRound: number
   mentatOwner: number | null
   activePlayerId: number
@@ -336,7 +345,7 @@ export interface GameState {
   combatStrength: Record<number, number>
   combatTroops: Record<number, number>
   currentConflict: ConflictCard | null
-  combatPasses: number[]
+  combatPasses: Set<number>
   occupiedSpaces: Record<number, number[]>
   playArea: Record<number, Card[]>
   canEndTurn: boolean

@@ -6,7 +6,7 @@ export const STARTING_DECK: Card[] = [
     name: "Convincing Argument",
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 2
         }
       }
@@ -18,7 +18,7 @@ export const STARTING_DECK: Card[] = [
     name: "Convincing Argument",
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 2
         }
       }
@@ -30,7 +30,7 @@ export const STARTING_DECK: Card[] = [
     name: "Dagger",
     revealEffect: [
       {
-        gain: {
+        reward: {
           combat: 1
         }
       }
@@ -42,7 +42,7 @@ export const STARTING_DECK: Card[] = [
     name: "Dagger",
     revealEffect: [
       {
-        gain: {
+        reward: {
           combat: 1
         }
       }
@@ -54,7 +54,7 @@ export const STARTING_DECK: Card[] = [
     name: "Diplomacy",
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 1
         }
       }
@@ -71,7 +71,7 @@ export const STARTING_DECK: Card[] = [
     name: "Dune, the Desert Planet",
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 1
         }
       }
@@ -83,7 +83,7 @@ export const STARTING_DECK: Card[] = [
     name: "Dune, the Desert Planet",
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 1
         }
       }
@@ -95,7 +95,7 @@ export const STARTING_DECK: Card[] = [
     name: "Reconnaissance",
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 1
         }
       }
@@ -117,7 +117,7 @@ export const STARTING_DECK: Card[] = [
     name: "Signet Ring",
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 1
         }
       }
@@ -138,7 +138,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
     cost: 2,
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 2
         }
       }
@@ -151,7 +151,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
     cost: 2,
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 2
         }
       }
@@ -164,7 +164,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
     cost: 2,
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 2
         }
       }
@@ -177,7 +177,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
     cost: 2,
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 2
         }
       }
@@ -190,7 +190,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
     cost: 2,
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 2
         }
       }
@@ -203,7 +203,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
     cost: 2,
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 2
         }
       }
@@ -216,7 +216,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
     cost: 2,
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 2
         }
       }
@@ -229,7 +229,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
     cost: 2,
     revealEffect: [
       {
-        gain: {
+        reward: {
           persuasion: 2
         }
       }
@@ -244,7 +244,7 @@ export const SPICE_MUST_FLOW_DECK: Card[]  = [
     name: "Spice Must Flow",
     revealEffect: [
       {
-        gain: {
+        reward: {
           spice: 1
         }
       }
@@ -258,7 +258,7 @@ export const SPICE_MUST_FLOW_DECK: Card[]  = [
     name: "Spice Must Flow",
     revealEffect: [
       {
-        gain: {
+        reward: {
           spice: 1
         }
       }
@@ -272,7 +272,7 @@ export const SPICE_MUST_FLOW_DECK: Card[]  = [
     name: "Spice Must Flow",
     revealEffect: [
       {
-        gain: {
+        reward: {
           spice: 1
         }
       }
@@ -286,7 +286,7 @@ export const SPICE_MUST_FLOW_DECK: Card[]  = [
     name: "Spice Must Flow",
     revealEffect: [
       {
-        gain: {
+        reward: {
           spice: 1
         }
       }
@@ -300,7 +300,7 @@ export const SPICE_MUST_FLOW_DECK: Card[]  = [
     name: "Spice Must Flow",
     revealEffect: [
       {
-        gain: {
+        reward: {
           spice: 1
         }
       }
@@ -314,7 +314,7 @@ export const SPICE_MUST_FLOW_DECK: Card[]  = [
     name: "Spice Must Flow",
     revealEffect: [
       {
-        gain: {
+        reward: {
           spice: 1
         }
       }
@@ -328,7 +328,7 @@ export const SPICE_MUST_FLOW_DECK: Card[]  = [
     name: "Spice Must Flow",
     revealEffect: [
       {
-        gain: {
+        reward: {
           spice: 1
         }
       }
@@ -342,7 +342,7 @@ export const SPICE_MUST_FLOW_DECK: Card[]  = [
     name: "Spice Must Flow",
     revealEffect: [
       {
-        gain: {
+        reward: {
           spice: 1
         }
       }
@@ -356,7 +356,7 @@ export const SPICE_MUST_FLOW_DECK: Card[]  = [
     name: "Spice Must Flow",
     revealEffect: [
       {
-        gain: {
+        reward: {
           spice: 1
         }
       }
@@ -370,7 +370,7 @@ export const SPICE_MUST_FLOW_DECK: Card[]  = [
     name: "Spice Must Flow",
     revealEffect: [
       {
-        gain: {
+        reward: {
           spice: 1
         }
       }
@@ -395,7 +395,7 @@ export const FOLDSPACE_DECK: Card[] = [
     ],
     playEffect: [
       {
-        gain: {
+        reward: {
           drawCards: 1,
           trashThisCard: true
         }
@@ -416,7 +416,7 @@ export const FOLDSPACE_DECK: Card[] = [
     ],
     playEffect: [
       {
-        gain: {
+        reward: {
           drawCards: 1,
           trashThisCard: true
         }
@@ -437,7 +437,7 @@ export const FOLDSPACE_DECK: Card[] = [
     ],
     playEffect: [
       {
-        gain: {
+        reward: {
           drawCards: 1,
           trashThisCard: true
         }
@@ -458,7 +458,7 @@ export const FOLDSPACE_DECK: Card[] = [
     ],
     playEffect: [
       {
-        gain: {
+        reward: {
           drawCards: 1,
           trashThisCard: true
         }
@@ -479,7 +479,7 @@ export const FOLDSPACE_DECK: Card[] = [
     ],
     playEffect: [
       {
-        gain: {
+        reward: {
           drawCards: 1,
           trashThisCard: true
         }
@@ -500,7 +500,7 @@ export const FOLDSPACE_DECK: Card[] = [
     ],
     playEffect: [
       {
-        gain: {
+        reward: {
           drawCards: 1,
           trashThisCard: true
         }
@@ -521,7 +521,7 @@ export const FOLDSPACE_DECK: Card[] = [
     ],
     playEffect: [
       {
-        gain: {
+        reward: {
           drawCards: 1,
           trashThisCard: true
         }
@@ -542,7 +542,7 @@ export const FOLDSPACE_DECK: Card[] = [
     ],
     playEffect: [
       {
-        gain: {
+        reward: {
           drawCards: 1,
           trashThisCard: true
         }
