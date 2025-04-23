@@ -7,7 +7,7 @@ import {
   Card,
   Reward,
   IntrigueCardEffect,
-  Winners,
+  Winners as Placements,
   IntrigueCardType,
   TurnType,
   SpaceProps,
@@ -20,7 +20,9 @@ import {
   ConflictGain,
   Gains,
   Player,
-  ControlMarkerType
+  ControlMarkerType,
+  RewardType,
+  GainSource
 } from '../../types/GameTypes'
 import { boardSpaces } from '../../data/boardSpaces'
 import { ARRAKIS_LIAISON_DECK } from '../../data/cards'
@@ -100,7 +102,15 @@ const initialGameState: GameState = {
   },
   combatStrength: {},
   combatTroops: {},
-  currentConflict: null,
+  currentConflict: {
+    tier: 1,
+    name: 'Placeholder',
+    rewards: {
+      first: [],
+      second: [],
+      third: []
+    }
+  },
   players: [],
   combatPasses: new Set(),
   history: [],
@@ -108,13 +118,13 @@ const initialGameState: GameState = {
   playArea: {} as Record<number, Card[]>,
   canEndTurn: false,
   canAcquireIR: false,
-  gains: {}
+  gains: []
 }
 
-function determineWinners(
+function determinePlacements(
   strength: Record<number, number>,
   playerCount: number
-): Winners {
+): Placements {
   const entries = Object.entries(strength)
     .map(([id, str]) => ({ id: Number(id), strength: str }))
     .filter(entry => entry.strength > 0)
@@ -132,104 +142,130 @@ function determineWinners(
 
 }
 
-function getPlacements4p(entries: {id: number, strength: number}[]): Winners {
-  const winners: Winners = {
+function getPlacements4p(entries: {id: number, strength: number}[]): Placements {
+  const placements: Placements = {
     first: [],
     second: [],
     third: []
   }
   if(entries[0]?.strength === entries[1]?.strength) {
-    winners.second = [entries[0]?.id, entries[1]?.id]
+    placements.second = [entries[0]?.id, entries[1]?.id]
     if(entries[1]?.strength === entries[2]?.strength) {
-      winners.second.push(entries[2]?.id)
+      placements.second.push(entries[2]?.id)
     } else if (entries[2]?.strength !== entries[3]?.strength) {
       //3rd and 4th players not tied - third place is rewarded
-      winners.third = [entries[2]?.id]
+      placements.third = [entries[2]?.id]
     }
     if(entries[1]?.strength === entries[3]?.strength) {
-      winners.second.push(entries[3]?.id)
+      placements.second.push(entries[3]?.id)
     }
   } else {
-    winners.first = [entries[0]?.id]
+    placements.first = [entries[0]?.id]
     if(entries[1]?.strength === entries[2]?.strength) {
-      winners.third = [entries[1]?.id, entries[2]?.id]
+      placements.third = [entries[1]?.id, entries[2]?.id]
       if(entries[2]?.strength === entries[3]?.strength) {
-        winners.third.push(entries[3]?.id)
+        placements.third.push(entries[3]?.id)
       }
     } else {
-      winners.second = [entries[1]?.id]
+      placements.second = [entries[1]?.id]
       if(entries[2]?.strength !== entries[3]?.strength) {
         //3rd and 4th players not tied - third place is rewarded
-        winners.third = [entries[2]?.id]
+        placements.third = [entries[2]?.id]
       }
     }
   }
-  return winners
+  return placements
 }
 
-function applyReward(state: GameState, reward: Reward, playerId: number): GameState {
+function applyReward(state: GameState, reward: Reward, placement: string, playerIds: number[]): GameState {
   const newState = { ...state }
-  
+  newState.gains = newState.gains || []
+  newState.gains.push({
+    playerId: playerIds[0],
+    source: GainSource.CONFLICT,
+    sourceId: state.currentConflict.id,
+    type: reward.type,
+    round: state.currentRound,
+    name: state.currentConflict.name + ' - ' + placement,
+    amount: reward.amount
+  })
   switch (reward.type) {
-    case 'victoryPoints':
+    case RewardType.VICTORY_POINTS:
       newState.players = newState.players.map(player => 
-        player.id === playerId 
+        playerIds.includes(player.id)
           ? { ...player, victoryPoints: player.victoryPoints + reward.amount }
           : player
       )
       break
 
-    case 'influence':
-      if (reward.faction) {
-        const currentInfluence = state.factionInfluence[reward.faction][playerId] || 0
-        newState.factionInfluence = {
-          ...state.factionInfluence,
-          [reward.faction]: {
-            ...state.factionInfluence[reward.faction],
-            [playerId]: currentInfluence + reward.amount
-          }
+    case RewardType.INFLUENCE : {
+      // TODO player chooses faction
+      const faction = FactionType.EMPEROR
+      const currentInfluence = state.factionInfluence[faction][playerIds[0]] || 0
+      newState.factionInfluence = {
+        ...state.factionInfluence,
+        [faction]: {
+          ...state.factionInfluence[faction],
+          [playerIds[0]]: currentInfluence + reward.amount
         }
       }
       break
-
-    case 'control':
+    }
+    case RewardType.CONTROL:
       if (state.currentConflict?.controlSpace) {
-        newState.controlMarkers[state.currentConflict.controlSpace] = playerId
+        newState.controlMarkers[state.currentConflict.controlSpace] = playerIds[0]
       }
+      // newState.gains.controlGains = newState.gains.controlGains || []
+      // newState.gains.controlGains.push({
+      //   playerId: playerIds[0],
+      //   round: state.currentRound,
+      //   name: 'Conflict victory', //TODO add conflict name and place
+      //   amount: reward.amount
+      // })
       break
 
-    case 'spice':
+    case RewardType.SPICE:
       newState.players = newState.players.map(player =>
-        player.id === playerId
+        playerIds.includes(player.id)
           ? { ...player, spice: player.spice + reward.amount }
           : player
       )
       break
 
-    case 'water':
+    case RewardType.WATER:
       newState.players = newState.players.map(player =>
-        player.id === playerId
+        playerIds.includes(player.id)
           ? { ...player, water: player.water + reward.amount }
           : player
       )
       break
 
-    case 'solari':
+    case RewardType.SOLARI:
       newState.players = newState.players.map(player =>
-        player.id === playerId
+        playerIds.includes(player.id)
           ? { ...player, solari: player.solari + reward.amount }
           : player
       )
       break
 
-    case 'troops':
+    case RewardType.TROOPS:
       newState.players = newState.players.map(player =>
-        player.id === playerId
+        playerIds.includes(player.id)
           ? { ...player, troops: player.troops + reward.amount }
           : player
       )
       break
-  }
+    case RewardType.INTRIGUE:
+      newState.players = newState.players.map(player =>
+        playerIds.includes(player.id)
+          ? { ...player, intrigueCount: player.intrigueCount + reward.amount }
+          : player
+      )
+      break
+    case RewardType.AGENT:
+        //TODO
+        break
+    }
 
   return newState
 }
@@ -531,36 +567,34 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       const strength = {...state.combatStrength}
 
-      const winners = determineWinners(strength, state.players.length) as Winners
+      const placements = determinePlacements(strength, state.players.length) as Placements
 
       let currentState = { ...state }
 
       //TODO handle choices
-      if (winners.first !== null) {
+      if (placements.first !== null && placements.first.length > 0) {
         state.currentConflict.rewards.first.forEach(reward => {
-          currentState = applyReward(currentState, reward, winners.first as number)
+          currentState = applyReward(currentState, reward, "1st place", placements.first || [])
         })
       }
 
-      if (winners.second !== null) {
+      if (placements.second !== null && placements.second.length > 0) {
         state.currentConflict.rewards.second.forEach(reward => {
-          currentState = applyReward(currentState, reward, winners.second as number)
+          currentState = applyReward(currentState, reward, "2nd place", placements.second || [])
         })
       }
 
-      if (winners.third !== null && state.players.length === 4) {
+      if (placements.third !== null && placements.third.length > 0 &&state.players.length === 4) {
         state.currentConflict.rewards.third?.forEach(reward => {
-          currentState = applyReward(currentState, reward, winners.third as number)
+          currentState = applyReward(currentState, reward, "3rd place", placements.third || [])
         })
       }
-      // TODO get next conflict
 
       return {
         ...currentState,
         phase: GamePhase.MAKERS,
         combatStrength: {},
-        combatTroops: {},
-        currentConflict: null
+        combatTroops: {}
       }
     }
     case 'PLAY_INTRIGUE': {

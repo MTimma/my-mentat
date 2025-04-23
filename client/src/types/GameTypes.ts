@@ -171,40 +171,20 @@ export interface CardEffect {
 
 export interface Gain {
   playerId: number
+  source: GainSource
+  sourceId: number
   round: number
   name: string
   amount: number
+  type: RewardType
 }
 
-export interface CardGain extends Gain {
-  cardId: number
-}
-
-export interface FieldGain extends Gain {
-  fieldId: number
-}
-
-export interface IntrigueGain extends Gain {
-  intrigueId: number
-}
-
-export interface ConflictGain extends Gain {
-  conflictId: number
-}
-
-export interface Gains {
-  persuasionGains?: Gain[]
-  combatGains?: Gain[]
-  spiceGains?: Gain[]
-  waterGains?: Gain[]
-  solariGains?: Gain[]
-  troopsGains?: Gain[]
-  drawGains?: Gain[]
-  victoryPointsGains?: Gain[]
-  intrigueCardsGains?: Gain[]
-  trashGains?: Gain[]
-  influenceGains?: Gain[]
-
+export enum GainSource {
+  CARD = 'card',
+  FIELD = 'field',
+  CONTROL = 'control',
+  INTRIGUE = 'intrigue',
+  CONFLICT = 'conflict',
 }
 
 export interface Card {
@@ -269,24 +249,25 @@ export interface IntrigueCardPlay {
 }
 
 export interface Reward {
-  type: 'spice' | 'water' | 'solari' | 'troops' | 'influence' | 'control' | 'victoryPoints'
+  type: RewardType
   amount: number
-  faction?: FactionType
 }
 
 export interface Winners {
   first: number[] | null
   second: number[] | null
-  third?: number[] | null
+  third: number[] | null
 }
 
 export interface ConflictCard {
+  id: number
+  tier: 1 | 2 | 3
   name: string
-  controlSpace: ControlMarkerType
+  controlSpace?: ControlMarkerType
   rewards: {
     first: Reward[]
     second: Reward[]
-    third?: Reward[]
+    third: Reward[]
   }
 }
 
@@ -311,6 +292,25 @@ export enum GamePhase {
   COMBAT_REWARDS = 'combat-rewards',
   MAKERS = 'makers',
   RECALL = 'recall'
+}
+
+export enum RewardType {
+  VICTORY_POINTS = 'victory-points',
+  INTRIGUE = 'intrigue',
+  SOLARI = 'solari',
+  SPICE = 'spice',
+  WATER = 'water',
+  INFLUENCE = 'influence',
+  CONTROL = 'control',
+  AGENT = 'agent',
+  COMBAT = 'combat',
+  TROOPS = 'troops',
+  DRAW = 'draw',
+  DISCARD = 'discard',
+  TRASH = 'trash',
+  RETREAT = 'retreat',
+  DEPLOY = 'deploy',
+  RECALL = 'recall',
 }
 
 export interface PlayerSetup {
@@ -339,12 +339,12 @@ export interface GameState {
   currentRound: number
   mentatOwner: number | null
   activePlayerId: number
-  gains: Gains
+  gains: Gain[]
   selectedCard: number | null
   currTurn: GameTurn | null
   combatStrength: Record<number, number>
   combatTroops: Record<number, number>
-  currentConflict: ConflictCard | null
+  currentConflict: ConflictCard
   combatPasses: Set<number>
   occupiedSpaces: Record<number, number[]>
   playArea: Record<number, Card[]>

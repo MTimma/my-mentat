@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Player, GameState } from '../../types/GameTypes';
+import { Player, GameState, RewardType, GainSource } from '../../types/GameTypes';
 import './CombatResults.css';
 
 interface PlayerResult {
@@ -81,7 +81,7 @@ const CombatResults: React.FC<CombatResultsProps> = ({
   const results = calculateResults();
 
   const getPlayerCombatGains = (playerId: number) => {
-    return history.map(state => state.gains.combatGains).flatMap(gain => gain?.filter(g => g.playerId === playerId) || []) || [];
+    return history.map(state => state.gains).flatMap(gain => gain?.filter(g => g.playerId === playerId && g.source === GainSource.CONFLICT) || []) || [];
   };
 
   return (
@@ -96,6 +96,7 @@ const CombatResults: React.FC<CombatResultsProps> = ({
             <th>Details</th>
           </tr>
         </thead>
+        {/* TODO add reward choices */}
         <tbody>
           {results.map((result) => (
             <tr key={result.playerId}>

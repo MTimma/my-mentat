@@ -156,7 +156,7 @@ const GameContent = () => {
 }
 
 function App() {
-  const [gameState, setGameState] = useState<'setup' | 'leaderChoices' | 'game'>('setup')
+  const [gameState, setGameState] = useState<'setup' | 'leaderChoices' | 'game' | 'conflict'>('setup')
   const [playerSetups, setPlayerSetups] = useState<PlayerSetup[]>([])
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
 
