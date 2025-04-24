@@ -311,6 +311,7 @@ export enum RewardType {
   RETREAT = 'retreat',
   DEPLOY = 'deploy',
   RECALL = 'recall',
+  PERSUASION = 'persuasion'
 }
 
 export interface PlayerSetup {
