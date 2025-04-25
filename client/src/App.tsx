@@ -9,7 +9,7 @@ import { useGame } from './components/GameContext/GameContext'
 import GameSetup from './components/GameSetup'
 import DeckSetup from './components/DeckSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup,Card, Leader, FactionType, GameTurn, GamePhase } from './types/GameTypes'
+import { PlayerSetup,Card, Leader, FactionType, GameTurn, GamePhase, MakerSpace } from './types/GameTypes'
 import { STARTING_DECK } from './data/cards'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
@@ -242,7 +242,12 @@ function App() {
             persuasion: 0,
             victoryPoints: 0,
             revealed: false,
-            gains: {}
+            gains: {},
+            bonusSpice: {
+              [MakerSpace.HAGGA_BASIN]: 0,
+              [MakerSpace.GREAT_FLAT]: 0,
+              [MakerSpace.IMPERIAL_BASIN]: 0
+            }
           })),
           factionInfluence:{
             [FactionType.EMPEROR]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),

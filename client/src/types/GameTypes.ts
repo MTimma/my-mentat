@@ -99,6 +99,12 @@ export interface InfluenceAmount {
   amount: number
 }
 
+export enum MakerSpace {
+  HAGGA_BASIN = 'hagga-basin',
+  GREAT_FLAT = 'great-flat',
+  IMPERIAL_BASIN = 'imperial-basin',
+}
+
 export interface SpaceProps {
   id: number
   name: string
@@ -122,7 +128,7 @@ export interface SpaceProps {
   occupiedBy?: number[]
   conflictMarker: boolean
   
-  bonusSpice?: number
+  makerSpace?: MakerSpace
   requiresInfluence?: InfluenceAmount
   controlMarker?: ControlMarkerType
   controlBonus?: {
@@ -334,6 +340,7 @@ export interface GameState {
   intrigueDeck: IntrigueCard[]
   intrigueDiscard: IntrigueCard[]
   controlMarkers: Record<ControlMarkerType, number | null>
+  bonusSpice: Record<MakerSpace, number>
   history: GameState[]
   players: Player[]
   firstPlayerMarker: number

@@ -14,7 +14,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
   reward,
   influence,
   cost,
-  bonusSpice,
+  makerSpace: bonusSpice,
   requiresInfluence,
   isHighlighted,
   onSpaceClick,

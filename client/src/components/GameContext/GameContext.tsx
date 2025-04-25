@@ -568,7 +568,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       let currentState = { ...state }
 
-      //TODO handle choices
+      //TODO handle choices in CombatResults.tsx
       if (placements.first !== null && placements.first.length > 0) {
         state.currentConflict.rewards.first.forEach(reward => {
           currentState = applyReward(currentState, reward, "1st place", placements.first || [])
@@ -587,6 +587,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         })
       }
 
+      // Apply Makers
+      boardSpaces.forEach(s => {
+        if(s.makerSpace && currentState.occupiedSpaces[s.id]?.length === 0) {
+          currentState.bonusSpice[s.makerSpace] += 1
+        }
+      })
+
+      // Recall Agents
+
+      
       return {
         ...currentState,
         phase: GamePhase.MAKERS,
@@ -692,6 +702,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       const updatedGains: Gain[] = [...newState.gains]
 
+      // TODO add bonus spice
       if (space.reward) {
         if (space.reward.solari) {
           updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: space.reward.solari, type: RewardType.SOLARI, source: GainSource.CONTROL } )
