@@ -111,6 +111,7 @@ const GameContent = () => {
           players={gameState.players}
           factionInfluence={gameState.factionInfluence}
           currentConflict={currentConflict}
+          bonusSpice={gameState.bonusSpice}
         />
         <div className="players-area">
           {gameState.players.map((player) => (
@@ -242,18 +243,18 @@ function App() {
             persuasion: 0,
             victoryPoints: 0,
             revealed: false,
-            gains: {},
-            bonusSpice: {
-              [MakerSpace.HAGGA_BASIN]: 0,
-              [MakerSpace.GREAT_FLAT]: 0,
-              [MakerSpace.IMPERIAL_BASIN]: 0
-            }
           })),
           factionInfluence:{
             [FactionType.EMPEROR]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
             [FactionType.SPACING_GUILD]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
             [FactionType.BENE_GESSERIT]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
             [FactionType.FREMEN]: Object.fromEntries(playerSetups.map((p, i) => [i, 0]))
+          },
+          gains: [],
+          bonusSpice: {
+            [MakerSpace.HAGGA_BASIN]: 0,
+            [MakerSpace.GREAT_FLAT]: 0,
+            [MakerSpace.IMPERIAL_BASIN]: 0
           },
           phase: GamePhase.PLAYER_TURNS
         }}>

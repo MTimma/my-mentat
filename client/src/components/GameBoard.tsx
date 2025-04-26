@@ -1,6 +1,6 @@
 import React from 'react'
-import { SpaceProps, AgentIcon, Player, FactionType, ConflictCard } from '../types/GameTypes'
-import BoardSpace from './BoardSpace'
+import { SpaceProps, AgentIcon, Player, FactionType, ConflictCard, MakerSpace } from '../types/GameTypes'
+import BoardSpace from './BoardSpace/BoardSpace'
 import CombatArea from './CombatArea'
 import { boardSpaces } from '../data/boardSpaces'
 
@@ -14,6 +14,7 @@ interface GameBoardProps {
   players: Player[]
   factionInfluence: Record<FactionType, Record<number, number>>
   currentConflict: ConflictCard | null
+  bonusSpice: Record<MakerSpace, number>
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -24,7 +25,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
   canPlaceAgent,
   combatTroops,
   players,
-  factionInfluence
+  factionInfluence,
+  bonusSpice
 }) => {
   const canPayCosts = (space: SpaceProps): boolean => {
     if (occupiedSpaces[space.id]?.length > 0) return false
@@ -64,6 +66,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
             onSpaceClick={() => onSpaceClick(space.id)}
             occupiedBy={occupiedSpaces[space.id] || []}
             isDisabled={!canPayCosts(space) || !canPlaceAgent}
+            bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
+            makerSpace={space.makerSpace}
           />
         ))}
       </div>

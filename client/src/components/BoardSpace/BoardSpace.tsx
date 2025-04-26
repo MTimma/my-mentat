@@ -1,11 +1,13 @@
 import React from 'react'
-import { SpaceProps} from '../types/GameTypes'
+import { SpaceProps } from '../../types/GameTypes'
+import './BoardSpace.css'
 
 interface BoardSpaceProps extends SpaceProps {
   isHighlighted: boolean
   onSpaceClick: () => void
   occupiedBy: number[]
   isDisabled: boolean
+  bonusSpice: number
 }
 
 const BoardSpace: React.FC<BoardSpaceProps> = ({
@@ -14,13 +16,14 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
   reward,
   influence,
   cost,
-  makerSpace: bonusSpice,
+  bonusSpice,
   requiresInfluence,
   isHighlighted,
   onSpaceClick,
   occupiedBy,
   conflictMarker,
-  isDisabled
+  isDisabled,
+  makerSpace
 }) => {
   const renderCost = () => {
     if (!cost) return null
@@ -59,7 +62,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
 
   const renderBonusSpice = () => {
     if (typeof bonusSpice !== 'number') return null
-    return bonusSpice > 0 ? (
+    return makerSpace ? (
       <div className="bonus-spice">
         + Bonus Spice: {bonusSpice}
       </div>

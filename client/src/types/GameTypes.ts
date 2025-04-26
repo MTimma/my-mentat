@@ -191,6 +191,8 @@ export enum GainSource {
   CONTROL = 'control',
   INTRIGUE = 'intrigue',
   CONFLICT = 'conflict',
+  HIGH_COUNCIL = 'high-council',
+  MENTAT = 'mentat'
 }
 
 export interface Card {
@@ -297,7 +299,8 @@ export enum GamePhase {
   COMBAT = 'combat',
   COMBAT_REWARDS = 'combat-rewards',
   MAKERS = 'makers',
-  RECALL = 'recall'
+  RECALL = 'recall',
+  END_GAME = 'end-game'
 }
 
 export enum RewardType {

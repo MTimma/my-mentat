@@ -566,42 +566,69 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       const placements = determinePlacements(strength, state.players.length) as Placements
 
-      let currentState = { ...state }
+      let newState = { ...state }
 
       //TODO handle choices in CombatResults.tsx
+      let mentatOwnerNextRound = null;
       if (placements.first !== null && placements.first.length > 0) {
         state.currentConflict.rewards.first.forEach(reward => {
-          currentState = applyReward(currentState, reward, "1st place", placements.first || [])
+          newState = applyReward(newState, reward, "1st place", placements.first || [])
         })
+        if(state.currentConflict.rewards.first.find(r => r.type === RewardType.AGENT)) {
+          mentatOwnerNextRound = placements.first[0]
+        }
       }
 
       if (placements.second !== null && placements.second.length > 0) {
         state.currentConflict.rewards.second.forEach(reward => {
-          currentState = applyReward(currentState, reward, "2nd place", placements.second || [])
+          newState = applyReward(newState, reward, "2nd place", placements.second || [])
         })
       }
 
       if (placements.third !== null && placements.third.length > 0 &&state.players.length === 4) {
         state.currentConflict.rewards.third?.forEach(reward => {
-          currentState = applyReward(currentState, reward, "3rd place", placements.third || [])
+          newState = applyReward(newState, reward, "3rd place", placements.third || [])
         })
       }
 
       // Apply Makers
       boardSpaces.forEach(s => {
-        if(s.makerSpace && currentState.occupiedSpaces[s.id]?.length === 0) {
-          currentState.bonusSpice[s.makerSpace] += 1
+        if(s.makerSpace && newState.occupiedSpaces[s.id]?.length === 0) {
+          newState.bonusSpice[s.makerSpace] += 1
         }
       })
 
       // Recall Agents
-
+      newState.occupiedSpaces = {}
+      newState.players.forEach(p => {
+        newState.players[p.id].agents = 2
+        if(newState.players[p.id].hasSwordmaster) {
+          newState.players[p.id].agents += 1
+        }
+        if(newState.players[p.id].id === mentatOwnerNextRound) {
+          newState.mentatOwner = p.id
+          newState.players[p.id].agents += 1
+        }
+      })
       
+      // Draw 5 cards
+      newState.players.forEach(p => {
+        if(p.deck.length < 5) {
+          p.deck = [...p.deck, ...p.discardPile]
+          p.discardPile = []
+        }
+        p.handCount = 5
+      })
+      newState.firstPlayerMarker = (newState.firstPlayerMarker + 1) % newState.players.length
+
+      // TODO If 10+ VP = End Game
+
       return {
-        ...currentState,
-        phase: GamePhase.MAKERS,
+        ...newState,
+        phase: GamePhase.ROUND_START,
         combatStrength: {},
-        combatTroops: {}
+        combatTroops: {},
+        currentRound: newState.currentRound + 1
       }
     }
     case 'PLAY_INTRIGUE': {
@@ -892,6 +919,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       let solariCount = 0
 
       const updatedGains: Gain[] = [...state.gains]
+
+      if(player.hasHighCouncilSeat) {
+        updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: 0, name: "High Council Seat", amount: 2, type: RewardType.PERSUASION, source: GainSource.HIGH_COUNCIL } )
+        persuasionCount += 2
+      }
+
       revealedCards.forEach(card => {
         card.revealEffect?.filter((effect:CardEffect) => {
             if(effect.cost) {
