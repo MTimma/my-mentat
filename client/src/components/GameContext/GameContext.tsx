@@ -702,7 +702,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       const updatedGains: Gain[] = [...newState.gains]
 
-      // TODO add bonus spice
+      
       if (space.reward) {
         if (space.reward.solari) {
           updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: space.reward.solari, type: RewardType.SOLARI, source: GainSource.CONTROL } )
@@ -711,6 +711,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (space.reward.spice) {
           updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: space.reward.spice, type: RewardType.SPICE, source: GainSource.CONTROL } )
           updatedPlayer.spice += space.reward.spice
+          if(space.makerSpace) {
+            updatedPlayer.spice += newState.bonusSpice[space.makerSpace] 
+            newState.bonusSpice[space.makerSpace] = 0
+          }
         }
         if (space.reward.water) {
           updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: space.reward.water, type: RewardType.WATER, source: GainSource.CONTROL } )
