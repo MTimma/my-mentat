@@ -18,12 +18,15 @@ import {
   RewardType,
   GainSource,
   GainType,
-  Gain
+  Gain,
+  MakerSpace
 } from '../../types/GameTypes'
-import { boardSpaces } from '../../data/boardSpaces'
+import { BOARD_SPACES } from '../../data/boardSpaces'
 import { ARRAKIS_LIAISON_DECK } from '../../data/cards'
 import { SPICE_MUST_FLOW_DECK } from '../../data/cards'
 import { FOLDSPACE_DECK } from '../../data/cards'
+import { CONFLICTS } from '../../data/conflicts'
+
 interface GameContextType {
   gameState: GameState
   currentConflict: ConflictCard | null
@@ -33,18 +36,12 @@ interface GameContextType {
 }
 
 type GameAction = 
-  | { type: 'START_ROUND' }
   | { type: 'END_TURN'; playerId: number }
   | { type: 'PLAY_CARD'; playerId: number; cardId: number }
   | { type: 'DEPLOY_TROOP'; playerId: number }
   | { type: 'RETREAT_TROOP'; playerId: number }
   | { type: 'PLAY_INTRIGUE'; cardId: number; playerId: number; targetPlayerId?: number }
-  // | { type: 'GAIN_INFLUENCE'; playerId: number; faction: FactionType; amount: number }
   | { type: 'ACQUIRE_CARD'; playerId: number; cardId: number }
-  // | { type: 'DRAW_CARD'; playerId: number }
-  // | { type: 'GAIN_RESOURCE'; playerId: number; resource: 'spice' | 'water' | 'solari'; amount: number }
-  // | { type: 'START_COMBAT' }
-  // | { type: 'ADD_COMBAT_STRENGTH'; playerId: number; amount: number }
   | { type: 'PLAY_COMBAT_INTRIGUE'; playerId: number; cardId: number }
   | { type: 'RESOLVE_COMBAT' }
   | { type: 'START_COMBAT_PHASE' }
@@ -54,6 +51,7 @@ type GameAction =
   | { type: 'REVEAL_CARDS'; playerId: number; cardIds: number[] }
   | { type: 'ACQUIRE_AL'; playerId: number }
   | { type: 'ACQUIRE_SMF'; playerId: number }
+  | { type: 'SELECT_CONFLICT'; conflictId: number }
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
 export const useGame = () => {
@@ -91,10 +89,16 @@ const initialGameState: GameState = {
   imperiumRow: [],
   intrigueDeck: [],
   intrigueDiscard: [],
+  conflictsDiscard: [],
   controlMarkers: {
     [ControlMarkerType.ARRAKIN]: null,
     [ControlMarkerType.CARTHAG]: null,
     [ControlMarkerType.IMPERIAL_BASIN]: null
+  },
+  bonusSpice: {
+    [MakerSpace.HAGGA_BASIN]: 0,
+    [MakerSpace.GREAT_FLAT]: 0,
+    [MakerSpace.IMPERIAL_BASIN]: 0
   },
   combatStrength: {},
   combatTroops: {},
@@ -328,11 +332,15 @@ function requirementSatisfied(effect: CardEffect, state: GameState, playerId: nu
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-    case 'START_ROUND':
+    case 'SELECT_CONFLICT': {
+      const conflict = CONFLICTS.find(c => c.id === action.conflictId)
+      if (!conflict) return state
       return {
         ...state,
+        currentConflict: conflict,
         phase: GamePhase.PLAYER_TURNS
       }
+    }
     case 'END_TURN': {
       const { playerId } = action
       if (playerId !== state.activePlayerId) return state
@@ -347,6 +355,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if(player.revealed) {
         player.discardPile = [...(player.discardPile || []), ...(player.playArea || [])]
         player.playArea = []
+        player.persuasion = 0
       }
 
       if (!newState.players.find(p => !p.revealed)) {
@@ -592,7 +601,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       // Apply Makers
-      boardSpaces.forEach(s => {
+      BOARD_SPACES.forEach(s => {
         if(s.makerSpace && newState.occupiedSpaces[s.id]?.length === 0) {
           newState.bonusSpice[s.makerSpace] += 1
         }
@@ -628,7 +637,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         phase: GamePhase.ROUND_START,
         combatStrength: {},
         combatTroops: {},
-        currentRound: newState.currentRound + 1
+        currentRound: newState.currentRound + 1,
+        conflictsDiscard: [...state.conflictsDiscard, state.currentConflict]
       }
     }
     case 'PLAY_INTRIGUE': {
@@ -684,7 +694,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const newState = {...state}
       const updatedPlayer: Player = {...newState.players.find(p => p.id === playerId)} as Player
       const card = updatedPlayer.deck.find(c => c.id === newState.selectedCard)
-      const space = boardSpaces.find((s: SpaceProps) => s.id === spaceId)
+      const space = BOARD_SPACES.find((s: SpaceProps) => s.id === spaceId)
       
       if (!updatedPlayer || !card || !space || playerId !== newState.activePlayerId || !newState.selectedCard) return state
       

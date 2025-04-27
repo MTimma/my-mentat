@@ -1,6 +1,6 @@
 import { SpaceProps, AgentIcon, FactionType, ControlMarkerType, MakerSpace } from '../types/GameTypes'
 
-export const boardSpaces: SpaceProps[] = [
+export const BOARD_SPACES: SpaceProps[] = [
   // City Spaces
   {
     id: 1,

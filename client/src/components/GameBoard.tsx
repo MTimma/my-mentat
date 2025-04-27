@@ -2,7 +2,8 @@ import React from 'react'
 import { SpaceProps, AgentIcon, Player, FactionType, ConflictCard, MakerSpace } from '../types/GameTypes'
 import BoardSpace from './BoardSpace/BoardSpace'
 import CombatArea from './CombatArea'
-import { boardSpaces } from '../data/boardSpaces'
+import { BOARD_SPACES } from '../data/boardSpaces'
+import ConflictSummary from './ConflictSummary/ConflictSummary'
 
 interface GameBoardProps {
   currentPlayer: number
@@ -13,7 +14,7 @@ interface GameBoardProps {
   combatTroops: Record<number, number>
   players: Player[]
   factionInfluence: Record<FactionType, Record<number, number>>
-  currentConflict: ConflictCard | null
+  currentConflict: ConflictCard
   bonusSpice: Record<MakerSpace, number>
 }
 
@@ -26,7 +27,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
   combatTroops,
   players,
   factionInfluence,
-  bonusSpice
+  bonusSpice,
+  currentConflict
 }) => {
   const canPayCosts = (space: SpaceProps): boolean => {
     if (occupiedSpaces[space.id]?.length > 0) return false
@@ -58,7 +60,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   return (
     <div className="game-board">
       <div className="board-spaces">
-        {boardSpaces.map((space) => (
+        {BOARD_SPACES.map((space) => (
           <BoardSpace 
             key={space.id}
             {...space}
@@ -71,6 +73,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           />
         ))}
       </div>
+      <ConflictSummary currentConflict={currentConflict} />
       <CombatArea 
         troops={combatTroops}
         players={players}

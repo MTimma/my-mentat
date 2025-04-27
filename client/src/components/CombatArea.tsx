@@ -36,51 +36,8 @@ const CombatArea: React.FC<CombatAreaProps> = ({
     )
   }
 
-  const renderRewards = () => {
-    if (!currentConflict) return null
-
-    return (
-      <div className="combat-rewards">
-        <div className="first-place">
-          {currentConflict.rewards.first.map((reward, index) => (
-            <div key={index} className="reward">
-              {reward.type === 'victory-points' && `${reward.amount}VP`}
-              {reward.type === 'spice' && `${reward.amount}🌶️`}
-              {reward.type === 'water' && `${reward.amount}💧`}
-              {reward.type === 'solari' && `${reward.amount}💰`}
-              {reward.type === 'troops' && `${reward.amount}⚔️`}
-              {reward.type === 'influence' && 
-                `${reward.amount} ${reward.faction} influence`}
-              {reward.type === 'control' && 
-                `Control of ${currentConflict.controlSpace}`}
-            </div>
-          ))}
-        </div>
-        <div className="second-place">
-          {currentConflict.rewards.second.map((reward, index) => (
-            <div key={index} className="reward">
-              {/* Same reward rendering as above */}
-            </div>
-          ))}
-        </div>
-        {currentConflict.rewards.third && players.length === 4 && (
-          <div className="third-place">
-            {currentConflict.rewards.third.map((reward, index) => (
-              <div key={index} className="reward">
-                {/* Same reward rendering as above */}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    )
-  }
-
   return (
     <div className="combat-area">
-      <div className="combat-title">
-        {currentConflict ? currentConflict.name : 'No Active Conflict'}
-      </div>
       <div className="combat-grid">
           <div key={players[0].id} className="combat-cell">
             {renderTroops(players[0].id)}
@@ -99,7 +56,6 @@ const CombatArea: React.FC<CombatAreaProps> = ({
             {renderStrength(players[2].id)}
           </div>  
       </div>
-      {renderRewards()}
     </div>
   )
 }

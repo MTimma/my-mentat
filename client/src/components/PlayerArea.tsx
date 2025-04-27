@@ -34,6 +34,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
         </div>
       </div>
       <div className="resources">
+        <div>VP: {player.victoryPoints}</div>
         <div>Spice: {player.spice}</div>
         <div>Water: {player.water}</div>
         <div>Solari: {player.solari}</div>

@@ -303,24 +303,32 @@ export enum GamePhase {
   END_GAME = 'end-game'
 }
 
+export enum ScreenState {
+  SETUP = 'setup',
+  LEADER_CHOICES = 'leader-choices',
+  ROUND_START = 'round-start',
+  GAME = 'game',
+  CONFLICT = 'conflict'
+}
+
 export enum RewardType {
-  VICTORY_POINTS = 'victory-points',
-  INTRIGUE = 'intrigue',
-  SOLARI = 'solari',
-  SPICE = 'spice',
-  WATER = 'water',
-  INFLUENCE = 'influence',
-  CONTROL = 'control',
-  AGENT = 'agent',
-  COMBAT = 'combat',
-  TROOPS = 'troops',
-  DRAW = 'draw',
-  DISCARD = 'discard',
-  TRASH = 'trash',
-  RETREAT = 'retreat',
-  DEPLOY = 'deploy',
-  RECALL = 'recall',
-  PERSUASION = 'persuasion'
+  VICTORY_POINTS = 'VP',
+  INTRIGUE = 'Intrigue',
+  SOLARI = 'Solari',
+  SPICE = 'Spice',
+  WATER = 'Water',
+  INFLUENCE = 'Influence',
+  CONTROL = 'Control',
+  AGENT = 'Agent',
+  COMBAT = 'Combat',
+  TROOPS = 'Troops',
+  DRAW = 'Draw',
+  DISCARD = 'Discard',
+  TRASH = 'Trash',
+  RETREAT = 'Retreat',
+  DEPLOY = 'Deploy',
+  RECALL = 'Recall',
+  PERSUASION = 'Persuasion'
 }
 
 export interface PlayerSetup {
@@ -342,6 +350,7 @@ export interface GameState {
   imperiumRow: Card[]
   intrigueDeck: IntrigueCard[]
   intrigueDiscard: IntrigueCard[]
+  conflictsDiscard: ConflictCard[]
   controlMarkers: Record<ControlMarkerType, number | null>
   bonusSpice: Record<MakerSpace, number>
   history: GameState[]
