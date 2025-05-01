@@ -134,6 +134,7 @@ const GameContent = () => {
       <div className="round-start-container" hidden={gameState.phase !== GamePhase.ROUND_START}>
         <ConflictSelect conflicts={CONFLICTS.filter(c => !gameState.conflictsDiscard.includes(c))} handleConflictSelect={handleConflictSelect}/>
       </div>
+      <div className="turn-controls-spacer" />
       <div className="turn-controls-container" hidden={gameState.phase !== GamePhase.PLAYER_TURNS && gameState.phase !== GamePhase.COMBAT}>
         <TurnControls
           activePlayer={activePlayer}
