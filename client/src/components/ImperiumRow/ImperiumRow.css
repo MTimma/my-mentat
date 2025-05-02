@@ -1,0 +1,67 @@
+.imperium-section {
+  display: flex;
+  gap: 20px;
+  padding: 10px;
+  background-color: #d4b16a;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  align-items: flex-start;
+}
+
+.imperium-row {
+  display: flex;
+  gap: 6px;
+}
+
+.fixed-cards {
+  display: flex;
+  gap: 6px;
+  border-left: 2px solid #8b4513;
+  padding-left: 20px;
+}
+
+.imperium-card {
+  width: 120px;
+  height: 160px;
+  border: 2px solid #8b4513;
+  border-radius: 6px;
+  background-color: #f4e4bc;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.imperium-card.fixed-card {
+  background-color: #e6d5a7;
+}
+
+.imperium-card h4 {
+  margin: 0;
+  text-align: center;
+  color: #8b4513;
+  font-size: 12px;
+}
+
+.persuasion-cost {
+  background-color: #8b4513;
+  color: white;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+
+.card-image-ir {
+  width: 100%;
+  max-width: 120px;
+  height: auto;
+  max-height: 100px;
+  object-fit: contain;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  display: block;
+  position: relative;
+} 

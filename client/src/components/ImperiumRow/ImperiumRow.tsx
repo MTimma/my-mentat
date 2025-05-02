@@ -1,5 +1,6 @@
 import React from 'react'
 import { Card } from '../types/GameTypes'
+import './ImperiumRow.css'
 
 interface ImperiumRowProps {
   cards: Card[]
@@ -46,8 +47,12 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
       </div>
       <div className="fixed-cards">
         <div className="imperium-card fixed-card">
-          <h4>Arrakis Liaison</h4>
-          <div className="persuasion-cost">2💰</div>
+          <img 
+            src={'imperium_row/arrakis_liaison.avif'} 
+            alt={'Arrakis Liaison'}
+            className="card-image-ir"
+          />
+          <>
           <div className="count-display">
             Count: {alCount}
           </div>
@@ -57,10 +62,15 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
             >
               Acquire
             </button>
+          </>
         </div>
         <div className="imperium-card fixed-card">
-          <h4>The Spice Must Flow</h4>
-          <div className="persuasion-cost">9💰</div>
+          <img 
+            src={'imperium_row/spice_must_flow.avif'} 
+            alt={'The Spice Must Flow'}
+            className="card-image-ir"
+          />
+          <>
           <div className="count-display">
             Count: {smfCount}
           </div>
@@ -70,6 +80,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
             >
               Acquire
             </button>
+          </>
         </div>
       </div>
     </div>
