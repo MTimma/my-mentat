@@ -76,7 +76,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
     <div className="card-selection-dialog-overlay">
       <div className="card-selection-dialog">
         <div className="dialog-header">
-          <h2>Select a Card to Play</h2>
+          {isRevealTurn ? <h2>Select Cards to Reveal</h2> : <h2>Select a Card to Play</h2>}
           <input
             type="text"
             placeholder="Search cards..."
@@ -99,6 +99,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
                   className="card-image"
                 />
               )}
+              {!card.image && (<>
               <div className="card-header">
                 <h3>{card.name}</h3>
                 {card.cost && <span className="persuasion">Cost: {card.cost}</span>}
@@ -131,6 +132,8 @@ const CardSearch: React.FC<CardSearchProps> = ({
                   Acquire: {JSON.stringify(card.acquireEffect)}
                 </p>
               )}
+              </>
+            )}
             </div>
           ))}
         </div>

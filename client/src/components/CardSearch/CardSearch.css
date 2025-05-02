@@ -55,11 +55,13 @@
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(135px, auto));
+  gap: 4px;
   overflow-y: auto;
   padding: 16px;
   max-height: calc(90vh - 200px);
+  justify-items: center;
+  justify-content: center;
 }
 
 .card {
@@ -73,15 +75,22 @@
   aspect-ratio: 2.5/3.5;
   display: flex;
   flex-direction: column;
+  width: 150px;
+  margin: 0;
+  transform: scale(0.70);
+  z-index: 1;
 }
 
 .card:hover {
-  transform: translateY(-2px);
+  transform: scale(0.85);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   border-color: #444;
+  z-index: 3;
 }
 
 .card.selected {
+  z-index: 2;
+  transform: scale(0.85);
   border-color: #ffd700;
   box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
 }
@@ -94,6 +103,8 @@
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
+  /* transform: scale(0.85); */
+  transform-origin: center;
 }
 
 .card.selected .card-image {
