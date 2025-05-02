@@ -1033,12 +1033,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.arrakisLiaisonDeck.length === 0) return state
       if (player.persuasion < 2) return state
       const alDeck = [...state.arrakisLiaisonDeck]
-      player.discardPile.push(alDeck.pop() as Card)
+      const discardPile = [...player.discardPile]
+      discardPile.push(alDeck.pop() as Card)
       player.persuasion -= 2
       return {
         ...state,
         arrakisLiaisonDeck: alDeck,
-        players: state.players.map(p => p.id === playerId ? { ...p, discardPile: player.discardPile, persuasion: player.persuasion } : p)
+        players: state.players.map(p => p.id === playerId ? { ...p, discardPile: discardPile, persuasion: player.persuasion } : p)
       }
     }
     case 'ACQUIRE_SMF': {
