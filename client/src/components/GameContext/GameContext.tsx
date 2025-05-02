@@ -601,12 +601,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       // Apply Makers
+      const bonusSpice = {...newState.bonusSpice}
       BOARD_SPACES.forEach(s => {
-        if(s.makerSpace && newState.occupiedSpaces[s.id]?.length === 0) {
-          newState.bonusSpice[s.makerSpace] += 1
+        if(s.makerSpace && (!newState.occupiedSpaces[s.id] || newState.occupiedSpaces[s.id]?.length === 0)) {
+          bonusSpice[s.makerSpace] += 1
         }
-      })
-
+      })  
+      newState.bonusSpice = bonusSpice
       // Recall Agents
       newState.occupiedSpaces = {}
       newState.players.forEach(p => {
@@ -622,6 +623,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Draw 5 cards
       newState.players.forEach(p => {
+        p.revealed = false
         if(p.deck.length < 5) {
           p.deck = [...p.deck, ...p.discardPile]
           p.discardPile = []
@@ -749,8 +751,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: space.reward.spice, type: RewardType.SPICE, source: GainSource.CONTROL } )
           updatedPlayer.spice += space.reward.spice
           if(space.makerSpace) {
-            updatedPlayer.spice += newState.bonusSpice[space.makerSpace] 
-            newState.bonusSpice[space.makerSpace] = 0
+            const bonusSpice = {...newState.bonusSpice}
+            updatedPlayer.spice += bonusSpice[space.makerSpace] 
+            bonusSpice[space.makerSpace] = 0
+            newState.bonusSpice = bonusSpice
           }
         }
         if (space.reward.water) {
@@ -1039,7 +1043,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         arrakisLiaisonDeck: alDeck,
-        players: state.players.map(p => p.id === playerId ? { ...p, discardPile: discardPile, persuasion: player.persuasion } : p)
+        players: state.players.map(p => p.id === playerId ? { ...p, discardPile: 
+        discardPile, persuasion: player.persuasion } : p)
       }
     }
     case 'ACQUIRE_SMF': {
