@@ -28,15 +28,16 @@ const CardSearch: React.FC<CardSearchProps> = ({
     const searchLower = searchTerm.toLowerCase()
     return cards.filter(card => {
       const searchableText = [
-        card.name,
-        card.effect,
-        card.acquireEffect,
-        card.persuasion?.toString(),
-        card.swordIcon ? 'sword' : '',
-        card.resources ? Object.entries(card.resources)
-          .map(([key, value]) => `${key}: ${value}`).join(' ') : '',
+        card.name,//TODO check effect other fields
+        card.revealEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
+        card.revealEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
+        card.revealEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
+        card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
+        card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
+        card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
+        card.acquireEffect ? JSON.stringify(card.acquireEffect) : '',
+        card.cost?.toString(),
         card.agentIcons.join(' '),
-        card.fremenBond ? 'fremen bond' : '',
       ].join(' ').toLowerCase()
 
       return searchableText.includes(searchLower)
@@ -91,28 +92,44 @@ const CardSearch: React.FC<CardSearchProps> = ({
               className={`card ${selectedCards?.find(c => c.id === card.id) ? 'selected' : ''}`}
               onClick={() => handleCardClick(card)}
             >
+              {card.image && (
+                <img 
+                  src={card.image} 
+                  alt={card.name}
+                  className="card-image"
+                />
+              )}
               <div className="card-header">
                 <h3>{card.name}</h3>
-                {card.persuasion && <span className="persuasion">Persuasion: {card.persuasion}</span>}
+                {card.cost && <span className="persuasion">Cost: {card.cost}</span>}
               </div>
               <div className="card-icons">
                 {card.agentIcons.map((icon, index) => (
                   <span key={index} className="agent-icon">{icon}</span>
                 ))}
-                {card.swordIcon && <span className="sword-icon">⚔️</span>}
               </div>
-              {card.resources && (
-                <div className="card-resources">
-                  {Object.entries(card.resources).map(([resource, amount]) => (
-                    <span key={resource} className="resource">
-                      {resource}: {amount}
-                    </span>
+              {card.revealEffect && (
+                <div className="card-effect">
+                  {card.revealEffect.map((effect, index) => (
+                    <div key={index}>
+                      Reveal: {JSON.stringify(effect.reward)}
+                    </div>
                   ))}
                 </div>
               )}
-              {card.effect && <p className="card-effect">{card.effect}</p>}
+              {card.playEffect && (
+                <div className="card-effect">
+                  {card.playEffect.map((effect, index) => (
+                    <div key={index}>
+                      Play: {JSON.stringify(effect.reward)}
+                    </div>
+                  ))}
+                </div>
+              )}
               {card.acquireEffect && (
-                <p className="card-acquire-effect">Acquire: {card.acquireEffect}</p>
+                <p className="card-acquire-effect">
+                  Acquire: {JSON.stringify(card.acquireEffect)}
+                </p>
               )}
             </div>
           ))}

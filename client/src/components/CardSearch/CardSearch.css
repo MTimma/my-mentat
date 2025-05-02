@@ -63,12 +63,16 @@
 }
 
 .card {
+  position: relative;
   background-color: #2a2a2a;
   border: 2px solid #333;
   border-radius: 6px;
   padding: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
+  aspect-ratio: 2.5/3.5;
+  display: flex;
+  flex-direction: column;
 }
 
 .card:hover {
@@ -80,6 +84,28 @@
 .card.selected {
   border-color: #ffd700;
   box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.card-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.card.selected .card-image {
+  filter: brightness(1.2) sepia(0.3);
+}
+
+.card.has-image .card-header,
+.card.has-image .card-icons,
+.card.has-image .card-resources,
+.card.has-image .card-effect,
+.card.has-image .card-acquire-effect {
+  display: none;
 }
 
 .card-header {

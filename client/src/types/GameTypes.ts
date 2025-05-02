@@ -198,6 +198,7 @@ export enum GainSource {
 export interface Card {
   id: number
   name: string
+  image: string
   faction?: FactionType
   cost?: number
   agentIcons: AgentIcon[]
