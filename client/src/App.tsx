@@ -90,7 +90,7 @@ const GameContent = () => {
     <div className="game-container">
       <div className="turn-history-container">
         <TurnHistory 
-          turns={gameState.history.map(h => h.currTurn).filter((turn): turn is GameTurn => turn !== null)}
+          turns={gameState.history}
           currentTurn={gameState.history.length}
           players={gameState.players}
         />
