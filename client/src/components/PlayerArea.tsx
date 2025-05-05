@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Player } from '../types/GameTypes'
 
 interface PlayerAreaProps {
@@ -12,8 +12,43 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
   isActive, 
   isStartingPlayer
 }) => {
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
+    <>
+    {!isOpen && <div className={`player-area-toggle ${isActive ? 'active' : ''}`} onClick={() => setIsOpen(!isOpen)}>
+        <div className="player-header">
+          <div className="name-with-indicators">
+            <div className="name-with-color">
+              <div className={`color-indicator ${player.color}`}></div>
+              <div>
+                <div className="resource-row">
+                  <div className="resource-stack">
+                    <span>{player.victoryPoints}</span>
+                    <img className="resource-icon" src={"icon/vp.png"} alt="vp" />
+                  </div>
+                  <div className="resource-stack">
+                    <span>{player.spice}</span>
+                    <img className="resource-icon" src={"icon/spice.png"} alt="spice" />
+                  </div>
+                  <div className="resource-stack">
+                    <span>{player.water}</span>
+                    <img className="resource-icon" src={"icon/water.png"} alt="water" />
+                  </div>
+                  <div className="resource-stack">
+                    <span>{player.solari}</span>
+                    <img className="resource-icon" src={"icon/solari.png"} alt="solari" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="player-indicators">
+              {isStartingPlayer && <div className="starting-player-indicator">🪱</div>}
+            </div>
+          </div>
+        </div>
+    </div>}
+    {isOpen && <div className="player-area-toggle" onClick={() => setIsOpen(!isOpen)}>
     <div className={`player-area ${isActive ? 'active' : ''}`}>
       <div className="player-header">
         <div className="name-with-indicators">
@@ -85,7 +120,10 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
           ))}
         </div>
       </div>
-    </div>
+      </div>
+    </div>}
+      
+    </>
   )
 }
 

@@ -45,8 +45,12 @@
   margin: 0 auto;
 }
 
-.players-area {
-  display: contents; /* This allows children to be positioned in the grid */
+.player-area-toggle {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f4e4bc;
+  min-width: 300px;
 }
 
 .player-area {
@@ -54,7 +58,6 @@
   border: 1px solid #ccc;
   border-radius: 4px;
   background-color: #f4e4bc;
-  width: 100%;
   min-width: 300px;
   height: 100%;
   min-height: 400px;
@@ -66,7 +69,7 @@
 }
 
 /* Position each player */
-.player-area:nth-child(1) {
+/* .player-area:nth-child(1) {
   grid-column: 1;
   grid-row: 1;
   justify-self: end;
@@ -104,7 +107,7 @@
   margin-right: -1px;
   margin-top: -1px;
   border-color: #1976d2;
-}
+} */
 
 /* Make player areas more compact */
 .player-area h3 {
@@ -119,7 +122,7 @@
   color: #000;
 }
 
-.player-area.active {
+.active {
   background-color: #e3f2fd;
   border-color: #2196f3;
 }
@@ -327,8 +330,8 @@
 }
 
 .color-indicator {
-  width: 16px;
-  height: 16px;
+  width: 1em;
+  height: 1em;
   border-radius: 50%;
   border: 2px solid rgba(0, 0, 0, 0.2);
 }
@@ -1254,4 +1257,36 @@
 .turn-controls-spacer {
   height: 84px; /* 1rem padding top+bottom + estimated content height */
   width: 100%;
+}
+
+
+.resource-row {
+  display: flex;
+}
+
+.resource-stack {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.resource-stack span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75em;
+  font-weight: bold;
+  color: #ffffff;
+  pointer-events: none;
+  text-shadow: 0 0 2px #000, 0 1px 2px #000;
+}
+
+.resource-stack .resource-icon {
+  display: block;
+  padding: 0.1em;
+  height: 2.5em;
+  width: auto;
+  vertical-align: middle;
 }
