@@ -104,14 +104,14 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         {renderRewards()}
         {renderInfluence()}
         {renderBonusSpice()}
-        <div className="agents-container">
-          {occupiedBy.map((playerId) => (
-            <div 
-              key={playerId} 
-              className={`agent player-${playerId}`} 
-            />
-          ))}
-        </div>
+      </div>
+      <div className="agents-container">
+        {occupiedBy.map((playerId) => (
+          <div 
+            key={playerId} 
+            className={`agent player-${playerId}`} 
+          />
+        ))}
       </div>
     </div>
   )
