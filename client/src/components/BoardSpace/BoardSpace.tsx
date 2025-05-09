@@ -23,7 +23,8 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
   occupiedBy,
   conflictMarker,
   isDisabled,
-  makerSpace
+  makerSpace,
+  image
 }) => {
   const renderCost = () => {
     if (!cost) return null
@@ -88,22 +89,29 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         ${isDisabled ? 'disabled' : ''}
       `}
       onClick={onSpaceClick}
+      style={{
+        backgroundImage: image ? `url(${image})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
     >
-      <div className="space-header">
-        <span className="space-name">{name}</span>
-        {renderCost()}
-      </div>
-      {renderRequirement()}
-      {renderRewards()}
-      {renderInfluence()}
-      {renderBonusSpice()}
-      <div className="agents-container">
-        {occupiedBy.map((playerId) => (
-          <div 
-            key={playerId} 
-            className={`agent player-${playerId}`} 
-          />
-        ))}
+      <div className="space-content">
+        <div className="space-header">
+          <span className="space-name">{name}</span>
+          {renderCost()}
+        </div>
+        {renderRequirement()}
+        {renderRewards()}
+        {renderInfluence()}
+        {renderBonusSpice()}
+        <div className="agents-container">
+          {occupiedBy.map((playerId) => (
+            <div 
+              key={playerId} 
+              className={`agent player-${playerId}`} 
+            />
+          ))}
+        </div>
       </div>
     </div>
   )

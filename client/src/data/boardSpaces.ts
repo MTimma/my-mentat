@@ -9,7 +9,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     agentIcon: AgentIcon.CITY,
     reward: { troops: 1, cards: 1 },
     controlBonus: { solari: 1 },
-    controlMarker: ControlMarkerType.ARRAKIN
+    controlMarker: ControlMarkerType.ARRAKIN,
+    image: "board/arrakeen.png"
   },
   {
     id: 2,
@@ -18,7 +19,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     agentIcon: AgentIcon.CITY,
     reward: { troops: 1, intrigueCards: 1 },
     controlBonus: { solari: 1 },
-    controlMarker: ControlMarkerType.CARTHAG
+    controlMarker: ControlMarkerType.CARTHAG,
+    image: "board/carthag.png"
   },
   {
     id: 3,
@@ -26,7 +28,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     conflictMarker: true,
     agentIcon: AgentIcon.CITY,
     cost: { water: 2 },
-    reward: { cards: 3 }
+    reward: { cards: 3 },
+    image: "board/research_station.png"
   },
 
   // Spice Trade Spaces
@@ -39,6 +42,7 @@ export const BOARD_SPACES: SpaceProps[] = [
     controlBonus: { spice: 1 },
     controlMarker: ControlMarkerType.IMPERIAL_BASIN,
     makerSpace: MakerSpace.IMPERIAL_BASIN,
+    image: "board/imperial_basin.png"
   },
   {
     id: 5,
@@ -47,7 +51,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     agentIcon: AgentIcon.SPICE_TRADE,
     cost: { water: 2 },
     reward: { spice: 3 },
-    makerSpace: MakerSpace.GREAT_FLAT
+    makerSpace: MakerSpace.GREAT_FLAT,
+    image: "board/the_great_flat.png"
   },
   {
     id: 6,
@@ -56,14 +61,16 @@ export const BOARD_SPACES: SpaceProps[] = [
     agentIcon: AgentIcon.SPICE_TRADE,
     cost: { water: 1 },
     reward: { spice: 2 },
-    makerSpace: MakerSpace.HAGGA_BASIN
+    makerSpace: MakerSpace.HAGGA_BASIN,
+    image: "board/hagga_basin.png"
   },
   {
     id: 7,
     name: "Secure Contract",
     conflictMarker: false,
     agentIcon: AgentIcon.SPICE_TRADE,
-    reward: { solari: 3 }
+    reward: { solari: 3 },
+    image: "board/secure_contract.png"
   },
   {
     id: 8,
@@ -92,7 +99,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     agentIcon: AgentIcon.LANDSRAAD,
     cost: { solari: 2 },
     reward: { cards: 1 },
-    specialEffect: 'mentat'
+    specialEffect: 'mentat',
+    image: "board/mentat.png"
   },
   {
     id: 11,
@@ -100,14 +108,16 @@ export const BOARD_SPACES: SpaceProps[] = [
     conflictMarker: false,
     agentIcon: AgentIcon.LANDSRAAD,
     cost: { solari: 4 },
-    reward: { troops: 4 }
+    reward: { troops: 4 },
+    image: "board/rally_troops.png"
   },
   {
     id: 12,
     name: "Hall of Oratory",
     conflictMarker: false,
     agentIcon: AgentIcon.LANDSRAAD,
-    reward: { persuasion: 1 }
+    reward: { persuasion: 1 },
+    image: "board/hall_of_oratory.png"
   },
   {
     id: 13,
@@ -115,7 +125,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     conflictMarker: false,
     agentIcon: AgentIcon.LANDSRAAD,
     cost: { solari: 8 },
-    specialEffect: 'swordmaster'
+    specialEffect: 'swordmaster',
+    image: "board/swordmaster.png"
   },
 
   // Faction Spaces
@@ -126,7 +137,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     agentIcon: AgentIcon.EMPEROR,
     cost: { spice: 4 },
     influence: { faction: FactionType.EMPEROR, amount: 1 },
-    reward: { solari: 5, troops: 2, intrigueCards: 1 }
+    reward: { solari: 5, troops: 2, intrigueCards: 1 },
+    image: "board/conspire.png"
   },
   {
     id: 15,
@@ -134,7 +146,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     conflictMarker: false,
     agentIcon: AgentIcon.EMPEROR,
     influence: { faction: FactionType.EMPEROR, amount: 1 },
-    reward: { solari: 2 }
+    reward: { solari: 2 },
+    image: "board/wealth.png"
   },
   {
     id: 16,
@@ -142,7 +155,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     conflictMarker: false,
     agentIcon: AgentIcon.SPACING_GUILD,
     influence: { faction: FactionType.SPACING_GUILD, amount: 1 },
-    specialEffect: 'foldspace'
+    specialEffect: 'foldspace',
+    image: "board/foldspace.png"
   },
   {
     id: 17,
@@ -151,7 +165,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     agentIcon: AgentIcon.SPACING_GUILD,
     cost: { spice: 6 },
     influence: { faction: FactionType.SPACING_GUILD, amount: 1 },
-    reward: { troops: 5, water: 2 }
+    reward: { troops: 5, water: 2 },
+    image: "board/heighliner.png"
   },
   {
     id: 18,
@@ -160,7 +175,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     agentIcon: AgentIcon.BENE_GESSERIT,
     influence: { faction: FactionType.BENE_GESSERIT, amount: 1 },
     reward: { intrigueCards: 1 },
-    specialEffect: 'secrets'
+    specialEffect: 'secrets',
+    image: "board/secrets.png"
   },
   {
     id: 19,
@@ -169,7 +185,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     agentIcon: AgentIcon.BENE_GESSERIT,
     cost: { spice: 2 },
     influence: { faction: FactionType.BENE_GESSERIT, amount: 1 },
-    specialEffect: 'selectiveBreeding'
+    specialEffect: 'selectiveBreeding',
+    image: "board/selective_breeding.png"
   },
   {
     id: 20,
@@ -178,7 +195,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     agentIcon: AgentIcon.FREMEN,
     cost: { water: 1 },
     influence: { faction: FactionType.FREMEN, amount: 1 },
-    reward: { troops: 2 }
+    reward: { troops: 2 },
+    image: "board/hardy_warriors.png"
   },
   {
     id: 21,
@@ -187,7 +205,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     agentIcon: AgentIcon.FREMEN,
     requiresInfluence: { faction: FactionType.FREMEN, amount: 2 },
     influence: { faction: FactionType.FREMEN, amount: 1 },
-    reward: { troops: 1, water: 1 }
+    reward: { troops: 1, water: 1 },
+    image: "board/sietch_tabr.png"
   },
   {
     id: 22,
@@ -195,6 +214,7 @@ export const BOARD_SPACES: SpaceProps[] = [
     conflictMarker: true,
     agentIcon: AgentIcon.FREMEN,
     influence: { faction: FactionType.FREMEN, amount: 1 },
-    reward: { water: 1 }
+    reward: { water: 1 },
+    image: "board/stillsuits.png"
   }
 ] 

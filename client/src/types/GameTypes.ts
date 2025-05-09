@@ -127,7 +127,7 @@ export interface SpaceProps {
   maxAgents?: number
   occupiedBy?: number[]
   conflictMarker: boolean
-  
+  image?: string
   makerSpace?: MakerSpace
   requiresInfluence?: InfluenceAmount
   controlMarker?: ControlMarkerType

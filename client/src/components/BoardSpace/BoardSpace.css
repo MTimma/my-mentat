@@ -4,9 +4,21 @@
   border-radius: 8px;
   padding: 8px;
   margin: 4px;
-  background-color: #f4e4bc;
   min-width: 120px;
   min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.space-content {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  padding: 4px;
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -23,7 +35,6 @@
 }
 
 .board-space.combat-space {
-  background-color: #fff3e0;
   border-color: #bf360c;
 }
 
@@ -67,7 +78,7 @@
   background: #fffbe6;
   border-radius: 4px;
   padding: 2px 6px;
-  z-index: 1;
+  z-index: 2;
 }
 
 .space-requirement {
@@ -79,6 +90,7 @@
   display: flex;
   gap: 4px;
   margin-top: auto;
+  z-index: 2;
 }
 
 .agent {
@@ -86,6 +98,7 @@
   height: 20px;
   border-radius: 50%;
   border: 2px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .agent.player-0 { background-color: #d32f2f; }
