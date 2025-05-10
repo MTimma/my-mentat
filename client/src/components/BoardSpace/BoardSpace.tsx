@@ -80,7 +80,38 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
   }
 
   return (
-    <div 
+    <>
+    {image && <div 
+      className={`
+        board-space 
+        ${agentIcon} 
+        ${isHighlighted ? 'highlighted' : ''} 
+        ${conflictMarker ? 'combat-space' : ''}
+        ${isDisabled ? 'disabled' : ''}
+      `}
+      onClick={onSpaceClick}
+      style={{
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
+    >
+      {image && (
+        <img 
+          src={image} 
+          alt={name}
+          className="board-space-image"
+        />
+      )}
+      <div className="agents-container">
+    {occupiedBy.map((playerId) => (
+      <div 
+        key={playerId} 
+        className={`agent player-${playerId}`} 
+      />
+    ))}
+  </div>
+    </div>}
+    {!image && <div 
       className={`
         board-space 
         ${agentIcon} 
@@ -114,6 +145,8 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         ))}
       </div>
     </div>
+    }
+    </>
   )
 }
 
