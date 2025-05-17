@@ -26,6 +26,10 @@
   text-align: center;
   font-size: 1.2em;
 }
+.faction-icon {
+  width: 100px;
+  height: auto;
+}
 
 .faction-choice {
   background-color: #f4e4bc;
@@ -52,7 +56,7 @@
   padding: 0.75rem 1.5rem;
   border: 2px solid #8b4513;
   border-radius: 4px;
-  background: transparent;
+  background: #4b443f;
   color: #8b4513;
   cursor: pointer;
   transition: all 0.2s ease;

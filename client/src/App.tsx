@@ -23,6 +23,8 @@ const GameContent = () => {
     currentConflict,
   } = useGame()
 
+  const [openPlayerIndex, setOpenPlayerIndex] = useState<number | null>(null)
+
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
 
   const handleCardSelect = (playerId: number, cardId: number) => {
@@ -120,12 +122,14 @@ const GameContent = () => {
           bonusSpice={gameState.bonusSpice}
         />
         <div className="players-area">
-          {gameState.players.map((player) => (
+          {gameState.players.map((player, idx) => (
             <PlayerArea 
               key={player.id} 
               player={player} 
               isActive={gameState.activePlayerId === player.id}
               isStartingPlayer={gameState.firstPlayerMarker === player.id}
+              isOpen={openPlayerIndex === idx}
+              onToggle={() => setOpenPlayerIndex(openPlayerIndex === idx ? null : idx)}
             />
           ))}
         </div>
@@ -251,7 +255,7 @@ function App() {
             hasSwordmaster: false,
             playArea: [],
             persuasion: 0,
-            victoryPoints: 0,
+            victoryPoints: 1,
             revealed: false,
           })),
           factionInfluence:{

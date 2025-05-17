@@ -119,4 +119,12 @@
 .agent.player-0 { background-color: #d32f2f; }
 .agent.player-1 { background-color: #388e3c; }
 .agent.player-2 { background-color: #fbc02d; }
-.agent.player-3 { background-color: #1976d2; } 
+.agent.player-3 { background-color: #1976d2; }
+
+.board-space.wide {
+  min-width: 260px;
+  flex-basis: 260px;
+  max-width: 400px;
+  min-height: 90px;
+  grid-column: span 2;
+} 

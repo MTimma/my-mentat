@@ -8,6 +8,7 @@ interface BoardSpaceProps extends SpaceProps {
   occupiedBy: number[]
   isDisabled: boolean
   bonusSpice: number
+  wide?: boolean
 }
 
 const BoardSpace: React.FC<BoardSpaceProps> = ({
@@ -24,7 +25,8 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
   conflictMarker,
   isDisabled,
   makerSpace,
-  image
+  image,
+  wide = false
 }) => {
   const renderCost = () => {
     if (!cost) return null
@@ -88,6 +90,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         ${isHighlighted ? 'highlighted' : ''} 
         ${conflictMarker ? 'combat-space' : ''}
         ${isDisabled ? 'disabled' : ''}
+        ${wide ? 'wide' : ''}
       `}
       onClick={onSpaceClick}
       style={{
@@ -118,6 +121,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         ${isHighlighted ? 'highlighted' : ''} 
         ${conflictMarker ? 'combat-space' : ''}
         ${isDisabled ? 'disabled' : ''}
+        ${wide ? 'wide' : ''}
       `}
       onClick={onSpaceClick}
       style={{

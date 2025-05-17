@@ -41,10 +41,10 @@ const BaronSetupChoice: React.FC<BaronSetupChoiceProps> = ({ initBaron, onComple
             <button
                 key={faction}
                 onClick={() => handleMasterStroke(faction)}
-                className={baron.masterStroke.factions?.includes(faction) ? 'selected' : ''}
+                className={`faction-icon ${baron.masterStroke.factions?.includes(faction) ? 'selected' : ''}`}
                 disabled={baron.masterStroke.factions?.length === 2 && !baron.masterStroke.factions?.includes(faction)}
             >
-                {faction.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+              <img className="faction-icon" src={`/icon/${faction}.png`} alt={faction.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} />
             </button>
             ))}
         </div>

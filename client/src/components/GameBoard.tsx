@@ -57,11 +57,19 @@ const GameBoard: React.FC<GameBoardProps> = ({
     return true
   }
 
+  // Split spaces for custom layout
+  const firstRowSpaces = BOARD_SPACES.slice(0, 3);
+  const restSpaces = BOARD_SPACES.slice(3);
+
+  // Helper to chunk array into rows of 5
+  const chunk = (arr: SpaceProps[], size: number): SpaceProps[][] => arr.length === 0 ? [] : [arr.slice(0, size), ...chunk(arr.slice(size), size)];
+  const restRows = chunk(restSpaces, 5);
+
   return (
     <div className="game-board">
       <div className="board-spaces">
-        {BOARD_SPACES.map((space) => (
-          <BoardSpace 
+        {firstRowSpaces.map((space, idx) => (
+          <BoardSpace
             key={space.id}
             {...space}
             isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
@@ -70,11 +78,28 @@ const GameBoard: React.FC<GameBoardProps> = ({
             isDisabled={!canPayCosts(space) || !canPlaceAgent}
             bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
             makerSpace={space.makerSpace}
+            wide={idx === 0 || idx === 2}
           />
         ))}
       </div>
+      {restRows.map((row, i) => (
+        <div className="board-spaces" key={i}>
+          {row.map((space: SpaceProps) => (
+            <BoardSpace
+              key={space.id}
+              {...space}
+              isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
+              onSpaceClick={() => onSpaceClick(space.id)}
+              occupiedBy={occupiedSpaces[space.id] || []}
+              isDisabled={!canPayCosts(space) || !canPlaceAgent}
+              bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
+              makerSpace={space.makerSpace}
+            />
+          ))}
+        </div>
+      ))}
       <ConflictSummary currentConflict={currentConflict} />
-      <CombatArea 
+      <CombatArea
         troops={combatTroops}
         players={players}
       />

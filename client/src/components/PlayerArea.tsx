@@ -1,22 +1,24 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Player } from '../types/GameTypes'
 
 interface PlayerAreaProps {
   player: Player
   isActive: boolean
   isStartingPlayer: boolean
+  isOpen: boolean
+  onToggle: () => void
 }
 
 const PlayerArea: React.FC<PlayerAreaProps> = ({ 
   player, 
   isActive, 
-  isStartingPlayer
+  isStartingPlayer,
+  isOpen,
+  onToggle
 }) => {
-  const [isOpen, setIsOpen] = useState(false)
-
   return (
     <>
-    {!isOpen && <div className={`player-area-toggle ${isActive ? 'active' : ''}`} onClick={() => setIsOpen(!isOpen)}>
+    {!isOpen && <div className={`player-area-toggle ${isActive ? 'active' : ''}`} onClick={onToggle}>
         <div className="player-header">
           <div className="name-with-indicators">
             <div className="name-with-color">
@@ -48,7 +50,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
           </div>
         </div>
     </div>}
-    {isOpen && <div className="player-area-toggle" onClick={() => setIsOpen(!isOpen)}>
+    {isOpen && <div className="player-area-toggle" onClick={onToggle}>
     <div className={`player-area ${isActive ? 'active' : ''}`}>
       <div className="player-header">
         <div className="name-with-indicators">
@@ -88,35 +90,13 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
         <h4>Play Area</h4>
         <div className="played-cards">
           {player.playArea.map((card) => (
-            <div
+            <img
               key={card.id}
-              className="game-card played"
-            >
-              <div className="card-header">
-                <h4>{card.name}</h4>
-                {card.persuasion && <div className="persuasion">⚖️ {card.persuasion}</div>}
-              </div>
-              <div className="card-content">
-                <div className="agent-placement">
-                  {card.agentIcons.map((area, index) => (
-                    <div 
-                      key={index} 
-                      className={`placement-dot ${area}`}
-                    />
-                  ))}
-                </div>
-                {card.swordIcon && <div className="sword-icon">⚔️</div>}
-                {card.resources && (
-                  <div className="card-resources">
-                    {card.resources.spice && <div>🌶️ {card.resources.spice}</div>}
-                    {card.resources.water && <div>💧 {card.resources.water}</div>}
-                    {card.resources.solari && <div>💰 {card.resources.solari}</div>}
-                    {card.resources.troops && <div>⚔️ {card.resources.troops}</div>}
-                  </div>
-                )}
-                {card.effect && <div className="card-effect">{card.effect}</div>}
-              </div>
-            </div>
+              src={card.image}
+              alt={card.name}
+              className="play-area-card-image"
+              style={{ height: '100px', borderRadius: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+            />
           ))}
         </div>
       </div>
