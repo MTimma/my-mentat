@@ -31,7 +31,15 @@ export const BOARD_SPACES: SpaceProps[] = [
     specialEffect: 'sellMelange',
     image: "board/sell_melange.png"
   },
-
+   {
+      id: 15,
+      name: "Wealth",
+      conflictMarker: false,
+      agentIcon: AgentIcon.EMPEROR,
+      influence: { faction: FactionType.EMPEROR, amount: 1 },
+      reward: { solari: 2 },
+      image: "board/wealth.png"
+    },
     {
       id: 14,
       name: "Conspire",
@@ -42,15 +50,7 @@ export const BOARD_SPACES: SpaceProps[] = [
       reward: { solari: 5, troops: 2, intrigueCards: 1 },
       image: "board/conspire.png"
     },
-    {
-      id: 15,
-      name: "Wealth",
-      conflictMarker: false,
-      agentIcon: AgentIcon.EMPEROR,
-      influence: { faction: FactionType.EMPEROR, amount: 1 },
-      reward: { solari: 2 },
-      image: "board/wealth.png"
-    },
+
     {
       id: 10,
       name: "Mentat",

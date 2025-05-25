@@ -75,7 +75,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
             onSpaceClick={() => onSpaceClick(space.id)}
             occupiedBy={occupiedSpaces[space.id] || []}
-            isDisabled={!canPayCosts(space) || !canPlaceAgent}
+            isDisabled={!canPayCosts(space) || !canPlaceAgent || !highlightedAreas?.includes(space.agentIcon)}
             bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
             makerSpace={space.makerSpace}
             wide={idx === 0 || idx === 2}
@@ -91,7 +91,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
               isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
               onSpaceClick={() => onSpaceClick(space.id)}
               occupiedBy={occupiedSpaces[space.id] || []}
-              isDisabled={!canPayCosts(space) || !canPlaceAgent}
+              isDisabled={!canPayCosts(space) || !canPlaceAgent || !highlightedAreas?.includes(space.agentIcon)}
               bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
               makerSpace={space.makerSpace}
             />
