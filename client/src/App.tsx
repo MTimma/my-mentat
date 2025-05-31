@@ -7,20 +7,18 @@ import TurnHistory from './components/TurnHistory'
 import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
 import GameSetup from './components/GameSetup'
-import DeckSetup from './components/DeckSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup,Card, Leader, FactionType, GameTurn, GamePhase, MakerSpace, ScreenState } from './types/GameTypes'
-import { STARTING_DECK } from './data/cards'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
+import GameStateSetup from './components/GameStateSetup/GameStateSetup'
 
 const GameContent = () => {
   const {
     gameState,
     dispatch,
-    currentConflict,
   } = useGame()
 
   const [openPlayerIndex, setOpenPlayerIndex] = useState<number | null>(null)
@@ -39,8 +37,15 @@ const GameContent = () => {
     dispatch({ type: 'PLAY_COMBAT_INTRIGUE', playerId, cardId })
   }
 
-  const handlePlaceAgent = (spaceId: number) => {
-    dispatch({ type: 'PLACE_AGENT', playerId: gameState.activePlayerId, spaceId })
+  const handlePlaceAgent = (spaceId: number, sellMelangeData?: { spiceCost: number; solariReward: number }) => {
+    if (!activePlayer) return;
+    
+    dispatch({
+      type: 'PLACE_AGENT',
+      playerId: activePlayer.id,
+      spaceId,
+      sellMelangeData
+    });
   }
 
   const handleRevealCards = (playerId: number, cardIds: number[]) => {
@@ -81,13 +86,6 @@ const GameContent = () => {
     dispatch({ type: 'ACQUIRE_SMF', playerId: activePlayer?.id || 0 })
   }
 
-  const getSelectedCardPlacement = (playerId: number) => {
-    const player = gameState.players.find(p => p.id === playerId)
-    if (!gameState.selectedCard || !player) return null
-    const selectedCard = player.deck.find(c => c.id === gameState.selectedCard)
-    return selectedCard?.agentIcons || null
-  }
-
   return (
     <div className="game-container">
       <div className="turn-history-container">
@@ -95,6 +93,7 @@ const GameContent = () => {
           turns={gameState.history}
           currentTurn={gameState.history.length}
           players={gameState.players}
+          onTurnChange={() => {}}
         />
       </div>
       <div className="imperium-row-container">
@@ -111,14 +110,14 @@ const GameContent = () => {
       <div className="main-area">
         <GameBoard 
           currentPlayer={gameState.activePlayerId}
-          highlightedAreas={getSelectedCardPlacement(gameState.activePlayerId)}
+          highlightedAreas={[]}
           onSpaceClick={handlePlaceAgent}
-          occupiedSpaces={gameState.occupiedSpaces} 
-          canPlaceAgent={!gameState.canEndTurn} 
+          occupiedSpaces={gameState.occupiedSpaces}
+          canPlaceAgent={!gameState.canEndTurn}
           combatTroops={gameState.combatTroops}
           players={gameState.players}
           factionInfluence={gameState.factionInfluence}
-          currentConflict={currentConflict}
+          currentConflict={gameState.currentConflict}
           bonusSpice={gameState.bonusSpice}
         />
         <div className="players-area">
@@ -144,7 +143,6 @@ const GameContent = () => {
           activePlayer={activePlayer}
           canEndTurn={gameState.canEndTurn}
           onPlayCard={handleCardSelect}
-          // onPlayIntrigue={handlePlayIntrigue}
           onPlayCombatIntrigue={handlePlayCombatIntrigue}
           onReveal={handleRevealCards}
           onEndTurn={handleEndTurn}
@@ -175,6 +173,10 @@ function App() {
   const [screenState, setScreenState] = useState<ScreenState>(ScreenState.SETUP)
   const [playerSetups, setPlayerSetups] = useState<PlayerSetup[]>([])
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
+  const [initialGameState, setInitialGameState] = useState<{
+    players: Player[]
+    currentRound: number
+  } | null>(null)
 
   const handleSetupComplete = (setups: PlayerSetup[]) => {
     setPlayerSetups(setups)
@@ -186,9 +188,14 @@ function App() {
     if (currentPlayerIndex < playerSetups.length - 1) {
       setCurrentPlayerIndex(prev => prev + 1)
     } else {
-      setScreenState(ScreenState.GAME)
+      setScreenState(ScreenState.GAME_STATE_SETUP)
       setCurrentPlayerIndex(0)
     }
+  }
+
+  const handleGameStateSetupComplete = (state: { players: Player[], currentRound: number }) => {
+    setInitialGameState(state)
+    setScreenState(ScreenState.GAME)
   }
 
   const renderLeaderChoices = () => {
@@ -209,16 +216,6 @@ function App() {
     );
   };
 
-  const handleDeckSetupComplete = (selectedCards: Card[]) => {
-    playerSetups[currentPlayerIndex].deck = STARTING_DECK
-    playerSetups[currentPlayerIndex].startingHand = selectedCards
-    if (currentPlayerIndex < playerSetups.length - 1) {
-      setCurrentPlayerIndex(prev => prev + 1)
-    } else {
-      setScreenState(ScreenState.GAME)
-    }
-  }
-
   return (
     <div className="app">
       {screenState === ScreenState.SETUP && (
@@ -227,37 +224,17 @@ function App() {
 
       {screenState === ScreenState.LEADER_CHOICES && renderLeaderChoices()}
 
-      {/* TODO Remove
-       {gameState === 'deckSetup' && playerSetups[currentPlayerIndex] && (
-        <DeckSetup
-          playerName={playerSetups[currentPlayerIndex].leader.name}
-          onComplete={handleDeckSetupComplete}
+      {screenState === ScreenState.GAME_STATE_SETUP && (
+        <GameStateSetup 
+          playerSetups={playerSetups}
+          onComplete={handleGameStateSetupComplete}
         />
-      )} */}
-      {screenState === ScreenState.GAME && (
+      )}
+
+      {screenState === ScreenState.GAME && initialGameState && (
         <GameProvider initialState={{
-          players: playerSetups.map((setup, index) => ({
-            id: index,
-            leader: setup.leader,
-            color: setup.color,
-            spice: 0,
-            water: 1,
-            solari: 0,
-            troops: 3,
-            combatValue: 0,
-            agents: 2,
-            handCount: 5,
-            intrigueCount: 0,
-            deck: setup.deck|| STARTING_DECK,
-            discardPile: [],
-            trash: [],
-            hasHighCouncilSeat: false,
-            hasSwordmaster: false,
-            playArea: [],
-            persuasion: 0,
-            victoryPoints: 1,
-            revealed: false,
-          })),
+          players: initialGameState.players,
+          currentRound: initialGameState.currentRound,
           factionInfluence:{
             [FactionType.EMPEROR]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
             [FactionType.SPACING_GUILD]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),

@@ -1,0 +1,60 @@
+.game-setup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(139, 69, 19, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.setup-container {
+  background-color: #f4e4bc;
+  padding: 1rem 1rem 0.5rem 1rem;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 90%;
+  margin: 2rem auto 1rem auto;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.setup-section {
+  margin-bottom: 1rem;
+}
+
+.player-setup-row {
+  background-color: white;
+  padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.start-game-button {
+  width: 100%;
+  padding: 1rem;
+  background-color: #8b4513;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  box-shadow: 0 -2px 8px rgba(139, 69, 19, 0.08);
+}
+
+.start-game-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+} 

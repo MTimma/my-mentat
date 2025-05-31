@@ -27,8 +27,6 @@ export const BOARD_SPACES: SpaceProps[] = [
     conflictMarker: false,
     agentIcon: AgentIcon.SPICE_TRADE,
     cost: { spice: 2 },
-    reward: { solari: 0 },
-    specialEffect: 'sellMelange',
     image: "board/sell_melange.png"
   },
    {

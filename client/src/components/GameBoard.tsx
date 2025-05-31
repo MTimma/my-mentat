@@ -1,21 +1,22 @@
-import React from 'react'
-import { SpaceProps, AgentIcon, Player, FactionType, ConflictCard, MakerSpace } from '../types/GameTypes'
+import React, { useState } from 'react'
+import { SpaceProps, AgentIcon, Player, ConflictCard, MakerSpace } from '../types/GameTypes'
 import BoardSpace from './BoardSpace/BoardSpace'
 import CombatArea from './CombatArea'
 import { BOARD_SPACES } from '../data/boardSpaces'
 import ConflictSummary from './ConflictSummary/ConflictSummary'
+import SellMelangePopup from './SellMelangePopup/SellMelangePopup'
 
 interface GameBoardProps {
-  currentPlayer: number
-  highlightedAreas: AgentIcon[] | null
-  onSpaceClick: (spaceId: number) => void
-  occupiedSpaces: Record<number, number[]>
-  canPlaceAgent: boolean
-  combatTroops: Record<number, number>
-  players: Player[]
-  factionInfluence: Record<FactionType, Record<number, number>>
-  currentConflict: ConflictCard
-  bonusSpice: Record<MakerSpace, number>
+  currentPlayer: number;
+  highlightedAreas: AgentIcon[];
+  onSpaceClick: (spaceId: number, sellMelangeData?: { spiceCost: number; solariReward: number }) => void;
+  occupiedSpaces: { [key: number]: number[] };
+  canPlaceAgent: boolean;
+  combatTroops: Record<number, number>;
+  players: Player[];
+  factionInfluence: { [key: string]: { [key: number]: number } };
+  currentConflict?: ConflictCard;
+  bonusSpice: { [key: string]: number };
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -30,6 +31,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
   bonusSpice,
   currentConflict
 }) => {
+  const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
+  const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
+
   const canPayCosts = (space: SpaceProps): boolean => {
     if (occupiedSpaces[space.id]?.length > 0) return false
     
@@ -57,6 +61,26 @@ const GameBoard: React.FC<GameBoardProps> = ({
     return true
   }
 
+  const handleSpaceClick = (spaceId: number) => {
+    const space = BOARD_SPACES.find(s => s.id === spaceId)
+    if (space?.name === "Sell Melange") {
+      setSelectedSpaceId(spaceId)
+      setShowSellMelangePopup(true)
+    } else {
+      onSpaceClick(spaceId)
+    }
+  }
+
+  const handleSellMelangeOptionSelect = (option: { spiceCost: number; solariReward: number }) => {
+    if (selectedSpaceId) {
+      onSpaceClick(selectedSpaceId, option);
+      setShowSellMelangePopup(false);
+      setSelectedSpaceId(null);
+    }
+  }
+
+  const currentPlayerData = players.find(p => p.id === currentPlayer)
+
   // Split spaces for custom layout
   const firstRowSpaces = BOARD_SPACES.slice(0, 3);
   const restSpaces = BOARD_SPACES.slice(3);
@@ -73,7 +97,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             key={space.id}
             {...space}
             isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
-            onSpaceClick={() => onSpaceClick(space.id)}
+            onSpaceClick={() => handleSpaceClick(space.id)}
             occupiedBy={occupiedSpaces[space.id] || []}
             isDisabled={!canPayCosts(space) || !canPlaceAgent || !highlightedAreas?.includes(space.agentIcon)}
             bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
@@ -89,7 +113,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
               key={space.id}
               {...space}
               isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
-              onSpaceClick={() => onSpaceClick(space.id)}
+              onSpaceClick={() => handleSpaceClick(space.id)}
               occupiedBy={occupiedSpaces[space.id] || []}
               isDisabled={!canPayCosts(space) || !canPlaceAgent || !highlightedAreas?.includes(space.agentIcon)}
               bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
@@ -98,11 +122,21 @@ const GameBoard: React.FC<GameBoardProps> = ({
           ))}
         </div>
       ))}
-      <ConflictSummary currentConflict={currentConflict} />
+      {currentConflict && <ConflictSummary currentConflict={currentConflict} />}
       <CombatArea
         troops={combatTroops}
         players={players}
       />
+      {showSellMelangePopup && currentPlayerData && (
+        <SellMelangePopup
+          playerSpice={currentPlayerData.spice}
+          onOptionSelect={handleSellMelangeOptionSelect}
+          onClose={() => {
+            setShowSellMelangePopup(false)
+            setSelectedSpaceId(null)
+          }}
+        />
+      )}
     </div>
   )
 }

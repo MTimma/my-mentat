@@ -135,7 +135,7 @@ export interface SpaceProps {
     spice?: number
     solari?: number
   }
-  specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'sellMelange' | 'highCouncil'
+  specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'highCouncil'
 }
 
 export interface CardEffect {
@@ -187,6 +187,7 @@ export interface Gain {
 
 export enum GainSource {
   CARD = 'card',
+  BOARD_SPACE = 'board-space',
   FIELD = 'field',
   CONTROL = 'control',
   INTRIGUE = 'intrigue',
@@ -307,6 +308,7 @@ export enum GamePhase {
 export enum ScreenState {
   SETUP = 'setup',
   LEADER_CHOICES = 'leader-choices',
+  GAME_STATE_SETUP = 'game-state-setup',
   ROUND_START = 'round-start',
   GAME = 'game',
   CONFLICT = 'conflict'

@@ -1,0 +1,57 @@
+.game-state-setup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(139, 69, 19, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.resource-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.resource-input label {
+  font-weight: bold;
+  color: #8b4513;
+}
+
+.resource-input input {
+  padding: 0.5rem;
+  border: 2px solid #8b4513;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.round-input {
+  width: 100px;
+  padding: 0.5rem;
+  border: 2px solid #8b4513;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+}
+
+.player-setup-row {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.player-setup-row h3 {
+  color: #8b4513;
+  margin-bottom: 1rem;
+} 
