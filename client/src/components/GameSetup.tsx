@@ -23,7 +23,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
     const newPlayers = Array.from({ length: count }, (_, i) => ({
       playerNumber: i + 1,
       color: Object.values(PlayerColor)[i],
-      leader: i === 0 ? LEADERS[4] : LEADERS[i - 1], //TODO test purpos Baron
+      leader: i === 0 ? LEADERS[4] : LEADERS[i - 1], 
       deck: STARTING_DECK,
       startingHand: []
     }))

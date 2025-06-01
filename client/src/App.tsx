@@ -8,7 +8,7 @@ import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -37,14 +37,14 @@ const GameContent = () => {
     dispatch({ type: 'PLAY_COMBAT_INTRIGUE', playerId, cardId })
   }
 
-  const handlePlaceAgent = (spaceId: number, sellMelangeData?: { spiceCost: number; solariReward: number }) => {
+  const handlePlaceAgent = (spaceId: number, extraData?: { trashedCardId: number } | { spiceCost: number; solariReward: number }) => {
     if (!activePlayer) return;
-    
     dispatch({
       type: 'PLACE_AGENT',
       playerId: activePlayer.id,
       spaceId,
-      sellMelangeData
+      ...(extraData && 'trashedCardId' in extraData ? { selectiveBreedingData: extraData } : {}),
+      ...(extraData && 'spiceCost' in extraData ? { sellMelangeData: extraData } : {}),
     });
   }
 
@@ -110,7 +110,7 @@ const GameContent = () => {
       <div className="main-area">
         <GameBoard 
           currentPlayer={gameState.activePlayerId}
-          highlightedAreas={[]}
+          highlightedAreas={getSelectedCardAgentIcons(gameState)}
           onSpaceClick={handlePlaceAgent}
           occupiedSpaces={gameState.occupiedSpaces}
           canPlaceAgent={!gameState.canEndTurn}
@@ -167,6 +167,10 @@ const GameContent = () => {
       </div>
     </div>
   )
+}
+
+function getSelectedCardAgentIcons(gameState: GameState): import("/Users/martins.osmanis/Documents/dev/my-mentat/client/src/types/GameTypes").AgentIcon[] {
+  return gameState.selectedCard ? gameState.players[gameState.activePlayerId].deck.find(c => c.id === gameState.selectedCard)?.agentIcons || [] : []
 }
 
 function App() {

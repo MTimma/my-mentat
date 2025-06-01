@@ -17,7 +17,6 @@ import {
   ControlMarkerType,
   RewardType,
   GainSource,
-  GainType,
   Gain,
   MakerSpace
 } from '../../types/GameTypes'
@@ -47,7 +46,7 @@ type GameAction =
   | { type: 'START_COMBAT_PHASE' }
   | { type: 'PASS_COMBAT'; playerId: number }
   | { type: 'DRAW_INTRIGUE'; playerId: number }
-  | { type: 'PLACE_AGENT'; playerId: number; spaceId: number; sellMelangeData?: { spiceCost: number; solariReward: number } }
+  | { type: 'PLACE_AGENT'; playerId: number; spaceId: number; sellMelangeData?: { spiceCost: number; solariReward: number }; selectiveBreedingData?: { trashedCardId: number } }
   | { type: 'REVEAL_CARDS'; playerId: number; cardIds: number[] }
   | { type: 'ACQUIRE_AL'; playerId: number }
   | { type: 'ACQUIRE_SMF'; playerId: number }
@@ -645,7 +644,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'PLAY_INTRIGUE': {
       const { cardId, playerId } = action
-      const player = state.players.find(p => p.id === playerId)
       const card = state.intrigueDeck.find(c => c.id === cardId)
 
       if (!card) return state
@@ -692,7 +690,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
     case 'PLACE_AGENT': {
-      const { playerId, spaceId, sellMelangeData } = action
+      const { playerId, spaceId, sellMelangeData, selectiveBreedingData } = action
       const newState = {...state}
       const updatedGains: Gain[] = [...newState.gains]
       const updatedPlayers: Player[] = [...newState.players]
@@ -735,7 +733,33 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (playerInfluence < space.requiresInfluence.amount) return state
       }
 
-      if (sellMelangeData) {
+      const updatedPlayArea = (selectiveBreedingData && card.id === selectiveBreedingData.trashedCardId) ? currPlayer.playArea : [...currPlayer.playArea, card]
+      
+      if (selectiveBreedingData) {
+        if (space.cost?.spice) currPlayer.spice -= space.cost.spice;
+
+        // Find the trashed card in any pile
+        const allCards = [
+          ...currPlayer.deck,
+          ...currPlayer.playArea,
+          ...currPlayer.discardPile,
+        ];
+        const trashedCard = allCards.find(c => c.id === selectiveBreedingData.trashedCardId);
+        // If it was in the deck (i.e., in hand) and not played card, reduce handCount
+        if (trashedCard && currPlayer.deck.includes(trashedCard) && trashedCard.id !== card.id) {
+          currPlayer.handCount -= 1; 
+        }
+        currPlayer.deck = currPlayer.deck.filter(c => c.id !== selectiveBreedingData.trashedCardId);
+        currPlayer.playArea = currPlayer.playArea.filter(c => c.id !== selectiveBreedingData.trashedCardId);
+        currPlayer.discardPile = currPlayer.discardPile.filter(c => c.id !== selectiveBreedingData.trashedCardId);
+
+        if (trashedCard) {
+          currPlayer.trash = [...currPlayer.trash, trashedCard];
+          currPlayer.handCount += 2;
+        } else {
+          console.log("Trashed card not found");
+        }
+      } else if (sellMelangeData) {
         currPlayer.spice -= sellMelangeData.spiceCost
         currPlayer.solari += sellMelangeData.solariReward
         updatedGains.push({ 
@@ -830,7 +854,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const updatedDeck = currPlayer.deck.filter(c => c.id !== card.id)
-      const updatedPlayArea = [...currPlayer.playArea, card]
 
       const canDeployTroops = space.conflictMarker || false
       const troopLimit = canDeployTroops ? 2 + (space.reward?.troops || 0): 0

@@ -92,7 +92,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         ${isDisabled ? 'disabled' : ''}
         ${wide ? 'wide' : ''}
       `}
-      onClick={onSpaceClick}
+      onClick={isDisabled ? undefined : onSpaceClick}
       style={{
         backgroundSize: 'cover',
         backgroundPosition: 'center'
@@ -123,7 +123,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         ${isDisabled ? 'disabled' : ''}
         ${wide ? 'wide' : ''}
       `}
-      onClick={onSpaceClick}
+      onClick={isDisabled ? undefined : onSpaceClick}
       style={{
         backgroundImage: image ? `url(${image})` : 'none',
         backgroundSize: 'cover',

@@ -1,15 +1,26 @@
 import React, { useState } from 'react'
-import { SpaceProps, AgentIcon, Player, ConflictCard, MakerSpace } from '../types/GameTypes'
+import { SpaceProps, AgentIcon, Player, ConflictCard, MakerSpace, Card } from '../types/GameTypes'
 import BoardSpace from './BoardSpace/BoardSpace'
 import CombatArea from './CombatArea'
 import { BOARD_SPACES } from '../data/boardSpaces'
 import ConflictSummary from './ConflictSummary/ConflictSummary'
 import SellMelangePopup from './SellMelangePopup/SellMelangePopup'
+import SelectiveBreedingPopup from './SelectiveBreedingPopup/SelectiveBreedingPopup'
+
+interface SellMelangeData {
+  spiceCost: number;
+  solariReward: number;
+}
+interface SelectiveBreedingData {
+  trashedCardId: number;
+}
+
+type ExtraSpaceData = SellMelangeData | SelectiveBreedingData | undefined;
 
 interface GameBoardProps {
   currentPlayer: number;
   highlightedAreas: AgentIcon[];
-  onSpaceClick: (spaceId: number, sellMelangeData?: { spiceCost: number; solariReward: number }) => void;
+  onSpaceClick: (spaceId: number, extraData?: ExtraSpaceData) => void;
   occupiedSpaces: { [key: number]: number[] };
   canPlaceAgent: boolean;
   combatTroops: Record<number, number>;
@@ -33,6 +44,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 }) => {
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
+  const [showSelectiveBreedingPopup, setShowSelectiveBreedingPopup] = useState(false)
 
   const canPayCosts = (space: SpaceProps): boolean => {
     if (occupiedSpaces[space.id]?.length > 0) return false
@@ -66,6 +78,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
     if (space?.name === "Sell Melange") {
       setSelectedSpaceId(spaceId)
       setShowSellMelangePopup(true)
+    } else if (space?.specialEffect === 'selectiveBreeding') {
+      setSelectedSpaceId(spaceId)
+      setShowSelectiveBreedingPopup(true)
     } else {
       onSpaceClick(spaceId)
     }
@@ -79,7 +94,27 @@ const GameBoard: React.FC<GameBoardProps> = ({
     }
   }
 
+  const handleSelectiveBreedingSelect = (card: Card) => {
+    if (selectedSpaceId) {
+      onSpaceClick(selectedSpaceId, { trashedCardId: card.id });
+      setShowSelectiveBreedingPopup(false);
+      setSelectedSpaceId(null);
+    }
+  }
+
+  const handleSelectiveBreedingCancel = () => {
+    setShowSelectiveBreedingPopup(false);
+    setSelectedSpaceId(null);
+  }
+
   const currentPlayerData = players.find(p => p.id === currentPlayer)
+  const selectiveBreedingCards = currentPlayerData
+    ? [
+        ...currentPlayerData.deck,
+        ...currentPlayerData.discardPile,
+        ...currentPlayerData.playArea
+      ]
+    : []
 
   // Split spaces for custom layout
   const firstRowSpaces = BOARD_SPACES.slice(0, 3);
@@ -135,6 +170,14 @@ const GameBoard: React.FC<GameBoardProps> = ({
             setShowSellMelangePopup(false)
             setSelectedSpaceId(null)
           }}
+        />
+      )}
+      {showSelectiveBreedingPopup && currentPlayerData && (
+        <SelectiveBreedingPopup
+          isOpen={showSelectiveBreedingPopup}
+          cards={selectiveBreedingCards}
+          onSelect={handleSelectiveBreedingSelect}
+          onCancel={handleSelectiveBreedingCancel}
         />
       )}
     </div>
