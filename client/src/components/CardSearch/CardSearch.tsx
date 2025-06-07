@@ -9,6 +9,7 @@ interface CardSearchProps {
   onCancel: () => void
   isRevealTurn: boolean
   selectionCount: number
+  text: string
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({
@@ -17,7 +18,8 @@ const CardSearch: React.FC<CardSearchProps> = ({
   onSelect,
   onCancel,
   isRevealTurn,
-  selectionCount
+  selectionCount,
+  text
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
@@ -76,7 +78,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
     <div className="card-selection-dialog-overlay">
       <div className="card-selection-dialog">
         <div className="dialog-header">
-          {isRevealTurn ? <h2>Select Cards to Reveal</h2> : <h2>Select a Card to Play</h2>}
+          <h2>{text}</h2>
           <input
             type="text"
             placeholder="Search cards..."

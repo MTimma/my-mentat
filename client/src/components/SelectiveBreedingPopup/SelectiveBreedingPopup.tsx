@@ -23,6 +23,7 @@ const SelectiveBreedingPopup: React.FC<SelectiveBreedingPopupProps> = ({
       onCancel={onCancel}
       isRevealTurn={false}
       selectionCount={1}
+      text="Selective Breeding: select a card to trash"
     />
   );
 };

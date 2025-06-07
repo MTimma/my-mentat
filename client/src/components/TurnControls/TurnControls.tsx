@@ -204,6 +204,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           onSelect={handleCardSelection}
           onCancel={() => setIsCardSelectionOpen(false)}
           isRevealTurn={isRevealTurn}
+          text={isRevealTurn ? "Select Cards to Reveal" : "Select a Card to Play"}
         />
       </div>
     </>
