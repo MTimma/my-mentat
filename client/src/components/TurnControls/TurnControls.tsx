@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Player, Card, Gains } from '../../types/GameTypes'
+import { Player, Card, Gain } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import './TurnControls.css'
 
@@ -16,9 +16,13 @@ interface TurnControlsProps {
   onRemoveTroop: (playerId: number) => void
   retreatableTroops: number
   deployableTroops: number
-  gains: Gains
+  gains: Gain[]
   isCombatPhase: boolean
   combatStrength: Record<number, number>
+  showSelectiveBreeding?: boolean
+  selectiveBreedingCards?: Card[]
+  onSelectiveBreedingSelect?: (card: Card) => void
+  onSelectiveBreedingCancel?: () => void
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -36,7 +40,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   deployableTroops,
   gains,
   isCombatPhase,
-  combatStrength
+  combatStrength,
+  showSelectiveBreeding = false,
+  onSelectiveBreedingSelect,
+  onSelectiveBreedingCancel
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -205,6 +212,16 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           onCancel={() => setIsCardSelectionOpen(false)}
           isRevealTurn={isRevealTurn}
           text={isRevealTurn ? "Select Cards to Reveal" : "Select a Card to Play"}
+        />
+
+        <CardSearch
+          isOpen={showSelectiveBreeding}
+          cards={[...activePlayer.deck, ...activePlayer.discardPile, ...activePlayer.playArea]}
+          selectionCount={1}
+          onSelect={selected => selected[0] && onSelectiveBreedingSelect && onSelectiveBreedingSelect(selected[0])}
+          onCancel={onSelectiveBreedingCancel || (() => {})}
+          isRevealTurn={false}
+          text="Selective Breeding: select a card to trash"
         />
       </div>
     </>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '../../types/GameTypes';
 import CardSearch from '../CardSearch/CardSearch';
+import './SelectiveBreedingPopup.css';
 
 interface SelectiveBreedingPopupProps {
   isOpen: boolean;
@@ -16,15 +17,19 @@ const SelectiveBreedingPopup: React.FC<SelectiveBreedingPopupProps> = ({
   onCancel,
 }) => {
   return (
-    <CardSearch
-      isOpen={isOpen}
-      cards={cards}
-      onSelect={(selected) => selected[0] && onSelect(selected[0])}
-      onCancel={onCancel}
-      isRevealTurn={false}
-      selectionCount={1}
-      text="Selective Breeding: select a card to trash"
-    />
+    <div className="selective-breeding-dialog-overlay">
+      <div className="selective-breeding-dialog">
+        <CardSearch
+          isOpen={isOpen}
+          cards={cards}
+          onSelect={(selected) => selected[0] && onSelect(selected[0])}
+          onCancel={onCancel}
+          isRevealTurn={false}
+          selectionCount={1}
+          text="Selective Breeding: select a card to trash"
+        />
+      </div>
+    </div>
   );
 };
 

@@ -8,7 +8,7 @@ import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -22,6 +22,9 @@ const GameContent = () => {
   } = useGame()
 
   const [openPlayerIndex, setOpenPlayerIndex] = useState<number | null>(null)
+  const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
+  const [selectiveBreedingCards, setSelectiveBreedingCards] = useState<Card[]>([])
+  const [onSelectiveBreedingSelect, setOnSelectiveBreedingSelect] = useState<((card: Card) => void) | null>(null)
 
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
 
@@ -86,6 +89,12 @@ const GameContent = () => {
     dispatch({ type: 'ACQUIRE_SMF', playerId: activePlayer?.id || 0 })
   }
 
+  const handleSelectiveBreedingRequested = (cards: Card[], onSelect: (card: Card) => void) => {
+    setSelectiveBreedingCards(cards)
+    setOnSelectiveBreedingSelect(() => onSelect)
+    setShowSelectiveBreeding(true)
+  }
+
   return (
     <div className="game-container">
       <div className="turn-history-container">
@@ -119,6 +128,7 @@ const GameContent = () => {
           factionInfluence={gameState.factionInfluence}
           currentConflict={gameState.currentConflict}
           bonusSpice={gameState.bonusSpice}
+          onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
         />
         <div className="players-area">
           {gameState.players.map((player, idx) => (
@@ -155,6 +165,12 @@ const GameContent = () => {
           gains={gameState.gains}
           isCombatPhase={gameState.phase === GamePhase.COMBAT}
           combatStrength={gameState.combatStrength}
+          showSelectiveBreeding={showSelectiveBreeding}
+          onSelectiveBreedingSelect={card => {
+            if (onSelectiveBreedingSelect) onSelectiveBreedingSelect(card)
+            setShowSelectiveBreeding(false)
+          }}
+          onSelectiveBreedingCancel={() => setShowSelectiveBreeding(false)}
         />
       </div>
       <div className="combat-results-container" hidden={gameState.phase !== GamePhase.COMBAT_REWARDS}>
