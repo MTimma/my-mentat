@@ -164,3 +164,13 @@
 .close-button:hover {
   background: #f4cf47;
 } 
+
+@media (max-width: 900px) {
+  .turn-history-overlay {
+    position: static;
+    width: 100%;
+    height: auto;
+    box-shadow: none;
+    border-left: 0;
+  }
+} 

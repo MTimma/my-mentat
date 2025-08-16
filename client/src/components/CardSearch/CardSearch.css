@@ -240,3 +240,13 @@
 .cards-grid::-webkit-scrollbar-thumb:hover {
   background: #555;
 } 
+
+@media (max-width: 900px) {
+  .card-selection-dialog-overlay {
+    right: 0;
+    bottom: 0;
+  }
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+} 

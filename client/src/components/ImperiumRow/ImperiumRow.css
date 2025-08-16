@@ -64,4 +64,27 @@
   margin-bottom: 4px;
   display: block;
   position: relative;
+}
+
+@media (max-width: 900px) {
+  .imperium-row {
+    flex-wrap: wrap;
+  }
+  .imperium-card {
+    width: 110px;
+    height: 150px;
+  }
+}
+
+@media (max-width: 600px) {
+  .imperium-card {
+    width: 100px;
+    height: 140px;
+  }
+  .fixed-cards {
+    width: 100%;
+    border-left: 0;
+    padding-left: 0;
+    justify-content: center;
+  }
 } 
