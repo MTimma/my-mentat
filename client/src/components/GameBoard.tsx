@@ -24,7 +24,7 @@ interface GameBoardProps {
   factionInfluence: { [key: string]: { [key: number]: number } };
   currentConflict?: ConflictCard;
   bonusSpice: { [key: string]: number };
-  onSelectiveBreedingRequested: (cards: Card[], onSelect: (card: Card) => void) => void;
+  onSelectiveBreedingRequested?: (cards: Card[], onSelect: (card: Card) => void) => void;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -37,8 +37,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   players,
   factionInfluence,
   bonusSpice,
-  currentConflict,
-  onSelectiveBreedingRequested
+  currentConflict
 }) => {
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
@@ -88,52 +87,53 @@ const GameBoard: React.FC<GameBoardProps> = ({
     }
   }
 
-  // Split spaces for custom layout
   const firstRowSpaces = BOARD_SPACES.slice(0, 3);
   const restSpaces = BOARD_SPACES.slice(3);
-
-  // Helper to chunk array into rows of 5
   const chunk = (arr: SpaceProps[], size: number): SpaceProps[][] => arr.length === 0 ? [] : [arr.slice(0, size), ...chunk(arr.slice(size), size)];
   const restRows = chunk(restSpaces, 5);
 
   return (
     <div className="game-board">
-      <div className="board-spaces">
-        {firstRowSpaces.map((space, idx) => (
-          <BoardSpace
-            key={space.id}
-            {...space}
-            isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
-            onSpaceClick={() => handleSpaceClick(space.id)}
-            occupiedBy={occupiedSpaces[space.id] || []}
-            isDisabled={!canPayCosts(space) || !canPlaceAgent || !highlightedAreas?.includes(space.agentIcon)}
-            bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
-            makerSpace={space.makerSpace}
-            wide={idx === 0 || idx === 2}
-          />
-        ))}
-      </div>
-      {restRows.map((row, i) => (
-        <div className="board-spaces" key={i}>
-          {row.map((space: SpaceProps) => (
-            <BoardSpace
-              key={space.id}
-              {...space}
-              isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
-              onSpaceClick={() => handleSpaceClick(space.id)}
-              occupiedBy={occupiedSpaces[space.id] || []}
-              isDisabled={!canPayCosts(space) || !canPlaceAgent || !highlightedAreas?.includes(space.agentIcon)}
-              bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
-              makerSpace={space.makerSpace}
-            />
+      <div className="board-viewport">
+        <div className="board-canvas">
+          <div className="board-spaces">
+            {firstRowSpaces.map((space, idx) => (
+              <BoardSpace
+                key={space.id}
+                {...space}
+                isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
+                onSpaceClick={() => handleSpaceClick(space.id)}
+                occupiedBy={occupiedSpaces[space.id] || []}
+                isDisabled={!canPayCosts(space) || !canPlaceAgent || !highlightedAreas?.includes(space.agentIcon)}
+                bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
+                makerSpace={space.makerSpace}
+                wide={idx === 0 || idx === 2}
+              />
+            ))}
+          </div>
+          {restRows.map((row, i) => (
+            <div className="board-spaces" key={i}>
+              {row.map((space: SpaceProps) => (
+                <BoardSpace
+                  key={space.id}
+                  {...space}
+                  isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
+                  onSpaceClick={() => handleSpaceClick(space.id)}
+                  occupiedBy={occupiedSpaces[space.id] || []}
+                  isDisabled={!canPayCosts(space) || !canPlaceAgent || !highlightedAreas?.includes(space.agentIcon)}
+                  bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
+                  makerSpace={space.makerSpace}
+                />
+              ))}
+            </div>
           ))}
+          {currentConflict && <ConflictSummary currentConflict={currentConflict} />}
+          <CombatArea
+            troops={combatTroops}
+            players={players}
+          />
         </div>
-      ))}
-      {currentConflict && <ConflictSummary currentConflict={currentConflict} />}
-      <CombatArea
-        troops={combatTroops}
-        players={players}
-      />
+      </div>
       {showSellMelangePopup && (
         <SellMelangePopup
           playerSpice={players.find(p => p.id === currentPlayer)?.spice || 0}

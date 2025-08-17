@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Player, GameState, RewardType, GainSource } from '../../types/GameTypes';
+import { Player, GameState, GainSource } from '../../types/GameTypes';
 import './CombatResults.css';
 
 interface PlayerResult {

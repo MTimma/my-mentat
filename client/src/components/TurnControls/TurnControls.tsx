@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Player, Card, Gain } from '../../types/GameTypes'
+import { Player, Card, Gain, RewardType } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import './TurnControls.css'
 
@@ -98,6 +98,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
   }
 
+  const totalOf = (type: RewardType) => gains
+    .filter(g => g.type === type)
+    .reduce((acc, g) => acc + (g.amount || 0), 0)
 
   return (
     <>
@@ -128,11 +131,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           )}
           {isRevealTurn && gains && (
             <div>
-              Persuasion: {gains.persuasionGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
-              Combat: {gains.combatGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
-              Spice: {gains.spiceGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
-              Water: {gains.waterGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
-              Solari: {gains.solariGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
+              Persuasion: {totalOf(RewardType.PERSUASION)}
+              {' '}Combat: {totalOf(RewardType.COMBAT)}
+              {' '}Spice: {totalOf(RewardType.SPICE)}
+              {' '}Water: {totalOf(RewardType.WATER)}
+              {' '}Solari: {totalOf(RewardType.SOLARI)}
             </div>
           )}
           {selectedCards.length === 0 && (
