@@ -710,8 +710,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (space.cost.water && currPlayer.water < space.cost.water) return state
       }
 
-      // Check if space is already occupied
-      if (newState.occupiedSpaces[spaceId]?.length > 0) return state
+      // Check if space is already occupied or card has infiltrate
+      if (newState.occupiedSpaces[spaceId]?.length > 0 && !card.infiltrate) return state
       
       if(space.controlMarker) {
         const controlPlayerId = newState.controlMarkers[space.controlMarker]

@@ -203,6 +203,7 @@ export interface Card {
   faction?: FactionType
   cost?: number
   agentIcons: AgentIcon[]
+  infiltrate?: boolean
   playEffect?: CardEffect[]
   revealEffect?: CardEffect[]
   acquireEffect?: {

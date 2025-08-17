@@ -1,0 +1,15 @@
+Integration plan (incremental)
+Keep current client-only flow; add a “Save snapshot” button that POSTs the full game state to the backend.
+Add event emission per user action; POST to /moves; server replays and returns authoritative state; client reconciles.
+Add WebSocket broadcast for spectator/multiplayer.
+Wrap the rules code in a shared package; gradually move authority to the server.
+
+
+Recommended setup (concise)
+Client: React + a pure rules engine (TS), React Query for API calls, responsive PWA.
+
+Server: Spring Boot for persistence (events + snapshots). No Kafka, no sockets (yet).
+
+Future-proofing: If/when multiplayer arrives, port the rules to server and make it authoritative; add WebSockets then.
+
+I can scaffold the Spring Boot API and wire React Query next if you want.

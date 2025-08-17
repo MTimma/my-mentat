@@ -8,7 +8,7 @@ import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -23,7 +23,6 @@ const GameContent = () => {
 
   const [openPlayerIndex, setOpenPlayerIndex] = useState<number | null>(null)
   const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
-  const [selectiveBreedingCards, setSelectiveBreedingCards] = useState<Card[]>([])
   const [onSelectiveBreedingSelect, setOnSelectiveBreedingSelect] = useState<((card: Card) => void) | null>(null)
 
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
@@ -90,7 +89,6 @@ const GameContent = () => {
   }
 
   const handleSelectiveBreedingRequested = (cards: Card[], onSelect: (card: Card) => void) => {
-    setSelectiveBreedingCards(cards)
     setOnSelectiveBreedingSelect(() => onSelect)
     setShowSelectiveBreeding(true)
   }
@@ -120,6 +118,7 @@ const GameContent = () => {
         <GameBoard 
           currentPlayer={gameState.activePlayerId}
           highlightedAreas={getSelectedCardAgentIcons(gameState)}
+          infiltrate={getInfiltrate(gameState)}
           onSpaceClick={handlePlaceAgent}
           occupiedSpaces={gameState.occupiedSpaces}
           canPlaceAgent={!gameState.canEndTurn}
@@ -185,7 +184,11 @@ const GameContent = () => {
   )
 }
 
-function getSelectedCardAgentIcons(gameState: GameState): import("/Users/martins.osmanis/Documents/dev/my-mentat/client/src/types/GameTypes").AgentIcon[] {
+function getInfiltrate(gameState: GameState): boolean {
+  return gameState.selectedCard ? gameState.players[gameState.activePlayerId].deck.find(c => c.id === gameState.selectedCard)?.infiltrate || false : false
+}
+
+function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
   return gameState.selectedCard ? gameState.players[gameState.activePlayerId].deck.find(c => c.id === gameState.selectedCard)?.agentIcons || [] : []
 }
 

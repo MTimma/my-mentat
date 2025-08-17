@@ -16,6 +16,7 @@ type ExtraSpaceData = SellMelangeData | undefined;
 interface GameBoardProps {
   currentPlayer: number;
   highlightedAreas: AgentIcon[];
+  infiltrate: boolean;
   onSpaceClick: (spaceId: number, extraData?: ExtraSpaceData) => void;
   occupiedSpaces: { [key: number]: number[] };
   canPlaceAgent: boolean;
@@ -30,6 +31,7 @@ interface GameBoardProps {
 const GameBoard: React.FC<GameBoardProps> = ({ 
   currentPlayer, 
   highlightedAreas,
+  infiltrate,
   onSpaceClick,
   occupiedSpaces,
   canPlaceAgent,
@@ -44,24 +46,21 @@ const GameBoard: React.FC<GameBoardProps> = ({
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
 
   const canPayCosts = (space: SpaceProps): boolean => {
-    if (occupiedSpaces[space.id]?.length > 0) return false
+    const player = players.find(p => p.id === currentPlayer)
+    if (!player) return false
+
+    if (occupiedSpaces[space.id]?.length > 0 && !infiltrate) return false
     
     if (space.requiresInfluence) {
-      const player = players.find(p => p.id === currentPlayer)
-      if (!player) return false
       const playerInfluence = factionInfluence[space.requiresInfluence.faction]?.[currentPlayer] || 0
       if (playerInfluence < space.requiresInfluence.amount) return false
     }
 
     if (space.name === "High Council") {
-      const player = players.find(p => p.id === currentPlayer)
       if (player?.hasHighCouncilSeat) return false
     }
 
     if (space.cost) {
-      const player = players.find(p => p.id === currentPlayer)
-      if (!player) return false
-      
       if (space.cost.solari && player.solari < space.cost.solari) return false
       if (space.cost.spice && player.spice < space.cost.spice) return false
       if (space.cost.water && player.water < space.cost.water) return false
@@ -106,7 +105,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
             onSpaceClick={() => handleSpaceClick(space.id)}
             occupiedBy={occupiedSpaces[space.id] || []}
-            isDisabled={!canPayCosts(space) || !canPlaceAgent || !highlightedAreas?.includes(space.agentIcon)}
+            isEnabled={canPayCosts(space) && canPlaceAgent && highlightedAreas?.includes(space.agentIcon)}
             bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
             makerSpace={space.makerSpace}
             wide={idx === 0 || idx === 2}
@@ -122,7 +121,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
               isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
               onSpaceClick={() => handleSpaceClick(space.id)}
               occupiedBy={occupiedSpaces[space.id] || []}
-              isDisabled={!canPayCosts(space) || !canPlaceAgent || !highlightedAreas?.includes(space.agentIcon)}
+              isEnabled={canPayCosts(space) && canPlaceAgent && highlightedAreas?.includes(space.agentIcon)}
               bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
               makerSpace={space.makerSpace}
             />
