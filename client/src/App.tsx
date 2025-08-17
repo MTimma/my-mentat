@@ -8,7 +8,7 @@ import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -23,8 +23,7 @@ const GameContent = () => {
 
   const [openPlayerIndex, setOpenPlayerIndex] = useState<number | null>(null)
   const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
-  const [selectiveBreedingCards, setSelectiveBreedingCards] = useState<Card[]>([])
-  const [onSelectiveBreedingSelect, setOnSelectiveBreedingSelect] = useState<((card: Card) => void) | null>(null)
+  const [onSelectiveBreedingSelect] = useState<((card: Card) => void) | null>(null)
 
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
 
@@ -89,11 +88,7 @@ const GameContent = () => {
     dispatch({ type: 'ACQUIRE_SMF', playerId: activePlayer?.id || 0 })
   }
 
-  const handleSelectiveBreedingRequested = (cards: Card[], onSelect: (card: Card) => void) => {
-    setSelectiveBreedingCards(cards)
-    setOnSelectiveBreedingSelect(() => onSelect)
-    setShowSelectiveBreeding(true)
-  }
+
 
   return (
     <div className="game-container">
@@ -128,7 +123,6 @@ const GameContent = () => {
           factionInfluence={gameState.factionInfluence}
           currentConflict={gameState.currentConflict}
           bonusSpice={gameState.bonusSpice}
-          onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
         />
         <div className="players-area">
           {gameState.players.map((player, idx) => (
@@ -185,7 +179,7 @@ const GameContent = () => {
   )
 }
 
-function getSelectedCardAgentIcons(gameState: GameState): import("/Users/martins.osmanis/Documents/dev/my-mentat/client/src/types/GameTypes").AgentIcon[] {
+function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
   return gameState.selectedCard ? gameState.players[gameState.activePlayerId].deck.find(c => c.id === gameState.selectedCard)?.agentIcons || [] : []
 }
 
@@ -256,14 +250,21 @@ function App() {
           players: initialGameState.players,
           currentRound: initialGameState.currentRound,
           factionInfluence:{
-            [FactionType.EMPEROR]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
-            [FactionType.SPACING_GUILD]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
-            [FactionType.BENE_GESSERIT]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
-            [FactionType.FREMEN]: Object.fromEntries(playerSetups.map((p, i) => [i, 0]))
+            [FactionType.EMPEROR]: Object.fromEntries(Array.from({ length: playerSetups.length }, (_, i) => [i, 0])),
+            [FactionType.SPACING_GUILD]: Object.fromEntries(Array.from({ length: playerSetups.length }, (_, i) => [i, 0])),
+            [FactionType.BENE_GESSERIT]: Object.fromEntries(Array.from({ length: playerSetups.length }, (_, i) => [i, 0])),
+            [FactionType.FREMEN]: Object.fromEntries(Array.from({ length: playerSetups.length }, (_, i) => [i, 0]))
           },
           phase: GamePhase.ROUND_START
         }}>
           <GameContent />
+          <div className="mobile-tabs" aria-label="mobile navigation">
+            <div className="mobile-tab active">Board</div>
+            <div className="mobile-tab">Imperium</div>
+            <div className="mobile-tab">Hand</div>
+            <div className="mobile-tab">History</div>
+            <div className="mobile-tab">Actions</div>
+          </div>
         </GameProvider>
       )}
     </div>

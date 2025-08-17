@@ -1,4 +1,4 @@
-import { IntrigueCard, IntrigueCardType } from '../types/GameTypes'
+import { IntrigueCard, IntrigueCardType, FactionType } from '../types/GameTypes'
 
 export const intrigueCards: IntrigueCard[] = [
   {
@@ -17,7 +17,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: "Gain 2 influence with any faction.",
     effect: {
       gainInfluence: {
-        faction: null, // Will be chosen when played
+        faction: FactionType.EMPEROR,
         amount: 2
       }
     },
@@ -48,9 +48,9 @@ export const intrigueCards: IntrigueCard[] = [
     id: 5,
     name: "Blackmail",
     type: IntrigueCardType.PLOT,
-    description: "Steal 2 solari from another player.",
+    description: "Gain 2 Solari (targeted steal not implemented in engine).",
     effect: {
-      stealResource: {
+      gainResource: {
         type: 'solari',
         amount: 2
       },

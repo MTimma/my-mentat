@@ -50,10 +50,9 @@ const DeckSetup: React.FC<DeckSetupProps> = ({ playerName, onComplete }) => {
               {card.agentIcons.map(icon => (
                 <span key={icon} className={`agent-icon ${icon}`} />
               ))}
-              {card.persuasion && (
-                <span className="persuasion">🗣️ {card.persuasion}</span>
+              {typeof card.cost === 'number' && (
+                <span className="persuasion">💰 {card.cost}</span>
               )}
-              {card.swordIcon && <span className="sword">⚔️</span>}
             </div>
           </div>
         ))}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Card } from '../types/GameTypes'
+import { Card } from '../../types/GameTypes'
 import './ImperiumRow.css'
 
 interface ImperiumRowProps {
@@ -33,8 +33,6 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
                   />
                 ))}
               </div>
-              {card.swordIcon && <div className="sword-icon">⚔️</div>}
-              {card.effect && <div className="card-effect">{card.effect}</div>}
             </div>
             <button 
               onClick={() => onAcquireCard?.(card.id)} 
