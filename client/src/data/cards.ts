@@ -1,4 +1,4 @@
-import { Card, AgentIcon } from '../types/GameTypes'
+import { Card, AgentIcon, FactionType } from '../types/GameTypes'
 
 export const STARTING_DECK: Card[] = [
   {
@@ -151,6 +151,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
     id: 201,
     name: "Arrakis Liaison",
+    faction: FactionType.FREMEN,
     image: "imperium_row/arrakis_liaison.avif",
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 2,
@@ -165,6 +166,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
     id: 202,
     name: "Arrakis Liaison",
+    faction: FactionType.FREMEN,
     image: "imperium_row/arrakis_liaison.avif",
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 2,
@@ -179,6 +181,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
     id: 203,
     name: "Arrakis Liaison",
+    faction: FactionType.FREMEN,
     image: "imperium_row/arrakis_liaison.avif",
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 2,
@@ -193,6 +196,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
     id: 204,
     name: "Arrakis Liaison",
+    faction: FactionType.FREMEN,
     image: "imperium_row/arrakis_liaison.avif",
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 2,
@@ -221,6 +225,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
     id: 206,
     name: "Arrakis Liaison",
+    faction: FactionType.FREMEN,
     image: "imperium_row/arrakis_liaison.avif",
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 2,
@@ -235,6 +240,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
     id: 207,
     name: "Arrakis Liaison",
+    faction: FactionType.FREMEN,
     image: "imperium_row/arrakis_liaison.avif",
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 2,
@@ -591,5 +597,222 @@ export const FOLDSPACE_DECK: Card[] = [
         }
       }
     ],
+  }
+]
+
+export const IMPERIUM_ROW_DECK: Card[] = [
+  {
+    id: 1001,
+    name: "Arrakis Recruiter",
+    image: "imperium_row/arrakis_recruiter.png",
+    agentIcons: [AgentIcon.CITY],
+    cost: 2,
+    playEffect: [
+      {
+        reward: {
+          troops: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          combat: 1,
+          persuasion: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1002,
+    name: "Arrakis Recruiter",
+    image: "imperium_row/arrakis_recruiter.png",
+    agentIcons: [AgentIcon.CITY],
+    cost: 2,
+    playEffect: [
+      {
+        reward: {
+          troops: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          combat: 1,
+          persuasion: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1003,
+    name: "Assassination Mission",
+    image: "imperium_row/assassination_mission.png",
+    agentIcons: [],
+    cost: 1,
+    trashEffect: [
+      {
+        cost: {
+          trashThisCard: true
+        },
+        reward: {
+          solari: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          combat: 1,
+          solari: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1004,
+    name: "Assassination Mission",
+    image: "imperium_row/assassination_mission.png",
+    agentIcons: [],
+    cost: 1,
+    trashEffect: [
+      {
+        cost: {
+          trashThisCard: true
+        },
+        reward: {
+          solari: 4
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          combat: 1,
+          solari: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1005,
+    name: "Assassination Mission",
+    image: "imperium_row/assassination_mission.png",
+    agentIcons: [],
+    cost: 1,
+    trashEffect: [
+      {
+        cost: {
+          trashThisCard: true
+        },
+        reward: {
+          solari: 4
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          combat: 1,
+          solari: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1006,
+    name: "Bene Gesserit Initiate",
+    image: "imperium_row/bene_gesserit_initiate.png",
+    faction: FactionType.BENE_GESSERIT,
+    agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 3,
+    playEffect: [
+      {
+        reward: {
+          drawCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1007,
+    name: "Bene Gesserit Initiate",
+    image: "imperium_row/bene_gesserit_initiate.png",
+    faction: FactionType.BENE_GESSERIT,
+    agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 3,
+    playEffect: [
+      {
+        reward: {
+          drawCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1008,
+    name: "Bene Gesserit Sister",
+    image: "imperium_row/bene_gesserit_sister.png",
+    faction: FactionType.BENE_GESSERIT,
+    agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.BENE_GESSERIT],
+    cost: 3,
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2,
+          combat: 2
+        },
+        effectOR: true
+      }
+    ]
+  },
+  {
+    id: 1009,
+    name: "Bene Gesserit Sister",
+    image: "imperium_row/bene_gesserit_sister.png",
+    faction: FactionType.BENE_GESSERIT,
+    agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.BENE_GESSERIT],
+    cost: 3,
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2,
+          combat: 2
+        },
+        effectOR: true
+      }
+    ]
+  },
+  {
+    id: 1010,
+    name: "Bene Gesserit Sister",
+    image: "imperium_row/bene_gesserit_sister.png",
+    faction: FactionType.BENE_GESSERIT,
+    agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.BENE_GESSERIT],
+    cost: 3,
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2,
+          combat: 2
+        },
+        effectOR: true
+      }
+    ]
   }
 ]

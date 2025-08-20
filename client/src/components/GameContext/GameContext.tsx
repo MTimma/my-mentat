@@ -21,7 +21,7 @@ import {
   MakerSpace
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
-import { ARRAKIS_LIAISON_DECK } from '../../data/cards'
+import { ARRAKIS_LIAISON_DECK, IMPERIUM_ROW_DECK } from '../../data/cards'
 import { SPICE_MUST_FLOW_DECK } from '../../data/cards'
 import { FOLDSPACE_DECK } from '../../data/cards'
 import { CONFLICTS } from '../../data/conflicts'
@@ -84,8 +84,8 @@ const initialGameState: GameState = {
   spiceMustFlowDeck: SPICE_MUST_FLOW_DECK,
   arrakisLiaisonDeck: ARRAKIS_LIAISON_DECK,
   foldspaceDeck: FOLDSPACE_DECK,
-  imperiumRowDeck: [],
-  imperiumRow: [],
+  imperiumRowDeck: IMPERIUM_ROW_DECK,
+  imperiumRow: [IMPERIUM_ROW_DECK[0], IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2]],
   intrigueDeck: [],
   intrigueDiscard: [],
   conflictsDiscard: [],
@@ -1116,7 +1116,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, c
   const value = {
     gameState,
     currentConflict: gameState.currentConflict,
-    imperiumRow: [],
+    imperiumRow: [IMPERIUM_ROW_DECK[0], IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2]],
     intrigueDeck: [],
     dispatch
   }

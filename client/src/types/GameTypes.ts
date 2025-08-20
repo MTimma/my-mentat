@@ -204,6 +204,7 @@ export interface Card {
   cost?: number
   agentIcons: AgentIcon[]
   infiltrate?: boolean
+  trashEffect?: CardEffect[]
   playEffect?: CardEffect[]
   revealEffect?: CardEffect[]
   acquireEffect?: {

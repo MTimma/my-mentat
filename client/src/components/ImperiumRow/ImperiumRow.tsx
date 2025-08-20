@@ -1,5 +1,5 @@
 import React from 'react'
-import { Card } from '../types/GameTypes'
+import { Card } from '../../types/GameTypes'
 import './ImperiumRow.css'
 
 interface ImperiumRowProps {
@@ -20,7 +20,12 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
       <div className="imperium-row">
         {cards.map((card) => (
           <div key={card.id} className="imperium-card" onClick={() => onAcquireCard?.(card.id)} >
-            <div className="card-header">
+            <img 
+              src={card.image}
+              alt={card.name}
+              className="card-image-ir"
+            />
+            {/* <div className="card-header">
               <h4>{card.name}</h4>
               {card.cost && <div className="persuasion-cost">{card.cost}💰</div>}
             </div>
@@ -35,7 +40,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
               </div>
               {card.swordIcon && <div className="sword-icon">⚔️</div>}
               {card.effect && <div className="card-effect">{card.effect}</div>}
-            </div>
+            </div> */}
             <button 
               onClick={() => onAcquireCard?.(card.id)} 
               disabled={!!(card.cost && card.cost > persuasion) || !canAcquire}
