@@ -85,7 +85,7 @@ const initialGameState: GameState = {
   arrakisLiaisonDeck: ARRAKIS_LIAISON_DECK,
   foldspaceDeck: FOLDSPACE_DECK,
   imperiumRowDeck: IMPERIUM_ROW_DECK,
-  imperiumRow: [IMPERIUM_ROW_DECK[0], IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2]],
+  imperiumRow: [IMPERIUM_ROW_DECK[0], IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2], IMPERIUM_ROW_DECK[10]],
   intrigueDeck: [],
   intrigueDiscard: [],
   conflictsDiscard: [],
@@ -712,7 +712,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Check if space is already occupied or card has infiltrate
       if (newState.occupiedSpaces[spaceId]?.length > 0 && !card.infiltrate) return state
-      
+
+      // Check if player has required influence
+      if (space.requiresInfluence) {
+        const playerInfluence = newState.factionInfluence[space.requiresInfluence.faction as FactionType]?.[playerId] || 0
+        if (playerInfluence < space.requiresInfluence.amount) return state
+      }
+
       if(space.controlMarker) {
         const controlPlayerId = newState.controlMarkers[space.controlMarker]
         if(controlPlayerId) {
@@ -725,12 +731,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             updatedGains.push({ round: newState.currentRound, playerId: controlPlayerId, sourceId: space.id, name: space.name + " Control Bonus", amount: space.controlBonus.spice, type: RewardType.SPICE, source: GainSource.CONTROL } )
           }
         }
-      }
-
-      // Check if player has required influence
-      if (space.requiresInfluence) {
-        const playerInfluence = newState.factionInfluence[space.requiresInfluence.faction as FactionType]?.[playerId] || 0
-        if (playerInfluence < space.requiresInfluence.amount) return state
       }
 
       const updatedPlayArea = (selectiveBreedingData && card.id === selectiveBreedingData.trashedCardId) ? currPlayer.playArea : [...currPlayer.playArea, card]
@@ -828,6 +828,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               if(effect.reward.troops) {
                 updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.troops, type: RewardType.TROOPS, source: GainSource.CARD } )
                 currPlayer.troops += effect.reward.troops
+              }
+              if(effect.reward.custom) {
+                switch(effect.reward.custom) {
+                  case 'CARRYALL':
+                    if (space.reward) {
+                      if (space.reward.spice) {
+                        updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: space.reward.spice, type: RewardType.SPICE, source: GainSource.CARD } )
+                        currPlayer.spice += space.reward.spice
+                      }
+                    }
+                    break
+                }
               }
             }
         })
@@ -1116,7 +1128,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, c
   const value = {
     gameState,
     currentConflict: gameState.currentConflict,
-    imperiumRow: [IMPERIUM_ROW_DECK[0], IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2]],
+    imperiumRow: [IMPERIUM_ROW_DECK[0], IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2], IMPERIUM_ROW_DECK[10]],
     intrigueDeck: [],
     dispatch
   }

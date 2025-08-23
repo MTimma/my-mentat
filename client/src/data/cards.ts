@@ -653,9 +653,6 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     cost: 1,
     trashEffect: [
       {
-        cost: {
-          trashThisCard: true
-        },
         reward: {
           solari: 1
         }
@@ -678,9 +675,6 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     cost: 1,
     trashEffect: [
       {
-        cost: {
-          trashThisCard: true
-        },
         reward: {
           solari: 4
         }
@@ -703,9 +697,6 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     cost: 1,
     trashEffect: [
       {
-        cost: {
-          trashThisCard: true
-        },
         reward: {
           solari: 4
         }
@@ -812,6 +803,58 @@ export const IMPERIUM_ROW_DECK: Card[] = [
           combat: 2
         },
         effectOR: true
+      }
+    ]
+  },
+  {
+    id: 1011,
+    name: "Carryall",
+    image: "imperium_row/carryall.avif",
+    agentIcons: [AgentIcon.SPICE_TRADE],
+    cost: 5,
+    playEffect: [
+      {
+        reward: {
+          custom: 'CARRYALL'
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          spice: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1012,
+    name: "Chani",
+    image: "imperium_row/chani.avif",
+    faction: FactionType.FREMEN,
+    agentIcons: [AgentIcon.FREMEN, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 5,
+    acquireEffect: {
+      water: 1
+    },
+    playEffect: [
+      {
+        reward: {
+          custom: 'CARRYALL'
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      },
+      {
+        reward: {
+          retreatTroops: Number.MAX_SAFE_INTEGER
+        }
       }
     ]
   }

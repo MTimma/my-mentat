@@ -171,6 +171,7 @@ export interface CardEffect {
     retreatTroops?: number
     retreatUnits?: number
     deployTroops?: number
+    custom?: string
   }
   effectOR?: boolean
 }
