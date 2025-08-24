@@ -94,6 +94,11 @@ export enum AgentIcon {
   BENE_GESSERIT = 'bene-gesserit'
 }
 
+export interface InfluenceReward {
+  influence: InfluenceAmount[]
+  chooseOne?: boolean
+}
+
 export interface InfluenceAmount {
   faction: FactionType
   amount: number
@@ -142,7 +147,8 @@ export interface CardEffect {
   requirement?: {
     influence?: InfluenceAmount
     alliance?: FactionType
-    bond?: FactionType
+    fremenBond?: FremenBond
+    bgInPlay?: boolean
   }
   cost?: {
     spice?: number
@@ -172,8 +178,14 @@ export interface CardEffect {
     retreatUnits?: number
     deployTroops?: number
     custom?: string
+    influence?: InfluenceReward
   }
   effectOR?: boolean
+}
+
+export interface FremenBond {
+  activate: boolean
+  used: boolean
 }
 
 export interface Gain {

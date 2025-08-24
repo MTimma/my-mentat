@@ -838,13 +838,6 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     acquireEffect: {
       water: 1
     },
-    playEffect: [
-      {
-        reward: {
-          custom: 'CARRYALL'
-        }
-      }
-    ],
     revealEffect: [
       {
         reward: {
@@ -854,6 +847,337 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       {
         reward: {
           retreatTroops: Number.MAX_SAFE_INTEGER
+        }
+      }
+    ]
+  },
+  {
+    id: 1013,
+    name: "CHOAM Directorship",
+    image: "imperium_row/choam_directorship.avif",
+    agentIcons: [],
+    cost: 8,
+    acquireEffect: {
+      influence: [
+        { faction: FactionType.FREMEN, amount: 1 },
+        { faction: FactionType.BENE_GESSERIT, amount: 1 },
+        { faction: FactionType.SPACING_GUILD, amount: 1 },
+        { faction: FactionType.EMPEROR, amount: 1 }
+      ]
+    },
+    revealEffect: [
+      {
+        reward: {
+          solari: 3
+        }
+      }
+    ]
+  },
+  {
+    id: 1014,
+    name: "Crysknife",
+    image: "imperium_row/crysknife.avif",
+    agentIcons: [AgentIcon.FREMEN, AgentIcon.SPICE_TRADE],
+    cost: 3,
+    playEffect: [
+      {
+        reward: {
+          spice: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          combat: 1
+        }
+      },
+      {
+        requirement: {
+          fremenBond: FactionType.FREMEN
+        },
+        reward: {
+          influence: { faction: FactionType.FREMEN, amount: 1 }
+        }
+      }
+    ]
+  },
+  {
+    id: 1015,
+    name: "Dr. Yueh",
+    image: "imperium_row/dr_yueh.avif",
+    agentIcons: [AgentIcon.CITY],
+    cost: 1,
+    playEffect: [
+      {
+        reward: {
+          drawCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1016,
+    name: "Duncan Idaho",
+    image: "imperium_row/duncan_idaho.avif",
+    agentIcons: [AgentIcon.CITY],
+    cost: 4,
+    playEffect: [
+      {
+        cost: {
+          water : 1
+        },
+        reward: {
+          drawCards: 1,
+          troops: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          water: 1,
+          combat: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1016,
+    name: "Duncan Idaho",
+    image: "imperium_row/duncan_idaho.avif",
+    agentIcons: [AgentIcon.CITY],
+    cost: 4,
+    playEffect: [
+      {
+        cost: {
+          water : 1
+        },
+        reward: {
+          drawCards: 1,
+          troops: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          water: 1,
+          combat: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1017,
+    name: "Fedaykin Death Commando",
+    image: "imperium_row/fedaykin_death_commando.avif",
+    faction: FactionType.FREMEN,
+    agentIcons: [AgentIcon.SPICE_TRADE, AgentIcon.CITY],
+    cost: 3,
+    playEffect: [
+      {
+        reward: {
+          trash : 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      },
+      {
+        requirement: {
+          fremenBond: FactionType.FREMEN
+        },
+        reward: {
+          combat: 3
+        }
+      }
+    ]
+  },
+  {
+    id: 1018,
+    name: "Fedaykin Death Commando",
+    image: "imperium_row/fedaykin_death_commando.avif",
+    faction: FactionType.FREMEN,
+    agentIcons: [AgentIcon.SPICE_TRADE, AgentIcon.CITY],
+    cost: 3,
+    playEffect: [
+      {
+        reward: {
+          trash : 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      },
+      {
+        requirement: {
+          fremenBond: FactionType.FREMEN
+        },
+        reward: {
+          combat: 3
+        }
+      }
+    ]
+  },
+  {
+    id: 1019,
+    name: "Firm Grip",
+    image: "imperium_row/firm_grip.avif",
+    faction: FactionType.EMPEROR,
+    agentIcons: [AgentIcon.EMPEROR, AgentIcon.LANDSRAAD],
+    cost: 4,
+    playEffect: [
+      {
+        cost: {
+          solari: 2
+        },
+        reward: {
+          influence: { 
+            chooseOne: true, 
+            influence: [
+              {faction: FactionType.SPACING_GUILD,amount: 1},
+              {faction: FactionType.FREMEN,amount: 1},
+              {faction: FactionType.BENE_GESSERIT,amount: 1},
+            ]
+          }
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        requirement: {
+          alliance: FactionType.EMPEROR
+        },
+        reward: {
+          persuasion: 4
+        }
+      }
+    ]
+  },
+  {
+    id: 1020,
+    name: "Fremen Camp",
+    image: "imperium_row/fremen_camp.avif",
+    faction: FactionType.FREMEN,
+    agentIcons: [AgentIcon.SPICE_TRADE],
+    cost: 4,
+    playEffect: [
+      {
+        cost: {
+          spice: 2
+        },
+        reward: {
+          troops: 3
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2,
+          combat: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1021,
+    name: "Fremen Camp",
+    image: "imperium_row/fremen_camp.avif",
+    faction: FactionType.FREMEN,
+    agentIcons: [AgentIcon.SPICE_TRADE],
+    cost: 4,
+    playEffect: [
+      {
+        cost: {
+          spice: 2
+        },
+        reward: {
+          troops: 3
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2,
+          combat: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1022,
+    name: "Gene Manipulation",
+    image: "imperium_row/gene_manipulation.avif",
+    faction: FactionType.BENE_GESSERIT,
+    agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
+    cost: 3,
+    playEffect: [
+      {
+        reward: {
+          trash: 1
+        }
+      },
+      {
+        requirement: {
+          bgInPlay: true
+        },
+        reward: {
+          spice: 2
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1023,
+    name: "Gene Manipulation",
+    image: "imperium_row/gene_manipulation.avif",
+    faction: FactionType.BENE_GESSERIT,
+    agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
+    cost: 3,
+    playEffect: [
+      {
+        reward: {
+          trash: 1
+        }
+      },
+      {
+        requirement: {
+          bgInPlay: true
+        },
+        reward: {
+          spice: 2
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
         }
       }
     ]

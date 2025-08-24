@@ -320,8 +320,13 @@ function requirementSatisfied(effect: CardEffect, state: GameState, playerId: nu
         return false;
       }
     }
-    if(req.bond) {
-      if(!state.playArea[playerId].find(card => card.faction === req.bond)) {
+    if(req.fremenBond) {
+      if(!state.playArea[playerId].find(card => card.faction === req.fremenBond)) {
+        return false;
+      }
+    }
+    if(req.bgInPlay) {
+      if(!state.playArea[playerId].find(card => card.faction === FactionType.BENE_GESSERIT)) {
         return false;
       }
     }
@@ -808,6 +813,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if(card.playEffect) {
         card.playEffect?.filter((effect:CardEffect) => {
             if(effect.cost) {
+              
+        //TODO paying cost is optional, make similar to selective breeding
               return false;
             }
             return requirementSatisfied(effect, state, playerId);
@@ -844,7 +851,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             }
         })
       }
-      
+      //TODO check FREMEN BOND on previously played cards
+      // if(card.faction === FactionType.FREMEN) {
+      //   currPlayer.playArea.filter
+      // }
+      // TODO create list of optional effects that can be activated
       // TODO implement card draw
       
       // Add influence
