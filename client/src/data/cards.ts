@@ -1,151 +1,239 @@
 import { Card, AgentIcon, FactionType } from '../types/GameTypes'
-
 export const STARTING_DECK: Card[] = [
   {
     id: 1,
-    name: "Convincing Argument",
-    image: "starter_deck/convincing_argument.avif",
-    revealEffect: [
+    name: "Crysknife",
+    image: "imperium_row/crysknife.avif",
+    agentIcons: [AgentIcon.FREMEN, AgentIcon.SPICE_TRADE],
+    cost: 3,
+    playEffect: [
       {
         reward: {
-          persuasion: 2
+          spice: 1
         }
       }
     ],
-    agentIcons: []
+    revealEffect: [
+      {
+        reward: {
+          combat: 1
+        }
+      },
+      {
+        requirement: {
+          fremenBond: { activated: false }
+        },
+        reward: {
+          influence: { influence: [{ faction: FactionType.FREMEN, amount: 1 }] }
+        }
+      }
+    ]
   },
   {
     id: 2,
-    name: "Convincing Argument",
-    image: "starter_deck/convincing_argument.avif",
+    name: "Firm Grip",
+    image: "imperium_row/firm_grip.avif",
+    faction: FactionType.EMPEROR,
+    agentIcons: [AgentIcon.EMPEROR, AgentIcon.LANDSRAAD],
+    cost: 4,
+    playEffect: [
+      {
+        cost: {
+          solari: 2
+        },
+        reward: {
+          influence: { 
+            chooseOne: true, 
+            influence: [
+              {faction: FactionType.SPACING_GUILD,amount: 1},
+              {faction: FactionType.FREMEN,amount: 1},
+              {faction: FactionType.BENE_GESSERIT,amount: 1},
+            ]
+          }
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        requirement: {
+          alliance: FactionType.EMPEROR
+        },
+        reward: {
+          persuasion: 4
+        }
+      }
+    ]
+  },
+  {
+    id: 1012,
+    name: "Chani",
+    image: "imperium_row/chani.avif",
+    faction: FactionType.FREMEN,
+    agentIcons: [AgentIcon.FREMEN, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 5,
+    acquireEffect: {
+      water: 1
+    },
     revealEffect: [
       {
         reward: {
           persuasion: 2
         }
-      }
-    ],
-    agentIcons: []
-  },
-  {
-    id: 3,
-    name: "Dagger",
-    image: "starter_deck/dagger.avif",
-    revealEffect: [
+      },
       {
         reward: {
-          combat: 1
+          retreatTroops: Number.MAX_SAFE_INTEGER
         }
       }
-    ],
-    agentIcons: [AgentIcon.LANDSRAAD]
-  },
-  {
-    id: 4,
-    name: "Dagger",
-    image: "starter_deck/dagger.avif",
-    revealEffect: [
-      {
-        reward: {
-          combat: 1
-        }
-      }
-    ],
-    agentIcons: [AgentIcon.LANDSRAAD]
-  },
-  {
-    id: 5,
-    name: "Diplomacy",
-    image: "starter_deck/diplomacy.avif",
-    revealEffect: [
-      {
-        reward: {
-          persuasion: 1
-        }
-      }
-    ],
-    agentIcons: [
-      AgentIcon.FREMEN,
-      AgentIcon.BENE_GESSERIT,
-      AgentIcon.SPACING_GUILD,
-      AgentIcon.EMPEROR
-    ]
-  },
-  {
-    id: 6,
-    name: "Dune, the Desert Planet",
-    image: "starter_deck/dune_the_desert_planet.avif",
-    revealEffect: [
-      {
-        reward: {
-          persuasion: 1
-        }
-      }
-    ],
-    agentIcons: [AgentIcon.SPICE_TRADE]
-  },
-  {
-    id: 7,
-    name: "Dune, the Desert Planet",  
-    image: "starter_deck/dune_the_desert_planet.avif",
-    revealEffect: [
-      {
-        reward: {
-          persuasion: 1
-        }
-      }
-    ],
-    agentIcons: [AgentIcon.SPICE_TRADE]
-  },
-  {
-    id: 8,
-    name: "Reconnaissance",
-    image: "starter_deck/reconnaissance.avif",
-    revealEffect: [
-      {
-        reward: {
-          persuasion: 1
-        }
-      }
-    ],
-    agentIcons: [AgentIcon.CITY]
-  },
-  {
-    id: 9,
-    name: "Seek Allies",
-    image: "starter_deck/seek_allies.avif",
-    revealEffect: [
-      {
-        reward: {
-          persuasion: 1
-        }
-      }
-    ],
-    agentIcons: [
-      AgentIcon.FREMEN,
-      AgentIcon.BENE_GESSERIT,
-      AgentIcon.SPACING_GUILD,
-      AgentIcon.EMPEROR
-    ]
-  },
-  {
-    id: 10,
-    name: "Signet Ring",
-    image: "starter_deck/signet_ring.avif",
-    revealEffect: [
-      {
-        reward: {
-          persuasion: 1
-        }
-      }
-    ],
-    agentIcons: [
-      AgentIcon.LANDSRAAD,
-      AgentIcon.CITY,
-      AgentIcon.SPICE_TRADE
     ]
   }
-] 
+]
+// export const STARTING_DECK: Card[] = [
+//   {
+//     id: 1,
+//     name: "Convincing Argument",
+//     image: "starter_deck/convincing_argument.avif",
+//     revealEffect: [
+//       {
+//         reward: {
+//           persuasion: 2
+//         }
+//       }
+//     ],
+//     agentIcons: []
+//   },
+//   {
+//     id: 2,
+//     name: "Convincing Argument",
+//     image: "starter_deck/convincing_argument.avif",
+//     revealEffect: [
+//       {
+//         reward: {
+//           persuasion: 2
+//         }
+//       }
+//     ],
+//     agentIcons: []
+//   },
+//   {
+//     id: 3,
+//     name: "Dagger",
+//     image: "starter_deck/dagger.avif",
+//     revealEffect: [
+//       {
+//         reward: {
+//           combat: 1
+//         }
+//       }
+//     ],
+//     agentIcons: [AgentIcon.LANDSRAAD]
+//   },
+//   {
+//     id: 4,
+//     name: "Dagger",
+//     image: "starter_deck/dagger.avif",
+//     revealEffect: [
+//       {
+//         reward: {
+//           combat: 1
+//         }
+//       }
+//     ],
+//     agentIcons: [AgentIcon.LANDSRAAD]
+//   },
+//   {
+//     id: 5,
+//     name: "Diplomacy",
+//     image: "starter_deck/diplomacy.avif",
+//     revealEffect: [
+//       {
+//         reward: {
+//           persuasion: 1
+//         }
+//       }
+//     ],
+//     agentIcons: [
+//       AgentIcon.FREMEN,
+//       AgentIcon.BENE_GESSERIT,
+//       AgentIcon.SPACING_GUILD,
+//       AgentIcon.EMPEROR
+//     ]
+//   },
+//   {
+//     id: 6,
+//     name: "Dune, the Desert Planet",
+//     image: "starter_deck/dune_the_desert_planet.avif",
+//     revealEffect: [
+//       {
+//         reward: {
+//           persuasion: 1
+//         }
+//       }
+//     ],
+//     agentIcons: [AgentIcon.SPICE_TRADE]
+//   },
+//   {
+//     id: 7,
+//     name: "Dune, the Desert Planet",  
+//     image: "starter_deck/dune_the_desert_planet.avif",
+//     revealEffect: [
+//       {
+//         reward: {
+//           persuasion: 1
+//         }
+//       }
+//     ],
+//     agentIcons: [AgentIcon.SPICE_TRADE]
+//   },
+//   {
+//     id: 8,
+//     name: "Reconnaissance",
+//     image: "starter_deck/reconnaissance.avif",
+//     revealEffect: [
+//       {
+//         reward: {
+//           persuasion: 1
+//         }
+//       }
+//     ],
+//     agentIcons: [AgentIcon.CITY]
+//   },
+//   {
+//     id: 9,
+//     name: "Seek Allies",
+//     image: "starter_deck/seek_allies.avif",
+//     revealEffect: [
+//       {
+//         reward: {
+//           persuasion: 1
+//         }
+//       }
+//     ],
+//     agentIcons: [
+//       AgentIcon.FREMEN,
+//       AgentIcon.BENE_GESSERIT,
+//       AgentIcon.SPACING_GUILD,
+//       AgentIcon.EMPEROR
+//     ]
+//   },
+//   {
+//     id: 10,
+//     name: "Signet Ring",
+//     image: "starter_deck/signet_ring.avif",
+//     revealEffect: [
+//       {
+//         reward: {
+//           persuasion: 1
+//         }
+//       }
+//     ],
+//     agentIcons: [
+//       AgentIcon.LANDSRAAD,
+//       AgentIcon.CITY,
+//       AgentIcon.SPICE_TRADE
+//     ]
+//   }
+// ] 
 
 export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
@@ -894,10 +982,10 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       },
       {
         requirement: {
-          fremenBond: FactionType.FREMEN
+          fremenBond: { activated: false }
         },
         reward: {
-          influence: { faction: FactionType.FREMEN, amount: 1 }
+          influence: { influence: [{ faction: FactionType.FREMEN, amount: 1 }] }
         }
       }
     ]
@@ -997,7 +1085,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       },
       {
         requirement: {
-          fremenBond: FactionType.FREMEN
+          fremenBond: { activated: false }
         },
         reward: {
           combat: 3
@@ -1027,7 +1115,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       },
       {
         requirement: {
-          fremenBond: FactionType.FREMEN
+          fremenBond: { activated: false }
         },
         reward: {
           combat: 3

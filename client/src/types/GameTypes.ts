@@ -184,8 +184,7 @@ export interface CardEffect {
 }
 
 export interface FremenBond {
-  activate: boolean
-  used: boolean
+  activated: boolean
 }
 
 export interface Gain {

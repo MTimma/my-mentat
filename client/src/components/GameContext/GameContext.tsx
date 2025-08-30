@@ -670,6 +670,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const { playerId, cardId } = action
       const player = state.players.find(p => p.id === playerId)
       const card = player?.deck.find(c => c.id === cardId)
+      
 
       if (!card || playerId !== state.activePlayerId || !player) return state
       // Create or update the current turn
@@ -696,13 +697,44 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'PLACE_AGENT': {
       const { playerId, spaceId, sellMelangeData, selectiveBreedingData } = action
-      const newState = {...state}
+      const  newState = {...state}
       const updatedGains: Gain[] = [...newState.gains]
       const updatedPlayers: Player[] = [...newState.players]
       const currPlayer: Player = {...updatedPlayers.find(p => p.id === playerId)} as Player
       const card = currPlayer.deck.find(c => c.id === newState.selectedCard)
       const space = BOARD_SPACES.find((s: SpaceProps) => s.id === spaceId)
       
+      function applyCardPlayEffect(effect: CardEffect, card: Card, space: SpaceProps) {
+        if (effect.reward.spice) {
+          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.spice, type: RewardType.SPICE, source: GainSource.CARD })
+          currPlayer.spice += effect.reward.spice
+        }
+        if (effect.reward.water) {
+          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.water, type: RewardType.WATER, source: GainSource.CARD })
+          currPlayer.water += effect.reward.water
+        }
+        if (effect.reward.solari) {
+          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.solari, type: RewardType.SOLARI, source: GainSource.CARD })
+          currPlayer.solari += effect.reward.solari
+        }
+        if (effect.reward.troops) {
+          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.troops, type: RewardType.TROOPS, source: GainSource.CARD })
+          currPlayer.troops += effect.reward.troops
+        }
+        if (effect.reward.custom) {
+          switch (effect.reward.custom) {
+            case 'CARRYALL':
+              if (space.reward) {
+                if (space.reward.spice) {
+                  updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: space.reward.spice, type: RewardType.SPICE, source: GainSource.CARD })
+                  currPlayer.spice += space.reward.spice
+                }
+              }
+              break
+          }
+        }
+      }
+
       if (!currPlayer || !card || !space || playerId !== newState.activePlayerId || !newState.selectedCard) return state
       
       // Check if player has any agents left
@@ -820,43 +852,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             return requirementSatisfied(effect, state, playerId);
            }).forEach(effect => {
           if(effect.reward) {
-              if(effect.reward.spice) {
-                updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.spice, type: RewardType.SPICE, source: GainSource.CARD } )
-                currPlayer.spice += effect.reward.spice
-              }
-              if(effect.reward.water) {
-                updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.water, type: RewardType.WATER, source: GainSource.CARD } )
-                currPlayer.water += effect.reward.water
-              }
-              if(effect.reward.solari) {
-                updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.solari, type: RewardType.SOLARI, source: GainSource.CARD } )
-                currPlayer.solari += effect.reward.solari
-              }
-              if(effect.reward.troops) {
-                updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.troops, type: RewardType.TROOPS, source: GainSource.CARD } )
-                currPlayer.troops += effect.reward.troops
-              }
-              if(effect.reward.custom) {
-                switch(effect.reward.custom) {
-                  case 'CARRYALL':
-                    if (space.reward) {
-                      if (space.reward.spice) {
-                        updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: space.reward.spice, type: RewardType.SPICE, source: GainSource.CARD } )
-                        currPlayer.spice += space.reward.spice
-                      }
-                    }
-                    break
-                }
+              applyCardPlayEffect(effect, card, space)
+              if(effect.requirement?.fremenBond) {
+                effect.requirement.fremenBond.activated = true
               }
             }
+
         })
       }
-      //TODO check FREMEN BOND on previously played cards
-      // if(card.faction === FactionType.FREMEN) {
-      //   currPlayer.playArea.filter
-      // }
-      // TODO create list of optional effects that can be activated
-      // TODO implement card draw
+      if(card.faction === FactionType.FREMEN) {
+        currPlayer.playArea.forEach(c => {
+          c.playEffect?.forEach(effect => {
+            if(effect.requirement?.fremenBond) {
+              effect.requirement.fremenBond.activated = true
+            }
+          })
+        })
+      }
       
       // Add influence
       if (space.influence) {
