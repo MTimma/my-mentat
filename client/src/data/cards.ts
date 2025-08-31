@@ -21,7 +21,7 @@ export const STARTING_DECK: Card[] = [
       },
       {
         requirement: {
-          fremenBond: { activated: false }
+          bond: FactionType.FREMEN
         },
         reward: {
           influence: { influence: [{ faction: FactionType.FREMEN, amount: 1 }] }
@@ -982,7 +982,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       },
       {
         requirement: {
-          fremenBond: { activated: false }
+          bond: FactionType.FREMEN
         },
         reward: {
           influence: { influence: [{ faction: FactionType.FREMEN, amount: 1 }] }
@@ -1085,7 +1085,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       },
       {
         requirement: {
-          fremenBond: { activated: false }
+          bond: FactionType.FREMEN
         },
         reward: {
           combat: 3
@@ -1115,7 +1115,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       },
       {
         requirement: {
-          fremenBond: { activated: false }
+          bond: FactionType.FREMEN
         },
         reward: {
           combat: 3
@@ -1225,7 +1225,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       },
       {
         requirement: {
-          bgInPlay: true
+          inPlay: FactionType.BENE_GESSERIT
         },
         reward: {
           spice: 2
@@ -1255,7 +1255,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       },
       {
         requirement: {
-          bgInPlay: true
+          inPlay: FactionType.BENE_GESSERIT
         },
         reward: {
           spice: 2

@@ -18,7 +18,9 @@ import {
   RewardType,
   GainSource,
   Gain,
-  MakerSpace
+  MakerSpace,
+  PlayEffect,
+  RevealEffect
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { ARRAKIS_LIAISON_DECK, IMPERIUM_ROW_DECK } from '../../data/cards'
@@ -305,7 +307,7 @@ function handleIntrigueEffect(
   return newState
 }
 
-function requirementSatisfied(effect: CardEffect, state: GameState, playerId: number): boolean {
+function playRequirementSatisfied(effect: PlayEffect, currCard: Card, state: GameState, playerId: number): boolean {
   if(effect?.requirement) {
     const req = effect.requirement
     if(req.influence) {
@@ -320,13 +322,35 @@ function requirementSatisfied(effect: CardEffect, state: GameState, playerId: nu
         return false;
       }
     }
-    if(req.fremenBond) {
-      if(!state.playArea[playerId].find(card => card.faction === req.fremenBond)) {
+    if(req.inPlay) {
+      if(!state.playArea[playerId].find(card => currCard.id !== card.id && card.faction === req.inPlay)) {
         return false;
       }
     }
-    if(req.bgInPlay) {
-      if(!state.playArea[playerId].find(card => card.faction === FactionType.BENE_GESSERIT)) {
+  }
+  return true;
+}
+
+function revealRequirementSatisfied(effect: RevealEffect, currCard: Card, state: GameState, playerId: number, revealedCards: Card[]): boolean {
+  if(effect?.requirement) {
+    const req = effect.requirement
+    if(req.influence) {
+      const factionType = req.influence.faction;
+      const factionAmount = req.influence.amount;
+      if(state.factionInfluence[factionType]?.[playerId] < factionAmount) {
+        return false;
+      }
+    }
+    if(req.alliance) {
+      if(state.factionAlliances[req.alliance] !== playerId) {
+        return false;
+      }
+    }
+    if(req.bond) {
+      if(
+        !state.playArea[playerId].find(card => currCard.id !== card.id && card.faction === FactionType.FREMEN) &&
+        !revealedCards.find(card => currCard.id !== card.id && card.faction === FactionType.FREMEN)
+      ) {
         return false;
       }
     }
@@ -843,30 +867,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
       if(card.playEffect) {
-        card.playEffect?.filter((effect:CardEffect) => {
+        card.playEffect?.filter((effect:PlayEffect) => {
             if(effect.cost) {
               
         //TODO paying cost is optional, make similar to selective breeding
               return false;
             }
-            return requirementSatisfied(effect, state, playerId);
+            return playRequirementSatisfied(effect, card, state, playerId);
            }).forEach(effect => {
           if(effect.reward) {
               applyCardPlayEffect(effect, card, space)
-              if(effect.requirement?.fremenBond) {
-                effect.requirement.fremenBond.activated = true
-              }
             }
 
-        })
-      }
-      if(card.faction === FactionType.FREMEN) {
-        currPlayer.playArea.forEach(c => {
-          c.playEffect?.forEach(effect => {
-            if(effect.requirement?.fremenBond) {
-              effect.requirement.fremenBond.activated = true
-            }
-          })
         })
       }
       
@@ -1004,9 +1016,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       revealedCards.forEach(card => {
         card.revealEffect?.filter((effect:CardEffect) => {
             if(effect.cost) {
-              return false;
+              //TODO implement optional cost paying
             }
-            return requirementSatisfied(effect, state, playerId);
+            return revealRequirementSatisfied(effect, card, state, playerId, revealedCards);
           })
           .forEach(effect => {
             if(effect.reward?.persuasion) {
@@ -1030,7 +1042,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               solariCount += effect.reward.solari
             }
           })
+          if(card.faction === FactionType.FREMEN) {
+            currPlayer.playArea.forEach(c => {
+              c.playEffect?.forEach(effect => {
+                if(effect.requirement?.fremenBond) {
+                  applyCardPlayEffect(effect, c, space)
+                  effect.requirement.fremenBond.activated = true
+                }
+              })
+            })
+          }
       })
+
+      
 
       // Update combat strength if player has troops in combat
       const hasTroopsInCombat = (state.combatTroops[playerId] || 0) > 0

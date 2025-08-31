@@ -143,13 +143,24 @@ export interface SpaceProps {
   specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'highCouncil'
 }
 
-export interface CardEffect {
-  requirement?: {
-    influence?: InfluenceAmount
-    alliance?: FactionType
-    fremenBond?: FremenBond
-    bgInPlay?: boolean
-  }
+export interface PlayReq extends CardEffectReq {
+  inPlay?: FactionType
+}
+
+export interface RevealReq extends CardEffectReq {
+  bond?: FactionType
+}
+
+export interface CardEffectReq {
+  influence?: InfluenceAmount
+  alliance?: FactionType
+}
+
+export type PlayEffect = CardEffect<PlayReq>
+export type RevealEffect = CardEffect<RevealReq>
+
+export interface CardEffect<R extends CardEffectReq = CardEffectReq> {
+  requirement?: R
   cost?: {
     spice?: number
     water?: number
@@ -183,10 +194,6 @@ export interface CardEffect {
   effectOR?: boolean
 }
 
-export interface FremenBond {
-  activated: boolean
-}
-
 export interface Gain {
   playerId: number
   source: GainSource
@@ -217,8 +224,8 @@ export interface Card {
   agentIcons: AgentIcon[]
   infiltrate?: boolean
   trashEffect?: CardEffect[]
-  playEffect?: CardEffect[]
-  revealEffect?: CardEffect[]
+  playEffect?: PlayEffect[]
+  revealEffect?: RevealEffect[]
   acquireEffect?: {
     victoryPoints?: number,
     spice?: number,
