@@ -94,6 +94,9 @@ export enum AgentIcon {
   BENE_GESSERIT = 'bene-gesserit'
 }
 
+export const ALL_AGENT_ICONS: AgentIcon[] =
+  Object.values(AgentIcon) as AgentIcon[];
+
 export interface InfluenceReward {
   influence: InfluenceAmount[]
   chooseOne?: boolean

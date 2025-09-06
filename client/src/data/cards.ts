@@ -1,239 +1,292 @@
-import { Card, AgentIcon, FactionType } from '../types/GameTypes'
+import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS } from '../types/GameTypes'
+// export const STARTING_DECK: Card[] = [
+//   {
+//     id: 1,
+//     name: "Crysknife",
+//     image: "imperium_row/crysknife.avif",
+//     agentIcons: [AgentIcon.FREMEN, AgentIcon.SPICE_TRADE],
+//     cost: 3,
+//     playEffect: [
+//       {
+//         reward: {
+//           solari: 1
+//         }
+//       }
+//     ],
+//     revealEffect: [
+//       {
+//         reward: {
+//           combat: 1
+//         }
+//       },
+//       {
+//         requirement: {
+//           bond: FactionType.FREMEN
+//         },
+//         reward: {
+//           influence: { influence: [{ faction: FactionType.FREMEN, amount: 1 }] }
+//         }
+//       }
+//     ]
+//   },
+//   {
+//     id: 2,
+//     name: "Firm Grip",
+//     image: "imperium_row/firm_grip.avif",
+//     faction: FactionType.EMPEROR,
+//     agentIcons: [AgentIcon.EMPEROR, AgentIcon.LANDSRAAD],
+//     cost: 4,
+//     playEffect: [
+//       {
+//         cost: {
+//           solari: 2
+//         },
+//         reward: {
+//           influence: { 
+//             chooseOne: true, 
+//             influence: [
+//               {faction: FactionType.SPACING_GUILD,amount: 1},
+//               {faction: FactionType.FREMEN,amount: 1},
+//               {faction: FactionType.BENE_GESSERIT,amount: 1},
+//             ]
+//           }
+//         }
+//       }
+//     ],
+//     revealEffect: [
+//       {
+//         requirement: {
+//           alliance: FactionType.EMPEROR
+//         },
+//         reward: {
+//           persuasion: 4
+//         }
+//       }
+//     ]
+//   },
+//   {
+//     id: 3,
+//     name: "Chani",
+//     image: "imperium_row/chani.avif",
+//     faction: FactionType.FREMEN,
+//     agentIcons: [AgentIcon.FREMEN, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+//     cost: 5,
+//     acquireEffect: {
+//       water: 1
+//     },
+//     revealEffect: [
+//       {
+//         reward: {
+//           persuasion: 2
+//         }
+//       },
+//       {
+//         reward: {
+//           retreatTroops: Number.MAX_SAFE_INTEGER
+//         }
+//       }
+//     ]
+//   },
+//   {
+//     id: 4,
+//     name: "Guild Administrator",
+//     image: "imperium_row/guild_administrator.avif",
+//     faction: FactionType.SPACING_GUILD,
+//     agentIcons: [AgentIcon.SPACING_GUILD, AgentIcon.SPICE_TRADE],
+//     cost: 2,
+//     playEffect: [
+//       {
+//         reward: {
+//           trash: 1
+//         }
+//       }
+//     ],
+//     revealEffect: [
+//       {
+//         reward: {
+//           persuasion: 1
+//         }
+//       }
+//     ]
+//   }
+// ]
 export const STARTING_DECK: Card[] = [
   {
     id: 1,
-    name: "Crysknife",
-    image: "imperium_row/crysknife.avif",
-    agentIcons: [AgentIcon.FREMEN, AgentIcon.SPICE_TRADE],
-    cost: 3,
-    playEffect: [
-      {
-        reward: {
-          spice: 1
-        }
-      }
-    ],
-    revealEffect: [
-      {
-        reward: {
-          combat: 1
-        }
-      },
-      {
-        requirement: {
-          bond: FactionType.FREMEN
-        },
-        reward: {
-          influence: { influence: [{ faction: FactionType.FREMEN, amount: 1 }] }
-        }
-      }
-    ]
-  },
-  {
-    id: 2,
-    name: "Firm Grip",
-    image: "imperium_row/firm_grip.avif",
-    faction: FactionType.EMPEROR,
-    agentIcons: [AgentIcon.EMPEROR, AgentIcon.LANDSRAAD],
-    cost: 4,
-    playEffect: [
-      {
-        cost: {
-          solari: 2
-        },
-        reward: {
-          influence: { 
-            chooseOne: true, 
-            influence: [
-              {faction: FactionType.SPACING_GUILD,amount: 1},
-              {faction: FactionType.FREMEN,amount: 1},
-              {faction: FactionType.BENE_GESSERIT,amount: 1},
-            ]
-          }
-        }
-      }
-    ],
-    revealEffect: [
-      {
-        requirement: {
-          alliance: FactionType.EMPEROR
-        },
-        reward: {
-          persuasion: 4
-        }
-      }
-    ]
-  },
-  {
-    id: 1012,
-    name: "Chani",
-    image: "imperium_row/chani.avif",
-    faction: FactionType.FREMEN,
-    agentIcons: [AgentIcon.FREMEN, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
-    cost: 5,
-    acquireEffect: {
-      water: 1
-    },
+    name: "Convincing Argument",
+    image: "starter_deck/convincing_argument.avif",
     revealEffect: [
       {
         reward: {
           persuasion: 2
         }
+      }
+    ],
+    agentIcons: []
+  },
+  {
+    id: 2,
+    name: "Convincing Argument",
+    image: "starter_deck/convincing_argument.avif",
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      }
+    ],
+    agentIcons: []
+  },
+  {
+    id: 3,
+    name: "Dagger",
+    image: "starter_deck/dagger.avif",
+    revealEffect: [
+      {
+        reward: {
+          combat: 1
+        }
+      }
+    ],
+    agentIcons: [AgentIcon.LANDSRAAD]
+  },
+  {
+    id: 4,
+    name: "Dagger",
+    image: "starter_deck/dagger.avif",
+    revealEffect: [
+      {
+        reward: {
+          combat: 1
+        }
+      }
+    ],
+    agentIcons: [AgentIcon.LANDSRAAD]
+  },
+  {
+    id: 5,
+    name: "Diplomacy",
+    image: "starter_deck/diplomacy.avif",
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      }
+    ],
+    agentIcons: [
+      AgentIcon.FREMEN,
+      AgentIcon.BENE_GESSERIT,
+      AgentIcon.SPACING_GUILD,
+      AgentIcon.EMPEROR
+    ]
+  },
+  {
+    id: 6,
+    name: "Dune, the Desert Planet",
+    image: "starter_deck/dune_the_desert_planet.avif",
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      }
+    ],
+    agentIcons: [AgentIcon.SPICE_TRADE]
+  },
+  {
+    id: 7,
+    name: "Dune, the Desert Planet",  
+    image: "starter_deck/dune_the_desert_planet.avif",
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      }
+    ],
+    agentIcons: [AgentIcon.SPICE_TRADE]
+  },
+  {
+    id: 8,
+    name: "Reconnaissance",
+    image: "starter_deck/reconnaissance.avif",
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      }
+    ],
+    agentIcons: [AgentIcon.CITY]
+  },
+  {
+    id: 9,
+    name: "Seek Allies",
+    image: "starter_deck/seek_allies.avif",
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      }
+    ],
+    agentIcons: [
+      AgentIcon.FREMEN,
+      AgentIcon.BENE_GESSERIT,
+      AgentIcon.SPACING_GUILD,
+      AgentIcon.EMPEROR
+    ]
+  },
+  {
+    id: 10,
+    name: "Signet Ring",
+    image: "starter_deck/signet_ring.avif",
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      }
+    ],
+    agentIcons: [
+      AgentIcon.LANDSRAAD,
+      AgentIcon.CITY,
+      AgentIcon.SPICE_TRADE
+    ]
+  },
+  {
+    id: 1026,
+    name: "Gun Thopter",
+    image: "imperium_row/gun_thopter.avif",
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 4,
+    playEffect: [
+      {
+        reward: {
+          trash: 1
+        }
       },
       {
         reward: {
-          retreatTroops: Number.MAX_SAFE_INTEGER
+          custom: "GUN_THOPTER"
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          combat: 3
+        }
+      },
+      {
+        reward: {
+          deployTroops: 1
         }
       }
     ]
   }
-]
-// export const STARTING_DECK: Card[] = [
-//   {
-//     id: 1,
-//     name: "Convincing Argument",
-//     image: "starter_deck/convincing_argument.avif",
-//     revealEffect: [
-//       {
-//         reward: {
-//           persuasion: 2
-//         }
-//       }
-//     ],
-//     agentIcons: []
-//   },
-//   {
-//     id: 2,
-//     name: "Convincing Argument",
-//     image: "starter_deck/convincing_argument.avif",
-//     revealEffect: [
-//       {
-//         reward: {
-//           persuasion: 2
-//         }
-//       }
-//     ],
-//     agentIcons: []
-//   },
-//   {
-//     id: 3,
-//     name: "Dagger",
-//     image: "starter_deck/dagger.avif",
-//     revealEffect: [
-//       {
-//         reward: {
-//           combat: 1
-//         }
-//       }
-//     ],
-//     agentIcons: [AgentIcon.LANDSRAAD]
-//   },
-//   {
-//     id: 4,
-//     name: "Dagger",
-//     image: "starter_deck/dagger.avif",
-//     revealEffect: [
-//       {
-//         reward: {
-//           combat: 1
-//         }
-//       }
-//     ],
-//     agentIcons: [AgentIcon.LANDSRAAD]
-//   },
-//   {
-//     id: 5,
-//     name: "Diplomacy",
-//     image: "starter_deck/diplomacy.avif",
-//     revealEffect: [
-//       {
-//         reward: {
-//           persuasion: 1
-//         }
-//       }
-//     ],
-//     agentIcons: [
-//       AgentIcon.FREMEN,
-//       AgentIcon.BENE_GESSERIT,
-//       AgentIcon.SPACING_GUILD,
-//       AgentIcon.EMPEROR
-//     ]
-//   },
-//   {
-//     id: 6,
-//     name: "Dune, the Desert Planet",
-//     image: "starter_deck/dune_the_desert_planet.avif",
-//     revealEffect: [
-//       {
-//         reward: {
-//           persuasion: 1
-//         }
-//       }
-//     ],
-//     agentIcons: [AgentIcon.SPICE_TRADE]
-//   },
-//   {
-//     id: 7,
-//     name: "Dune, the Desert Planet",  
-//     image: "starter_deck/dune_the_desert_planet.avif",
-//     revealEffect: [
-//       {
-//         reward: {
-//           persuasion: 1
-//         }
-//       }
-//     ],
-//     agentIcons: [AgentIcon.SPICE_TRADE]
-//   },
-//   {
-//     id: 8,
-//     name: "Reconnaissance",
-//     image: "starter_deck/reconnaissance.avif",
-//     revealEffect: [
-//       {
-//         reward: {
-//           persuasion: 1
-//         }
-//       }
-//     ],
-//     agentIcons: [AgentIcon.CITY]
-//   },
-//   {
-//     id: 9,
-//     name: "Seek Allies",
-//     image: "starter_deck/seek_allies.avif",
-//     revealEffect: [
-//       {
-//         reward: {
-//           persuasion: 1
-//         }
-//       }
-//     ],
-//     agentIcons: [
-//       AgentIcon.FREMEN,
-//       AgentIcon.BENE_GESSERIT,
-//       AgentIcon.SPACING_GUILD,
-//       AgentIcon.EMPEROR
-//     ]
-//   },
-//   {
-//     id: 10,
-//     name: "Signet Ring",
-//     image: "starter_deck/signet_ring.avif",
-//     revealEffect: [
-//       {
-//         reward: {
-//           persuasion: 1
-//         }
-//       }
-//     ],
-//     agentIcons: [
-//       AgentIcon.LANDSRAAD,
-//       AgentIcon.CITY,
-//       AgentIcon.SPICE_TRADE
-//     ]
-//   }
-// ] 
+] 
 
 export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
@@ -970,7 +1023,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     playEffect: [
       {
         reward: {
-          spice: 1
+          solari: 1
         }
       }
     ],
@@ -1269,5 +1322,206 @@ export const IMPERIUM_ROW_DECK: Card[] = [
         }
       }
     ]
+  },
+  {
+    id: 1024,
+    name: "Guild Administrator",
+    image: "imperium_row/guild_administrator.avif",
+    faction: FactionType.SPACING_GUILD,
+    agentIcons: [AgentIcon.SPACING_GUILD, AgentIcon.SPICE_TRADE],
+    cost: 2,
+    playEffect: [
+      {
+        reward: {
+          trash: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1025,
+    name: "Guild Administrator",
+    image: "imperium_row/guild_administrator.avif",
+    faction: FactionType.SPACING_GUILD,
+    agentIcons: [AgentIcon.SPACING_GUILD, AgentIcon.SPICE_TRADE],
+    cost: 2,
+    playEffect: [
+      {
+        reward: {
+          trash: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1026,
+    name: "Gun Thopter",
+    image: "imperium_row/gun_thopter.avif",
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 4,
+    playEffect: [
+      {
+        reward: {
+          custom: "GUN_THOPTER"
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          combat: 3
+        }
+      },
+      {
+        reward: {
+          deployTroops: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1027,
+    name: "Gun Thopter",
+    image: "imperium_row/gun_thopter.avif",
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 4,
+    playEffect: [
+      {
+        reward: {
+          custom: "GUN_THOPTER"
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          combat: 3
+        }
+      },
+      {
+        reward: {
+          deployTroops: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1028,
+    name: "Gurney Halleck",
+    image: "imperium_row/gurney_halleck.avif",
+    agentIcons: [AgentIcon.CITY],
+    cost: 6,
+    playEffect: [
+      {
+        reward: {
+          troops: 2,
+          drawCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      },
+      {
+        cost: {
+          solari: 3
+        },
+        reward: {
+          troops: 2,
+          custom: "GURNEY_HALLECK"
+        }
+      }
+    ]
+  },
+  {
+    id: 1029,
+    name: "Imperial Spy",
+    image: "imperium_row/imperial_spy.avif",
+    faction: FactionType.EMPEROR,
+    agentIcons: [AgentIcon.EMPEROR],
+    cost: 2,
+    playEffect: [
+      {
+        cost: {
+          trashThisCard: true
+        },
+        reward: {
+          intrigueCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          combat: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1030,
+    name: "Imperial Spy",
+    image: "imperium_row/imperial_spy.avif",
+    faction: FactionType.EMPEROR,
+    agentIcons: [AgentIcon.EMPEROR],
+    cost: 2,
+    playEffect: [
+      {
+        cost: {
+          trashThisCard: true
+        },
+        reward: {
+          intrigueCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          combat: 1
+        }
+      }
+    ]
   }
+  // TODO implement taking agent from anywhere
+  // {
+  //   id: 1031,
+  //   name: "Kwisatz Haderach",
+  //   image: "imperium_row/kwisatz_haderach.avif",
+  //   faction: FactionType.BENE_GESSERIT,
+  //   infiltrate: true,
+  //   agentIcons: ALL_AGENT_ICONS,
+  //   cost: 2,
+  //   playEffect: [
+  //     {
+  //       reward: {
+  //         custom: "KWISATZ_HADERACH"
+  //       }
+  //     },
+  //     {
+  //       reward: {
+  //         drawCards: 1
+  //       }
+  //     }
+  //   ]
+  // },
 ]
