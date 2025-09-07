@@ -128,6 +128,7 @@ const GameContent = () => {
           currentConflict={gameState.currentConflict}
           bonusSpice={gameState.bonusSpice}
           onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
+          recallMode={Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
         />
         <div className="players-area">
           {gameState.players.map((player, idx) => (

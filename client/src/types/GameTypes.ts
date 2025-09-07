@@ -159,7 +159,9 @@ export interface CardEffectReq {
   alliance?: FactionType
 }
 
-export type PlayEffect = CardEffect<PlayReq>
+export type PlayEffect = CardEffect<PlayReq> & {
+  beforePlaceAgent?: { returnAgentFromBoard?: boolean } // This is only used for Kwisatz Haderach
+}
 export type RevealEffect = CardEffect<RevealReq>
 
 export interface CardEffect<R extends CardEffectReq = CardEffectReq> {

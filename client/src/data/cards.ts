@@ -256,32 +256,26 @@ export const STARTING_DECK: Card[] = [
     ]
   },
   {
-    id: 1026,
-    name: "Gun Thopter",
-    image: "imperium_row/gun_thopter.avif",
-    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
-    cost: 4,
+    id: 1031,
+    name: "Kwisatz Haderach",
+    image: "imperium_row/kwisatz_haderach.avif",
+    faction: FactionType.BENE_GESSERIT,
+    infiltrate: true,
+    agentIcons: ALL_AGENT_ICONS,
+    cost: 8,
     playEffect: [
       {
+        beforePlaceAgent: { returnAgentFromBoard: true },
+        reward: {}
+      },
+      {
         reward: {
-          trash: 1
+          custom: "KWISATZ_HADERACH"
         }
       },
       {
         reward: {
-          custom: "GUN_THOPTER"
-        }
-      }
-    ],
-    revealEffect: [
-      {
-        reward: {
-          combat: 3
-        }
-      },
-      {
-        reward: {
-          deployTroops: 1
+          drawCards: 1
         }
       }
     ]
@@ -1501,27 +1495,30 @@ export const IMPERIUM_ROW_DECK: Card[] = [
         }
       }
     ]
+  },
+  {
+    id: 1031,
+    name: "Kwisatz Haderach",
+    image: "imperium_row/kwisatz_haderach.avif",
+    faction: FactionType.BENE_GESSERIT,
+    infiltrate: true, //TODO not only infiltrate, it ignores space costs as well
+    agentIcons: ALL_AGENT_ICONS,
+    cost: 8,
+    playEffect: [
+      {
+        beforePlaceAgent: { returnAgentFromBoard: true },
+        reward: {}
+      },
+      {
+        reward: {
+          custom: "KWISATZ_HADERACH"
+        }
+      },
+      {
+        reward: {
+          drawCards: 1
+        }
+      }
+    ]
   }
-  // TODO implement taking agent from anywhere
-  // {
-  //   id: 1031,
-  //   name: "Kwisatz Haderach",
-  //   image: "imperium_row/kwisatz_haderach.avif",
-  //   faction: FactionType.BENE_GESSERIT,
-  //   infiltrate: true,
-  //   agentIcons: ALL_AGENT_ICONS,
-  //   cost: 2,
-  //   playEffect: [
-  //     {
-  //       reward: {
-  //         custom: "KWISATZ_HADERACH"
-  //       }
-  //     },
-  //     {
-  //       reward: {
-  //         drawCards: 1
-  //       }
-  //     }
-  //   ]
-  // },
 ]

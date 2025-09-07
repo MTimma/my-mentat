@@ -713,6 +713,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             acquiredCards: []
           }
 
+      // Check for before-place-agent requirement on play effects
+      const requiresReturn = card.playEffect?.some(e => e.beforePlaceAgent?.returnAgentFromBoard)
+      if (requiresReturn) {
+        const spaceIds = Object.entries(state.occupiedSpaces)
+          .filter(([, ids]) => ids.includes(playerId))
+          .map(([sid]) => Number(sid))
+        if (spaceIds.length === 0) {
+          // No agents on board; cannot play this card
+          return state
+        }
+        const updatedTurn = {
+          ...currentTurn,
+          gainedEffects: [...(currentTurn.gainedEffects || []), 'RECALL_REQUIRED']
+        }
+        return {
+          ...state,
+          selectedCard: cardId,
+          currTurn: updatedTurn
+        }
+      }
+
       return {
         ...state,
         selectedCard: cardId,
@@ -781,6 +802,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       if (!currPlayer || !card || !space || playerId !== newState.activePlayerId || !newState.selectedCard) return state
+
+      // Handle recall-before-placement requirement: interpret this click as recall if needed
+      if (newState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED')) {
+        const occupants = newState.occupiedSpaces[spaceId] || []
+        if (!occupants.includes(playerId)) {
+          // Not a valid recall click; ignore
+          return state
+        }
+        // Remove the player's agent from that space and refund one agent
+        newState.occupiedSpaces = {
+          ...newState.occupiedSpaces,
+          [spaceId]: occupants.filter(id => id !== playerId)
+        }
+        newState.players = newState.players.map(p => p.id === playerId ? { ...p, agents: p.agents + 1 } : p)
+        // Clear the recall flag; keep selectedCard so player can now place
+        newState.currTurn = {
+          ...newState.currTurn,
+          gainedEffects: (newState.currTurn?.gainedEffects || []).filter(e => e !== 'RECALL_REQUIRED')
+        }
+        return newState
+      }
       
       // Check if player has any agents left
       if (currPlayer.agents <= 0) return state

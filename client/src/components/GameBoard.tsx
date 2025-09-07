@@ -11,7 +11,11 @@ interface SellMelangeData {
   solariReward: number;
 }
 
-type ExtraSpaceData = SellMelangeData | undefined;
+interface SelectiveBreedingData {
+  trashedCardId: number;
+}
+
+type ExtraSpaceData = SellMelangeData | SelectiveBreedingData | undefined;
 
 interface GameBoardProps {
   currentPlayer: number;
@@ -26,6 +30,7 @@ interface GameBoardProps {
   currentConflict?: ConflictCard;
   bonusSpice: { [key: string]: number };
   onSelectiveBreedingRequested: (cards: Card[], onSelect: (card: Card) => void) => void;
+  recallMode?: boolean;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -40,12 +45,17 @@ const GameBoard: React.FC<GameBoardProps> = ({
   factionInfluence,
   bonusSpice,
   currentConflict,
-  onSelectiveBreedingRequested
+  onSelectiveBreedingRequested,
+  recallMode = false
 }) => {
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
 
   const canPayCosts = (space: SpaceProps): boolean => {
+    // In recall mode, allow clicking only on spaces where the current player has an agent
+    if (recallMode) {
+      return Boolean(occupiedSpaces[space.id]?.includes(currentPlayer))
+    }
     const player = players.find(p => p.id === currentPlayer)
     if (!player) return false
 
@@ -77,6 +87,15 @@ const GameBoard: React.FC<GameBoardProps> = ({
     } else {
       onSpaceClick(spaceId)
     }
+    if (space?.name === "Selective Breeding") {
+      const player = players.find(p => p.id === currentPlayer)
+      if (!player) return
+      onSelectiveBreedingRequested(
+        [...player.deck, ...player.discardPile, ...player.playArea],
+        (card) => onSpaceClick(spaceId, { trashedCardId: card.id })
+      )
+      return
+    }
   }
 
   const handleSellMelangeOptionSelect = (option: { spiceCost: number; solariReward: number }) => {
@@ -105,7 +124,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
             onSpaceClick={() => handleSpaceClick(space.id)}
             occupiedBy={occupiedSpaces[space.id] || []}
-            isEnabled={canPayCosts(space) && canPlaceAgent && highlightedAreas?.includes(space.agentIcon)}
+            isEnabled={isSpaceClickable(recallMode, occupiedSpaces, space, currentPlayer, canPayCosts, canPlaceAgent, highlightedAreas)}
             bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
             makerSpace={space.makerSpace}
             wide={idx === 0 || idx === 2}
@@ -121,7 +140,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
               isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
               onSpaceClick={() => handleSpaceClick(space.id)}
               occupiedBy={occupiedSpaces[space.id] || []}
-              isEnabled={canPayCosts(space) && canPlaceAgent && highlightedAreas?.includes(space.agentIcon)}
+              isEnabled={recallMode ? Boolean(occupiedSpaces[space.id]?.includes(currentPlayer)) : Boolean(canPayCosts(space) && canPlaceAgent && highlightedAreas?.includes(space.agentIcon))}
               bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
               makerSpace={space.makerSpace}
             />
@@ -148,3 +167,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 }
 
 export default GameBoard 
+
+function isSpaceClickable(recallMode: boolean, occupiedSpaces: { [key: number]: number[] }, space: SpaceProps, currentPlayer: number, canPayCosts: (space: SpaceProps) => boolean, canPlaceAgent: boolean, highlightedAreas: AgentIcon[]): boolean {
+  return recallMode ? Boolean(occupiedSpaces[space.id]?.includes(currentPlayer)) : Boolean(canPayCosts(space) && canPlaceAgent && highlightedAreas?.includes(space.agentIcon))
+}
