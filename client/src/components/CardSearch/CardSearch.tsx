@@ -31,9 +31,9 @@ const CardSearch: React.FC<CardSearchProps> = ({
     return cards.filter(card => {
       const searchableText = [
         card.name,//TODO check effect other fields
-        card.revealEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
-        card.revealEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
-        card.revealEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
+        card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
+        card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
+        card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
         card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
         card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
         card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
@@ -111,9 +111,9 @@ const CardSearch: React.FC<CardSearchProps> = ({
                   <span key={index} className="agent-icon">{icon}</span>
                 ))}
               </div>
-              {card.revealEffect && (
+              {card.playEffect && (
                 <div className="card-effect">
-                  {card.revealEffect.map((effect, index) => (
+                  {card.playEffect.map((effect, index) => (
                     <div key={index}>
                       Reveal: {JSON.stringify(effect.reward)}
                     </div>

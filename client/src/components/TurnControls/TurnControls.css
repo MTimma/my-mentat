@@ -224,3 +224,33 @@ button:disabled {
     min-width: 0;
   }
 }
+
+.optional-effects-bar {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.optional-effects-bar.top-bar {
+  margin-bottom: 4px;
+  padding: 2px 4px;
+  background:#222;
+  border-radius:4px;
+}
+
+.optional-effect-btn {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+}
+
+.optional-effect-btn.disabled,
+.optional-effect-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.resource-icon {
+  width:16px;
+  height:16px;
+}

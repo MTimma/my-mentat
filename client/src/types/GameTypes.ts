@@ -98,7 +98,7 @@ export const ALL_AGENT_ICONS: AgentIcon[] =
   Object.values(AgentIcon) as AgentIcon[];
 
 export interface InfluenceReward {
-  influence: InfluenceAmount[]
+  amounts: InfluenceAmount[]
   chooseOne?: boolean
 }
 
@@ -113,6 +113,17 @@ export enum MakerSpace {
   IMPERIAL_BASIN = 'imperial-basin',
 }
 
+export interface SpaceCostReward {
+  cost?: {
+    solari?: number
+    trash?: number
+  }
+  reward?: {
+    spice?: number
+    cards?: number
+  }
+}
+
 export interface SpaceProps {
   id: number
   name: string
@@ -122,15 +133,10 @@ export interface SpaceProps {
     water?: number
     solari?: number
   }
-  reward?: {
-    spice?: number
-    water?: number
-    solari?: number
-    troops?: number
-    cards?: number
-    intrigueCards?: number
-    persuasion?: number
-  }
+  effects?:[{
+    cost?: Cost
+    reward: Reward
+  }]
   influence?: InfluenceAmount
   maxAgents?: number
   occupiedBy?: number[]
@@ -160,42 +166,47 @@ export interface CardEffectReq {
 }
 
 export type PlayEffect = CardEffect<PlayReq> & {
-  beforePlaceAgent?: { returnAgentFromBoard?: boolean } // This is only used for Kwisatz Haderach
+  beforePlaceAgent?: { recallAgent?: boolean } // This is only used for Kwisatz Haderach
 }
 export type RevealEffect = CardEffect<RevealReq>
 
+export interface Cost {
+  spice?: number
+  water?: number
+  solari?: number
+  trashThisCard?: boolean
+  trash?: number
+  discard?: number
+  influence?: InfluenceAmount
+  troops?: number
+  retreatTroops?: number
+  retreatUnits?: number
+  deployTroops?: number
+}
+
+export interface Reward {
+  persuasion?: number
+  combat?: number
+  spice?: number
+  water?: number
+  solari?: number
+  troops?: number
+  drawCards?: number
+  victoryPoints?: number
+  intrigueCards?: number
+  trash?: number
+  trashThisCard?: boolean
+  retreatTroops?: number
+  retreatUnits?: number
+  deployTroops?: number
+  custom?: string
+  influence?: InfluenceReward
+}
+
 export interface CardEffect<R extends CardEffectReq = CardEffectReq> {
   requirement?: R
-  cost?: {
-    spice?: number
-    water?: number
-    solari?: number
-    trashThisCard?: boolean
-    discard?: number
-    influence?: InfluenceAmount
-    troops?: number
-    retreatTroops?: number
-    retreatUnits?: number
-    deployTroops?: number
-  }
-  reward: {
-    persuasion?: number
-    combat?: number
-    spice?: number
-    water?: number
-    solari?: number
-    troops?: number
-    drawCards?: number
-    victoryPoints?: number
-    intrigueCards?: number
-    trash?: number
-    trashThisCard?: boolean
-    retreatTroops?: number
-    retreatUnits?: number
-    deployTroops?: number
-    custom?: string
-    influence?: InfluenceReward
-  }
+  cost?: Cost
+  reward: Reward
   effectOR?: boolean
 }
 
@@ -236,7 +247,7 @@ export interface Card {
     spice?: number,
     troops?: number,
     trash?: number,
-    influence?: InfluenceAmount[],
+    influence?: InfluenceReward,
     water?: number,
   }
 }
@@ -284,7 +295,7 @@ export interface IntrigueCardPlay {
   effectDecisions?: Record<string, any>
 }
 
-export interface Reward {
+export interface ConflictReward {
   type: RewardType
   amount: number
 }
@@ -301,10 +312,18 @@ export interface ConflictCard {
   name: string
   controlSpace?: ControlMarkerType
   rewards: {
-    first: Reward[]
-    second: Reward[]
-    third: Reward[]
+    first: ConflictReward[]
+    second: ConflictReward[]
+    third: ConflictReward[]
   }
+}
+
+export interface OptionalEffect {
+  id: string
+  cost: Cost
+  reward: Reward
+  source: { type: GainSource; id: number; name: string }
+  data?: { trashedCardId?: number }
 }
 
 export interface GameTurn {
@@ -319,6 +338,7 @@ export interface GameTurn {
   gainedEffects?: string[]
   acquiredCards?: Card[]
   playedIntrigueCard?: IntrigueCardPlay[]
+  optionalEffects?: OptionalEffect[]
 }
 
 export enum GamePhase {

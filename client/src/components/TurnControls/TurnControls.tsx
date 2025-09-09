@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Player, Card, Gain } from '../../types/GameTypes'
+import { Player, Card, Gain, Cost, Reward } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import './TurnControls.css'
 
@@ -19,6 +19,8 @@ interface TurnControlsProps {
   gains: Gain[]
   isCombatPhase: boolean
   combatStrength: Record<number, number>
+  optionalEffects?: { cost: Cost; reward: Reward; source: { type: string; id: number; name: string }; data?: { trashedCardId?: number } }[]
+  onPayCost?: (effect: { cost: Cost; reward: Reward; source: { type: string; id: number; name: string }; data?: { trashedCardId?: number } }) => void
   showSelectiveBreeding?: boolean
   selectiveBreedingCards?: Card[]
   onSelectiveBreedingSelect?: (card: Card) => void
@@ -41,6 +43,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   gains,
   isCombatPhase,
   combatStrength,
+  optionalEffects = [],
+  onPayCost,
   showSelectiveBreeding = false,
   onSelectiveBreedingSelect,
   onSelectiveBreedingCancel
@@ -48,6 +52,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
+  const [showTrashPopup, setShowTrashPopup] = useState(false)
+  const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
 
   if (!activePlayer) return null
 
@@ -98,6 +104,71 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
   }
 
+  /* ---------- Optional effects helpers ---------- */
+  const isAffordable = (cost: Cost): boolean => {
+    if (!activePlayer) return false
+    if(cost.spice && activePlayer.spice < cost.spice) return false
+    if(cost.water && activePlayer.water < cost.water) return false
+    if(cost.solari && activePlayer.solari < cost.solari) return false
+    if(cost.troops && activePlayer.troops < cost.troops) return false
+    // trash costs always affordable (player chooses card)
+    return true
+  }
+
+  const Icon: React.FC<{type:string}> = ({type}) => <img src={`/icon/${type}.png`} alt={type} className="resource-icon" />
+
+  const renderPart = (amount:number|undefined, type:string, sign:'+'|'-') => {
+    if(!amount) return null
+    return (
+      <span className="res-part" key={type+sign}>
+        {sign==='-'?'-':'+'}{amount}&nbsp;<Icon type={type} />
+      </span>
+    )
+  }
+
+  const renderLabel = (effect:{cost:Cost; reward:Reward}): React.ReactNode => {
+    const {cost,reward} = effect
+    const left: React.ReactNode[] = []
+    left.push(renderPart(cost.spice,'spice','-'))
+    left.push(renderPart(cost.water,'water','-'))
+    left.push(renderPart(cost.solari,'solari','-'))
+    if(cost.trash || cost.trashThisCard) left.push(<span key="trash">Trash</span>)
+
+    const right: React.ReactNode[] = []
+    right.push(renderPart(reward.spice,'spice','+'))
+    right.push(renderPart(reward.water,'water','+'))
+    right.push(renderPart(reward.solari,'solari','+'))
+    if(reward.drawCards) right.push(<span key="draw">Draw {reward.drawCards}</span>)
+    if(reward.troops) right.push(<span key="troops">+{reward.troops} Troops</span>)
+    if(reward.victoryPoints) right.push(<span key="vp">+{reward.victoryPoints} VP</span>)
+
+    return (
+      <span className="effect-label">
+        {left.filter(Boolean).map((n,idx)=> <React.Fragment key={idx}>{n} </React.Fragment>)}
+        &nbsp;→&nbsp;
+        {right.filter(Boolean).map((n,idx)=> <React.Fragment key={idx}>{n} </React.Fragment>)}
+      </span>
+    )
+  }
+
+  const handleEffectClick = (effect: typeof optionalEffects[0]) => {
+    if(effect.cost.trash && !effect.cost.trashThisCard) {
+      // need popup
+      setPendingEffect(effect)
+      setShowTrashPopup(true)
+    } else {
+      onPayCost && onPayCost(effect)
+    }
+  }
+
+  const handleTrashSelect = (card: Card) => {
+    if(pendingEffect && onPayCost) {
+      onPayCost({ ...pendingEffect, data: { trashedCardId: card.id } })
+    }
+    setShowTrashPopup(false)
+    setPendingEffect(null)
+  }
+
 
   return (
     <>
@@ -115,6 +186,19 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           </div>
         </div>
       )}
+      {optionalEffects.length > 0 && (
+        <div className="optional-effects-bar top-bar">
+          {optionalEffects.map((eff, idx) => (
+            <button key={idx}
+                    className="optional-effect-btn"
+                    disabled={!isAffordable(eff.cost)}
+                    onClick={() => handleEffectClick(eff)}>
+               {renderLabel(eff)}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="turn-controls">
         <div className="active-player-info">
           <div className={`color-indicator ${activePlayer.color}`}></div>
@@ -222,6 +306,16 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           onCancel={onSelectiveBreedingCancel || (() => {})}
           isRevealTurn={false}
           text="Selective Breeding: select a card to trash"
+        />
+
+        <CardSearch
+          isOpen={showTrashPopup}
+          cards={[...activePlayer.deck, ...activePlayer.discardPile, ...activePlayer.playArea]}
+          selectionCount={1}
+          onSelect={selected => selected[0] && handleTrashSelect(selected[0])}
+          onCancel={() => { setShowTrashPopup(false); setPendingEffect(null);} }
+          isRevealTurn={false}
+          text="Select card to trash"
         />
       </div>
     </>

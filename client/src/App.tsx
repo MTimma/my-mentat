@@ -8,7 +8,7 @@ import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -70,6 +70,11 @@ const GameContent = () => {
   
   const handleAddTroop = (playerId: number) => {
     dispatch({ type: 'DEPLOY_TROOP', playerId })
+  }
+
+  const handlePayCost = (effect: OptionalEffect) => {
+    if(!activePlayer) return;
+    dispatch({ type: 'PAY_COST', playerId: activePlayer.id, effect })
   }
 
   const handleRemoveTroop = (playerId: number) => {
@@ -161,10 +166,12 @@ const GameContent = () => {
           onAddTroop={handleAddTroop}
           onRemoveTroop={handleRemoveTroop}
           retreatableTroops={gameState.currTurn?.removableTroops || 0}
-          deployableTroops={Math.min((gameState.currTurn?.troopLimit || 2) - (gameState.currTurn?.removableTroops || 0), activePlayer?.troops || 0)}
+          deployableTroops={Math.min((gameState.currTurn?.troopLimit || 0) - (gameState.currTurn?.removableTroops || 0), activePlayer?.troops || 0)}
           gains={gameState.gains}
           isCombatPhase={gameState.phase === GamePhase.COMBAT}
           combatStrength={gameState.combatStrength}
+          optionalEffects={gameState.currTurn?.optionalEffects || []}
+          onPayCost={handlePayCost}
           showSelectiveBreeding={showSelectiveBreeding}
           onSelectiveBreedingSelect={card => {
             if (onSelectiveBreedingSelect) onSelectiveBreedingSelect(card)

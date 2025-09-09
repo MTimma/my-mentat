@@ -265,7 +265,7 @@ export const STARTING_DECK: Card[] = [
     cost: 8,
     playEffect: [
       {
-        beforePlaceAgent: { returnAgentFromBoard: true },
+        beforePlaceAgent: { recallAgent: true },
         reward: {}
       },
       {
@@ -276,6 +276,63 @@ export const STARTING_DECK: Card[] = [
       {
         reward: {
           drawCards: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1021,
+    name: "Fremen Camp",
+    image: "imperium_row/fremen_camp.avif",
+    faction: FactionType.FREMEN,
+    agentIcons: [AgentIcon.SPICE_TRADE],
+    cost: 4,
+    playEffect: [
+      {
+        cost: {
+          spice: 2
+        },
+        reward: {
+          troops: 3
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2,
+          combat: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1028,
+    name: "Gurney Halleck",
+    image: "imperium_row/gurney_halleck.avif",
+    agentIcons: [AgentIcon.CITY],
+    cost: 6,
+    playEffect: [
+      {
+        reward: {
+          troops: 2,
+          drawCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      },
+      {
+        cost: {
+          solari: 3
+        },
+        reward: {
+          troops: 2,
+          deployTroops: 2
         }
       }
     ]
@@ -993,12 +1050,15 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     agentIcons: [],
     cost: 8,
     acquireEffect: {
-      influence: [
-        { faction: FactionType.FREMEN, amount: 1 },
-        { faction: FactionType.BENE_GESSERIT, amount: 1 },
-        { faction: FactionType.SPACING_GUILD, amount: 1 },
-        { faction: FactionType.EMPEROR, amount: 1 }
-      ]
+      
+      influence: {  
+        amounts: [
+          { faction: FactionType.FREMEN, amount: 1 },
+          { faction: FactionType.BENE_GESSERIT, amount: 1 },
+          { faction: FactionType.SPACING_GUILD, amount: 1 },
+          { faction: FactionType.EMPEROR, amount: 1 }
+        ]
+      }
     },
     revealEffect: [
       {
@@ -1032,7 +1092,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
           bond: FactionType.FREMEN
         },
         reward: {
-          influence: { influence: [{ faction: FactionType.FREMEN, amount: 1 }] }
+          influence: { amounts: [{ faction: FactionType.FREMEN, amount: 1 }] }
         }
       }
     ]
@@ -1185,7 +1245,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
         reward: {
           influence: { 
             chooseOne: true, 
-            influence: [
+            amounts: [
               {faction: FactionType.SPACING_GUILD,amount: 1},
               {faction: FactionType.FREMEN,amount: 1},
               {faction: FactionType.BENE_GESSERIT,amount: 1},
@@ -1439,7 +1499,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
         },
         reward: {
           troops: 2,
-          custom: "GURNEY_HALLECK"
+          deployTroops: 2
         }
       }
     ]
@@ -1502,11 +1562,12 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     image: "imperium_row/kwisatz_haderach.avif",
     faction: FactionType.BENE_GESSERIT,
     infiltrate: true, //TODO not only infiltrate, it ignores space costs as well
+    //TODO add to turn controls indicator when recalling agent
     agentIcons: ALL_AGENT_ICONS,
     cost: 8,
     playEffect: [
       {
-        beforePlaceAgent: { returnAgentFromBoard: true },
+        beforePlaceAgent: { recallAgent: true },
         reward: {}
       },
       {
@@ -1517,6 +1578,115 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       {
         reward: {
           drawCards: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1032,
+    name: "Lady Jessica",
+    image: "imperium_row/lady_jessica.avif",
+    faction: FactionType.BENE_GESSERIT,
+    infiltrate: true, //TODO not only infiltrate, it ignores space costs as well
+    //TODO add to turn controls indicator when recalling agent
+    agentIcons: [AgentIcon.BENE_GESSERIT, AgentIcon.CITY, AgentIcon.SPICE_TRADE, AgentIcon.LANDSRAAD],
+    cost: 7,
+    acquireEffect: {
+      influence: {
+        chooseOne: true,
+        amounts: [
+          { faction: FactionType.BENE_GESSERIT, amount: 1 },
+          { faction: FactionType.FREMEN, amount: 1 },
+          { faction: FactionType.SPACING_GUILD, amount: 1 },
+          { faction: FactionType.EMPEROR, amount: 1 }
+        ]
+      }
+    },
+    playEffect: [
+      {
+        reward: {
+          drawCards: 2
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 3,
+          combat: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1033,
+    name: "Liet Kynes",
+    image: "imperium_row/liet_kynes.avif",
+    faction: [FactionType.FREMEN, FactionType.EMPEROR],
+    agentIcons: [AgentIcon.FREMEN, AgentIcon.CITY],
+    cost: 5,
+    acquireEffect: {
+      influence: {
+        amounts: [
+          { faction: FactionType.EMPEROR, amount: 1 }
+        ]
+      }
+    },
+  
+    revealEffect: [
+      {
+        reward: {
+          custom: "LIET_KYNES"
+        }
+      }
+    ]
+  },
+  {
+    id: 1034,
+    name: "Missionaria Protectiva",
+    image: "imperium_row/missionaria_protectiva.avif",
+    faction: FactionType.BENE_GESSERIT,
+    agentIcons: [AgentIcon.CITY],
+    cost: 1,
+    playEffect: [
+      {
+        requirement: {
+          inPlay: FactionType.BENE_GESSERIT
+        },
+        reward: {
+          persuasion: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          custom: "LIET_KYNES"
+        }
+      }
+    ]
+  },
+  {
+    id: 1035,
+    name: "Missionaria Protectiva",
+    image: "imperium_row/missionaria_protectiva.avif",
+    faction: FactionType.BENE_GESSERIT,
+    agentIcons: [AgentIcon.CITY],
+    cost: 1,
+    playEffect: [
+      {
+        requirement: {
+          inPlay: FactionType.BENE_GESSERIT
+        },
+        reward: {
+          persuasion: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          custom: "LIET_KYNES"
         }
       }
     ]

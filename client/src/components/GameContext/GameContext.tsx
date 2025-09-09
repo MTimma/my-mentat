@@ -5,7 +5,9 @@ import {
   ConflictCard,
   IntrigueCard,
   Card,
+  Cost,
   Reward,
+  ConflictReward,
   IntrigueCardEffect,
   Winners as Placements,
   IntrigueCardType,
@@ -20,7 +22,9 @@ import {
   Gain,
   MakerSpace,
   PlayEffect,
-  RevealEffect
+  RevealEffect,
+  GameTurn,
+  OptionalEffect
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { ARRAKIS_LIAISON_DECK, IMPERIUM_ROW_DECK } from '../../data/cards'
@@ -52,6 +56,7 @@ type GameAction =
   | { type: 'REVEAL_CARDS'; playerId: number; cardIds: number[] }
   | { type: 'ACQUIRE_AL'; playerId: number }
   | { type: 'ACQUIRE_SMF'; playerId: number }
+  | { type: 'PAY_COST'; playerId: number; effect: OptionalEffect }
   | { type: 'SELECT_CONFLICT'; conflictId: number }
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
@@ -179,7 +184,7 @@ function getPlacements4p(entries: {id: number, strength: number}[]): Placements 
   return placements
 }
 
-function applyReward(state: GameState, reward: Reward, placement: string, playerIds: number[]): GameState {
+function applyReward(state: GameState, reward: ConflictReward, placement: string, playerIds: number[]): GameState {
   const newState = { ...state }
   newState.gains = newState.gains || []
   newState.gains.push({
@@ -442,7 +447,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!player || player.troops <= 0) return state
       
       const currentTroops = state.combatTroops[action.playerId] || 0
-      const updatedCombat = player.combatValue? player.combatValue + 2 : 2;
+      const updatedCombat = player.combatValue ? player.combatValue + 2 : 2;
       const currentTurn = state.activePlayerId === action.playerId ? 
         {
             ...state.currTurn,
@@ -460,7 +465,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         },
         combatStrength: {
           ...state.combatStrength,
-          [action.playerId]: state.combatStrength[action.playerId] ? state.combatStrength[action.playerId] + 2 : 2
+          [action.playerId]: updatedCombat
         },
         players: state.players.map(p =>
           p.id === action.playerId
@@ -706,7 +711,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             cardId,
             agentSpace: undefined,
             canDeployTroops: false,
-            troopLimit: 2,
+            troopLimit: 0,
             removableTroops: 0,
             persuasionCount: 0,
             gainedEffects: [],
@@ -714,7 +719,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
 
       // Check for before-place-agent requirement on play effects
-      const requiresReturn = card.playEffect?.some(e => e.beforePlaceAgent?.returnAgentFromBoard)
+      const requiresReturn = card.playEffect?.some(e => e.beforePlaceAgent?.recallAgent)
       if (requiresReturn) {
         const spaceIds = Object.entries(state.occupiedSpaces)
           .filter(([, ids]) => ids.includes(playerId))
@@ -756,7 +761,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         canDeployTroops: space?.conflictMarker || false,
         troopLimit: space?.conflictMarker ? 2 + (newState.currTurn?.troopLimit|| 0): 0,
         removableTroops: 0,
-        persuasionCount: space?.reward?.persuasion || 0,
+        persuasionCount: 0,
         gainedEffects: [],
         acquiredCards: []
       }
@@ -779,16 +784,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           currPlayer.troops += effect.reward.troops
           tempCurrTurn.troopLimit += effect.reward.troops
         }
+        if (effect.reward.drawCards) {
+          updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: effect.reward.drawCards, type: RewardType.DRAW, source: GainSource.CARD })
+          currPlayer.handCount += effect.reward.drawCards
+        }
+        if ( effect.reward.intrigueCards) {
+          updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: effect.reward.intrigueCards, type: RewardType.INTRIGUE, source: GainSource.CARD })
+          currPlayer.intrigueCount += effect.reward.intrigueCards
+        }
         if (effect.reward.custom) {
           switch (effect.reward.custom) {
-            case 'CARRYALL':
-              if (space.reward) {
-                if (space.reward.spice) {
-                  updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: space.reward.spice, type: RewardType.SPICE, source: GainSource.CARD })
-                  currPlayer.spice += space.reward.spice
-                }
+            case 'CARRYALL': {
+              const spiceReward = space.effects?.find(e => e.reward.spice)?.reward.spice
+              if (spiceReward) {
+                  updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: spiceReward, type: RewardType.SPICE, source: GainSource.CARD })
+                  currPlayer.spice += spiceReward
               }
               break
+            }
             case 'GUN_THOPTER':
               newState.players.forEach(p => {
                 if(p.id !== playerId && p.troops > 0) {
@@ -800,6 +813,44 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
         }
       }
+
+      function applySpaceEffect(effect: {cost?: Cost, reward: Reward}, updatedGains: Gain[], newState: GameState, playerId: number, space: SpaceProps, currPlayer: Player): void {
+        if (effect.reward.solari) {
+          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.solari, type: RewardType.SOLARI, source: GainSource.BOARD_SPACE })
+          currPlayer.solari += effect.reward.solari
+        }
+        if (effect.reward.spice) {
+          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.spice, type: RewardType.SPICE, source: GainSource.BOARD_SPACE })
+          currPlayer.spice += effect.reward.spice
+          if (space.makerSpace) {
+            const bonusSpice = { ...newState.bonusSpice }
+            currPlayer.spice += bonusSpice[space.makerSpace]
+            bonusSpice[space.makerSpace] = 0
+            newState.bonusSpice = bonusSpice
+          }
+        }
+        if (effect.reward.water) {
+          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.water, type: RewardType.WATER, source: GainSource.BOARD_SPACE })
+          currPlayer.water += effect.reward.water
+        }
+        if (effect.reward.troops) {
+          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.troops, type: RewardType.TROOPS, source: GainSource.BOARD_SPACE })
+          tempCurrTurn.troopLimit += effect.reward.troops
+          currPlayer.troops += effect.reward.troops
+        }
+        if (effect.reward.persuasion) {
+          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.persuasion, type: RewardType.PERSUASION, source: GainSource.BOARD_SPACE })
+          currPlayer.persuasion += effect.reward.persuasion
+        }
+        if (effect.reward.drawCards) {
+          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.drawCards, type: RewardType.DRAW, source: GainSource.BOARD_SPACE })
+          currPlayer.handCount += effect.reward.drawCards
+        }
+        if (effect.reward.intrigueCards) {
+          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.intrigueCards, type: RewardType.INTRIGUE, source: GainSource.BOARD_SPACE })
+          currPlayer.intrigueCount += effect.reward.intrigueCards
+        }
+    }
 
       if (!currPlayer || !card || !space || playerId !== newState.activePlayerId || !newState.selectedCard) return state
 
@@ -901,42 +952,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (space.cost.water) currPlayer.water -= space.cost.water
       }
       
-      if (space.reward) {
-        if (space.reward.solari) {
-          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: space.reward.solari, type: RewardType.SOLARI, source: GainSource.BOARD_SPACE } )
-          currPlayer.solari += space.reward.solari
-        } 
-        if (space.reward.spice) {
-          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: space.reward.spice, type: RewardType.SPICE, source: GainSource.BOARD_SPACE } )
-          currPlayer.spice += space.reward.spice
-          if(space.makerSpace) {
-            const bonusSpice = {...newState.bonusSpice}
-            currPlayer.spice += bonusSpice[space.makerSpace] 
-            bonusSpice[space.makerSpace] = 0
-            newState.bonusSpice = bonusSpice
-          }
-        }
-        if (space.reward.water) {
-          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: space.reward.water, type: RewardType.WATER, source: GainSource.BOARD_SPACE } )
-          currPlayer.water += space.reward.water
-        }
-        if (space.reward.troops) {
-          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: space.reward.troops, type: RewardType.TROOPS, source: GainSource.BOARD_SPACE } )
-          currPlayer.troops += space.reward.troops
-        }
-        if (space.reward.persuasion) {
-          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: space.reward.persuasion, type: RewardType.PERSUASION, source: GainSource.BOARD_SPACE } )
-          currPlayer.persuasion += space.reward.persuasion
-        }
+      if (space.effects) {
+        space.effects.forEach(effect => {
+          applySpaceEffect(effect, updatedGains, newState, playerId, space, currPlayer)
+        })
       }
+
+      // Build optional effects list (play effects with cost)
+      const optionalEffects: OptionalEffect[] = []
+
       if(card.playEffect) {
         card.playEffect?.filter((effect:PlayEffect) => {
             if(effect.cost) {
-              
-        //TODO paying cost is optional, make similar to selective breeding
+              const effectId = card.name + crypto.randomUUID();
+              optionalEffects.push({ id: effectId, cost: effect.cost as Cost, reward: effect.reward, source:{ type: GainSource.CARD, id: card.id, name: card.name } })
               return false;
             }
-            return playRequirementSatisfied(effect, card, state, playerId);
+            return playRequirementSatisfied(effect, card, state, playerId)
            }).forEach(effect => {
           if(effect.reward) {
               applyCardPlayEffect(effect, card, space)
@@ -966,8 +998,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedDeck = currPlayer.deck.filter(c => c.id !== card.id)
 
       const canDeployTroops = tempCurrTurn?.canDeployTroops || false
-      const troopLimit = canDeployTroops ? 2 + (tempCurrTurn?.troopLimit|| 0): 0
+      const troopLimit = canDeployTroops ? (tempCurrTurn?.troopLimit|| 2): 2
       const persuasionCount = tempCurrTurn?.persuasionCount || 0
+
+      
 
       const currentTurn = newState.currTurn?.playerId === playerId 
         ? {
@@ -976,7 +1010,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             canDeployTroops: canDeployTroops,
             troopLimit: troopLimit,
             removableTroops: newState.currTurn?.removableTroops || 0,
-            persuasionCount: (newState.currTurn?.persuasionCount || 0) + persuasionCount
+            persuasionCount: (newState.currTurn?.persuasionCount || 0) + persuasionCount,
+            optionalEffects: [...(newState.currTurn?.optionalEffects||[]), ...optionalEffects],
           }
         : {
             playerId,
@@ -987,8 +1022,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             troopLimit: troopLimit,
             removableTroops: 0,
             persuasionCount: persuasionCount,
-            gainedEffects: [],
-            acquiredCards: []
+            gainedEffects: [],//TODO is this used?
+            acquiredCards: [],
+            optionalEffects: [...(newState.currTurn?.optionalEffects||[]), ...optionalEffects],
           }
 
       if (space.specialEffect) {
@@ -1021,9 +1057,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             })
             break
 
-          case 'selectiveBreeding':
-            // TODO: Implement card trashing and drawing
-            break
         }
       }
 
@@ -1086,11 +1119,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         persuasionCount += 2
       }
 
+      const optionalEffects: OptionalEffect[] = []
       revealedCards.forEach(card => {
         card.revealEffect?.filter((effect:CardEffect) => {
             if(effect.cost) {
-              //TODO implement optional cost
+              const effectId = card.name + crypto.randomUUID();
+              optionalEffects.push({ id: effectId, cost: effect.cost as Cost, reward: effect.reward, source:{ type: GainSource.CARD, id: card.id, name: card.name } })
+              return false;
             }
+            // collect optional effects (with cost) into optionalEffects array later
             return revealRequirementSatisfied(effect, card, state, playerId, revealedCards);
           })
           .forEach(effect => {
@@ -1115,23 +1152,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               solariCount += effect.reward.solari
             }
             if(effect.reward?.intrigueCards) {
-              updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.intrigueCards, type: RewardType.INTRIGUE_CARDS, source: GainSource.CARD } )
+              updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.intrigueCards, type: RewardType.INTRIGUE, source: GainSource.CARD } )
               player.intrigueCount += effect.reward.intrigueCards
             }
             if(effect.reward?.deployTroops) {
               updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.deployTroops, type: RewardType.DEPLOY, source: GainSource.CARD } )
               tempCurrTurn.troopLimit += effect.reward.deployTroops
               tempCurrTurn.canDeployTroops = true
-            }
-            if(effect.reward?.custom) {
-              switch (effect.reward.custom) {
-                case 'GURNEY_HALLECK':
-                  updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: 2, type: RewardType.TROOPS, source: GainSource.CARD } )
-                  player.troops += 2
-                  tempCurrTurn.troopLimit += 2
-                  tempCurrTurn.canDeployTroops = true
-                  break
-              }
             }
           })
         
@@ -1146,6 +1173,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             troopLimit: tempCurrTurn.troopLimit,
             removableTroops: tempCurrTurn.removableTroops,
             persuasionCount: (state.currTurn?.persuasionCount || 0) + persuasionCount,
+            optionalEffects: [...(state.currTurn?.optionalEffects||[]), ...optionalEffects],
           }
         : {
             playerId,
@@ -1155,18 +1183,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             removableTroops: tempCurrTurn.removableTroops,
             persuasionCount: persuasionCount,
             gainedEffects: [],
-            acquiredCards: []
+            acquiredCards: [],
+            optionalEffects
           }
 
-      // Update combat strength if player has troops in combat
+      // Update combat strength even if not in combat (so can be used later)
       const hasTroopsInCombat = (state.combatTroops[playerId] || 0) > 0
-      const updatedCombatValue = hasTroopsInCombat ? 
-            (player.combatValue ? player.combatValue + swordCount : swordCount + (state.combatTroops[playerId] * 2)) 
-          : player.combatValue
+      const updatedCombatValue = player.combatValue ? player.combatValue + swordCount : swordCount + (state.combatTroops[playerId] ? (state.combatTroops[playerId] * 2): 0)
       const updatedCombatStrength = hasTroopsInCombat
         ? { ...state.combatStrength, [playerId]: (state.combatStrength[playerId] || 0) + swordCount }
         : state.combatStrength
-
       return {
         ...state,
         gains: updatedGains,
@@ -1232,10 +1258,116 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         players: state.players.map(p => p.id === playerId ? { ...p,discardPile: player.discardPile, persuasion: player.persuasion } : p)
       }
     }
+    case 'PAY_COST': {
+      const { playerId, effect } = action;
+      const { cost, reward, data, source } = effect;
+      const player: Player = {...state.players.find(p => p.id === playerId)} as Player
+      if (!player) return state;
+      const tempCurrTurn: GameTurn = {
+        ...state.currTurn,
+        troopLimit: state.currTurn?.troopLimit || 0,
+        canDeployTroops: state.currTurn?.canDeployTroops || false,
+        removableTroops: state.currTurn?.removableTroops || 0,
+        persuasionCount: state.currTurn?.persuasionCount || 0,
+      } as GameTurn
+
+      function canPayCost(player: Player): boolean {
+        if(cost.spice && player.spice < cost.spice) return false;
+        if(cost.water && player.water < cost.water) return false;
+        if(cost.solari && player.solari < cost.solari) return false;
+        if(cost.troops && player.troops < cost.troops) return false;
+        if(cost.trash && !data?.trashedCardId) return false;
+        if(cost.trashThisCard && !data?.trashedCardId) return false;
+        return true;
+      }
+
+      if(!canPayCost(player)) return state; // cannot afford
+
+      // Deduct numeric resources
+      if(cost.spice) player.spice -= cost.spice;
+      if(cost.water) player.water -= cost.water;
+      if(cost.solari) player.solari -= cost.solari;
+      if(cost.troops) player.troops -= cost.troops;
+
+      if(cost.trash) player.trash = [...(player.trash||[]), ...player.playArea.filter(c => c.id === data?.trashedCardId)];
+      if(cost.trashThisCard) player.trash = [...(player.trash||[]), ...player.playArea.filter(c => c.id === source.id)];
+
+      // Handle trashing this card (card assumed to be in playArea)
+      if(cost.trashThisCard && source.type === GainSource.CARD) {
+        const cardId = source.id;
+        let trashedCard: Card | undefined;
+        player.playArea = player.playArea.filter(c => { if(c.id===cardId){trashedCard=c;return false;} return true;});
+        if(trashedCard) {
+          player.trash = [...(player.trash||[]), trashedCard];
+        } else {
+          console.log("(Trash this card) card not found in playArea");
+          return state;
+        }
+      }
+
+      if(cost.trash) {
+        const cardId = data?.trashedCardId;
+        let trashedCard: Card | undefined;
+        let isTrashedFromHand = false;
+        player.playArea = player.playArea.filter(c => { if(c.id===cardId){trashedCard=c;return false;} return true;});
+        player.deck = player.deck.filter(c => { if(c.id===cardId){trashedCard=c; isTrashedFromHand=true; return false;} return true;});
+        player.discardPile = player.discardPile.filter(c => { if(c.id===cardId){trashedCard=c;return false;} return true;});
+        if(trashedCard) {
+          player.trash = [...(player.trash||[]), trashedCard];
+          // If card trashed from hand (deck), fix handCount
+          if(isTrashedFromHand) {
+            player.handCount = Math.max(0, player.handCount - 1);
+          }
+        } else {
+          console.log("Trashed card not found");
+          return state;
+        }
+      }
+
+      const newGains: Gain[] = [...state.gains];
+      function pushGain(amount:number, type: RewardType) {
+        if(!amount) return;
+        newGains.push({
+          round: state.currentRound,
+          playerId,
+          sourceId: source.id,
+          name: source.name,
+          amount,
+          type,
+          source: source.type
+        });
+      }
+
+      if(reward.drawCards) {
+        player.handCount += reward.drawCards;
+        pushGain(reward.drawCards, RewardType.DRAW);
+      }
+      if(reward.spice) { player.spice += reward.spice; pushGain(reward.spice, RewardType.SPICE);}
+      if(reward.water) { player.water += reward.water; pushGain(reward.water, RewardType.WATER);} 
+      if(reward.solari) { player.solari += reward.solari; pushGain(reward.solari, RewardType.SOLARI);} 
+      if(reward.troops) { player.troops += reward.troops; pushGain(reward.troops, RewardType.TROOPS);} 
+      if(reward.deployTroops) {
+        pushGain(reward.deployTroops, RewardType.DEPLOY);
+        tempCurrTurn.troopLimit = tempCurrTurn.troopLimit ? tempCurrTurn.troopLimit + reward.deployTroops : reward.deployTroops;
+        tempCurrTurn.canDeployTroops = true;
+      }
+      if(reward.victoryPoints) { player.victoryPoints += reward.victoryPoints; pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS);} 
+
+      // Remove cost from optionalEffects
+      tempCurrTurn.optionalEffects = tempCurrTurn.optionalEffects?.filter(
+        e => e.id !== effect.id
+      );
+
+      return {
+        ...state,
+        gains: newGains,
+        players: state.players.map(p => p.id===playerId? player: p),
+        currTurn: tempCurrTurn
+      }
+    }
     default:
       return state
   }
-  
 }
 
 interface GameProviderProps {

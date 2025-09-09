@@ -1,12 +1,12 @@
 import React from 'react'
-import { ConflictCard, Reward } from '../../types/GameTypes'
+import { ConflictCard, ConflictReward } from '../../types/GameTypes'
 import './ConflictSummary.css'
 
 interface ConflictSummaryProps {
   currentConflict: ConflictCard
 }
 
-function formatRewards(rewards: Reward[] = []) {
+function formatRewards(rewards: ConflictReward[] = []) {
   if (!rewards.length) return <span className="no-reward">-</span>
   return rewards.map((r, i) => (
     <span key={i} className={`reward reward-${r.type}`}>{r.amount} {r.type}</span>
