@@ -250,7 +250,25 @@ button:disabled {
   cursor: not-allowed;
 }
 
+
+.res-part{
+  position: relative;
+  display:inline-block;
+}
+.res-amt{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  color:#fff;
+  font-weight:bold;
+  font-size:0.8rem;
+  pointer-events:none;
+  margin-top: 10px;
+}
+
 .resource-icon {
-  width:16px;
-  height:16px;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 0px;
 }

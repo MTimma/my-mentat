@@ -33,7 +33,7 @@ import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS } from '../types/GameType
 //     id: 2,
 //     name: "Firm Grip",
 //     image: "imperium_row/firm_grip.avif",
-//     faction: FactionType.EMPEROR,
+//     faction: [FactionType.EMPEROR],
 //     agentIcons: [AgentIcon.EMPEROR, AgentIcon.LANDSRAAD],
 //     cost: 4,
 //     playEffect: [
@@ -45,9 +45,9 @@ import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS } from '../types/GameType
 //           influence: { 
 //             chooseOne: true, 
 //             influence: [
-//               {faction: FactionType.SPACING_GUILD,amount: 1},
-//               {faction: FactionType.FREMEN,amount: 1},
-//               {faction: FactionType.BENE_GESSERIT,amount: 1},
+//               {faction: [FactionType.SPACING_GUILD],amount: 1},
+//               {faction: [FactionType.FREMEN],amount: 1},
+//               {faction: [FactionType.BENE_GESSERIT],amount: 1},
 //             ]
 //           }
 //         }
@@ -68,7 +68,7 @@ import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS } from '../types/GameType
 //     id: 3,
 //     name: "Chani",
 //     image: "imperium_row/chani.avif",
-//     faction: FactionType.FREMEN,
+//     faction: [FactionType.FREMEN],
 //     agentIcons: [AgentIcon.FREMEN, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
 //     cost: 5,
 //     acquireEffect: {
@@ -91,7 +91,7 @@ import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS } from '../types/GameType
 //     id: 4,
 //     name: "Guild Administrator",
 //     image: "imperium_row/guild_administrator.avif",
-//     faction: FactionType.SPACING_GUILD,
+//     faction: [FactionType.SPACING_GUILD],
 //     agentIcons: [AgentIcon.SPACING_GUILD, AgentIcon.SPICE_TRADE],
 //     cost: 2,
 //     playEffect: [
@@ -259,7 +259,7 @@ export const STARTING_DECK: Card[] = [
     id: 1031,
     name: "Kwisatz Haderach",
     image: "imperium_row/kwisatz_haderach.avif",
-    faction: FactionType.BENE_GESSERIT,
+    faction: [FactionType.BENE_GESSERIT],
     infiltrate: true,
     agentIcons: ALL_AGENT_ICONS,
     cost: 8,
@@ -284,7 +284,7 @@ export const STARTING_DECK: Card[] = [
     id: 1021,
     name: "Fremen Camp",
     image: "imperium_row/fremen_camp.avif",
-    faction: FactionType.FREMEN,
+    faction: [FactionType.FREMEN],
     agentIcons: [AgentIcon.SPICE_TRADE],
     cost: 4,
     playEffect: [
@@ -336,6 +336,29 @@ export const STARTING_DECK: Card[] = [
         }
       }
     ]
+  },
+  {
+    id: 1033,
+    name: "Liet Kynes",
+    image: "imperium_row/liet_kynes.avif",
+    faction: [FactionType.FREMEN, FactionType.EMPEROR],
+    agentIcons: [AgentIcon.FREMEN, AgentIcon.CITY],
+    cost: 5,
+    acquireEffect: {
+      influence: {
+        amounts: [
+          { faction: FactionType.EMPEROR, amount: 1 }
+        ]
+      }
+    },
+  
+    revealEffect: [
+      {
+        reward: {
+          custom: "LIET_KYNES"
+        }
+      }
+    ]
   }
 ] 
 
@@ -343,7 +366,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
     id: 201,
     name: "Arrakis Liaison",
-    faction: FactionType.FREMEN,
+    faction: [FactionType.FREMEN],
     image: "imperium_row/arrakis_liaison.avif",
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 2,
@@ -358,7 +381,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
     id: 202,
     name: "Arrakis Liaison",
-    faction: FactionType.FREMEN,
+    faction: [FactionType.FREMEN],
     image: "imperium_row/arrakis_liaison.avif",
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 2,
@@ -373,7 +396,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
     id: 203,
     name: "Arrakis Liaison",
-    faction: FactionType.FREMEN,
+    faction: [FactionType.FREMEN],
     image: "imperium_row/arrakis_liaison.avif",
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 2,
@@ -388,7 +411,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
     id: 204,
     name: "Arrakis Liaison",
-    faction: FactionType.FREMEN,
+    faction: [FactionType.FREMEN],
     image: "imperium_row/arrakis_liaison.avif",
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 2,
@@ -417,7 +440,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
     id: 206,
     name: "Arrakis Liaison",
-    faction: FactionType.FREMEN,
+    faction: [FactionType.FREMEN],
     image: "imperium_row/arrakis_liaison.avif",
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 2,
@@ -432,7 +455,7 @@ export const ARRAKIS_LIAISON_DECK: Card[]  = [
   {
     id: 207,
     name: "Arrakis Liaison",
-    faction: FactionType.FREMEN,
+    faction: [FactionType.FREMEN],
     image: "imperium_row/arrakis_liaison.avif",
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 2,
@@ -907,7 +930,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1006,
     name: "Bene Gesserit Initiate",
     image: "imperium_row/bene_gesserit_initiate.png",
-    faction: FactionType.BENE_GESSERIT,
+    faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
     cost: 3,
     playEffect: [
@@ -929,7 +952,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1007,
     name: "Bene Gesserit Initiate",
     image: "imperium_row/bene_gesserit_initiate.png",
-    faction: FactionType.BENE_GESSERIT,
+    faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
     cost: 3,
     playEffect: [
@@ -951,7 +974,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1008,
     name: "Bene Gesserit Sister",
     image: "imperium_row/bene_gesserit_sister.png",
-    faction: FactionType.BENE_GESSERIT,
+    faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.BENE_GESSERIT],
     cost: 3,
     revealEffect: [
@@ -968,7 +991,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1009,
     name: "Bene Gesserit Sister",
     image: "imperium_row/bene_gesserit_sister.png",
-    faction: FactionType.BENE_GESSERIT,
+    faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.BENE_GESSERIT],
     cost: 3,
     revealEffect: [
@@ -985,7 +1008,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1010,
     name: "Bene Gesserit Sister",
     image: "imperium_row/bene_gesserit_sister.png",
-    faction: FactionType.BENE_GESSERIT,
+    faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.BENE_GESSERIT],
     cost: 3,
     revealEffect: [
@@ -1024,7 +1047,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1012,
     name: "Chani",
     image: "imperium_row/chani.avif",
-    faction: FactionType.FREMEN,
+    faction: [FactionType.FREMEN],
     agentIcons: [AgentIcon.FREMEN, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
     cost: 5,
     acquireEffect: {
@@ -1174,7 +1197,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1017,
     name: "Fedaykin Death Commando",
     image: "imperium_row/fedaykin_death_commando.avif",
-    faction: FactionType.FREMEN,
+    faction: [FactionType.FREMEN],
     agentIcons: [AgentIcon.SPICE_TRADE, AgentIcon.CITY],
     cost: 3,
     playEffect: [
@@ -1204,7 +1227,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1018,
     name: "Fedaykin Death Commando",
     image: "imperium_row/fedaykin_death_commando.avif",
-    faction: FactionType.FREMEN,
+    faction: [FactionType.FREMEN],
     agentIcons: [AgentIcon.SPICE_TRADE, AgentIcon.CITY],
     cost: 3,
     playEffect: [
@@ -1234,7 +1257,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1019,
     name: "Firm Grip",
     image: "imperium_row/firm_grip.avif",
-    faction: FactionType.EMPEROR,
+    faction: [FactionType.EMPEROR],
     agentIcons: [AgentIcon.EMPEROR, AgentIcon.LANDSRAAD],
     cost: 4,
     playEffect: [
@@ -1246,9 +1269,9 @@ export const IMPERIUM_ROW_DECK: Card[] = [
           influence: { 
             chooseOne: true, 
             amounts: [
-              {faction: FactionType.SPACING_GUILD,amount: 1},
-              {faction: FactionType.FREMEN,amount: 1},
-              {faction: FactionType.BENE_GESSERIT,amount: 1},
+              {faction: [FactionType.SPACING_GUILD],amount: 1},
+              {faction: [FactionType.FREMEN],amount: 1},
+              {faction: [FactionType.BENE_GESSERIT],amount: 1},
             ]
           }
         }
@@ -1269,7 +1292,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1020,
     name: "Fremen Camp",
     image: "imperium_row/fremen_camp.avif",
-    faction: FactionType.FREMEN,
+    faction: [FactionType.FREMEN],
     agentIcons: [AgentIcon.SPICE_TRADE],
     cost: 4,
     playEffect: [
@@ -1295,7 +1318,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1021,
     name: "Fremen Camp",
     image: "imperium_row/fremen_camp.avif",
-    faction: FactionType.FREMEN,
+    faction: [FactionType.FREMEN],
     agentIcons: [AgentIcon.SPICE_TRADE],
     cost: 4,
     playEffect: [
@@ -1321,7 +1344,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1022,
     name: "Gene Manipulation",
     image: "imperium_row/gene_manipulation.avif",
-    faction: FactionType.BENE_GESSERIT,
+    faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 3,
     playEffect: [
@@ -1351,7 +1374,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1023,
     name: "Gene Manipulation",
     image: "imperium_row/gene_manipulation.avif",
-    faction: FactionType.BENE_GESSERIT,
+    faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
     cost: 3,
     playEffect: [
@@ -1381,7 +1404,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1024,
     name: "Guild Administrator",
     image: "imperium_row/guild_administrator.avif",
-    faction: FactionType.SPACING_GUILD,
+    faction: [FactionType.SPACING_GUILD],
     agentIcons: [AgentIcon.SPACING_GUILD, AgentIcon.SPICE_TRADE],
     cost: 2,
     playEffect: [
@@ -1403,7 +1426,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1025,
     name: "Guild Administrator",
     image: "imperium_row/guild_administrator.avif",
-    faction: FactionType.SPACING_GUILD,
+    faction: [FactionType.SPACING_GUILD],
     agentIcons: [AgentIcon.SPACING_GUILD, AgentIcon.SPICE_TRADE],
     cost: 2,
     playEffect: [
@@ -1508,7 +1531,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1029,
     name: "Imperial Spy",
     image: "imperium_row/imperial_spy.avif",
-    faction: FactionType.EMPEROR,
+    faction: [FactionType.EMPEROR],
     agentIcons: [AgentIcon.EMPEROR],
     cost: 2,
     playEffect: [
@@ -1534,7 +1557,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1030,
     name: "Imperial Spy",
     image: "imperium_row/imperial_spy.avif",
-    faction: FactionType.EMPEROR,
+    faction: [FactionType.EMPEROR],
     agentIcons: [AgentIcon.EMPEROR],
     cost: 2,
     playEffect: [
@@ -1560,7 +1583,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1031,
     name: "Kwisatz Haderach",
     image: "imperium_row/kwisatz_haderach.avif",
-    faction: FactionType.BENE_GESSERIT,
+    faction: [FactionType.BENE_GESSERIT],
     infiltrate: true, //TODO not only infiltrate, it ignores space costs as well
     //TODO add to turn controls indicator when recalling agent
     agentIcons: ALL_AGENT_ICONS,
@@ -1568,9 +1591,6 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     playEffect: [
       {
         beforePlaceAgent: { recallAgent: true },
-        reward: {}
-      },
-      {
         reward: {
           custom: "KWISATZ_HADERACH"
         }
@@ -1586,7 +1606,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1032,
     name: "Lady Jessica",
     image: "imperium_row/lady_jessica.avif",
-    faction: FactionType.BENE_GESSERIT,
+    faction: [FactionType.BENE_GESSERIT],
     infiltrate: true, //TODO not only infiltrate, it ignores space costs as well
     //TODO add to turn controls indicator when recalling agent
     agentIcons: [AgentIcon.BENE_GESSERIT, AgentIcon.CITY, AgentIcon.SPICE_TRADE, AgentIcon.LANDSRAAD],
@@ -1645,7 +1665,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1034,
     name: "Missionaria Protectiva",
     image: "imperium_row/missionaria_protectiva.avif",
-    faction: FactionType.BENE_GESSERIT,
+    faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.CITY],
     cost: 1,
     playEffect: [
@@ -1654,14 +1674,22 @@ export const IMPERIUM_ROW_DECK: Card[] = [
           inPlay: FactionType.BENE_GESSERIT
         },
         reward: {
-          persuasion: 1
+          influence: {
+            chooseOne: true,
+            amounts: [
+              { faction: FactionType.BENE_GESSERIT, amount: 1 },
+              { faction: FactionType.FREMEN, amount: 1 },
+              { faction: FactionType.SPACING_GUILD, amount: 1 },
+              { faction: FactionType.EMPEROR, amount: 1 }
+            ]
+          }
         }
       }
     ],
     revealEffect: [
       {
         reward: {
-          custom: "LIET_KYNES"
+          persuasion: 1
         }
       }
     ]
@@ -1670,7 +1698,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     id: 1035,
     name: "Missionaria Protectiva",
     image: "imperium_row/missionaria_protectiva.avif",
-    faction: FactionType.BENE_GESSERIT,
+    faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.CITY],
     cost: 1,
     playEffect: [
@@ -1679,14 +1707,47 @@ export const IMPERIUM_ROW_DECK: Card[] = [
           inPlay: FactionType.BENE_GESSERIT
         },
         reward: {
-          persuasion: 1
+          influence: {
+            chooseOne: true,
+            amounts: [
+              { faction: FactionType.BENE_GESSERIT, amount: 1 },
+              { faction: FactionType.FREMEN, amount: 1 },
+              { faction: FactionType.SPACING_GUILD, amount: 1 },
+              { faction: FactionType.EMPEROR, amount: 1 }
+            ]
+          }
         }
       }
     ],
     revealEffect: [
       {
         reward: {
-          custom: "LIET_KYNES"
+          persuasion: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1036,
+    name: "Other Memory",
+    image: "imperium_row/other_memory.avif",
+    faction: [FactionType.BENE_GESSERIT],
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 4,
+    playEffect: [
+      {
+        reward: {
+          drawCards: 1,
+          custom: "OTHER_MEMORY"
+        },
+        effectOR: true
+        // implement OR effects
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
         }
       }
     ]

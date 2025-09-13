@@ -235,7 +235,7 @@ export interface Card {
   id: number
   name: string
   image: string
-  faction?: FactionType
+  faction?: FactionType[]
   cost?: number
   agentIcons: AgentIcon[]
   infiltrate?: boolean

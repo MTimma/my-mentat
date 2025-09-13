@@ -31,6 +31,7 @@ interface GameBoardProps {
   bonusSpice: { [key: string]: number };
   onSelectiveBreedingRequested: (cards: Card[], onSelect: (card: Card) => void) => void;
   recallMode?: boolean;
+  ignoreCosts?: boolean;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -46,7 +47,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
   bonusSpice,
   currentConflict,
   onSelectiveBreedingRequested,
-  recallMode = false
+  recallMode = false,
+  ignoreCosts = false
 }) => {
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
@@ -56,10 +58,15 @@ const GameBoard: React.FC<GameBoardProps> = ({
     if (recallMode) {
       return Boolean(occupiedSpaces[space.id]?.includes(currentPlayer))
     }
+
     const player = players.find(p => p.id === currentPlayer)
     if (!player) return false
 
     if (occupiedSpaces[space.id]?.length > 0 && !infiltrate) return false
+
+    if (ignoreCosts) {
+      return true
+    }
     
     if (space.requiresInfluence) {
       const playerInfluence = factionInfluence[space.requiresInfluence.faction]?.[currentPlayer] || 0

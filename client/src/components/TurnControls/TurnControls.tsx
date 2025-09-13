@@ -115,13 +115,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     return true
   }
 
-  const Icon: React.FC<{type:string}> = ({type}) => <img src={`/icon/${type}.png`} alt={type} className="resource-icon" />
+  const Icon: React.FC<{ type: string; className?: string }> = ({ type, className }) =>
+    <img src={`/icon/${type}.png`} alt={type} className={className ?? 'resource-icon'} />
 
-  const renderPart = (amount:number|undefined, type:string, sign:'+'|'-') => {
-    if(!amount) return null
+  const renderPart = (amount: number | undefined, type: string) => {
+    if (!amount) return null
     return (
-      <span className="res-part" key={type+sign}>
-        {sign==='-'?'-':'+'}{amount}&nbsp;<Icon type={type} />
+      <span className="res-part" key={type}>
+        <Icon type={type} />
+        <span className="res-amt">{amount}</span>
       </span>
     )
   }
@@ -129,18 +131,18 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const renderLabel = (effect:{cost:Cost; reward:Reward}): React.ReactNode => {
     const {cost,reward} = effect
     const left: React.ReactNode[] = []
-    left.push(renderPart(cost.spice,'spice','-'))
-    left.push(renderPart(cost.water,'water','-'))
-    left.push(renderPart(cost.solari,'solari','-'))
+    left.push(renderPart(cost.spice,'spice'))
+    left.push(renderPart(cost.water,'water'))
+    left.push(renderPart(cost.solari,'solari'))
     if(cost.trash || cost.trashThisCard) left.push(<span key="trash">Trash</span>)
 
     const right: React.ReactNode[] = []
-    right.push(renderPart(reward.spice,'spice','+'))
-    right.push(renderPart(reward.water,'water','+'))
-    right.push(renderPart(reward.solari,'solari','+'))
+    right.push(renderPart(reward.spice,'spice'))
+    right.push(renderPart(reward.water,'water'))
+    right.push(renderPart(reward.solari,'solari'))
     if(reward.drawCards) right.push(<span key="draw">Draw {reward.drawCards}</span>)
-    if(reward.troops) right.push(<span key="troops">+{reward.troops} Troops</span>)
-    if(reward.victoryPoints) right.push(<span key="vp">+{reward.victoryPoints} VP</span>)
+    if(reward.troops) right.push(<span key="troops">{reward.troops} Troops</span>)
+    if(reward.victoryPoints) right.push(<span key="vp">{reward.victoryPoints} VP</span>)
 
     return (
       <span className="effect-label">

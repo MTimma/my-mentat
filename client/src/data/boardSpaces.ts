@@ -18,7 +18,7 @@ export const BOARD_SPACES: SpaceProps[] = [
     name: "Hall of Oratory",
     conflictMarker: false,
     agentIcon: AgentIcon.LANDSRAAD,
-    effects: [{ reward: { persuasion: 1 } }],
+    effects: [{ reward: { troops: 1, persuasion: 1 } }],
     image: "board/hall_of_oratory.png"
   },
   {

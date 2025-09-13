@@ -328,7 +328,7 @@ function playRequirementSatisfied(effect: PlayEffect, currCard: Card, state: Gam
       }
     }
     if(req.inPlay) {
-      if(!state.playArea[playerId].find(card => currCard.id !== card.id && card.faction === req.inPlay)) {
+      if(!state.playArea[playerId].find(card => currCard.id !== card.id && card.faction?.includes(req.inPlay as FactionType))) {
         return false;
       }
     }
@@ -353,8 +353,8 @@ function revealRequirementSatisfied(effect: RevealEffect, currCard: Card, state:
     }
     if(req.bond) {
       if(
-        !state.playArea[playerId].find(card => currCard.id !== card.id && card.faction === FactionType.FREMEN) &&
-        !revealedCards.find(card => currCard.id !== card.id && card.faction === FactionType.FREMEN)
+        !state.playArea[playerId].find(card => currCard.id !== card.id && card.faction?.includes(FactionType.FREMEN)) &&
+        !revealedCards.find(card => currCard.id !== card.id && card.faction?.includes(FactionType.FREMEN))
       ) {
         return false;
       }
@@ -853,7 +853,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
       if (!currPlayer || !card || !space || playerId !== newState.activePlayerId || !newState.selectedCard) return state
-
+      
+      const ignoreSpaceCostAndReq = card.playEffect?.find(e => e.reward?.custom === 'KWISATZ_HADERACH')
       // Handle recall-before-placement requirement: interpret this click as recall if needed
       if (newState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED')) {
         const occupants = newState.occupiedSpaces[spaceId] || []
@@ -879,7 +880,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (currPlayer.agents <= 0) return state
 
       // Check if player can afford the space
-      if (space.cost) {
+      if (space.cost && !ignoreSpaceCostAndReq) {
         if (space.cost.solari && currPlayer.solari < space.cost.solari) return state
         if (space.cost.spice && currPlayer.spice < space.cost.spice) return state
         if (space.cost.water && currPlayer.water < space.cost.water) return state
@@ -889,7 +890,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (newState.occupiedSpaces[spaceId]?.length > 0 && !card.infiltrate) return state
 
       // Check if player has required influence
-      if (space.requiresInfluence) {
+      if (space.requiresInfluence && !ignoreSpaceCostAndReq) {
         const playerInfluence = newState.factionInfluence[space.requiresInfluence.faction as FactionType]?.[playerId] || 0
         if (playerInfluence < space.requiresInfluence.amount) return state
       }
@@ -946,7 +947,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           type: RewardType.SOLARI, 
           source: GainSource.BOARD_SPACE
         })
-      } else if (space.cost) {
+      } else if (space.cost && !ignoreSpaceCostAndReq) {
         if (space.cost.solari) currPlayer.solari -= space.cost.solari
         if (space.cost.spice) currPlayer.spice -= space.cost.spice
         if (space.cost.water) currPlayer.water -= space.cost.water
@@ -963,6 +964,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       if(card.playEffect) {
         card.playEffect?.filter((effect:PlayEffect) => {
+            if(effect.effectOR) {
+              // TODO implement OR effects (this is not optional)
+              return false;
+            }
             if(effect.cost) {
               const effectId = card.name + crypto.randomUUID();
               optionalEffects.push({ id: effectId, cost: effect.cost as Cost, reward: effect.reward, source:{ type: GainSource.CARD, id: card.id, name: card.name } })
@@ -1122,12 +1127,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const optionalEffects: OptionalEffect[] = []
       revealedCards.forEach(card => {
         card.revealEffect?.filter((effect:CardEffect) => {
+            if(effect.effectOR) {
+              // TODO implement OR effects (this is not optional)
+              return false;
+            }
             if(effect.cost) {
               const effectId = card.name + crypto.randomUUID();
               optionalEffects.push({ id: effectId, cost: effect.cost as Cost, reward: effect.reward, source:{ type: GainSource.CARD, id: card.id, name: card.name } })
               return false;
             }
-            // collect optional effects (with cost) into optionalEffects array later
             return revealRequirementSatisfied(effect, card, state, playerId, revealedCards);
           })
           .forEach(effect => {
@@ -1159,6 +1167,20 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.deployTroops, type: RewardType.DEPLOY, source: GainSource.CARD } )
               tempCurrTurn.troopLimit += effect.reward.deployTroops
               tempCurrTurn.canDeployTroops = true
+            }
+            if(effect.reward?.custom) {
+              switch (effect.reward.custom) {
+                case 'LIET_KYNES': {
+                  const fremenInPlay =  player.playArea.filter(c => c.faction?.includes(FactionType.FREMEN)).length
+                  const fremenInReveal = revealedCards.filter(c => c.faction?.includes(FactionType.FREMEN)).length
+                  const gainedPersuasion = (fremenInPlay + fremenInReveal) * 2
+                  persuasionCount += gainedPersuasion
+                  updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: gainedPersuasion, type: RewardType.PERSUASION, source: GainSource.CARD } )
+                  break
+                }
+                default:
+                  break
+              }
             }
           })
         

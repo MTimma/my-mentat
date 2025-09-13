@@ -134,6 +134,7 @@ const GameContent = () => {
           bonusSpice={gameState.bonusSpice}
           onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
           recallMode={Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
+          ignoreCosts={Boolean(getSelectedCard(gameState)?.playEffect?.find(e => e.reward?.custom === 'KWISATZ_HADERACH'))}
         />
         <div className="players-area">
           {gameState.players.map((player, idx) => (
@@ -196,9 +197,14 @@ function getInfiltrate(gameState: GameState): boolean {
   return gameState.selectedCard ? gameState.players[gameState.activePlayerId].deck.find(c => c.id === gameState.selectedCard)?.infiltrate || false : false
 }
 
-function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
-  return gameState.selectedCard ? gameState.players[gameState.activePlayerId].deck.find(c => c.id === gameState.selectedCard)?.agentIcons || [] : []
+function getSelectedCard(gameState: GameState): Card | null {
+  return gameState.selectedCard ? gameState.players[gameState.activePlayerId].deck.find(c => c.id === gameState.selectedCard) || null : null
 }
+
+function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
+  return getSelectedCard(gameState)?.agentIcons || []
+}
+
 
 function App() {
   const [screenState, setScreenState] = useState<ScreenState>(ScreenState.SETUP)
