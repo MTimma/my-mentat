@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Player, Card, Gain, Cost, Reward } from '../../types/GameTypes'
+import { Player, Card, Cost, Reward } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import './TurnControls.css'
 
@@ -16,7 +16,6 @@ interface TurnControlsProps {
   onRemoveTroop: (playerId: number) => void
   retreatableTroops: number
   deployableTroops: number
-  gains: Gain[]
   isCombatPhase: boolean
   combatStrength: Record<number, number>
   optionalEffects?: { cost: Cost; reward: Reward; source: { type: string; id: number; name: string }; data?: { trashedCardId?: number } }[]
@@ -25,6 +24,8 @@ interface TurnControlsProps {
   selectiveBreedingCards?: Card[]
   onSelectiveBreedingSelect?: (card: Card) => void
   onSelectiveBreedingCancel?: () => void
+  pendingChoices?: { id:string; rewards: Reward[]; source:{type:string;id:number;name:string} }[]
+  onResolveChoice?: (choiceId:string, reward: Reward) => void
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -40,22 +41,29 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onRemoveTroop,
   retreatableTroops,
   deployableTroops,
-  gains,
   isCombatPhase,
   combatStrength,
   optionalEffects = [],
   onPayCost,
   showSelectiveBreeding = false,
   onSelectiveBreedingSelect,
-  onSelectiveBreedingCancel
+  onSelectiveBreedingCancel,
+  pendingChoices = [],
+  onResolveChoice
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const [showTrashPopup, setShowTrashPopup] = useState(false)
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
+  const [showChoicePopup, setShowChoicePopup] = useState(false)
+  const [activeChoice, setActiveChoice] = useState<typeof pendingChoices[0] | null>(null)
 
   if (!activePlayer) return null
+  if(!showChoicePopup && pendingChoices.length>0) {
+    setShowChoicePopup(true)
+    setActiveChoice(pendingChoices[0])
+  }
 
   const getRankings = () => {
     const entries = Object.entries(combatStrength)
@@ -171,6 +179,25 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     setPendingEffect(null)
   }
 
+  const ChoiceDialog = () => {
+    if(!activeChoice) return null
+    return (
+      <div className="card-selection-dialog-overlay">
+        <div className="card-selection-dialog">
+          <h2>Choose one reward</h2>
+          <div className="choices-list">
+            {activeChoice.rewards.map((r,idx)=>(
+              <button key={idx} className="choice-btn" onClick={()=>{
+                onResolveChoice&&onResolveChoice(activeChoice.id,r);
+                const next=pendingChoices.find(c=>c.id!==activeChoice.id);
+                if(next){setActiveChoice(next);} else {setShowChoicePopup(false);setActiveChoice(null);}
+              }}>
+                {renderLabel({cost:{},reward:r})}
+              </button>))}
+          </div>
+        </div>
+      </div>)
+  }
 
   return (
     <>
@@ -212,15 +239,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               {selectedCards.map(card => card.name).join(', ')}
             </div>
           )}
-          {isRevealTurn && gains && (
-            <div>
-              Persuasion: {gains.persuasionGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
-              Combat: {gains.combatGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
-              Spice: {gains.spiceGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
-              Water: {gains.waterGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
-              Solari: {gains.solariGains?.filter(g => 'cardId' in g).reduce((acc, gain) => acc + (gain.amount ? gain.amount : 0), 0)}
-            </div>
-          )}
+          {/* Reveal summaries removed for now */}
           {selectedCards.length === 0 && (
             <div>
               No card selected
@@ -319,6 +338,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           isRevealTurn={false}
           text="Select card to trash"
         />
+
+        <ChoiceDialog />
       </div>
     </>
   )

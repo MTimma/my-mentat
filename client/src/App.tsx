@@ -8,7 +8,7 @@ import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -70,6 +70,11 @@ const GameContent = () => {
   
   const handleAddTroop = (playerId: number) => {
     dispatch({ type: 'DEPLOY_TROOP', playerId })
+  }
+
+  const handleResolveChoice = (choiceId:string, reward: Reward) => {
+    if(!activePlayer) return;
+    dispatch({ type:'RESOLVE_CHOICE', playerId: activePlayer.id, choiceId, reward })
   }
 
   const handlePayCost = (effect: OptionalEffect) => {
@@ -172,6 +177,8 @@ const GameContent = () => {
           isCombatPhase={gameState.phase === GamePhase.COMBAT}
           combatStrength={gameState.combatStrength}
           optionalEffects={gameState.currTurn?.optionalEffects || []}
+          pendingChoices={gameState.currTurn?.pendingChoices || []}
+          onResolveChoice={handleResolveChoice}
           onPayCost={handlePayCost}
           showSelectiveBreeding={showSelectiveBreeding}
           onSelectiveBreedingSelect={card => {

@@ -326,6 +326,13 @@ export interface OptionalEffect {
   data?: { trashedCardId?: number }
 }
 
+// Mandatory OR-choice effect generated when a card lists multiple rewards with `effectOR`.
+export interface PendingChoice {
+  id: string
+  rewards: Reward[]  // one must be selected
+  source: { type: GainSource; id: number; name: string }
+}
+
 export interface GameTurn {
   playerId: number
   type: TurnType
@@ -339,6 +346,7 @@ export interface GameTurn {
   acquiredCards?: Card[]
   playedIntrigueCard?: IntrigueCardPlay[]
   optionalEffects?: OptionalEffect[]
+  pendingChoices?: PendingChoice[]
 }
 
 export enum GamePhase {

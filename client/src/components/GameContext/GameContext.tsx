@@ -24,7 +24,8 @@ import {
   PlayEffect,
   RevealEffect,
   GameTurn,
-  OptionalEffect
+  OptionalEffect,
+  PendingChoice
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { ARRAKIS_LIAISON_DECK, IMPERIUM_ROW_DECK } from '../../data/cards'
@@ -57,6 +58,7 @@ type GameAction =
   | { type: 'ACQUIRE_AL'; playerId: number }
   | { type: 'ACQUIRE_SMF'; playerId: number }
   | { type: 'PAY_COST'; playerId: number; effect: OptionalEffect }
+  | { type: 'RESOLVE_CHOICE'; playerId: number; choiceId: string; reward: Reward }
   | { type: 'SELECT_CONFLICT'; conflictId: number }
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
@@ -274,6 +276,49 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
         break
     }
 
+  return newState
+}
+
+function applyChoiceReward(state: GameState, reward: Reward, playerId: number): GameState {
+  const newState = { ...state }
+  const player = newState.players.find(p => p.id === playerId)
+  if (!player) return state
+
+  const pushGain = (amount: number | undefined, type: RewardType) => {
+    if (!amount) return
+    newState.gains.push({
+      playerId,
+      round: newState.currentRound,
+      source: GainSource.CARD,
+      sourceId: 0,
+      name: 'Choice Reward',
+      amount,
+      type
+    })
+  }
+
+  if (reward.spice) { player.spice += reward.spice; pushGain(reward.spice, RewardType.SPICE) }
+  if (reward.water) { player.water += reward.water; pushGain(reward.water, RewardType.WATER) }
+  if (reward.solari) { player.solari += reward.solari; pushGain(reward.solari, RewardType.SOLARI) }
+  if (reward.troops) { player.troops += reward.troops; pushGain(reward.troops, RewardType.TROOPS) }
+  if (reward.persuasion) { player.persuasion += reward.persuasion; pushGain(reward.persuasion, RewardType.PERSUASION) }
+  if (reward.combat) {
+    const current = newState.combatStrength[playerId] || 0
+    newState.combatStrength[playerId] = current + reward.combat
+    pushGain(reward.combat, RewardType.COMBAT)
+  }
+  if (reward.drawCards) { player.handCount += reward.drawCards; pushGain(reward.drawCards, RewardType.DRAW) }
+  if (reward.deployTroops) {
+    const ct = newState.currTurn
+    if (ct) {
+      ct.troopLimit = (ct.troopLimit || 0) + reward.deployTroops
+      ct.canDeployTroops = true
+    }
+    pushGain(reward.deployTroops, RewardType.DEPLOY)
+  }
+  if (reward.victoryPoints) { player.victoryPoints += reward.victoryPoints; pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS)}
+
+  newState.players = newState.players.map(p => p.id === playerId ? player : p)
   return newState
 }
 
@@ -763,7 +808,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         removableTroops: 0,
         persuasionCount: 0,
         gainedEffects: [],
-        acquiredCards: []
+        acquiredCards: [],
+        pendingChoices: []
       }
       
       function applyCardPlayEffect(effect: CardEffect, card: Card, space: SpaceProps) {
@@ -963,9 +1009,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const optionalEffects: OptionalEffect[] = []
 
       if(card.playEffect) {
+        const orRewards: Reward[] = [];
         card.playEffect?.filter((effect:PlayEffect) => {
             if(effect.effectOR) {
-              // TODO implement OR effects (this is not optional)
+              orRewards.push(effect.reward);
               return false;
             }
             if(effect.cost) {
@@ -979,7 +1026,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               applyCardPlayEffect(effect, card, space)
             }
 
-        })
+        });
+        if(orRewards.length>0) {
+          const choiceId = card.name + '-OR-' + crypto.randomUUID();
+          tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices||[]), { id: choiceId, rewards: orRewards, source:{ type: GainSource.CARD, id: card.id, name: card.name }}]
+        }
       }
       
       // Add influence
@@ -1017,6 +1068,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             removableTroops: newState.currTurn?.removableTroops || 0,
             persuasionCount: (newState.currTurn?.persuasionCount || 0) + persuasionCount,
             optionalEffects: [...(newState.currTurn?.optionalEffects||[]), ...optionalEffects],
+            pendingChoices: [...(newState.currTurn?.pendingChoices||[]), ...(tempCurrTurn.pendingChoices||[])]
           }
         : {
             playerId,
@@ -1030,6 +1082,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             gainedEffects: [],//TODO is this used?
             acquiredCards: [],
             optionalEffects: [...(newState.currTurn?.optionalEffects||[]), ...optionalEffects],
+            pendingChoices: tempCurrTurn.pendingChoices || []
           }
 
       if (space.specialEffect) {
@@ -1083,7 +1136,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ),
         occupiedSpaces: updatedOccupiedSpaces,
         currTurn: currentTurn,
-        canEndTurn: true
+        canEndTurn: currentTurn.pendingChoices?.length ? false : true
       }
     }
     case 'REVEAL_CARDS': {
@@ -1125,10 +1178,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const optionalEffects: OptionalEffect[] = []
+      const pendingChoices: PendingChoice[] = [...(state.currTurn?.pendingChoices||[])]
       revealedCards.forEach(card => {
+        const orRewards: Reward[] = []
         card.revealEffect?.filter((effect:CardEffect) => {
             if(effect.effectOR) {
-              // TODO implement OR effects (this is not optional)
+              orRewards.push(effect.reward)
               return false;
             }
             if(effect.cost) {
@@ -1184,6 +1239,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             }
           })
         
+      if(orRewards.length>0) {
+        const choiceId = card.name + '-OR-' + crypto.randomUUID();
+        pendingChoices.push({ id: choiceId, rewards: orRewards, source:{ type: GainSource.CARD, id: card.id, name: card.name } })
+      }
       })
 
       // Create or update the current turn
@@ -1196,6 +1255,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             removableTroops: tempCurrTurn.removableTroops,
             persuasionCount: (state.currTurn?.persuasionCount || 0) + persuasionCount,
             optionalEffects: [...(state.currTurn?.optionalEffects||[]), ...optionalEffects],
+            pendingChoices: pendingChoices
           }
         : {
             playerId,
@@ -1206,7 +1266,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             persuasionCount: persuasionCount,
             gainedEffects: [],
             acquiredCards: [],
-            optionalEffects
+            optionalEffects,
+            pendingChoices
           }
 
       // Update combat strength even if not in combat (so can be used later)
@@ -1237,7 +1298,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ),
         combatStrength: updatedCombatStrength,
         currTurn: currentTurn,
-        canEndTurn: true,
+        canEndTurn: pendingChoices.length>0? false : true,
         canAcquireIR: true
       }
     }
@@ -1386,6 +1447,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         players: state.players.map(p => p.id===playerId? player: p),
         currTurn: tempCurrTurn
       }
+    }
+    case 'RESOLVE_CHOICE': {
+      const { playerId, choiceId, reward } = action
+      if(!state.currTurn) return state
+      const newTurn = { ...state.currTurn }
+      newTurn.pendingChoices = (newTurn.pendingChoices||[]).filter(c => c.id !== choiceId)
+      let newState = { ...state, currTurn: newTurn }
+      newState = applyChoiceReward(newState, reward, playerId)
+      newState.canEndTurn = (newTurn.pendingChoices?.length||0)===0 && newState.canEndTurn
+      return newState
     }
     default:
       return state
