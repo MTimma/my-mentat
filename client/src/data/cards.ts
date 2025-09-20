@@ -256,6 +256,31 @@ export const STARTING_DECK: Card[] = [
     ]
   },
   {
+    id: 1036,
+    name: "Other Memory",
+    image: "imperium_row/other_memory.avif",
+    faction: [FactionType.BENE_GESSERIT],
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 4,
+    playEffect: [
+      {
+        reward: {
+          drawCards: 1,
+          custom: "OTHER_MEMORY"
+        },
+        effectOR: true
+        // implement OR effects
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      }
+    ]
+  },
+  {
     id: 1031,
     name: "Kwisatz Haderach",
     image: "imperium_row/kwisatz_haderach.avif",

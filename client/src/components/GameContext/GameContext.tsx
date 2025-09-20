@@ -856,6 +856,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 }
               })
               break
+            case 'OTHER_MEMORY': {
+              // TODO choose in popup
+               const bgCards = currPlayer.discardPile.filter(c => c.faction?.includes(FactionType.BENE_GESSERIT))
+               if(bgCards.length > 0) {
+                currPlayer.handCount += 1
+                // TODO Reward type - draw from discard?
+                updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: 1, type: RewardType.DRAW, source: GainSource.CARD })
+               }
+              break
+            }
           }
         }
       }
@@ -1012,7 +1022,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const orRewards: Reward[] = [];
         card.playEffect?.filter((effect:PlayEffect) => {
             if(effect.effectOR) {
-              orRewards.push(effect.reward);
+              orRewards.push(effect.reward)
               return false;
             }
             if(effect.cost) {
@@ -1029,7 +1039,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         });
         if(orRewards.length>0) {
           const choiceId = card.name + '-OR-' + crypto.randomUUID();
-          tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices||[]), { id: choiceId, rewards: orRewards, source:{ type: GainSource.CARD, id: card.id, name: card.name }}]
+          const options = orRewards.map(r=>{
+            let dis=false
+            if(r.custom==='OTHER_MEMORY'){
+              const hasBG=currPlayer.discardPile.some(c=>c.faction?.includes(FactionType.BENE_GESSERIT))
+              dis=!hasBG
+            }
+            return {reward:r,disabled:dis}
+          })
+          tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices||[]), { id: choiceId, options, source:{ type: GainSource.CARD, id: card.id, name: card.name }}]
         }
       }
       
@@ -1241,7 +1259,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         
       if(orRewards.length>0) {
         const choiceId = card.name + '-OR-' + crypto.randomUUID();
-        pendingChoices.push({ id: choiceId, rewards: orRewards, source:{ type: GainSource.CARD, id: card.id, name: card.name } })
+        const options = orRewards.map(r=>{
+          let dis=false
+          if(r.custom==='OTHER_MEMORY'){
+            const hasBG=player.discardPile.some(c=>c.faction?.includes(FactionType.BENE_GESSERIT))
+            dis=!hasBG
+          }
+          return {reward:r,disabled:dis}
+        })
+        pendingChoices.push({ id: choiceId, options, source:{ type: GainSource.CARD, id: card.id, name: card.name } })
       }
       })
 
@@ -1455,7 +1481,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       newTurn.pendingChoices = (newTurn.pendingChoices||[]).filter(c => c.id !== choiceId)
       let newState = { ...state, currTurn: newTurn }
       newState = applyChoiceReward(newState, reward, playerId)
-      newState.canEndTurn = (newTurn.pendingChoices?.length||0)===0 && newState.canEndTurn
+      newState.canEndTurn = (newTurn.pendingChoices?.length||0)===0
       return newState
     }
     default:

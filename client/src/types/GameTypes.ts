@@ -327,9 +327,14 @@ export interface OptionalEffect {
 }
 
 // Mandatory OR-choice effect generated when a card lists multiple rewards with `effectOR`.
+export interface ChoiceOption {
+  reward: Reward
+  disabled?: boolean
+}
+
 export interface PendingChoice {
   id: string
-  rewards: Reward[]  // one must be selected
+  options: ChoiceOption[] // one must be chosen
   source: { type: GainSource; id: number; name: string }
 }
 
