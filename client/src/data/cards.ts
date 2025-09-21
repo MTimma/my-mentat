@@ -1,4 +1,4 @@
-import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS } from '../types/GameTypes'
+import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS, CustomEffect } from '../types/GameTypes'
 // export const STARTING_DECK: Card[] = [
 //   {
 //     id: 1,
@@ -265,11 +265,16 @@ export const STARTING_DECK: Card[] = [
     playEffect: [
       {
         reward: {
-          drawCards: 1,
-          custom: "OTHER_MEMORY"
+          drawCards: 1
         },
-        effectOR: true
+        choiceOpt: true
         // implement OR effects
+      },
+      {
+        reward: {
+          custom: CustomEffect.OTHER_MEMORY
+        },
+        choiceOpt: true
       }
     ],
     revealEffect: [
@@ -1008,7 +1013,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
           persuasion: 2,
           combat: 2
         },
-        effectOR: true
+        choiceOpt: true
       }
     ]
   },
@@ -1025,7 +1030,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
           persuasion: 2,
           combat: 2
         },
-        effectOR: true
+        choiceOpt: true
       }
     ]
   },
@@ -1042,7 +1047,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
           persuasion: 2,
           combat: 2
         },
-        effectOR: true
+        choiceOpt: true
       }
     ]
   },
@@ -1765,8 +1770,38 @@ export const IMPERIUM_ROW_DECK: Card[] = [
           drawCards: 1,
           custom: "OTHER_MEMORY"
         },
-        effectOR: true
+        choiceOpt: true
         // implement OR effects
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1036,
+    name: "Other Memory",
+    image: "imperium_row/other_memory.avif",
+    faction: [FactionType.BENE_GESSERIT],
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 4,
+    playEffect: [
+      {
+        reward: {
+          drawCards: 1
+        },
+        choiceOpt: true
+        // implement OR effects
+      },
+      {
+        reward: {
+          custom: "OTHER_MEMORY"
+        },
+        choiceOpt: true
       }
     ],
     revealEffect: [

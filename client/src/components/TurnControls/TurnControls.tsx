@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Player, Card, Cost, Reward } from '../../types/GameTypes'
+import { Player, Card, Cost, Reward, PendingChoice } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import './TurnControls.css'
 
@@ -24,7 +24,7 @@ interface TurnControlsProps {
   selectiveBreedingCards?: Card[]
   onSelectiveBreedingSelect?: (card: Card) => void
   onSelectiveBreedingCancel?: () => void
-  pendingChoices?: { id:string; rewards: Reward[]; source:{type:string;id:number;name:string} }[]
+  pendingChoices?: PendingChoice[]
   onResolveChoice?: (choiceId:string, reward: Reward) => void
 }
 
@@ -57,13 +57,16 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [showTrashPopup, setShowTrashPopup] = useState(false)
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
   const [showChoicePopup, setShowChoicePopup] = useState(false)
-  const [activeChoice, setActiveChoice] = useState<typeof pendingChoices[0] | null>(null)
+  const [activeChoice, setActiveChoice] = useState<PendingChoice | null>(null)
+
+  React.useEffect(()=>{
+    if(!showChoicePopup && pendingChoices.length>0){
+      setShowChoicePopup(true);
+      setActiveChoice(pendingChoices[0]);
+    }
+  },[pendingChoices, showChoicePopup]);
 
   if (!activePlayer) return null
-  if(!showChoicePopup && pendingChoices.length>0) {
-    setShowChoicePopup(true)
-    setActiveChoice(pendingChoices[0])
-  }
 
   const getRankings = () => {
     const entries = Object.entries(combatStrength)
@@ -126,7 +129,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const Icon: React.FC<{ type: string; className?: string }> = ({ type, className }) =>
     <img src={`/icon/${type}.png`} alt={type} className={className ?? 'resource-icon'} />
 
-  const renderPart = (amount: number | undefined, type: string) => {
+  const renderAmt = (amount: number | undefined, type: string) => {
     if (!amount) return null
     return (
       <span className="res-part" key={type}>
@@ -136,26 +139,31 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     )
   }
 
-  const renderLabel = (effect:{cost:Cost; reward:Reward}): React.ReactNode => {
-    const {cost,reward} = effect
-    const left: React.ReactNode[] = []
-    left.push(renderPart(cost.spice,'spice'))
-    left.push(renderPart(cost.water,'water'))
-    left.push(renderPart(cost.solari,'solari'))
-    if(cost.trash || cost.trashThisCard) left.push(<span key="trash">Trash</span>)
-
+  const renderLabel = (opt: {cost?: Cost; reward: Reward; costLabel?: string; rewardLabel?: string}): React.ReactNode => {
+    const {cost,reward,costLabel,rewardLabel} = opt
+    let left = null;
+    if(cost){
+      left = []
+      left.push(renderAmt(cost.spice,'spice'))
+      left.push(renderAmt(cost.water,'water'))
+      left.push(renderAmt(cost.solari,'solari'))
+      left.push(renderAmt(cost.influence?.amount,'influence'))
+      if(cost.trash || cost.trashThisCard) left.push(<span key="trash">Trash</span>)
+      if(costLabel) left.push(<span key="cost">{costLabel}</span>)
+    }
     const right: React.ReactNode[] = []
-    right.push(renderPart(reward.spice,'spice'))
-    right.push(renderPart(reward.water,'water'))
-    right.push(renderPart(reward.solari,'solari'))
+    right.push(renderAmt(reward.spice,'spice'))
+    right.push(renderAmt(reward.water,'water'))
+    right.push(renderAmt(reward.solari,'solari'))
     if(reward.drawCards) right.push(<span key="draw">Draw {reward.drawCards}</span>)
     if(reward.troops) right.push(<span key="troops">{reward.troops} Troops</span>)
     if(reward.victoryPoints) right.push(<span key="vp">{reward.victoryPoints} VP</span>)
+    if(rewardLabel) right.push(<span key="reward">{rewardLabel}</span>)
 
     return (
       <span className="effect-label">
-        {left.filter(Boolean).map((n,idx)=> <React.Fragment key={idx}>{n} </React.Fragment>)}
-        &nbsp;→&nbsp;
+        {left?.filter(Boolean).map((n,idx)=> <React.Fragment key={idx}>{n} </React.Fragment>)}
+        {left && right && <>&nbsp;→&nbsp;</>}
         {right.filter(Boolean).map((n,idx)=> <React.Fragment key={idx}>{n} </React.Fragment>)}
       </span>
     )
@@ -167,7 +175,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       setPendingEffect(effect)
       setShowTrashPopup(true)
     } else {
-      onPayCost && onPayCost(effect)
+      if(onPayCost){onPayCost(effect)}
     }
   }
 
@@ -180,23 +188,28 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }
 
   const ChoiceDialog = () => {
-    if(!activeChoice) return null
+    if(!activeChoice) return null;
     return (
       <div className="card-selection-dialog-overlay">
         <div className="card-selection-dialog">
           <h2>Choose one reward</h2>
           <div className="choices-list">
-            {activeChoice.rewards.map((r,idx)=>(
-              <button key={idx} className="choice-btn" onClick={()=>{
-                onResolveChoice&&onResolveChoice(activeChoice.id,r);
-                const next=pendingChoices.find(c=>c.id!==activeChoice.id);
-                if(next){setActiveChoice(next);} else {setShowChoicePopup(false);setActiveChoice(null);}
-              }}>
-                {renderLabel({cost:{},reward:r})}
+            {activeChoice.options.map((opt, idx:number)=>(
+              <button key={idx}
+                      className="choice-btn"
+                      disabled={opt.disabled}
+                      onClick={()=>{
+                        if(opt.disabled) return;
+                        if(onResolveChoice){onResolveChoice(activeChoice.id,opt.reward)}
+                        const next=pendingChoices.find(c=>c.id!==activeChoice.id);
+                        if(next){setActiveChoice(next);} else {setShowChoicePopup(false);setActiveChoice(null);}                
+                      }}>
+                {renderLabel(opt)}
               </button>))}
           </div>
         </div>
-      </div>)
+      </div>
+    );
   }
 
   return (

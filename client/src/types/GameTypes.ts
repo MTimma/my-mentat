@@ -182,6 +182,7 @@ export interface Cost {
   retreatTroops?: number
   retreatUnits?: number
   deployTroops?: number
+  custom?: string
 }
 
 export interface Reward {
@@ -199,7 +200,7 @@ export interface Reward {
   retreatTroops?: number
   retreatUnits?: number
   deployTroops?: number
-  custom?: string
+  custom?: CustomEffect
   influence?: InfluenceReward
 }
 
@@ -207,7 +208,7 @@ export interface CardEffect<R extends CardEffectReq = CardEffectReq> {
   requirement?: R
   cost?: Cost
   reward: Reward
-  effectOR?: boolean
+  choiceOpt?: boolean
 }
 
 export interface Gain {
@@ -328,7 +329,10 @@ export interface OptionalEffect {
 
 // Mandatory OR-choice effect generated when a card lists multiple rewards with `effectOR`.
 export interface ChoiceOption {
+  cost?: Cost
   reward: Reward
+  costLabel?: string
+  rewardLabel?: string
   disabled?: boolean
 }
 
@@ -432,4 +436,8 @@ export interface GameState {
   playArea: Record<number, Card[]>
   canEndTurn: boolean
   canAcquireIR: boolean
+}
+
+export enum CustomEffect {
+  OTHER_MEMORY = 'Other Memory',
 }

@@ -25,13 +25,15 @@ import {
   RevealEffect,
   GameTurn,
   OptionalEffect,
-  PendingChoice
+  PendingChoice,
+  CustomEffect
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { ARRAKIS_LIAISON_DECK, IMPERIUM_ROW_DECK } from '../../data/cards'
 import { SPICE_MUST_FLOW_DECK } from '../../data/cards'
 import { FOLDSPACE_DECK } from '../../data/cards'
 import { CONFLICTS } from '../../data/conflicts'
+import { effectTexts } from '../../data/effectTexts'
 
 interface GameContextType {
   gameState: GameState
@@ -1021,7 +1023,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if(card.playEffect) {
         const orRewards: Reward[] = [];
         card.playEffect?.filter((effect:PlayEffect) => {
-            if(effect.effectOR) {
+            if(effect.choiceOpt) {
               orRewards.push(effect.reward)
               return false;
             }
@@ -1041,11 +1043,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           const choiceId = card.name + '-OR-' + crypto.randomUUID();
           const options = orRewards.map(r=>{
             let dis=false
-            if(r.custom==='OTHER_MEMORY'){
+            if(r.custom===CustomEffect.OTHER_MEMORY){
               const hasBG=currPlayer.discardPile.some(c=>c.faction?.includes(FactionType.BENE_GESSERIT))
               dis=!hasBG
             }
-            return {reward:r,disabled:dis}
+            return {reward:r,disabled:dis,rewardLabel:r.custom?effectTexts[r.custom]:undefined}
           })
           tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices||[]), { id: choiceId, options, source:{ type: GainSource.CARD, id: card.id, name: card.name }}]
         }
@@ -1200,7 +1202,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       revealedCards.forEach(card => {
         const orRewards: Reward[] = []
         card.revealEffect?.filter((effect:CardEffect) => {
-            if(effect.effectOR) {
+            if(effect.choiceOpt) {
               orRewards.push(effect.reward)
               return false;
             }
