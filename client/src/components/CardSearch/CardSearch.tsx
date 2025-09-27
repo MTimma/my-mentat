@@ -1,10 +1,13 @@
 import React, { useState, useMemo } from 'react'
-import { Card } from '../../types/GameTypes'
+import { Card, Player, CardPile } from '../../types/GameTypes'
 import './CardSearch.css'
 
 interface CardSearchProps {
   isOpen: boolean
-  cards: Card[]
+  cards?: Card[] // Optional now - can be provided directly or derived from player + piles
+  player?: Player // Optional - needed when using piles
+  piles?: CardPile[] // Optional - alternative to providing cards directly
+  customFilter?: (card: Card) => boolean // Optional custom filter
   onSelect: (selectedCards: Card[]) => void
   onCancel: () => void
   isRevealTurn: boolean
@@ -15,6 +18,9 @@ interface CardSearchProps {
 const CardSearch: React.FC<CardSearchProps> = ({
   isOpen,
   cards,
+  player,
+  piles,
+  customFilter,
   onSelect,
   onCancel,
   isRevealTurn,
@@ -24,11 +30,50 @@ const CardSearch: React.FC<CardSearchProps> = ({
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
 
+  // Derive available cards from piles or use provided cards
+  const availableCards = useMemo(() => {
+    // Helper function to get cards from a specific pile
+    const getCardsFromPile = (pile: CardPile): Card[] => {
+      if (!player) return []
+      switch (pile) {
+        case 'HAND':
+          return player.deck // In this game, deck represents hand
+        case 'DISCARD':
+          return player.discardPile
+        case 'DECK':
+          return [] // Deck cards are not visible for selection
+        case 'PLAY_AREA':
+          return player.playArea
+        default:
+          return []
+      }
+    }
+
+    let baseCards: Card[]
+    
+    if (cards) {
+      // Use provided cards directly
+      baseCards = cards
+    } else if (player && piles) {
+      // Derive cards from piles
+      baseCards = piles.flatMap(pile => getCardsFromPile(pile))
+    } else {
+      baseCards = []
+    }
+    
+    // Apply custom filter if provided
+    if (customFilter) {
+      return baseCards.filter(customFilter)
+    }
+    
+    return baseCards
+  }, [cards, player, piles, customFilter])
+
   const filteredCards = useMemo(() => {
-    if (!searchTerm) return cards
+    if (!searchTerm) return availableCards
 
     const searchLower = searchTerm.toLowerCase()
-    return cards.filter(card => {
+    return availableCards.filter(card => {
       const searchableText = [
         card.name,//TODO check effect other fields
         card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
@@ -44,7 +89,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
 
       return searchableText.includes(searchLower)
     })
-  }, [cards, searchTerm])
+  }, [availableCards, searchTerm])
 
   if (!isOpen) return null
 

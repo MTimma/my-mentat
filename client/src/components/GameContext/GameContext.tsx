@@ -26,6 +26,8 @@ import {
   GameTurn,
   OptionalEffect,
   PendingChoice,
+  CardSelectChoice,
+  FixedOptionsChoice,
   CustomEffect
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
@@ -60,7 +62,10 @@ type GameAction =
   | { type: 'ACQUIRE_AL'; playerId: number }
   | { type: 'ACQUIRE_SMF'; playerId: number }
   | { type: 'PAY_COST'; playerId: number; effect: OptionalEffect }
-  | { type: 'RESOLVE_CHOICE'; playerId: number; choiceId: string; reward: Reward }
+  | { type: 'RESOLVE_CHOICE'; playerId: number; choiceId: string; reward: Reward; source?: { type: string; id: number; name: string } }
+  | { type: 'RESOLVE_CARD_SELECT'; playerId: number; choiceId: string; cardIds: number[] }
+  | { type: 'CUSTOM_EFFECT'; playerId: number; customEffect: CustomEffect; data: any }
+  | { type: 'TRASH_CARD'; playerId: number; cardId: number; gainReward?: Reward }
   | { type: 'SELECT_CONFLICT'; conflictId: number }
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
@@ -800,7 +805,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const currPlayer: Player = {...updatedPlayers.find(p => p.id === playerId)} as Player
       const card = currPlayer.deck.find(c => c.id === newState.selectedCard)
       const space = BOARD_SPACES.find((s: SpaceProps) => s.id === spaceId)
-      const tempCurrTurn = {
+      const tempCurrTurn: GameTurn = {
         playerId,
         type: TurnType.ACTION,
         cardId: card?.id,
@@ -830,7 +835,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (effect.reward.troops) {
           updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: effect.reward.troops, type: RewardType.TROOPS, source: GainSource.CARD })
           currPlayer.troops += effect.reward.troops
-          tempCurrTurn.troopLimit += effect.reward.troops
+          tempCurrTurn.troopLimit = (tempCurrTurn.troopLimit || 0) + effect.reward.troops
         }
         if (effect.reward.drawCards) {
           updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: effect.reward.drawCards, type: RewardType.DRAW, source: GainSource.CARD })
@@ -842,7 +847,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
         if (effect.reward.custom) {
           switch (effect.reward.custom) {
-            case 'CARRYALL': {
+            case CustomEffect.CARRYALL: {
               const spiceReward = space.effects?.find(e => e.reward.spice)?.reward.spice
               if (spiceReward) {
                   updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: spiceReward, type: RewardType.SPICE, source: GainSource.CARD })
@@ -850,7 +855,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               }
               break
             }
-            case 'GUN_THOPTER':
+            case CustomEffect.GUN_THOPTER:
               newState.players.forEach(p => {
                 if(p.id !== playerId && p.troops > 0) {
                   updatedGains.push({ round: newState.currentRound, playerId: p.id, sourceId: card.id, name: card.name, amount: -1, type: RewardType.TROOPS, source: GainSource.CARD })
@@ -858,16 +863,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 }
               })
               break
-            case 'OTHER_MEMORY': {
-              // TODO choose in popup
-               const bgCards = currPlayer.discardPile.filter(c => c.faction?.includes(FactionType.BENE_GESSERIT))
-               if(bgCards.length > 0) {
-                currPlayer.handCount += 1
-                // TODO Reward type - draw from discard?
-                updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: 1, type: RewardType.DRAW, source: GainSource.CARD })
-               }
-              break
-            }
+            
           }
         }
       }
@@ -893,7 +889,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
         if (effect.reward.troops) {
           updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.troops, type: RewardType.TROOPS, source: GainSource.BOARD_SPACE })
-          tempCurrTurn.troopLimit += effect.reward.troops
+          tempCurrTurn.troopLimit = (tempCurrTurn.troopLimit || 0) + effect.reward.troops
           currPlayer.troops += effect.reward.troops
         }
         if (effect.reward.persuasion) {
@@ -912,7 +908,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (!currPlayer || !card || !space || playerId !== newState.activePlayerId || !newState.selectedCard) return state
       
-      const ignoreSpaceCostAndReq = card.playEffect?.find(e => e.reward?.custom === 'KWISATZ_HADERACH')
+      const ignoreSpaceCostAndReq = card.playEffect?.find(e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH)
       // Handle recall-before-placement requirement: interpret this click as recall if needed
       if (newState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED')) {
         const occupants = newState.occupiedSpaces[spaceId] || []
@@ -1049,7 +1045,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             }
             return {reward:r,disabled:dis,rewardLabel:r.custom?effectTexts[r.custom]:undefined}
           })
-          tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices||[]), { id: choiceId, options, source:{ type: GainSource.CARD, id: card.id, name: card.name }}]
+          const fixedOptionsChoice: FixedOptionsChoice = {
+            id: choiceId,
+            kind: 'FIXED_OPTIONS',
+            prompt: 'Choose one reward',
+            options,
+            source: { type: GainSource.CARD, id: card.id, name: card.name }
+          };
+          tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices||[] as PendingChoice[]), fixedOptionsChoice]
         }
       }
       
@@ -1162,15 +1165,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'REVEAL_CARDS': {
       const { playerId, cardIds } = action
       const player: Player = {...state.players.find(p => p.id === playerId)} as Player
-      const tempCurrTurn = {
+      const tempCurrTurn: GameTurn = {
         ...state.currTurn,
+        playerId,
         canDeployTroops: state.currTurn?.canDeployTroops || false,
         troopLimit: state.currTurn?.troopLimit || 0,
         removableTroops: state.currTurn?.removableTroops || 0,
         persuasionCount: state.currTurn?.persuasionCount || 0,
         type: TurnType.REVEAL,
         gainedEffects: [],
-        acquiredCards: []
+        acquiredCards: [],
+        pendingChoices: []
       }
 
       if (!player || playerId !== state.activePlayerId) return state
@@ -1240,12 +1245,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             }
             if(effect.reward?.deployTroops) {
               updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.deployTroops, type: RewardType.DEPLOY, source: GainSource.CARD } )
-              tempCurrTurn.troopLimit += effect.reward.deployTroops
+              tempCurrTurn.troopLimit = (tempCurrTurn.troopLimit || 0) + effect.reward.deployTroops
               tempCurrTurn.canDeployTroops = true
             }
             if(effect.reward?.custom) {
               switch (effect.reward.custom) {
-                case 'LIET_KYNES': {
+                case CustomEffect.LIET_KYNES: {
                   const fremenInPlay =  player.playArea.filter(c => c.faction?.includes(FactionType.FREMEN)).length
                   const fremenInReveal = revealedCards.filter(c => c.faction?.includes(FactionType.FREMEN)).length
                   const gainedPersuasion = (fremenInPlay + fremenInReveal) * 2
@@ -1263,13 +1268,20 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const choiceId = card.name + '-OR-' + crypto.randomUUID();
         const options = orRewards.map(r=>{
           let dis=false
-          if(r.custom==='OTHER_MEMORY'){
+          if(r.custom===CustomEffect.OTHER_MEMORY){
             const hasBG=player.discardPile.some(c=>c.faction?.includes(FactionType.BENE_GESSERIT))
             dis=!hasBG
           }
           return {reward:r,disabled:dis}
         })
-        pendingChoices.push({ id: choiceId, options, source:{ type: GainSource.CARD, id: card.id, name: card.name } })
+        const fixedOptionsChoice: FixedOptionsChoice = {
+          id: choiceId,
+          kind: 'FIXED_OPTIONS',
+          prompt: 'Choose one reward',
+          options,
+          source: { type: GainSource.CARD, id: card.id, name: card.name }
+        };
+        pendingChoices.push(fixedOptionsChoice)
       }
       })
 
@@ -1477,13 +1489,111 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
     case 'RESOLVE_CHOICE': {
-      const { playerId, choiceId, reward } = action
+      const { playerId, choiceId, reward, source } = action
       if(!state.currTurn) return state
       const newTurn = { ...state.currTurn }
       newTurn.pendingChoices = (newTurn.pendingChoices||[]).filter(c => c.id !== choiceId)
       let newState = { ...state, currTurn: newTurn }
       newState = applyChoiceReward(newState, reward, playerId)
       newState.canEndTurn = (newTurn.pendingChoices?.length||0)===0
+      return newState
+    }
+    case 'RESOLVE_CARD_SELECT': {
+      const { choiceId, cardIds } = action
+      if(!state.currTurn) return state
+      
+      // Find the choice being resolved
+      const choice = state.currTurn.pendingChoices?.find(c => c.id === choiceId)
+      if (!choice || choice.kind !== 'CARD_SELECT') return state
+      
+      const cardSelectChoice = choice as CardSelectChoice
+      
+      // Execute the onResolve callback to get the action to dispatch
+      const resolveAction = cardSelectChoice.onResolve(cardIds)
+      
+      // Remove the resolved choice from pending choices
+      const newTurn = { ...state.currTurn }
+      newTurn.pendingChoices = (newTurn.pendingChoices||[]).filter(c => c.id !== choiceId)
+      
+      const newState = { 
+        ...state, 
+        currTurn: newTurn,
+        canEndTurn: (newTurn.pendingChoices?.length||0)===0
+      }
+      
+      // Recursively dispatch the resolve action
+      return gameReducer(newState, resolveAction)
+    }
+    case 'CUSTOM_EFFECT': {
+      const { playerId, customEffect, data } = action
+      switch(customEffect) {
+        case CustomEffect.OTHER_MEMORY: {
+          const { cardId } = data 
+          const player = state.players.find(p => p.id === playerId)
+          if (!player) return state
+          
+          // Find the card in discard pile
+          const cardIndex = player.discardPile.findIndex(c => c.id === cardId)
+          if (cardIndex === -1) return state
+          
+          const card = player.discardPile[cardIndex]
+          const newDiscardPile = player.discardPile.filter(c => c.id !== cardId)
+          const newDeck = [card, ...player.deck]
+          return {
+            ...state,
+            players: state.players.map(p =>
+              p.id === playerId
+              ? { ...p, discardPile: newDiscardPile, deck: newDeck, handCount: p.handCount + 1 }
+              : p
+            )
+          }
+        }
+        default: {
+          console.log("Custom effect not implemented: ", customEffect)
+          return state
+        }
+      }
+    }
+    case 'TRASH_CARD': {
+      const { playerId, cardId, gainReward } = action
+      const player = state.players.find(p => p.id === playerId)
+      if (!player) return state
+      
+      let card: Card | undefined
+      const newPlayer = { ...player }
+      
+      // Find and remove the card from any pile
+      const handIndex = player.deck.findIndex(c => c.id === cardId)
+      const discardIndex = player.discardPile.findIndex(c => c.id === cardId)
+      const playAreaIndex = player.playArea.findIndex(c => c.id === cardId)
+      
+      if (handIndex !== -1) {
+        card = player.deck[handIndex]
+        newPlayer.deck = player.deck.filter(c => c.id !== cardId)
+        newPlayer.handCount = Math.max(0, player.handCount - 1)
+      } else if (discardIndex !== -1) {
+        card = player.discardPile[discardIndex]
+        newPlayer.discardPile = player.discardPile.filter(c => c.id !== cardId)
+      } else if (playAreaIndex !== -1) {
+        card = player.playArea[playAreaIndex]
+        newPlayer.playArea = player.playArea.filter(c => c.id !== cardId)
+      }
+      
+      if (!card) return state
+      
+      // Add to trash
+      newPlayer.trash = [...(player.trash || []), card]
+      
+      let newState = {
+        ...state,
+        players: state.players.map(p => p.id === playerId ? newPlayer : p)
+      }
+      
+      // Apply any reward for trashing
+      if (gainReward) {
+        newState = applyChoiceReward(newState, gainReward, playerId)
+      }
+      
       return newState
     }
     default:

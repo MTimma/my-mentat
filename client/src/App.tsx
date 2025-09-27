@@ -8,7 +8,7 @@ import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -72,9 +72,14 @@ const GameContent = () => {
     dispatch({ type: 'DEPLOY_TROOP', playerId })
   }
 
-  const handleResolveChoice = (choiceId:string, reward: Reward) => {
+  const handleResolveChoice = (choiceId:string, reward: Reward, source?: { type: string; id: number; name: string }) => {
     if(!activePlayer) return;
-    dispatch({ type:'RESOLVE_CHOICE', playerId: activePlayer.id, choiceId, reward })
+    dispatch({ type:'RESOLVE_CHOICE', playerId: activePlayer.id, choiceId, reward, source })
+  }
+
+  const handleResolveCardSelect = (choiceId: string, cardIds: number[]) => {
+    if(!activePlayer) return;
+    dispatch({ type: 'RESOLVE_CARD_SELECT', playerId: activePlayer.id, choiceId, cardIds })
   }
 
   const handlePayCost = (effect: OptionalEffect) => {
@@ -98,7 +103,7 @@ const GameContent = () => {
     dispatch({ type: 'ACQUIRE_SMF', playerId: activePlayer?.id || 0 })
   }
 
-  const handleSelectiveBreedingRequested = (cards: Card[], onSelect: (card: Card) => void) => {
+  const handleSelectiveBreedingRequested = (_cards: Card[], onSelect: (card: Card) => void) => {
     setOnSelectiveBreedingSelect(() => onSelect)
     setShowSelectiveBreeding(true)
   }
@@ -139,7 +144,7 @@ const GameContent = () => {
           bonusSpice={gameState.bonusSpice}
           onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
           recallMode={Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
-          ignoreCosts={Boolean(getSelectedCard(gameState)?.playEffect?.find(e => e.reward?.custom === 'KWISATZ_HADERACH'))}
+          ignoreCosts={Boolean(getSelectedCard(gameState)?.playEffect?.find(e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH))}
         />
         <div className="players-area">
           {gameState.players.map((player, idx) => (
@@ -173,12 +178,12 @@ const GameContent = () => {
           onRemoveTroop={handleRemoveTroop}
           retreatableTroops={gameState.currTurn?.removableTroops || 0}
           deployableTroops={Math.min((gameState.currTurn?.troopLimit || 0) - (gameState.currTurn?.removableTroops || 0), activePlayer?.troops || 0)}
-          gains={gameState.gains}
           isCombatPhase={gameState.phase === GamePhase.COMBAT}
           combatStrength={gameState.combatStrength}
           optionalEffects={gameState.currTurn?.optionalEffects || []}
           pendingChoices={gameState.currTurn?.pendingChoices || []}
           onResolveChoice={handleResolveChoice}
+          onResolveCardSelect={handleResolveCardSelect}
           onPayCost={handlePayCost}
           showSelectiveBreeding={showSelectiveBreeding}
           onSelectiveBreedingSelect={card => {
@@ -280,10 +285,10 @@ function App() {
           players: initialGameState.players,
           currentRound: initialGameState.currentRound,
           factionInfluence:{
-            [FactionType.EMPEROR]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
-            [FactionType.SPACING_GUILD]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
-            [FactionType.BENE_GESSERIT]: Object.fromEntries(playerSetups.map((p, i) => [i, 0])),
-            [FactionType.FREMEN]: Object.fromEntries(playerSetups.map((p, i) => [i, 0]))
+            [FactionType.EMPEROR]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0])),
+            [FactionType.SPACING_GUILD]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0])),
+            [FactionType.BENE_GESSERIT]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0])),
+            [FactionType.FREMEN]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0]))
           },
           phase: GamePhase.ROUND_START
         }}>

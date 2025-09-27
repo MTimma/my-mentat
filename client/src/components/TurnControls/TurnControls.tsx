@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Player, Card, Cost, Reward, PendingChoice } from '../../types/GameTypes'
+import { Player, Card, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import './TurnControls.css'
 
@@ -18,14 +18,15 @@ interface TurnControlsProps {
   deployableTroops: number
   isCombatPhase: boolean
   combatStrength: Record<number, number>
-  optionalEffects?: { cost: Cost; reward: Reward; source: { type: string; id: number; name: string }; data?: { trashedCardId?: number } }[]
-  onPayCost?: (effect: { cost: Cost; reward: Reward; source: { type: string; id: number; name: string }; data?: { trashedCardId?: number } }) => void
+  optionalEffects?: OptionalEffect[]
+  onPayCost?: (effect: OptionalEffect) => void
   showSelectiveBreeding?: boolean
   selectiveBreedingCards?: Card[]
   onSelectiveBreedingSelect?: (card: Card) => void
   onSelectiveBreedingCancel?: () => void
   pendingChoices?: PendingChoice[]
-  onResolveChoice?: (choiceId:string, reward: Reward) => void
+  onResolveChoice?: (choiceId:string, reward: Reward, source?: { type: string; id: number; name: string }) => void
+  onResolveCardSelect?: (choiceId: string, cardIds: number[]) => void
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -49,7 +50,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onSelectiveBreedingSelect,
   onSelectiveBreedingCancel,
   pendingChoices = [],
-  onResolveChoice
+  onResolveChoice,
+  onResolveCardSelect
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -189,27 +191,66 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
   const ChoiceDialog = () => {
     if(!activeChoice) return null;
-    return (
-      <div className="card-selection-dialog-overlay">
-        <div className="card-selection-dialog">
-          <h2>Choose one reward</h2>
-          <div className="choices-list">
-            {activeChoice.options.map((opt, idx:number)=>(
-              <button key={idx}
-                      className="choice-btn"
-                      disabled={opt.disabled}
-                      onClick={()=>{
-                        if(opt.disabled) return;
-                        if(onResolveChoice){onResolveChoice(activeChoice.id,opt.reward)}
-                        const next=pendingChoices.find(c=>c.id!==activeChoice.id);
-                        if(next){setActiveChoice(next);} else {setShowChoicePopup(false);setActiveChoice(null);}                
-                      }}>
-                {renderLabel(opt)}
-              </button>))}
+    
+    // Handle card selection choices
+    if (activeChoice.kind === 'CARD_SELECT') {
+      const cardSelectChoice = activeChoice as CardSelectChoice;
+      return (
+        <CardSearch
+          isOpen={true}
+          player={activePlayer!}
+          piles={cardSelectChoice.piles}
+          customFilter={cardSelectChoice.filter}
+          selectionCount={cardSelectChoice.selectionCount}
+          text={cardSelectChoice.prompt}
+          isRevealTurn={cardSelectChoice.selectionCount > 1} // Use multi-select logic if more than 1 card
+          onSelect={(selectedCards) => {
+            if (onResolveCardSelect) {
+              onResolveCardSelect(activeChoice.id, selectedCards.map(card => card.id));
+            }
+            const next = pendingChoices.find(c => c.id !== activeChoice.id);
+            if (next) {
+              setActiveChoice(next);
+            } else {
+              setShowChoicePopup(false);
+              setActiveChoice(null);
+            }
+          }}
+          onCancel={() => {
+            setShowChoicePopup(false);
+            setActiveChoice(null);
+          }}
+        />
+      );
+    }
+    
+    // Handle fixed options choices
+    if (activeChoice.kind === 'FIXED_OPTIONS') {
+      const fixedOptionsChoice = activeChoice as FixedOptionsChoice;
+      return (
+        <div className="card-selection-dialog-overlay">
+          <div className="card-selection-dialog">
+            <h2>{fixedOptionsChoice.prompt || 'Choose one reward'}</h2>
+            <div className="choices-list">
+              {fixedOptionsChoice.options.map((opt, idx:number)=>(
+                <button key={idx}
+                        className="choice-btn"
+                        disabled={opt.disabled}
+                        onClick={()=>{
+                          if(opt.disabled) return;
+                          if(onResolveChoice){onResolveChoice(activeChoice.id,opt.reward, activeChoice.source)}
+                          const next=pendingChoices.find(c=>c.id!==activeChoice.id);
+                          if(next){setActiveChoice(next);} else {setShowChoicePopup(false);setActiveChoice(null);}                
+                        }}>
+                  {renderLabel(opt)}
+                </button>))}
+            </div>
           </div>
         </div>
-      </div>
-    );
+      );
+    }
+    
+    return null;
   }
 
   return (
@@ -334,7 +375,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
         <CardSearch
           isOpen={showSelectiveBreeding}
-          cards={[...activePlayer.deck, ...activePlayer.discardPile, ...activePlayer.playArea]}
+          player={activePlayer}
+          piles={['HAND', 'DISCARD', 'PLAY_AREA']}
           selectionCount={1}
           onSelect={selected => selected[0] && onSelectiveBreedingSelect && onSelectiveBreedingSelect(selected[0])}
           onCancel={onSelectiveBreedingCancel || (() => {})}
@@ -344,7 +386,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
         <CardSearch
           isOpen={showTrashPopup}
-          cards={[...activePlayer.deck, ...activePlayer.discardPile, ...activePlayer.playArea]}
+          player={activePlayer}
+          piles={['HAND', 'DISCARD', 'PLAY_AREA']}
           selectionCount={1}
           onSelect={selected => selected[0] && handleTrashSelect(selected[0])}
           onCancel={() => { setShowTrashPopup(false); setPendingEffect(null);} }
