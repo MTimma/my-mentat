@@ -333,7 +333,6 @@ export interface ChoiceOption {
   reward: Reward
   costLabel?: string
   rewardLabel?: string
-  disabled?: boolean
 }
 
 // Card pile types for card selection
@@ -351,6 +350,7 @@ export enum ChoiceType {
 interface PendingChoiceBase {
   id: string
   prompt: string
+  disabled?: boolean
   source: { type: GainSource; id: number; name: string }
 }
 // Fixed options choice (current reward selection system)

@@ -289,9 +289,16 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
 }
 
 function applyChoiceReward(state: GameState, reward: Reward, playerId: number): GameState {
-  const newState = { ...state }
-  const player = newState.players.find(p => p.id === playerId)
-  if (!player) return state
+  const newState = { 
+    ...state,
+    gains: [...state.gains], // Create a copy of the gains array too
+    combatStrength: { ...state.combatStrength } // Create a copy of combatStrength too
+  }
+  const originalPlayer = newState.players.find(p => p.id === playerId)
+  if (!originalPlayer) return state
+
+  // Create a proper copy of the player object to avoid mutations
+  const player = { ...originalPlayer }
 
   const pushGain = (amount: number | undefined, type: RewardType) => {
     if (!amount) return
@@ -1504,13 +1511,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
     case 'RESOLVE_CHOICE': {
-      const { playerId, choiceId, reward, source } = action
+      const { playerId, reward } = action
       if(!state.currTurn) return state
       const newTurn = { ...state.currTurn }
-      newTurn.pendingChoices = (newTurn.pendingChoices||[]).filter(c => c.id !== choiceId)
+      // Clear all pending choices when user makes any choice
+      newTurn.pendingChoices = []
       let newState = { ...state, currTurn: newTurn }
       newState = applyChoiceReward(newState, reward, playerId)
-      newState.canEndTurn = (newTurn.pendingChoices?.length||0)===0
+      newState.canEndTurn = true // No more choices pending
       return newState
     }
     case 'RESOLVE_CARD_SELECT': {
@@ -1519,21 +1527,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Find the choice being resolved
       const choice = state.currTurn.pendingChoices?.find(c => c.id === choiceId)
-      if (!choice || choice.type !== 'CARD_SELECT') return state
+      if (!choice || choice.type !== ChoiceType.CARD_SELECT) return state
       
       const cardSelectChoice = choice as CardSelectChoice
       
       // Execute the onResolve callback to get the action to dispatch
       const resolveAction = cardSelectChoice.onResolve(cardIds)
       
-      // Remove the resolved choice from pending choices
+      // Clear all pending choices when user makes any choice
       const newTurn = { ...state.currTurn }
-      newTurn.pendingChoices = (newTurn.pendingChoices||[]).filter(c => c.id !== choiceId)
+      newTurn.pendingChoices = []
       
       const newState = { 
         ...state, 
         currTurn: newTurn,
-        canEndTurn: (newTurn.pendingChoices?.length||0)===0
+        canEndTurn: true // No more choices pending
       }
       
       // Recursively dispatch the resolve action
@@ -1541,6 +1549,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'CUSTOM_EFFECT': {
       const { playerId, customEffect, data } = action
+      
       switch(customEffect) {
         case CustomEffect.OTHER_MEMORY: {
           const { cardId } = data 
@@ -1554,9 +1563,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           const card = player.discardPile[cardIndex]
           const newDiscardPile = player.discardPile.filter(c => c.id !== cardId)
           const newDeck = [card, ...player.deck]
+          const newState = { ...state }
+          // newState.gains.push({
+          //   playerId,
+          //   round: newState.currentRound,
+          //   source: GainSource.CARD,
+          //   sourceId: 0,
+          //   name: 'Choice Reward',
+          //   amount,
+          //   type
+          // })
           return {
-            ...state,
-            players: state.players.map(p =>
+            ...newState,
+            players: newState.players.map(p =>
               p.id === playerId
               ? { ...p, discardPile: newDiscardPile, deck: newDeck, handCount: p.handCount + 1 }
               : p
@@ -1684,6 +1703,7 @@ function getEffectChoice(currPlayer: Player, card: Card, effect: PlayEffect): Ca
       piles: [CardPile.DISCARD],
       filter: (c: Card) => c.faction?.includes(FactionType.BENE_GESSERIT) || false,
       selectionCount: 1,
+      disabled: !currPlayer.discardPile.some(c => c.faction?.includes(FactionType.BENE_GESSERIT)),
       onResolve: (cardIds: number[]) => ({
         type: 'CUSTOM_EFFECT',
         playerId: currPlayer.id,
@@ -1693,7 +1713,7 @@ function getEffectChoice(currPlayer: Player, card: Card, effect: PlayEffect): Ca
     }
   }
   // else create fixed options choice
-  const options = [{cost:effect.cost,reward:effect.reward,disabled:false,rewardLabel: "test fixed"}]
+  const options = [{cost:effect.cost,reward:effect.reward,rewardLabel: "test fixed"}]
   return{
     id: choiceId,
     type: ChoiceType.FIXED_OPTIONS,

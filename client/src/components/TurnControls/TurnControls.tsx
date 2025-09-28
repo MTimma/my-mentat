@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Player, Card, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect } from '../../types/GameTypes'
+import { Player, Card, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import './TurnControls.css'
 
@@ -58,15 +58,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const [showTrashPopup, setShowTrashPopup] = useState(false)
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
-  const [showChoicePopup, setShowChoicePopup] = useState(false)
-  const [activeChoice, setActiveChoice] = useState<PendingChoice | null>(null)
-
-  React.useEffect(()=>{
-    if(!showChoicePopup && pendingChoices.length>0){
-      setShowChoicePopup(true);
-      setActiveChoice(pendingChoices[0]);
-    }
-  },[pendingChoices, showChoicePopup]);
+  const [activeCardSelect, setActiveCardSelect] = useState<CardSelectChoice | null>(null)
 
   if (!activePlayer) return null
 
@@ -191,67 +183,88 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }
 
   const ChoiceDialog = () => {
-    if(!activeChoice) return null;
-    
-    // Handle card selection choices
-    if (activeChoice.type === 'CARD_SELECT') {
-      const cardSelectChoice = activeChoice as CardSelectChoice;
+    if(pendingChoices.length === 0) return null;
+
+    // If user clicked a card selection choice, show the CardSearch dialog
+    if (activeCardSelect) {
       return (
         <CardSearch
           isOpen={true}
           player={activePlayer!}
-          piles={cardSelectChoice.piles}
-          customFilter={cardSelectChoice.filter}
-          selectionCount={cardSelectChoice.selectionCount}
-          text={cardSelectChoice.prompt}
-          isRevealTurn={cardSelectChoice.selectionCount > 1} // Use multi-select logic if more than 1 card
+          piles={activeCardSelect.piles}
+          customFilter={activeCardSelect.filter}
+          selectionCount={activeCardSelect.selectionCount}
+          text={activeCardSelect.prompt}
+          isRevealTurn={activeCardSelect.selectionCount > 1}
           onSelect={(selectedCards) => {
             if (onResolveCardSelect) {
-              onResolveCardSelect(activeChoice.id, selectedCards.map(card => card.id));
+              onResolveCardSelect(activeCardSelect.id, selectedCards.map(card => card.id));
             }
-            const next = pendingChoices.find(c => c.id !== activeChoice.id);
-            if (next) {
-              setActiveChoice(next);
-            } else {
-              setShowChoicePopup(false);
-              setActiveChoice(null);
-            }
+            setActiveCardSelect(null);
           }}
           onCancel={() => {
-            setShowChoicePopup(false);
-            setActiveChoice(null);
+            setActiveCardSelect(null);
           }}
         />
       );
     }
+
+    // Show all choices as buttons in one dialog
+    const allOptions: Array<{choiceId: string, choice: PendingChoice, option?: {reward: Reward, disabled?: boolean, cost?: Cost}, source: {type: string, id: number, name: string}}> = [];
     
-    // Handle fixed options choices
-    if (activeChoice.type === 'FIXED_OPTIONS') {
-      const fixedOptionsChoice = activeChoice as FixedOptionsChoice;
-      return (
-        <div className="card-selection-dialog-overlay">
-          <div className="card-selection-dialog">
-            <h2>{fixedOptionsChoice.prompt || 'Choose one reward'}</h2>
-            <div className="choices-list">
-              {fixedOptionsChoice.options.map((opt, idx:number)=>(
-                <button key={idx}
-                        className="choice-btn"
-                        disabled={opt.disabled || !isAffordable(opt.cost)}
-                        onClick={()=>{
-                          if(opt.disabled) return;
-                          if(onResolveChoice){onResolveChoice(activeChoice.id,opt.reward, activeChoice.source)}
-                          const next=pendingChoices.find(c=>c.id!==activeChoice.id);
-                          if(next){setActiveChoice(next);} else {setShowChoicePopup(false);setActiveChoice(null);}                
-                        }}>
-                  {renderLabel(opt)}
-                </button>))}
-            </div>
+    pendingChoices.forEach(choice => {
+      if (choice.type === ChoiceType.FIXED_OPTIONS) {
+        const fixedChoice = choice as FixedOptionsChoice;
+        // Each option becomes a separate button
+        fixedChoice.options.forEach(option => {
+          allOptions.push({
+            choiceId: choice.id,
+            choice: choice,
+            option: option,
+            source: choice.source
+          });
+        });
+      } else if (choice.type === ChoiceType.CARD_SELECT) {
+        // Card selection choices become buttons that open CardSearch when clicked
+        allOptions.push({
+          choiceId: choice.id,
+          choice: choice,
+          source: choice.source
+        });
+      }
+    });
+
+    if (allOptions.length === 0) return null;
+
+    return (
+      <div className="card-selection-dialog-overlay">
+        <div className="card-selection-dialog">
+          <h2>Choose one reward</h2>
+          <div className="choices-list">
+            {allOptions.map((item, idx) => (
+              <button 
+                key={idx}
+                className="choice-btn"
+                disabled={item.choice.disabled || !isAffordable(item.option?.cost)}
+                onClick={() => {
+                  if(item.choice.disabled) return;
+                  
+                  if(item.choice.type === ChoiceType.CARD_SELECT) {
+                    // Open card selection dialog
+                    setActiveCardSelect(item.choice as CardSelectChoice);
+                  } else if(onResolveChoice && item.option) {
+                    // Resolve fixed option choice
+                    onResolveChoice(item.choiceId, item.option.reward, item.source);
+                  }
+                }}
+              >
+                {item.option ? renderLabel(item.option) : (item.choice as CardSelectChoice).prompt}
+              </button>
+            ))}
           </div>
         </div>
-      );
-    }
-    
-    return null;
+      </div>
+    );
   }
 
   return (
@@ -282,6 +295,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           ))}
         </div>
       )}
+      {
+        <ChoiceDialog />
+        
+      }
 
       <div className="turn-controls">
         <div className="active-player-info">
@@ -395,8 +412,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           isRevealTurn={false}
           text="Select card to trash"
         />
-
-        <ChoiceDialog />
       </div>
     </>
   )
