@@ -28,14 +28,16 @@ import {
   PendingChoice,
   CardSelectChoice,
   FixedOptionsChoice,
-  CustomEffect
+  CustomEffect,
+  ChoiceType,
+  CardPile
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { ARRAKIS_LIAISON_DECK, IMPERIUM_ROW_DECK } from '../../data/cards'
 import { SPICE_MUST_FLOW_DECK } from '../../data/cards'
 import { FOLDSPACE_DECK } from '../../data/cards'
 import { CONFLICTS } from '../../data/conflicts'
-import { effectTexts } from '../../data/effectTexts'
+import { EFFECT_TEXTS } from '../../data/effectTexts'
 
 interface GameContextType {
   gameState: GameState
@@ -444,7 +446,35 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       if (!newState.players.find(p => !p.revealed)) {
-        // All players have revealed
+        // All players have revealed - check if anyone can participate in combat
+        const playersWithTroops = newState.players.filter(p => (newState.combatTroops[p.id] || 0) > 0)
+        const playersWithIntrigueAndTroops = playersWithTroops.filter(p => p.intrigueCount > 0)
+        
+        if (playersWithIntrigueAndTroops.length === 0) {
+          // Skip combat phase - no one can participate
+          return {
+            ...newState,
+            phase: GamePhase.COMBAT_REWARDS,
+            combatPasses: new Set(),
+            players: newState.players.map(p =>
+              p.id === playerId
+                ? {
+                    ...p,
+                    selectedCard: null,
+                  }
+                : p
+            ),
+            activePlayerId: 0,
+            history: [...state.history, state],
+            currTurn: null,
+            canEndTurn: false,
+            canAcquireIR: false,
+            selectedCard: null,
+            gains: []
+          }
+        }
+        
+        // Continue to combat phase with first eligible player
         return {
           ...newState,
           phase: GamePhase.COMBAT,
@@ -457,7 +487,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 }
               : p
           ),
-          activePlayerId: 0,
+          activePlayerId: playersWithIntrigueAndTroops[0].id,
           history: [...state.history, state],
           currTurn: null,
           canEndTurn: false,
@@ -623,7 +653,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     
       return {
-        ...newState
+        ...newState,
+        activePlayerId: nextIndex
       }
     }
     case 'PLAY_COMBAT_INTRIGUE': {
@@ -1015,12 +1046,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Build optional effects list (play effects with cost)
       const optionalEffects: OptionalEffect[] = []
-
+      const choiceEffects: PlayEffect[] = [];
       if(card.playEffect) {
-        const orRewards: Reward[] = [];
         card.playEffect?.filter((effect:PlayEffect) => {
             if(effect.choiceOpt) {
-              orRewards.push(effect.reward)
+              choiceEffects.push(effect)
               return false;
             }
             if(effect.cost) {
@@ -1035,24 +1065,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             }
 
         });
-        if(orRewards.length>0) {
-          const choiceId = card.name + '-OR-' + crypto.randomUUID();
-          const options = orRewards.map(r=>{
-            let dis=false
-            if(r.custom===CustomEffect.OTHER_MEMORY){
-              const hasBG=currPlayer.discardPile.some(c=>c.faction?.includes(FactionType.BENE_GESSERIT))
-              dis=!hasBG
-            }
-            return {reward:r,disabled:dis,rewardLabel:r.custom?effectTexts[r.custom]:undefined}
-          })
-          const fixedOptionsChoice: FixedOptionsChoice = {
-            id: choiceId,
-            kind: 'FIXED_OPTIONS',
-            prompt: 'Choose one reward',
-            options,
-            source: { type: GainSource.CARD, id: card.id, name: card.name }
-          };
-          tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices||[] as PendingChoice[]), fixedOptionsChoice]
+        if(choiceEffects.length>0) {
+          const pendingChoices: PendingChoice[] = choiceEffects.map(r => getEffectChoice(currPlayer, card, r));
+          tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices||[]), ...pendingChoices];
         }
       }
       
@@ -1276,7 +1291,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         })
         const fixedOptionsChoice: FixedOptionsChoice = {
           id: choiceId,
-          kind: 'FIXED_OPTIONS',
+          type: 'FIXED_OPTIONS',
           prompt: 'Choose one reward',
           options,
           source: { type: GainSource.CARD, id: card.id, name: card.name }
@@ -1504,7 +1519,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Find the choice being resolved
       const choice = state.currTurn.pendingChoices?.find(c => c.id === choiceId)
-      if (!choice || choice.kind !== 'CARD_SELECT') return state
+      if (!choice || choice.type !== 'CARD_SELECT') return state
       
       const cardSelectChoice = choice as CardSelectChoice
       
@@ -1626,3 +1641,64 @@ export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, c
     </GameContext.Provider>
   )
 } 
+
+function getEffectChoice(currPlayer: Player, card: Card, effect: PlayEffect): CardSelectChoice | FixedOptionsChoice {
+  const choiceId = card.name + '-OR-' + crypto.randomUUID();
+  if(effect.cost?.trash) {
+    return {
+      id: choiceId,
+      type: ChoiceType.CARD_SELECT,
+      prompt: 'Choose a card to trash',
+      piles: [CardPile.DECK, CardPile.DISCARD],
+      selectionCount: 1,
+      onResolve: (cardIds: number[]) => ({ 
+        type: 'TRASH_CARD',
+        playerId: currPlayer.id,
+        cardId: cardIds[0],
+        gainReward: effect.reward
+      }),
+      source: { type: GainSource.CARD, id: card.id, name: card.name }
+    }
+    
+  }
+  if(effect.reward.trash) {
+    return {
+      id: choiceId,
+      type: ChoiceType.CARD_SELECT,
+      prompt: 'Choose a card to trash',
+      piles: [CardPile.DECK, CardPile.DISCARD],
+      selectionCount: 1,
+      onResolve: (cardIds: number[]) => ({ 
+        type: 'TRASH_CARD',
+        playerId: currPlayer.id,
+        cardId: cardIds[0]
+      }),
+      source: { type: GainSource.CARD, id: card.id, name: card.name }
+    }
+  }
+  if(effect.reward.custom===CustomEffect.OTHER_MEMORY) {
+    return {
+      id: choiceId,
+      type: ChoiceType.CARD_SELECT,
+      prompt: EFFECT_TEXTS[CustomEffect.OTHER_MEMORY],
+      piles: [CardPile.DISCARD],
+      filter: (c: Card) => c.faction?.includes(FactionType.BENE_GESSERIT) || false,
+      selectionCount: 1,
+      onResolve: (cardIds: number[]) => ({
+        type: 'CUSTOM_EFFECT',
+        playerId: currPlayer.id,
+        cardId: cardIds[0]
+      }),
+      source: { type: GainSource.CARD, id: card.id, name: card.name }
+    }
+  }
+  // else create fixed options choice
+  const options = [{cost:effect.cost,reward:effect.reward,disabled:false,rewardLabel: "test fixed"}]
+  return{
+    id: choiceId,
+    type: ChoiceType.FIXED_OPTIONS,
+    prompt: 'Choose one reward',
+    options,
+    source: { type: GainSource.CARD, id: card.id, name: card.name }
+  };
+}

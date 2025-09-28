@@ -118,7 +118,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }
 
   /* ---------- Optional effects helpers ---------- */
-  const isAffordable = (cost: Cost): boolean => {
+  const isAffordable = (cost: Cost | undefined): boolean => {
+    if(!cost) return true
     if (!activePlayer) return false
     if(cost.spice && activePlayer.spice < cost.spice) return false
     if(cost.water && activePlayer.water < cost.water) return false
@@ -193,7 +194,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     if(!activeChoice) return null;
     
     // Handle card selection choices
-    if (activeChoice.kind === 'CARD_SELECT') {
+    if (activeChoice.type === 'CARD_SELECT') {
       const cardSelectChoice = activeChoice as CardSelectChoice;
       return (
         <CardSearch
@@ -225,7 +226,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
     
     // Handle fixed options choices
-    if (activeChoice.kind === 'FIXED_OPTIONS') {
+    if (activeChoice.type === 'FIXED_OPTIONS') {
       const fixedOptionsChoice = activeChoice as FixedOptionsChoice;
       return (
         <div className="card-selection-dialog-overlay">
@@ -235,7 +236,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               {fixedOptionsChoice.options.map((opt, idx:number)=>(
                 <button key={idx}
                         className="choice-btn"
-                        disabled={opt.disabled}
+                        disabled={opt.disabled || !isAffordable(opt.cost)}
                         onClick={()=>{
                           if(opt.disabled) return;
                           if(onResolveChoice){onResolveChoice(activeChoice.id,opt.reward, activeChoice.source)}

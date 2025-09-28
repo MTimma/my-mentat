@@ -337,7 +337,15 @@ export interface ChoiceOption {
 }
 
 // Card pile types for card selection
-export type CardPile = 'HAND' | 'DISCARD' | 'DECK' | 'PLAY_AREA'
+export enum CardPile {
+  DISCARD,
+  DECK,
+  PLAY_AREA
+}
+export enum ChoiceType {
+  FIXED_OPTIONS,
+  CARD_SELECT
+}
 
 // Base interface for all pending choices
 interface PendingChoiceBase {
@@ -345,17 +353,16 @@ interface PendingChoiceBase {
   prompt: string
   source: { type: GainSource; id: number; name: string }
 }
-
 // Fixed options choice (current reward selection system)
 export interface FixedOptionsChoice extends PendingChoiceBase {
-  kind: 'FIXED_OPTIONS'
+  type: ChoiceType.FIXED_OPTIONS
   options: ChoiceOption[] // one must be chosen
 }
 
 // Card selection choice
 export interface CardSelectChoice extends PendingChoiceBase {
-  kind: 'CARD_SELECT'
-  piles: CardPile[]          // e.g. ['HAND','DISCARD'] or ['PLAY_AREA']
+  type: ChoiceType.CARD_SELECT
+  piles: CardPile[]
   filter?: (c: Card) => boolean
   selectionCount: number
   onResolve: (cardIds: number[]) => any // GameAction will be defined in GameContext
@@ -461,7 +468,7 @@ export interface GameState {
 }
 
 export enum CustomEffect {
-  OTHER_MEMORY = 'Other Memory',
+  OTHER_MEMORY = 'OTHER_MEMORY',
   CARRYALL = 'CARRYALL',
   GUN_THOPTER = 'GUN_THOPTER',
   KWISATZ_HADERACH = 'KWISATZ_HADERACH',
