@@ -186,6 +186,8 @@ const GameContent = () => {
           onResolveCardSelect={handleResolveCardSelect}
           onPayCost={handlePayCost}
           showSelectiveBreeding={showSelectiveBreeding}
+          selectedCard={getSelectedCard(gameState)}
+          recallMode={Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
           onSelectiveBreedingSelect={card => {
             if (onSelectiveBreedingSelect) onSelectiveBreedingSelect(card)
             setShowSelectiveBreeding(false)

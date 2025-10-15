@@ -11,6 +11,34 @@
     color: white;
 }
 
+.selected-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.selected-card-info .card-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #ffd700;
+}
+
+.selected-card-info .instruction {
+    font-size: 1rem;
+    color: #00ff00;
+    font-weight: bold;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
 .control-buttons {
     display: flex;
     gap: 10px;

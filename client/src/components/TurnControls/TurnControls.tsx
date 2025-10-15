@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Player, Card, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType } from '../../types/GameTypes'
+import { Player, Card, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import './TurnControls.css'
 
@@ -27,6 +27,8 @@ interface TurnControlsProps {
   pendingChoices?: PendingChoice[]
   onResolveChoice?: (choiceId:string, reward: Reward, source?: { type: string; id: number; name: string }) => void
   onResolveCardSelect?: (choiceId: string, cardIds: number[]) => void
+  selectedCard?: Card | null
+  recallMode?: boolean
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -51,7 +53,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onSelectiveBreedingCancel,
   pendingChoices = [],
   onResolveChoice,
-  onResolveCardSelect
+  onResolveCardSelect,
+  selectedCard = null,
+  recallMode = false
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -306,13 +310,23 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           {activePlayer.leader.name}
         </div>
         <div className="selected-cards">
-          {selectedCards.length > 0 && (
+          {selectedCard && (
+            <div className="selected-card-info">
+              <div className="card-name">
+                {selectedCard.name}
+              </div>
+              <div className="instruction">
+                {recallMode ? '⬅️ Recall an agent from the board' : '➡️ Place the agent on board'}
+              </div>
+            </div>
+          )}
+          {selectedCards.length > 0 && !selectedCard && (
             <div>
               {selectedCards.map(card => card.name).join(', ')}
             </div>
           )}
           {/* Reveal summaries removed for now */}
-          {selectedCards.length === 0 && (
+          {selectedCards.length === 0 && !selectedCard && (
             <div>
               No card selected
             </div>
@@ -394,7 +408,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         <CardSearch
           isOpen={showSelectiveBreeding}
           player={activePlayer}
-          piles={['HAND', 'DISCARD', 'PLAY_AREA']}
+          piles={[CardPile.HAND, CardPile.DISCARD, CardPile.PLAY_AREA]}
           selectionCount={1}
           onSelect={selected => selected[0] && onSelectiveBreedingSelect && onSelectiveBreedingSelect(selected[0])}
           onCancel={onSelectiveBreedingCancel || (() => {})}
@@ -405,7 +419,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         <CardSearch
           isOpen={showTrashPopup}
           player={activePlayer}
-          piles={['HAND', 'DISCARD', 'PLAY_AREA']}
+          piles={[CardPile.HAND, CardPile.DISCARD, CardPile.PLAY_AREA]}
           selectionCount={1}
           onSelect={selected => selected[0] && handleTrashSelect(selected[0])}
           onCancel={() => { setShowTrashPopup(false); setPendingEffect(null);} }

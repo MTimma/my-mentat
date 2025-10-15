@@ -337,13 +337,14 @@ export interface ChoiceOption {
 
 // Card pile types for card selection
 export enum CardPile {
-  DISCARD,
-  DECK,
-  PLAY_AREA
+  HAND = 'HAND',
+  DISCARD = 'DISCARD',
+  DECK = 'DECK',
+  PLAY_AREA = 'PLAY_AREA'
 }
 export enum ChoiceType {
-  FIXED_OPTIONS,
-  CARD_SELECT
+  FIXED_OPTIONS = 'FIXED_OPTIONS',
+  CARD_SELECT = 'CARD_SELECT'
 }
 
 // Base interface for all pending choices

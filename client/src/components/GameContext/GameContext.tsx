@@ -432,7 +432,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         currentConflict: conflict,
-        phase: GamePhase.PLAYER_TURNS
+        phase: GamePhase.PLAYER_TURNS,
+        activePlayerId: state.firstPlayerMarker
       }
     }
     case 'END_TURN': {
@@ -1298,7 +1299,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         })
         const fixedOptionsChoice: FixedOptionsChoice = {
           id: choiceId,
-          type: 'FIXED_OPTIONS',
+          type: ChoiceType.FIXED_OPTIONS,
           prompt: 'Choose one reward',
           options,
           source: { type: GainSource.CARD, id: card.id, name: card.name }
@@ -1511,10 +1512,45 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
     case 'RESOLVE_CHOICE': {
-      const { playerId, reward } = action
+      const { playerId, reward, source } = action
       if(!state.currTurn) return state
+      
+      // Check if this reward has a custom effect that needs card selection
+      if(reward.custom === CustomEffect.OTHER_MEMORY) {
+        const player = state.players.find(p => p.id === playerId)
+        if(!player) return state
+        
+        // Create a CardSelectChoice for the custom effect
+        const choiceId = 'OTHER_MEMORY-' + crypto.randomUUID()
+        const cardSelectChoice: CardSelectChoice = {
+          id: choiceId,
+          type: ChoiceType.CARD_SELECT,
+          prompt: EFFECT_TEXTS[CustomEffect.OTHER_MEMORY],
+          piles: [CardPile.DISCARD],
+          filter: (c: Card) => c.faction?.includes(FactionType.BENE_GESSERIT) || false,
+          selectionCount: 1,
+          disabled: !player.discardPile.some(c => c.faction?.includes(FactionType.BENE_GESSERIT)),
+          onResolve: (cardIds: number[]) => ({
+            type: 'CUSTOM_EFFECT',
+            playerId: player.id,
+            customEffect: CustomEffect.OTHER_MEMORY,
+            data: { cardId: cardIds[0] }
+          }),
+          source: { type: GainSource.CARD, id: source?.id || 0, name: source?.name || 'Unknown' }
+        }
+        
+        const newTurn = { ...state.currTurn }
+        newTurn.pendingChoices = [cardSelectChoice]
+        
+        return {
+          ...state,
+          currTurn: newTurn,
+          canEndTurn: false // Still have a choice pending
+        }
+      }
+      
+      // Normal reward without custom effect
       const newTurn = { ...state.currTurn }
-      // Clear all pending choices when user makes any choice
       newTurn.pendingChoices = []
       let newState = { ...state, currTurn: newTurn }
       newState = applyChoiceReward(newState, reward, playerId)
@@ -1707,7 +1743,8 @@ function getEffectChoice(currPlayer: Player, card: Card, effect: PlayEffect): Ca
       onResolve: (cardIds: number[]) => ({
         type: 'CUSTOM_EFFECT',
         playerId: currPlayer.id,
-        cardId: cardIds[0]
+        customEffect: CustomEffect.OTHER_MEMORY,
+        data: { cardId: cardIds[0] }
       }),
       source: { type: GainSource.CARD, id: card.id, name: card.name }
     }
