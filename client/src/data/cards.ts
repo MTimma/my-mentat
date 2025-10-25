@@ -1,3 +1,4 @@
+import { transform } from 'framer-motion'
 import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS, CustomEffect } from '../types/GameTypes'
 // export const STARTING_DECK: Card[] = [
 //   {
@@ -300,7 +301,7 @@ export const STARTING_DECK: Card[] = [
       },
       {
         reward: {
-          custom: "KWISATZ_HADERACH"
+          custom: CustomEffect.KWISATZ_HADERACH
         }
       },
       {
@@ -385,7 +386,29 @@ export const STARTING_DECK: Card[] = [
     revealEffect: [
       {
         reward: {
-          custom: "LIET_KYNES"
+          custom: CustomEffect.LIET_KYNES
+        }
+      }
+    ]
+  },
+  {
+    id: 1038,
+    name: "Piter De Vries",
+    image: "imperium_row/piter_de_vries.avif",
+    agentIcons: [AgentIcon.CITY, AgentIcon.LANDSRAAD],
+    cost: 5,
+    playEffect: [
+      {
+        reward: {
+          intrigueCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 3,
+          combat: 1
         }
       }
     ]
@@ -1060,7 +1083,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     playEffect: [
       {
         reward: {
-          custom: 'CARRYALL'
+          custom: CustomEffect.CARRYALL
         }
       }
     ],
@@ -1198,7 +1221,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     ]
   },
   {
-    id: 1016,
+    id: 1017,
     name: "Duncan Idaho",
     image: "imperium_row/duncan_idaho.avif",
     agentIcons: [AgentIcon.CITY],
@@ -1219,36 +1242,6 @@ export const IMPERIUM_ROW_DECK: Card[] = [
         reward: {
           water: 1,
           combat: 2
-        }
-      }
-    ]
-  },
-  {
-    id: 1017,
-    name: "Fedaykin Death Commando",
-    image: "imperium_row/fedaykin_death_commando.avif",
-    faction: [FactionType.FREMEN],
-    agentIcons: [AgentIcon.SPICE_TRADE, AgentIcon.CITY],
-    cost: 3,
-    playEffect: [
-      {
-        reward: {
-          trash : 1
-        }
-      }
-    ],
-    revealEffect: [
-      {
-        reward: {
-          persuasion: 1
-        }
-      },
-      {
-        requirement: {
-          bond: FactionType.FREMEN
-        },
-        reward: {
-          combat: 3
         }
       }
     ]
@@ -1285,6 +1278,36 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   },
   {
     id: 1019,
+    name: "Fedaykin Death Commando",
+    image: "imperium_row/fedaykin_death_commando.avif",
+    faction: [FactionType.FREMEN],
+    agentIcons: [AgentIcon.SPICE_TRADE, AgentIcon.CITY],
+    cost: 3,
+    playEffect: [
+      {
+        reward: {
+          trash : 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      },
+      {
+        requirement: {
+          bond: FactionType.FREMEN
+        },
+        reward: {
+          combat: 3
+        }
+      }
+    ]
+  },
+  {
+    id: 1020,
     name: "Firm Grip",
     image: "imperium_row/firm_grip.avif",
     faction: [FactionType.EMPEROR],
@@ -1319,32 +1342,6 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     ]
   },
   {
-    id: 1020,
-    name: "Fremen Camp",
-    image: "imperium_row/fremen_camp.avif",
-    faction: [FactionType.FREMEN],
-    agentIcons: [AgentIcon.SPICE_TRADE],
-    cost: 4,
-    playEffect: [
-      {
-        cost: {
-          spice: 2
-        },
-        reward: {
-          troops: 3
-        }
-      }
-    ],
-    revealEffect: [
-      {
-        reward: {
-          persuasion: 2,
-          combat: 1
-        }
-      }
-    ]
-  },
-  {
     id: 1021,
     name: "Fremen Camp",
     image: "imperium_row/fremen_camp.avif",
@@ -1372,30 +1369,26 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   },
   {
     id: 1022,
-    name: "Gene Manipulation",
-    image: "imperium_row/gene_manipulation.avif",
-    faction: [FactionType.BENE_GESSERIT],
-    agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
-    cost: 3,
+    name: "Fremen Camp",
+    image: "imperium_row/fremen_camp.avif",
+    faction: [FactionType.FREMEN],
+    agentIcons: [AgentIcon.SPICE_TRADE],
+    cost: 4,
     playEffect: [
       {
-        reward: {
-          trash: 1
-        }
-      },
-      {
-        requirement: {
-          inPlay: FactionType.BENE_GESSERIT
+        cost: {
+          spice: 2
         },
         reward: {
-          spice: 2
+          troops: 3
         }
       }
     ],
     revealEffect: [
       {
         reward: {
-          persuasion: 2
+          persuasion: 2,
+          combat: 1
         }
       }
     ]
@@ -1432,22 +1425,30 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   },
   {
     id: 1024,
-    name: "Guild Administrator",
-    image: "imperium_row/guild_administrator.avif",
-    faction: [FactionType.SPACING_GUILD],
-    agentIcons: [AgentIcon.SPACING_GUILD, AgentIcon.SPICE_TRADE],
-    cost: 2,
+    name: "Gene Manipulation",
+    image: "imperium_row/gene_manipulation.avif",
+    faction: [FactionType.BENE_GESSERIT],
+    agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
+    cost: 3,
     playEffect: [
       {
         reward: {
           trash: 1
+        }
+      },
+      {
+        requirement: {
+          inPlay: FactionType.BENE_GESSERIT
+        },
+        reward: {
+          spice: 2
         }
       }
     ],
     revealEffect: [
       {
         reward: {
-          persuasion: 1
+          persuasion: 2
         }
       }
     ]
@@ -1476,26 +1477,22 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   },
   {
     id: 1026,
-    name: "Gun Thopter",
-    image: "imperium_row/gun_thopter.avif",
-    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
-    cost: 4,
+    name: "Guild Administrator",
+    image: "imperium_row/guild_administrator.avif",
+    faction: [FactionType.SPACING_GUILD],
+    agentIcons: [AgentIcon.SPACING_GUILD, AgentIcon.SPICE_TRADE],
+    cost: 2,
     playEffect: [
       {
         reward: {
-          custom: "GUN_THOPTER"
+          trash: 1
         }
       }
     ],
     revealEffect: [
       {
         reward: {
-          combat: 3
-        }
-      },
-      {
-        reward: {
-          deployTroops: 1
+          persuasion: 1
         }
       }
     ]
@@ -1509,7 +1506,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     playEffect: [
       {
         reward: {
-          custom: "GUN_THOPTER"
+          custom: CustomEffect.GUN_THOPTER
         }
       }
     ],
@@ -1528,6 +1525,32 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   },
   {
     id: 1028,
+    name: "Gun Thopter",
+    image: "imperium_row/gun_thopter.avif",
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 4,
+    playEffect: [
+      {
+        reward: {
+          custom: CustomEffect.GUN_THOPTER
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          combat: 3
+        }
+      },
+      {
+        reward: {
+          deployTroops: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1029,
     name: "Gurney Halleck",
     image: "imperium_row/gurney_halleck.avif",
     agentIcons: [AgentIcon.CITY],
@@ -1553,32 +1576,6 @@ export const IMPERIUM_ROW_DECK: Card[] = [
         reward: {
           troops: 2,
           deployTroops: 2
-        }
-      }
-    ]
-  },
-  {
-    id: 1029,
-    name: "Imperial Spy",
-    image: "imperium_row/imperial_spy.avif",
-    faction: [FactionType.EMPEROR],
-    agentIcons: [AgentIcon.EMPEROR],
-    cost: 2,
-    playEffect: [
-      {
-        cost: {
-          trashThisCard: true
-        },
-        reward: {
-          intrigueCards: 1
-        }
-      }
-    ],
-    revealEffect: [
-      {
-        reward: {
-          persuasion: 1,
-          combat: 1
         }
       }
     ]
@@ -1611,6 +1608,32 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   },
   {
     id: 1031,
+    name: "Imperial Spy",
+    image: "imperium_row/imperial_spy.avif",
+    faction: [FactionType.EMPEROR],
+    agentIcons: [AgentIcon.EMPEROR],
+    cost: 2,
+    playEffect: [
+      {
+        cost: {
+          trashThisCard: true
+        },
+        reward: {
+          intrigueCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          combat: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1032,
     name: "Kwisatz Haderach",
     image: "imperium_row/kwisatz_haderach.avif",
     faction: [FactionType.BENE_GESSERIT],
@@ -1633,7 +1656,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     ]
   },
   {
-    id: 1032,
+    id: 1033,
     name: "Lady Jessica",
     image: "imperium_row/lady_jessica.avif",
     faction: [FactionType.BENE_GESSERIT],
@@ -1669,7 +1692,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     ]
   },
   {
-    id: 1033,
+    id: 1034,
     name: "Liet Kynes",
     image: "imperium_row/liet_kynes.avif",
     faction: [FactionType.FREMEN, FactionType.EMPEROR],
@@ -1686,40 +1709,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     revealEffect: [
       {
         reward: {
-          custom: "LIET_KYNES"
-        }
-      }
-    ]
-  },
-  {
-    id: 1034,
-    name: "Missionaria Protectiva",
-    image: "imperium_row/missionaria_protectiva.avif",
-    faction: [FactionType.BENE_GESSERIT],
-    agentIcons: [AgentIcon.CITY],
-    cost: 1,
-    playEffect: [
-      {
-        requirement: {
-          inPlay: FactionType.BENE_GESSERIT
-        },
-        reward: {
-          influence: {
-            chooseOne: true,
-            amounts: [
-              { faction: FactionType.BENE_GESSERIT, amount: 1 },
-              { faction: FactionType.FREMEN, amount: 1 },
-              { faction: FactionType.SPACING_GUILD, amount: 1 },
-              { faction: FactionType.EMPEROR, amount: 1 }
-            ]
-          }
-        }
-      }
-    ],
-    revealEffect: [
-      {
-        reward: {
-          persuasion: 1
+          custom: CustomEffect.LIET_KYNES
         }
       }
     ]
@@ -1759,31 +1749,39 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   },
   {
     id: 1036,
-    name: "Other Memory",
-    image: "imperium_row/other_memory.avif",
+    name: "Missionaria Protectiva",
+    image: "imperium_row/missionaria_protectiva.avif",
     faction: [FactionType.BENE_GESSERIT],
-    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
-    cost: 4,
+    agentIcons: [AgentIcon.CITY],
+    cost: 1,
     playEffect: [
       {
-        reward: {
-          drawCards: 1,
-          custom: "OTHER_MEMORY"
+        requirement: {
+          inPlay: FactionType.BENE_GESSERIT
         },
-        choiceOpt: true
-        // implement OR effects
+        reward: {
+          influence: {
+            chooseOne: true,
+            amounts: [
+              { faction: FactionType.BENE_GESSERIT, amount: 1 },
+              { faction: FactionType.FREMEN, amount: 1 },
+              { faction: FactionType.SPACING_GUILD, amount: 1 },
+              { faction: FactionType.EMPEROR, amount: 1 }
+            ]
+          }
+        }
       }
     ],
     revealEffect: [
       {
         reward: {
-          persuasion: 2
+          persuasion: 1
         }
       }
     ]
   },
   {
-    id: 1036,
+    id: 1037,
     name: "Other Memory",
     image: "imperium_row/other_memory.avif",
     faction: [FactionType.BENE_GESSERIT],
@@ -1799,7 +1797,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       },
       {
         reward: {
-          custom: "OTHER_MEMORY"
+          custom: CustomEffect.OTHER_MEMORY
         },
         choiceOpt: true
       }
@@ -1808,6 +1806,115 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       {
         reward: {
           persuasion: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1038,
+    name: "Opulence",
+    image: "imperium_row/opulence.avif",
+    faction: [FactionType.EMPEROR],
+    agentIcons: [AgentIcon.EMPEROR],
+    cost: 6,
+    playEffect: [
+      {
+        reward: {
+          solari: 3
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1
+        }
+      },
+      {
+        cost: {
+          solari: 6
+        },
+        reward: {
+          victoryPoints: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1039,
+    name: "Piter De Vries",
+    image: "imperium_row/piter_de_vries.avif",
+    agentIcons: [AgentIcon.CITY, AgentIcon.LANDSRAAD],
+    cost: 5,
+    playEffect: [
+      {
+        reward: {
+          intrigueCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 3,
+          combat: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1040,
+    name: "Power Play",
+    image: "imperium_row/power_play.avif",
+    agentIcons: [AgentIcon.EMPEROR, AgentIcon.SPACING_GUILD, AgentIcon.BENE_GESSERIT, AgentIcon.FREMEN],
+    cost: 5,
+    playEffect: [
+      {
+        reward: {
+          custom: CustomEffect.POWER_PLAY,//TODO can trash this card before getting effect
+        },
+      },
+      {
+        reward: {
+          trashThisCard: true
+        }
+      }
+    ]
+  },
+  {
+    id: 1041,
+    name: "Power Play",
+    image: "imperium_row/power_play.avif",
+    agentIcons: [AgentIcon.EMPEROR, AgentIcon.SPACING_GUILD, AgentIcon.BENE_GESSERIT, AgentIcon.FREMEN],
+    cost: 5,
+    playEffect: [
+      {
+        reward: {
+          custom: CustomEffect.POWER_PLAY,//TODO can trash this card before getting effect
+        },
+      },
+      {
+        reward: {
+          trashThisCard: true
+        }
+      }
+    ]
+  },
+  {
+    id: 1042,
+    name: "Power Play",
+    image: "imperium_row/power_play.avif",
+    agentIcons: [AgentIcon.EMPEROR, AgentIcon.SPACING_GUILD, AgentIcon.BENE_GESSERIT, AgentIcon.FREMEN],
+    cost: 5,
+    playEffect: [
+      {
+        reward: {
+          custom: CustomEffect.POWER_PLAY,//TODO can trash this card before getting effect
+        },
+      },
+      {
+        reward: {
+          trashThisCard: true
         }
       }
     ]

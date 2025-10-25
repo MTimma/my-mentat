@@ -474,4 +474,5 @@ export enum CustomEffect {
   GUN_THOPTER = 'GUN_THOPTER',
   KWISATZ_HADERACH = 'KWISATZ_HADERACH',
   LIET_KYNES = 'LIET_KYNES',
+  POWER_PLAY = 'POWER_PLAY', // TODO need to implement
 }
