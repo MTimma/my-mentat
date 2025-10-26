@@ -1,4 +1,3 @@
-import { transform } from 'framer-motion'
 import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS, CustomEffect } from '../types/GameTypes'
 // export const STARTING_DECK: Card[] = [
 //   {
@@ -392,23 +391,58 @@ export const STARTING_DECK: Card[] = [
     ]
   },
   {
-    id: 1038,
-    name: "Piter De Vries",
-    image: "imperium_row/piter_de_vries.avif",
-    agentIcons: [AgentIcon.CITY, AgentIcon.LANDSRAAD],
-    cost: 5,
-    playEffect: [
+    id: 1048,
+    name: "Scout",
+    image: "imperium_row/scout.avif",
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 1,
+    revealEffect: [
       {
         reward: {
-          intrigueCards: 1
+          persuasion: 1,
+          combat: 1,
+          retreatTroops: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1051,
+    name: "Shifting Allegiances",
+    image: "imperium_row/shifting_allegiances.avif",
+    agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.SPICE_TRADE],
+    cost: 3,
+    playEffect: [
+      {
+        cost: {
+          spice: 2,
+          influence: {
+            chooseOne: true,
+            amounts: [
+              { faction: FactionType.SPACING_GUILD, amount: 1 },
+              { faction: FactionType.FREMEN, amount: 1 },
+              { faction: FactionType.BENE_GESSERIT, amount: 1 },
+              { faction: FactionType.EMPEROR, amount: 1 },
+            ]
+          }
+        },
+        reward: {
+          influence: {
+            chooseOne: true,
+            amounts: [
+              { faction: FactionType.SPACING_GUILD, amount: 2 },
+              { faction: FactionType.FREMEN, amount: 2 },
+              { faction: FactionType.BENE_GESSERIT, amount: 2 },
+              { faction: FactionType.EMPEROR, amount: 2 },
+            ]
+          }
         }
       }
     ],
     revealEffect: [
       {
         reward: {
-          persuasion: 3,
-          combat: 1
+          persuasion: 2
         }
       }
     ]
@@ -914,28 +948,6 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     ]
   },
   {
-    id: 1003,
-    name: "Assassination Mission",
-    image: "imperium_row/assassination_mission.png",
-    agentIcons: [],
-    cost: 1,
-    trashEffect: [
-      {
-        reward: {
-          solari: 1
-        }
-      }
-    ],
-    revealEffect: [
-      {
-        reward: {
-          combat: 1,
-          solari: 1
-        }
-      }
-    ]
-  },
-  {
     id: 1004,
     name: "Assassination Mission",
     image: "imperium_row/assassination_mission.png",
@@ -1195,32 +1207,6 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     ]
   },
   {
-    id: 1016,
-    name: "Duncan Idaho",
-    image: "imperium_row/duncan_idaho.avif",
-    agentIcons: [AgentIcon.CITY],
-    cost: 4,
-    playEffect: [
-      {
-        cost: {
-          water : 1
-        },
-        reward: {
-          drawCards: 1,
-          troops: 1
-        }
-      }
-    ],
-    revealEffect: [
-      {
-        reward: {
-          water: 1,
-          combat: 2
-        }
-      }
-    ]
-  },
-  {
     id: 1017,
     name: "Duncan Idaho",
     image: "imperium_row/duncan_idaho.avif",
@@ -1322,9 +1308,9 @@ export const IMPERIUM_ROW_DECK: Card[] = [
           influence: { 
             chooseOne: true, 
             amounts: [
-              {faction: [FactionType.SPACING_GUILD],amount: 1},
-              {faction: [FactionType.FREMEN],amount: 1},
-              {faction: [FactionType.BENE_GESSERIT],amount: 1},
+              {faction: FactionType.SPACING_GUILD,amount: 1},
+              {faction: FactionType.FREMEN,amount: 1},
+              {faction: FactionType.BENE_GESSERIT,amount: 1},
             ]
           }
         }
@@ -1498,6 +1484,59 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     ]
   },
   {
+    id: 1026,
+    name: "Guild Ambassador",
+    image: "imperium_row/guild_ambassador.avif",
+    faction: [FactionType.SPACING_GUILD],
+    agentIcons: [AgentIcon.LANDSRAAD],
+    cost: 4,
+    playEffect: [
+      {
+        choiceOpt: true,
+        reward: {
+          influence: {
+            amounts: [
+              { faction: FactionType.SPACING_GUILD, amount: 1 },
+            ]
+          }
+        }
+      },
+      {
+        reward: {
+          spice: 2
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        requirement: {
+          alliance: FactionType.SPACING_GUILD
+        },
+        cost: {
+          spice: 3
+        },
+        reward: {
+          victoryPoints: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1026,
+    name: "Guild Bankers",
+    image: "imperium_row/guild_bankers.avif",
+    faction: [FactionType.SPACING_GUILD],
+    agentIcons: [AgentIcon.EMPEROR, AgentIcon.SPACING_GUILD, AgentIcon.LANDSRAAD],
+    cost: 3,
+    revealEffect: [
+      {
+        reward: {
+          custom: CustomEffect.GUILD_BANKERS
+        }
+      }
+    ]
+  },
+  {
     id: 1027,
     name: "Gun Thopter",
     image: "imperium_row/gun_thopter.avif",
@@ -1645,7 +1684,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
       {
         beforePlaceAgent: { recallAgent: true },
         reward: {
-          custom: "KWISATZ_HADERACH"
+          custom: CustomEffect.KWISATZ_HADERACH
         }
       },
       {
@@ -1918,5 +1957,628 @@ export const IMPERIUM_ROW_DECK: Card[] = [
         }
       }
     ]
+  },
+  {
+    id: 1043,
+    name: "Reverend Mother Mohiam",
+    image: "imperium_row/reverend_mother_mohiam.avif",
+    faction: [FactionType.EMPEROR, FactionType.BENE_GESSERIT],
+    agentIcons: [AgentIcon.EMPEROR, AgentIcon.BENE_GESSERIT],
+    cost: 6,
+    playEffect: [
+      {
+        reward: {
+          custom: CustomEffect.REVEREND_MOTHER_MOHIAM,//TODO can trash this card before getting effect
+        },
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2,
+          spice: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1044,
+    name: "Sardaukar Infantry",
+    image: "imperium_row/sardaukar_infantry.avif",
+    faction: [FactionType.EMPEROR],
+    agentIcons: [],
+    cost: 1,
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          combat: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1045,
+    name: "Sardaukar Infantry",
+    image: "imperium_row/sardaukar_infantry.avif",
+    faction: [FactionType.EMPEROR],
+    agentIcons: [],
+    cost: 1,
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          combat: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1046,
+    name: "Sardaukar Legion",
+    image: "imperium_row/sardaukar_legion.avif",
+    faction: [FactionType.EMPEROR],
+    agentIcons: [AgentIcon.EMPEROR, AgentIcon.LANDSRAAD],
+    cost: 5,
+    playEffect: [
+      {
+        reward: {
+          troops: 2
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          deployTroops: 3
+        }
+      }
+    ]
+  },
+  {
+    id: 1047,
+    name: "Sardaukar Legion",
+    image: "imperium_row/sardaukar_legion.avif",
+    faction: [FactionType.EMPEROR],
+    agentIcons: [AgentIcon.EMPEROR, AgentIcon.LANDSRAAD],
+    cost: 5,
+    playEffect: [
+      {
+        reward: {
+          troops: 2
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          deployTroops: 3
+        }
+      }
+    ]
+  },
+  {
+    id: 1048,
+    name: "Scout",
+    image: "imperium_row/scout.avif",
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 1,
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          combat: 1,
+          retreatTroops: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1049,
+    name: "Scout",
+    image: "imperium_row/scout.avif",
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 1,
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          combat: 1,
+          retreatTroops: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1050,
+    name: "Shifting Allegiances",
+    image: "imperium_row/shifting_allegiances.avif",
+    agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.SPICE_TRADE],
+    cost: 3,
+    playEffect: [
+      {
+        cost: {
+          spice: 2,
+          influence: {
+            chooseOne: true,
+            amounts: [
+              { faction: FactionType.SPACING_GUILD, amount: 1 },
+              { faction: FactionType.FREMEN, amount: 1 },
+              { faction: FactionType.BENE_GESSERIT, amount: 1 },
+              { faction: FactionType.EMPEROR, amount: 1 },
+            ]
+          }
+        },
+        reward: {
+          influence: {
+            chooseOne: true,
+            amounts: [
+              { faction: FactionType.SPACING_GUILD, amount: 2 },
+              { faction: FactionType.FREMEN, amount: 2 },
+              { faction: FactionType.BENE_GESSERIT, amount: 2 },
+              { faction: FactionType.EMPEROR, amount: 2 },
+            ]
+          }
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1051,
+    name: "Shifting Allegiances",
+    image: "imperium_row/shifting_allegiances.avif",
+    agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.SPICE_TRADE],
+    cost: 3,
+    playEffect: [
+      {
+        cost: {
+          spice: 2,
+          influence: {
+            chooseOne: true,
+            amounts: [
+              { faction: FactionType.SPACING_GUILD, amount: 1 },
+              { faction: FactionType.FREMEN, amount: 1 },
+              { faction: FactionType.BENE_GESSERIT, amount: 1 },
+              { faction: FactionType.EMPEROR, amount: 1 },
+            ]
+          }
+        },
+        reward: {
+          influence: {
+            chooseOne: true,
+            amounts: [
+              { faction: FactionType.SPACING_GUILD, amount: 2 },
+              { faction: FactionType.FREMEN, amount: 2 },
+              { faction: FactionType.BENE_GESSERIT, amount: 2 },
+              { faction: FactionType.EMPEROR, amount: 2 },
+            ]
+          }
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1052,
+    name: "Sietch Reverend Mother",
+    image: "imperium_row/sietch_reverend_mother.avif",
+    faction: [FactionType.BENE_GESSERIT, FactionType.FREMEN],
+    agentIcons: [AgentIcon.BENE_GESSERIT, AgentIcon.FREMEN],
+    cost: 4,
+    playEffect: [
+      {
+        reward: {
+          trash: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        requirement: {
+          bond: FactionType.FREMEN
+        },
+        reward: {
+          persuasion: 3,
+          spice: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1053,
+    name: "Smuggler's Thopter",
+    image: "imperium_row/smugglers_thopter.avif",
+    faction: [FactionType.SPACING_GUILD],
+    agentIcons: [AgentIcon.SPICE_TRADE],
+    cost: 4,
+    revealEffect: [
+      {
+        requirement: {
+          influence: {  
+            faction: FactionType.SPACING_GUILD,
+            amount: 2
+          }
+        },
+        reward: {
+          persuasion: 1,
+          spice: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1054,
+    name: "Smuggler's Thopter",
+    image: "imperium_row/smugglers_thopter.avif",
+    faction: [FactionType.SPACING_GUILD],
+    agentIcons: [AgentIcon.SPICE_TRADE],
+    cost: 4,
+    revealEffect: [
+      {
+        requirement: {
+          influence: {  
+            faction: FactionType.SPACING_GUILD,
+            amount: 2
+          }
+        },
+        reward: {
+          persuasion: 1,
+          spice: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1055,
+    name: "Space Travel",
+    image: "imperium_row/space_travel.avif",
+    faction: [FactionType.SPACING_GUILD],
+    agentIcons: [AgentIcon.SPACING_GUILD],
+    cost: 3,
+    playEffect: [
+      {
+        reward: {
+          drawCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1056,
+    name: "Space Travel",
+    image: "imperium_row/space_travel.avif",
+    faction: [FactionType.SPACING_GUILD],
+    agentIcons: [AgentIcon.SPACING_GUILD],
+    cost: 3,
+    playEffect: [
+      {
+        reward: {
+          drawCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1057,
+    name: "Spice Hunter",
+    image: "imperium_row/spice_hunter.avif",
+    faction: [FactionType.FREMEN],
+    agentIcons: [AgentIcon.FREMEN, AgentIcon.SPICE_TRADE],
+    cost: 2,
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          combat: 1
+        }
+      },
+      {
+        requirement: {
+          bond: FactionType.FREMEN
+        },
+        reward: {
+          spice: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1057,
+    name: "Spice Hunter",
+    image: "imperium_row/spice_hunter.avif",
+    faction: [FactionType.FREMEN],
+    agentIcons: [AgentIcon.FREMEN, AgentIcon.SPICE_TRADE],
+    cost: 2,
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          combat: 1
+        }
+      },
+      {
+        requirement: {
+          bond: FactionType.FREMEN
+        },
+        reward: {
+          spice: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1058,
+    name: "Spice Smugglers",
+    image: "imperium_row/spice_smugglers.avif",
+    faction: [FactionType.SPACING_GUILD],
+    agentIcons: [AgentIcon.CITY],
+    cost: 2,
+    playEffect: [
+      {
+        cost: {
+          spice: 2
+        },
+        reward: {
+          influence: {
+            amounts: [
+              { faction: FactionType.SPACING_GUILD, amount: 1 },
+            ]
+          },
+          solari: 3
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          combat: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1058,
+    name: "Spice Smugglers",
+    image: "imperium_row/spice_smugglers.avif",
+    faction: [FactionType.SPACING_GUILD],
+    agentIcons: [AgentIcon.CITY],
+    cost: 2,
+    playEffect: [
+      {
+        cost: {
+          spice: 2
+        },
+        reward: {
+          influence: {
+            amounts: [
+              { faction: FactionType.SPACING_GUILD, amount: 1 },
+            ]
+          },
+          solari: 3
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          combat: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1059,
+    name: "Stilgar",
+    image: "imperium_row/stilgar.avif",
+    faction: [FactionType.FREMEN],
+    agentIcons: [AgentIcon.FREMEN, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 5,
+    playEffect: [
+      {
+        reward: {
+          water: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2,
+          combat: 3
+        }
+      }
+    ]
+  },
+  {
+    id: 1060,
+    name: "Test of Humanity",
+    image: "imperium_row/test_of_humanity.avif",
+    faction: [FactionType.BENE_GESSERIT],
+    agentIcons: [AgentIcon.BENE_GESSERIT, AgentIcon.CITY, AgentIcon.LANDSRAAD],
+    cost: 3,
+    playEffect: [
+      {
+        reward: {
+          custom: CustomEffect.TEST_OF_HUMANITY
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1061,
+    name: "The Voice",
+    image: "imperium_row/the_voice.avif",
+    faction: [FactionType.BENE_GESSERIT],
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 2,
+    playEffect: [
+      {
+        reward: {
+          custom: CustomEffect.THE_VOICE
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1062,
+    name: "The Voice",
+    image: "imperium_row/the_voice.avif",
+    faction: [FactionType.BENE_GESSERIT],
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 2,
+    playEffect: [
+      {
+        reward: {
+          custom: CustomEffect.THE_VOICE
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1063,
+    name: "Thufir Hawat",
+    image: "imperium_row/thufir_hawat.avif",
+    agentIcons: [AgentIcon.EMPEROR, AgentIcon.SPACING_GUILD, AgentIcon.BENE_GESSERIT, AgentIcon.FREMEN, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 5,
+    playEffect: [
+      {
+        reward: {
+          drawCards: 1
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 1,
+          intrigueCards: 1
+        }
+      }
+    ]
+  },
+  {
+    id: 1064,
+    name: "Worm Riders",
+    image: "imperium_row/worm_riders.avif",
+    faction: [FactionType.FREMEN],
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 6,
+    playEffect: [
+      {
+        reward: {
+          spice: 2
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        requirement: {
+          influence: {
+            faction: FactionType.FREMEN,
+            amount: 2
+          }
+        },
+        reward: {
+          combat: 4
+        }
+      },
+      {
+        requirement: {
+          alliance: FactionType.FREMEN
+        },
+        reward: {
+          combat: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1065,
+    name: "Worm Riders",
+    image: "imperium_row/worm_riders.avif",
+    faction: [FactionType.FREMEN],
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 6,
+    playEffect: [
+      {
+        reward: {
+          spice: 2
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        requirement: {
+          influence: {
+            faction: FactionType.FREMEN,
+            amount: 2
+          }
+        },
+        reward: {
+          combat: 4
+        }
+      },
+      {
+        requirement: {
+          alliance: FactionType.FREMEN
+        },
+        reward: {
+          combat: 2
+        }
+      }
+    ]
   }
+
 ]

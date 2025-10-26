@@ -97,7 +97,7 @@ export enum AgentIcon {
 export const ALL_AGENT_ICONS: AgentIcon[] =
   Object.values(AgentIcon) as AgentIcon[];
 
-export interface InfluenceReward {
+export interface InfluenceAmounts {
   amounts: InfluenceAmount[]
   chooseOne?: boolean
 }
@@ -177,7 +177,7 @@ export interface Cost {
   trashThisCard?: boolean
   trash?: number
   discard?: number
-  influence?: InfluenceAmount
+  influence?: InfluenceAmounts
   troops?: number
   retreatTroops?: number
   retreatUnits?: number
@@ -201,7 +201,7 @@ export interface Reward {
   retreatUnits?: number
   deployTroops?: number
   custom?: CustomEffect
-  influence?: InfluenceReward
+  influence?: InfluenceAmounts
 }
 
 export interface CardEffect<R extends CardEffectReq = CardEffectReq> {
@@ -248,7 +248,7 @@ export interface Card {
     spice?: number,
     troops?: number,
     trash?: number,
-    influence?: InfluenceReward,
+    influence?: InfluenceAmounts,
     water?: number,
   }
 }
@@ -475,4 +475,8 @@ export enum CustomEffect {
   KWISATZ_HADERACH = 'KWISATZ_HADERACH',
   LIET_KYNES = 'LIET_KYNES',
   POWER_PLAY = 'POWER_PLAY', // TODO need to implement
+  REVEREND_MOTHER_MOHIAM = 'REVEREND_MOTHER_MOHIAM', // TODO need to implement
+  TEST_OF_HUMANITY = 'TEST_OF_HUMANITY', // TODO need to implement
+  THE_VOICE = 'THE_VOICE', // TODO need to implement
+  GUILD_BANKERS = 'GUILD_BANKERS', // TODO need to implement
 }

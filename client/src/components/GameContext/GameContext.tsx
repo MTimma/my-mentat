@@ -103,7 +103,7 @@ const initialGameState: GameState = {
   arrakisLiaisonDeck: ARRAKIS_LIAISON_DECK,
   foldspaceDeck: FOLDSPACE_DECK,
   imperiumRowDeck: IMPERIUM_ROW_DECK,
-  imperiumRow: [IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2], IMPERIUM_ROW_DECK[10], IMPERIUM_ROW_DECK[38]],
+  imperiumRow: [IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2], IMPERIUM_ROW_DECK[47], IMPERIUM_ROW_DECK[38]],
   intrigueDeck: [],
   intrigueDiscard: [],
   conflictsDiscard: [],
