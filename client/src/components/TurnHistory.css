@@ -55,6 +55,8 @@
   padding: 10px 18px;
   border-bottom: 1px solid rgba(255,255,255,0.07);
   transition: background 0.2s;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .turn-history-row.current {
@@ -100,10 +102,60 @@
   font-size: 0.95em;
   cursor: pointer;
   transition: background 0.2s;
+  margin-left: auto;
 }
 .details-button:hover {
   background: #d4af37;
   color: #222;
+}
+
+/* Gains display */
+.turn-gains {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.gain-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.9em;
+  font-weight: 500;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.gain-item.positive {
+  color: #6dd47e;
+}
+
+.gain-item.negative {
+  color: #e74c3c;
+}
+
+.gain-amount {
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.gain-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  vertical-align: middle;
+  filter: brightness(1.1);
+}
+
+.gain-text-fallback {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  padding: 0 2px;
 }
 
 /* Modal for turn details */
