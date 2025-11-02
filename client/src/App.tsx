@@ -108,6 +108,16 @@ const GameContent = () => {
     setShowSelectiveBreeding(true)
   }
 
+  const handleClaimReward = (rewardId: string) => {
+    if (!activePlayer) return;
+    dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId })
+  }
+
+  const handleClaimAllRewards = () => {
+    if (!activePlayer) return;
+    dispatch({ type: 'CLAIM_ALL_REWARDS', playerId: activePlayer.id })
+  }
+
   return (
     <div className="game-container">
       <div className="turn-history-container">
@@ -193,6 +203,9 @@ const GameContent = () => {
             setShowSelectiveBreeding(false)
           }}
           onSelectiveBreedingCancel={() => setShowSelectiveBreeding(false)}
+          pendingRewards={gameState.pendingRewards}
+          onClaimReward={handleClaimReward}
+          onClaimAllRewards={handleClaimAllRewards}
         />
       </div>
       <div className="combat-results-container" hidden={gameState.phase !== GamePhase.COMBAT_REWARDS}>

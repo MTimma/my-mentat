@@ -327,6 +327,17 @@ export interface OptionalEffect {
   data?: { trashedCardId?: number }
 }
 
+export interface PendingReward {
+  id: string
+  source: {
+    type: GainSource
+    id: number
+    name: string
+  }
+  reward: Reward
+  isTrash: boolean // true if reward.trash or reward.trashThisCard
+}
+
 // Mandatory OR-choice effect generated when a card lists multiple rewards with `effectOR`.
 export interface ChoiceOption {
   cost?: Cost
@@ -466,6 +477,7 @@ export interface GameState {
   playArea: Record<number, Card[]>
   canEndTurn: boolean
   canAcquireIR: boolean
+  pendingRewards: PendingReward[]
 }
 
 export enum CustomEffect {

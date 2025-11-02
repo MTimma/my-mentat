@@ -300,3 +300,122 @@ button:disabled {
   height: 32px;
   margin-bottom: 0px;
 }
+
+/* Effects Bar - Unified display for all effect types */
+.effects-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  overflow-x: auto;
+  max-width: 1200px;
+}
+
+.effect-card {
+  min-width: 200px;
+  background: rgba(40, 40, 40, 0.9);
+  border: 2px solid #666;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.effect-card.mandatory {
+  border-color: #4CAF50;
+}
+
+.effect-card.optional {
+  border-style: dashed;
+  border-color: #FFC107;
+  opacity: 0.9;
+}
+
+.effect-card-header {
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: #fff;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #666;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.optional-tag {
+  font-size: 0.7rem;
+  color: #FFC107;
+  font-style: italic;
+}
+
+.effect-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.effect-btn {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  border: 1px solid #666;
+  border-radius: 4px;
+  background-color: #555;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.effect-btn:hover:not(:disabled) {
+  background-color: #666;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.effect-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.effect-btn.trash-reward {
+  border: 2px solid #ff6b6b;
+  background-color: #8b0000;
+  position: relative;
+}
+
+.effect-btn.trash-reward:hover:not(:disabled) {
+  background-color: #a00000;
+  border-color: #ff4444;
+}
+
+.warning-icon {
+  font-size: 1rem;
+  margin-right: 4px;
+}
+
+.effect-btn.optional {
+  border-color: #FFC107;
+  background-color: rgba(255, 193, 7, 0.2);
+}
+
+.effect-btn.choice {
+  border-color: #2196F3;
+  background-color: rgba(33, 150, 243, 0.2);
+}
+
+.get-mandatory-effects-button {
+  background-color: #4CAF50 !important;
+  color: white !important;
+  font-weight: bold;
+  padding: 0.75rem 1.5rem !important;
+  font-size: 1rem !important;
+  border: 2px solid #45a049 !important;
+}
+
+.get-mandatory-effects-button:hover:not(:disabled) {
+  background-color: #45a049 !important;
+}

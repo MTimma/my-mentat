@@ -30,7 +30,8 @@ import {
   FixedOptionsChoice,
   CustomEffect,
   ChoiceType,
-  CardPile
+  CardPile,
+  PendingReward
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { ARRAKIS_LIAISON_DECK, IMPERIUM_ROW_DECK } from '../../data/cards'
@@ -69,6 +70,8 @@ type GameAction =
   | { type: 'CUSTOM_EFFECT'; playerId: number; customEffect: CustomEffect; data: any }
   | { type: 'TRASH_CARD'; playerId: number; cardId: number; gainReward?: Reward }
   | { type: 'SELECT_CONFLICT'; conflictId: number }
+  | { type: 'CLAIM_REWARD'; playerId: number; rewardId: string }
+  | { type: 'CLAIM_ALL_REWARDS'; playerId: number }
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
 export const useGame = () => {
@@ -136,7 +139,8 @@ const initialGameState: GameState = {
   playArea: {} as Record<number, Card[]>,
   canEndTurn: false,
   canAcquireIR: false,
-  gains: []
+  gains: [],
+  pendingRewards: []
 }
 
 function determinePlacements(
@@ -422,6 +426,116 @@ function revealRequirementSatisfied(effect: RevealEffect, currCard: Card, state:
     }
   }
   return true;
+}
+
+// Helper function to apply a reward to a player (shared by CLAIM_REWARD and CLAIM_ALL_REWARDS)
+function applyRewardToPlayer(
+  reward: Reward,
+  player: Player,
+  gains: Gain[],
+  state: GameState,
+  source: { type: GainSource; id: number; name: string }
+) {
+  if (reward.spice) {
+    gains.push({
+      round: state.currentRound,
+      playerId: player.id,
+      sourceId: source.id,
+      name: source.name,
+      amount: reward.spice,
+      type: RewardType.SPICE,
+      source: source.type
+    })
+    player.spice += reward.spice
+  }
+  
+  if (reward.water) {
+    gains.push({
+      round: state.currentRound,
+      playerId: player.id,
+      sourceId: source.id,
+      name: source.name,
+      amount: reward.water,
+      type: RewardType.WATER,
+      source: source.type
+    })
+    player.water += reward.water
+  }
+  
+  if (reward.solari) {
+    gains.push({
+      round: state.currentRound,
+      playerId: player.id,
+      sourceId: source.id,
+      name: source.name,
+      amount: reward.solari,
+      type: RewardType.SOLARI,
+      source: source.type
+    })
+    player.solari += reward.solari
+  }
+  
+  if (reward.troops) {
+    gains.push({
+      round: state.currentRound,
+      playerId: player.id,
+      sourceId: source.id,
+      name: source.name,
+      amount: reward.troops,
+      type: RewardType.TROOPS,
+      source: source.type
+    })
+    player.troops += reward.troops
+  }
+  
+  if (reward.drawCards) {
+    gains.push({
+      round: state.currentRound,
+      playerId: player.id,
+      sourceId: source.id,
+      name: source.name,
+      amount: reward.drawCards,
+      type: RewardType.DRAW_CARDS,
+      source: source.type
+    })
+    player.handCount += reward.drawCards
+  }
+  
+  if (reward.intrigueCards) {
+    gains.push({
+      round: state.currentRound,
+      playerId: player.id,
+      sourceId: source.id,
+      name: source.name,
+      amount: reward.intrigueCards,
+      type: RewardType.INTRIGUE_CARDS,
+      source: source.type
+    })
+    player.intrigueCount += reward.intrigueCards
+  }
+  
+  if (reward.influence) {
+    reward.influence.amounts.forEach(inf => {
+      const currentInfluence = state.factionInfluence[inf.faction]?.[player.id] || 0
+      state.factionInfluence = {
+        ...state.factionInfluence,
+        [inf.faction]: {
+          ...state.factionInfluence[inf.faction],
+          [player.id]: currentInfluence + inf.amount
+        }
+      }
+    })
+  }
+  
+  // Handle trash
+  if (reward.trash || reward.trashThisCard) {
+    const trashedCardId = reward.trashThisCard || reward.trash
+    const trashedCard = player.deck.find(c => c.id === trashedCardId)
+    if (trashedCard) {
+      player.deck = player.deck.filter(c => c.id !== trashedCardId)
+      player.trash = [...player.trash, trashedCard]
+    }
+  }
 }
 
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -844,6 +958,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const currPlayer: Player = {...updatedPlayers.find(p => p.id === playerId)} as Player
       const card = currPlayer.deck.find(c => c.id === newState.selectedCard)
       const space = BOARD_SPACES.find((s: SpaceProps) => s.id === spaceId)
+      const pendingRewards: PendingReward[] = [...newState.pendingRewards]
       const tempCurrTurn: GameTurn = {
         playerId,
         type: TurnType.ACTION,
@@ -858,39 +973,51 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         pendingChoices: []
       }
       
+      // Helper to add pending reward
+      const addPendingReward = (reward: Reward, source: { type: GainSource; id: number; name: string }, isTrash: boolean = false) => {
+        const rewardId = `${source.type}-${source.id}-${crypto.randomUUID()}`
+        pendingRewards.push({
+          id: rewardId,
+          source,
+          reward,
+          isTrash
+        })
+      }
+      
       function applyCardPlayEffect(effect: CardEffect, card: Card, space: SpaceProps) {
+        // Add to pendingRewards: spice, water, solari, troops, drawCards, intrigueCards
         if (effect.reward.spice) {
-          updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: effect.reward.spice, type: RewardType.SPICE, source: GainSource.CARD })
-          currPlayer.spice += effect.reward.spice
+          addPendingReward({ spice: effect.reward.spice }, { type: GainSource.CARD, id: card.id, name: card.name })
         }
         if (effect.reward.water) {
-          updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: effect.reward.water, type: RewardType.WATER, source: GainSource.CARD })
-          currPlayer.water += effect.reward.water
+          addPendingReward({ water: effect.reward.water }, { type: GainSource.CARD, id: card.id, name: card.name })
         }
         if (effect.reward.solari) {
-          updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: effect.reward.solari, type: RewardType.SOLARI, source: GainSource.CARD })
-          currPlayer.solari += effect.reward.solari
+          addPendingReward({ solari: effect.reward.solari }, { type: GainSource.CARD, id: card.id, name: card.name })
         }
         if (effect.reward.troops) {
-          updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: effect.reward.troops, type: RewardType.TROOPS, source: GainSource.CARD })
-          currPlayer.troops += effect.reward.troops
-          tempCurrTurn.troopLimit = (tempCurrTurn.troopLimit || 0) + effect.reward.troops
+          addPendingReward({ troops: effect.reward.troops }, { type: GainSource.CARD, id: card.id, name: card.name })
         }
         if (effect.reward.drawCards) {
-          updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: effect.reward.drawCards, type: RewardType.DRAW, source: GainSource.CARD })
-          currPlayer.handCount += effect.reward.drawCards
+          addPendingReward({ drawCards: effect.reward.drawCards }, { type: GainSource.CARD, id: card.id, name: card.name })
         }
-        if ( effect.reward.intrigueCards) {
-          updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: effect.reward.intrigueCards, type: RewardType.INTRIGUE, source: GainSource.CARD })
-          currPlayer.intrigueCount += effect.reward.intrigueCards
+        if (effect.reward.intrigueCards) {
+          addPendingReward({ intrigueCards: effect.reward.intrigueCards }, { type: GainSource.CARD, id: card.id, name: card.name })
         }
+        
+        // Auto-apply pooled rewards: deployTroops
+        if (effect.reward.deployTroops) {
+          tempCurrTurn.troopLimit = (tempCurrTurn.troopLimit || 0) + effect.reward.deployTroops
+          updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: effect.reward.deployTroops, type: RewardType.DEPLOY, source: GainSource.CARD })
+        }
+        
+        // Auto-apply custom effects (calculated effects)
         if (effect.reward.custom) {
           switch (effect.reward.custom) {
             case CustomEffect.CARRYALL: {
               const spiceReward = space.effects?.find(e => e.reward.spice)?.reward.spice
               if (spiceReward) {
-                  updatedGains.push({ round: newState.currentRound, playerId: currPlayer.id, sourceId: card.id, name: card.name, amount: spiceReward, type: RewardType.SPICE, source: GainSource.CARD })
-                  currPlayer.spice += spiceReward
+                addPendingReward({ spice: spiceReward }, { type: GainSource.CARD, id: card.id, name: card.name })
               }
               break
             }
@@ -905,43 +1032,50 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             
           }
         }
+        
+        // Handle trash rewards
+        if (effect.reward.trash || effect.reward.trashThisCard) {
+          addPendingReward({ trash: effect.reward.trash, trashThisCard: effect.reward.trashThisCard }, { type: GainSource.CARD, id: card.id, name: card.name }, true)
+        }
       }
 
       function applySpaceEffect(effect: {cost?: Cost, reward: Reward}, updatedGains: Gain[], newState: GameState, playerId: number, space: SpaceProps, currPlayer: Player): void {
+        // Add to pendingRewards: solari, spice, water, troops, drawCards, intrigueCards
         if (effect.reward.solari) {
-          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.solari, type: RewardType.SOLARI, source: GainSource.BOARD_SPACE })
-          currPlayer.solari += effect.reward.solari
+          addPendingReward({ solari: effect.reward.solari }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
         }
         if (effect.reward.spice) {
-          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.spice, type: RewardType.SPICE, source: GainSource.BOARD_SPACE })
-          currPlayer.spice += effect.reward.spice
+          let totalSpice = effect.reward.spice
+          // Add bonus spice from maker spaces
           if (space.makerSpace) {
             const bonusSpice = { ...newState.bonusSpice }
-            currPlayer.spice += bonusSpice[space.makerSpace]
+            totalSpice += bonusSpice[space.makerSpace]
             bonusSpice[space.makerSpace] = 0
             newState.bonusSpice = bonusSpice
           }
+          addPendingReward({ spice: totalSpice }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
         }
         if (effect.reward.water) {
-          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.water, type: RewardType.WATER, source: GainSource.BOARD_SPACE })
-          currPlayer.water += effect.reward.water
+          addPendingReward({ water: effect.reward.water }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
         }
         if (effect.reward.troops) {
-          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.troops, type: RewardType.TROOPS, source: GainSource.BOARD_SPACE })
-          tempCurrTurn.troopLimit = (tempCurrTurn.troopLimit || 0) + effect.reward.troops
-          currPlayer.troops += effect.reward.troops
+          addPendingReward({ troops: effect.reward.troops }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
         }
+        if (effect.reward.drawCards) {
+          addPendingReward({ drawCards: effect.reward.drawCards }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
+        }
+        if (effect.reward.intrigueCards) {
+          addPendingReward({ intrigueCards: effect.reward.intrigueCards }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
+        }
+        
+        // Auto-apply pooled rewards: persuasion, deployTroops
         if (effect.reward.persuasion) {
           updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.persuasion, type: RewardType.PERSUASION, source: GainSource.BOARD_SPACE })
           currPlayer.persuasion += effect.reward.persuasion
         }
-        if (effect.reward.drawCards) {
-          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.drawCards, type: RewardType.DRAW, source: GainSource.BOARD_SPACE })
-          currPlayer.handCount += effect.reward.drawCards
-        }
-        if (effect.reward.intrigueCards) {
-          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.intrigueCards, type: RewardType.INTRIGUE, source: GainSource.BOARD_SPACE })
-          currPlayer.intrigueCount += effect.reward.intrigueCards
+        if (effect.reward.deployTroops) {
+          tempCurrTurn.troopLimit = (tempCurrTurn.troopLimit || 0) + effect.reward.deployTroops
+          updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: effect.reward.deployTroops, type: RewardType.DEPLOY, source: GainSource.BOARD_SPACE })
         }
     }
 
@@ -1079,16 +1213,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
       
-      // Add influence
+      // Add influence to pending rewards (single bumps)
       if (space.influence) {
-        const currentInfluence = newState.factionInfluence[space.influence.faction as FactionType]?.[playerId] || 0
-        newState.factionInfluence = {
-          ...newState.factionInfluence,
-          [space.influence.faction as FactionType]: {
-            ...newState.factionInfluence[space.influence.faction as FactionType],
-            [playerId]: currentInfluence + space.influence.amount
-          }
-        }
+        addPendingReward(
+          { influence: { amounts: [space.influence] } }, 
+          { type: GainSource.BOARD_SPACE, id: space.id, name: space.name }
+        )
       }
 
       // Update occupied spaces
@@ -1182,7 +1312,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ),
         occupiedSpaces: updatedOccupiedSpaces,
         currTurn: currentTurn,
-        canEndTurn: currentTurn.pendingChoices?.length ? false : true
+        pendingRewards,
+        canEndTurn: (currentTurn.pendingChoices?.length || pendingRewards.length) ? false : true
       }
     }
     case 'REVEAL_CARDS': {
@@ -1211,14 +1342,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedDeck = player.deck.filter(card => !cardIds.includes(card.id))
       const updatedPlayArea = [...player.playArea, ...revealedCards]
 
-      // Calculate reveal effects
+      // Calculate reveal effects - pooled resources
       let persuasionCount = 0
       let swordCount = 0
-      let spiceCount = 0
-      let waterCount = 0
-      let solariCount = 0
 
       const updatedGains: Gain[] = [...state.gains]
+      const pendingRewards: PendingReward[] = [...state.pendingRewards]
+
+      // Helper to add pending reward from card
+      const addPendingReward = (reward: Reward, source: { type: GainSource; id: number; name: string }, isTrash: boolean = false) => {
+        const rewardId = `${source.type}-${source.id}-${crypto.randomUUID()}`
+        pendingRewards.push({
+          id: rewardId,
+          source,
+          reward,
+          isTrash
+        })
+      }
 
       if(player.hasHighCouncilSeat) {
         updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: 0, name: "High Council Seat", amount: 2, type: RewardType.PERSUASION, source: GainSource.HIGH_COUNCIL } )
@@ -1242,6 +1382,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             return revealRequirementSatisfied(effect, card, state, playerId, revealedCards);
           })
           .forEach(effect => {
+            // Auto-apply pooled rewards: persuasion, combat
             if(effect.reward?.persuasion) {
               updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.persuasion, type: RewardType.PERSUASION, source: GainSource.CARD } )
               persuasionCount += effect.reward.persuasion
@@ -1250,27 +1391,29 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.combat, type: RewardType.COMBAT, source: GainSource.CARD } )
               swordCount += effect.reward.combat
             }
+            
+            // Add to pendingRewards: spice, water, solari, intrigueCards
             if(effect.reward?.spice) {
-              updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.spice, type: RewardType.SPICE, source: GainSource.CARD } )
-              spiceCount += effect.reward.spice
+              addPendingReward({ spice: effect.reward.spice }, { type: GainSource.CARD, id: card.id, name: card.name })
             }
             if(effect.reward?.water) {
-              updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.water, type: RewardType.WATER, source: GainSource.CARD } )
-              waterCount += effect.reward.water
+              addPendingReward({ water: effect.reward.water }, { type: GainSource.CARD, id: card.id, name: card.name })
             }
             if(effect.reward?.solari) {
-              updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.solari, type: RewardType.SOLARI, source: GainSource.CARD } )
-              solariCount += effect.reward.solari
+              addPendingReward({ solari: effect.reward.solari }, { type: GainSource.CARD, id: card.id, name: card.name })
             }
             if(effect.reward?.intrigueCards) {
-              updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.intrigueCards, type: RewardType.INTRIGUE, source: GainSource.CARD } )
-              player.intrigueCount += effect.reward.intrigueCards
+              addPendingReward({ intrigueCards: effect.reward.intrigueCards }, { type: GainSource.CARD, id: card.id, name: card.name })
             }
+            
+            // Auto-apply pooled: deployTroops
             if(effect.reward?.deployTroops) {
               updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.deployTroops, type: RewardType.DEPLOY, source: GainSource.CARD } )
               tempCurrTurn.troopLimit = (tempCurrTurn.troopLimit || 0) + effect.reward.deployTroops
               tempCurrTurn.canDeployTroops = true
             }
+            
+            // Auto-apply custom calculated effects
             if(effect.reward?.custom) {
               switch (effect.reward.custom) {
                 case CustomEffect.LIET_KYNES: {
@@ -1352,16 +1495,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 combatValue: updatedCombatValue,
                 handCount: 0,
                 persuasion: player.persuasion + persuasionCount,
-                spice: player.spice + spiceCount,
-                water: player.water + waterCount,
-                solari: player.solari + solariCount,
                 revealed: true
               }
             : p
         ),
         combatStrength: updatedCombatStrength,
         currTurn: currentTurn,
-        canEndTurn: pendingChoices.length>0? false : true,
+        pendingRewards,
+        canEndTurn: (pendingChoices.length > 0 || pendingRewards.length > 0) ? false : true,
         canAcquireIR: true
       }
     }
@@ -1663,6 +1804,228 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (gainReward) {
         newState = applyChoiceReward(newState, gainReward, playerId)
       }
+      
+      return newState
+    }
+    
+    // Helper function to apply a reward to a player (shared by CLAIM_REWARD and CLAIM_ALL_REWARDS)
+    const applyRewardToPlayer = (
+      reward: Reward,
+      player: Player,
+      gains: Gain[],
+      state: GameState,
+      source: { type: GainSource; id: number; name: string }
+    ): Player => {
+      const updatedPlayer = { ...player }
+      
+      if (reward.spice) {
+        gains.push({
+          round: state.currentRound,
+          playerId: player.id,
+          sourceId: source.id,
+          name: source.name,
+          amount: reward.spice,
+          type: RewardType.SPICE,
+          source: source.type
+        })
+        updatedPlayer.spice += reward.spice
+      }
+      
+      if (reward.water) {
+        gains.push({
+          round: state.currentRound,
+          playerId: player.id,
+          sourceId: source.id,
+          name: source.name,
+          amount: reward.water,
+          type: RewardType.WATER,
+          source: source.type
+        })
+        updatedPlayer.water += reward.water
+      }
+      
+      if (reward.solari) {
+        gains.push({
+          round: state.currentRound,
+          playerId: player.id,
+          sourceId: source.id,
+          name: source.name,
+          amount: reward.solari,
+          type: RewardType.SOLARI,
+          source: source.type
+        })
+        updatedPlayer.solari += reward.solari
+      }
+      
+      if (reward.troops) {
+        gains.push({
+          round: state.currentRound,
+          playerId: player.id,
+          sourceId: source.id,
+          name: source.name,
+          amount: reward.troops,
+          type: RewardType.TROOP,
+          source: source.type
+        })
+        updatedPlayer.troops += reward.troops
+      }
+      
+      if (reward.drawCards) {
+        for (let i = 0; i < reward.drawCards; i++) {
+          const newCard = updatedPlayer.deck[0]
+          if (newCard) {
+            updatedPlayer.deck = updatedPlayer.deck.slice(1)
+            updatedPlayer.handCount += 1
+          }
+        }
+        gains.push({
+          round: state.currentRound,
+          playerId: player.id,
+          sourceId: source.id,
+          name: source.name,
+          amount: reward.drawCards,
+          type: RewardType.DRAW_CARD,
+          source: source.type
+        })
+      }
+      
+      if (reward.intrigueCards) {
+        gains.push({
+          round: state.currentRound,
+          playerId: player.id,
+          sourceId: source.id,
+          name: source.name,
+          amount: reward.intrigueCards,
+          type: RewardType.INTRIGUE_CARD,
+          source: source.type
+        })
+        updatedPlayer.intrigueCount += reward.intrigueCards
+      }
+      
+      if (reward.influence) {
+        reward.influence.amounts.forEach(influenceAmount => {
+          const faction = influenceAmount.faction as FactionType
+          const currentInfluence = state.factionInfluence[faction]?.[player.id] || 0
+          // This will be updated in the state separately
+        })
+      }
+      
+      if (reward.trash || reward.trashThisCard) {
+        const trashedCardId = reward.trashThisCard || reward.trash
+        const trashedCard = updatedPlayer.deck.find(c => c.id === trashedCardId)
+        if (trashedCard) {
+          updatedPlayer.deck = updatedPlayer.deck.filter(c => c.id !== trashedCardId)
+          updatedPlayer.trash = [...updatedPlayer.trash, trashedCard]
+        }
+      }
+      
+      return updatedPlayer
+    }
+    
+    case 'CLAIM_REWARD': {
+      const { playerId, rewardId } = action
+      const player = state.players.find(p => p.id === playerId)
+      if (!player) return state
+      
+      // Find the reward
+      const reward = state.pendingRewards.find(r => r.id === rewardId)
+      if (!reward) return state
+      
+      let newState = { ...state }
+      let newPlayer = { ...player }
+      const newGains = [...state.gains]
+      
+      // If this is a trash reward, remove all pending rewards from the same card source
+      if (reward.isTrash) {
+        // Remove all pending rewards from the SAME card source
+        newState.pendingRewards = state.pendingRewards.filter(r => 
+          !(r.source.type === reward.source.type && r.source.id === reward.source.id)
+        )
+      } else {
+        // Regular reward - just remove this one
+        newState.pendingRewards = state.pendingRewards.filter(r => r.id !== rewardId)
+      }
+      
+      // Apply the reward using shared helper
+      newPlayer = applyRewardToPlayer(reward.reward, newPlayer, newGains, state, reward.source)
+      
+      // Handle influence updates (needs state modification)
+      if (reward.reward.influence) {
+        reward.reward.influence.amounts.forEach(inf => {
+          const currentInfluence = newState.factionInfluence[inf.faction]?.[playerId] || 0
+          newState.factionInfluence = {
+            ...newState.factionInfluence,
+            [inf.faction]: {
+              ...newState.factionInfluence[inf.faction],
+              [playerId]: currentInfluence + inf.amount
+            }
+          }
+        })
+      }
+      
+      // Update player
+      newState.players = newState.players.map(p => p.id === playerId ? newPlayer : p)
+      newState.gains = newGains
+      
+      // Update canEndTurn based on remaining pendingRewards and pendingChoices
+      newState.canEndTurn = (newState.pendingRewards.length === 0 && (!newState.currTurn?.pendingChoices?.length))
+      
+      return newState
+    }
+    case 'CLAIM_ALL_REWARDS': {
+      const { playerId } = action
+      const player = state.players.find(p => p.id === playerId)
+      if (!player) return state
+      
+      let newState = { ...state }
+      let newPlayer = { ...player }
+      const newGains = [...state.gains]
+      
+      // Group rewards by source to identify sources with trash
+      const sourcesWithTrash = new Set<string>()
+      
+      // Find all sources that contain trash rewards
+      state.pendingRewards.forEach(r => {
+        if (r.isTrash) {
+          sourcesWithTrash.add(`${r.source.type}-${r.source.id}`)
+        }
+      })
+      
+      // Apply rewards only from sources WITHOUT trash
+      const rewardsToApply = state.pendingRewards.filter(r => 
+        !sourcesWithTrash.has(`${r.source.type}-${r.source.id}`)
+      )
+      
+      // Apply each reward using shared helper
+      rewardsToApply.forEach(reward => {
+        newPlayer = applyRewardToPlayer(reward.reward, newPlayer, newGains, state, reward.source)
+        
+        // Handle influence updates (needs state modification)
+        if (reward.reward.influence) {
+          reward.reward.influence.amounts.forEach(inf => {
+            const currentInfluence = newState.factionInfluence[inf.faction]?.[playerId] || 0
+            newState.factionInfluence = {
+              ...newState.factionInfluence,
+              [inf.faction]: {
+                ...newState.factionInfluence[inf.faction],
+                [playerId]: currentInfluence + inf.amount
+              }
+            }
+          })
+        }
+      })
+      
+      // Remove all applied rewards from pendingRewards (keep only trash sources)
+      newState.pendingRewards = state.pendingRewards.filter(r => 
+        sourcesWithTrash.has(`${r.source.type}-${r.source.id}`)
+      )
+      
+      // Update player and gains
+      newState.players = newState.players.map(p => p.id === playerId ? newPlayer : p)
+      newState.gains = newGains
+      
+      // Update canEndTurn based on remaining pendingRewards and pendingChoices
+      newState.canEndTurn = (newState.pendingRewards.length === 0 && (!newState.currTurn?.pendingChoices?.length))
       
       return newState
     }

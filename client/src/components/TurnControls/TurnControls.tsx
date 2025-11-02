@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Player, Card, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile } from '../../types/GameTypes'
+import { Player, Card, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import './TurnControls.css'
 
@@ -29,6 +29,9 @@ interface TurnControlsProps {
   onResolveCardSelect?: (choiceId: string, cardIds: number[]) => void
   selectedCard?: Card | null
   recallMode?: boolean
+  pendingRewards?: PendingReward[]
+  onClaimReward?: (rewardId: string) => void
+  onClaimAllRewards?: () => void
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -55,7 +58,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onResolveChoice,
   onResolveCardSelect,
   selectedCard = null,
-  recallMode = false
+  recallMode = false,
+  pendingRewards = [],
+  onClaimReward,
+  onClaimAllRewards
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -271,6 +277,162 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     );
   }
 
+  // Render unified effects bar with cards grouped by source
+  const renderEffectsBar = () => {
+    // Group effects by source
+    type EffectSource = {
+      type: GainSource
+      id: number
+      name: string
+    }
+    
+    type EffectCard = {
+      source: EffectSource
+      rewards: PendingReward[]
+      optional: OptionalEffect[]
+      choices: PendingChoice[]
+    }
+    
+    const sourceMap = new Map<string, EffectCard>()
+    
+    // Add pending rewards
+    pendingRewards.forEach(reward => {
+      const key = `${reward.source.type}-${reward.source.id}`
+      if (!sourceMap.has(key)) {
+        sourceMap.set(key, {
+          source: reward.source,
+          rewards: [],
+          optional: [],
+          choices: []
+        })
+      }
+      sourceMap.get(key)!.rewards.push(reward)
+    })
+    
+    // Add optional effects
+    optionalEffects.forEach(effect => {
+      const key = `${effect.source.type}-${effect.source.id}`
+      if (!sourceMap.has(key)) {
+        sourceMap.set(key, {
+          source: { type: effect.source.type, id: effect.source.id, name: effect.source.name },
+          rewards: [],
+          optional: [],
+          choices: []
+        })
+      }
+      sourceMap.get(key)!.optional.push(effect)
+    })
+    
+    // Add pending choices
+    pendingChoices.forEach(choice => {
+      const key = `${choice.source.type}-${choice.source.id}`
+      if (!sourceMap.has(key)) {
+        sourceMap.set(key, {
+          source: { type: choice.source.type, id: choice.source.id, name: choice.source.name },
+          rewards: [],
+          optional: [],
+          choices: []
+        })
+      }
+      sourceMap.get(key)!.choices.push(choice)
+    })
+    
+    if (sourceMap.size === 0) return null
+    
+    const effectCards = Array.from(sourceMap.values())
+    
+    // Check if there are any trash rewards (to disable Get Mandatory Effects button)
+    const hasTrash = pendingRewards.some(r => r.isTrash)
+    
+    // Helper to get list of rewards that would be cancelled by trash
+    const getCancelledRewards = (card: EffectCard, trashReward: PendingReward): string => {
+      const cancelled = card.rewards
+        .filter(r => r.id !== trashReward.id)
+        .map(r => {
+          const parts: string[] = []
+          if (r.reward.spice) parts.push(`Spice +${r.reward.spice}`)
+          if (r.reward.water) parts.push(`Water +${r.reward.water}`)
+          if (r.reward.solari) parts.push(`Solari +${r.reward.solari}`)
+          if (r.reward.troops) parts.push(`Troop +${r.reward.troops}`)
+          if (r.reward.drawCards) parts.push(`Draw +${r.reward.drawCards}`)
+          if (r.reward.intrigueCards) parts.push(`Intrigue +${r.reward.intrigueCards}`)
+          if (r.reward.influence) parts.push(`Influence +${r.reward.influence.amounts.map(i => i.amount).join('+')}`)
+          return parts.join(', ')
+        })
+        .join('; ')
+      return cancelled
+    }
+    
+    return (
+      <div className="effects-bar">
+        {effectCards.map((card, idx) => (
+          <div 
+            key={idx} 
+            className={`effect-card ${card.optional.length > 0 ? 'optional' : 'mandatory'}`}
+          >
+            <div className="effect-card-header">
+              {card.source.name}
+              {card.optional.length > 0 && <span className="optional-tag">(Optional)</span>}
+            </div>
+            <div className="effect-card-body">
+              {/* Mandatory Rewards */}
+              {card.rewards.map(reward => (
+                <button
+                  key={reward.id}
+                  className={`effect-btn ${reward.isTrash ? 'trash-reward' : ''}`}
+                  onClick={() => onClaimReward && onClaimReward(reward.id)}
+                  title={reward.isTrash ? `⚠️ Trashing this card will cancel effects that haven't been applied yet. Cancels: ${getCancelledRewards(card, reward)}` : undefined}
+                >
+                  {reward.isTrash && <span className="warning-icon">⚠️ </span>}
+                  {renderLabel({ reward: reward.reward })}
+                </button>
+              ))}
+              
+              {/* Optional Effects */}
+              {card.optional.map((eff, idx) => (
+                <button 
+                  key={idx}
+                  className="effect-btn optional"
+                  disabled={!isAffordable(eff.cost)}
+                  onClick={() => handleEffectClick(eff)}
+                >
+                  {renderLabel(eff)}
+                </button>
+              ))}
+              
+              {/* Pending Choices */}
+              {card.choices.map(choice => {
+                if (choice.type === ChoiceType.CARD_SELECT) {
+                  return (
+                    <button
+                      key={choice.id}
+                      className="effect-btn choice"
+                      onClick={() => setActiveCardSelect(choice as CardSelectChoice)}
+                    >
+                      {choice.prompt}
+                    </button>
+                  )
+                } else {
+                  const fixedChoice = choice as FixedOptionsChoice
+                  return fixedChoice.options.map((option, oidx) => (
+                    <button
+                      key={`${choice.id}-${oidx}`}
+                      className="effect-btn choice"
+                      disabled={option.disabled || !isAffordable(option.cost)}
+                      onClick={() => onResolveChoice && onResolveChoice(choice.id, option.reward, choice.source)}
+                    >
+                      {renderLabel(option)}
+                    </button>
+                  ))
+                }
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <>
       {isCombatPhase && (
@@ -287,18 +449,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           </div>
         </div>
       )}
-      {optionalEffects.length > 0 && (
-        <div className="optional-effects-bar top-bar">
-          {optionalEffects.map((eff, idx) => (
-            <button key={idx}
-                    className="optional-effect-btn"
-                    disabled={!isAffordable(eff.cost)}
-                    onClick={() => handleEffectClick(eff)}>
-               {renderLabel(eff)}
-            </button>
-          ))}
-        </div>
-      )}
+      {renderEffectsBar()}
       {
         <ChoiceDialog />
         
@@ -366,6 +517,12 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               Retreat Troop ({retreatableTroops})
             </button>
           </>
+          {!isCombatPhase && pendingRewards.length > 0 && <button 
+            className="get-mandatory-effects-button"
+            onClick={() => onClaimAllRewards && onClaimAllRewards()}
+          >
+            Get Mandatory Effects
+          </button>}
           {!isCombatPhase && <button 
             className="play-intrigue-button"
             // onClick={}
