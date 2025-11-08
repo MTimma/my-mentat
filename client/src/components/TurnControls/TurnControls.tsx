@@ -18,6 +18,8 @@ interface TurnControlsProps {
   deployableTroops: number
   isCombatPhase: boolean
   combatStrength: Record<number, number>
+  combatPasses?: Set<number>
+  players?: Player[]
   optionalEffects?: OptionalEffect[]
   onPayCost?: (effect: OptionalEffect) => void
   showSelectiveBreeding?: boolean
@@ -32,6 +34,7 @@ interface TurnControlsProps {
   pendingRewards?: PendingReward[]
   onClaimReward?: (rewardId: string) => void
   onClaimAllRewards?: () => void
+  agentPlaced?: boolean
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -49,6 +52,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   deployableTroops,
   isCombatPhase,
   combatStrength,
+  combatPasses = new Set(),
+  players = [],
   optionalEffects = [],
   onPayCost,
   showSelectiveBreeding = false,
@@ -61,7 +66,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   recallMode = false,
   pendingRewards = [],
   onClaimReward,
-  onClaimAllRewards
+  onClaimAllRewards,
+  agentPlaced = false
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -152,7 +158,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       left.push(renderAmt(cost.spice,'spice'))
       left.push(renderAmt(cost.water,'water'))
       left.push(renderAmt(cost.solari,'solari'))
-      left.push(renderAmt(cost.influence?.amount,'influence'))
+      if(cost.influence) left.push(<span key="influence">Influence</span>)
       if(cost.trash || cost.trashThisCard) left.push(<span key="trash">Trash</span>)
       if(costLabel) left.push(<span key="cost">{costLabel}</span>)
     }
@@ -193,9 +199,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }
 
   const ChoiceDialog = () => {
-    if(pendingChoices.length === 0) return null;
-
-    // If user clicked a card selection choice, show the CardSearch dialog
+    // Only show CardSearch dialog when user clicks a card selection choice
     if (activeCardSelect) {
       return (
         <CardSearch
@@ -218,63 +222,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         />
       );
     }
-
-    // Show all choices as buttons in one dialog
-    const allOptions: Array<{choiceId: string, choice: PendingChoice, option?: {reward: Reward, disabled?: boolean, cost?: Cost}, source: {type: string, id: number, name: string}}> = [];
     
-    pendingChoices.forEach(choice => {
-      if (choice.type === ChoiceType.FIXED_OPTIONS) {
-        const fixedChoice = choice as FixedOptionsChoice;
-        // Each option becomes a separate button
-        fixedChoice.options.forEach(option => {
-          allOptions.push({
-            choiceId: choice.id,
-            choice: choice,
-            option: option,
-            source: choice.source
-          });
-        });
-      } else if (choice.type === ChoiceType.CARD_SELECT) {
-        // Card selection choices become buttons that open CardSearch when clicked
-        allOptions.push({
-          choiceId: choice.id,
-          choice: choice,
-          source: choice.source
-        });
-      }
-    });
-
-    if (allOptions.length === 0) return null;
-
-    return (
-      <div className="card-selection-dialog-overlay">
-        <div className="card-selection-dialog">
-          <h2>Choose one reward</h2>
-          <div className="choices-list">
-            {allOptions.map((item, idx) => (
-              <button 
-                key={idx}
-                className="choice-btn"
-                disabled={item.choice.disabled || !isAffordable(item.option?.cost)}
-                onClick={() => {
-                  if(item.choice.disabled) return;
-                  
-                  if(item.choice.type === ChoiceType.CARD_SELECT) {
-                    // Open card selection dialog
-                    setActiveCardSelect(item.choice as CardSelectChoice);
-                  } else if(onResolveChoice && item.option) {
-                    // Resolve fixed option choice
-                    onResolveChoice(item.choiceId, item.option.reward, item.source);
-                  }
-                }}
-              >
-                {item.option ? renderLabel(item.option) : (item.choice as CardSelectChoice).prompt}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   // Render unified effects bar with cards grouped by source
@@ -341,9 +290,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     
     const effectCards = Array.from(sourceMap.values())
     
-    // Check if there are any trash rewards (to disable Get Mandatory Effects button)
-    const hasTrash = pendingRewards.some(r => r.isTrash)
-    
     // Helper to get list of rewards that would be cancelled by trash
     const getCancelledRewards = (card: EffectCard, trashReward: PendingReward): string => {
       const cancelled = card.rewards
@@ -403,27 +349,38 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               {/* Pending Choices */}
               {card.choices.map(choice => {
                 if (choice.type === ChoiceType.CARD_SELECT) {
+                  const cardSelectChoice = choice as CardSelectChoice
+                  // Prompt is already set with the correct text from GameContext
+                  
                   return (
                     <button
                       key={choice.id}
                       className="effect-btn choice"
-                      onClick={() => setActiveCardSelect(choice as CardSelectChoice)}
+                      onClick={() => setActiveCardSelect(cardSelectChoice)}
+                      disabled={cardSelectChoice.disabled}
                     >
-                      {choice.prompt}
+                      {cardSelectChoice.prompt}
                     </button>
                   )
                 } else {
+                  // Render FixedOptionsChoice with all options horizontally with OR separator
                   const fixedChoice = choice as FixedOptionsChoice
-                  return fixedChoice.options.map((option, oidx) => (
-                    <button
-                      key={`${choice.id}-${oidx}`}
-                      className="effect-btn choice"
-                      disabled={option.disabled || !isAffordable(option.cost)}
-                      onClick={() => onResolveChoice && onResolveChoice(choice.id, option.reward, choice.source)}
-                    >
-                      {renderLabel(option)}
-                    </button>
-                  ))
+                  return (
+                    <div key={choice.id} className="or-choice-container">
+                      {fixedChoice.options.map((option, oidx) => (
+                        <React.Fragment key={`${choice.id}-${oidx}`}>
+                          {oidx > 0 && <span className="or-separator">OR</span>}
+                          <button
+                            className="effect-btn choice or-option"
+                            disabled={option.disabled || !isAffordable(option.cost)}
+                            onClick={() => onResolveChoice && onResolveChoice(choice.id, option.reward, choice.source)}
+                          >
+                            {renderLabel(option)}
+                          </button>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  )
                 }
               })}
             </div>
@@ -441,11 +398,17 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             Combat Phase
           </div>
           <div className="combat-rankings">
-            {getRankings().map(({ playerId, strength, rank }) => (
-              <div key={playerId} className={`combat-rank rank-${rank}`}>
-                {rank}. <div className={`agent player-${playerId}`} />: {strength} strength 
-              </div>
-            ))}
+            {getRankings().map(({ playerId, strength, rank }) => {
+              const player = players.find(p => p.id === playerId)
+              const hasPassed = combatPasses.has(playerId)
+              return (
+                <div key={playerId} className={`combat-rank rank-${rank} ${hasPassed ? 'passed' : ''}`}>
+                  {rank}. <div className={`agent player-${playerId}`} />: {strength} strength 
+                  {player && ` (${player.leader.name})`}
+                  {hasPassed && <span className="pass-indicator"> ✓ Passed</span>}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -487,8 +450,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           <button 
             className="play-card-button"
             onClick={handlePlayCard}
-            disabled={activePlayer.agents === 0 || canEndTurn}
+            disabled={activePlayer.agents === 0 || canEndTurn || agentPlaced}
             hidden={isCombatPhase}
+            title={agentPlaced ? "You have already placed an agent this turn" : undefined}
           >
             Play Card
           </button>
@@ -520,6 +484,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           {!isCombatPhase && pendingRewards.length > 0 && <button 
             className="get-mandatory-effects-button"
             onClick={() => onClaimAllRewards && onClaimAllRewards()}
+            disabled={pendingRewards.some(r => r.isTrash) || pendingChoices.length > 0}
+            title={pendingChoices.length > 0 ? "Cannot apply mandatory effects while choices are pending" : (pendingRewards.some(r => r.isTrash) ? "Cannot auto-apply when trash rewards are present" : "")}
           >
             Get Mandatory Effects
           </button>}

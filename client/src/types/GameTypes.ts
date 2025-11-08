@@ -344,6 +344,7 @@ export interface ChoiceOption {
   reward: Reward
   costLabel?: string
   rewardLabel?: string
+  disabled?: boolean
 }
 
 // Card pile types for card selection
@@ -492,3 +493,11 @@ export enum CustomEffect {
   THE_VOICE = 'THE_VOICE', // TODO need to implement
   GUILD_BANKERS = 'GUILD_BANKERS', // TODO need to implement
 }
+
+// Custom effects that are auto-applied and don't need user input
+export const AUTO_APPLIED_CUSTOM_EFFECTS: CustomEffect[] = [
+  CustomEffect.KWISATZ_HADERACH,
+  CustomEffect.LIET_KYNES,
+  CustomEffect.CARRYALL,
+  CustomEffect.GUN_THOPTER
+]

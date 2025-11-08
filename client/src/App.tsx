@@ -190,6 +190,8 @@ const GameContent = () => {
           deployableTroops={Math.min((gameState.currTurn?.troopLimit || 0) - (gameState.currTurn?.removableTroops || 0), activePlayer?.troops || 0)}
           isCombatPhase={gameState.phase === GamePhase.COMBAT}
           combatStrength={gameState.combatStrength}
+          combatPasses={gameState.combatPasses}
+          players={gameState.players}
           optionalEffects={gameState.currTurn?.optionalEffects || []}
           pendingChoices={gameState.currTurn?.pendingChoices || []}
           onResolveChoice={handleResolveChoice}
@@ -206,6 +208,7 @@ const GameContent = () => {
           pendingRewards={gameState.pendingRewards}
           onClaimReward={handleClaimReward}
           onClaimAllRewards={handleClaimAllRewards}
+          agentPlaced={Boolean(gameState.currTurn?.agentSpace)}
         />
       </div>
       <div className="combat-results-container" hidden={gameState.phase !== GamePhase.COMBAT_REWARDS}>
