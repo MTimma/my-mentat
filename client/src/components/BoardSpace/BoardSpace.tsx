@@ -1,5 +1,6 @@
 import React from 'react'
 import { SpaceProps } from '../../types/GameTypes'
+import AgentIcon from '../AgentIcon/AgentIcon'
 import './BoardSpace.css'
 
 interface BoardSpaceProps extends SpaceProps {
@@ -9,6 +10,42 @@ interface BoardSpaceProps extends SpaceProps {
   isEnabled: boolean
   bonusSpice: number
   wide?: boolean
+}
+
+// Helper function to get player color matching AgentIcon.css
+const getPlayerColor = (playerId: number): string => {
+  const colors: Record<number, string> = {
+    0: '#d32f2f', // red
+    1: '#388e3c', // green
+    2: '#fbc02d', // yellow
+    3: '#1976d2', // blue
+  }
+  return colors[playerId] || '#8b4513' // fallback to default brown
+}
+
+// Generate border styles based on occupied players
+const generateBorderStyles = (occupiedBy: number[]): React.CSSProperties => {
+  if (occupiedBy.length === 0) {
+    return {}
+  }
+
+  // Background color from first player (semi-transparent)
+  const firstPlayerColor = getPlayerColor(occupiedBy[0])
+  const backgroundColor = `${firstPlayerColor}80` // 50% opacity (less transparent)
+
+  // Generate concentric borders using box-shadow
+  const boxShadow = occupiedBy
+    .map((playerId, index) => {
+      const color = getPlayerColor(playerId)
+      const offset = (index + 1) * 4 // 4px per border layer
+      return `0 0 0 ${offset}px ${color}`
+    })
+    .join(', ')
+
+  return {
+    backgroundColor,
+    boxShadow,
+  }
 }
 
 const BoardSpace: React.FC<BoardSpaceProps> = ({
@@ -81,6 +118,8 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
     )
   }
 
+  const playerBorderStyles = generateBorderStyles(occupiedBy)
+
   return (
     <>
     {image && <div 
@@ -95,7 +134,8 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
       onClick={isEnabled ? onSpaceClick : undefined}
       style={{
         backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundPosition: 'center',
+        ...playerBorderStyles
       }}
     >
       {image && (
@@ -106,13 +146,13 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         />
       )}
       <div className="agents-container">
-    {occupiedBy.map((playerId) => (
-      <div 
-        key={playerId} 
-        className={`agent player-${playerId}`} 
-      />
-    ))}
-  </div>
+        {occupiedBy.map((playerId) => (
+          <AgentIcon 
+            key={playerId} 
+            playerId={playerId}
+          />
+        ))}
+      </div>
     </div>}
     {!image && <div 
       className={`
@@ -120,14 +160,15 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         ${agentIcon} 
         ${isHighlighted ? 'highlighted' : ''} 
         ${conflictMarker ? 'combat-space' : ''}
-        ${isDisabled ? 'disabled' : ''}
+        ${!isEnabled ? 'disabled' : ''}
         ${wide ? 'wide' : ''}
       `}
-      onClick={isDisabled ? undefined : onSpaceClick}
+      onClick={isEnabled ? onSpaceClick : undefined}
       style={{
         backgroundImage: image ? `url(${image})` : 'none',
         backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundPosition: 'center',
+        ...playerBorderStyles
       }}
     >
       <div className="space-content">
@@ -142,9 +183,9 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
       </div>
       <div className="agents-container">
         {occupiedBy.map((playerId) => (
-          <div 
+          <AgentIcon 
             key={playerId} 
-            className={`agent player-${playerId}`} 
+            playerId={playerId}
           />
         ))}
       </div>

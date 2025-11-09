@@ -4,6 +4,7 @@ export const PLAY_EFFECT_TEXTS: Partial<Record<CustomEffect, string>> = {
     [CustomEffect.OTHER_MEMORY]: "Draw a Bene Gesserit card from your discard pile.",
     [CustomEffect.CARRYALL]: "Double the base (not bonus) spice you harvest with this agent",
     [CustomEffect.GUN_THOPTER]: "Each opponent loses 1 garrisoned troop.",
+    [CustomEffect.SECRETS_STEAL]: "Steal intrigue from player with 4 or more",
 }
 
 export const EFFECT_DISABLED_TEXTS: Partial<Record<CustomEffect, string>> = {

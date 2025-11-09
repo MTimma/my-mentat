@@ -245,37 +245,30 @@
 
 .populated-areas {
   border-color: #1976d2;
-  background-color: #1976d2;
 }
 
 .landsraad {
   border-color: #388e3c;
-  background-color: #388e3c;
 }
 
 .deserts {
   border-color: #fbc02d;
-  background-color: #fbc02d;
 }
 
 .emperor {
   border-color: #757575;
-  background-color: #757575;
 }
 
 .fremen {
   border-color: #03a9f4;
-  background-color: #03a9f4;
 }
 
 .spacing-guild {
   border-color: #d32f2f;
-  background-color: #d32f2f;
 }
 
 .bene-gesserit {
   border-color: #7b1fa2;
-  background-color: #7b1fa2;
 }
 
 .player-header {
@@ -1211,8 +1204,12 @@
 @media (max-width: 900px) {
   .board-spaces {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    max-width: none;
+    max-width: 600px;
+    margin: 0 auto;
     gap: 6px;
+  }
+  .game-board {
+    padding: 8px;
   }
   .imperium-section {
     max-width: 100%;
@@ -1223,6 +1220,7 @@
 @media (max-width: 600px) {
   .board-spaces {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 450px;
     gap: 6px;
   }
   .turn-controls-container {

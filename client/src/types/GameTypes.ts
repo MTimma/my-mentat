@@ -336,6 +336,7 @@ export interface PendingReward {
   }
   reward: Reward
   isTrash: boolean // true if reward.trash or reward.trashThisCard
+  disabled?: boolean // true if the reward cannot be claimed (e.g., no valid targets)
 }
 
 // Mandatory OR-choice effect generated when a card lists multiple rewards with `effectOR`.
@@ -487,6 +488,7 @@ export enum CustomEffect {
   GUN_THOPTER = 'GUN_THOPTER',
   KWISATZ_HADERACH = 'KWISATZ_HADERACH',
   LIET_KYNES = 'LIET_KYNES',
+  SECRETS_STEAL = 'SECRETS_STEAL',
   POWER_PLAY = 'POWER_PLAY', // TODO need to implement
   REVEREND_MOTHER_MOHIAM = 'REVEREND_MOTHER_MOHIAM', // TODO need to implement
   TEST_OF_HUMANITY = 'TEST_OF_HUMANITY', // TODO need to implement

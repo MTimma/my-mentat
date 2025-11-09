@@ -591,7 +591,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             canEndTurn: false,
             canAcquireIR: false,
             selectedCard: null,
-            gains: []
+            gains: [],
+            pendingRewards: []
           }
         }
         
@@ -614,7 +615,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           canEndTurn: false,
           canAcquireIR: false,
           selectedCard: null,
-          gains: []
+          gains: [],
+          pendingRewards: []
         }
       }
       
@@ -642,7 +644,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         canEndTurn: false,
         selectedCard: null,
         canAcquireIR: false,
-        gains: []
+        gains: [],
+        pendingRewards: []
       }
     }
     case 'DEPLOY_TROOP': {
@@ -1089,6 +1092,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (effect.reward.intrigueCards) {
           addPendingReward({ intrigueCards: effect.reward.intrigueCards }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
         }
+        if (effect.reward.custom) {
+          // For SECRETS_STEAL, check if any opponents have 4+ intrigue
+          if (effect.reward.custom === CustomEffect.SECRETS_STEAL) {
+            const hasEligibleTargets = updatedPlayers.some(p => 
+              p.id !== playerId && p.intrigueCount >= 4
+            )
+            addPendingReward(
+              { custom: effect.reward.custom }, 
+              { type: GainSource.BOARD_SPACE, id: space.id, name: space.name }
+            )
+            // Mark as disabled if no eligible targets
+            if (!hasEligibleTargets) {
+              const lastReward = pendingRewards[pendingRewards.length - 1]
+              if (lastReward) {
+                lastReward.disabled = true
+              }
+            }
+          } else {
+            addPendingReward({ custom: effect.reward.custom }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
+          }
+        }
         
         // Auto-apply pooled rewards: persuasion, deployTroops
         if (effect.reward.persuasion) {
@@ -1344,12 +1368,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
 
           case 'secrets':
-            updatedPlayers.forEach(opponent => {
-              if (opponent.id !== playerId && opponent.intrigueCount >= 4) {
-                opponent.intrigueCount -= 1
-                currPlayer.intrigueCount += 1
-              }
-            })
+            // Steal logic is now handled by SECRETS_STEAL custom effect button
             break
 
         }
@@ -1374,7 +1393,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         occupiedSpaces: updatedOccupiedSpaces,
         currTurn: currentTurn,
         pendingRewards,
-        canEndTurn: (currentTurn.pendingChoices?.length || pendingRewards.length) ? false : true
+        canEndTurn: (currentTurn.pendingChoices?.length || pendingRewards.filter(r => !r.disabled).length) ? false : true
       }
     }
     case 'REVEAL_CARDS': {
@@ -1587,7 +1606,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         combatStrength: updatedCombatStrength,
         currTurn: currentTurn,
         pendingRewards,
-        canEndTurn: (pendingChoices.length > 0 || pendingRewards.length > 0) ? false : true,
+        canEndTurn: (pendingChoices.length > 0 || pendingRewards.filter(r => !r.disabled).length > 0) ? false : true,
         canAcquireIR: true
       }
     }
@@ -1775,6 +1794,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
       
+      // Check if this is a SECRETS_STEAL custom effect
+      if(reward.custom === CustomEffect.SECRETS_STEAL) {
+        // Dispatch CUSTOM_EFFECT action
+        const newTurn = { ...state.currTurn }
+        newTurn.pendingChoices = []
+        const newState = { 
+          ...state, 
+          currTurn: newTurn,
+          canEndTurn: true
+        }
+        return gameReducer(newState, {
+          type: 'CUSTOM_EFFECT',
+          playerId,
+          customEffect: CustomEffect.SECRETS_STEAL,
+          data: {}
+        })
+      }
+      
       // Normal reward without custom effect
       const newTurn = { ...state.currTurn }
       newTurn.pendingChoices = []
@@ -1841,6 +1878,35 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               p.id === playerId
               ? { ...p, discardPile: newDiscardPile, deck: newDeck, handCount: p.handCount + 1 }
               : p
+            )
+          }
+        }
+        case CustomEffect.SECRETS_STEAL: {
+          const player = state.players.find(p => p.id === playerId)
+          if (!player) return state
+          
+          // Steal 1 intrigue from each opponent with 4+ intrigue
+          const newPlayers = state.players.map(p => {
+            if (p.id !== playerId && p.intrigueCount >= 4) {
+              return { ...p, intrigueCount: p.intrigueCount - 1 }
+            }
+            return p
+          })
+          
+          // Count how many intrigue cards were stolen
+          const stolenCount = newPlayers.filter(p => {
+            if (p.id === playerId) return false
+            const originalPlayer = state.players.find(op => op.id === p.id)
+            return originalPlayer && originalPlayer.intrigueCount > p.intrigueCount
+          }).length
+          
+          // Update the player with stolen intrigue
+          return {
+            ...state,
+            players: newPlayers.map(p => 
+              p.id === playerId 
+                ? { ...p, intrigueCount: p.intrigueCount + stolenCount }
+                : p
             )
           }
         }
@@ -1933,12 +1999,20 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         })
       }
       
+      // If troops were recruited during this turn on a combat space, increase troopLimit
+      if (reward.reward.troops && newState.currTurn?.canDeployTroops) {
+        newState.currTurn = {
+          ...newState.currTurn,
+          troopLimit: (newState.currTurn.troopLimit || 0) + reward.reward.troops
+        }
+      }
+      
       // Update player
       newState.players = newState.players.map(p => p.id === playerId ? newPlayer : p)
       newState.gains = newGains
       
       // Update canEndTurn based on remaining pendingRewards and pendingChoices
-      newState.canEndTurn = (newState.pendingRewards.length === 0 && (!newState.currTurn?.pendingChoices?.length))
+      newState.canEndTurn = (newState.pendingRewards.filter(r => !r.disabled).length === 0 && (!newState.currTurn?.pendingChoices?.length))
       
       return newState
     }
@@ -1961,14 +2035,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       })
       
-      // Apply rewards only from sources WITHOUT trash
+      // Apply rewards only from sources WITHOUT trash and that are NOT disabled
       const rewardsToApply = state.pendingRewards.filter(r => 
-        !sourcesWithTrash.has(`${r.source.type}-${r.source.id}`)
+        !sourcesWithTrash.has(`${r.source.type}-${r.source.id}`) && !r.disabled
       )
+      
+      // Track total troops recruited for troopLimit update
+      let totalTroopsRecruited = 0
       
       // Apply each reward using shared helper
       rewardsToApply.forEach(reward => {
         newPlayer = applyRewardToPlayer(reward.reward, newPlayer, newGains, state, reward.source)
+        
+        // Track troops recruited
+        if (reward.reward.troops) {
+          totalTroopsRecruited += reward.reward.troops
+        }
         
         // Handle influence updates (needs state modification)
         if (reward.reward.influence) {
@@ -1985,17 +2067,25 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       })
       
-      // Remove all applied rewards from pendingRewards (keep only trash sources)
+      // If troops were recruited during this turn on a combat space, increase troopLimit
+      if (totalTroopsRecruited > 0 && newState.currTurn?.canDeployTroops) {
+        newState.currTurn = {
+          ...newState.currTurn,
+          troopLimit: (newState.currTurn.troopLimit || 0) + totalTroopsRecruited
+        }
+      }
+      
+      // Remove all applied rewards from pendingRewards (keep only trash sources and disabled rewards)
       newState.pendingRewards = state.pendingRewards.filter(r => 
-        sourcesWithTrash.has(`${r.source.type}-${r.source.id}`)
+        sourcesWithTrash.has(`${r.source.type}-${r.source.id}`) || r.disabled
       )
       
       // Update player and gains
       newState.players = newState.players.map(p => p.id === playerId ? newPlayer : p)
       newState.gains = newGains
       
-      // Update canEndTurn based on remaining pendingRewards and pendingChoices
-      newState.canEndTurn = (newState.pendingRewards.length === 0 && (!newState.currTurn?.pendingChoices?.length))
+      // Update canEndTurn based on remaining pendingRewards and pendingChoices (excluding disabled rewards)
+      newState.canEndTurn = (newState.pendingRewards.filter(r => !r.disabled).length === 0 && (!newState.currTurn?.pendingChoices?.length))
       
       return newState
     }

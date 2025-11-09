@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
-import { Player, Card, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource } from '../../types/GameTypes'
+import { Player, Card, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
+import AgentIcon from '../AgentIcon/AgentIcon'
+import { PLAY_EFFECT_TEXTS, EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
 import './TurnControls.css'
 
 interface TurnControlsProps {
@@ -168,7 +170,45 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     right.push(renderAmt(reward.solari,'solari'))
     if(reward.drawCards) right.push(<span key="draw">Draw {reward.drawCards}</span>)
     if(reward.troops) right.push(<span key="troops">{reward.troops} Troops</span>)
+    if(reward.intrigueCards) right.push(<span key="intrigue">Intrigue +{reward.intrigueCards}</span>)
+    if(reward.influence) {
+      reward.influence.amounts.forEach((inf, idx) => {
+        right.push(<span key={`influence-${idx}`}>{inf.faction} Influence +{inf.amount}</span>)
+      })
+    }
     if(reward.victoryPoints) right.push(<span key="vp">{reward.victoryPoints} VP</span>)
+    if(reward.custom) {
+      // Special handling for SECRETS_STEAL to show player colors
+      if(reward.custom === CustomEffect.SECRETS_STEAL && players) {
+        const eligiblePlayers = players.filter(p => 
+          p.id !== activePlayer?.id && p.intrigueCount >= 4
+        )
+        
+        if (eligiblePlayers.length === 0) {
+          right.push(
+            <span key="custom">
+              Steal intrigue from player with 4 or more (0)
+            </span>
+          )
+        } else {
+          right.push(
+            <span key="custom" style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+              <span>Steal intrigue from player with 4 or more (</span>
+              {eligiblePlayers.map((p, idx) => (
+                <React.Fragment key={p.id}>
+                  {idx > 0 && <span> </span>}
+                  <AgentIcon playerId={p.id} />
+                </React.Fragment>
+              ))}
+              <span>)</span>
+            </span>
+          )
+        }
+      } else {
+        const customText = PLAY_EFFECT_TEXTS[reward.custom] || reward.custom
+        right.push(<span key="custom">{customText}</span>)
+      }
+    }
     if(rewardLabel) right.push(<span key="reward">{rewardLabel}</span>)
 
     return (
@@ -327,6 +367,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   key={reward.id}
                   className={`effect-btn ${reward.isTrash ? 'trash-reward' : ''}`}
                   onClick={() => onClaimReward && onClaimReward(reward.id)}
+                  disabled={reward.disabled}
                   title={reward.isTrash ? `⚠️ Trashing this card will cancel effects that haven't been applied yet. Cancels: ${getCancelledRewards(card, reward)}` : undefined}
                 >
                   {reward.isTrash && <span className="warning-icon">⚠️ </span>}
@@ -367,18 +408,27 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   const fixedChoice = choice as FixedOptionsChoice
                   return (
                     <div key={choice.id} className="or-choice-container">
-                      {fixedChoice.options.map((option, oidx) => (
-                        <React.Fragment key={`${choice.id}-${oidx}`}>
-                          {oidx > 0 && <span className="or-separator">OR</span>}
-                          <button
-                            className="effect-btn choice or-option"
-                            disabled={option.disabled || !isAffordable(option.cost)}
-                            onClick={() => onResolveChoice && onResolveChoice(choice.id, option.reward, choice.source)}
-                          >
-                            {renderLabel(option)}
-                          </button>
-                        </React.Fragment>
-                      ))}
+                      {fixedChoice.options.map((option, oidx) => {
+                        // Get disabled tooltip text if option is disabled and has a custom effect
+                        let disabledTooltip: string | undefined
+                        if (option.disabled && option.reward.custom) {
+                          disabledTooltip = EFFECT_DISABLED_TEXTS[option.reward.custom] || 'This option is not available'
+                        }
+                        
+                        return (
+                          <React.Fragment key={`${choice.id}-${oidx}`}>
+                            {oidx > 0 && <span className="or-separator">OR</span>}
+                            <button
+                              className="effect-btn choice or-option"
+                              disabled={option.disabled || !isAffordable(option.cost)}
+                              onClick={() => onResolveChoice && onResolveChoice(choice.id, option.reward, choice.source)}
+                              title={disabledTooltip}
+                            >
+                              {renderLabel(option)}
+                            </button>
+                          </React.Fragment>
+                        )
+                      })}
                     </div>
                   )
                 }
@@ -403,7 +453,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               const hasPassed = combatPasses.has(playerId)
               return (
                 <div key={playerId} className={`combat-rank rank-${rank} ${hasPassed ? 'passed' : ''}`}>
-                  {rank}. <div className={`agent player-${playerId}`} />: {strength} strength 
+                  {rank}. <AgentIcon playerId={playerId} />: {strength} strength 
                   {player && ` (${player.leader.name})`}
                   {hasPassed && <span className="pass-indicator"> ✓ Passed</span>}
                 </div>
@@ -459,8 +509,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           <button 
             className="reveal-turn-button"
             onClick={handleRevealTurn}
-            disabled={canEndTurn || isCombatPhase}
+            disabled={canEndTurn || isCombatPhase || agentPlaced}
             hidden={isCombatPhase}
+            title={agentPlaced ? "You have already placed an agent this turn" : undefined}
           >
             Reveal Turn
           </button>
@@ -481,7 +532,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               Retreat Troop ({retreatableTroops})
             </button>
           </>
-          {!isCombatPhase && pendingRewards.length > 0 && <button 
+          {!isCombatPhase && pendingRewards.length > 0 && pendingRewards.some(r => !r.disabled) && <button 
             className="get-mandatory-effects-button"
             onClick={() => onClaimAllRewards && onClaimAllRewards()}
             disabled={pendingRewards.some(r => r.isTrash) || pendingChoices.length > 0}

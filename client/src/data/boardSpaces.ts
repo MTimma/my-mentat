@@ -1,4 +1,4 @@
-import { SpaceProps, AgentIcon, FactionType, ControlMarkerType, MakerSpace } from '../types/GameTypes'
+import { SpaceProps, AgentIcon, FactionType, ControlMarkerType, MakerSpace, CustomEffect } from '../types/GameTypes'
 
 export const BOARD_SPACES: SpaceProps[] = [
 
@@ -135,7 +135,10 @@ export const BOARD_SPACES: SpaceProps[] = [
     conflictMarker: false,
     agentIcon: AgentIcon.BENE_GESSERIT,
     influence: { faction: FactionType.BENE_GESSERIT, amount: 1 },
-    effects: [{ reward: { intrigueCards: 1 } }],
+    effects: [
+      { reward: { intrigueCards: 1 } },
+      { reward: { custom: CustomEffect.SECRETS_STEAL } }
+    ],
     specialEffect: 'secrets',
     image: "board/secrets.png"
   },

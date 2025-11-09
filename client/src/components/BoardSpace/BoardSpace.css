@@ -9,7 +9,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to allow box-shadow borders to show */
 }
 
 .space-content {
@@ -94,7 +94,7 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #e0c48f;
+  background: transparent; /* Changed from brown to transparent so player color shows through */
   border-radius: 4px;
   z-index: 0;
 }
@@ -107,20 +107,6 @@
   gap: 4px;
   z-index: 2;
 }
-
-.agent {
-  width: 0;
-  height: 0;
-  border-left: 20px solid transparent;
-  border-right: 20px solid transparent;
-  border-bottom: 36px solid;
-  filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.4));
-}
-
-.agent.player-0 { border-bottom-color: #d32f2f; }
-.agent.player-1 { border-bottom-color: #388e3c; }
-.agent.player-2 { border-bottom-color: #fbc02d; }
-.agent.player-3 { border-bottom-color: #1976d2; }
 
 .board-space.wide {
   min-width: 260px;
@@ -137,17 +123,18 @@
     padding: 6px;
   }
   .agents-container {
+    top: 25%;
+    left: 30%;
     gap: 2px;
-  }
-  .agent {
-    border-left-width: 8px;
-    border-right-width: 8px;
-    border-bottom-width: 14px;
   }
 }
 
 @media (max-width: 600px) {
   .board-space {
     min-height: 60px;
+  }
+  .agents-container {
+    top: 28%;
+    left: 32%;
   }
 } 

@@ -1,0 +1,26 @@
+.agent {
+  width: 24px;
+  height: 36px;
+  filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.4));
+  display: inline-block;
+}
+
+.agent.player-0 .agent-fill { fill: #d32f2f; }
+.agent.player-1 .agent-fill { fill: #388e3c; }
+.agent.player-2 .agent-fill { fill: #fbc02d; }
+.agent.player-3 .agent-fill { fill: #1976d2; }
+
+@media (max-width: 900px) {
+  .agent {
+    width: 18px;
+    height: 28px;
+  }
+}
+
+@media (max-width: 600px) {
+  .agent {
+    width: 16px;
+    height: 24px;
+  }
+}
+
