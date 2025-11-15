@@ -133,6 +133,7 @@ export interface SpaceProps {
     water?: number
     solari?: number
   }
+  reward?: Reward
   effects?:[{
     cost?: Cost
     reward: Reward
@@ -277,7 +278,7 @@ export interface ActionTurn {
   cardId: number
   agentSpaceId: number
   agentIcon: AgentIcon
-  specialEffectDecisions?: Record<string, any>
+  specialEffectDecisions?: Record<string, unknown>
 }
 
 export interface RevealTurn {
@@ -293,7 +294,7 @@ export interface PassTurn {
 
 export interface IntrigueCardPlay {
   cardId: number
-  effectDecisions?: Record<string, any>
+  effectDecisions?: Record<string, unknown>
 }
 
 export interface ConflictReward {
@@ -337,6 +338,7 @@ export interface PendingReward {
   reward: Reward
   isTrash: boolean // true if reward.trash or reward.trashThisCard
   disabled?: boolean // true if the reward cannot be claimed (e.g., no valid targets)
+  powerPlay?: boolean // true if this influence reward should grant +1 extra (Power Play effect)
 }
 
 // Mandatory OR-choice effect generated when a card lists multiple rewards with `effectOR`.
@@ -379,7 +381,7 @@ export interface CardSelectChoice extends PendingChoiceBase {
   piles: CardPile[]
   filter?: (c: Card) => boolean
   selectionCount: number
-  onResolve: (cardIds: number[]) => any // GameAction will be defined in GameContext
+  onResolve: (cardIds: number[]) => unknown // GameAction will be defined in GameContext
 }
 
 // Unified pending choice type
@@ -399,6 +401,13 @@ export interface GameTurn {
   playedIntrigueCard?: IntrigueCardPlay[]
   optionalEffects?: OptionalEffect[]
   pendingChoices?: PendingChoice[]
+  smfDiscount?: boolean // true if Guild Bankers discount is active for this reveal turn
+  opponentDiscardState?: {
+    effect: CustomEffect
+    remainingOpponents: number[]
+    currentOpponent?: number
+    discardCounts?: Record<number, number> // Track how many cards each opponent has discarded
+  }
 }
 
 export enum GamePhase {
@@ -480,6 +489,7 @@ export interface GameState {
   canEndTurn: boolean
   canAcquireIR: boolean
   pendingRewards: PendingReward[]
+  blockedSpaces?: Array<{ spaceId: number; playerId: number }> // Spaces blocked by The Voice
 }
 
 export enum CustomEffect {
@@ -500,6 +510,4 @@ export enum CustomEffect {
 export const AUTO_APPLIED_CUSTOM_EFFECTS: CustomEffect[] = [
   CustomEffect.KWISATZ_HADERACH,
   CustomEffect.LIET_KYNES,
-  CustomEffect.CARRYALL,
-  CustomEffect.GUN_THOPTER
 ]

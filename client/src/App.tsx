@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import GameBoard from './components/GameBoard'
 import PlayerArea from './components/PlayerArea'
@@ -24,6 +24,11 @@ const GameContent = () => {
   const [openPlayerIndex, setOpenPlayerIndex] = useState<number | null>(null)
   const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
   const [onSelectiveBreedingSelect, setOnSelectiveBreedingSelect] = useState<((card: Card) => void) | null>(null)
+  const [voiceSelectionRewardId, setVoiceSelectionRewardId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setVoiceSelectionRewardId(null)
+  }, [gameState.activePlayerId])
 
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
 
@@ -108,14 +113,39 @@ const GameContent = () => {
     setShowSelectiveBreeding(true)
   }
 
-  const handleClaimReward = (rewardId: string) => {
-    if (!activePlayer) return;
-    dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId })
+  const handleClaimReward = (rewardId: string, customData?: { [key: string]: unknown }) => {
+    if (!activePlayer) return
+    if (voiceSelectionRewardId && rewardId !== voiceSelectionRewardId && !(customData && 'spaceId' in customData)) {
+      return
+    }
+    dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId, customData })
   }
 
   const handleClaimAllRewards = () => {
-    if (!activePlayer) return;
+    if (!activePlayer || voiceSelectionRewardId) return
     dispatch({ type: 'CLAIM_ALL_REWARDS', playerId: activePlayer.id })
+  }
+
+  const handleVoiceSelectionStart = (rewardId: string) => {
+    setVoiceSelectionRewardId(rewardId)
+  }
+
+  const handleVoiceSpaceSelect = (spaceId: number) => {
+    if (!activePlayer || !voiceSelectionRewardId) return
+    handleClaimReward(voiceSelectionRewardId, { spaceId })
+    setVoiceSelectionRewardId(null)
+  }
+
+  const handleVoiceSelectionCancel = () => setVoiceSelectionRewardId(null)
+
+  const handleOpponentDiscardChoice = (opponentId: number, choice: 'discard' | 'loseTroop') => {
+    if (!activePlayer) return
+    dispatch({ type: 'OPPONENT_DISCARD_CHOICE', playerId: activePlayer.id, opponentId, choice })
+  }
+
+  const handleOpponentDiscardCard = (opponentId: number, cardId: number) => {
+    if (!activePlayer) return
+    dispatch({ type: 'OPPONENT_DISCARD_CARD', playerId: activePlayer.id, opponentId, cardId })
   }
 
   return (
@@ -155,6 +185,9 @@ const GameContent = () => {
           onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
           recallMode={Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
           ignoreCosts={Boolean(getSelectedCard(gameState)?.playEffect?.find(e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH))}
+          voiceSelectionActive={Boolean(voiceSelectionRewardId)}
+          onVoiceSpaceSelect={handleVoiceSpaceSelect}
+          blockedSpaces={gameState.blockedSpaces || []}
         />
         <div className="players-area">
           {gameState.players.map((player, idx) => (
@@ -209,6 +242,13 @@ const GameContent = () => {
           onClaimReward={handleClaimReward}
           onClaimAllRewards={handleClaimAllRewards}
           agentPlaced={Boolean(gameState.currTurn?.agentSpace)}
+          opponentDiscardState={gameState.currTurn?.opponentDiscardState}
+          onOpponentDiscardChoice={handleOpponentDiscardChoice}
+          onOpponentDiscardCard={handleOpponentDiscardCard}
+          combatTroops={gameState.combatTroops}
+          onVoiceSelectionStart={handleVoiceSelectionStart}
+          voiceSelectionActive={Boolean(voiceSelectionRewardId)}
+          onVoiceSelectionCancel={handleVoiceSelectionCancel}
         />
       </div>
       <div className="combat-results-container" hidden={gameState.phase !== GamePhase.COMBAT_REWARDS}>

@@ -73,8 +73,10 @@ type GameAction =
   | { type: 'CUSTOM_EFFECT'; playerId: number; customEffect: CustomEffect; data: CustomEffectData }
   | { type: 'TRASH_CARD'; playerId: number; cardId: number; gainReward?: Reward }
   | { type: 'SELECT_CONFLICT'; conflictId: number }
-  | { type: 'CLAIM_REWARD'; playerId: number; rewardId: string }
+  | { type: 'CLAIM_REWARD'; playerId: number; rewardId: string; customData?: CustomEffectData }
   | { type: 'CLAIM_ALL_REWARDS'; playerId: number }
+  | { type: 'OPPONENT_DISCARD_CHOICE'; playerId: number; opponentId: number; choice: 'discard' | 'loseTroop' }
+  | { type: 'OPPONENT_DISCARD_CARD'; playerId: number; opponentId: number; cardId: number }
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
 export const useGame = () => {
@@ -143,7 +145,8 @@ const initialGameState: GameState = {
   canEndTurn: false,
   canAcquireIR: false,
   gains: [],
-  pendingRewards: []
+  pendingRewards: [],
+  blockedSpaces: []
 }
 
 function determinePlacements(
@@ -628,8 +631,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       
 
+      // Clear blocked spaces for the player whose turn is starting
+      const clearedBlockedSpaces = (newState.blockedSpaces || []).filter(
+        bs => bs.playerId !== nextPlayer.id
+      )
+
       return {
         ...newState,
+        blockedSpaces: clearedBlockedSpaces,
         players: newState.players.map(p =>
           p.id === playerId
             ? {
@@ -1054,7 +1063,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 }
               })
               break
-            
+            default:
+              if (!AUTO_APPLIED_CUSTOM_EFFECTS.includes(effect.reward.custom)) {
+                addPendingReward({ custom: effect.reward.custom }, { type: GainSource.CARD, id: card.id, name: card.name })
+              }
           }
         }
         
@@ -1109,7 +1121,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 lastReward.disabled = true
               }
             }
-          } else {
+          } else if (!AUTO_APPLIED_CUSTOM_EFFECTS.includes(effect.reward.custom)) {
             addPendingReward({ custom: effect.reward.custom }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
           }
         }
@@ -1157,6 +1169,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (space.cost.solari && currPlayer.solari < space.cost.solari) return state
         if (space.cost.spice && currPlayer.spice < space.cost.spice) return state
         if (space.cost.water && currPlayer.water < space.cost.water) return state
+      }
+
+      // Check if space is blocked by The Voice
+      const blockedSpace = newState.blockedSpaces?.find(bs => bs.spaceId === spaceId)
+      if (blockedSpace && blockedSpace.playerId !== playerId) {
+        // Space is blocked for this opponent
+        return state
       }
 
       // Check if space is already occupied or card has infiltrate
@@ -1300,10 +1319,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Add influence to pending rewards (single bumps)
       if (space.influence) {
-        addPendingReward(
-          { influence: { amounts: [space.influence] } }, 
-          { type: GainSource.BOARD_SPACE, id: space.id, name: space.name }
-        )
+        // Check if Power Play effect is active for this placement
+        const hasPowerPlay = card.playEffect?.some(e => e.reward.custom === CustomEffect.POWER_PLAY)
+        const influenceReward = { influence: { amounts: [space.influence] } }
+        const pendingReward = {
+          id: `${GainSource.BOARD_SPACE}-${space.id}-${crypto.randomUUID()}`,
+          source: { type: GainSource.BOARD_SPACE, id: space.id, name: space.name },
+          reward: influenceReward,
+          isTrash: false,
+          powerPlay: hasPowerPlay
+        }
+        pendingRewards.push(pendingReward)
       }
 
       // Update occupied spaces
@@ -1362,7 +1388,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           case 'foldspace': {
             const card = newState.foldspaceDeck.pop()
             if (card) {
-              currPlayer.discardPile.push(card)
+              currPlayer.discardPile = [...currPlayer.discardPile, card]
             }
             break
           }
@@ -1509,6 +1535,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                   updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: gainedPersuasion, type: RewardType.PERSUASION, source: GainSource.CARD } )
                   break
                 }
+                case CustomEffect.GUILD_BANKERS:
+                  // Add as pending reward for user to activate
+                  addPendingReward({ custom: effect.reward.custom }, { type: GainSource.CARD, id: card.id, name: card.name })
+                  break
                 default:
                   break
               }
@@ -1632,7 +1662,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const player: Player = {...state.players.find(p => p.id === playerId)} as Player
       if (!player) return state
       if (state.spiceMustFlowDeck.length === 0) return state
-      if (player.persuasion < 9) return state
+      
+      // Check for Guild Bankers discount
+      const hasDiscount = state.currTurn?.smfDiscount === true
+      const cost = hasDiscount ? Math.max(0, 9 - 3) : 9
+      
+      if (player.persuasion < cost) return state
       const smfDeck = [...state.spiceMustFlowDeck]
       const card = smfDeck.pop() as Card
       const updatedGains: Gain[] = [...state.gains]
@@ -1641,11 +1676,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         player.victoryPoints += card.acquireEffect?.victoryPoints || 0
       }
       player.discardPile.push(card)
-      player.persuasion -= 9
+      player.persuasion -= cost
+      
+      // Clear discount flag after use
+      const newCurrTurn = state.currTurn ? { ...state.currTurn, smfDiscount: false } : null
+      
       return {
         ...state,
         spiceMustFlowDeck: smfDeck,
         gains: updatedGains,
+        currTurn: newCurrTurn,
         players: state.players.map(p => p.id === playerId ? { ...p,discardPile: player.discardPile, persuasion: player.persuasion } : p)
       }
     }
@@ -1831,7 +1871,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const cardSelectChoice = choice as CardSelectChoice
       
       // Execute the onResolve callback to get the action to dispatch
-      const resolveAction = cardSelectChoice.onResolve(cardIds)
+      const resolveAction = cardSelectChoice.onResolve(cardIds) as GameAction
       
       // Clear all pending choices when user makes any choice
       const newTurn = { ...state.currTurn }
@@ -1910,6 +1950,87 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             )
           }
         }
+        case CustomEffect.POWER_PLAY: {
+          const pendingRewards = state.pendingRewards.map(r => ({ ...r }))
+          const target = pendingRewards.find(r => 
+            r.source.type === GainSource.BOARD_SPACE && Boolean(r.reward.influence)
+          )
+          if (!target) return state
+          target.powerPlay = true
+          return {
+            ...state,
+            pendingRewards
+          }
+        }
+        case CustomEffect.REVEREND_MOTHER_MOHIAM: {
+          const player = state.players.find(p => p.id === playerId)
+          if (!player) return state
+          
+          // Check if player has another Bene Gesserit card in play
+          const hasBeneGesseritInPlay = player.playArea.some(c => 
+            c.faction?.includes(FactionType.BENE_GESSERIT) && c.id !== data?.cardId
+          )
+          
+          if (!hasBeneGesseritInPlay) {
+            // Effect doesn't trigger
+            return state
+          }
+          
+          // Initialize opponent discard state
+          const opponents = state.players.filter(p => p.id !== playerId).map(p => p.id)
+          const discardCounts: Record<number, number> = {}
+          opponents.forEach(id => { discardCounts[id] = 0 })
+          return {
+            ...state,
+            currTurn: state.currTurn ? {
+              ...state.currTurn,
+              opponentDiscardState: {
+                effect: CustomEffect.REVEREND_MOTHER_MOHIAM,
+                remainingOpponents: opponents,
+                currentOpponent: opponents[0],
+                discardCounts
+              }
+            } : null
+          }
+        }
+        case CustomEffect.TEST_OF_HUMANITY: {
+          // Initialize opponent choice state
+          const opponents = state.players.filter(p => p.id !== playerId).map(p => p.id)
+          return {
+            ...state,
+            currTurn: state.currTurn ? {
+              ...state.currTurn,
+              opponentDiscardState: {
+                effect: CustomEffect.TEST_OF_HUMANITY,
+                remainingOpponents: opponents,
+                currentOpponent: opponents[0]
+              }
+            } : null
+          }
+        }
+        case CustomEffect.THE_VOICE: {
+          const { spaceId } = data
+          if (typeof spaceId !== 'number') return state
+          
+          // Block the space for opponents until this player's next turn
+          const newBlockedSpaces = [...(state.blockedSpaces || [])]
+          newBlockedSpaces.push({ spaceId, playerId })
+          
+          return {
+            ...state,
+            blockedSpaces: newBlockedSpaces
+          }
+        }
+        case CustomEffect.GUILD_BANKERS: {
+          // Set SMF discount flag for this reveal turn
+          return {
+            ...state,
+            currTurn: state.currTurn ? {
+              ...state.currTurn,
+              smfDiscount: true
+            } : null
+          }
+        }
         default: {
           console.log("Custom effect not implemented: ", customEffect)
           return state
@@ -1959,13 +2080,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return newState
     }
     case 'CLAIM_REWARD': {
-      const { playerId, rewardId } = action
+      const { playerId, rewardId, customData } = action
       const player = state.players.find(p => p.id === playerId)
       if (!player) return state
       
       // Find the reward
       const reward = state.pendingRewards.find(r => r.id === rewardId)
       if (!reward) return state
+      if (reward.reward.custom === CustomEffect.THE_VOICE && (typeof customData?.spaceId !== 'number')) {
+        return state
+      }
       
       const newState = { ...state }
       let newPlayer = { ...player }
@@ -1982,6 +2106,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         newState.pendingRewards = state.pendingRewards.filter(r => r.id !== rewardId)
       }
       
+      // Handle custom effects before applying reward
+      if (reward.reward.custom) {
+        // Dispatch CUSTOM_EFFECT action for other custom effects
+        const customEffectState = {
+          ...newState,
+          pendingRewards: state.pendingRewards.filter(r => r.id !== rewardId),
+          players: state.players.map(p => p.id === playerId ? newPlayer : p),
+          gains: newGains
+        }
+        return gameReducer(customEffectState, {
+          type: 'CUSTOM_EFFECT',
+          playerId,
+          customEffect: reward.reward.custom,
+          data: customData || {}
+        })
+      }
+      
       // Apply the reward using shared helper
       newPlayer = applyRewardToPlayer(reward.reward, newPlayer, newGains, state, reward.source)
       
@@ -1989,11 +2130,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (reward.reward.influence) {
         reward.reward.influence.amounts.forEach(inf => {
           const currentInfluence = newState.factionInfluence[inf.faction]?.[playerId] || 0
+          // Power Play grants +1 extra influence
+          const influenceAmount = reward.powerPlay ? inf.amount + 1 : inf.amount
           newState.factionInfluence = {
             ...newState.factionInfluence,
             [inf.faction]: {
               ...newState.factionInfluence[inf.faction],
-              [playerId]: currentInfluence + inf.amount
+              [playerId]: currentInfluence + influenceAmount
             }
           }
         })
@@ -2037,7 +2180,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Apply rewards only from sources WITHOUT trash and that are NOT disabled
       const rewardsToApply = state.pendingRewards.filter(r => 
-        !sourcesWithTrash.has(`${r.source.type}-${r.source.id}`) && !r.disabled
+        !sourcesWithTrash.has(`${r.source.type}-${r.source.id}`) &&
+        !r.disabled &&
+        !r.reward.custom
       )
       
       // Track total troops recruited for troopLimit update
@@ -2056,11 +2201,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (reward.reward.influence) {
           reward.reward.influence.amounts.forEach(inf => {
             const currentInfluence = newState.factionInfluence[inf.faction]?.[playerId] || 0
+            // Power Play grants +1 extra influence
+            const influenceAmount = reward.powerPlay ? inf.amount + 1 : inf.amount
             newState.factionInfluence = {
               ...newState.factionInfluence,
               [inf.faction]: {
                 ...newState.factionInfluence[inf.faction],
-                [playerId]: currentInfluence + inf.amount
+                [playerId]: currentInfluence + influenceAmount
               }
             }
           })
@@ -2088,6 +2235,130 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       newState.canEndTurn = (newState.pendingRewards.filter(r => !r.disabled).length === 0 && (!newState.currTurn?.pendingChoices?.length))
       
       return newState
+    }
+    case 'OPPONENT_DISCARD_CHOICE': {
+      const { playerId: actingPlayerId, opponentId, choice } = action
+      if (!state.currTurn?.opponentDiscardState) return state
+      if (actingPlayerId !== state.activePlayerId) return state
+      
+      const discardState = state.currTurn.opponentDiscardState
+      if (discardState.currentOpponent !== opponentId) return state
+      
+      const opponent = state.players.find(p => p.id === opponentId)
+      if (!opponent) return state
+      
+      if (choice === 'loseTroop') {
+        // Remove one deployed troop from combat
+        const currentTroops = state.combatTroops[opponentId] || 0
+        if (currentTroops <= 0) return state
+        
+        const newCombatTroops = { ...state.combatTroops }
+        newCombatTroops[opponentId] = currentTroops - 1
+        
+        const newCombatStrength = { ...state.combatStrength }
+        const currentStrength = newCombatStrength[opponentId] || 0
+        if (currentStrength >= 2) {
+          newCombatStrength[opponentId] = currentStrength - 2
+        } else {
+          delete newCombatStrength[opponentId]
+        }
+        
+        // Move to next opponent
+        const remainingOpponents = discardState.remainingOpponents.filter(id => id !== opponentId)
+        const newOpponentDiscardState = remainingOpponents.length > 0 ? {
+          ...discardState,
+          remainingOpponents,
+          currentOpponent: remainingOpponents[0]
+        } : undefined
+        
+        return {
+          ...state,
+          combatTroops: newCombatTroops,
+          combatStrength: newCombatStrength,
+          players: state.players.map(p =>
+            p.id === opponentId
+              ? { ...p, troops: p.troops + 1, combatValue: p.combatValue ? p.combatValue - 2 : 0 }
+              : p
+          ),
+          currTurn: state.currTurn ? {
+            ...state.currTurn,
+            opponentDiscardState: newOpponentDiscardState
+          } : null,
+          canEndTurn: newOpponentDiscardState === undefined && state.pendingRewards.filter(r => !r.disabled).length === 0
+        }
+      } else {
+        // Choice is discard - will be handled by OPPONENT_DISCARD_CARD action
+        return state
+      }
+    }
+    case 'OPPONENT_DISCARD_CARD': {
+      const { playerId: actingPlayerId, opponentId, cardId } = action
+      if (!state.currTurn?.opponentDiscardState) return state
+      if (actingPlayerId !== state.activePlayerId) return state
+      
+      const discardState = state.currTurn.opponentDiscardState
+      if (discardState.currentOpponent !== opponentId) return state
+      
+      const opponent = state.players.find(p => p.id === opponentId)
+      if (!opponent) return state
+      
+      // Find and move card from deck to discard pile
+      const cardIndex = opponent.deck.findIndex(c => c.id === cardId)
+      if (cardIndex === -1) return state
+      
+      const card = opponent.deck[cardIndex]
+      const newDeck = opponent.deck.filter(c => c.id !== cardId)
+      const newDiscardPile = [...opponent.discardPile, card]
+      
+      // Move to next opponent
+      const remainingOpponents = discardState.remainingOpponents.filter(id => id !== opponentId)
+      const newOpponentDiscardState = remainingOpponents.length > 0 ? {
+        ...discardState,
+        remainingOpponents,
+        currentOpponent: remainingOpponents[0]
+      } : undefined
+      
+      // Update discard count for this opponent
+      const discardCounts = { ...(discardState.discardCounts || {}) }
+      discardCounts[opponentId] = (discardCounts[opponentId] || 0) + 1
+      
+      // For Reverend Mother Mohiam, each opponent discards 2 cards
+      const requiredDiscards = discardState.effect === CustomEffect.REVEREND_MOTHER_MOHIAM ? 2 : 1
+      const hasDiscardedEnough = discardCounts[opponentId] >= requiredDiscards
+      
+      if (!hasDiscardedEnough) {
+        // Opponent needs to discard more cards
+        return {
+          ...state,
+          players: state.players.map(p =>
+            p.id === opponentId
+              ? { ...p, deck: newDeck, discardPile: newDiscardPile, handCount: Math.max(0, p.handCount - 1) }
+              : p
+          ),
+          currTurn: state.currTurn ? {
+            ...state.currTurn,
+            opponentDiscardState: {
+              ...discardState,
+              discardCounts
+            }
+          } : null
+        }
+      }
+      
+      // Opponent has discarded enough, move to next
+      return {
+        ...state,
+        players: state.players.map(p =>
+          p.id === opponentId
+            ? { ...p, deck: newDeck, discardPile: newDiscardPile, handCount: Math.max(0, p.handCount - 1) }
+            : p
+        ),
+        currTurn: state.currTurn ? {
+          ...state.currTurn,
+          opponentDiscardState: newOpponentDiscardState
+        } : null,
+        canEndTurn: newOpponentDiscardState === undefined && state.pendingRewards.filter(r => !r.disabled).length === 0
+      }
     }
     default:
       return state

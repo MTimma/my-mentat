@@ -10,6 +10,8 @@ interface BoardSpaceProps extends SpaceProps {
   isEnabled: boolean
   bonusSpice: number
   wide?: boolean
+  isVoiceSelectable?: boolean
+  voiceBlockedBy?: number | null
 }
 
 // Helper function to get player color matching AgentIcon.css
@@ -63,7 +65,9 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
   isEnabled,
   makerSpace,
   image,
-  wide = false
+  wide = false,
+  isVoiceSelectable = false,
+  voiceBlockedBy = null
 }) => {
   const renderCost = () => {
     if (!cost) return null
@@ -130,6 +134,8 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         ${conflictMarker ? 'combat-space' : ''}
         ${!isEnabled ? 'disabled' : ''}
         ${wide ? 'wide' : ''}
+        ${isVoiceSelectable ? 'voice-selectable' : ''}
+        ${voiceBlockedBy !== null ? 'voice-blocked' : ''}
       `}
       onClick={isEnabled ? onSpaceClick : undefined}
       style={{
@@ -144,6 +150,9 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
           alt={name}
           className="board-space-image"
         />
+      )}
+      {voiceBlockedBy !== null && (
+        <div className="voice-block-indicator" title="Blocked by The Voice" />
       )}
       <div className="agents-container">
         {occupiedBy.map((playerId) => (
@@ -162,6 +171,8 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         ${conflictMarker ? 'combat-space' : ''}
         ${!isEnabled ? 'disabled' : ''}
         ${wide ? 'wide' : ''}
+        ${isVoiceSelectable ? 'voice-selectable' : ''}
+        ${voiceBlockedBy !== null ? 'voice-blocked' : ''}
       `}
       onClick={isEnabled ? onSpaceClick : undefined}
       style={{
@@ -171,6 +182,9 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         ...playerBorderStyles
       }}
     >
+      {voiceBlockedBy !== null && (
+        <div className="voice-block-indicator" title="Blocked by The Voice" />
+      )}
       <div className="space-content">
         <div className="space-header">
           <span className="space-name">{name}</span>

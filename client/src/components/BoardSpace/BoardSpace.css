@@ -29,6 +29,36 @@
   box-shadow: 0 0 10px #ffd700;
 }
 
+.board-space.voice-selectable {
+  box-shadow: 0 0 12px rgba(255, 167, 38, 0.8);
+}
+
+.board-space.voice-blocked {
+  border-color: #ffa726;
+}
+
+.voice-block-indicator {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 18px solid #ffa726;
+  z-index: 3;
+}
+
+.voice-block-indicator::after {
+  content: '!';
+  position: absolute;
+  top: 2px;
+  left: -4px;
+  color: #000;
+  font-weight: bold;
+  font-size: 0.7rem;
+}
+
 .board-space.disabled {
   opacity: 0.6;
   cursor: not-allowed;

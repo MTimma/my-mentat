@@ -32,6 +32,9 @@ interface GameBoardProps {
   onSelectiveBreedingRequested: (cards: Card[], onSelect: (card: Card) => void) => void;
   recallMode?: boolean;
   ignoreCosts?: boolean;
+  voiceSelectionActive?: boolean;
+  onVoiceSpaceSelect?: (spaceId: number) => void;
+  blockedSpaces?: Array<{ spaceId: number; playerId: number }>;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -48,10 +51,16 @@ const GameBoard: React.FC<GameBoardProps> = ({
   currentConflict,
   onSelectiveBreedingRequested,
   recallMode = false,
-  ignoreCosts = false
+  ignoreCosts = false,
+  voiceSelectionActive = false,
+  onVoiceSpaceSelect,
+  blockedSpaces = []
 }) => {
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
+
+  const blockedSpaceMap = new Map<number, number>()
+  blockedSpaces.forEach(entry => blockedSpaceMap.set(entry.spaceId, entry.playerId))
 
   const canPayCosts = (space: SpaceProps): boolean => {
     // In recall mode, allow clicking only on spaces where the current player has an agent
@@ -87,6 +96,11 @@ const GameBoard: React.FC<GameBoardProps> = ({
   }
 
   const handleSpaceClick = (spaceId: number) => {
+    if (voiceSelectionActive && onVoiceSpaceSelect) {
+      onVoiceSpaceSelect(spaceId)
+      return
+    }
+
     const space = BOARD_SPACES.find(s => s.id === spaceId)
     if (space?.name === "Sell Melange") {
       setSelectedSpaceId(spaceId)
@@ -124,34 +138,53 @@ const GameBoard: React.FC<GameBoardProps> = ({
   return (
     <div className="game-board">
       <div className="board-spaces">
-        {firstRowSpaces.map((space, idx) => (
-          <BoardSpace
-            key={space.id}
-            {...space}
-            isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
-            onSpaceClick={() => handleSpaceClick(space.id)}
-            occupiedBy={occupiedSpaces[space.id] || []}
-            isEnabled={isSpaceClickable(recallMode, occupiedSpaces, space, currentPlayer, canPayCosts, canPlaceAgent, highlightedAreas)}
-            bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
-            makerSpace={space.makerSpace}
-            wide={idx === 0 || idx === 2}
-          />
-        ))}
-      </div>
-      {restRows.map((row, i) => (
-        <div className="board-spaces" key={i}>
-          {row.map((space: SpaceProps) => (
+        {firstRowSpaces.map((space, idx) => {
+          const blockedBy = blockedSpaceMap.get(space.id)
+          const isBlockedForCurrent = typeof blockedBy === 'number' && blockedBy !== currentPlayer
+          const enabled = voiceSelectionActive
+            ? true
+            : (isSpaceClickable(recallMode, occupiedSpaces, space, currentPlayer, canPayCosts, canPlaceAgent, highlightedAreas) && !isBlockedForCurrent)
+          return (
             <BoardSpace
               key={space.id}
               {...space}
               isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
               onSpaceClick={() => handleSpaceClick(space.id)}
               occupiedBy={occupiedSpaces[space.id] || []}
-              isEnabled={recallMode ? Boolean(occupiedSpaces[space.id]?.includes(currentPlayer)) : Boolean(canPayCosts(space) && canPlaceAgent && highlightedAreas?.includes(space.agentIcon))}
+              isEnabled={enabled}
               bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
               makerSpace={space.makerSpace}
+              wide={idx === 0 || idx === 2}
+              isVoiceSelectable={voiceSelectionActive}
+              voiceBlockedBy={blockedBy}
             />
-          ))}
+          )
+        })}
+      </div>
+      {restRows.map((row, i) => (
+        <div className="board-spaces" key={i}>
+          {row.map((space: SpaceProps) => {
+            const blockedBy = blockedSpaceMap.get(space.id)
+            const isBlockedForCurrent = typeof blockedBy === 'number' && blockedBy !== currentPlayer
+            const baseEnabled = recallMode
+              ? Boolean(occupiedSpaces[space.id]?.includes(currentPlayer))
+              : Boolean(canPayCosts(space) && canPlaceAgent && highlightedAreas?.includes(space.agentIcon))
+            const enabled = voiceSelectionActive ? true : (baseEnabled && !isBlockedForCurrent)
+            return (
+              <BoardSpace
+                key={space.id}
+                {...space}
+                isHighlighted={highlightedAreas?.includes(space.agentIcon) || false}
+                onSpaceClick={() => handleSpaceClick(space.id)}
+                occupiedBy={occupiedSpaces[space.id] || []}
+                isEnabled={enabled}
+                bonusSpice={space.makerSpace ? bonusSpice[space.makerSpace as MakerSpace] : 0}
+                makerSpace={space.makerSpace}
+                isVoiceSelectable={voiceSelectionActive}
+                voiceBlockedBy={blockedBy}
+              />
+            )
+          })}
         </div>
       ))}
       {currentConflict && <ConflictSummary currentConflict={currentConflict} />}

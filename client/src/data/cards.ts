@@ -112,6 +112,70 @@ import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS, CustomEffect } from '../
 // ]
 export const STARTING_DECK: Card[] = [
   {
+    id: 1061,
+    name: "The Voice",
+    image: "imperium_row/the_voice.avif",
+    faction: [FactionType.BENE_GESSERIT],
+    agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
+    cost: 2,
+    playEffect: [
+      {
+        reward: {
+          custom: CustomEffect.THE_VOICE
+        }
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1043,
+    name: "Reverend Mother Mohiam",
+    image: "imperium_row/reverend_mother_mohiam.avif",
+    faction: [FactionType.EMPEROR, FactionType.BENE_GESSERIT],
+    agentIcons: [AgentIcon.EMPEROR, AgentIcon.BENE_GESSERIT],
+    cost: 6,
+    playEffect: [
+      {
+        reward: {
+          custom: CustomEffect.REVEREND_MOTHER_MOHIAM,
+        },
+      }
+    ],
+    revealEffect: [
+      {
+        reward: {
+          persuasion: 2,
+          spice: 2
+        }
+      }
+    ]
+  },
+  {
+    id: 1040,
+    name: "Power Play",
+    image: "imperium_row/power_play.avif",
+    agentIcons: [AgentIcon.EMPEROR, AgentIcon.SPACING_GUILD, AgentIcon.BENE_GESSERIT, AgentIcon.FREMEN],
+    cost: 5,
+    playEffect: [
+      {
+        reward: {
+          custom: CustomEffect.POWER_PLAY,//TODO can trash this card before getting effect
+        },
+      },
+      {
+        reward: {
+          trashThisCard: true
+        }
+      }
+    ]
+  },
+  {
     id: 1,
     name: "Convincing Argument",
     image: "starter_deck/convincing_argument.avif",
@@ -1968,7 +2032,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     playEffect: [
       {
         reward: {
-          custom: CustomEffect.REVEREND_MOTHER_MOHIAM,//TODO can trash this card before getting effect
+          custom: CustomEffect.REVEREND_MOTHER_MOHIAM,
         },
       }
     ],

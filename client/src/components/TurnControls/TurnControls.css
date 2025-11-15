@@ -410,6 +410,66 @@ button:disabled {
   margin-right: 4px;
 }
 
+.voice-selection-banner {
+  background: rgba(255, 165, 0, 0.15);
+  border: 1px solid #ffa726;
+  color: #ffa726;
+  padding: 10px 12px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin-bottom: 12px;
+}
+
+.opponent-discard-panel {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid #ffa726;
+  padding: 12px;
+  border-radius: 6px;
+  color: #fff;
+  margin-bottom: 12px;
+  max-width: 1200px;
+}
+
+.opponent-discard-panel .panel-title {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.opponent-discard-panel .panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.secondary-btn {
+  background-color: #546e7a;
+  color: #fff;
+}
+
+.danger-btn {
+  background-color: #c62828;
+  color: #fff;
+}
+
+.primary-btn {
+  background-color: #2e7d32;
+  color: #fff;
+}
+
+.hint-text {
+  font-size: 0.85rem;
+  color: #ffd54f;
+}
+
 .effect-btn.optional {
   border-color: #FFC107;
   background-color: rgba(255, 193, 7, 0.2);

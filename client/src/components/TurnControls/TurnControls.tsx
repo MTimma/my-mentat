@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
-import { Player, Card, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect } from '../../types/GameTypes'
+import { Player, Card, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
-import { PLAY_EFFECT_TEXTS, EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
+import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
 import './TurnControls.css'
 
 interface TurnControlsProps {
@@ -37,6 +37,13 @@ interface TurnControlsProps {
   onClaimReward?: (rewardId: string) => void
   onClaimAllRewards?: () => void
   agentPlaced?: boolean
+  opponentDiscardState?: GameTurn['opponentDiscardState']
+  onOpponentDiscardChoice?: (opponentId: number, choice: 'discard' | 'loseTroop') => void
+  onOpponentDiscardCard?: (opponentId: number, cardId: number) => void
+  combatTroops?: Record<number, number>
+  onVoiceSelectionStart?: (rewardId: string) => void
+  voiceSelectionActive?: boolean
+  onVoiceSelectionCancel?: () => void
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -69,7 +76,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   pendingRewards = [],
   onClaimReward,
   onClaimAllRewards,
-  agentPlaced = false
+  agentPlaced = false,
+  opponentDiscardState,
+  onOpponentDiscardChoice,
+  onOpponentDiscardCard,
+  combatTroops = {},
+  onVoiceSelectionStart,
+  voiceSelectionActive = false,
+  onVoiceSelectionCancel
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -77,6 +91,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [showTrashPopup, setShowTrashPopup] = useState(false)
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
   const [activeCardSelect, setActiveCardSelect] = useState<CardSelectChoice | null>(null)
+  const [opponentCardSelect, setOpponentCardSelect] = useState<Player | null>(null)
 
   if (!activePlayer) return null
 
@@ -239,7 +254,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }
 
   const ChoiceDialog = () => {
-    // Only show CardSearch dialog when user clicks a card selection choice
     if (activeCardSelect) {
       return (
         <CardSearch
@@ -261,6 +275,26 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           }}
         />
       );
+    }
+
+    if (opponentCardSelect) {
+      return (
+        <CardSearch
+          isOpen={true}
+          player={opponentCardSelect}
+          piles={[CardPile.DECK]}
+          selectionCount={1}
+          text={`Choose a card from ${opponentCardSelect.leader?.name || opponentCardSelect.color} to discard`}
+          isRevealTurn={false}
+          onSelect={(selectedCards) => {
+            if (onOpponentDiscardCard) {
+              onOpponentDiscardCard(opponentCardSelect.id, selectedCards[0].id)
+            }
+            setOpponentCardSelect(null)
+          }}
+          onCancel={() => setOpponentCardSelect(null)}
+        />
+      )
     }
     
     return null;
@@ -362,30 +396,48 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             </div>
             <div className="effect-card-body">
               {/* Mandatory Rewards */}
-              {card.rewards.map(reward => (
+              {card.rewards.map(reward => {
+                const isVoiceReward = reward.reward.custom === CustomEffect.THE_VOICE
+                const disabled = voiceSelectionActive || reward.disabled
+                const tooltip = voiceSelectionActive
+                  ? 'Finish The Voice selection before claiming other rewards.'
+                  : reward.isTrash
+                    ? `⚠️ Trashing this card will cancel effects that haven't been applied yet. Cancels: ${getCancelledRewards(card, reward)}`
+                    : undefined
+                return (
                 <button
                   key={reward.id}
                   className={`effect-btn ${reward.isTrash ? 'trash-reward' : ''}`}
-                  onClick={() => onClaimReward && onClaimReward(reward.id)}
-                  disabled={reward.disabled}
-                  title={reward.isTrash ? `⚠️ Trashing this card will cancel effects that haven't been applied yet. Cancels: ${getCancelledRewards(card, reward)}` : undefined}
+                  onClick={() => {
+                    if (!onClaimReward) return
+                    if (isVoiceReward && onVoiceSelectionStart) {
+                      onVoiceSelectionStart(reward.id)
+                    } else {
+                      onClaimReward(reward.id)
+                    }
+                  }}
+                  disabled={disabled}
+                  title={tooltip}
                 >
                   {reward.isTrash && <span className="warning-icon">⚠️ </span>}
                   {renderLabel({ reward: reward.reward })}
                 </button>
-              ))}
+              )})}
               
               {/* Optional Effects */}
-              {card.optional.map((eff, idx) => (
+              {card.optional.map((eff, idx) => {
+                const disabled = voiceSelectionActive || !isAffordable(eff.cost)
+                return (
                 <button 
                   key={idx}
                   className="effect-btn optional"
-                  disabled={!isAffordable(eff.cost)}
+                  disabled={disabled}
                   onClick={() => handleEffectClick(eff)}
+                  title={voiceSelectionActive ? 'Finish The Voice selection before resolving other effects.' : undefined}
                 >
                   {renderLabel(eff)}
                 </button>
-              ))}
+              )})}
               
               {/* Pending Choices */}
               {card.choices.map(choice => {
@@ -398,7 +450,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                       key={choice.id}
                       className="effect-btn choice"
                       onClick={() => setActiveCardSelect(cardSelectChoice)}
-                      disabled={cardSelectChoice.disabled}
+                      disabled={cardSelectChoice.disabled || voiceSelectionActive}
+                      title={voiceSelectionActive ? 'Finish The Voice selection before resolving other choices.' : undefined}
                     >
                       {cardSelectChoice.prompt}
                     </button>
@@ -412,7 +465,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                         // Get disabled tooltip text if option is disabled and has a custom effect
                         let disabledTooltip: string | undefined
                         if (option.disabled && option.reward.custom) {
-                          disabledTooltip = EFFECT_DISABLED_TEXTS[option.reward.custom] || 'This option is not available'
+                          disabledTooltip = PLAY_EFFECT_DISABLED_TEXTS[option.reward.custom] || 'This option is not available'
                         }
                         
                         return (
@@ -420,9 +473,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                             {oidx > 0 && <span className="or-separator">OR</span>}
                             <button
                               className="effect-btn choice or-option"
-                              disabled={option.disabled || !isAffordable(option.cost)}
+                              disabled={option.disabled || !isAffordable(option.cost) || voiceSelectionActive}
                               onClick={() => onResolveChoice && onResolveChoice(choice.id, option.reward, choice.source)}
-                              title={disabledTooltip}
+                              title={voiceSelectionActive ? 'Finish The Voice selection before resolving other choices.' : disabledTooltip}
                             >
                               {renderLabel(option)}
                             </button>
@@ -436,6 +489,83 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             </div>
           </div>
         ))}
+      </div>
+    )
+  }
+
+  const renderVoiceSelectionBanner = () => {
+    if (!voiceSelectionActive) return null
+    return (
+      <div className="voice-selection-banner">
+        <span>Select any board space to block with The Voice.</span>
+        {onVoiceSelectionCancel && (
+          <button className="secondary-btn" onClick={onVoiceSelectionCancel}>
+            Cancel
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  const renderOpponentDiscardPanel = () => {
+    const currentOpponentId = opponentDiscardState?.currentOpponent
+    if (!currentOpponentId) return null
+    const opponent = players.find(p => p.id === currentOpponentId)
+    if (!opponent) return null
+    const effect = opponentDiscardState?.effect
+    if (!effect) return null
+    const discardCounts = opponentDiscardState?.discardCounts || {}
+    const discarded = discardCounts[currentOpponentId] || 0
+    const required = effect === CustomEffect.REVEREND_MOTHER_MOHIAM ? 2 : 1
+    const remaining = Math.max(0, required - discarded)
+    const canLoseTroop = (combatTroops[currentOpponentId] || 0) > 0
+
+    return (
+      <div className="opponent-discard-panel">
+        <div className="panel-title">
+          {effect === CustomEffect.REVEREND_MOTHER_MOHIAM ? 'Reverend Mother Mohiam' : 'Test of Humanity'}
+        </div>
+        <div className="panel-body">
+          <div className="opponent-row">
+            <AgentIcon playerId={opponent.id} />
+            <span>{opponent.leader?.name || opponent.color}</span>
+          </div>
+          {effect === CustomEffect.REVEREND_MOTHER_MOHIAM ? (
+            <>
+              <p>{`Discard ${remaining} more card${remaining !== 1 ? 's' : ''} from this player's deck.`}</p>
+              <button
+                className="primary-btn"
+                onClick={() => setOpponentCardSelect(opponent)}
+                disabled={!onOpponentDiscardCard}
+              >
+                Choose card to discard
+              </button>
+            </>
+          ) : (
+            <>
+              <p>Each opponent must discard a card or lose one deployed troop.</p>
+              <div className="panel-actions">
+                <button
+                  className="secondary-btn"
+                  onClick={() => setOpponentCardSelect(opponent)}
+                  disabled={!onOpponentDiscardCard}
+                >
+                  Discard a card
+                </button>
+                <button
+                  className="danger-btn"
+                  onClick={() => onOpponentDiscardChoice && onOpponentDiscardChoice(opponent.id, 'loseTroop')}
+                  disabled={!onOpponentDiscardChoice || !canLoseTroop}
+                >
+                  Lose deployed troop
+                </button>
+              </div>
+              {!canLoseTroop && (
+                <small className="hint-text">No deployed troops — must discard a card.</small>
+              )}
+            </>
+          )}
+        </div>
       </div>
     )
   }
@@ -462,6 +592,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           </div>
         </div>
       )}
+      {renderVoiceSelectionBanner()}
+      {renderOpponentDiscardPanel()}
       {renderEffectsBar()}
       {
         <ChoiceDialog />
@@ -535,8 +667,16 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           {!isCombatPhase && pendingRewards.length > 0 && pendingRewards.some(r => !r.disabled) && <button 
             className="get-mandatory-effects-button"
             onClick={() => onClaimAllRewards && onClaimAllRewards()}
-            disabled={pendingRewards.some(r => r.isTrash) || pendingChoices.length > 0}
-            title={pendingChoices.length > 0 ? "Cannot apply mandatory effects while choices are pending" : (pendingRewards.some(r => r.isTrash) ? "Cannot auto-apply when trash rewards are present" : "")}
+            disabled={voiceSelectionActive || pendingRewards.some(r => r.isTrash) || pendingChoices.length > 0}
+            title={
+              voiceSelectionActive
+                ? 'Finish The Voice selection before claiming rewards.'
+                : pendingChoices.length > 0
+                  ? "Cannot apply mandatory effects while choices are pending"
+                  : pendingRewards.some(r => r.isTrash)
+                    ? "Cannot auto-apply when trash rewards are present"
+                    : ""
+            }
           >
             Get Mandatory Effects
           </button>}
