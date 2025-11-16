@@ -36,6 +36,7 @@ interface TurnControlsProps {
   pendingRewards?: PendingReward[]
   onClaimReward?: (rewardId: string) => void
   onClaimAllRewards?: () => void
+  onAutoApplyRewards?: () => void
   agentPlaced?: boolean
   opponentDiscardState?: GameTurn['opponentDiscardState']
   onOpponentDiscardChoice?: (opponentId: number, choice: 'discard' | 'loseTroop') => void
@@ -44,6 +45,7 @@ interface TurnControlsProps {
   onVoiceSelectionStart?: (rewardId: string) => void
   voiceSelectionActive?: boolean
   onVoiceSelectionCancel?: () => void
+  onOpponentNoCardAck?: (opponentId: number) => void
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -76,6 +78,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   pendingRewards = [],
   onClaimReward,
   onClaimAllRewards,
+  onAutoApplyRewards,
   agentPlaced = false,
   opponentDiscardState,
   onOpponentDiscardChoice,
@@ -83,7 +86,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   combatTroops = {},
   onVoiceSelectionStart,
   voiceSelectionActive = false,
-  onVoiceSelectionCancel
+  onVoiceSelectionCancel,
+  onOpponentNoCardAck
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -92,6 +96,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
   const [activeCardSelect, setActiveCardSelect] = useState<CardSelectChoice | null>(null)
   const [opponentCardSelect, setOpponentCardSelect] = useState<Player | null>(null)
+  const hasPendingVoiceReward = pendingRewards.some(r => r.reward.custom === CustomEffect.THE_VOICE && !r.disabled)
+  const hasOpponentDiscard = Boolean(opponentDiscardState)
+  const hasMandatoryRewards = pendingRewards.some(r => !r.disabled && !r.isTrash)
 
   if (!activePlayer) return null
 
@@ -283,6 +290,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           isOpen={true}
           player={opponentCardSelect}
           piles={[CardPile.DECK]}
+          customFilter={(card) => !opponentCardSelect.playArea.some(pc => pc.id === card.id)}
           selectionCount={1}
           text={`Choose a card from ${opponentCardSelect.leader?.name || opponentCardSelect.color} to discard`}
           isRevealTurn={false}
@@ -518,7 +526,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     const discarded = discardCounts[currentOpponentId] || 0
     const required = effect === CustomEffect.REVEREND_MOTHER_MOHIAM ? 2 : 1
     const remaining = Math.max(0, required - discarded)
+    const availableCards = opponent.deck.length
+    const discardableNow = Math.min(remaining, availableCards)
     const canLoseTroop = (combatTroops[currentOpponentId] || 0) > 0
+    const canDiscardCard = Boolean(onOpponentDiscardCard) && discardableNow > 0
 
     return (
       <div className="opponent-discard-panel">
@@ -532,14 +543,29 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           </div>
           {effect === CustomEffect.REVEREND_MOTHER_MOHIAM ? (
             <>
-              <p>{`Discard ${remaining} more card${remaining !== 1 ? 's' : ''} from this player's deck.`}</p>
-              <button
-                className="primary-btn"
-                onClick={() => setOpponentCardSelect(opponent)}
-                disabled={!onOpponentDiscardCard}
-              >
-                Choose card to discard
-              </button>
+              {discardableNow > 0 ? (
+                <>
+                  <p>{`Discard ${discardableNow} more card${discardableNow !== 1 ? 's' : ''} from this player's deck.`}</p>
+                  <button
+                    className="primary-btn"
+                    onClick={() => canDiscardCard && setOpponentCardSelect(opponent)}
+                    disabled={!canDiscardCard}
+                  >
+                    Choose card to discard
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p>This opponent has no cards available to discard.</p>
+                  <button
+                    className="primary-btn"
+                    onClick={() => onOpponentNoCardAck && onOpponentNoCardAck(opponent.id)}
+                    disabled={!onOpponentNoCardAck}
+                  >
+                    Acknowledge
+                  </button>
+                </>
+              )}
             </>
           ) : (
             <>
@@ -547,8 +573,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               <div className="panel-actions">
                 <button
                   className="secondary-btn"
-                  onClick={() => setOpponentCardSelect(opponent)}
-                  disabled={!onOpponentDiscardCard}
+                  onClick={() => canDiscardCard && setOpponentCardSelect(opponent)}
+                  disabled={!canDiscardCard}
                 >
                   Discard a card
                 </button>
@@ -561,7 +587,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 </button>
               </div>
               {!canLoseTroop && (
-                <small className="hint-text">No deployed troops — must discard a card.</small>
+                <small className="hint-text">
+                  {canDiscardCard ? 'No deployed troops — must discard a card.' : 'No cards or troops available.'}
+                </small>
               )}
             </>
           )}
@@ -632,18 +660,30 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           <button 
             className="play-card-button"
             onClick={handlePlayCard}
-            disabled={activePlayer.agents === 0 || canEndTurn || agentPlaced}
+            disabled={activePlayer.agents === 0 || canEndTurn || agentPlaced || hasOpponentDiscard || hasMandatoryRewards}
             hidden={isCombatPhase}
-            title={agentPlaced ? "You have already placed an agent this turn" : undefined}
+            title={
+              hasOpponentDiscard
+                ? 'Resolve opponent discard instructions before taking new actions.'
+                : hasMandatoryRewards
+                  ? 'Claim pending rewards before taking new actions.'
+                  : agentPlaced ? "You have already placed an agent this turn" : undefined
+            }
           >
             Play Card
           </button>
           <button 
             className="reveal-turn-button"
             onClick={handleRevealTurn}
-            disabled={canEndTurn || isCombatPhase || agentPlaced}
+            disabled={canEndTurn || isCombatPhase || agentPlaced || hasOpponentDiscard || hasMandatoryRewards}
             hidden={isCombatPhase}
-            title={agentPlaced ? "You have already placed an agent this turn" : undefined}
+            title={
+              hasOpponentDiscard
+                ? 'Resolve opponent discard instructions before taking new actions.'
+                : hasMandatoryRewards
+                  ? 'Claim pending rewards before taking new actions.'
+                  : agentPlaced ? "You have already placed an agent this turn" : undefined
+            }
           >
             Reveal Turn
           </button>
@@ -666,19 +706,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           </>
           {!isCombatPhase && pendingRewards.length > 0 && pendingRewards.some(r => !r.disabled) && <button 
             className="get-mandatory-effects-button"
-            onClick={() => onClaimAllRewards && onClaimAllRewards()}
-            disabled={voiceSelectionActive || pendingRewards.some(r => r.isTrash) || pendingChoices.length > 0}
+            onClick={() => onAutoApplyRewards && onAutoApplyRewards()}
+            disabled={voiceSelectionActive}
             title={
               voiceSelectionActive
                 ? 'Finish The Voice selection before claiming rewards.'
-                : pendingChoices.length > 0
-                  ? "Cannot apply mandatory effects while choices are pending"
-                  : pendingRewards.some(r => r.isTrash)
-                    ? "Cannot auto-apply when trash rewards are present"
-                    : ""
+                : "Auto-apply non-interactive rewards (skips The Voice, Reverend Mother Mohiam, Test of Humanity, trash, and OR choices)"
             }
           >
-            Get Mandatory Effects
+            Auto-Apply Effects
           </button>}
           {!isCombatPhase && <button 
             className="play-intrigue-button"

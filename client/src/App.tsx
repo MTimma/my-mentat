@@ -8,7 +8,7 @@ import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -115,7 +115,8 @@ const GameContent = () => {
 
   const handleClaimReward = (rewardId: string, customData?: { [key: string]: unknown }) => {
     if (!activePlayer) return
-    if (voiceSelectionRewardId && rewardId !== voiceSelectionRewardId && !(customData && 'spaceId' in customData)) {
+    const hasVoiceSpace = Boolean(customData && typeof (customData as Record<string, unknown>).spaceId === 'number')
+    if (voiceSelectionRewardId && rewardId !== voiceSelectionRewardId && !hasVoiceSpace) {
       return
     }
     dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId, customData })
@@ -146,6 +147,52 @@ const GameContent = () => {
   const handleOpponentDiscardCard = (opponentId: number, cardId: number) => {
     if (!activePlayer) return
     dispatch({ type: 'OPPONENT_DISCARD_CARD', playerId: activePlayer.id, opponentId, cardId })
+  }
+
+  const handleOpponentNoCardAck = (opponentId: number) => {
+    if (!activePlayer) return
+    dispatch({ type: 'OPPONENT_NO_CARD_ACK', playerId: activePlayer.id, opponentId })
+  }
+
+  const handleAutoApplyRewards = () => {
+    if (!activePlayer) return
+    
+    // Interactive custom effects that require user input
+    const interactiveEffects = [
+      CustomEffect.THE_VOICE,
+      CustomEffect.REVEREND_MOTHER_MOHIAM,
+      CustomEffect.TEST_OF_HUMANITY
+    ]
+    
+    // Filter rewards to only include non-interactive ones
+    const autoApplicableRewards = gameState.pendingRewards.filter(reward => {
+      // Skip disabled rewards
+      if (reward.disabled) return false
+      
+      // Skip trash rewards (require user selection)
+      if (reward.isTrash) return false
+      
+      // Skip rewards with interactive custom effects
+      if (reward.reward.custom && interactiveEffects.includes(reward.reward.custom)) {
+        return false
+      }
+      
+      // Skip rewards that are part of OR choices (pending choices)
+      const isPartOfChoice = gameState.currTurn?.pendingChoices?.some(choice => 
+        choice.type === ChoiceType.FIXED_OPTIONS &&
+        (choice as FixedOptionsChoice).options.some(opt => 
+          opt.source?.id === reward.source.id && opt.source?.type === reward.source.type
+        )
+      )
+      if (isPartOfChoice) return false
+      
+      return true
+    })
+    
+    // Dispatch CLAIM_REWARD for each auto-applicable reward
+    autoApplicableRewards.forEach(reward => {
+      dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId: reward.id })
+    })
   }
 
   return (
@@ -241,6 +288,7 @@ const GameContent = () => {
           pendingRewards={gameState.pendingRewards}
           onClaimReward={handleClaimReward}
           onClaimAllRewards={handleClaimAllRewards}
+          onAutoApplyRewards={handleAutoApplyRewards}
           agentPlaced={Boolean(gameState.currTurn?.agentSpace)}
           opponentDiscardState={gameState.currTurn?.opponentDiscardState}
           onOpponentDiscardChoice={handleOpponentDiscardChoice}
@@ -249,6 +297,7 @@ const GameContent = () => {
           onVoiceSelectionStart={handleVoiceSelectionStart}
           voiceSelectionActive={Boolean(voiceSelectionRewardId)}
           onVoiceSelectionCancel={handleVoiceSelectionCancel}
+          onOpponentNoCardAck={handleOpponentNoCardAck}
         />
       </div>
       <div className="combat-results-container" hidden={gameState.phase !== GamePhase.COMBAT_REWARDS}>

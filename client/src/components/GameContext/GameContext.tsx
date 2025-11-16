@@ -77,6 +77,7 @@ type GameAction =
   | { type: 'CLAIM_ALL_REWARDS'; playerId: number }
   | { type: 'OPPONENT_DISCARD_CHOICE'; playerId: number; opponentId: number; choice: 'discard' | 'loseTroop' }
   | { type: 'OPPONENT_DISCARD_CARD'; playerId: number; opponentId: number; cardId: number }
+  | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
 export const useGame = () => {
@@ -939,6 +940,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const player = state.players.find(p => p.id === playerId)
       const card = player?.deck.find(c => c.id === cardId)
       
+      if (state.currTurn?.opponentDiscardState) {
+        return state
+      }
+
 
       if (!card || playerId !== state.activePlayerId || !player) return state
       // Create or update the current turn
@@ -1977,7 +1982,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
           
           // Initialize opponent discard state
-          const opponents = state.players.filter(p => p.id !== playerId).map(p => p.id)
+          const opponents = state.players
+            .filter(p => p.id !== playerId)
+            .map(p => p.id)
+          if (opponents.length === 0) return state
           const discardCounts: Record<number, number> = {}
           opponents.forEach(id => { discardCounts[id] = 0 })
           return {
@@ -1996,6 +2004,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         case CustomEffect.TEST_OF_HUMANITY: {
           // Initialize opponent choice state
           const opponents = state.players.filter(p => p.id !== playerId).map(p => p.id)
+          if (opponents.length === 0) return state
+          const discardCounts: Record<number, number> = {}
+          opponents.forEach(id => { discardCounts[id] = 0 })
           return {
             ...state,
             currTurn: state.currTurn ? {
@@ -2003,7 +2014,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               opponentDiscardState: {
                 effect: CustomEffect.TEST_OF_HUMANITY,
                 remainingOpponents: opponents,
-                currentOpponent: opponents[0]
+                currentOpponent: opponents[0],
+                discardCounts
               }
             } : null
           }
@@ -2268,7 +2280,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const newOpponentDiscardState = remainingOpponents.length > 0 ? {
           ...discardState,
           remainingOpponents,
-          currentOpponent: remainingOpponents[0]
+          currentOpponent: remainingOpponents[0],
+          discardCounts: discardState.discardCounts
         } : undefined
         
         return {
@@ -2306,17 +2319,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const cardIndex = opponent.deck.findIndex(c => c.id === cardId)
       if (cardIndex === -1) return state
       
+      // Ensure card is not in playArea (already revealed)
+      if (opponent.playArea.some(c => c.id === cardId)) return state
+      
       const card = opponent.deck[cardIndex]
       const newDeck = opponent.deck.filter(c => c.id !== cardId)
       const newDiscardPile = [...opponent.discardPile, card]
-      
-      // Move to next opponent
-      const remainingOpponents = discardState.remainingOpponents.filter(id => id !== opponentId)
-      const newOpponentDiscardState = remainingOpponents.length > 0 ? {
-        ...discardState,
-        remainingOpponents,
-        currentOpponent: remainingOpponents[0]
-      } : undefined
       
       // Update discard count for this opponent
       const discardCounts = { ...(discardState.discardCounts || {}) }
@@ -2324,7 +2332,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // For Reverend Mother Mohiam, each opponent discards 2 cards
       const requiredDiscards = discardState.effect === CustomEffect.REVEREND_MOTHER_MOHIAM ? 2 : 1
-      const hasDiscardedEnough = discardCounts[opponentId] >= requiredDiscards
+      let hasDiscardedEnough = discardCounts[opponentId] >= requiredDiscards
+
+      if (!hasDiscardedEnough && discardState.effect === CustomEffect.REVEREND_MOTHER_MOHIAM) {
+        const cardsRemaining = newDeck.length
+        if (cardsRemaining === 0) {
+          discardCounts[opponentId] = requiredDiscards
+          hasDiscardedEnough = true
+        }
+      }
+
+      const remainingOpponents = discardState.remainingOpponents.filter(id => id !== opponentId)
+      const newOpponentDiscardState = remainingOpponents.length > 0 ? {
+        ...discardState,
+        remainingOpponents,
+        currentOpponent: remainingOpponents[0],
+        discardCounts
+      } : undefined
       
       if (!hasDiscardedEnough) {
         // Opponent needs to discard more cards
@@ -2353,6 +2377,36 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             ? { ...p, deck: newDeck, discardPile: newDiscardPile, handCount: Math.max(0, p.handCount - 1) }
             : p
         ),
+        currTurn: state.currTurn ? {
+          ...state.currTurn,
+          opponentDiscardState: newOpponentDiscardState
+        } : null,
+        canEndTurn: newOpponentDiscardState === undefined && state.pendingRewards.filter(r => !r.disabled).length === 0
+      }
+    }
+    case 'OPPONENT_NO_CARD_ACK': {
+      const { playerId: actingPlayerId, opponentId } = action
+      if (!state.currTurn?.opponentDiscardState) return state
+      if (actingPlayerId !== state.activePlayerId) return state
+      const discardState = state.currTurn.opponentDiscardState
+      if (discardState.currentOpponent !== opponentId) return state
+      if (discardState.effect !== CustomEffect.REVEREND_MOTHER_MOHIAM) return state
+      const opponent = state.players.find(p => p.id === opponentId)
+      if (!opponent || opponent.deck.length > 0) return state
+
+      const discardCounts = { ...(discardState.discardCounts || {}) }
+      discardCounts[opponentId] = 2
+
+      const remainingOpponents = discardState.remainingOpponents.filter(id => id !== opponentId)
+      const newOpponentDiscardState = remainingOpponents.length > 0 ? {
+        ...discardState,
+        remainingOpponents,
+        currentOpponent: remainingOpponents[0],
+        discardCounts
+      } : undefined
+
+      return {
+        ...state,
         currTurn: state.currTurn ? {
           ...state.currTurn,
           opponentDiscardState: newOpponentDiscardState
