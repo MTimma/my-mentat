@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer } from 'react'
-import { 
-  GameState, 
+import {
+  GameState,
   FactionType,
   ConflictCard,
   IntrigueCard,
@@ -41,6 +41,30 @@ import { FOLDSPACE_DECK } from '../../data/cards'
 import { CONFLICTS } from '../../data/conflicts'
 import { PLAY_EFFECT_TEXTS } from '../../data/effectTexts'
 
+const deepClone = <T>(value: T): T => {
+  if (Array.isArray(value)) {
+    return value.map(item => deepClone(item)) as T
+  }
+  if (value && typeof value === 'object') {
+    const clone: Record<string, unknown> = {}
+    Object.entries(value as Record<string, unknown>).forEach(([key, val]) => {
+      clone[key] = deepClone(val)
+    })
+    return clone as T
+  }
+  return value
+}
+
+const cloneCardWithId = (card: Card, id: number): Card => ({
+  ...deepClone(card),
+  id
+})
+
+const createImperiumDeck = (): Card[] => {
+  let nextId = 2000
+  return IMPERIUM_ROW_DECK.map(card => cloneCardWithId(card, nextId++))
+}
+
 interface GameContextType {
   gameState: GameState
   currentConflict: ConflictCard | null
@@ -75,6 +99,7 @@ type GameAction =
   | { type: 'SELECT_CONFLICT'; conflictId: number }
   | { type: 'CLAIM_REWARD'; playerId: number; rewardId: string; customData?: CustomEffectData }
   | { type: 'CLAIM_ALL_REWARDS'; playerId: number }
+  | { type: 'INITIALIZE_IMPERIUM_ROW'; cardIds: number[] }
   | { type: 'OPPONENT_DISCARD_CHOICE'; playerId: number; opponentId: number; choice: 'discard' | 'loseTroop' }
   | { type: 'OPPONENT_DISCARD_CARD'; playerId: number; opponentId: number; cardId: number }
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
@@ -87,6 +112,8 @@ export const useGame = () => {
   }
   return context
 }
+
+const initialImperiumDeck = createImperiumDeck()
 
 const initialGameState: GameState = {
   firstPlayerMarker: 0,
@@ -111,8 +138,8 @@ const initialGameState: GameState = {
   spiceMustFlowDeck: SPICE_MUST_FLOW_DECK,
   arrakisLiaisonDeck: ARRAKIS_LIAISON_DECK,
   foldspaceDeck: FOLDSPACE_DECK,
-  imperiumRowDeck: IMPERIUM_ROW_DECK,
-  imperiumRow: [IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2], IMPERIUM_ROW_DECK[47], IMPERIUM_ROW_DECK[38]],
+  imperiumRowDeck: initialImperiumDeck,
+  imperiumRow: [],
   intrigueDeck: [],
   intrigueDiscard: [],
   conflictsDiscard: [],
@@ -543,6 +570,33 @@ function revealRequirementSatisfied(effect: RevealEffect, currCard: Card, state:
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
+    case 'INITIALIZE_IMPERIUM_ROW': {
+      if (state.imperiumRow.length >= 5) return state
+      const remainingSlots = 5 - state.imperiumRow.length
+      const requiredCount = Math.min(remainingSlots, state.imperiumRowDeck.length)
+      if (requiredCount <= 0) return state
+      if (action.cardIds.length !== requiredCount) return state
+
+      const ids = new Set(action.cardIds)
+      const selected: Card[] = []
+      const remaining: Card[] = []
+
+      state.imperiumRowDeck.forEach(card => {
+        if (ids.has(card.id) && selected.length < requiredCount) {
+          selected.push(card)
+        } else {
+          remaining.push(card)
+        }
+      })
+
+      if (selected.length !== requiredCount) return state
+
+      return {
+        ...state,
+        imperiumRow: [...state.imperiumRow, ...selected],
+        imperiumRowDeck: remaining
+      }
+    }
     case 'SELECT_CONFLICT': {
       const conflict = CONFLICTS.find(c => c.id === action.conflictId)
       if (!conflict) return state
@@ -1645,6 +1699,91 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         canAcquireIR: true
       }
     }
+    case 'ACQUIRE_CARD': {
+      const { playerId, cardId } = action
+      const player = state.players.find(p => p.id === playerId)
+      if (!player) return state
+
+      const cardIndex = state.imperiumRow.findIndex(card => card.id === cardId)
+      if (cardIndex === -1) return state
+      const card = state.imperiumRow[cardIndex]
+      const cost = card.cost || 0
+      if (player.persuasion < cost) return state
+
+      const updatedPlayer: Player = {
+        ...player,
+        persuasion: player.persuasion - cost,
+        discardPile: [...player.discardPile, card]
+      }
+
+      const updatedGains: Gain[] = [...state.gains]
+      const pushGain = (amount: number | undefined, type: RewardType) => {
+        if (!amount) return
+        updatedGains.push({
+          round: state.currentRound,
+          playerId,
+          sourceId: card.id,
+          name: `${card.name} Acquire`,
+          amount,
+          type,
+          source: GainSource.CARD
+        })
+      }
+
+      const applyResource = (prop: 'spice' | 'water' | 'troops' | 'victoryPoints', amount?: number, rewardType?: RewardType) => {
+        if (!amount) return
+        updatedPlayer[prop] += amount
+        if (rewardType) pushGain(amount, rewardType)
+      }
+
+      applyResource('spice', card.acquireEffect?.spice, RewardType.SPICE)
+      applyResource('water', card.acquireEffect?.water, RewardType.WATER)
+      applyResource('troops', card.acquireEffect?.troops, RewardType.TROOPS)
+      applyResource('victoryPoints', card.acquireEffect?.victoryPoints, RewardType.VICTORY_POINTS)
+
+      let updatedFactionInfluence = state.factionInfluence
+      if (card.acquireEffect?.influence) {
+        updatedFactionInfluence = { ...state.factionInfluence }
+        card.acquireEffect.influence.amounts.forEach(({ faction, amount }) => {
+          const current = updatedFactionInfluence[faction][playerId] || 0
+          updatedFactionInfluence = {
+            ...updatedFactionInfluence,
+            [faction]: {
+              ...updatedFactionInfluence[faction],
+              [playerId]: current + amount
+            }
+          }
+          pushGain(amount, RewardType.INFLUENCE)
+        })
+      }
+
+      const updatedImperiumRow = [...state.imperiumRow]
+      updatedImperiumRow.splice(cardIndex, 1)
+
+      let remainingDeck = [...state.imperiumRowDeck]
+      if (remainingDeck.length > 0) {
+        const [nextCard, ...rest] = remainingDeck
+        updatedImperiumRow.push(nextCard)
+        remainingDeck = rest
+      }
+
+      const updatedCurrTurn = state.currTurn?.playerId === playerId
+        ? {
+            ...state.currTurn,
+            acquiredCards: [...(state.currTurn?.acquiredCards || []), card]
+          }
+        : state.currTurn
+
+      return {
+        ...state,
+        players: state.players.map(p => (p.id === playerId ? updatedPlayer : p)),
+        imperiumRow: updatedImperiumRow,
+        imperiumRowDeck: remainingDeck,
+        currTurn: updatedCurrTurn,
+        gains: updatedGains,
+        factionInfluence: updatedFactionInfluence
+      }
+    }
     case 'ACQUIRE_AL': {
       const { playerId } = action
       const player: Player = {...state.players.find(p => p.id === playerId)} as Player
@@ -2433,7 +2572,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, c
   const value = {
     gameState,
     currentConflict: gameState.currentConflict,
-    imperiumRow: [IMPERIUM_ROW_DECK[0], IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2], IMPERIUM_ROW_DECK[10]],
+    imperiumRow: gameState.imperiumRow,
     intrigueDeck: [],
     dispatch
   }

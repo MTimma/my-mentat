@@ -1,4 +1,6 @@
 import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS, CustomEffect } from '../types/GameTypes'
+
+const cloneCardData = <T>(data: T): T => JSON.parse(JSON.stringify(data))
 // export const STARTING_DECK: Card[] = [
 //   {
 //     id: 1,
@@ -2646,3 +2648,11 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   }
 
 ]
+
+export const IMPERIUM_CARD_LIBRARY = IMPERIUM_ROW_DECK.reduce<Record<string, Omit<Card, 'id'>>>((acc, card) => {
+  if (!acc[card.name]) {
+    const { id, ...rest } = card
+    acc[card.name] = cloneCardData(rest)
+  }
+  return acc
+}, {})
