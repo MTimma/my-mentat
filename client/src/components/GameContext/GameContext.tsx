@@ -75,6 +75,7 @@ type GameAction =
   | { type: 'SELECT_CONFLICT'; conflictId: number }
   | { type: 'CLAIM_REWARD'; playerId: number; rewardId: string; customData?: CustomEffectData }
   | { type: 'CLAIM_ALL_REWARDS'; playerId: number }
+  | { type: 'RESET_IMPERIUM_ROW'; cardIds: number[] }
   | { type: 'OPPONENT_DISCARD_CHOICE'; playerId: number; opponentId: number; choice: 'discard' | 'loseTroop' }
   | { type: 'OPPONENT_DISCARD_CARD'; playerId: number; opponentId: number; cardId: number }
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
@@ -87,8 +88,6 @@ export const useGame = () => {
   }
   return context
 }
-
-const initialImperiumDeck = buildImperiumDeck()
 
 const initialGameState: GameState = {
   firstPlayerMarker: 0,
@@ -113,7 +112,7 @@ const initialGameState: GameState = {
   spiceMustFlowDeck: SPICE_MUST_FLOW_DECK,
   arrakisLiaisonDeck: ARRAKIS_LIAISON_DECK,
   foldspaceDeck: FOLDSPACE_DECK,
-  imperiumRowDeck: initialImperiumDeck,
+  imperiumRowDeck: buildImperiumDeck(),
   imperiumRow: [],
   intrigueDeck: [],
   intrigueDiscard: [],
@@ -545,7 +544,29 @@ function revealRequirementSatisfied(effect: RevealEffect, currCard: Card, state:
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-    case 'SELECT_CONFLICT': {
+      case 'RESET_IMPERIUM_ROW': {
+        if (action.cardIds.length === 0) return state
+        const ids = new Set(action.cardIds)
+        const selected: Card[] = []
+        const remaining: Card[] = []
+
+        state.imperiumRowDeck.forEach(card => {
+          if (ids.has(card.id)) {
+            selected.push(card)
+          } else {
+            remaining.push(card)
+          }
+        })
+
+        if (selected.length !== action.cardIds.length) return state
+
+        return {
+          ...state,
+          imperiumRow: selected,
+          imperiumRowDeck: remaining
+        }
+      }
+      case 'SELECT_CONFLICT': {
       const conflict = CONFLICTS.find(c => c.id === action.conflictId)
       if (!conflict) return state
       return {
@@ -909,14 +930,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       // TODO If 10+ VP = End Game
 
-      return {
-        ...newState,
-        phase: GamePhase.ROUND_START,
-        combatStrength: {},
-        combatTroops: {},
-        currentRound: newState.currentRound + 1,
-        conflictsDiscard: [...state.conflictsDiscard, state.currentConflict]
-      }
+        const refreshedDeck = [...newState.imperiumRow, ...newState.imperiumRowDeck]
+
+        return {
+          ...newState,
+          phase: GamePhase.ROUND_START,
+          combatStrength: {},
+          combatTroops: {},
+          currentRound: newState.currentRound + 1,
+          conflictsDiscard: [...state.conflictsDiscard, state.currentConflict],
+          imperiumRow: [],
+          imperiumRowDeck: refreshedDeck
+        }
     }
     case 'PLAY_INTRIGUE': {
       const { cardId, playerId } = action
