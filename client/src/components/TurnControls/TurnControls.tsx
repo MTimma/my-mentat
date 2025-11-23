@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Player, Card, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn } from '../../types/GameTypes'
+import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
@@ -8,6 +8,7 @@ import './TurnControls.css'
 interface TurnControlsProps {
   activePlayer: Player | null
   onPlayCard: (playerId: number, cardId: number) => void
+  onPlayIntrigue: (playerId: number, cardId: number) => void
   onPlayCombatIntrigue: (playerId: number, cardId: number) => void
   onReveal: (playerId: number, cardIds: number[]) => void
   canEndTurn: boolean
@@ -46,12 +47,14 @@ interface TurnControlsProps {
   voiceSelectionActive?: boolean
   onVoiceSelectionCancel?: () => void
   onOpponentNoCardAck?: (opponentId: number) => void
+  intrigueDeck: IntrigueCard[]
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
   activePlayer,
   canEndTurn,
   onPlayCard,
+  onPlayIntrigue,
   onPlayCombatIntrigue,
   onReveal,
   onEndTurn,
@@ -87,11 +90,13 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onVoiceSelectionStart,
   voiceSelectionActive = false,
   onVoiceSelectionCancel,
-  onOpponentNoCardAck
+  onOpponentNoCardAck,
+  intrigueDeck
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
+  const [isIntrigueSelectionOpen, setIsIntrigueSelectionOpen] = useState(false)
   const [showTrashPopup, setShowTrashPopup] = useState(false)
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
   const [activeCardSelect, setActiveCardSelect] = useState<CardSelectChoice | null>(null)
@@ -101,6 +106,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const hasMandatoryRewards = pendingRewards.some(r => !r.disabled && !r.isTrash)
 
   if (!activePlayer) return null
+  const playableIntrigueCards = intrigueDeck.filter(card => card.type !== IntrigueCardType.COMBAT)
 
   const getRankings = () => {
     const entries = Object.entries(combatStrength)
@@ -116,6 +122,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const handlePlayCard = () => {
     setIsRevealTurn(false)
     setIsCardSelectionOpen(true)
+  }
+
+  const handlePlayIntrigueClick = () => {
+    setIsRevealTurn(false)
+    setIsIntrigueSelectionOpen(true)
   }
 
   const handlePlayCombatIntrigue = () => {
@@ -146,6 +157,13 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       onReveal(activePlayer.id, selectedCards.map(card => card.id))
     } else if (selectedCards.length === 1) {
       onPlayCard(activePlayer.id, selectedCards[0].id)
+    }
+  }
+
+  const handleIntrigueSelection = (selectedCards: Card[]) => {
+    setIsIntrigueSelectionOpen(false)
+    if (selectedCards[0]) {
+      onPlayIntrigue(activePlayer.id, selectedCards[0].id)
     }
   }
 
@@ -718,8 +736,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           </button>}
           {!isCombatPhase && <button 
             className="play-intrigue-button"
-            // onClick={}
-            disabled={activePlayer.intrigueCount === 0}
+            onClick={handlePlayIntrigueClick}
+            disabled={activePlayer.intrigueCount === 0 || playableIntrigueCards.length === 0}
+            title={playableIntrigueCards.length === 0 ? 'No intrigue cards available in the deck.' : undefined}
           >
             Play Intrigue ({activePlayer.intrigueCount})
           </button>}
@@ -753,6 +772,16 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           onCancel={() => setIsCardSelectionOpen(false)}
           isRevealTurn={isRevealTurn}
           text={isRevealTurn ? "Select Cards to Reveal" : "Select a Card to Play"}
+        />
+
+        <CardSearch
+          isOpen={isIntrigueSelectionOpen}
+          cards={playableIntrigueCards}
+          selectionCount={1}
+          onSelect={handleIntrigueSelection}
+          onCancel={() => setIsIntrigueSelectionOpen(false)}
+          isRevealTurn={false}
+          text="Select an Intrigue card to play"
         />
 
         <CardSearch

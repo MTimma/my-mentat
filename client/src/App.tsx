@@ -35,6 +35,10 @@ const GameContent = () => {
   const handleCardSelect = (playerId: number, cardId: number) => {
     dispatch({ type: 'PLAY_CARD', playerId, cardId })
   }
+
+  const handlePlayIntrigue = (playerId: number, cardId: number) => {
+    dispatch({ type: 'PLAY_INTRIGUE', playerId, cardId })
+  }
   
   const handleConflictSelect = (conflictId: number) => {
     dispatch({ type: 'SELECT_CONFLICT', conflictId })
@@ -254,52 +258,54 @@ const GameContent = () => {
         <ConflictSelect conflicts={CONFLICTS.filter(c => !gameState.conflictsDiscard.includes(c))} handleConflictSelect={handleConflictSelect}/>
       </div>
       <div className="turn-controls-spacer" />
-      <div className="turn-controls-container" hidden={gameState.phase !== GamePhase.PLAYER_TURNS && gameState.phase !== GamePhase.COMBAT}>
-        <TurnControls
-          activePlayer={activePlayer}
-          canEndTurn={gameState.canEndTurn}
-          onPlayCard={handleCardSelect}
-          onPlayCombatIntrigue={handlePlayCombatIntrigue}
-          onReveal={handleRevealCards}
-          onEndTurn={handleEndTurn}
-          onPassCombat={handlePassCombat}
-          canDeployTroops={gameState.currTurn?.canDeployTroops || false}
-          onAddTroop={handleAddTroop}
-          onRemoveTroop={handleRemoveTroop}
-          retreatableTroops={gameState.currTurn?.removableTroops || 0}
-          deployableTroops={Math.min((gameState.currTurn?.troopLimit || 0) - (gameState.currTurn?.removableTroops || 0), activePlayer?.troops || 0)}
-          isCombatPhase={gameState.phase === GamePhase.COMBAT}
-          combatStrength={gameState.combatStrength}
-          combatPasses={gameState.combatPasses}
-          players={gameState.players}
-          optionalEffects={gameState.currTurn?.optionalEffects || []}
-          pendingChoices={gameState.currTurn?.pendingChoices || []}
-          onResolveChoice={handleResolveChoice}
-          onResolveCardSelect={handleResolveCardSelect}
-          onPayCost={handlePayCost}
-          showSelectiveBreeding={showSelectiveBreeding}
-          selectedCard={getSelectedCard(gameState)}
-          recallMode={Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
-          onSelectiveBreedingSelect={card => {
-            if (onSelectiveBreedingSelect) onSelectiveBreedingSelect(card)
-            setShowSelectiveBreeding(false)
-          }}
-          onSelectiveBreedingCancel={() => setShowSelectiveBreeding(false)}
-          pendingRewards={gameState.pendingRewards}
-          onClaimReward={handleClaimReward}
-          onClaimAllRewards={handleClaimAllRewards}
-          onAutoApplyRewards={handleAutoApplyRewards}
-          agentPlaced={Boolean(gameState.currTurn?.agentSpace)}
-          opponentDiscardState={gameState.currTurn?.opponentDiscardState}
-          onOpponentDiscardChoice={handleOpponentDiscardChoice}
-          onOpponentDiscardCard={handleOpponentDiscardCard}
-          combatTroops={gameState.combatTroops}
-          onVoiceSelectionStart={handleVoiceSelectionStart}
-          voiceSelectionActive={Boolean(voiceSelectionRewardId)}
-          onVoiceSelectionCancel={handleVoiceSelectionCancel}
-          onOpponentNoCardAck={handleOpponentNoCardAck}
-        />
-      </div>
+        <div className="turn-controls-container" hidden={gameState.phase !== GamePhase.PLAYER_TURNS && gameState.phase !== GamePhase.COMBAT}>
+          <TurnControls
+            activePlayer={activePlayer}
+            canEndTurn={gameState.canEndTurn}
+            onPlayCard={handleCardSelect}
+            onPlayIntrigue={handlePlayIntrigue}
+            onPlayCombatIntrigue={handlePlayCombatIntrigue}
+            onReveal={handleRevealCards}
+            onEndTurn={handleEndTurn}
+            onPassCombat={handlePassCombat}
+            canDeployTroops={gameState.currTurn?.canDeployTroops || false}
+            onAddTroop={handleAddTroop}
+            onRemoveTroop={handleRemoveTroop}
+            retreatableTroops={gameState.currTurn?.removableTroops || 0}
+            deployableTroops={Math.min((gameState.currTurn?.troopLimit || 0) - (gameState.currTurn?.removableTroops || 0), activePlayer?.troops || 0)}
+            isCombatPhase={gameState.phase === GamePhase.COMBAT}
+            combatStrength={gameState.combatStrength}
+            combatPasses={gameState.combatPasses}
+            players={gameState.players}
+            optionalEffects={gameState.currTurn?.optionalEffects || []}
+            pendingChoices={gameState.currTurn?.pendingChoices || []}
+            onResolveChoice={handleResolveChoice}
+            onResolveCardSelect={handleResolveCardSelect}
+            onPayCost={handlePayCost}
+            showSelectiveBreeding={showSelectiveBreeding}
+            selectedCard={getSelectedCard(gameState)}
+            recallMode={Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
+            onSelectiveBreedingSelect={card => {
+              if (onSelectiveBreedingSelect) onSelectiveBreedingSelect(card)
+              setShowSelectiveBreeding(false)
+            }}
+            onSelectiveBreedingCancel={() => setShowSelectiveBreeding(false)}
+            pendingRewards={gameState.pendingRewards}
+            onClaimReward={handleClaimReward}
+            onClaimAllRewards={handleClaimAllRewards}
+            onAutoApplyRewards={handleAutoApplyRewards}
+            agentPlaced={Boolean(gameState.currTurn?.agentSpace)}
+            opponentDiscardState={gameState.currTurn?.opponentDiscardState}
+            onOpponentDiscardChoice={handleOpponentDiscardChoice}
+            onOpponentDiscardCard={handleOpponentDiscardCard}
+            combatTroops={gameState.combatTroops}
+            onVoiceSelectionStart={handleVoiceSelectionStart}
+            voiceSelectionActive={Boolean(voiceSelectionRewardId)}
+            onVoiceSelectionCancel={handleVoiceSelectionCancel}
+            onOpponentNoCardAck={handleOpponentNoCardAck}
+            intrigueDeck={gameState.intrigueDeck}
+          />
+        </div>
       <div className="combat-results-container" hidden={gameState.phase !== GamePhase.COMBAT_REWARDS}>
         <CombatResults 
           players={gameState.players}

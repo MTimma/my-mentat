@@ -1,73 +1,136 @@
-import { IntrigueCard, IntrigueCardType } from '../types/GameTypes'
+import { IntrigueCard, IntrigueCardType, FactionType } from '../types/GameTypes'
 
 export const intrigueCards: IntrigueCard[] = [
   {
     id: 1,
-    name: "Ambush",
+    name: 'Ambush',
     type: IntrigueCardType.COMBAT,
-    description: "Add 4 strength to your combat total.",
-    effect: {
-      strengthBonus: 4
-    },
+    description: 'Add 4 strength to your combat total.',
+    image: '/intrigue/base/ambush.png',
+    agentIcons: [],
+    playEffect: [
+      {
+        reward: { combat: 4 }
+      }
+    ]
   },
   {
     id: 2,
-    name: "Secret Alliance",
+    name: 'Bindu Suspension',
     type: IntrigueCardType.PLOT,
-    description: "Gain 2 influence with any faction.",
-    effect: {
-      gainInfluence: {
-        faction: null, // Will be chosen when played
-        amount: 2
+    description: 'Draw 2 cards.',
+    image: '/intrigue/base/bindu_suspension.png',
+    agentIcons: [],
+    playEffect: [
+      {
+        reward: { drawCards: 2 }
       }
-    },
+    ]
   },
   {
     id: 3,
-    name: "Sabotage",
-    type: IntrigueCardType.COMBAT,
-    description: "Remove 2 enemy troops from the conflict.",
-    effect: {
-      removeEnemyTroops: 2,
-      targetPlayer: true
-    },
+    name: 'Bribery',
+    type: IntrigueCardType.PLOT,
+    description: 'Gain 3 Solari.',
+    image: '/intrigue/base/bribery.png',
+    agentIcons: [],
+    playEffect: [
+      {
+        reward: { solari: 3 }
+      }
+    ]
   },
   {
     id: 4,
-    name: "Spice Cache",
+    name: 'Corner the Market',
     type: IntrigueCardType.PLOT,
-    description: "Gain 3 spice.",
-    effect: {
-      gainResource: {
-        type: 'spice',
-        amount: 3
+    description: 'Gain 2 spice.',
+    image: '/intrigue/base/corner_the_market.png',
+    agentIcons: [],
+    playEffect: [
+      {
+        reward: { spice: 2 }
       }
-    },
+    ]
   },
   {
     id: 5,
-    name: "Blackmail",
-    type: IntrigueCardType.PLOT,
-    description: "Steal 2 solari from another player.",
-    effect: {
-      stealResource: {
-        type: 'solari',
-        amount: 2
-      },
-      targetPlayer: true
-    },
+    name: 'Rapid Mobilization',
+    type: IntrigueCardType.COMBAT,
+    description: 'Deploy 3 troops immediately.',
+    image: '/intrigue/base/rapid_mobilization.png',
+    agentIcons: [],
+    playEffect: [
+      {
+        reward: { troops: 3 }
+      }
+    ]
   },
   {
     id: 6,
-    name: "Strategic Planning",
-    type: IntrigueCardType.COMBAT,
-    description: "Draw 2 cards when you win a conflict.",
-    effect: {
-      drawCards: 2,
-      playCondition: 'onWinCombat'
-    },
+    name: 'Water of Life',
+    type: IntrigueCardType.PLOT,
+    description: 'Gain 1 water and draw 2 cards.',
+    image: '/intrigue/base/water_of_life.png',
+    agentIcons: [],
+    playEffect: [
+      {
+        reward: { water: 1, drawCards: 2 }
+      }
+    ]
   },
-  // TODO Add more cards...
+  {
+    id: 7,
+    name: 'Windfall',
+    type: IntrigueCardType.PLOT,
+    description: 'Gain 2 Solari.',
+    image: '/intrigue/base/windfall.png',
+    agentIcons: [],
+    playEffect: [
+      {
+        reward: { solari: 2 }
+      }
+    ]
+  },
+  {
+    id: 8,
+    name: 'Double Cross',
+    type: IntrigueCardType.COMBAT,
+    description: 'Gain 2 combat strength.',
+    image: '/intrigue/base/double_cross.png',
+    agentIcons: [],
+    playEffect: [
+      {
+        reward: { combat: 2 }
+      }
+    ]
+  },
+  {
+    id: 9,
+    name: 'To the Victor',
+    type: IntrigueCardType.ENDGAME,
+    description: 'Gain 1 victory point.',
+    image: '/intrigue/base/to_the_victor.png',
+    agentIcons: [],
+    playEffect: [
+      {
+        reward: { victoryPoints: 1 }
+      }
+    ]
+  },
+  {
+    id: 10,
+    name: 'Guild Authorization',
+    type: IntrigueCardType.PLOT,
+    description: 'Gain 1 influence with the Spacing Guild.',
+    image: '/intrigue/base/guild_authorization.png',
+    agentIcons: [],
+    playEffect: [
+      {
+        reward: { influence: { amounts: [{ faction: FactionType.SPACING_GUILD, amount: 1 }] } }
+      }
+    ]
+  }
 ]
 
 export class IntrigueDeckService {
