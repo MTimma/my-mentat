@@ -2656,3 +2656,11 @@ export const IMPERIUM_CARD_LIBRARY = IMPERIUM_ROW_DECK.reduce<Record<string, Omi
   }
   return acc
 }, {})
+
+export const buildImperiumDeck = (startId = 2000): Card[] => {
+  let nextId = startId
+  return IMPERIUM_ROW_DECK.map(card => ({
+    ...cloneCardData(card),
+    id: nextId++
+  }))
+}

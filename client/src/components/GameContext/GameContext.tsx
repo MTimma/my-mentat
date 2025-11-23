@@ -35,35 +35,11 @@ import {
   AUTO_APPLIED_CUSTOM_EFFECTS
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
-import { ARRAKIS_LIAISON_DECK, IMPERIUM_ROW_DECK } from '../../data/cards'
+import { ARRAKIS_LIAISON_DECK, buildImperiumDeck } from '../../data/cards'
 import { SPICE_MUST_FLOW_DECK } from '../../data/cards'
 import { FOLDSPACE_DECK } from '../../data/cards'
 import { CONFLICTS } from '../../data/conflicts'
 import { PLAY_EFFECT_TEXTS } from '../../data/effectTexts'
-
-const deepClone = <T>(value: T): T => {
-  if (Array.isArray(value)) {
-    return value.map(item => deepClone(item)) as T
-  }
-  if (value && typeof value === 'object') {
-    const clone: Record<string, unknown> = {}
-    Object.entries(value as Record<string, unknown>).forEach(([key, val]) => {
-      clone[key] = deepClone(val)
-    })
-    return clone as T
-  }
-  return value
-}
-
-const cloneCardWithId = (card: Card, id: number): Card => ({
-  ...deepClone(card),
-  id
-})
-
-const createImperiumDeck = (): Card[] => {
-  let nextId = 2000
-  return IMPERIUM_ROW_DECK.map(card => cloneCardWithId(card, nextId++))
-}
 
 interface GameContextType {
   gameState: GameState
@@ -99,7 +75,6 @@ type GameAction =
   | { type: 'SELECT_CONFLICT'; conflictId: number }
   | { type: 'CLAIM_REWARD'; playerId: number; rewardId: string; customData?: CustomEffectData }
   | { type: 'CLAIM_ALL_REWARDS'; playerId: number }
-  | { type: 'INITIALIZE_IMPERIUM_ROW'; cardIds: number[] }
   | { type: 'OPPONENT_DISCARD_CHOICE'; playerId: number; opponentId: number; choice: 'discard' | 'loseTroop' }
   | { type: 'OPPONENT_DISCARD_CARD'; playerId: number; opponentId: number; cardId: number }
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
@@ -113,7 +88,7 @@ export const useGame = () => {
   return context
 }
 
-const initialImperiumDeck = createImperiumDeck()
+const initialImperiumDeck = buildImperiumDeck()
 
 const initialGameState: GameState = {
   firstPlayerMarker: 0,
@@ -570,33 +545,6 @@ function revealRequirementSatisfied(effect: RevealEffect, currCard: Card, state:
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-    case 'INITIALIZE_IMPERIUM_ROW': {
-      if (state.imperiumRow.length >= 5) return state
-      const remainingSlots = 5 - state.imperiumRow.length
-      const requiredCount = Math.min(remainingSlots, state.imperiumRowDeck.length)
-      if (requiredCount <= 0) return state
-      if (action.cardIds.length !== requiredCount) return state
-
-      const ids = new Set(action.cardIds)
-      const selected: Card[] = []
-      const remaining: Card[] = []
-
-      state.imperiumRowDeck.forEach(card => {
-        if (ids.has(card.id) && selected.length < requiredCount) {
-          selected.push(card)
-        } else {
-          remaining.push(card)
-        }
-      })
-
-      if (selected.length !== requiredCount) return state
-
-      return {
-        ...state,
-        imperiumRow: [...state.imperiumRow, ...selected],
-        imperiumRowDeck: remaining
-      }
-    }
     case 'SELECT_CONFLICT': {
       const conflict = CONFLICTS.find(c => c.id === action.conflictId)
       if (!conflict) return state

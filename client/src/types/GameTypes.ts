@@ -424,6 +424,7 @@ export enum ScreenState {
   SETUP = 'setup',
   LEADER_CHOICES = 'leader-choices',
   GAME_STATE_SETUP = 'game-state-setup',
+  IMPERIUM_ROW_SETUP = 'imperium-row-setup',
   ROUND_START = 'round-start',
   GAME = 'game',
   CONFLICT = 'conflict'

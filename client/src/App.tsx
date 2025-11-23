@@ -15,6 +15,7 @@ import { CONFLICTS } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
 import GameStateSetup from './components/GameStateSetup/GameStateSetup'
 import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
+import { buildImperiumDeck } from './data/cards'
 
 const GameContent = () => {
   const {
@@ -109,10 +110,6 @@ const GameContent = () => {
     dispatch({ type: 'ACQUIRE_SMF', playerId: activePlayer?.id || 0 })
   }
 
-  const handleImperiumRowSetup = (cardIds: number[]) => {
-    dispatch({ type: 'INITIALIZE_IMPERIUM_ROW', cardIds })
-  }
-
   const handleSelectiveBreedingRequested = (_cards: Card[], onSelect: (card: Card) => void) => {
     setOnSelectiveBreedingSelect(() => onSelect)
     setShowSelectiveBreeding(true)
@@ -200,9 +197,6 @@ const GameContent = () => {
     })
   }
 
-  const imperiumSelectionCount = Math.min(5 - gameState.imperiumRow.length, gameState.imperiumRowDeck.length)
-  const needsImperiumSelection = gameState.phase === GamePhase.ROUND_START && gameState.imperiumRow.length < 5 && imperiumSelectionCount > 0
-
   return (
     <div className="game-container">
       <div className="turn-history-container">
@@ -257,15 +251,7 @@ const GameContent = () => {
           ))}
         </div>
       </div>
-    
-      {needsImperiumSelection && (
-        <ImperiumRowSelect
-          cards={gameState.imperiumRowDeck}
-          requiredCount={imperiumSelectionCount}
-          onConfirm={handleImperiumRowSetup}
-        />
-      )}
-      <div className="round-start-container" hidden={gameState.phase !== GamePhase.ROUND_START || needsImperiumSelection}>
+      <div className="round-start-container" hidden={gameState.phase !== GamePhase.ROUND_START}>
         <ConflictSelect conflicts={CONFLICTS.filter(c => !gameState.conflictsDiscard.includes(c))} handleConflictSelect={handleConflictSelect}/>
       </div>
       <div className="turn-controls-spacer" />
@@ -348,6 +334,9 @@ function App() {
     players: Player[]
     currentRound: number
   } | null>(null)
+  const [setupImperiumDeck] = useState<Card[]>(() => buildImperiumDeck())
+  const [selectedImperiumRow, setSelectedImperiumRow] = useState<Card[] | null>(null)
+  const [remainingImperiumDeck, setRemainingImperiumDeck] = useState<Card[] | null>(null)
 
   const handleSetupComplete = (setups: PlayerSetup[]) => {
     setPlayerSetups(setups)
@@ -366,7 +355,7 @@ function App() {
 
   const handleGameStateSetupComplete = (state: { players: Player[], currentRound: number }) => {
     setInitialGameState(state)
-    setScreenState(ScreenState.GAME)
+    setScreenState(ScreenState.IMPERIUM_ROW_SETUP)
   }
 
   const renderLeaderChoices = () => {
@@ -387,6 +376,21 @@ function App() {
     );
   };
 
+  const handleImperiumRowSelectionComplete = (cardIds: number[]) => {
+    const selected: Card[] = []
+    const remaining: Card[] = []
+    setupImperiumDeck.forEach(card => {
+      if (cardIds.includes(card.id)) {
+        selected.push(card)
+      } else {
+        remaining.push(card)
+      }
+    })
+    setSelectedImperiumRow(selected)
+    setRemainingImperiumDeck(remaining)
+    setScreenState(ScreenState.GAME)
+  }
+
   return (
     <div className="app">
       {screenState === ScreenState.SETUP && (
@@ -402,7 +406,15 @@ function App() {
         />
       )}
 
-      {screenState === ScreenState.GAME && initialGameState && (
+      {screenState === ScreenState.IMPERIUM_ROW_SETUP && initialGameState && (
+        <ImperiumRowSelect
+          cards={setupImperiumDeck}
+          requiredCount={5}
+          onConfirm={handleImperiumRowSelectionComplete}
+        />
+      )}
+
+      {screenState === ScreenState.GAME && initialGameState && selectedImperiumRow && remainingImperiumDeck && (
         <GameProvider initialState={{
           players: initialGameState.players,
           currentRound: initialGameState.currentRound,
@@ -412,7 +424,9 @@ function App() {
             [FactionType.BENE_GESSERIT]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0])),
             [FactionType.FREMEN]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0]))
           },
-          phase: GamePhase.ROUND_START
+          phase: GamePhase.ROUND_START,
+          imperiumRow: selectedImperiumRow,
+          imperiumRowDeck: remainingImperiumDeck
         }}>
           <GameContent />
         </GameProvider>
