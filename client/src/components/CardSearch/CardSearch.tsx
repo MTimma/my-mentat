@@ -69,27 +69,28 @@ const CardSearch: React.FC<CardSearchProps> = ({
     return baseCards
   }, [cards, player, piles, customFilter])
 
-  const filteredCards = useMemo(() => {
-    if (!searchTerm) return availableCards
+    const filteredCards = useMemo(() => {
+      if (!searchTerm) return availableCards
 
-    const searchLower = searchTerm.toLowerCase()
-    return availableCards.filter(card => {
-      const searchableText = [
-        card.name,//TODO check effect other fields
-        card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
-        card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
-        card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
-        card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
-        card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
-        card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
-        card.acquireEffect ? JSON.stringify(card.acquireEffect) : '',
-        card.cost?.toString(),
-        card.agentIcons.join(' '),
-      ].join(' ').toLowerCase()
+      const searchLower = searchTerm.toLowerCase()
+      return availableCards.filter(card => {
+        const searchableText = [
+          card.name,//TODO check effect other fields
+          card.description || '',
+          card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
+          card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
+          card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
+          card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
+          card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
+          card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
+          card.acquireEffect ? JSON.stringify(card.acquireEffect) : '',
+          card.cost?.toString(),
+          card.agentIcons.join(' '),
+        ].join(' ').toLowerCase()
 
-      return searchableText.includes(searchLower)
-    })
-  }, [availableCards, searchTerm])
+        return searchableText.includes(searchLower)
+      })
+    }, [availableCards, searchTerm])
 
   if (!isOpen) return null
 
