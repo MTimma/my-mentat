@@ -2486,7 +2486,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, c
   const value = {
     gameState,
     currentConflict: gameState.currentConflict,
-    imperiumRow: [IMPERIUM_ROW_DECK[0], IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2], IMPERIUM_ROW_DECK[10]],
+    imperiumRow: gameState.imperiumRow,
     intrigueDeck: gameState.intrigueDeck,
     dispatch
   }
