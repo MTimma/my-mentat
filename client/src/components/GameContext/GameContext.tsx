@@ -544,28 +544,30 @@ function revealRequirementSatisfied(effect: RevealEffect, currCard: Card, state:
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-      case 'RESET_IMPERIUM_ROW': {
-        if (action.cardIds.length === 0) return state
-        const ids = new Set(action.cardIds)
-        const selected: Card[] = []
-        const remaining: Card[] = []
+    case 'RESET_IMPERIUM_ROW': {
+      if (action.cardIds.length === 0) return state
 
-        state.imperiumRowDeck.forEach(card => {
-          if (ids.has(card.id)) {
-            selected.push(card)
-          } else {
-            remaining.push(card)
-          }
-        })
+      const deckMap = new Map(state.imperiumRowDeck.map(card => [card.id, card] as [number, Card]))
+      const selected: Card[] = []
+      const usedIds = new Set<number>()
 
-        if (selected.length !== action.cardIds.length) return state
-
-        return {
-          ...state,
-          imperiumRow: selected,
-          imperiumRowDeck: remaining
+      for (const id of action.cardIds) {
+        const card = deckMap.get(id)
+        if (!card) {
+          return state
         }
+        selected.push(card)
+        usedIds.add(id)
       }
+
+      const remaining = state.imperiumRowDeck.filter(card => !usedIds.has(card.id))
+
+      return {
+        ...state,
+        imperiumRow: selected,
+        imperiumRowDeck: remaining
+      }
+    }
       case 'SELECT_CONFLICT': {
       const conflict = CONFLICTS.find(c => c.id === action.conflictId)
       if (!conflict) return state
