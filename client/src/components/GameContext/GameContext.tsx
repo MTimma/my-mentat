@@ -463,7 +463,11 @@ function handleIntrigueEffect(
   const player = state.players.find(p => p.id === playerId)
   if (!player) return state
 
-  const newState = { ...state, gains: [...state.gains] }
+  const newState = { 
+    ...state, 
+    gains: [...state.gains],
+    combatStrength: { ...state.combatStrength }
+  }
   const updatedPlayers = state.players.map(p => ({ ...p }))
   const playerIndex = updatedPlayers.findIndex(p => p.id === playerId)
   const updatedPlayer = { ...updatedPlayers[playerIndex] }
