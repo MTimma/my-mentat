@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer } from 'react'
-import { 
-  GameState, 
+import {
+  GameState,
   FactionType,
   ConflictCard,
   IntrigueCard,
@@ -35,7 +35,7 @@ import {
   AUTO_APPLIED_CUSTOM_EFFECTS
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
-import { ARRAKIS_LIAISON_DECK, IMPERIUM_ROW_DECK } from '../../data/cards'
+import { ARRAKIS_LIAISON_DECK, buildImperiumDeck } from '../../data/cards'
 import { SPICE_MUST_FLOW_DECK } from '../../data/cards'
 import { FOLDSPACE_DECK } from '../../data/cards'
 import { CONFLICTS } from '../../data/conflicts'
@@ -75,6 +75,7 @@ type GameAction =
   | { type: 'SELECT_CONFLICT'; conflictId: number }
   | { type: 'CLAIM_REWARD'; playerId: number; rewardId: string; customData?: CustomEffectData }
   | { type: 'CLAIM_ALL_REWARDS'; playerId: number }
+  | { type: 'RESET_IMPERIUM_ROW'; cardIds: number[] }
   | { type: 'OPPONENT_DISCARD_CHOICE'; playerId: number; opponentId: number; choice: 'discard' | 'loseTroop' }
   | { type: 'OPPONENT_DISCARD_CARD'; playerId: number; opponentId: number; cardId: number }
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
@@ -111,8 +112,8 @@ const initialGameState: GameState = {
   spiceMustFlowDeck: SPICE_MUST_FLOW_DECK,
   arrakisLiaisonDeck: ARRAKIS_LIAISON_DECK,
   foldspaceDeck: FOLDSPACE_DECK,
-  imperiumRowDeck: IMPERIUM_ROW_DECK,
-  imperiumRow: [IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2], IMPERIUM_ROW_DECK[47], IMPERIUM_ROW_DECK[38]],
+  imperiumRowDeck: buildImperiumDeck(),
+  imperiumRow: [],
   intrigueDeck: [],
   intrigueDiscard: [],
   conflictsDiscard: [],
@@ -543,7 +544,31 @@ function revealRequirementSatisfied(effect: RevealEffect, currCard: Card, state:
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-    case 'SELECT_CONFLICT': {
+    case 'RESET_IMPERIUM_ROW': {
+      if (action.cardIds.length === 0) return state
+
+      const deckMap = new Map(state.imperiumRowDeck.map(card => [card.id, card] as [number, Card]))
+      const selected: Card[] = []
+      const usedIds = new Set<number>()
+
+      for (const id of action.cardIds) {
+        const card = deckMap.get(id)
+        if (!card) {
+          return state
+        }
+        selected.push(card)
+        usedIds.add(id)
+      }
+
+      const remaining = state.imperiumRowDeck.filter(card => !usedIds.has(card.id))
+
+      return {
+        ...state,
+        imperiumRow: selected,
+        imperiumRowDeck: remaining
+      }
+    }
+      case 'SELECT_CONFLICT': {
       const conflict = CONFLICTS.find(c => c.id === action.conflictId)
       if (!conflict) return state
       return {
@@ -907,14 +932,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       // TODO If 10+ VP = End Game
 
-      return {
-        ...newState,
-        phase: GamePhase.ROUND_START,
-        combatStrength: {},
-        combatTroops: {},
-        currentRound: newState.currentRound + 1,
-        conflictsDiscard: [...state.conflictsDiscard, state.currentConflict]
-      }
+        const refreshedDeck = [...newState.imperiumRow, ...newState.imperiumRowDeck]
+
+        return {
+          ...newState,
+          phase: GamePhase.ROUND_START,
+          combatStrength: {},
+          combatTroops: {},
+          currentRound: newState.currentRound + 1,
+          conflictsDiscard: [...state.conflictsDiscard, state.currentConflict],
+          imperiumRow: [],
+          imperiumRowDeck: refreshedDeck
+        }
     }
     case 'PLAY_INTRIGUE': {
       const { cardId, playerId } = action
@@ -1643,6 +1672,91 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         pendingRewards,
         canEndTurn: (pendingChoices.length > 0 || pendingRewards.filter(r => !r.disabled).length > 0) ? false : true,
         canAcquireIR: true
+      }
+    }
+    case 'ACQUIRE_CARD': {
+      const { playerId, cardId } = action
+      const player = state.players.find(p => p.id === playerId)
+      if (!player) return state
+
+      const cardIndex = state.imperiumRow.findIndex(card => card.id === cardId)
+      if (cardIndex === -1) return state
+      const card = state.imperiumRow[cardIndex]
+      const cost = card.cost || 0
+      if (player.persuasion < cost) return state
+
+      const updatedPlayer: Player = {
+        ...player,
+        persuasion: player.persuasion - cost,
+        discardPile: [...player.discardPile, card]
+      }
+
+      const updatedGains: Gain[] = [...state.gains]
+      const pushGain = (amount: number | undefined, type: RewardType) => {
+        if (!amount) return
+        updatedGains.push({
+          round: state.currentRound,
+          playerId,
+          sourceId: card.id,
+          name: `${card.name} Acquire`,
+          amount,
+          type,
+          source: GainSource.CARD
+        })
+      }
+
+      const applyResource = (prop: 'spice' | 'water' | 'troops' | 'victoryPoints', amount?: number, rewardType?: RewardType) => {
+        if (!amount) return
+        updatedPlayer[prop] += amount
+        if (rewardType) pushGain(amount, rewardType)
+      }
+
+      applyResource('spice', card.acquireEffect?.spice, RewardType.SPICE)
+      applyResource('water', card.acquireEffect?.water, RewardType.WATER)
+      applyResource('troops', card.acquireEffect?.troops, RewardType.TROOPS)
+      applyResource('victoryPoints', card.acquireEffect?.victoryPoints, RewardType.VICTORY_POINTS)
+
+      let updatedFactionInfluence = state.factionInfluence
+      if (card.acquireEffect?.influence) {
+        updatedFactionInfluence = { ...state.factionInfluence }
+        card.acquireEffect.influence.amounts.forEach(({ faction, amount }) => {
+          const current = updatedFactionInfluence[faction][playerId] || 0
+          updatedFactionInfluence = {
+            ...updatedFactionInfluence,
+            [faction]: {
+              ...updatedFactionInfluence[faction],
+              [playerId]: current + amount
+            }
+          }
+          pushGain(amount, RewardType.INFLUENCE)
+        })
+      }
+
+      const updatedImperiumRow = [...state.imperiumRow]
+      updatedImperiumRow.splice(cardIndex, 1)
+
+      let remainingDeck = [...state.imperiumRowDeck]
+      if (remainingDeck.length > 0) {
+        const [nextCard, ...rest] = remainingDeck
+        updatedImperiumRow.push(nextCard)
+        remainingDeck = rest
+      }
+
+      const updatedCurrTurn = state.currTurn?.playerId === playerId
+        ? {
+            ...state.currTurn,
+            acquiredCards: [...(state.currTurn?.acquiredCards || []), card]
+          }
+        : state.currTurn
+
+      return {
+        ...state,
+        players: state.players.map(p => (p.id === playerId ? updatedPlayer : p)),
+        imperiumRow: updatedImperiumRow,
+        imperiumRowDeck: remainingDeck,
+        currTurn: updatedCurrTurn,
+        gains: updatedGains,
+        factionInfluence: updatedFactionInfluence
       }
     }
     case 'ACQUIRE_AL': {
@@ -2433,7 +2547,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, c
   const value = {
     gameState,
     currentConflict: gameState.currentConflict,
-    imperiumRow: [IMPERIUM_ROW_DECK[0], IMPERIUM_ROW_DECK[1], IMPERIUM_ROW_DECK[2], IMPERIUM_ROW_DECK[10]],
+    imperiumRow: gameState.imperiumRow,
     intrigueDeck: [],
     dispatch
   }

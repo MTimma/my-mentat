@@ -14,6 +14,8 @@ import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
 import GameStateSetup from './components/GameStateSetup/GameStateSetup'
+import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
+import { buildImperiumDeck } from './data/cards'
 
 const GameContent = () => {
   const {
@@ -108,6 +110,10 @@ const GameContent = () => {
     dispatch({ type: 'ACQUIRE_SMF', playerId: activePlayer?.id || 0 })
   }
 
+  const handleImperiumRowSetup = (cardIds: number[]) => {
+    dispatch({ type: 'RESET_IMPERIUM_ROW', cardIds })
+  }
+
   const handleSelectiveBreedingRequested = (_cards: Card[], onSelect: (card: Card) => void) => {
     setOnSelectiveBreedingSelect(() => onSelect)
     setShowSelectiveBreeding(true)
@@ -195,6 +201,9 @@ const GameContent = () => {
     })
   }
 
+  const imperiumSelectionCount = Math.min(Math.max(0, 5 - gameState.imperiumRow.length), gameState.imperiumRowDeck.length)
+  const needsImperiumSelection = gameState.phase === GamePhase.ROUND_START && imperiumSelectionCount > 0
+
   return (
     <div className="game-container">
       <div className="turn-history-container">
@@ -248,9 +257,15 @@ const GameContent = () => {
             />
           ))}
         </div>
-      </div>
-    
-      <div className="round-start-container" hidden={gameState.phase !== GamePhase.ROUND_START}>
+        </div>
+        {needsImperiumSelection && (
+          <ImperiumRowSelect
+            cards={gameState.imperiumRowDeck}
+            requiredCount={imperiumSelectionCount}
+            onConfirm={handleImperiumRowSetup}
+          />
+        )}
+        <div className="round-start-container" hidden={gameState.phase !== GamePhase.ROUND_START || needsImperiumSelection}>
         <ConflictSelect conflicts={CONFLICTS.filter(c => !gameState.conflictsDiscard.includes(c))} handleConflictSelect={handleConflictSelect}/>
       </div>
       <div className="turn-controls-spacer" />
@@ -333,6 +348,7 @@ function App() {
     players: Player[]
     currentRound: number
   } | null>(null)
+  const [setupImperiumDeck, setSetupImperiumDeck] = useState<Card[]>(() => buildImperiumDeck())
 
   const handleSetupComplete = (setups: PlayerSetup[]) => {
     setPlayerSetups(setups)
@@ -350,8 +366,9 @@ function App() {
   }
 
   const handleGameStateSetupComplete = (state: { players: Player[], currentRound: number }) => {
-    setInitialGameState(state)
-    setScreenState(ScreenState.GAME)
+      setInitialGameState(state)
+      setSetupImperiumDeck(buildImperiumDeck())
+      setScreenState(ScreenState.GAME)
   }
 
   const renderLeaderChoices = () => {
@@ -397,7 +414,8 @@ function App() {
             [FactionType.BENE_GESSERIT]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0])),
             [FactionType.FREMEN]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0]))
           },
-          phase: GamePhase.ROUND_START
+          phase: GamePhase.ROUND_START,
+          imperiumRowDeck: setupImperiumDeck
         }}>
           <GameContent />
         </GameProvider>
