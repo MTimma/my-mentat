@@ -8,7 +8,6 @@ import {
   Cost,
   Reward,
   ConflictReward,
-  IntrigueCardEffect,
   Winners as Placements,
   IntrigueCardType,
   TurnType,
@@ -40,6 +39,7 @@ import { SPICE_MUST_FLOW_DECK } from '../../data/cards'
 import { FOLDSPACE_DECK } from '../../data/cards'
 import { CONFLICTS } from '../../data/conflicts'
 import { PLAY_EFFECT_TEXTS } from '../../data/effectTexts'
+import { intrigueCards } from '../../services/IntrigueDeckService'
 
 interface GameContextType {
   gameState: GameState
@@ -114,7 +114,7 @@ const initialGameState: GameState = {
   foldspaceDeck: FOLDSPACE_DECK,
   imperiumRowDeck: buildImperiumDeck(),
   imperiumRow: [],
-  intrigueDeck: [],
+  intrigueDeck: [...intrigueCards],
   intrigueDiscard: [],
   conflictsDiscard: [],
   controlMarkers: {
@@ -458,37 +458,95 @@ function applyChoiceReward(state: GameState, reward: Reward, playerId: number): 
 
 function handleIntrigueEffect(
   state: GameState,
-  effect: IntrigueCardEffect,
+  card: IntrigueCard,
   playerId: number
 ): GameState {
-  const newState = { ...state }
+  const player = state.players.find(p => p.id === playerId)
+  if (!player) return state
 
-  if (effect.gainResource) {
-    const { type, amount } = effect.gainResource
-    newState.players = newState.players.map(player =>
-      player.id === playerId
-        ? { ...player, [type]: player[type] + amount }
-        : player
-    )
+  const newState = { 
+    ...state, 
+    gains: [...state.gains],
+    combatStrength: { ...state.combatStrength }
+  }
+  const updatedPlayers = state.players.map(p => ({ ...p }))
+  const playerIndex = updatedPlayers.findIndex(p => p.id === playerId)
+  const updatedPlayer = { ...updatedPlayers[playerIndex] }
+  const pushGain = (amount: number, type: RewardType) => {
+    newState.gains.push({
+      round: state.currentRound,
+      playerId,
+      sourceId: card.id,
+      name: card.name,
+      amount,
+      type,
+      source: GainSource.INTRIGUE
+    })
   }
 
-  if (effect.gainInfluence && effect.gainInfluence.faction) {
-    const { faction, amount } = effect.gainInfluence
-    const currentInfluence = state.factionInfluence[faction][playerId] || 0
-    newState.factionInfluence = {
-      ...state.factionInfluence,
-      [faction]: {
-        ...state.factionInfluence[faction],
-        [playerId]: currentInfluence + amount
-      }
+  const applyReward = (reward: Reward) => {
+    if (reward.spice) {
+      updatedPlayer.spice += reward.spice
+      pushGain(reward.spice, RewardType.SPICE)
+    }
+    if (reward.water) {
+      updatedPlayer.water += reward.water
+      pushGain(reward.water, RewardType.WATER)
+    }
+    if (reward.solari) {
+      updatedPlayer.solari += reward.solari
+      pushGain(reward.solari, RewardType.SOLARI)
+    }
+    if (reward.troops) {
+      updatedPlayer.troops += reward.troops
+      pushGain(reward.troops, RewardType.TROOPS)
+    }
+    if (reward.persuasion) {
+      updatedPlayer.persuasion += reward.persuasion
+      pushGain(reward.persuasion, RewardType.PERSUASION)
+    }
+    if (reward.victoryPoints) {
+      updatedPlayer.victoryPoints += reward.victoryPoints
+      pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS)
+    }
+    if (reward.combat) {
+      newState.combatStrength[playerId] = (newState.combatStrength[playerId] || 0) + reward.combat
+      pushGain(reward.combat, RewardType.COMBAT)
+    }
+    if (reward.drawCards) {
+      updatedPlayer.handCount += reward.drawCards
+      pushGain(reward.drawCards, RewardType.DRAW)
+    }
+    if (reward.intrigueCards) {
+      updatedPlayer.intrigueCount += reward.intrigueCards
+      pushGain(reward.intrigueCards, RewardType.INTRIGUE)
+    }
+    if (reward.influence) {
+      reward.influence.amounts.forEach(({ faction, amount }) => {
+        const currentInfluence = newState.factionInfluence[faction]?.[playerId] || 0
+        newState.factionInfluence = {
+          ...newState.factionInfluence,
+          [faction]: {
+            ...newState.factionInfluence[faction],
+            [playerId]: currentInfluence + amount
+          }
+        }
+        pushGain(amount, RewardType.INFLUENCE)
+      })
     }
   }
 
-  if (effect.drawCards) {
-    // Implement card drawing logic
-  }
+  card.playEffect?.forEach(effect => {
+    if (!effect.reward) return
+    if (!playRequirementSatisfied(effect, card, state, playerId)) return
+    applyReward(effect.reward)
+  })
 
-  return newState
+  updatedPlayers[playerIndex] = updatedPlayer
+  return {
+    ...newState,
+    players: updatedPlayers
+  }
 }
 
 function playRequirementSatisfied(effect: PlayEffect, currCard: Card, state: GameState, playerId: number): boolean {
@@ -845,24 +903,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (!card || card.type !== IntrigueCardType.COMBAT) return state
 
-      const newState = {...state}
-      const effect = card.effect
-      // TODO check effect requirements and timing
-      if (effect.strengthBonus) {
-        newState.combatStrength[playerId] = 
-          (newState.combatStrength[playerId] || 0) + effect.strengthBonus
+      const updatedState = handleIntrigueEffect(state, card, playerId)
+      const newState = {
+        ...updatedState,
+        players: updatedState.players.map(p =>
+          p.id === playerId
+            ? { ...p, intrigueCount: p.intrigueCount - 1 }
+            : p
+        ),
+        intrigueDeck: updatedState.intrigueDeck.filter(c => c.id !== cardId),
+        intrigueDiscard: [...updatedState.intrigueDiscard, card]
       }
-
-      newState.players = newState.players.map(p =>
-        p.id === playerId
-          ? {
-              ...p,
-              intrigueCount: p.intrigueCount - 1
-            }
-          : p
-      )
-      newState.intrigueDeck = newState.intrigueDeck.filter(c => c.id !== cardId)
-      newState.intrigueDiscard.push(card)
 
       return newState
     }
@@ -949,18 +1000,20 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const { cardId, playerId } = action
       const card = state.intrigueDeck.find(c => c.id === cardId)
 
-      if (!card) return state
+      if (!card || card.type === IntrigueCardType.COMBAT) return state
 
-      const newState = handleIntrigueEffect(state, card.effect, playerId)
-
-      newState.players = newState.players.map(p =>
-        p.id === playerId
-          ? {
-              ...p,
-              intrigueCount: p.intrigueCount - 1
-            }
-          : p
-      )
+      const updatedState = handleIntrigueEffect(state, card, playerId)
+      
+      const newState = {
+        ...updatedState,
+        players: updatedState.players.map(p =>
+          p.id === playerId
+            ? { ...p, intrigueCount: p.intrigueCount - 1 }
+            : p
+        ),
+        intrigueDeck: updatedState.intrigueDeck.filter(c => c.id !== cardId),
+        intrigueDiscard: [...updatedState.intrigueDiscard, card]
+      }
 
       return newState
     }
@@ -2548,7 +2601,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, c
     gameState,
     currentConflict: gameState.currentConflict,
     imperiumRow: gameState.imperiumRow,
-    intrigueDeck: [],
+    intrigueDeck: gameState.intrigueDeck,
     dispatch
   }
 

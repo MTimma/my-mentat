@@ -4,36 +4,6 @@ export enum IntrigueCardType {
   ENDGAME = 'endgame'
 }
 
-export interface IntrigueCardEffect {
-  // Combat effects
-  strengthBonus?: number
-  deployTroops?: number
-  removeEnemyTroops?: number
-  
-  // Plot effects
-  gainResource?: {
-    type: 'spice' | 'water' | 'solari' | 'troops'
-    amount: number
-  }
-  gainInfluence?: {
-    faction: FactionType
-    amount: number
-  }
-  drawCards?: number
-  
-  // Special conditions
-  playCondition?: 'onWinCombat' | 'onLoseCombat' | 'onReveal' | 'immediate'
-  targetPlayer?: boolean 
-}
-
-export interface IntrigueCard {
-  id: number
-  name: string
-  type: IntrigueCardType
-  effect: IntrigueCardEffect
-  description: string
-}
-
 // Contains display values for the leader
 export class Leader {
   constructor(
@@ -252,6 +222,12 @@ export interface Card {
     influence?: InfluenceAmounts,
     water?: number,
   }
+}
+
+export interface IntrigueCard extends Card {
+  type: IntrigueCardType
+  description: string
+  targetPlayer?: boolean
 }
 
 export enum FactionType {

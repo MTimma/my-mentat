@@ -20,7 +20,7 @@ const IntrigueCardList: React.FC<IntrigueCardListProps> = ({
   const [targetingCard, setTargetingCard] = useState<IntrigueCard | null>(null)
 
   const handlePlayCard = (card: IntrigueCard) => {
-    if (card.effect.targetPlayer) {
+    if (card.targetPlayer) {
       setTargetingCard(card)
     } else {
       onPlayCard(card.id)
@@ -49,7 +49,7 @@ const IntrigueCardList: React.FC<IntrigueCardListProps> = ({
                 onClick={() => handlePlayCard(card)}
                 className="play-intrigue-button"
               >
-                {card.effect.targetPlayer ? 'Choose Target' : 'Play Card'}
+                  {card.targetPlayer ? 'Choose Target' : 'Play Card'}
               </button>
             )}
           </div>
