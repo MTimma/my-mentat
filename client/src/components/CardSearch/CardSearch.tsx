@@ -13,6 +13,7 @@ interface CardSearchProps {
   isRevealTurn: boolean
   selectionCount: number
   text: string
+  onSelectionChange?: (selectedCards: Card[]) => void
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({
@@ -25,7 +26,8 @@ const CardSearch: React.FC<CardSearchProps> = ({
   onCancel,
   isRevealTurn,
   selectionCount,
-  text
+  text,
+  onSelectionChange,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
@@ -95,14 +97,23 @@ const CardSearch: React.FC<CardSearchProps> = ({
   if (!isOpen) return null
 
   const handleCardClick = (card: Card) => {
+    let nextSelected: Card[]
+
     if (!isRevealTurn) {
-      setSelectedCards([card])
+      nextSelected = [card]
     } else {
       if (selectedCards.find(c => c.id === card.id)) {
-        setSelectedCards(selectedCards.filter(c => c.id !== card.id))
+        nextSelected = selectedCards.filter(c => c.id !== card.id)
       } else if (selectedCards.length < selectionCount) {
-        setSelectedCards([...selectedCards, card])
+        nextSelected = [...selectedCards, card]
+      } else {
+        nextSelected = selectedCards
       }
+    }
+
+    setSelectedCards(nextSelected)
+    if (onSelectionChange) {
+      onSelectionChange(nextSelected)
     }
   }
 
@@ -116,6 +127,9 @@ const CardSearch: React.FC<CardSearchProps> = ({
 
   const handleCancel = () => {
     setSelectedCards([])
+    if (onSelectionChange) {
+      onSelectionChange([])
+    }
     setSearchTerm('')
     onCancel()
   }

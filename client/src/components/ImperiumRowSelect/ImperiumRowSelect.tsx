@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Card } from '../../types/GameTypes'
+import CardSearch from '../CardSearch/CardSearch'
 import './ImperiumRowSelect.css'
 
 interface ImperiumRowSelectProps {
@@ -9,26 +10,35 @@ interface ImperiumRowSelectProps {
 }
 
 const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCount, onConfirm }) => {
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [selectedCards, setSelectedCards] = useState<Card[]>([])
 
-  const handleToggle = (cardId: number) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(cardId)) {
-        next.delete(cardId)
-      } else if (next.size < requiredCount) {
-        next.add(cardId)
-      }
-      return next
-    })
-  }
+  // Lock body scroll while the modal is mounted
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [])
 
   const sortedCards = useMemo(
     () => [...cards].sort((a, b) => a.name.localeCompare(b.name)),
     [cards]
   )
 
-  const canConfirm = selectedIds.size === requiredCount
+  const handleSelect = (cardsToSelect: Card[]) => {
+    onConfirm(cardsToSelect.map(card => card.id))
+  }
+
+  const handleCancel = () => {
+    setSelectedCards([])
+  }
+
+  const handleSelectionChange = (cards: Card[]) => {
+    setSelectedCards(cards)
+  }
+
+  const previewSlots = Array.from({ length: requiredCount }, (_, index) => selectedCards[index] || null)
 
   return (
     <div className="imperium-select-overlay">
@@ -37,40 +47,36 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCo
           <h2>Select {requiredCount} Imperium Row Cards</h2>
           <p>Click cards to choose which ones appear in the row before revealing the next conflict.</p>
           <div className="imperium-select-count">
-            Selected {selectedIds.size} / {requiredCount}
+            Selected {selectedCards.length} / {requiredCount}
           </div>
         </header>
 
-        <div className="imperium-select-grid">
-          {sortedCards.map(card => {
-            const isSelected = selectedIds.has(card.id)
-            return (
-              <button
-                key={card.id}
-                type="button"
-                className={`imperium-select-card${isSelected ? ' selected' : ''}`}
-                onClick={() => handleToggle(card.id)}
-              >
-                <img src={card.image} alt={card.name} />
-                <div className="imperium-select-card-name">{card.name}</div>
-                {card.cost !== undefined && (
-                  <div className="imperium-select-card-cost">{card.cost} 💧</div>
-                )}
-              </button>
-            )
-          })}
+        <div className="imperium-select-preview">
+          {previewSlots.map((card, index) => (
+            <div key={index} className="imperium-select-preview-slot">
+              {card && card.image && (
+                <img
+                  src={card.image}
+                  alt={card.name}
+                  className="imperium-select-preview-image"
+                />
+              )}
+            </div>
+          ))}
         </div>
 
-        <footer className="imperium-select-actions">
-          <button
-            type="button"
-            className="confirm"
-            disabled={!canConfirm}
-            onClick={() => canConfirm && onConfirm(Array.from(selectedIds))}
-          >
-            Confirm Selection
-          </button>
-        </footer>
+        <div className="imperium-select-cardsearch-wrapper">
+          <CardSearch
+            isOpen={true}
+            cards={sortedCards}
+            onSelect={handleSelect}
+            onCancel={handleCancel}
+            isRevealTurn={true}
+            selectionCount={requiredCount}
+            text={`Select ${requiredCount} Imperium Row Cards`}
+            onSelectionChange={handleSelectionChange}
+          />
+        </div>
       </div>
     </div>
   )
