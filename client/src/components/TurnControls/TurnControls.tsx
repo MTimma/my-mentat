@@ -289,17 +289,17 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           selectionCount={activeCardSelect.selectionCount}
           text={activeCardSelect.prompt}
           isRevealTurn={activeCardSelect.selectionCount > 1}
-          onSelect={(selectedCards) => {
+          onSelect={selectedCards => {
             if (onResolveCardSelect) {
-              onResolveCardSelect(activeCardSelect.id, selectedCards.map(card => card.id));
+              onResolveCardSelect(activeCardSelect.id, selectedCards.map(card => card.id))
             }
-            setActiveCardSelect(null);
+            setActiveCardSelect(null)
           }}
           onCancel={() => {
-            setActiveCardSelect(null);
+            setActiveCardSelect(null)
           }}
         />
-      );
+      )
     }
 
     if (opponentCardSelect) {
@@ -308,11 +308,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           isOpen={true}
           player={opponentCardSelect}
           piles={[CardPile.DECK]}
-          customFilter={(card) => !opponentCardSelect.playArea.some(pc => pc.id === card.id)}
+          customFilter={card => !opponentCardSelect.playArea.some(pc => pc.id === card.id)}
           selectionCount={1}
           text={`Choose a card from ${opponentCardSelect.leader?.name || opponentCardSelect.color} to discard`}
           isRevealTurn={false}
-          onSelect={(selectedCards) => {
+          onSelect={selectedCards => {
             if (onOpponentDiscardCard) {
               onOpponentDiscardCard(opponentCardSelect.id, selectedCards[0].id)
             }
@@ -534,17 +534,60 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }
 
   const renderOpponentDiscardPanel = () => {
+    const effect = opponentDiscardState?.effect
+    if (!effect) return null
+    
+    // For REVEREND_MOTHER_MOHIAM, show player selection if no current opponent selected
+    if (effect === CustomEffect.REVEREND_MOTHER_MOHIAM && !opponentDiscardState?.currentOpponent) {
+      const remainingOpponents = opponentDiscardState?.remainingOpponents || []
+      const eligibleOpponents = players.filter(p => 
+        remainingOpponents.includes(p.id) && p.handCount > 0
+      )
+      
+      if (eligibleOpponents.length === 0) {
+        // All opponents processed or have no cards
+        return null
+      }
+      
+      return (
+        <div className="opponent-discard-panel">
+          <div className="panel-title">
+            Reverend Mother Mohiam
+          </div>
+          <div className="panel-body">
+            <p>Choose which opponent to discard 2 cards from:</p>
+            <div className="panel-actions">
+              {eligibleOpponents.map(opponent => (
+                <button
+                  key={opponent.id}
+                  className="primary-btn"
+                  onClick={() => {
+                    if (onOpponentDiscardChoice) {
+                      // Set this opponent as current
+                      onOpponentDiscardChoice(opponent.id, 'discard')
+                    }
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <AgentIcon playerId={opponent.id} />
+                  <span>{opponent.leader?.name || opponent.color} ({opponent.handCount} cards)</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
     const currentOpponentId = opponentDiscardState?.currentOpponent
     if (!currentOpponentId) return null
     const opponent = players.find(p => p.id === currentOpponentId)
     if (!opponent) return null
-    const effect = opponentDiscardState?.effect
-    if (!effect) return null
     const discardCounts = opponentDiscardState?.discardCounts || {}
     const discarded = discardCounts[currentOpponentId] || 0
     const required = effect === CustomEffect.REVEREND_MOTHER_MOHIAM ? 2 : 1
     const remaining = Math.max(0, required - discarded)
-    const availableCards = opponent.deck.length
+    const availableCards = opponent.handCount
     const discardableNow = Math.min(remaining, availableCards)
     const canLoseTroop = (combatTroops[currentOpponentId] || 0) > 0
     const canDiscardCard = Boolean(onOpponentDiscardCard) && discardableNow > 0
@@ -563,7 +606,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             <>
               {discardableNow > 0 ? (
                 <>
-                  <p>{`Discard ${discardableNow} more card${discardableNow !== 1 ? 's' : ''} from this player's deck.`}</p>
+                  <p>{`Discard ${discardableNow} more card${discardableNow !== 1 ? 's' : ''} from this player's hand.`}</p>
                   <button
                     className="primary-btn"
                     onClick={() => canDiscardCard && setOpponentCardSelect(opponent)}
@@ -675,37 +718,39 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           )}
         </div>
         <div className="control-buttons">
-          <button 
-            className="play-card-button"
-            onClick={handlePlayCard}
-            disabled={activePlayer.agents === 0 || canEndTurn || agentPlaced || hasOpponentDiscard || hasMandatoryRewards}
-            hidden={isCombatPhase}
-            title={
-              hasOpponentDiscard
-                ? 'Resolve opponent discard instructions before taking new actions.'
-                : hasMandatoryRewards
-                  ? 'Claim pending rewards before taking new actions.'
-                  : agentPlaced ? "You have already placed an agent this turn" : undefined
-            }
-          >
-            Play Card
-          </button>
-          <button 
-            className="reveal-turn-button"
-            onClick={handleRevealTurn}
-            disabled={canEndTurn || isCombatPhase || agentPlaced || hasOpponentDiscard || hasMandatoryRewards}
-            hidden={isCombatPhase}
-            title={
-              hasOpponentDiscard
-                ? 'Resolve opponent discard instructions before taking new actions.'
-                : hasMandatoryRewards
-                  ? 'Claim pending rewards before taking new actions.'
-                  : agentPlaced ? "You have already placed an agent this turn" : undefined
-            }
-          >
-            Reveal Turn
-          </button>
-          <>
+          <div className="button-pair">
+            <button 
+              className="play-card-button"
+              onClick={handlePlayCard}
+              disabled={activePlayer.agents === 0 || canEndTurn || agentPlaced || hasOpponentDiscard || hasMandatoryRewards}
+              hidden={isCombatPhase}
+              title={
+                hasOpponentDiscard
+                  ? 'Resolve opponent discard instructions before taking new actions.'
+                  : hasMandatoryRewards
+                    ? 'Claim pending rewards before taking new actions.'
+                    : agentPlaced ? "You have already placed an agent this turn" : undefined
+              }
+            >
+              Play Card
+            </button>
+            <button 
+              className="reveal-turn-button"
+              onClick={handleRevealTurn}
+              disabled={canEndTurn || isCombatPhase || agentPlaced || hasOpponentDiscard || hasMandatoryRewards}
+              hidden={isCombatPhase}
+              title={
+                hasOpponentDiscard
+                  ? 'Resolve opponent discard instructions before taking new actions.'
+                  : hasMandatoryRewards
+                    ? 'Claim pending rewards before taking new actions.'
+                    : agentPlaced ? "You have already placed an agent this turn" : undefined
+              }
+            >
+              Reveal Turn
+            </button>
+          </div>
+          <div className="button-pair">
             <button 
               className="add-troop-button"
               onClick={() => onAddTroop(activePlayer.id)}
@@ -721,7 +766,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             >
               Retreat Troop ({retreatableTroops})
             </button>
-          </>
+          </div>
           {!isCombatPhase && pendingRewards.length > 0 && pendingRewards.some(r => !r.disabled) && <button 
             className="get-mandatory-effects-button"
             onClick={() => onAutoApplyRewards && onAutoApplyRewards()}
@@ -734,34 +779,36 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           >
             Auto-Apply Effects
           </button>}
-          {!isCombatPhase && <button 
-            className="play-intrigue-button"
-            onClick={handlePlayIntrigueClick}
-            disabled={activePlayer.intrigueCount === 0 || playableIntrigueCards.length === 0}
-            title={playableIntrigueCards.length === 0 ? 'No intrigue cards available in the deck.' : undefined}
-          >
-            Play Intrigue ({activePlayer.intrigueCount})
-          </button>}
-          {isCombatPhase && <button 
-            className="play-intrigue-button"
-            onClick={handlePlayCombatIntrigue}
-            disabled={activePlayer.intrigueCount === 0}
-          >
-            Play Combat Intrigue ({activePlayer.intrigueCount})
-          </button>}
-          {!isCombatPhase && <button 
-            className="end-turn-button"
-            onClick={handleEndTurn}
-            disabled={!canEndTurn}
-          >
-            End Turn
-          </button>}
-          {isCombatPhase && <button 
-            className="pass-combat-button"
-            onClick={handlePassCombat}
-          >
-            Pass Combat
-          </button>}
+          <div className="button-pair">
+            {!isCombatPhase && <button 
+              className="play-intrigue-button"
+              onClick={handlePlayIntrigueClick}
+              disabled={activePlayer.intrigueCount === 0 || playableIntrigueCards.length === 0}
+              title={playableIntrigueCards.length === 0 ? 'No intrigue cards available in the deck.' : undefined}
+            >
+              Play Intrigue ({activePlayer.intrigueCount})
+            </button>}
+            {isCombatPhase && <button 
+              className="play-intrigue-button"
+              onClick={handlePlayCombatIntrigue}
+              disabled={activePlayer.intrigueCount === 0}
+            >
+              Play Combat Intrigue ({activePlayer.intrigueCount})
+            </button>}
+            {!isCombatPhase && <button 
+              className="end-turn-button"
+              onClick={handleEndTurn}
+              disabled={!canEndTurn}
+            >
+              End Turn
+            </button>}
+            {isCombatPhase && <button 
+              className="pass-combat-button"
+              onClick={handlePassCombat}
+            >
+              Pass Combat
+            </button>}
+          </div>
         </div>
 
         <CardSearch
@@ -771,7 +818,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           onSelect={handleCardSelection}
           onCancel={() => setIsCardSelectionOpen(false)}
           isRevealTurn={isRevealTurn}
-          text={isRevealTurn ? "Select Cards to Reveal" : "Select a Card to Play"}
+          text={isRevealTurn ? 'Select Cards to Reveal' : 'Select a Card to Play'}
         />
 
         <CardSearch

@@ -30,12 +30,19 @@
   align-items: center;
   padding-bottom: 16px;
   border-bottom: 1px solid #333;
+  gap: 16px;
 }
 
 .dialog-header h2 {
   margin: 0;
   color: #fff;
   font-size: 1.5rem;
+}
+
+.dialog-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .search-input {
@@ -45,12 +52,49 @@
   background-color: #2a2a2a;
   color: #fff;
   font-size: 1rem;
-  width: 300px;
+  width: 260px;
 }
 
 .search-input:focus {
   outline: none;
   border-color: #666;
+}
+
+.header-cancel-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  background-color: #3a3a3a;
+  color: #ccc;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.header-cancel-button:hover {
+  filter: brightness(1.2);
+}
+
+.header-confirm-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  background-color: #ffd700;
+  color: #000;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.header-confirm-button:hover:enabled {
+  filter: brightness(1.2);
+}
+
+.header-confirm-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .cards-grid {
@@ -77,7 +121,7 @@
   flex-direction: column;
   width: 150px;
   margin: 0;
-  transform: scale(0.70);
+  transform: scale(0.7);
   z-index: 1;
 }
 
@@ -103,7 +147,6 @@
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
-  /* transform: scale(0.85); */
   transform-origin: center;
 }
 
@@ -187,41 +230,6 @@
   line-height: 1.4;
 }
 
-.dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid #333;
-}
-
-.dialog-actions button {
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.dialog-actions button:first-child {
-  background-color: #3a3a3a;
-  color: #ccc;
-}
-
-.dialog-actions button:last-child {
-  background-color: #ffd700;
-  color: #000;
-}
-
-.dialog-actions button:hover {
-  filter: brightness(1.2);
-}
-
-.dialog-actions button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 
 /* Scrollbar Styling */
 .cards-grid::-webkit-scrollbar {
@@ -239,7 +247,7 @@
 
 .cards-grid::-webkit-scrollbar-thumb:hover {
   background: #555;
-} 
+}
 
 @media (max-width: 900px) {
   .card-selection-dialog-overlay {
@@ -249,4 +257,52 @@
   .cards-grid {
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
-} 
+}
+
+@media (max-width: 600px) {
+  .card-selection-dialog {
+    padding: 12px;
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .dialog-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding-bottom: 12px;
+  }
+
+  .dialog-header h2 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+  }
+
+  .dialog-header-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .search-input {
+    width: 100%;
+    flex: 1 1 100%;
+    min-width: 0;
+    font-size: 0.9rem;
+    padding: 6px 10px;
+  }
+
+  .header-cancel-button,
+  .header-confirm-button {
+    flex: 1 1 calc(50% - 3px);
+    min-width: 0;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  .cards-grid {
+    padding: 12px;
+    max-height: calc(95vh - 180px);
+  }
+}
+

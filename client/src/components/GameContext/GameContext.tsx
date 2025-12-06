@@ -1097,12 +1097,25 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Helper to add pending reward
       const addPendingReward = (reward: Reward, source: { type: GainSource; id: number; name: string }, isTrash: boolean = false) => {
         const rewardId = `${source.type}-${source.id}-${crypto.randomUUID()}`
-        pendingRewards.push({
+        const pendingReward: PendingReward = {
           id: rewardId,
           source,
           reward,
           isTrash
-        })
+        }
+        
+        // Check if REVEREND_MOTHER_MOHIAM and disable if condition not met
+        if (reward.custom === CustomEffect.REVEREND_MOTHER_MOHIAM && source.type === GainSource.CARD) {
+          // Check if player has another Bene Gesserit card in playArea (excluding the current card)
+          const hasBeneGesseritInPlay = currPlayer.playArea.some(c => 
+            c.faction?.includes(FactionType.BENE_GESSERIT) && c.id !== source.id
+          )
+          if (!hasBeneGesseritInPlay) {
+            pendingReward.disabled = true
+          }
+        }
+        
+        pendingRewards.push(pendingReward)
       }
       
       function applyCardPlayEffect(effect: CardEffect, card: Card, space: SpaceProps) {
@@ -1310,7 +1323,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
         if (trashedCard) {
           currPlayer.trash = [...currPlayer.trash, trashedCard];
-          currPlayer.handCount += 2;
         } else {
           console.log("Trashed card not found");
         }
@@ -2149,8 +2161,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
           
           // Initialize opponent discard state
+          // For REVEREND_MOTHER_MOHIAM, only include opponents with cards in hand
           const opponents = state.players
-            .filter(p => p.id !== playerId)
+            .filter(p => p.id !== playerId && p.handCount > 0)
             .map(p => p.id)
           if (opponents.length === 0) return state
           const discardCounts: Record<number, number> = {}
@@ -2162,7 +2175,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               opponentDiscardState: {
                 effect: CustomEffect.REVEREND_MOTHER_MOHIAM,
                 remainingOpponents: opponents,
-                currentOpponent: opponents[0],
+                currentOpponent: undefined, // No auto-select, let player choose
                 discardCounts
               }
             } : null
@@ -2195,9 +2208,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           const newBlockedSpaces = [...(state.blockedSpaces || [])]
           newBlockedSpaces.push({ spaceId, playerId })
           
+          // Update canEndTurn based on remaining pendingRewards and pendingChoices
+          const canEndTurn = (state.pendingRewards.filter(r => !r.disabled).length === 0 && (!state.currTurn?.pendingChoices?.length))
+          
           return {
             ...state,
-            blockedSpaces: newBlockedSpaces
+            blockedSpaces: newBlockedSpaces,
+            canEndTurn
           }
         }
         case CustomEffect.GUILD_BANKERS: {
@@ -2421,6 +2438,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (actingPlayerId !== state.activePlayerId) return state
       
       const discardState = state.currTurn.opponentDiscardState
+      
+      // For REVEREND_MOTHER_MOHIAM, allow setting currentOpponent if undefined
+      if (discardState.effect === CustomEffect.REVEREND_MOTHER_MOHIAM && !discardState.currentOpponent && choice === 'discard') {
+        // Set the selected opponent as current
+        if (!discardState.remainingOpponents.includes(opponentId)) return state
+        const opponent = state.players.find(p => p.id === opponentId)
+        if (!opponent || opponent.handCount === 0) return state
+        
+        return {
+          ...state,
+          currTurn: state.currTurn ? {
+            ...state.currTurn,
+            opponentDiscardState: {
+              ...discardState,
+              currentOpponent: opponentId
+            }
+          } : null
+        }
+      }
+      
+      // For other cases, currentOpponent must match
       if (discardState.currentOpponent !== opponentId) return state
       
       const opponent = state.players.find(p => p.id === opponentId)
@@ -2559,7 +2597,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (discardState.currentOpponent !== opponentId) return state
       if (discardState.effect !== CustomEffect.REVEREND_MOTHER_MOHIAM) return state
       const opponent = state.players.find(p => p.id === opponentId)
-      if (!opponent || opponent.deck.length > 0) return state
+      if (!opponent || opponent.handCount > 0) return state
 
       const discardCounts = { ...(discardState.discardCounts || {}) }
       discardCounts[opponentId] = 2

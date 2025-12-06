@@ -78,6 +78,12 @@ button:disabled {
 .control-buttons {
     display: flex;
     gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.button-pair {
+    display: flex;
+    gap: 0.5rem;
 }
 
 .control-buttons button {
@@ -249,10 +255,22 @@ button:disabled {
   .control-buttons {
     flex-wrap: wrap;
     justify-content: center;
+    gap: 0.5rem;
   }
-  .control-buttons button {
-    flex: 1 1 calc(50% - 8px);
-    min-width: 140px;
+  .button-pair {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 0.5rem;
+  }
+  .button-pair button {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+  .control-buttons > button:not(.button-pair button) {
+    flex: 1 1 100%;
+    min-width: 0;
   }
 }
 
@@ -260,9 +278,22 @@ button:disabled {
   .active-player-info {
     font-size: 1rem;
   }
-  .control-buttons button {
-    flex: 1 1 100%;
+  .control-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .button-pair {
+    width: 100%;
+    gap: 0.5rem;
+  }
+  .button-pair button {
+    flex: 1 1 calc(50% - 4px);
     min-width: 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  .control-buttons > button:not(.button-pair button) {
+    width: 100%;
   }
 }
 

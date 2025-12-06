@@ -14,6 +14,7 @@ interface CardSearchProps {
   selectionCount: number
   text: string
   onSelectionChange?: (selectedCards: Card[]) => void
+  hideTitle?: boolean
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({
@@ -28,6 +29,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
   selectionCount,
   text,
   onSelectionChange,
+  hideTitle = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
@@ -52,7 +54,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
     }
 
     let baseCards: Card[]
-    
+
     if (cards) {
       // Use provided cards directly
       baseCards = cards
@@ -62,37 +64,37 @@ const CardSearch: React.FC<CardSearchProps> = ({
     } else {
       baseCards = []
     }
-    
+
     // Apply custom filter if provided
     if (customFilter) {
       return baseCards.filter(customFilter)
     }
-    
+
     return baseCards
   }, [cards, player, piles, customFilter])
 
-    const filteredCards = useMemo(() => {
-      if (!searchTerm) return availableCards
+  const filteredCards = useMemo(() => {
+    if (!searchTerm) return availableCards
 
-      const searchLower = searchTerm.toLowerCase()
-      return availableCards.filter(card => {
-        const searchableText = [
-          card.name,//TODO check effect other fields
-          card.description || '',
-          card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
-          card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
-          card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
-          card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
-          card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
-          card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
-          card.acquireEffect ? JSON.stringify(card.acquireEffect) : '',
-          card.cost?.toString(),
-          card.agentIcons.join(' '),
-        ].join(' ').toLowerCase()
+    const searchLower = searchTerm.toLowerCase()
+    return availableCards.filter(card => {
+      const searchableText = [
+        card.name,
+        card.description || '',
+        card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
+        card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
+        card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
+        card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
+        card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
+        card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
+        card.acquireEffect ? JSON.stringify(card.acquireEffect) : '',
+        card.cost?.toString(),
+        card.agentIcons.join(' '),
+      ].join(' ').toLowerCase()
 
-        return searchableText.includes(searchLower)
-      })
-    }, [availableCards, searchTerm])
+      return searchableText.includes(searchLower)
+    })
+  }, [availableCards, searchTerm])
 
   if (!isOpen) return null
 
@@ -138,14 +140,29 @@ const CardSearch: React.FC<CardSearchProps> = ({
     <div className="card-selection-dialog-overlay">
       <div className="card-selection-dialog">
         <div className="dialog-header">
-          <h2>{text}</h2>
-          <input
-            type="text"
-            placeholder="Search cards..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
+          {!hideTitle && <h2>{text}</h2>}
+          <div className="dialog-header-actions">
+            <input
+              type="text"
+              placeholder="Search cards..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+            <button
+              className="header-cancel-button"
+              onClick={handleCancel}
+            >
+              Cancel
+            </button>
+            <button
+              className="header-confirm-button"
+              onClick={handleConfirm}
+              disabled={selectedCards.length !== selectionCount}
+            >
+              Confirm
+            </button>
+          </div>
         </div>
         <div className="cards-grid">
           {filteredCards.map(card => (
@@ -155,62 +172,60 @@ const CardSearch: React.FC<CardSearchProps> = ({
               onClick={() => handleCardClick(card)}
             >
               {card.image && (
-                <img 
-                  src={card.image} 
+                <img
+                  src={card.image}
                   alt={card.name}
                   className="card-image"
                 />
               )}
-              {!card.image && (<>
-              <div className="card-header">
-                <h3>{card.name}</h3>
-                {card.cost && <span className="persuasion">Cost: {card.cost}</span>}
-              </div>
-              <div className="card-icons">
-                {card.agentIcons.map((icon, index) => (
-                  <span key={index} className="agent-icon">{icon}</span>
-                ))}
-              </div>
-              {card.playEffect && (
-                <div className="card-effect">
-                  {card.playEffect.map((effect, index) => (
-                    <div key={index}>
-                      Reveal: {JSON.stringify(effect.reward)}
+              {!card.image && (
+                <>
+                  <div className="card-header">
+                    <h3>{card.name}</h3>
+                    {card.cost && <span className="persuasion">Cost: {card.cost}</span>}
+                  </div>
+                  <div className="card-icons">
+                    {card.agentIcons.map((icon, index) => (
+                      <span
+                        key={index}
+                        className="agent-icon"
+                      >
+                        {icon}
+                      </span>
+                    ))}
+                  </div>
+                  {card.playEffect && (
+                    <div className="card-effect">
+                      {card.playEffect.map((effect, index) => (
+                        <div key={index}>
+                          Reveal: {JSON.stringify(effect.reward)}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-              {card.playEffect && (
-                <div className="card-effect">
-                  {card.playEffect.map((effect, index) => (
-                    <div key={index}>
-                      Play: {JSON.stringify(effect.reward)}
+                  )}
+                  {card.playEffect && (
+                    <div className="card-effect">
+                      {card.playEffect.map((effect, index) => (
+                        <div key={index}>
+                          Play: {JSON.stringify(effect.reward)}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  )}
+                  {card.acquireEffect && (
+                    <p className="card-acquire-effect">
+                      Acquire: {JSON.stringify(card.acquireEffect)}
+                    </p>
+                  )}
+                </>
               )}
-              {card.acquireEffect && (
-                <p className="card-acquire-effect">
-                  Acquire: {JSON.stringify(card.acquireEffect)}
-                </p>
-              )}
-              </>
-            )}
             </div>
           ))}
-        </div>
-        <div className="dialog-actions">
-          <button onClick={handleCancel}>Cancel</button>
-          <button 
-            onClick={handleConfirm}
-            disabled={selectedCards.length !== selectionCount}
-          >
-            Confirm
-          </button>
         </div>
       </div>
     </div>
   )
 }
 
-export default CardSearch 
+export default CardSearch
+

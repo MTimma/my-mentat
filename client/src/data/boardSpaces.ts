@@ -150,6 +150,7 @@ export const BOARD_SPACES: SpaceProps[] = [
     cost: { spice: 2 },
     influence: { faction: FactionType.BENE_GESSERIT, amount: 1 },
     specialEffect: 'selectiveBreeding',
+    effects: [{ reward: { drawCards: 2 } }],
     image: "board/selective_breeding.png"
   },
   {
