@@ -24,6 +24,7 @@ const GameContent = () => {
   } = useGame()
 
   const [openPlayerIndex, setOpenPlayerIndex] = useState<number | null>(null)
+  const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(false)
   const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
   const [onSelectiveBreedingSelect, setOnSelectiveBreedingSelect] = useState<((card: Card) => void) | null>(null)
   const [voiceSelectionRewardId, setVoiceSelectionRewardId] = useState<string | null>(null)
@@ -190,9 +191,10 @@ const GameContent = () => {
       // Skip rewards that are part of OR choices (pending choices)
       const isPartOfChoice = gameState.currTurn?.pendingChoices?.some(choice => 
         choice.type === ChoiceType.FIXED_OPTIONS &&
-        (choice as FixedOptionsChoice).options.some(opt => 
-          opt.source?.id === reward.source.id && opt.source?.type === reward.source.type
-        )
+        (choice as FixedOptionsChoice).options.some(opt => {
+          const optSource = (opt as unknown as { source?: { id: number; type: string } }).source
+          return optSource?.id === reward.source.id && optSource?.type === reward.source.type
+        })
       )
       if (isPartOfChoice) return false
       
@@ -210,14 +212,24 @@ const GameContent = () => {
 
   return (
     <div className="game-container">
-      <div className="turn-history-container">
+      <button
+        type="button"
+        className="turn-history-toggle"
+        aria-expanded={isTurnHistoryOpen}
+        aria-controls="turn-history-overlay"
+        onClick={() => setIsTurnHistoryOpen(open => !open)}
+      >
+        {isTurnHistoryOpen ? 'Close history' : 'Turn history'}
+      </button>
+      {isTurnHistoryOpen && (
         <TurnHistory 
           turns={gameState.history}
-          currentTurn={gameState.history.length}
+          currentTurn={Math.max(0, gameState.history.length - 1)}
           players={gameState.players}
           onTurnChange={() => {}}
+          onClose={() => setIsTurnHistoryOpen(false)}
         />
-      </div>
+      )}
       <div className="imperium-row-container">
         <ImperiumRow 
         canAcquire={gameState.canAcquireIR}

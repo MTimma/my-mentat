@@ -379,6 +379,30 @@
   padding: 10px;
 }
 
+.turn-history-toggle {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 1300;
+  background: rgba(20, 20, 20, 0.92);
+  color: #d4af37;
+  border: 2px solid #d4af37;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.turn-history-toggle:hover {
+  background: rgba(40, 40, 40, 0.95);
+}
+
+.turn-history-toggle:focus-visible {
+  outline: 2px solid #ffd700;
+  outline-offset: 2px;
+}
+
 .turn-history {
   display: flex;
   align-items: center;

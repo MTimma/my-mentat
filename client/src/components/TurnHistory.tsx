@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Player, GameState, Gain, RewardType } from '../types/GameTypes'
 import { getRewardIcon, getRewardDisplayName } from '../utils/rewardIcons'
 import './TurnHistory.css'
@@ -8,6 +8,7 @@ interface TurnHistoryProps {
   currentTurn: number
   players: Player[]
   onTurnChange: (turnIndex: number) => void
+  onClose?: () => void
 }
 
 interface AggregatedGain {
@@ -15,7 +16,7 @@ interface AggregatedGain {
   amount: number
 }
 
-const TurnHistory: React.FC<TurnHistoryProps> = ({ turns, currentTurn, players, onTurnChange }) => {
+const TurnHistory: React.FC<TurnHistoryProps> = ({ turns, currentTurn, players, onTurnChange, onClose }) => {
   const [selectedTurn, setSelectedTurn] = useState<number | null>(null)
 
   // Get the turn info from GameState
@@ -84,12 +85,34 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({ turns, currentTurn, players, 
     )
   }
 
+  useEffect(() => {
+    if (!onClose) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
-    <div className="turn-history-overlay">
+    <div
+      id="turn-history-overlay"
+      className="turn-history-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Turn history"
+    >
       <div className="turn-history-header">
-        <button onClick={() => onTurnChange(Math.max(0, currentTurn - 1))} disabled={currentTurn === 0}>&lt;</button>
-        <span>Turn {currentTurn + 1} / {turns.length}</span>
-        <button onClick={() => onTurnChange(Math.min(turns.length - 1, currentTurn + 1))} disabled={currentTurn === turns.length - 1}>&gt;</button>
+        <div className="turn-history-nav">
+          <button onClick={() => onTurnChange(Math.max(0, currentTurn - 1))} disabled={currentTurn === 0}>&lt;</button>
+          <span>Turn {currentTurn + 1} / {turns.length}</span>
+          <button onClick={() => onTurnChange(Math.min(turns.length - 1, currentTurn + 1))} disabled={currentTurn === turns.length - 1}>&gt;</button>
+        </div>
+        {onClose && (
+          <button className="turn-history-close" type="button" aria-label="Close turn history" onClick={onClose}>
+            ×
+          </button>
+        )}
       </div>
       <div className="turn-history-list">
         {turns.map((turn, index) => {
