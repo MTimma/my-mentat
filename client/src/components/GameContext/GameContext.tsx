@@ -82,7 +82,9 @@ type GameAction =
   | { type: 'OPPONENT_DISCARD_CHOICE'; playerId: number; opponentId: number; choice: 'discard' | 'loseTroop' }
   | { type: 'OPPONENT_DISCARD_CARD'; playerId: number; opponentId: number; cardId: number }
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
-  | { type: 'RESOLVE_ENDGAME' }
+    | { type: 'UNDO_TO_TURN'; turnIndex: number }
+    | { type: 'RESOLVE_ENDGAME' }
+
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
 export const useGame = () => {
@@ -2783,6 +2785,41 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           opponentDiscardState: newOpponentDiscardState
         } : null,
         canEndTurn: newOpponentDiscardState === undefined && state.pendingRewards.filter(r => !r.disabled).length === 0
+      }
+    }
+    case 'UNDO_TO_TURN': {
+      const { turnIndex } = action
+      
+      // Validate turnIndex
+      if (turnIndex < 0 || turnIndex >= state.history.length) {
+        console.warn('Invalid undo turn index:', turnIndex)
+        return state
+      }
+      
+      // Get the historical state at the target index
+      const targetState = state.history[turnIndex]
+      if (!targetState) {
+        console.warn('No historical state found at index:', turnIndex)
+        return state
+      }
+      
+      // Truncate history to only include turns before the target
+      // The target state becomes the new current state
+      const truncatedHistory = state.history.slice(0, turnIndex)
+      
+      // Return the historical state with truncated history
+      // Clear any in-progress turn state
+      return {
+        ...targetState,
+        history: truncatedHistory,
+        // Reset transient state that should not persist after undo
+        selectedCard: null,
+        currTurn: null,
+        canEndTurn: false,
+        canAcquireIR: false,
+        pendingRewards: [],
+        gains: [],
+        blockedSpaces: []
       }
     }
     default:
