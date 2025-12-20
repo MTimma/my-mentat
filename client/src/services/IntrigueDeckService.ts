@@ -1,4 +1,4 @@
-import { IntrigueCard, IntrigueCardType, FactionType } from '../types/GameTypes'
+import { IntrigueCard, IntrigueCardType, FactionType, EffectTiming, GamePhase } from '../types/GameTypes'
 
 export const intrigueCards: IntrigueCard[] = [
   // NOTE: These entries are derived from the images in `client/public/intrigue/base/`.
@@ -20,7 +20,20 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'If you have a faction alliance: pay 2 spice to gain +7 strength.',
     image: '/intrigue/base/allied_armada.png',
     agentIcons: [],
-    playEffect: [{ cost: { spice: 2 }, reward: { combat: 7 } }]
+    playEffect: [
+      {
+        requirement: {
+          or: [
+            { alliance: FactionType.EMPEROR },
+            { alliance: FactionType.SPACING_GUILD },
+            { alliance: FactionType.BENE_GESSERIT },
+            { alliance: FactionType.FREMEN }
+          ]
+        },
+        cost: { spice: 2 },
+        reward: { combat: 7 }
+      }
+    ]
   },
   {
     id: 3,
@@ -67,7 +80,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Gain 2 persuasion during your Reveal turn this round.',
     image: '/intrigue/base/charisma.png',
     agentIcons: [],
-    playEffect: [{ reward: { persuasion: 2 } }]
+    playEffect: [{ timing: EffectTiming.ON_REVEAL_THIS_ROUND, reward: { persuasion: 2 } }]
   },
   {
     id: 8,
@@ -197,7 +210,10 @@ export const intrigueCards: IntrigueCard[] = [
       'Gain 1 water during your Reveal turn this round. You may put cards you acquire on top of your deck.',
     image: '/intrigue/base/recruitment_mission.png',
     agentIcons: [],
-    playEffect: [{ reward: { water: 1 } }]
+    playEffect: [
+      { timing: EffectTiming.ON_REVEAL_THIS_ROUND, reward: { water: 1 } },
+      { reward: { acquireToTopThisRound: true } }
+    ]
   },
   {
     id: 22,
@@ -251,7 +267,10 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Combat: +2 strength —OR— Endgame: counts as 10 spice for tiebreakers.',
     image: '/intrigue/base/tiebraker.png',
     agentIcons: [],
-    playEffect: [{ reward: { combat: 2 } }]
+    playEffect: [
+      { phase: GamePhase.COMBAT, reward: { combat: 2 } },
+      { phase: GamePhase.END_GAME, reward: { tiebreakerSpice: 10 } }
+    ]
   },
   {
     id: 28,

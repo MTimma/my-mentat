@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn } from '../../types/GameTypes'
+import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
@@ -48,6 +48,8 @@ interface TurnControlsProps {
   onVoiceSelectionCancel?: () => void
   onOpponentNoCardAck?: (opponentId: number) => void
   intrigueDeck: IntrigueCard[]
+  gamePhase: GamePhase
+  activeIntrigueThisRound?: IntrigueCard[]
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -91,7 +93,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   voiceSelectionActive = false,
   onVoiceSelectionCancel,
   onOpponentNoCardAck,
-  intrigueDeck
+  intrigueDeck,
+  gamePhase,
+  activeIntrigueThisRound = []
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -106,7 +110,20 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const hasMandatoryRewards = pendingRewards.some(r => !r.disabled && !r.isTrash)
 
   if (!activePlayer) return null
-  const playableIntrigueCards = intrigueDeck.filter(card => card.type !== IntrigueCardType.COMBAT)
+  const isEndGame = gamePhase === GamePhase.END_GAME
+  const playableIntrigueCards = intrigueDeck.filter(card => {
+    if (gamePhase === GamePhase.END_GAME) {
+      if (card.type === IntrigueCardType.ENDGAME) return true
+      // Allow special cases like Tiebreaker (combat intrigue with an endgame effect).
+      return Boolean(card.playEffect?.some(e => {
+        if (!e.phase) return false
+        const phases = Array.isArray(e.phase) ? e.phase : [e.phase]
+        return phases.includes(GamePhase.END_GAME)
+      }))
+    }
+    // In normal Player Turns, only Plot intrigue can be played (combat handled separately)
+    return card.type === IntrigueCardType.PLOT
+  })
 
   const getRankings = () => {
     const entries = Object.entries(combatStrength)
@@ -694,6 +711,28 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           <div className={`color-indicator ${activePlayer.color}`}></div>
           {activePlayer.leader.name}
         </div>
+        {activeIntrigueThisRound.length > 0 && (
+          <div className="active-intrigue-peek" aria-label="Active intrigue this round">
+            <div className="active-intrigue-preview" title="Hover to view active intrigue this round">
+              <img
+                src={activeIntrigueThisRound[0].image}
+                alt={activeIntrigueThisRound[0].name}
+                className="active-intrigue-preview-img"
+              />
+            </div>
+            <div className="active-intrigue-panel" role="region" aria-label="Active intrigue cards">
+              {activeIntrigueThisRound.map(card => (
+                <img
+                  key={card.id}
+                  src={card.image}
+                  alt={card.name}
+                  className="active-intrigue-img"
+                  title={card.name}
+                />
+              ))}
+            </div>
+          </div>
+        )}
         <div className="selected-cards">
           {selectedCard && (
             <div className="selected-card-info">
@@ -723,7 +762,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               className="play-card-button"
               onClick={handlePlayCard}
               disabled={activePlayer.agents === 0 || canEndTurn || agentPlaced || hasOpponentDiscard || hasMandatoryRewards}
-              hidden={isCombatPhase}
+              hidden={isCombatPhase || isEndGame}
               title={
                 hasOpponentDiscard
                   ? 'Resolve opponent discard instructions before taking new actions.'
@@ -738,7 +777,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               className="reveal-turn-button"
               onClick={handleRevealTurn}
               disabled={canEndTurn || isCombatPhase || agentPlaced || hasOpponentDiscard || hasMandatoryRewards}
-              hidden={isCombatPhase}
+              hidden={isCombatPhase || isEndGame}
               title={
                 hasOpponentDiscard
                   ? 'Resolve opponent discard instructions before taking new actions.'

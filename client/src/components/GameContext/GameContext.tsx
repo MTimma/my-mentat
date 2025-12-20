@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useReducer } from 'react'
 import {
   GameState,
@@ -31,7 +32,8 @@ import {
   ChoiceType,
   CardPile,
   PendingReward,
-  AUTO_APPLIED_CUSTOM_EFFECTS
+  AUTO_APPLIED_CUSTOM_EFFECTS,
+  EffectTiming
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { ARRAKIS_LIAISON_DECK, buildImperiumDeck } from '../../data/cards'
@@ -40,6 +42,7 @@ import { FOLDSPACE_DECK } from '../../data/cards'
 import { CONFLICTS } from '../../data/conflicts'
 import { PLAY_EFFECT_TEXTS } from '../../data/effectTexts'
 import { intrigueCards } from '../../services/IntrigueDeckService'
+import { playRequirementSatisfied, revealRequirementSatisfied } from './requirements'
 
 interface GameContextType {
   gameState: GameState
@@ -79,6 +82,7 @@ type GameAction =
   | { type: 'OPPONENT_DISCARD_CHOICE'; playerId: number; opponentId: number; choice: 'discard' | 'loseTroop' }
   | { type: 'OPPONENT_DISCARD_CARD'; playerId: number; opponentId: number; cardId: number }
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
+  | { type: 'RESOLVE_ENDGAME' }
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
 export const useGame = () => {
@@ -148,6 +152,12 @@ const initialGameState: GameState = {
   canAcquireIR: false,
   gains: [],
   pendingRewards: [],
+  scheduledIntrigueOnReveal: {},
+  activeIntrigueThisRound: {},
+  acquireToTopThisRound: {},
+  endgameTiebreakerSpice: {},
+  endgameDonePlayers: new Set(),
+  endgameWinners: null,
   blockedSpaces: []
 }
 
@@ -467,7 +477,11 @@ function handleIntrigueEffect(
   const newState = { 
     ...state, 
     gains: [...state.gains],
-    combatStrength: { ...state.combatStrength }
+    combatStrength: { ...state.combatStrength },
+    scheduledIntrigueOnReveal: { ...(state.scheduledIntrigueOnReveal || {}) },
+    activeIntrigueThisRound: { ...(state.activeIntrigueThisRound || {}) },
+    acquireToTopThisRound: { ...(state.acquireToTopThisRound || {}) },
+    endgameTiebreakerSpice: { ...(state.endgameTiebreakerSpice || {}) }
   }
   const updatedPlayers = state.players.map(p => ({ ...p }))
   const playerIndex = updatedPlayers.findIndex(p => p.id === playerId)
@@ -539,6 +553,46 @@ function handleIntrigueEffect(
   card.playEffect?.forEach(effect => {
     if (!effect.reward) return
     if (!playRequirementSatisfied(effect, card, state, playerId)) return
+    // Optional phase gating on effects (used by multi-phase intrigue cards like Tiebreaker)
+    if (effect.phase) {
+      const phases = Array.isArray(effect.phase) ? effect.phase : [effect.phase]
+      if (!phases.includes(state.phase)) return
+    }
+    if (effect.timing === EffectTiming.ON_REVEAL_THIS_ROUND) {
+      const scheduled = newState.scheduledIntrigueOnReveal[playerId] || []
+      scheduled.push({
+        cardId: card.id,
+        name: card.name,
+        image: card.image,
+        reward: effect.reward
+      })
+      newState.scheduledIntrigueOnReveal[playerId] = scheduled
+
+      const active = newState.activeIntrigueThisRound[playerId] || []
+      if (!active.some(c => c.id === card.id)) {
+        newState.activeIntrigueThisRound[playerId] = [...active, card]
+      }
+      return
+    }
+    // Endgame-only tiebreaker modifier
+    if (effect.reward.tiebreakerSpice) {
+      newState.endgameTiebreakerSpice[playerId] =
+        (newState.endgameTiebreakerSpice[playerId] || 0) + effect.reward.tiebreakerSpice
+      const active = newState.activeIntrigueThisRound[playerId] || []
+      if (!active.some(c => c.id === card.id)) {
+        newState.activeIntrigueThisRound[playerId] = [...active, card]
+      }
+      return
+    }
+    // Immediate intrigue modifier (applies for the remainder of the round / reveal turn)
+    if (effect.reward.acquireToTopThisRound) {
+      newState.acquireToTopThisRound[playerId] = true
+      const active = newState.activeIntrigueThisRound[playerId] || []
+      if (!active.some(c => c.id === card.id)) {
+        newState.activeIntrigueThisRound[playerId] = [...active, card]
+      }
+      return
+    }
     applyReward(effect.reward)
   })
 
@@ -549,56 +603,6 @@ function handleIntrigueEffect(
   }
 }
 
-function playRequirementSatisfied(effect: PlayEffect, currCard: Card, state: GameState, playerId: number): boolean {
-  if(effect?.requirement) {
-    const req = effect.requirement
-    if(req.influence) {
-      const factionType = req.influence.faction;
-      const factionAmount = req.influence.amount;
-      if(state.factionInfluence[factionType]?.[playerId] < factionAmount) {
-        return false;
-      }
-    }
-    if(req.alliance) {
-      if(state.factionAlliances[req.alliance] !== playerId) {
-        return false;
-      }
-    }
-    if(req.inPlay) {
-      if(!state.playArea[playerId].find(card => currCard.id !== card.id && card.faction?.includes(req.inPlay as FactionType))) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-function revealRequirementSatisfied(effect: RevealEffect, currCard: Card, state: GameState, playerId: number, revealedCards: Card[]): boolean {
-  if(effect?.requirement) {
-    const req = effect.requirement
-    if(req.influence) {
-      const factionType = req.influence.faction;
-      const factionAmount = req.influence.amount;
-      if(state.factionInfluence[factionType]?.[playerId] < factionAmount) {
-        return false;
-      }
-    }
-    if(req.alliance) {
-      if(state.factionAlliances[req.alliance] !== playerId) {
-        return false;
-      }
-    }
-    if(req.bond) {
-      if(
-        !state.playArea[playerId].find(card => currCard.id !== card.id && card.faction?.includes(FactionType.FREMEN)) &&
-        !revealedCards.find(card => currCard.id !== card.id && card.faction?.includes(FactionType.FREMEN))
-      ) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -643,6 +647,34 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const newState = {...state}
       const player = newState.players[playerId]
       if (!player) return state
+
+      // Endgame uses a simpler “done” turn rotation (no agent/reveal structure).
+      if (state.phase === GamePhase.END_GAME) {
+        const done = new Set(newState.endgameDonePlayers || [])
+        done.add(playerId)
+
+        // Find next player who isn't done yet.
+        let nextIndex = (playerId + 1) % newState.players.length
+        let attempts = 0
+        while (attempts < newState.players.length && done.has(newState.players[nextIndex].id)) {
+          nextIndex = (nextIndex + 1) % newState.players.length
+          attempts++
+        }
+
+        const allDone = done.size >= newState.players.length
+        return {
+          ...newState,
+          endgameDonePlayers: done,
+          activePlayerId: allDone ? newState.activePlayerId : newState.players[nextIndex].id,
+          currTurn: null,
+          canEndTurn: true,
+          selectedCard: null,
+          canAcquireIR: false,
+          gains: [],
+          pendingRewards: []
+        }
+      }
+
       if (!state.selectedCard && state.currTurn?.type !== TurnType.REVEAL) return state
       const currentTurn = newState.currTurn
       if (!currentTurn) return state
@@ -651,6 +683,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         player.discardPile = [...(player.discardPile || []), ...(player.playArea || [])]
         player.playArea = []
         player.persuasion = 0
+        // Clear round-scoped intrigue modifiers/UI for this player once their Reveal turn is complete
+        newState.acquireToTopThisRound = { ...(newState.acquireToTopThisRound || {}), [playerId]: false }
+        newState.scheduledIntrigueOnReveal = { ...(newState.scheduledIntrigueOnReveal || {}), [playerId]: [] }
+        newState.activeIntrigueThisRound = { ...(newState.activeIntrigueThisRound || {}), [playerId]: [] }
       }
 
       if (!newState.players.find(p => !p.revealed)) {
@@ -899,6 +935,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'PLAY_COMBAT_INTRIGUE': {
       const { playerId, cardId } = action
+      if (playerId !== state.activePlayerId) return state
+      if (state.phase !== GamePhase.COMBAT) return state
+
+      const player = state.players.find(p => p.id === playerId)
+      if (!player || player.intrigueCount < 1) return state
+      if ((state.combatTroops[playerId] || 0) < 1) return state
+
       const card = state.intrigueDeck.find(c => c.id === cardId)
 
       if (!card || card.type !== IntrigueCardType.COMBAT) return state
@@ -985,22 +1028,61 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
         const refreshedDeck = [...newState.imperiumRow, ...newState.imperiumRowDeck]
 
+        const updatedConflictsDiscard = [...state.conflictsDiscard, state.currentConflict]
+        const endgameTriggered =
+          newState.players.some(p => p.victoryPoints >= 10) ||
+          updatedConflictsDiscard.length >= CONFLICTS.length
+
+        if (endgameTriggered) {
+          return {
+            ...newState,
+            phase: GamePhase.END_GAME,
+            activePlayerId: newState.firstPlayerMarker,
+            conflictsDiscard: updatedConflictsDiscard,
+            imperiumRow: [],
+            imperiumRowDeck: refreshedDeck,
+            canEndTurn: true,
+            canAcquireIR: false,
+            endgameDonePlayers: new Set(),
+            endgameWinners: null
+          }
+        }
+
         return {
           ...newState,
           phase: GamePhase.ROUND_START,
           combatStrength: {},
           combatTroops: {},
           currentRound: newState.currentRound + 1,
-          conflictsDiscard: [...state.conflictsDiscard, state.currentConflict],
+          conflictsDiscard: updatedConflictsDiscard,
           imperiumRow: [],
           imperiumRowDeck: refreshedDeck
         }
     }
     case 'PLAY_INTRIGUE': {
       const { cardId, playerId } = action
+      if (playerId !== state.activePlayerId) return state
+      if (state.phase !== GamePhase.PLAYER_TURNS && state.phase !== GamePhase.END_GAME) return state
+
+      const player = state.players.find(p => p.id === playerId)
+      if (!player || player.intrigueCount < 1) return state
+      // If player has already revealed, their turns are skipped for the rest of the Player Turns phase
+      if (state.phase === GamePhase.PLAYER_TURNS && player.revealed) return state
+
       const card = state.intrigueDeck.find(c => c.id === cardId)
 
-      if (!card || card.type === IntrigueCardType.COMBAT) return state
+      if (!card) return state
+      // In Player Turns: only Plot intrigue (Combat intrigue is handled by PLAY_COMBAT_INTRIGUE)
+      if (state.phase === GamePhase.PLAYER_TURNS && card.type !== IntrigueCardType.PLOT) return state
+      // In Endgame: allow Endgame intrigue, plus any Combat intrigue that has an endgame effect (e.g. Tiebreaker)
+      if (state.phase === GamePhase.END_GAME) {
+        const hasEndgameEffect = Boolean(card.playEffect?.some(e => {
+          if (!e.phase) return card.type === IntrigueCardType.ENDGAME
+          const phases = Array.isArray(e.phase) ? e.phase : [e.phase]
+          return phases.includes(GamePhase.END_GAME)
+        }))
+        if (!hasEndgameEffect) return state
+      }
 
       const updatedState = handleIntrigueEffect(state, card, playerId)
       
@@ -1016,6 +1098,34 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       return newState
+    }
+
+    case 'RESOLVE_ENDGAME': {
+      if (state.phase !== GamePhase.END_GAME) return state
+
+      // Winner by VP; ties broken by spice, Solari, water, garrisoned troops.
+      const maxVp = Math.max(...state.players.map(p => p.victoryPoints))
+      let contenders = state.players.filter(p => p.victoryPoints === maxVp)
+      if (contenders.length <= 1) {
+        return { ...state, endgameWinners: contenders.map(p => p.id) }
+      }
+
+      const spiceWithBonus = (p: Player) => p.spice + (state.endgameTiebreakerSpice?.[p.id] || 0)
+      const maxSpice = Math.max(...contenders.map(spiceWithBonus))
+      contenders = contenders.filter(p => spiceWithBonus(p) === maxSpice)
+      if (contenders.length <= 1) return { ...state, endgameWinners: contenders.map(p => p.id) }
+
+      const maxSolari = Math.max(...contenders.map(p => p.solari))
+      contenders = contenders.filter(p => p.solari === maxSolari)
+      if (contenders.length <= 1) return { ...state, endgameWinners: contenders.map(p => p.id) }
+
+      const maxWater = Math.max(...contenders.map(p => p.water))
+      contenders = contenders.filter(p => p.water === maxWater)
+      if (contenders.length <= 1) return { ...state, endgameWinners: contenders.map(p => p.id) }
+
+      const maxTroops = Math.max(...contenders.map(p => p.troops))
+      contenders = contenders.filter(p => p.troops === maxTroops)
+      return { ...state, endgameWinners: contenders.map(p => p.id) }
     }
     case 'PLAY_CARD': {
       const { playerId, cardId } = action
@@ -1570,6 +1680,56 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         persuasionCount += 2
       }
 
+      // Auto-resolve any scheduled intrigue effects that trigger on this player's Reveal turn (this round).
+      const scheduledIntrigue = (state.scheduledIntrigueOnReveal?.[playerId] || [])
+      scheduledIntrigue.forEach(s => {
+        const pushIntrigueGain = (amount: number | undefined, type: RewardType) => {
+          if (!amount) return
+          updatedGains.push({
+            round: state.currentRound,
+            playerId,
+            sourceId: s.cardId,
+            name: s.name,
+            amount,
+            type,
+            source: GainSource.INTRIGUE
+          })
+        }
+
+        if (s.reward.persuasion) {
+          persuasionCount += s.reward.persuasion
+          pushIntrigueGain(s.reward.persuasion, RewardType.PERSUASION)
+        }
+        if (s.reward.combat) {
+          swordCount += s.reward.combat
+          pushIntrigueGain(s.reward.combat, RewardType.COMBAT)
+        }
+        if (s.reward.spice) {
+          player.spice += s.reward.spice
+          pushIntrigueGain(s.reward.spice, RewardType.SPICE)
+        }
+        if (s.reward.water) {
+          player.water += s.reward.water
+          pushIntrigueGain(s.reward.water, RewardType.WATER)
+        }
+        if (s.reward.solari) {
+          player.solari += s.reward.solari
+          pushIntrigueGain(s.reward.solari, RewardType.SOLARI)
+        }
+        if (s.reward.troops) {
+          player.troops += s.reward.troops
+          pushIntrigueGain(s.reward.troops, RewardType.TROOPS)
+        }
+        if (s.reward.victoryPoints) {
+          player.victoryPoints += s.reward.victoryPoints
+          pushIntrigueGain(s.reward.victoryPoints, RewardType.VICTORY_POINTS)
+        }
+        if (s.reward.intrigueCards) {
+          player.intrigueCount += s.reward.intrigueCards
+          pushIntrigueGain(s.reward.intrigueCards, RewardType.INTRIGUE)
+        }
+      })
+
       const optionalEffects: OptionalEffect[] = []
       const pendingChoices: PendingChoice[] = [...(state.currTurn?.pendingChoices||[])]
       revealedCards.forEach(card => {
@@ -1736,7 +1896,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         currTurn: currentTurn,
         pendingRewards,
         canEndTurn: (pendingChoices.length > 0 || pendingRewards.filter(r => !r.disabled).length > 0) ? false : true,
-        canAcquireIR: true
+        canAcquireIR: true,
+        scheduledIntrigueOnReveal: { ...(state.scheduledIntrigueOnReveal || {}), [playerId]: [] }
       }
     }
     case 'ACQUIRE_CARD': {
@@ -1750,10 +1911,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const cost = card.cost || 0
       if (player.persuasion < cost) return state
 
+      const shouldAcquireToTop = Boolean(state.acquireToTopThisRound?.[playerId])
+      const updatedDeck = shouldAcquireToTop ? [card, ...player.deck] : player.deck
+      const updatedDiscardPile = shouldAcquireToTop ? player.discardPile : [...player.discardPile, card]
+
       const updatedPlayer: Player = {
         ...player,
         persuasion: player.persuasion - cost,
-        discardPile: [...player.discardPile, card]
+        deck: updatedDeck,
+        discardPile: updatedDiscardPile
       }
 
       const updatedGains: Gain[] = [...state.gains]

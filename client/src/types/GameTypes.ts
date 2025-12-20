@@ -124,14 +124,21 @@ export interface SpaceProps {
 }
 
 export interface PlayReq extends CardEffectReq {
+  // Allow OR requirement groups with PlayReq-specific fields
+  or?: PlayReq[]
   inPlay?: FactionType
 }
 
 export interface RevealReq extends CardEffectReq {
+  // Allow OR requirement groups with RevealReq-specific fields
+  or?: RevealReq[]
   bond?: FactionType
 }
 
 export interface CardEffectReq {
+  // OR-group requirements: direct fields are ANDed, and if `or` is provided,
+  // at least one sub-requirement must also be satisfied.
+  or?: CardEffectReq[]
   influence?: InfluenceAmount
   alliance?: FactionType
 }
@@ -171,8 +178,17 @@ export interface Reward {
   retreatTroops?: number
   retreatUnits?: number
   deployTroops?: number
+  // Intrigue: while active this round, acquired cards may be put on top of deck instead of discard.
+  acquireToTopThisRound?: boolean
+  // Endgame tiebreaker modifier (e.g. “counts as 10 spice for tiebreakers”)
+  tiebreakerSpice?: number
   custom?: CustomEffect
   influence?: InfluenceAmounts
+}
+
+export enum EffectTiming {
+  IMMEDIATE = 'immediate',
+  ON_REVEAL_THIS_ROUND = 'on-reveal-this-round'
 }
 
 export interface CardEffect<R extends CardEffectReq = CardEffectReq> {
@@ -180,6 +196,9 @@ export interface CardEffect<R extends CardEffectReq = CardEffectReq> {
   cost?: Cost
   reward: Reward
   choiceOpt?: boolean
+  timing?: EffectTiming
+  // Optional phase gating (primarily used for intrigue cards that can be used in multiple phases)
+  phase?: GamePhase | GamePhase[]
 }
 
 export interface Gain {
@@ -225,9 +244,18 @@ export interface Card {
 }
 
 export interface IntrigueCard extends Card {
+  // Intrigue cards never have agent icons (rulebook: intrigue is not played as an Agent turn card)
+  agentIcons: []
   type: IntrigueCardType
   description: string
   targetPlayer?: boolean
+}
+
+export interface ScheduledIntrigueEffect {
+  cardId: number
+  name: string
+  image: string
+  reward: Reward
 }
 
 export enum FactionType {
@@ -466,6 +494,18 @@ export interface GameState {
   canEndTurn: boolean
   canAcquireIR: boolean
   pendingRewards: PendingReward[]
+  // Intrigue effects that will auto-resolve when the player takes their Reveal turn this round.
+  scheduledIntrigueOnReveal: Record<number, ScheduledIntrigueEffect[]>
+  // Intrigue cards that remain “active this round” (for UI attribution near Turn Controls).
+  activeIntrigueThisRound: Record<number, IntrigueCard[]>
+  // Intrigue modifier: during this player's Reveal turn this round, acquisitions may go to top of deck.
+  acquireToTopThisRound: Record<number, boolean>
+  // Endgame: additional spice considered for tiebreakers (from intrigue effects)
+  endgameTiebreakerSpice: Record<number, number>
+  // Endgame: players who have finished playing endgame intrigue
+  endgameDonePlayers: Set<number>
+  // Endgame: computed winners (after RESOLVE_ENDGAME)
+  endgameWinners: number[] | null
   blockedSpaces?: Array<{ spaceId: number; playerId: number }> // Spaces blocked by The Voice
 }
 

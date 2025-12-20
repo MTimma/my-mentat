@@ -3,6 +3,7 @@
   border: 1px solid #ccc;
   border-radius: 5px;
   /* background-color: #f9f9f9; */
+  position: relative;
 }
 
 .selected-cards {
@@ -73,6 +74,63 @@ button:disabled {
     color: white;
     font-size: 1.2rem;
     font-weight: bold;
+}
+
+.active-intrigue-peek {
+    position: absolute;
+    right: 10px;
+    top: -18px;
+    z-index: 10;
+}
+
+.active-intrigue-preview {
+    height: 22px; /* only show the top part */
+    width: 120px;
+    overflow: hidden;
+    border-radius: 10px 10px 0 0;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(20, 20, 20, 0.8);
+    cursor: pointer;
+}
+
+.active-intrigue-preview-img {
+    width: 120px;
+    height: 80px;
+    object-fit: cover;
+    display: block;
+}
+
+.active-intrigue-panel {
+    margin-top: 8px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(20, 20, 20, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+
+    /* collapsed by default */
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 120ms ease, transform 120ms ease;
+}
+
+/* open on hover or when explicitly toggled */
+.active-intrigue-peek:hover .active-intrigue-panel,
+.active-intrigue-peek:focus-within .active-intrigue-panel {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.active-intrigue-img {
+    width: 120px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .control-buttons {

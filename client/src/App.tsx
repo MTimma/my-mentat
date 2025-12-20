@@ -79,6 +79,10 @@ const GameContent = () => {
   const handleConfirmCombat = () => {
     dispatch({ type: 'RESOLVE_COMBAT' });
   }
+
+  const handleResolveEndgame = () => {
+    dispatch({ type: 'RESOLVE_ENDGAME' })
+  }
   
   const handleAddTroop = (playerId: number) => {
     dispatch({ type: 'DEPLOY_TROOP', playerId })
@@ -285,7 +289,7 @@ const GameContent = () => {
         <ConflictSelect conflicts={CONFLICTS.filter(c => !gameState.conflictsDiscard.includes(c))} handleConflictSelect={handleConflictSelect}/>
       </div>
       <div className="turn-controls-spacer" />
-        <div className="turn-controls-container" hidden={gameState.phase !== GamePhase.PLAYER_TURNS && gameState.phase !== GamePhase.COMBAT}>
+        <div className="turn-controls-container" hidden={gameState.phase !== GamePhase.PLAYER_TURNS && gameState.phase !== GamePhase.COMBAT && gameState.phase !== GamePhase.END_GAME}>
           <TurnControls
             activePlayer={activePlayer}
             canEndTurn={gameState.canEndTurn}
@@ -331,8 +335,31 @@ const GameContent = () => {
             onVoiceSelectionCancel={handleVoiceSelectionCancel}
             onOpponentNoCardAck={handleOpponentNoCardAck}
             intrigueDeck={gameState.intrigueDeck}
+            gamePhase={gameState.phase}
+            activeIntrigueThisRound={activePlayer ? (gameState.activeIntrigueThisRound?.[activePlayer.id] || []) : []}
           />
         </div>
+      <div className="endgame-container" hidden={gameState.phase !== GamePhase.END_GAME}>
+        <div style={{ color: 'white', marginTop: '12px' }}>
+          <h3>Endgame</h3>
+          <div>
+            Done: {gameState.endgameDonePlayers?.size || 0}/{gameState.players.length}
+          </div>
+          <button
+            type="button"
+            onClick={handleResolveEndgame}
+            disabled={(gameState.endgameDonePlayers?.size || 0) < gameState.players.length}
+            title={(gameState.endgameDonePlayers?.size || 0) < gameState.players.length ? 'All players must End Turn before resolving Endgame.' : undefined}
+          >
+            Resolve Endgame
+          </button>
+          {gameState.endgameWinners && (
+            <div style={{ marginTop: '8px' }}>
+              Winner(s): {gameState.endgameWinners.map(id => gameState.players.find(p => p.id === id)?.leader.name || `P${id}`).join(', ')}
+            </div>
+          )}
+        </div>
+      </div>
       <div className="combat-results-container" hidden={gameState.phase !== GamePhase.COMBAT_REWARDS}>
         <CombatResults 
           players={gameState.players}
