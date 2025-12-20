@@ -1259,3 +1259,54 @@
     flex: 0 0 auto;
   }
 }
+
+/* Time Travel / History Viewing Banner */
+.history-viewing-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(90deg, rgba(52, 152, 219, 0.95) 0%, rgba(41, 128, 185, 0.95) 100%);
+  color: #fff;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 1200;
+  box-shadow: 0 2px 12px rgba(52, 152, 219, 0.4);
+  font-weight: 500;
+}
+
+.history-viewing-banner .history-icon {
+  font-size: 1.4em;
+}
+
+.history-viewing-banner .return-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.history-viewing-banner .return-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* When viewing history, add top padding to game container to account for banner */
+.game-container:has(+ .history-viewing-banner),
+.game-container:has(.history-viewing-banner) {
+  padding-top: 60px;
+}
+
+/* Dimmed state for disabled areas when viewing history */
+.game-container.viewing-history .turn-controls-container,
+.game-container.viewing-history .round-start-container {
+  opacity: 0.4;
+  pointer-events: none;
+}

@@ -6,6 +6,7 @@ import ImperiumRow from './components/ImperiumRow/ImperiumRow'
 import TurnHistory from './components/TurnHistory'
 import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
+import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
 import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice } from './types/GameTypes'
@@ -23,6 +24,15 @@ const GameContent = () => {
     dispatch,
   } = useGame()
 
+  const {
+    isViewingHistory,
+    displayState,
+    viewingTurnIndex,
+    goToTurn,
+    returnToCurrent,
+    undoToTurn
+  } = useTimeTravel()
+
   const [openPlayerIndex, setOpenPlayerIndex] = useState<number | null>(null)
   const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(false)
   const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
@@ -33,7 +43,15 @@ const GameContent = () => {
     setVoiceSelectionRewardId(null)
   }, [gameState.activePlayerId])
 
+  // Clear voice selection when returning from history
+  useEffect(() => {
+    if (!isViewingHistory) return
+    setVoiceSelectionRewardId(null)
+  }, [isViewingHistory])
+
+  // Use displayState for rendering, but gameState for actions
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
+  const displayActivePlayer = displayState.players.find(p => p.id === displayState.activePlayerId) || null
 
   const handleCardSelect = (playerId: number, cardId: number) => {
     dispatch({ type: 'PLAY_CARD', playerId, cardId })
@@ -225,49 +243,66 @@ const GameContent = () => {
         <TurnHistory 
           turns={gameState.history}
           currentTurn={Math.max(0, gameState.history.length - 1)}
+          viewingTurnIndex={viewingTurnIndex}
           players={gameState.players}
-          onTurnChange={() => {}}
-          onClose={() => setIsTurnHistoryOpen(false)}
+          currentGameState={gameState}
+          onTurnChange={goToTurn}
+          onReturnToCurrent={returnToCurrent}
+          onUndoToTurn={(turnIndex) => dispatch({ type: 'UNDO_TO_TURN', turnIndex })}
+          onClose={() => {
+            setIsTurnHistoryOpen(false)
+            returnToCurrent()
+          }}
         />
+      )}
+      {/* History viewing banner */}
+      {isViewingHistory && (
+        <div className="history-viewing-banner">
+          <span className="history-icon">📜</span>
+          <span>Viewing Turn {(viewingTurnIndex ?? 0) + 1} of {gameState.history.length}</span>
+          <button className="return-btn" onClick={returnToCurrent}>
+            Return to Current
+          </button>
+        </div>
       )}
       <div className="imperium-row-container">
         <ImperiumRow 
-        canAcquire={gameState.canAcquireIR}
-        cards={gameState.imperiumRow} 
-        alCount={gameState.arrakisLiaisonDeck.length} 
-        smfCount={gameState.spiceMustFlowDeck.length} 
-        persuasion={activePlayer?.persuasion || 0} 
+        canAcquire={isViewingHistory ? false : gameState.canAcquireIR}
+        cards={displayState.imperiumRow} 
+        alCount={displayState.arrakisLiaisonDeck.length} 
+        smfCount={displayState.spiceMustFlowDeck.length} 
+        persuasion={isViewingHistory ? 0 : (activePlayer?.persuasion || 0)} 
         onAcquireArrakisLiaison={handleAcquireArrakisLiaison} 
         onAcquireSpiceMustFlow={handleAcquireSpiceMustFlow} 
         onAcquireCard={handleAcquireCard} />
       </div>
       <div className="main-area">
         <GameBoard 
-          currentPlayer={gameState.activePlayerId}
-          highlightedAreas={getSelectedCardAgentIcons(gameState)}
-          infiltrate={getInfiltrate(gameState)}
-          onSpaceClick={handlePlaceAgent}
-          occupiedSpaces={gameState.occupiedSpaces}
-          canPlaceAgent={!gameState.canEndTurn}
-          combatTroops={gameState.combatTroops}
-          players={gameState.players}
-          factionInfluence={gameState.factionInfluence}
-          currentConflict={gameState.currentConflict}
-          bonusSpice={gameState.bonusSpice}
+          currentPlayer={displayState.activePlayerId}
+          highlightedAreas={isViewingHistory ? [] : getSelectedCardAgentIcons(gameState)}
+          infiltrate={isViewingHistory ? false : getInfiltrate(gameState)}
+          onSpaceClick={isViewingHistory ? () => {} : handlePlaceAgent}
+          occupiedSpaces={displayState.occupiedSpaces}
+          canPlaceAgent={isViewingHistory ? false : !gameState.canEndTurn}
+          combatTroops={displayState.combatTroops}
+          players={displayState.players}
+          factionInfluence={displayState.factionInfluence}
+          currentConflict={displayState.currentConflict}
+          bonusSpice={displayState.bonusSpice}
           onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
-          recallMode={Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
-          ignoreCosts={Boolean(getSelectedCard(gameState)?.playEffect?.find(e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH))}
-          voiceSelectionActive={Boolean(voiceSelectionRewardId)}
+          recallMode={isViewingHistory ? false : Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
+          ignoreCosts={isViewingHistory ? false : Boolean(getSelectedCard(gameState)?.playEffect?.find(e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH))}
+          voiceSelectionActive={isViewingHistory ? false : Boolean(voiceSelectionRewardId)}
           onVoiceSpaceSelect={handleVoiceSpaceSelect}
-          blockedSpaces={gameState.blockedSpaces || []}
+          blockedSpaces={displayState.blockedSpaces || []}
         />
         <div className="players-area">
-          {gameState.players.map((player, idx) => (
+          {displayState.players.map((player, idx) => (
             <PlayerArea 
               key={player.id} 
               player={player} 
-              isActive={gameState.activePlayerId === player.id}
-              isStartingPlayer={gameState.firstPlayerMarker === player.id}
+              isActive={displayState.activePlayerId === player.id}
+              isStartingPlayer={displayState.firstPlayerMarker === player.id}
               isOpen={openPlayerIndex === idx}
               onToggle={() => setOpenPlayerIndex(openPlayerIndex === idx ? null : idx)}
             />
@@ -281,11 +316,11 @@ const GameContent = () => {
             onConfirm={handleImperiumRowSetup}
           />
         )}
-        <div className="round-start-container" hidden={gameState.phase !== GamePhase.ROUND_START || needsImperiumSelection}>
+        <div className="round-start-container" hidden={isViewingHistory || gameState.phase !== GamePhase.ROUND_START || needsImperiumSelection}>
         <ConflictSelect conflicts={CONFLICTS.filter(c => !gameState.conflictsDiscard.includes(c))} handleConflictSelect={handleConflictSelect}/>
       </div>
       <div className="turn-controls-spacer" />
-        <div className="turn-controls-container" hidden={gameState.phase !== GamePhase.PLAYER_TURNS && gameState.phase !== GamePhase.COMBAT}>
+        <div className="turn-controls-container" hidden={isViewingHistory || (gameState.phase !== GamePhase.PLAYER_TURNS && gameState.phase !== GamePhase.COMBAT)}>
           <TurnControls
             activePlayer={activePlayer}
             canEndTurn={gameState.canEndTurn}
@@ -333,7 +368,7 @@ const GameContent = () => {
             intrigueDeck={gameState.intrigueDeck}
           />
         </div>
-      <div className="combat-results-container" hidden={gameState.phase !== GamePhase.COMBAT_REWARDS}>
+      <div className="combat-results-container" hidden={isViewingHistory || gameState.phase !== GamePhase.COMBAT_REWARDS}>
         <CombatResults 
           players={gameState.players}
           combatStrength={gameState.combatStrength}
@@ -357,6 +392,20 @@ function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
   return getSelectedCard(gameState)?.agentIcons || []
 }
 
+// Wrapper component that provides TimeTravel context to GameContent
+const GameContentWithTimeTravel = () => {
+  const { gameState, dispatch } = useGame()
+  
+  const handleUndoToTurn = (turnIndex: number) => {
+    dispatch({ type: 'UNDO_TO_TURN', turnIndex })
+  }
+  
+  return (
+    <TimeTravelProvider gameState={gameState} onUndoToTurn={handleUndoToTurn}>
+      <GameContent />
+    </TimeTravelProvider>
+  )
+}
 
 function App() {
   const [screenState, setScreenState] = useState<ScreenState>(ScreenState.SETUP)
@@ -435,7 +484,7 @@ function App() {
           phase: GamePhase.ROUND_START,
           imperiumRowDeck: setupImperiumDeck
         }}>
-          <GameContent />
+          <GameContentWithTimeTravel />
         </GameProvider>
       )}
     </div>
