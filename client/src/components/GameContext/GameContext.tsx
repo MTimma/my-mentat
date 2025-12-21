@@ -82,7 +82,9 @@ type GameAction =
   | { type: 'OPPONENT_DISCARD_CHOICE'; playerId: number; opponentId: number; choice: 'discard' | 'loseTroop' }
   | { type: 'OPPONENT_DISCARD_CARD'; playerId: number; opponentId: number; cardId: number }
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
-  | { type: 'RESOLVE_ENDGAME' }
+    | { type: 'UNDO_TO_TURN'; turnIndex: number }
+    | { type: 'RESOLVE_ENDGAME' }
+
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
 export const useGame = () => {
@@ -2783,6 +2785,194 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           opponentDiscardState: newOpponentDiscardState
         } : null,
         canEndTurn: newOpponentDiscardState === undefined && state.pendingRewards.filter(r => !r.disabled).length === 0
+      }
+    }
+    case 'UNDO_TO_TURN': {
+      const { turnIndex } = action
+      
+      // Validate turnIndex
+      if (turnIndex < 0 || turnIndex >= state.history.length) {
+        console.warn('Invalid undo turn index:', turnIndex)
+        return state
+      }
+      
+      // Get the historical state at the target index
+      const targetState = state.history[turnIndex]
+      if (!targetState) {
+        console.warn('No historical state found at index:', turnIndex)
+        return state
+      }
+      
+      // Truncate history to only include turns up to and including the target
+      // The target state becomes the new current state, but we preserve it in history
+      const historyBeforeTarget = state.history.slice(0, turnIndex)
+      // Include targetState in history to preserve turn information
+      const truncatedHistory = [...historyBeforeTarget, targetState]
+      
+      // Restore the target state with truncated history (targetState is now the last entry)
+      const restoredState = {
+        ...targetState,
+        history: historyBeforeTarget // Don't include targetState in its own history
+      }
+      
+      // Extract activePlayerId from restored state and get current player
+      const currentPlayerId = restoredState.activePlayerId
+      const currentPlayer = restoredState.players.find(p => p.id === currentPlayerId)
+      if (!currentPlayer) {
+        // If player not found, return restored state as-is
+        return {
+          ...restoredState,
+          currTurn: null,
+          selectedCard: null,
+          canEndTurn: false,
+          canAcquireIR: false,
+          gains: [],
+          pendingRewards: []
+        }
+      }
+      
+      // Create a working copy of the restored state
+      const newState = {...restoredState}
+      
+      // Handle endgame phase separately
+      if (restoredState.phase === GamePhase.END_GAME) {
+        const done = new Set(newState.endgameDonePlayers || [])
+        done.add(currentPlayerId)
+        
+        // Find next player who isn't done yet
+        let nextIndex = (currentPlayerId + 1) % newState.players.length
+        let attempts = 0
+        while (attempts < newState.players.length && done.has(newState.players[nextIndex].id)) {
+          nextIndex = (nextIndex + 1) % newState.players.length
+          attempts++
+        }
+        
+        const allDone = done.size >= newState.players.length
+        const advancedState = {
+          ...newState,
+          endgameDonePlayers: done,
+          activePlayerId: allDone ? newState.activePlayerId : newState.players[nextIndex].id,
+          currTurn: null,
+          canEndTurn: true,
+          selectedCard: null,
+          canAcquireIR: false,
+          gains: [],
+          pendingRewards: []
+        }
+        
+        // Don't add the advanced state to history - it will be added when the turn actually completes
+        // Just return the state with the preserved history (which includes targetState)
+        return {
+          ...advancedState,
+          history: truncatedHistory
+        }
+      }
+      
+      // Check if all players have revealed (transition to combat)
+      if (!newState.players.find(p => !p.revealed)) {
+        // All players have revealed - check if anyone can participate in combat
+        const playersWithTroops = newState.players.filter(p => (newState.combatTroops[p.id] || 0) > 0)
+        const playersWithIntrigueAndTroops = playersWithTroops.filter(p => p.intrigueCount > 0)
+        
+        if (playersWithIntrigueAndTroops.length === 0) {
+          // Skip combat phase - no one can participate
+          const combatRewardsState = {
+            ...newState,
+            phase: GamePhase.COMBAT_REWARDS,
+            combatPasses: new Set<number>(),
+            players: newState.players.map(p =>
+              p.id === currentPlayerId
+                ? {
+                    ...p,
+                    selectedCard: null,
+                  }
+                : p
+            ),
+            activePlayerId: 0,
+            currTurn: null,
+            canEndTurn: false,
+            canAcquireIR: false,
+            selectedCard: null,
+            gains: [],
+            pendingRewards: []
+          }
+          
+          // Don't add the combat rewards state to history - it will be added when combat actually resolves
+          // Just return the state with the preserved history (which includes targetState)
+          return {
+            ...combatRewardsState,
+            history: truncatedHistory
+          }
+        }
+        
+        // Continue to combat phase with first eligible player
+        const combatState = {
+          ...newState,
+          phase: GamePhase.COMBAT,
+          combatPasses: new Set<number>(),
+          players: newState.players.map(p =>
+            p.id === currentPlayerId
+              ? {
+                  ...p,
+                  selectedCard: null,
+                }
+              : p
+          ),
+          activePlayerId: playersWithIntrigueAndTroops[0].id,
+          currTurn: null,
+          canEndTurn: false,
+          canAcquireIR: false,
+          selectedCard: null,
+          gains: [],
+          pendingRewards: []
+        }
+        
+        // Don't add the combat state to history - it will be added when combat actually resolves
+        // Just return the state with the preserved history (which includes targetState)
+        return {
+          ...combatState,
+          history: truncatedHistory
+        }
+      }
+      
+      // Otherwise, advance to next player (skip revealed players)
+      let nextIndex = (currentPlayerId + 1) % newState.players.length
+      let nextPlayer = newState.players[nextIndex]
+      while(nextPlayer.revealed) {
+        nextIndex = (nextIndex + 1) % newState.players.length
+        nextPlayer = newState.players[nextIndex]
+      }
+      
+      // Clear blocked spaces for the player whose turn is starting
+      const clearedBlockedSpaces = (newState.blockedSpaces || []).filter(
+        bs => bs.playerId !== nextPlayer.id
+      )
+      
+      const advancedState = {
+        ...newState,
+        blockedSpaces: clearedBlockedSpaces,
+        players: newState.players.map(p =>
+          p.id === currentPlayerId
+            ? {
+                ...p,
+                selectedCard: null,
+              }
+            : p
+        ),
+        activePlayerId: nextPlayer.id,
+        currTurn: null,
+        canEndTurn: false,
+        selectedCard: null,
+        canAcquireIR: false,
+        gains: [],
+        pendingRewards: []
+      }
+      
+      // Don't add the advanced state to history - it will be added when the turn actually completes
+      // Just return the state with the preserved history (which includes targetState)
+      return {
+        ...advancedState,
+        history: truncatedHistory
       }
     }
     default:

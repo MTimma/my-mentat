@@ -1,0 +1,182 @@
+.undo-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.undo-confirm-dialog {
+  background: #1a1a1a;
+  border: 2px solid #c0392b;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90vw;
+  box-shadow: 0 0 40px rgba(192, 57, 43, 0.3);
+}
+
+.undo-confirm-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(192, 57, 43, 0.15);
+  border-radius: 10px 10px 0 0;
+}
+
+.undo-confirm-header .warning-icon {
+  font-size: 1.8em;
+}
+
+.undo-confirm-header h2 {
+  margin: 0;
+  color: #e74c3c;
+  font-size: 1.4em;
+}
+
+.undo-confirm-body {
+  padding: 24px;
+}
+
+.undo-main-warning {
+  font-size: 1.1em;
+  color: #fff;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.undo-main-warning strong {
+  color: #e74c3c;
+}
+
+.undo-details {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.undo-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.detail-label {
+  color: #888;
+}
+
+.detail-value {
+  color: #d4af37;
+  font-weight: 500;
+}
+
+.undo-warning-box {
+  background: rgba(231, 76, 60, 0.15);
+  border: 1px solid rgba(231, 76, 60, 0.4);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.undo-warning-box strong {
+  color: #e74c3c;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.undo-warning-box p {
+  margin: 0;
+  color: #ccc;
+  font-size: 0.95em;
+}
+
+.undo-losses-section {
+  margin-bottom: 16px;
+}
+
+.undo-losses-section h3 {
+  font-size: 0.95em;
+  color: #d4af37;
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.losses-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.losses-list li {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  color: #e74c3c;
+  font-size: 0.95em;
+}
+
+.undo-warning-final {
+  background: rgba(192, 57, 43, 0.1);
+  border-radius: 8px;
+  padding: 12px 16px;
+  text-align: center;
+}
+
+.undo-warning-final p {
+  margin: 0;
+  color: #ccc;
+  font-size: 0.9em;
+}
+
+.undo-warning-final strong {
+  color: #e74c3c;
+}
+
+.undo-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0 0 10px 10px;
+}
+
+.undo-confirm-actions button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-button {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ccc;
+}
+
+.cancel-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.confirm-button.danger {
+  background: #c0392b;
+  border: none;
+  color: #fff;
+}
+
+.confirm-button.danger:hover {
+  background: #e74c3c;
+}
