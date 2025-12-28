@@ -171,8 +171,10 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           </button>
           <span>
             {isViewingHistory 
-              ? `Viewing Turn ${(viewingTurnIndex ?? 0) + 1} / ${turns.length}`
-              : `Turn ${turns.length + 1} (Current)`
+              ? viewingTurnIndex === 0
+                ? `Viewing Initial State / ${turns.length} turns`
+                : `Viewing Turn ${viewingTurnIndex} / ${turns.length} turns`
+              : `Turn ${turns.length} (Current)`
             }
           </span>
           <button 
@@ -233,10 +235,16 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleTurnClick(index)}
             >
-              <div className="turn-number">{index + 1}</div>
+              <div className="turn-number">
+                {index === 0 ? 'Initial' : index}
+              </div>
               <div className={`turn-player-indicator ${info.color}`}></div>
-              <div className="turn-player-name">{info.player}</div>
-              <div className="turn-type">{info.type}</div>
+              <div className="turn-player-name">
+                {index === 0 ? 'Initial State' : info.player}
+              </div>
+              <div className="turn-type">
+                {index === 0 ? 'Setup' : info.type}
+              </div>
               {aggregated.length > 0 && (
                 <div className="turn-gains">
                   {aggregated.map((gain, idx) => renderGain(gain, idx))}
@@ -253,7 +261,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                 <button 
                   className="undo-button"
                   onClick={(e) => handleUndoClick(index, e)}
-                  title={`Undo to turn ${index + 1}`}
+                  title={index === 0 ? 'Reset to initial state' : `Undo to turn ${index}`}
                 >
                   Undo
                 </button>
@@ -270,7 +278,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && onReturnToCurrent()}
         >
-          <div className="turn-number">{turns.length + 1}</div>
+          <div className="turn-number">{turns.length}</div>
           <div className={`turn-player-indicator ${players.find(p => p.id === currentGameState.activePlayerId)?.color || 'gray'}`}></div>
           <div className="turn-player-name">
             {players.find(p => p.id === currentGameState.activePlayerId)?.leader?.name || 'Current Player'}
@@ -289,7 +297,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       {selectedTurn !== null && (
         <div className="turn-details-modal">
           <div className="turn-details-content">
-            <h3>Turn {selectedTurn + 1} Details</h3>
+            <h3>{selectedTurn === 0 ? 'Initial State' : `Turn ${selectedTurn}`} Details</h3>
             <pre>{JSON.stringify(turns[selectedTurn], null, 2)}</pre>
             <button className="close-button" onClick={() => setSelectedTurn(null)}>Close</button>
           </div>

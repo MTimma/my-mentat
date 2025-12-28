@@ -507,6 +507,8 @@ export interface GameState {
   // Endgame: computed winners (after RESOLVE_ENDGAME)
   endgameWinners: number[] | null
   blockedSpaces?: Array<{ spaceId: number; playerId: number }> // Spaces blocked by The Voice
+  // Pending Imperium Row replacement: when a card is acquired, track the index where replacement is needed
+  pendingImperiumRowReplacement: { cardIndex: number } | null
 }
 
 export enum CustomEffect {

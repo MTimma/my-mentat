@@ -141,6 +141,12 @@ const GameContent = () => {
     dispatch({ type: 'RESET_IMPERIUM_ROW', cardIds })
   }
 
+  const handleImperiumRowReplacement = (cardIds: number[]) => {
+    if (cardIds.length === 1) {
+      dispatch({ type: 'SELECT_IMPERIUM_REPLACEMENT', cardId: cardIds[0] })
+    }
+  }
+
   const handleSelectiveBreedingRequested = (_cards: Card[], onSelect: (card: Card) => void) => {
     setOnSelectiveBreedingSelect(() => onSelect)
     setShowSelectiveBreeding(true)
@@ -231,6 +237,7 @@ const GameContent = () => {
 
   const imperiumSelectionCount = Math.min(Math.max(0, 5 - gameState.imperiumRow.length), gameState.imperiumRowDeck.length)
   const needsImperiumSelection = gameState.phase === GamePhase.ROUND_START && imperiumSelectionCount > 0
+  const needsReplacementSelection = gameState.pendingImperiumRowReplacement !== null && gameState.imperiumRowDeck.length > 0
 
   return (
     <div className="game-container">
@@ -263,7 +270,12 @@ const GameContent = () => {
       {isViewingHistory && (
         <div className="history-viewing-banner">
           <span className="history-icon">📜</span>
-          <span>Viewing Turn {(viewingTurnIndex ?? 0) + 1} of {gameState.history.length}</span>
+          <span>
+            {viewingTurnIndex === 0 
+              ? `Viewing Initial State of ${gameState.history.length} turns`
+              : `Viewing Turn ${viewingTurnIndex} of ${gameState.history.length} turns`
+            }
+          </span>
           <button className="return-btn" onClick={returnToCurrent}>
             Return to Current
           </button>
@@ -318,6 +330,13 @@ const GameContent = () => {
             cards={gameState.imperiumRowDeck}
             requiredCount={imperiumSelectionCount}
             onConfirm={handleImperiumRowSetup}
+          />
+        )}
+        {needsReplacementSelection && (
+          <ImperiumRowSelect
+            cards={gameState.imperiumRowDeck}
+            requiredCount={1}
+            onConfirm={handleImperiumRowReplacement}
           />
         )}
         <div className="round-start-container" hidden={isViewingHistory || gameState.phase !== GamePhase.ROUND_START || needsImperiumSelection}>

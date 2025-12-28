@@ -108,11 +108,13 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
           <div className="undo-details">
             <div className="undo-detail-row">
               <span className="detail-label">Reverting to:</span>
-              <span className="detail-value">Turn {targetTurnIndex + 1}</span>
+              <span className="detail-value">
+                {targetTurnIndex === 0 ? 'Initial State' : `Turn ${targetTurnIndex}`}
+              </span>
             </div>
             <div className="undo-detail-row">
               <span className="detail-label">Current turn:</span>
-              <span className="detail-value">Turn {currentHistoryLength + 1}</span>
+              <span className="detail-value">Turn {currentHistoryLength}</span>
             </div>
           </div>
           

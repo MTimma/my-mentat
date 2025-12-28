@@ -79,6 +79,7 @@ type GameAction =
   | { type: 'CLAIM_REWARD'; playerId: number; rewardId: string; customData?: CustomEffectData }
   | { type: 'CLAIM_ALL_REWARDS'; playerId: number }
   | { type: 'RESET_IMPERIUM_ROW'; cardIds: number[] }
+  | { type: 'SELECT_IMPERIUM_REPLACEMENT'; cardId: number }
   | { type: 'OPPONENT_DISCARD_CHOICE'; playerId: number; opponentId: number; choice: 'discard' | 'loseTroop' }
   | { type: 'OPPONENT_DISCARD_CARD'; playerId: number; opponentId: number; cardId: number }
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
@@ -160,7 +161,8 @@ const initialGameState: GameState = {
   endgameTiebreakerSpice: {},
   endgameDonePlayers: new Set(),
   endgameWinners: null,
-  blockedSpaces: []
+  blockedSpaces: [],
+  pendingImperiumRowReplacement: null
 }
 
 function determinePlacements(
@@ -1968,12 +1970,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedImperiumRow = [...state.imperiumRow]
       updatedImperiumRow.splice(cardIndex, 1)
 
-      let remainingDeck = [...state.imperiumRowDeck]
-      if (remainingDeck.length > 0) {
-        const [nextCard, ...rest] = remainingDeck
-        updatedImperiumRow.push(nextCard)
-        remainingDeck = rest
+      // Adjust existing pending replacement index if this acquisition affects it
+      // If we remove a card at an index before the pending replacement position,
+      // we need to decrement the pending replacement index
+      let existingPendingReplacement = state.pendingImperiumRowReplacement
+      if (existingPendingReplacement && cardIndex < existingPendingReplacement.cardIndex) {
+        existingPendingReplacement = {
+          cardIndex: existingPendingReplacement.cardIndex - 1
+        }
       }
+
+      // Set pending replacement if there are cards available in the deck
+      // Note: If there's already a pending replacement, we'll overwrite it.
+      // The modal will show for each replacement sequentially.
+      const pendingReplacement = state.imperiumRowDeck.length > 0
+        ? { cardIndex }
+        : null
 
       const updatedCurrTurn = state.currTurn?.playerId === playerId
         ? {
@@ -1986,10 +1998,39 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         players: state.players.map(p => (p.id === playerId ? updatedPlayer : p)),
         imperiumRow: updatedImperiumRow,
-        imperiumRowDeck: remainingDeck,
+        imperiumRowDeck: [...state.imperiumRowDeck],
         currTurn: updatedCurrTurn,
         gains: updatedGains,
-        factionInfluence: updatedFactionInfluence
+        factionInfluence: updatedFactionInfluence,
+        pendingImperiumRowReplacement: pendingReplacement
+      }
+    }
+    case 'SELECT_IMPERIUM_REPLACEMENT': {
+      const { cardId } = action
+      
+      // Check if there's a pending replacement
+      if (!state.pendingImperiumRowReplacement) return state
+      
+      // Find the card in the deck
+      const cardIndex = state.imperiumRowDeck.findIndex(card => card.id === cardId)
+      if (cardIndex === -1) return state
+      
+      const selectedCard = state.imperiumRowDeck[cardIndex]
+      const { cardIndex: replacementIndex } = state.pendingImperiumRowReplacement
+      
+      // Remove the card from the deck
+      const updatedDeck = [...state.imperiumRowDeck]
+      updatedDeck.splice(cardIndex, 1)
+      
+      // Add the card to the Imperium Row at the tracked index
+      const updatedImperiumRow = [...state.imperiumRow]
+      updatedImperiumRow.splice(replacementIndex, 0, selectedCard)
+      
+      return {
+        ...state,
+        imperiumRow: updatedImperiumRow,
+        imperiumRowDeck: updatedDeck,
+        pendingImperiumRowReplacement: null
       }
     }
     case 'ACQUIRE_AL': {
@@ -2809,10 +2850,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Include targetState in history to preserve turn information
       const truncatedHistory = [...historyBeforeTarget, targetState]
       
+      // For turn 0 (initial state), preserve it in history so it can be undone to again
+      // For other turns, include history up to target (not including targetState itself)
+      const restoredHistory = turnIndex === 0 ? [targetState] : historyBeforeTarget
+      
       // Restore the target state with truncated history (targetState is now the last entry)
       const restoredState = {
         ...targetState,
-        history: historyBeforeTarget // Don't include targetState in its own history
+        history: restoredHistory
       }
       
       // Extract activePlayerId from restored state and get current player
@@ -2861,10 +2906,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
         
         // Don't add the advanced state to history - it will be added when the turn actually completes
-        // Just return the state with the preserved history (which includes targetState)
+        // For turn 0, preserve the initial state in history. For other turns, include truncated history
         return {
           ...advancedState,
-          history: truncatedHistory
+          history: turnIndex === 0 ? [targetState] : truncatedHistory
         }
       }
       
@@ -2898,10 +2943,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
           
           // Don't add the combat rewards state to history - it will be added when combat actually resolves
-          // Just return the state with the preserved history (which includes targetState)
+          // For turn 0, preserve the initial state in history. For other turns, include truncated history
           return {
             ...combatRewardsState,
-            history: truncatedHistory
+            history: turnIndex === 0 ? [targetState] : truncatedHistory
           }
         }
         
@@ -2928,10 +2973,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
         
         // Don't add the combat state to history - it will be added when combat actually resolves
-        // Just return the state with the preserved history (which includes targetState)
+        // For turn 0, preserve the initial state in history. For other turns, include truncated history
         return {
           ...combatState,
-          history: truncatedHistory
+          history: turnIndex === 0 ? [targetState] : truncatedHistory
         }
       }
       
@@ -2969,14 +3014,71 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       
       // Don't add the advanced state to history - it will be added when the turn actually completes
-      // Just return the state with the preserved history (which includes targetState)
+      // For turn 0, preserve the initial state in history. For other turns, include truncated history
       return {
         ...advancedState,
-        history: truncatedHistory
+        history: turnIndex === 0 ? [targetState] : truncatedHistory
       }
     }
     default:
       return state
+  }
+}
+
+// Helper function to create a deep copy of GameState for history
+function deepCopyGameState(state: GameState): GameState {
+  return {
+    ...state,
+    // Deep copy arrays
+    players: state.players.map(p => ({
+      ...p,
+      deck: [...p.deck],
+      discardPile: [...p.discardPile],
+      trash: [...p.trash],
+      playArea: [...p.playArea]
+    })),
+    imperiumRow: [...state.imperiumRow],
+    imperiumRowDeck: [...state.imperiumRowDeck],
+    spiceMustFlowDeck: [...state.spiceMustFlowDeck],
+    arrakisLiaisonDeck: [...state.arrakisLiaisonDeck],
+    foldspaceDeck: [...state.foldspaceDeck],
+    intrigueDeck: [...state.intrigueDeck],
+    intrigueDiscard: [...state.intrigueDiscard],
+    conflictsDiscard: [...state.conflictsDiscard],
+    gains: [...state.gains],
+    pendingRewards: [...state.pendingRewards],
+    // Deep copy Sets
+    combatPasses: new Set(state.combatPasses),
+    endgameDonePlayers: new Set(state.endgameDonePlayers),
+    // Deep copy objects
+    factionInfluence: {
+      [FactionType.EMPEROR]: { ...state.factionInfluence[FactionType.EMPEROR] },
+      [FactionType.SPACING_GUILD]: { ...state.factionInfluence[FactionType.SPACING_GUILD] },
+      [FactionType.BENE_GESSERIT]: { ...state.factionInfluence[FactionType.BENE_GESSERIT] },
+      [FactionType.FREMEN]: { ...state.factionInfluence[FactionType.FREMEN] }
+    },
+    combatStrength: { ...state.combatStrength },
+    combatTroops: { ...state.combatTroops },
+    occupiedSpaces: Object.fromEntries(
+      Object.entries(state.occupiedSpaces).map(([key, spaces]) => [key, [...spaces]])
+    ),
+    playArea: Object.fromEntries(
+      Object.entries(state.playArea).map(([key, cards]) => [key, [...cards]])
+    ),
+    scheduledIntrigueOnReveal: Object.fromEntries(
+      Object.entries(state.scheduledIntrigueOnReveal).map(([key, effects]) => [key, [...effects]])
+    ),
+    activeIntrigueThisRound: Object.fromEntries(
+      Object.entries(state.activeIntrigueThisRound).map(([key, cards]) => [key, [...cards]])
+    ),
+    acquireToTopThisRound: { ...state.acquireToTopThisRound },
+    endgameTiebreakerSpice: { ...state.endgameTiebreakerSpice },
+    bonusSpice: { ...state.bonusSpice },
+    controlMarkers: { ...state.controlMarkers },
+    blockedSpaces: state.blockedSpaces ? [...state.blockedSpaces] : [],
+    pendingImperiumRowReplacement: state.pendingImperiumRowReplacement ? { ...state.pendingImperiumRowReplacement } : null,
+    // History should be empty for the initial state snapshot
+    history: []
   }
 }
 
@@ -2986,10 +3088,18 @@ interface GameProviderProps {
 }
 
 export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, children }) => {
-  const [gameState, dispatch] = useReducer(gameReducer, {
+  const initialMergedState = {
     ...initialGameState,
     ...initialState
-  })
+  }
+  
+  // Create initial state with the initial state saved as turn 0 in history
+  const initialStateWithHistory: GameState = {
+    ...initialMergedState,
+    history: [deepCopyGameState(initialMergedState)]
+  }
+  
+  const [gameState, dispatch] = useReducer(gameReducer, initialStateWithHistory)
 
   const value = {
     gameState,

@@ -91,7 +91,10 @@ export const TimeTravelProvider: React.FC<TimeTravelProviderProps> = ({
     if (viewingTurnIndex === gameState.history.length) {
       return 'Current Turn (in progress)'
     }
-    return `Turn ${viewingTurnIndex + 1} of ${gameState.history.length}`
+    if (viewingTurnIndex === 0) {
+      return `Initial State of ${gameState.history.length} turns`
+    }
+    return `Turn ${viewingTurnIndex} of ${gameState.history.length} turns`
   }, [viewingTurnIndex, gameState.history.length])
   
   // Navigate to a specific turn
