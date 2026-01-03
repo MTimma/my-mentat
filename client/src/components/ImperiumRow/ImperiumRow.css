@@ -1,37 +1,65 @@
+/* CSS Custom Properties for consistent sizing */
+:root {
+  --card-width: 100px;
+  --card-height: 140px;
+  --card-padding: 2px;
+  --card-gap: 1px;
+  --section-padding: 2px;
+  --image-max-height: 85px;
+}
+
 .imperium-section {
-  display: flex;
-  gap: 20px;
-  padding: 10px;
+  padding: var(--section-padding);
   background-color: #d4b16a;
   border-radius: 8px;
-  margin-bottom: 10px;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-  align-items: flex-start;
+  margin-bottom: 2px;
+  width: 100%;
+  position: relative;
 }
 
-.imperium-row {
-  display: flex;
-  gap: 6px;
+.imperium-toggle-mobile {
+  display: none;
 }
 
-.fixed-cards {
-  display: flex;
-  gap: 6px;
-  border-left: 2px solid #8b4513;
-  padding-left: 20px;
+/* Desktop: CSS Grid with 7 columns to fill available width */
+.cards-grid {
+  display: grid;
+  gap: var(--card-gap);
+  overflow-x: visible;
+}
+
+.cards-grid.main-cards {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-bottom: var(--card-gap);
+}
+
+.cards-grid.fixed-cards-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .imperium-card {
-  width: 120px;
-  height: 160px;
+  width: 100%;
+  min-width: 0;
+  max-width: 120px;
+  aspect-ratio: 100 / 140;
+  height: auto;
   border: 2px solid #8b4513;
   border-radius: 6px;
   background-color: #f4e4bc;
-  padding: 8px;
+  padding: var(--card-padding);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  justify-content: flex-start;
+}
+
+/* Cards without buttons are more compact */
+.imperium-card.no-button {
+  aspect-ratio: 100 / 100;
+  border: 1px solid #8b4513;
+  padding: 1px;
+  justify-content: center;
+  border-radius: 4px;
 }
 
 .imperium-card.fixed-card {
@@ -56,35 +84,224 @@
 
 .card-image-ir {
   width: 100%;
-  max-width: 120px;
   height: auto;
-  max-height: 100px;
+  max-height: var(--image-max-height);
   object-fit: contain;
   border-radius: 4px;
-  margin-bottom: 4px;
+  margin-bottom: 1px;
   display: block;
   position: relative;
+  flex-shrink: 0;
 }
 
+/* Images in no-button cards take more space */
+.imperium-card.no-button .card-image-ir {
+  max-height: calc(100% - 4px);
+  margin-bottom: 0;
+  border-radius: 2px;
+}
+
+.count-display {
+  font-size: 0.75em;
+  color: #8b4513;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
+}
+
+.imperium-card button.acquire-button {
+  margin-top: 2px;
+  padding: 4px 6px;
+  font-size: 0.75em;
+  min-height: 44px;
+  border: 1px solid #8b4513;
+  background-color: #8b4513;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.imperium-card button.acquire-button:hover:not(:disabled) {
+  background-color: #6b3410;
+}
+
+.imperium-card button.acquire-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Tablet breakpoint (600-900px) - All 7 cards in one row */
 @media (max-width: 900px) {
-  .imperium-row {
-    flex-wrap: wrap;
+  :root {
+    --card-padding: 2px;
+    --card-gap: 1px;
+    --section-padding: 2px;
+    --image-max-height: 70px;
   }
+
+  .cards-grid.main-cards {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-bottom: var(--card-gap);
+  }
+
+  .cards-grid.fixed-cards-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .imperium-card {
-    width: 110px;
-    height: 150px;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    aspect-ratio: 100 / 130;
+    height: auto;
+    max-height: 110px;
+  }
+
+  .imperium-card.no-button {
+    aspect-ratio: 100 / 95;
+    max-height: 90px;
+    border: 1px solid #8b4513;
+    padding: 1px;
+  }
+
+  .card-image-ir {
+    max-height: 60px;
   }
 }
 
+/* Mobile breakpoint (375-600px) - All 7 cards in one row, very small */
 @media (max-width: 600px) {
-  .imperium-card {
-    width: 100px;
-    height: 140px;
+  :root {
+    --card-padding: 1px;
+    --card-gap: 1px;
+    --section-padding: 1px;
+    --image-max-height: 50px;
   }
-  .fixed-cards {
+
+  .imperium-toggle-mobile {
+    display: block;
     width: 100%;
-    border-left: 0;
-    padding-left: 0;
-    justify-content: center;
+    padding: 4px;
+    margin-bottom: 2px;
+    background-color: #8b4513;
+    color: white;
+    border: 2px solid #6b3410;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
   }
-} 
+
+  .imperium-toggle-mobile:hover {
+    background-color: #6b3410;
+  }
+
+  .cards-grid.main-cards {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-bottom: var(--card-gap);
+  }
+
+  .cards-grid.fixed-cards-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .imperium-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    aspect-ratio: 100 / 120;
+    height: auto;
+    max-height: 70px;
+    min-height: 60px;
+  }
+
+  .imperium-card.no-button {
+    aspect-ratio: 100 / 90;
+    max-height: 60px;
+    min-height: 50px;
+    border: 1px solid #8b4513;
+    padding: 1px;
+  }
+
+  .card-image-ir {
+    max-height: 45px;
+  }
+
+  .imperium-card.no-button .card-image-ir {
+    max-height: calc(100% - 2px);
+  }
+
+  .imperium-card button.acquire-button {
+    min-height: 32px;
+    font-size: 0.6em;
+    padding: 2px 4px;
+    margin-top: 1px;
+  }
+
+  .count-display {
+    font-size: 0.6em;
+    margin: 0;
+    line-height: 1;
+  }
+}
+
+/* Small mobile breakpoint (< 375px) - All 7 cards in one row, even smaller */
+@media (max-width: 375px) {
+  :root {
+    --card-padding: 1px;
+    --card-gap: 1px;
+    --section-padding: 1px;
+    --image-max-height: 45px;
+  }
+
+  .cards-grid.main-cards {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-bottom: var(--card-gap);
+  }
+
+  .cards-grid.fixed-cards-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .imperium-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    aspect-ratio: 100 / 110;
+    height: auto;
+    max-height: 65px;
+    min-height: 55px;
+  }
+
+  .imperium-card.no-button {
+    aspect-ratio: 100 / 85;
+    max-height: 55px;
+    min-height: 45px;
+    border: 1px solid #8b4513;
+    padding: 1px;
+  }
+
+  .card-image-ir {
+    max-height: 40px;
+  }
+
+  .imperium-card.no-button .card-image-ir {
+    max-height: calc(100% - 2px);
+  }
+
+  .imperium-card button.acquire-button {
+    min-height: 28px;
+    font-size: 0.55em;
+    padding: 2px 3px;
+    margin-top: 1px;
+  }
+
+  .count-display {
+    font-size: 0.55em;
+    margin: 0;
+    line-height: 1;
+  }
+}

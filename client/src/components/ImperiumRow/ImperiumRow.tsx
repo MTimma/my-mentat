@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Card } from '../../types/GameTypes'
 import './ImperiumRow.css'
 
@@ -15,79 +15,86 @@ interface ImperiumRowProps {
 
 
 const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion, alCount, smfCount, onAcquireArrakisLiaison, onAcquireSpiceMustFlow, onAcquireCard }) => {
+  const [isVisible, setIsVisible] = useState(true)
+
   return (
     <div className="imperium-section">
-      <div className="imperium-row">
-        {cards.map((card) => (
-          <div key={card.id} className="imperium-card" onClick={() => onAcquireCard?.(card.id)} >
-            <img 
-              src={card.image}
-              alt={card.name}
-              className="card-image-ir"
-            />
-            {/* <div className="card-header">
-              <h4>{card.name}</h4>
-              {card.cost && <div className="persuasion-cost">{card.cost}💰</div>}
-            </div>
-            <div className="card-content">
-              <div className="agent-placement">
-                {card.agentIcons?.map((area, index) => (
-                  <div 
-                    key={index} 
-                    className={`placement-dot ${area}`}
-                  />
-                ))}
+      <button 
+        className="imperium-toggle-mobile"
+        onClick={() => setIsVisible(!isVisible)}
+        aria-label={isVisible ? "Hide Imperium Row" : "Show Imperium Row"}
+      >
+        {isVisible ? "▲ Hide Imperium Row" : "▼ Show Imperium Row"}
+      </button>
+      {isVisible && (
+        <>
+          {/* Main imperium row cards - 5 cards */}
+          <div className={`cards-grid main-cards ${!canAcquire ? 'no-buttons' : ''}`}>
+            {cards.map((card) => (
+              <div key={card.id} className={`imperium-card ${!canAcquire ? 'no-button' : ''}`} onClick={() => canAcquire && onAcquireCard?.(card.id)} >
+                <img 
+                  src={card.image}
+                  alt={card.name}
+                  className="card-image-ir"
+                />
+                {canAcquire && (
+                  <button 
+                    className="acquire-button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAcquireCard?.(card.id)
+                    }} 
+                    disabled={!!(card.cost && card.cost > persuasion)}
+                  >
+                    Acquire
+                  </button>
+                )}
               </div>
-              {card.swordIcon && <div className="sword-icon">⚔️</div>}
-              {card.effect && <div className="card-effect">{card.effect}</div>}
-            </div> */}
-            <button 
-              onClick={() => onAcquireCard?.(card.id)} 
-              disabled={!!(card.cost && card.cost > persuasion) || !canAcquire}
-            >
-              Acquire
-            </button>
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="fixed-cards">
-        <div className="imperium-card fixed-card">
-          <img 
-            src={'imperium_row/arrakis_liaison.avif'} 
-            alt={'Arrakis Liaison'}
-            className="card-image-ir"
-          />
-          <>
-          <div className="count-display">
-            Count: {alCount}
+          {/* Fixed cards row - 2 cards with counts */}
+          <div className={`cards-grid fixed-cards-row ${!canAcquire ? 'no-buttons' : ''}`}>
+            <div className={`imperium-card fixed-card ${!canAcquire ? 'no-button' : ''}`}>
+              <img 
+                src={'imperium_row/arrakis_liaison.avif'} 
+                alt={'Arrakis Liaison'}
+                className="card-image-ir"
+              />
+              <div className="count-display">
+                Count: {alCount}
+              </div>
+              {canAcquire && (
+                <button 
+                  className="acquire-button"
+                  onClick={() => onAcquireArrakisLiaison()} 
+                  disabled={!!(2 > persuasion) || alCount === 0}
+                >
+                  Acquire
+                </button>
+              )}
+            </div>
+            <div className={`imperium-card fixed-card ${!canAcquire ? 'no-button' : ''}`}>
+              <img 
+                src={'imperium_row/spice_must_flow.avif'} 
+                alt={'The Spice Must Flow'}
+                className="card-image-ir"
+              />
+              <div className="count-display">
+                Count: {smfCount}
+              </div>
+              {canAcquire && (
+                <button 
+                  className="acquire-button"
+                  onClick={() => onAcquireSpiceMustFlow()} 
+                  disabled={!!(9 > persuasion) || smfCount === 0}
+                >
+                  Acquire
+                </button>
+              )}
+            </div>
           </div>
-          <button 
-              onClick={() => onAcquireArrakisLiaison()} 
-              disabled={!!(2 > persuasion) || !canAcquire || alCount === 0}
-            >
-              Acquire
-            </button>
-          </>
-        </div>
-        <div className="imperium-card fixed-card">
-          <img 
-            src={'imperium_row/spice_must_flow.avif'} 
-            alt={'The Spice Must Flow'}
-            className="card-image-ir"
-          />
-          <>
-          <div className="count-display">
-            Count: {smfCount}
-          </div>
-          <button 
-              onClick={() => onAcquireSpiceMustFlow()} 
-              disabled={!!(9 > persuasion) || !canAcquire || smfCount === 0}
-            >
-              Acquire
-            </button>
-          </>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   )
 }

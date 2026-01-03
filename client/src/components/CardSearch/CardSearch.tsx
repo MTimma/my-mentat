@@ -142,13 +142,24 @@ const CardSearch: React.FC<CardSearchProps> = ({
         <div className="dialog-header">
           {!hideTitle && <h2>{text}</h2>}
           <div className="dialog-header-actions">
-            <input
-              type="text"
-              placeholder="Search cards..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
+            <div className="search-input-wrapper">
+              <input
+                type="text"
+                placeholder="Search cards..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+              {searchTerm && (
+                <button
+                  className="search-clear-button"
+                  onClick={() => setSearchTerm('')}
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
+            </div>
             <button
               className="header-cancel-button"
               onClick={handleCancel}

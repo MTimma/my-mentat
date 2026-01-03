@@ -243,7 +243,7 @@ const GameContent = () => {
     <div className="game-container">
       <button
         type="button"
-        className="turn-history-toggle"
+        className={`turn-history-toggle ${isTurnHistoryOpen && isViewingHistory ? 'viewing-history' : ''}`}
         aria-expanded={isTurnHistoryOpen}
         aria-controls="turn-history-overlay"
         onClick={() => setIsTurnHistoryOpen(open => !open)}
@@ -269,6 +269,14 @@ const GameContent = () => {
       {/* History viewing banner */}
       {isViewingHistory && (
         <div className="history-viewing-banner">
+          <button 
+            className="history-nav-btn"
+            onClick={() => goToTurn(Math.max(0, (viewingTurnIndex ?? gameState.history.length) - 1))} 
+            disabled={viewingTurnIndex === 0}
+            title="Previous turn"
+          >
+            &lt;
+          </button>
           <span className="history-icon">📜</span>
           <span>
             {viewingTurnIndex === 0 
@@ -276,6 +284,21 @@ const GameContent = () => {
               : `Viewing Turn ${viewingTurnIndex} of ${gameState.history.length} turns`
             }
           </span>
+          <button 
+            className="history-nav-btn"
+            onClick={() => {
+              const effectiveViewIndex = viewingTurnIndex ?? gameState.history.length
+              if (effectiveViewIndex < gameState.history.length) {
+                goToTurn(effectiveViewIndex + 1)
+              } else {
+                returnToCurrent()
+              }
+            }}
+            disabled={false}
+            title="Next turn"
+          >
+            &gt;
+          </button>
           <button className="return-btn" onClick={returnToCurrent}>
             Return to Current
           </button>
