@@ -44,7 +44,7 @@ const PlayerTargetDialog: React.FC<PlayerTargetDialogProps> = ({
           className="cancel-button"
           onClick={onCancel}
         >
-          Cancel
+          Clear all
         </button>
       </div>
     </div>
