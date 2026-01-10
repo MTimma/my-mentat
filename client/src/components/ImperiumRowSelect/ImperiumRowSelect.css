@@ -204,7 +204,7 @@
   .imperium-select-dialog .search-input {
     width: 100%;
     font-size: 0.9rem;
-    padding: 8px 28px 8px 12px;
+    padding: 8px 0px 8px 12px;
   }
 
   .imperium-select-dialog .header-cancel-button,
@@ -223,7 +223,6 @@
     flex-shrink: 0;
     margin-top: 0;
     margin-bottom: 0;
-    padding: 12px 0;
     border-top: 1px solid #333;
     border-bottom: 1px solid #333;
     background: #10141b;

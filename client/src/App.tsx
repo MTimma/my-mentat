@@ -243,7 +243,7 @@ const GameContent = () => {
     <div className="game-container">
       <button
         type="button"
-        className={`turn-history-toggle ${isTurnHistoryOpen && isViewingHistory ? 'viewing-history' : ''}`}
+        className={"turn-history-toggle"}
         aria-expanded={isTurnHistoryOpen}
         aria-controls="turn-history-overlay"
         onClick={() => setIsTurnHistoryOpen(open => !open)}
@@ -267,7 +267,7 @@ const GameContent = () => {
         />
       )}
       {/* History viewing banner */}
-      {isViewingHistory && (
+      {(
         <div className="history-viewing-banner">
           <button 
             className="history-nav-btn"
@@ -277,13 +277,6 @@ const GameContent = () => {
           >
             &lt;
           </button>
-          <span className="history-icon">📜</span>
-          <span>
-            {viewingTurnIndex === 0 
-              ? `Viewing Initial State of ${gameState.history.length} turns`
-              : `Viewing Turn ${viewingTurnIndex} of ${gameState.history.length} turns`
-            }
-          </span>
           <button 
             className="history-nav-btn"
             onClick={() => {
@@ -294,12 +287,19 @@ const GameContent = () => {
                 returnToCurrent()
               }
             }}
-            disabled={false}
+            hidden={viewingTurnIndex === null}
             title="Next turn"
           >
             &gt;
           </button>
-          <button className="return-btn" onClick={returnToCurrent}>
+          <span>
+            { viewingTurnIndex === null ? `Turn ${gameState.history.length}, round ${gameState.currentRound}` : (viewingTurnIndex === 0 ? `Viewing the initial state` : `Turn ${viewingTurnIndex} of ${gameState.history.length}`) }
+          </span>
+          
+          <button 
+              className="return-btn" 
+              onClick={returnToCurrent} 
+              hidden={viewingTurnIndex === null}>
             Return to Current
           </button>
         </div>

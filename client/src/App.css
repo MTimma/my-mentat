@@ -381,7 +381,7 @@
 
 .turn-history-toggle {
   position: fixed;
-  top: 12px;
+  top: 5px;
   right: 12px;
   z-index: 1300;
   background: rgba(20, 20, 20, 0.92);
@@ -393,10 +393,6 @@
   cursor: pointer;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   transition: top 0.3s ease;
-}
-
-.turn-history-toggle.viewing-history {
-  top: 70px; /* Below header (~60px) + banner (~50px) with some spacing */
 }
 
 .turn-history-toggle:hover {
@@ -1268,12 +1264,12 @@
 /* Time Travel / History Viewing Banner */
 .history-viewing-banner {
   position: fixed;
-  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
   background: linear-gradient(90deg, rgba(52, 152, 219, 0.95) 0%, rgba(41, 128, 185, 0.95) 100%);
   color: #fff;
-  padding: 12px 20px;
+  padding: 5px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1292,14 +1288,6 @@
   margin-left: auto;
 }
 
-.history-viewing-banner > span:not(.history-icon) {
-  flex: 1;
-  text-align: center;
-}
-
-.history-viewing-banner .history-icon {
-  font-size: 1.4em;
-}
 
 .history-viewing-banner .history-nav-btn {
   background: rgba(255, 255, 255, 0.2);
@@ -1340,6 +1328,11 @@
 .history-viewing-banner .return-btn:hover {
   background: rgba(255, 255, 255, 0.3);
   border-color: rgba(255, 255, 255, 0.6);
+}
+
+.history-viewing-banner span {
+  text-align: center;
+  flex: 1;
 }
 
 /* When viewing history, add top padding to game container to account for banner */

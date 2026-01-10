@@ -167,44 +167,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             : `Turn ${turns.length} (Current)`
           }
         </span>
-        {isViewingHistory && (
-          <button 
-            className="return-to-current-btn"
-            onClick={onReturnToCurrent}
-          >
-            Return to Current
-          </button>
-        )}
       </div>
-
-      {isViewingHistory && (
-        <div className="viewing-history-banner">
-          <div className="turn-history-nav">
-            <button 
-              onClick={() => onTurnChange(Math.max(0, effectiveViewIndex - 1))} 
-              disabled={effectiveViewIndex === 0}
-              title="Previous turn"
-            >
-              &lt;
-            </button>
-            <span className="history-icon">📜</span>
-            <span>Viewing historical state - Actions disabled</span>
-            <button 
-              onClick={() => {
-                if (effectiveViewIndex < turns.length) {
-                  onTurnChange(effectiveViewIndex + 1)
-                } else {
-                  onReturnToCurrent()
-                }
-              }} 
-              disabled={!isViewingHistory}
-              title="Next turn"
-            >
-              &gt;
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="turn-history-list">
         {turns.map((turn, index) => {
