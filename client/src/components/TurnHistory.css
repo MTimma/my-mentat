@@ -336,3 +336,128 @@
     border-left: 0;
   }
 }
+
+@media (max-width: 600px) {
+  .turn-history-overlay {
+    width: 100vw;
+  }
+  
+  .turn-history-header {
+    padding: 10px 12px 6px 12px;
+    font-size: 0.95em;
+  }
+  
+  .turn-history-row {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  
+  .turn-number {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75em;
+  }
+  
+  .turn-player-indicator {
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+  }
+  
+  .turn-player-name {
+    font-size: 0.85em;
+    min-width: 60px;
+  }
+  
+  .turn-type {
+    font-size: 0.8em;
+    min-width: 40px;
+    margin-right: 4px;
+  }
+  
+  .turn-actions {
+    gap: 4px;
+  }
+  
+  .details-button,
+  .undo-button {
+    padding: 3px 6px;
+    font-size: 0.75em;
+  }
+  
+  .gain-item {
+    font-size: 0.75em;
+    padding: 1px 3px;
+    gap: 2px;
+  }
+  
+  .gain-icon {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .gain-amount {
+    font-size: 0.75em;
+  }
+  
+  .current-indicator {
+    font-size: 0.75em;
+    gap: 4px;
+  }
+  
+  .live-dot {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+@media (max-width: 400px) {
+  .turn-history-header {
+    padding: 8px 10px 5px 10px;
+    font-size: 0.85em;
+  }
+  
+  .turn-history-row {
+    padding: 5px 8px;
+    gap: 4px;
+  }
+  
+  .turn-number {
+    width: 18px;
+    height: 18px;
+    font-size: 0.7em;
+  }
+  
+  .turn-player-indicator {
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+    border-width: 1.5px;
+  }
+  
+  .turn-player-name {
+    font-size: 0.75em;
+    min-width: 50px;
+  }
+  
+  .turn-type {
+    font-size: 0.7em;
+    min-width: 35px;
+  }
+  
+  .details-button,
+  .undo-button {
+    padding: 2px 4px;
+    font-size: 0.65em;
+  }
+  
+  .gain-item {
+    font-size: 0.65em;
+    padding: 1px 2px;
+  }
+  
+  .gain-icon {
+    width: 10px;
+    height: 10px;
+  }
+}

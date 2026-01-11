@@ -36,4 +36,54 @@
 .third-place .place { color: #cd7f32; }
 .no-reward {
   color: #aaa;
+}
+
+@media (max-width: 600px) {
+  .conflict-summary {
+    padding: 4px 6px;
+    margin: 2px 0;
+    font-size: 0.7rem;
+    border-radius: 3px;
+  }
+  
+  .conflict-title {
+    margin-bottom: 2px;
+    font-size: 0.75em;
+  }
+  
+  .conflict-rewards {
+    gap: 6px;
+  }
+  
+  .reward {
+    padding: 1px 3px;
+    font-size: 0.7em;
+    border-radius: 2px;
+  }
+  
+  .place {
+    margin-right: 2px;
+  }
+}
+
+@media (max-width: 400px) {
+  .conflict-summary {
+    padding: 3px 4px;
+    margin: 1px 0;
+    font-size: 0.6rem;
+  }
+  
+  .conflict-title {
+    margin-bottom: 2px;
+    font-size: 0.65em;
+  }
+  
+  .conflict-rewards {
+    gap: 4px;
+  }
+  
+  .reward {
+    padding: 0px 2px;
+    font-size: 0.6em;
+  }
 } 
