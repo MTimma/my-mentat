@@ -295,7 +295,7 @@ const GameContent = () => {
           <span>
             { viewingTurnIndex === null ? `Turn ${gameState.history.length}, round ${gameState.currentRound}` : (viewingTurnIndex === 0 ? `Viewing the initial state` : `Turn ${viewingTurnIndex} of ${gameState.history.length}`) }
           </span>
-          
+        
           <button 
               className="return-btn" 
               onClick={returnToCurrent} 

@@ -155,12 +155,12 @@ button:disabled {
 }
 
 .play-card-button {
-    background-color: #4CAF50;
+    background-color: #3d6644;
     color: white;
 }
 
 .reveal-turn-button {
-    background-color: #2196F3;
+    background-color: #34495e;
     color: white;
 }
 
