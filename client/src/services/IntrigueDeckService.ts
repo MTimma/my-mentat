@@ -1,4 +1,4 @@
-import { IntrigueCard, IntrigueCardType, FactionType, EffectTiming, GamePhase } from '../types/GameTypes'
+import { IntrigueCard, IntrigueCardType, FactionType, EffectTiming, GamePhase, CustomEffect, AgentIcon } from '../types/GameTypes'
 
 export const intrigueCards: IntrigueCard[] = [
   // NOTE: These entries are derived from the images in `client/public/intrigue/base/`.
@@ -62,7 +62,7 @@ export const intrigueCards: IntrigueCard[] = [
       'Acquire a card that costs 3 or less —OR— pay 2 spice to acquire a card that costs 5 or less to the top of your deck.',
     image: '/intrigue/base/bypass_protocol.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ reward: { custom: CustomEffect.BYPASS_PROTOCOL } }]
   },
   {
     id: 6,
@@ -71,7 +71,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Pay 1 spice to take the Mentat from its designated space in the Landsraad.',
     image: '/intrigue/base/calculated_hire.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ cost: { spice: 1 }, reward: { custom: CustomEffect.CALCULATED_HIRE } }]
   },
   {
     id: 7,
@@ -99,7 +99,7 @@ export const intrigueCards: IntrigueCard[] = [
       'Endgame: If you have at least two The Spice Must Flow, gain 1 VP. If you have more The Spice Must Flow than each opponent, gain 1 VP.',
     image: '/intrigue/base/corner_the_market.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ phase: GamePhase.END_GAME, reward: { custom: CustomEffect.CORNER_THE_MARKET } }]
   },
   {
     id: 10,
@@ -114,10 +114,11 @@ export const intrigueCards: IntrigueCard[] = [
     id: 11,
     name: 'Dispatch an Envoy',
     type: IntrigueCardType.PLOT,
-    description: 'The card you play this turn has the following icons.',
+    description: 'The card you play this turn has the following icons: Landsraad, Fremen, Bene Gesserit, Spacing Guild.',
     image: '/intrigue/base/dispatch_an_envoy.png',
     agentIcons: [],
-    playEffect: []
+    // Adds Landsraad, Fremen, Bene Gesserit, and Spacing Guild icons to the next card played this turn
+    playEffect: [{ reward: { custom: CustomEffect.DISPATCH_AN_ENVOY } }]
   },
   {
     id: 12,
@@ -127,7 +128,8 @@ export const intrigueCards: IntrigueCard[] = [
       'An opponent of your choice loses 1 troop in the Conflict and you deploy 1 troop from your supply to the Conflict.',
     image: '/intrigue/base/double_cross.png',
     agentIcons: [],
-    playEffect: []
+    targetPlayer: true,
+    playEffect: [{ reward: { custom: CustomEffect.DOUBLE_CROSS } }]
   },
   {
     id: 13,
@@ -154,7 +156,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Enemy Agents don’t block your next Agent at board spaces this turn.',
     image: '/intrigue/base/infiltrate.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ reward: { custom: CustomEffect.INFILTRATE } }]
   },
   {
     id: 16,
@@ -182,7 +184,7 @@ export const intrigueCards: IntrigueCard[] = [
       'Endgame: If you have 3+ influence on three faction tracks, gain 1 VP —OR— if you have 3+ influence on four faction tracks, gain 2 VP.',
     image: '/intrigue/base/plans_within_plans.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ phase: GamePhase.END_GAME, reward: { custom: CustomEffect.PLANS_WITHIN_PLANS } }]
   },
   {
     id: 19,
@@ -200,7 +202,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Deploy any number of your garrisoned troops to the Conflict.',
     image: '/intrigue/base/rapid_mobilization.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ reward: { custom: CustomEffect.RAPID_MOBILIZATION } }]
   },
   {
     id: 21,
@@ -288,7 +290,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Recall one of your Agents.',
     image: '/intrigue/base/urgent_mission.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ reward: { custom: CustomEffect.URGENT_MISSION } }]
   },
   {
     id: 30,

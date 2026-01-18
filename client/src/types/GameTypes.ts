@@ -509,6 +509,11 @@ export interface GameState {
   blockedSpaces?: Array<{ spaceId: number; playerId: number }> // Spaces blocked by The Voice
   // Pending Imperium Row replacement: when a card is acquired, track the index where replacement is needed
   pendingImperiumRowReplacement: { cardIndex: number } | null
+  // Intrigue effects that modify turn behavior
+  infiltrateActive: Record<number, boolean> // Player can ignore enemy agents blocking spaces this turn
+  dispatchEnvoyIcons: Record<number, AgentIcon[]> // Additional agent icons for player's next card this turn
+  rapidMobilizationActive: Record<number, boolean> // Player can deploy all garrisoned troops this turn
+  urgentMissionPending: Record<number, boolean> // Player needs to recall an agent
 }
 
 export enum CustomEffect {
@@ -523,6 +528,16 @@ export enum CustomEffect {
   TEST_OF_HUMANITY = 'TEST_OF_HUMANITY', // TODO need to implement
   THE_VOICE = 'THE_VOICE', // TODO need to implement
   GUILD_BANKERS = 'GUILD_BANKERS', // TODO need to implement
+  // Intrigue card custom effects
+  CORNER_THE_MARKET = 'CORNER_THE_MARKET', // ENDGAME: Check SMF cards
+  PLANS_WITHIN_PLANS = 'PLANS_WITHIN_PLANS', // ENDGAME: Check influence tracks
+  CALCULATED_HIRE = 'CALCULATED_HIRE', // Take mentat
+  RAPID_MOBILIZATION = 'RAPID_MOBILIZATION', // Deploy all garrisoned troops
+  DOUBLE_CROSS = 'DOUBLE_CROSS', // Target loses troop, you deploy one
+  INFILTRATE = 'INFILTRATE', // Ignore enemy agents blocking
+  DISPATCH_AN_ENVOY = 'DISPATCH_AN_ENVOY', // Add faction icons this turn
+  URGENT_MISSION = 'URGENT_MISSION', // Recall one agent
+  BYPASS_PROTOCOL = 'BYPASS_PROTOCOL', // Acquire card with special conditions
 }
 
 // Custom effects that are auto-applied and don't need user input
