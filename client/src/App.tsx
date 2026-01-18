@@ -9,7 +9,7 @@ import { useGame } from './components/GameContext/GameContext'
 import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, Cost, CustomEffect, ChoiceType, FixedOptionsChoice } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -106,9 +106,9 @@ const GameContent = () => {
     dispatch({ type: 'DEPLOY_TROOP', playerId })
   }
 
-  const handleResolveChoice = (choiceId:string, reward: Reward, source?: { type: string; id: number; name: string }) => {
+  const handleResolveChoice = (choiceId:string, reward: Reward, cost?: Cost, source?: { type: string; id: number; name: string }) => {
     if(!activePlayer) return;
-    dispatch({ type:'RESOLVE_CHOICE', playerId: activePlayer.id, choiceId, reward, source })
+    dispatch({ type:'RESOLVE_CHOICE', playerId: activePlayer.id, choiceId, reward, cost, source })
   }
 
   const handleResolveCardSelect = (choiceId: string, cardIds: number[]) => {
@@ -329,7 +329,7 @@ const GameContent = () => {
           currentConflict={displayState.currentConflict}
           bonusSpice={displayState.bonusSpice}
           onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
-          recallMode={isViewingHistory ? false : Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
+          recallMode={isViewingHistory ? false : Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED') || gameState.urgentMissionPending?.[gameState.activePlayerId])}
           ignoreCosts={isViewingHistory ? false : Boolean(getSelectedCard(gameState)?.playEffect?.find(e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH))}
           voiceSelectionActive={isViewingHistory ? false : Boolean(voiceSelectionRewardId)}
           onVoiceSpaceSelect={handleVoiceSpaceSelect}
@@ -376,11 +376,16 @@ const GameContent = () => {
             onReveal={handleRevealCards}
             onEndTurn={handleEndTurn}
             onPassCombat={handlePassCombat}
-            canDeployTroops={gameState.currTurn?.canDeployTroops || false}
+            canDeployTroops={gameState.currTurn?.canDeployTroops || gameState.rapidMobilizationActive?.[gameState.activePlayerId] || false}
             onAddTroop={handleAddTroop}
             onRemoveTroop={handleRemoveTroop}
             retreatableTroops={gameState.currTurn?.removableTroops || 0}
-            deployableTroops={Math.min((gameState.currTurn?.troopLimit || 0) - (gameState.currTurn?.removableTroops || 0), activePlayer?.troops || 0)}
+            deployableTroops={
+              // If Rapid Mobilization is active, allow deploying all garrisoned troops
+              gameState.rapidMobilizationActive?.[gameState.activePlayerId]
+                ? (activePlayer?.troops || 0)
+                : Math.min((gameState.currTurn?.troopLimit || 0) - (gameState.currTurn?.removableTroops || 0), activePlayer?.troops || 0)
+            }
             isCombatPhase={gameState.phase === GamePhase.COMBAT}
             combatStrength={gameState.combatStrength}
             combatPasses={gameState.combatPasses}
@@ -392,7 +397,7 @@ const GameContent = () => {
             onPayCost={handlePayCost}
             showSelectiveBreeding={showSelectiveBreeding}
             selectedCard={getSelectedCard(gameState)}
-            recallMode={Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
+            recallMode={Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED') || gameState.urgentMissionPending?.[gameState.activePlayerId])}
             onSelectiveBreedingSelect={card => {
               if (onSelectiveBreedingSelect) onSelectiveBreedingSelect(card)
               setShowSelectiveBreeding(false)
@@ -450,15 +455,25 @@ const GameContent = () => {
 }
 
 function getInfiltrate(gameState: GameState): boolean {
-  return gameState.selectedCard ? gameState.players[gameState.activePlayerId].deck.find(c => c.id === gameState.selectedCard)?.infiltrate || false : false
+  // Check both card infiltrate property and intrigue infiltrate active
+  const cardInfiltrate = gameState.selectedCard 
+    ? gameState.players[gameState.activePlayerId]?.deck.find(c => c.id === gameState.selectedCard)?.infiltrate || false 
+    : false
+  const intrigueInfiltrate = gameState.infiltrateActive?.[gameState.activePlayerId] || false
+  return cardInfiltrate || intrigueInfiltrate
 }
 
 function getSelectedCard(gameState: GameState): Card | null {
-  return gameState.selectedCard ? gameState.players[gameState.activePlayerId].deck.find(c => c.id === gameState.selectedCard) || null : null
+  return gameState.selectedCard ? gameState.players[gameState.activePlayerId]?.deck.find(c => c.id === gameState.selectedCard) || null : null
 }
 
 function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
-  return getSelectedCard(gameState)?.agentIcons || []
+  const cardIcons = getSelectedCard(gameState)?.agentIcons || []
+  // Add Dispatch an Envoy icons if active
+  const envoyIcons = gameState.dispatchEnvoyIcons?.[gameState.activePlayerId] || []
+  // Combine and deduplicate icons
+  const allIcons = [...new Set([...cardIcons, ...envoyIcons])]
+  return allIcons
 }
 
 // Wrapper component that provides TimeTravel context to GameContent

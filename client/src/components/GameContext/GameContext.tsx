@@ -33,7 +33,8 @@ import {
   CardPile,
   PendingReward,
   AUTO_APPLIED_CUSTOM_EFFECTS,
-  EffectTiming
+  EffectTiming,
+  AgentIcon
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { ARRAKIS_LIAISON_DECK, buildImperiumDeck } from '../../data/cards'
@@ -71,7 +72,7 @@ type GameAction =
   | { type: 'ACQUIRE_AL'; playerId: number }
   | { type: 'ACQUIRE_SMF'; playerId: number }
   | { type: 'PAY_COST'; playerId: number; effect: OptionalEffect }
-  | { type: 'RESOLVE_CHOICE'; playerId: number; choiceId: string; reward: Reward; source?: { type: string; id: number; name: string } }
+  | { type: 'RESOLVE_CHOICE'; playerId: number; choiceId: string; reward: Reward; cost?: Cost; source?: { type: string; id: number; name: string } }
   | { type: 'RESOLVE_CARD_SELECT'; playerId: number; choiceId: string; cardIds: number[] }
   | { type: 'CUSTOM_EFFECT'; playerId: number; customEffect: CustomEffect; data: CustomEffectData }
   | { type: 'TRASH_CARD'; playerId: number; cardId: number; gainReward?: Reward }
@@ -162,7 +163,11 @@ const initialGameState: GameState = {
   endgameDonePlayers: new Set(),
   endgameWinners: null,
   blockedSpaces: [],
-  pendingImperiumRowReplacement: null
+  pendingImperiumRowReplacement: null,
+  infiltrateActive: {},
+  dispatchEnvoyIcons: {},
+  rapidMobilizationActive: {},
+  urgentMissionPending: {}
 }
 
 function determinePlacements(
@@ -465,6 +470,11 @@ function applyChoiceReward(state: GameState, reward: Reward, playerId: number): 
     pushGain(reward.deployTroops, RewardType.DEPLOY)
   }
   if (reward.victoryPoints) { player.victoryPoints += reward.victoryPoints; pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS)}
+  
+  // Handle acquireToTopThisRound flag from choices (e.g., Bypass Protocol)
+  if (reward.acquireToTopThisRound) {
+    newState.acquireToTopThisRound = { ...(newState.acquireToTopThisRound || {}), [playerId]: true }
+  }
 
   newState.players = newState.players.map(p => p.id === playerId ? player : p)
   return newState
@@ -473,7 +483,8 @@ function applyChoiceReward(state: GameState, reward: Reward, playerId: number): 
 function handleIntrigueEffect(
   state: GameState,
   card: IntrigueCard,
-  playerId: number
+  playerId: number,
+  targetPlayerId?: number
 ): GameState {
   const player = state.players.find(p => p.id === playerId)
   if (!player) return state
@@ -482,10 +493,16 @@ function handleIntrigueEffect(
     ...state, 
     gains: [...state.gains],
     combatStrength: { ...state.combatStrength },
+    combatTroops: { ...state.combatTroops },
     scheduledIntrigueOnReveal: { ...(state.scheduledIntrigueOnReveal || {}) },
     activeIntrigueThisRound: { ...(state.activeIntrigueThisRound || {}) },
     acquireToTopThisRound: { ...(state.acquireToTopThisRound || {}) },
-    endgameTiebreakerSpice: { ...(state.endgameTiebreakerSpice || {}) }
+    endgameTiebreakerSpice: { ...(state.endgameTiebreakerSpice || {}) },
+    infiltrateActive: { ...(state.infiltrateActive || {}) },
+    dispatchEnvoyIcons: { ...(state.dispatchEnvoyIcons || {}) },
+    rapidMobilizationActive: { ...(state.rapidMobilizationActive || {}) },
+    urgentMissionPending: { ...(state.urgentMissionPending || {}) },
+    occupiedSpaces: { ...state.occupiedSpaces }
   }
   const updatedPlayers = state.players.map(p => ({ ...p }))
   const playerIndex = updatedPlayers.findIndex(p => p.id === playerId)
@@ -597,6 +614,199 @@ function handleIntrigueEffect(
       }
       return
     }
+    
+    // Handle custom intrigue effects
+    if (effect.reward.custom) {
+      switch (effect.reward.custom) {
+        case CustomEffect.CORNER_THE_MARKET: {
+          // ENDGAME: Check how many "The Spice Must Flow" cards the player has
+          const playerSmfCount = [
+            ...updatedPlayer.deck, 
+            ...updatedPlayer.discardPile, 
+            ...updatedPlayer.playArea
+          ].filter(c => c.name === 'The Spice Must Flow').length
+          
+          let vpGained = 0
+          // If you have at least two SMF, gain 1 VP
+          if (playerSmfCount >= 2) {
+            vpGained += 1
+          }
+          // If you have more SMF than each opponent, gain 1 VP
+          const otherPlayers = updatedPlayers.filter(p => p.id !== playerId)
+          const hasMoreThanAll = otherPlayers.every(opponent => {
+            const opponentSmfCount = [
+              ...opponent.deck, 
+              ...opponent.discardPile, 
+              ...opponent.playArea
+            ].filter(c => c.name === 'The Spice Must Flow').length
+            return playerSmfCount > opponentSmfCount
+          })
+          if (hasMoreThanAll && otherPlayers.length > 0) {
+            vpGained += 1
+          }
+          
+          if (vpGained > 0) {
+            updatedPlayer.victoryPoints += vpGained
+            pushGain(vpGained, RewardType.VICTORY_POINTS)
+          }
+          return
+        }
+        
+        case CustomEffect.PLANS_WITHIN_PLANS: {
+          // ENDGAME: Check how many faction tracks have 3+ influence
+          const factionCount = Object.values(FactionType).filter(faction => {
+            const influence = newState.factionInfluence[faction]?.[playerId] || 0
+            return influence >= 3
+          }).length
+          
+          let vpGained = 0
+          if (factionCount >= 4) {
+            vpGained = 2
+          } else if (factionCount >= 3) {
+            vpGained = 1
+          }
+          
+          if (vpGained > 0) {
+            updatedPlayer.victoryPoints += vpGained
+            pushGain(vpGained, RewardType.VICTORY_POINTS)
+          }
+          return
+        }
+        
+        case CustomEffect.CALCULATED_HIRE: {
+          // Pay 1 spice to take the Mentat (cost already handled by effect.cost)
+          // Check if mentat is available (mentatOwner is null means it's on the board)
+          if (newState.mentatOwner === null && updatedPlayer.spice >= (effect.cost?.spice || 0)) {
+            updatedPlayer.spice -= (effect.cost?.spice || 0)
+            pushGain(-(effect.cost?.spice || 0), RewardType.SPICE)
+            newState.mentatOwner = playerId
+            updatedPlayer.agents += 1
+            pushGain(1, RewardType.AGENT)
+          }
+          return
+        }
+        
+        case CustomEffect.RAPID_MOBILIZATION: {
+          // Deploy any number of garrisoned troops to the Conflict
+          // Set flag to allow deploying all troops from garrison
+          newState.rapidMobilizationActive[playerId] = true
+          const active = newState.activeIntrigueThisRound[playerId] || []
+          if (!active.some(c => c.id === card.id)) {
+            newState.activeIntrigueThisRound[playerId] = [...active, card]
+          }
+          return
+        }
+        
+        case CustomEffect.DOUBLE_CROSS: {
+          // Target opponent loses 1 troop in conflict, player deploys 1 from supply
+          if (targetPlayerId !== undefined) {
+            const targetTroops = newState.combatTroops[targetPlayerId] || 0
+            if (targetTroops > 0) {
+              // Target loses 1 troop in conflict
+              newState.combatTroops[targetPlayerId] = targetTroops - 1
+              newState.combatStrength[targetPlayerId] = Math.max(0, (newState.combatStrength[targetPlayerId] || 0) - 2)
+              newState.gains.push({
+                round: state.currentRound,
+                playerId: targetPlayerId,
+                sourceId: card.id,
+                name: card.name,
+                amount: -1,
+                type: RewardType.TROOPS,
+                source: GainSource.INTRIGUE
+              })
+            }
+          }
+          // Player deploys 1 troop from supply to conflict
+          if (updatedPlayer.troops > 0) {
+            updatedPlayer.troops -= 1
+            newState.combatTroops[playerId] = (newState.combatTroops[playerId] || 0) + 1
+            newState.combatStrength[playerId] = (newState.combatStrength[playerId] || 0) + 2
+            pushGain(1, RewardType.DEPLOY)
+          }
+          return
+        }
+        
+        case CustomEffect.INFILTRATE: {
+          // Enemy Agents don't block your next Agent at board spaces this turn
+          newState.infiltrateActive[playerId] = true
+          const active = newState.activeIntrigueThisRound[playerId] || []
+          if (!active.some(c => c.id === card.id)) {
+            newState.activeIntrigueThisRound[playerId] = [...active, card]
+          }
+          return
+        }
+        
+        case CustomEffect.DISPATCH_AN_ENVOY: {
+          // The card you play this turn has Landsraad, Fremen, Bene Gesserit, Spacing Guild icons
+          newState.dispatchEnvoyIcons[playerId] = [
+            AgentIcon.LANDSRAAD,
+            AgentIcon.FREMEN,
+            AgentIcon.BENE_GESSERIT,
+            AgentIcon.SPACING_GUILD
+          ]
+          const active = newState.activeIntrigueThisRound[playerId] || []
+          if (!active.some(c => c.id === card.id)) {
+            newState.activeIntrigueThisRound[playerId] = [...active, card]
+          }
+          return
+        }
+        
+        case CustomEffect.URGENT_MISSION: {
+          // Recall one of your Agents - set flag to require agent selection
+          newState.urgentMissionPending[playerId] = true
+          const active = newState.activeIntrigueThisRound[playerId] || []
+          if (!active.some(c => c.id === card.id)) {
+            newState.activeIntrigueThisRound[playerId] = [...active, card]
+          }
+          return
+        }
+        
+        case CustomEffect.BYPASS_PROTOCOL: {
+          // Create a pending choice for Bypass Protocol
+          // Option 1: Acquire a card that costs 3 or less (approximated as +3 persuasion)
+          // Option 2: Pay 2 spice to acquire a card that costs 5 or less to top of deck (approximated as pay 2 spice, +5 persuasion, acquire to top)
+          const canPaySpice = updatedPlayer.spice >= 2
+          
+          const bypassChoice: FixedOptionsChoice = {
+            id: 'bypass-protocol-' + crypto.randomUUID(),
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Bypass Protocol: Choose one',
+            options: [
+              { 
+                reward: { persuasion: 3 },
+                rewardLabel: 'Acquire a card costing 3 or less (+3 persuasion)'
+              },
+              { 
+                cost: { spice: 2 },
+                reward: { persuasion: 5, acquireToTopThisRound: true },
+                costLabel: 'Pay 2 spice',
+                rewardLabel: 'Acquire a card costing 5 or less to top of deck (+5 persuasion)',
+                disabled: !canPaySpice
+              }
+            ],
+            source: { type: GainSource.INTRIGUE, id: card.id, name: card.name }
+          }
+          
+          // Add to pending choices in current turn
+          if (newState.currTurn) {
+            newState.currTurn = {
+              ...newState.currTurn,
+              pendingChoices: [...(newState.currTurn.pendingChoices || []), bypassChoice]
+            }
+          }
+          
+          const active = newState.activeIntrigueThisRound[playerId] || []
+          if (!active.some(c => c.id === card.id)) {
+            newState.activeIntrigueThisRound[playerId] = [...active, card]
+          }
+          return
+        }
+        
+        default:
+          break
+      }
+    }
+    
     applyReward(effect.reward)
   })
 
@@ -1064,7 +1274,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
     }
     case 'PLAY_INTRIGUE': {
-      const { cardId, playerId } = action
+      const { cardId, playerId, targetPlayerId } = action
       if (playerId !== state.activePlayerId) return state
       if (state.phase !== GamePhase.PLAYER_TURNS && state.phase !== GamePhase.END_GAME) return state
 
@@ -1088,7 +1298,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (!hasEndgameEffect) return state
       }
 
-      const updatedState = handleIntrigueEffect(state, card, playerId)
+      const updatedState = handleIntrigueEffect(state, card, playerId, targetPlayerId)
       
       const newState = {
         ...updatedState,
@@ -1351,6 +1561,29 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
     }
 
+      // Handle Urgent Mission recall (standalone agent recall from intrigue card)
+      if (newState.urgentMissionPending?.[playerId]) {
+        const occupants = newState.occupiedSpaces[spaceId] || []
+        if (!occupants.includes(playerId)) {
+          // Not a valid recall click; ignore
+          return state
+        }
+        // Remove the player's agent from that space and refund one agent
+        newState.occupiedSpaces = {
+          ...newState.occupiedSpaces,
+          [spaceId]: occupants.filter(id => id !== playerId)
+        }
+        newState.players = newState.players.map(p => p.id === playerId ? { ...p, agents: p.agents + 1 } : p)
+        // Clear the Urgent Mission flag
+        newState.urgentMissionPending = { ...newState.urgentMissionPending, [playerId]: false }
+        // Clear from active intrigue this round (UI)
+        newState.activeIntrigueThisRound = {
+          ...newState.activeIntrigueThisRound,
+          [playerId]: (newState.activeIntrigueThisRound?.[playerId] || []).filter(c => c.name !== 'Urgent Mission')
+        }
+        return newState
+      }
+
       if (!currPlayer || !card || !space || playerId !== newState.activePlayerId || !newState.selectedCard) return state
       
       const ignoreSpaceCostAndReq = card.playEffect?.find(e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH)
@@ -1392,8 +1625,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return state
       }
 
-      // Check if space is already occupied or card has infiltrate
-      if (newState.occupiedSpaces[spaceId]?.length > 0 && !card.infiltrate) return state
+      // Check if space is already occupied or card has infiltrate or infiltrate intrigue is active
+      const infiltrateActive = newState.infiltrateActive?.[playerId] || false
+      if (newState.occupiedSpaces[spaceId]?.length > 0 && !card.infiltrate && !infiltrateActive) return state
 
       // Check if player has required influence
       if (space.requiresInfluence && !ignoreSpaceCostAndReq) {
@@ -1616,6 +1850,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       currPlayer.agents -= 1
       currPlayer.handCount -= 1
 
+      // Clear turn-specific intrigue effects after placing an agent
+      const clearedInfiltrateActive = { ...(newState.infiltrateActive || {}), [playerId]: false }
+      const clearedDispatchEnvoyIcons = { ...(newState.dispatchEnvoyIcons || {}), [playerId]: [] }
+
       return {
         ...newState,
         gains: updatedGains,
@@ -1632,7 +1870,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         occupiedSpaces: updatedOccupiedSpaces,
         currTurn: currentTurn,
         pendingRewards,
-        canEndTurn: (currentTurn.pendingChoices?.length || pendingRewards.filter(r => !r.disabled).length) ? false : true
+        canEndTurn: (currentTurn.pendingChoices?.length || pendingRewards.filter(r => !r.disabled).length) ? false : true,
+        infiltrateActive: clearedInfiltrateActive,
+        dispatchEnvoyIcons: clearedDispatchEnvoyIcons
       }
     }
     case 'REVEAL_CARDS': {
@@ -2190,12 +2430,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
     case 'RESOLVE_CHOICE': {
-      const { playerId, reward, source } = action
+      const { playerId, reward, cost, source } = action
       if(!state.currTurn) return state
+      
+      // Apply cost first if present
+      let stateAfterCost = { ...state }
+      if (cost) {
+        const player = stateAfterCost.players.find(p => p.id === playerId)
+        if (!player) return state
+        const updatedPlayer = { ...player }
+        if (cost.spice) updatedPlayer.spice -= cost.spice
+        if (cost.water) updatedPlayer.water -= cost.water
+        if (cost.solari) updatedPlayer.solari -= cost.solari
+        if (cost.troops) updatedPlayer.troops -= cost.troops
+        stateAfterCost = {
+          ...stateAfterCost,
+          players: stateAfterCost.players.map(p => p.id === playerId ? updatedPlayer : p)
+        }
+      }
       
       // Check if this reward has a custom effect that needs card selection
       if(reward.custom === CustomEffect.OTHER_MEMORY) {
-        const player = state.players.find(p => p.id === playerId)
+        const player = stateAfterCost.players.find(p => p.id === playerId)
         if(!player) return state
         
         // Create a CardSelectChoice for the custom effect
@@ -2217,11 +2473,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           source: { type: GainSource.CARD, id: source?.id || 0, name: source?.name || 'Unknown' }
         }
         
-        const newTurn = { ...state.currTurn }
+        const newTurn = { ...stateAfterCost.currTurn }
         newTurn.pendingChoices = [cardSelectChoice]
         
         return {
-          ...state,
+          ...stateAfterCost,
           currTurn: newTurn,
           canEndTurn: false // Still have a choice pending
         }
@@ -2230,10 +2486,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Check if this is a SECRETS_STEAL custom effect
       if(reward.custom === CustomEffect.SECRETS_STEAL) {
         // Dispatch CUSTOM_EFFECT action
-        const newTurn = { ...state.currTurn }
+        const newTurn = { ...stateAfterCost.currTurn }
         newTurn.pendingChoices = []
         const newState = { 
-          ...state, 
+          ...stateAfterCost, 
           currTurn: newTurn,
           canEndTurn: true
         }
@@ -2246,9 +2502,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       
       // Normal reward without custom effect
-      const newTurn = { ...state.currTurn }
+      const newTurn = { ...stateAfterCost.currTurn }
       newTurn.pendingChoices = []
-      const newState = applyChoiceReward(state, reward, playerId)
+      const newState = applyChoiceReward(stateAfterCost, reward, playerId)
       newState.currTurn = newTurn
       newState.canEndTurn = true // No more choices pending
       return newState

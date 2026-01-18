@@ -30,7 +30,7 @@ interface TurnControlsProps {
   onSelectiveBreedingSelect?: (card: Card) => void
   onSelectiveBreedingCancel?: () => void
   pendingChoices?: PendingChoice[]
-  onResolveChoice?: (choiceId:string, reward: Reward, source?: { type: string; id: number; name: string }) => void
+  onResolveChoice?: (choiceId:string, reward: Reward, cost?: Cost, source?: { type: string; id: number; name: string }) => void
   onResolveCardSelect?: (choiceId: string, cardIds: number[]) => void
   selectedCard?: Card | null
   recallMode?: boolean
@@ -517,7 +517,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                             <button
                               className="effect-btn choice or-option"
                               disabled={option.disabled || !isAffordable(option.cost) || voiceSelectionActive}
-                              onClick={() => onResolveChoice && onResolveChoice(choice.id, option.reward, choice.source)}
+                              onClick={() => onResolveChoice && onResolveChoice(choice.id, option.reward, option.cost, choice.source)}
                               title={voiceSelectionActive ? 'Finish The Voice selection before resolving other choices.' : disabledTooltip}
                             >
                               {renderLabel(option)}
