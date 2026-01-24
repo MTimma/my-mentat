@@ -1591,11 +1591,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           case 'mentat':
             newState.mentatOwner = playerId
             currPlayer.agents += 1
+            updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: 1, type: RewardType.MENTAT, source: GainSource.BOARD_SPACE })
             break
 
           case 'swordmaster':
             currPlayer.hasSwordmaster = true
             currPlayer.agents += 1
+            updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: 1, type: RewardType.SWORDMASTER, source: GainSource.BOARD_SPACE })
             break
 
           case 'foldspace': {
@@ -1603,12 +1605,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             if (card) {
               currPlayer.discardPile = [...currPlayer.discardPile, card]
             }
+            updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: 1, type: RewardType.CARD, source: GainSource.BOARD_SPACE })
             break
           }
-
-          case 'secrets':
-            // Steal logic is now handled by SECRETS_STEAL custom effect button
-            break
 
         }
       }
@@ -1939,6 +1938,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           source: GainSource.CARD
         })
       }
+      pushGain(1, RewardType.CARD)
 
       const applyResource = (prop: 'spice' | 'water' | 'troops' | 'victoryPoints', amount?: number, rewardType?: RewardType) => {
         if (!amount) return

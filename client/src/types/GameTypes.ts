@@ -445,13 +445,16 @@ export enum RewardType {
   AGENT = 'Agent',
   COMBAT = 'Combat',
   TROOPS = 'Troops',
+  CARD = 'Card',
   DRAW = 'Draw',
   DISCARD = 'Discard',
   TRASH = 'Trash',
   RETREAT = 'Retreat',
   DEPLOY = 'Deploy',
   RECALL = 'Recall',
-  PERSUASION = 'Persuasion'
+  PERSUASION = 'Persuasion',
+  MENTAT = "Mentat",
+  SWORDMASTER = "Swordmaster"
 }
 
 export interface PlayerSetup {

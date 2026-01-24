@@ -36,7 +36,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   const [undoTargetIndex, setUndoTargetIndex] = useState<number | null>(null)
 
   // Determine which turn is being viewed (null means current/live)
-  const effectiveViewIndex = viewingTurnIndex ?? turns.length
   const isViewingHistory = viewingTurnIndex !== null
 
   // Get the turn info from GameState
