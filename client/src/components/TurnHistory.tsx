@@ -17,7 +17,7 @@ interface TurnHistoryProps {
 }
 
 interface AggregatedGain {
-  type: RewardType
+  type: string
   amount: number
 }
 
@@ -58,24 +58,30 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     return turn.gains?.filter(gain => gain.playerId === playerId) || []
   }
 
-  // Aggregate gains by type (sum amounts of same type)
-  const aggregateGains = (gains: Gain[]): AggregatedGain[] => {
-    const aggregated = new Map<RewardType, number>()
-    
-    gains.forEach(gain => {
-      const current = aggregated.get(gain.type) || 0
-      aggregated.set(gain.type, current + gain.amount)
-    })
-
-    return Array.from(aggregated.entries())
-      .map(([type, amount]) => ({ type, amount }))
-      .filter(g => g.amount !== 0)
-  }
+    // Aggregate gains by type (sum amounts of same type)
+    const aggregateGains = (gains: Gain[]): AggregatedGain[] => {
+      const aggregated = new Map<string, number>()
+      
+      gains.forEach(gain => {
+        const current = aggregated.get(gain.name) || 0
+        if (gain.type in [RewardType.INFLUENCE, RewardType.CARD]) {
+          aggregated.set(gain.name, current + gain.amount)
+        } else {
+          aggregated.set(gain.type, current + gain.amount)
+        }
+        
+        aggregated.set(gain.name, current + gain.amount)
+      })
+  
+      return Array.from(aggregated.entries())
+        .map(([type, amount]) => ({ type, amount }))
+        .filter(g => g.amount !== 0)
+    }
 
   // Render a single gain icon with amount
   const renderGain = (gain: AggregatedGain, index: number) => {
-    const iconPath = getRewardIcon(gain.type)
-    const displayName = getRewardDisplayName(gain.type)
+    const iconPath = getRewardIcon(gain.type as RewardType)
+    const displayName = getRewardDisplayName(gain.type as RewardType, gain.type)
     const isNegative = gain.amount < 0
     const displayAmount = gain.amount > 0 ? `+${gain.amount}` : `${gain.amount}`
 
@@ -172,7 +178,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         {turns.map((turn, index) => {
           const info = getTurnInfo(turn)
           const gains = getGainsForTurn(turn)
-          const aggregated = aggregateGains(gains)
+          const aggregatedGains = aggregateGains(gains)
           const isViewing = viewingTurnIndex === index
           const isCurrent = index === currentTurn && !isViewingHistory
           
@@ -189,15 +195,12 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                 {index === 0 ? 'Initial' : index}
               </div>
               <div className={`turn-player-indicator ${info.color}`}></div>
-              <div className="turn-player-name">
-                {index === 0 ? 'Initial State' : info.player}
-              </div>
               <div className="turn-type">
                 {index === 0 ? 'Setup' : info.type}
               </div>
-              {aggregated.length > 0 && (
+              {gains.length > 0 && (
                 <div className="turn-gains">
-                  {aggregated.map((gain, idx) => renderGain(gain, idx))}
+                  {aggregatedGains.map((gain, idx) => renderGain(gain, idx))}
                 </div>
               )}
               <div className="turn-actions">
@@ -235,10 +238,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           </div>
           <div className="turn-type">
             {currentGameState.currTurn?.type || 'In Progress'}
-          </div>
-          <div className="current-indicator">
-            <span className="live-dot"></span>
-            LIVE
           </div>
         </div>
       </div>

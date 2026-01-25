@@ -1605,7 +1605,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             if (card) {
               currPlayer.discardPile = [...currPlayer.discardPile, card]
             }
-            updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: 1, type: RewardType.CARD, source: GainSource.BOARD_SPACE })
+            updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: 'Foldspace' , amount: 1, type: RewardType.CARD, source: GainSource.BOARD_SPACE })
             break
           }
 
@@ -1938,7 +1938,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           source: GainSource.CARD
         })
       }
-      pushGain(1, RewardType.CARD)
+      updatedGains.push({
+        round: state.currentRound,
+        playerId,
+        sourceId: card.id,
+        name: card.name,
+        amount: 1,
+        type: RewardType.CARD,
+        source: GainSource.CARD
+      })
 
       const applyResource = (prop: 'spice' | 'water' | 'troops' | 'victoryPoints', amount?: number, rewardType?: RewardType) => {
         if (!amount) return
@@ -2537,6 +2545,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           const currentInfluence = newState.factionInfluence[inf.faction]?.[playerId] || 0
           // Power Play grants +1 extra influence
           const influenceAmount = reward.powerPlay ? inf.amount + 1 : inf.amount
+          newGains.push({ round: newState.currentRound, playerId: playerId, sourceId: reward.source.id, name: inf.faction, amount: influenceAmount, type: RewardType.INFLUENCE, source: reward.source.type })
           newState.factionInfluence = {
             ...newState.factionInfluence,
             [inf.faction]: {
@@ -2608,6 +2617,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             const currentInfluence = newState.factionInfluence[inf.faction]?.[playerId] || 0
             // Power Play grants +1 extra influence
             const influenceAmount = reward.powerPlay ? inf.amount + 1 : inf.amount
+            newGains.push({ round: newState.currentRound, playerId: playerId, sourceId: reward.source.id, name: inf.faction, amount: influenceAmount, type: RewardType.INFLUENCE, source: reward.source.type })
             newState.factionInfluence = {
               ...newState.factionInfluence,
               [inf.faction]: {

@@ -33,18 +33,19 @@ export function getRewardIcon(type: RewardType): string | null {
 /**
  * Gets a display name for a reward type (fallback when no icon available)
  */
-export function getRewardDisplayName(type: RewardType): string {
+export function getRewardDisplayName(type: RewardType, name?: string): string {
   switch (type) {
     case RewardType.VICTORY_POINTS: return 'VP'
     case RewardType.INTRIGUE: return 'Intrigue'
     case RewardType.SOLARI: return 'Solari'
     case RewardType.SPICE: return 'Spice'
     case RewardType.WATER: return 'Water'
-    case RewardType.INFLUENCE: return 'Influence'
+    case RewardType.INFLUENCE: return name || 'Influence'
     case RewardType.CONTROL: return 'Control'
     case RewardType.AGENT: return 'Agent'
     case RewardType.COMBAT: return 'Combat'
     case RewardType.TROOPS: return 'Troops'
+    case RewardType.CARD: return name || 'Card'
     case RewardType.DRAW: return 'Draw'
     case RewardType.DISCARD: return 'Discard'
     case RewardType.TRASH: return 'Trash'
@@ -52,6 +53,7 @@ export function getRewardDisplayName(type: RewardType): string {
     case RewardType.DEPLOY: return 'Deploy'
     case RewardType.RECALL: return 'Recall'
     case RewardType.PERSUASION: return 'Persuasion'
+    
     default: return type
   }
 }
