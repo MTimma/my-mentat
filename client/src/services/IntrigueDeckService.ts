@@ -1,9 +1,6 @@
 import { IntrigueCard, IntrigueCardType, FactionType, EffectTiming, GamePhase } from '../types/GameTypes'
 
 export const intrigueCards: IntrigueCard[] = [
-  // NOTE: These entries are derived from the images in `client/public/intrigue/base/`.
-  // Some effects (timing triggers, “choose one”, board-space exceptions, etc.) are not yet modeled by the current intrigue resolution,
-  // so they’re captured in `description` but may have partial/empty `playEffect`.
   {
     id: 1,
     name: 'Ambush',
@@ -43,7 +40,7 @@ export const intrigueCards: IntrigueCard[] = [
       'At the start of your turn: draw 1 card. You may pass your turn (instead of taking an Agent or Reveal turn).',
     image: '/intrigue/base/bindu_suspension.png',
     agentIcons: [],
-    playEffect: [{ reward: { drawCards: 1 } }]
+    playEffect: [] //TODO custom timing
   },
   {
     id: 4,
@@ -52,7 +49,19 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Pay 2 Solari to gain 1 influence with a faction of your choice.',
     image: '/intrigue/base/bribery.png',
     agentIcons: [],
-    playEffect: [{ cost: { solari: 2 }, reward: {} }]
+    playEffect: [
+      { 
+          cost: { solari: 2 }, 
+            reward: { 
+            influence: { amounts: [
+            { faction: FactionType.EMPEROR, amount: 1 }, 
+            { faction: FactionType.SPACING_GUILD, amount: 1 },
+            { faction: FactionType.BENE_GESSERIT, amount: 1 },
+            { faction: FactionType.FREMEN, amount: 1 },
+          ] , chooseOne: true } 
+      } 
+    }
+  ]
   },
   {
     id: 5,
@@ -62,7 +71,22 @@ export const intrigueCards: IntrigueCard[] = [
       'Acquire a card that costs 3 or less —OR— pay 2 spice to acquire a card that costs 5 or less to the top of your deck.',
     image: '/intrigue/base/bypass_protocol.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{
+      choiceOpt: true,
+      reward: {
+        acquire: {
+          limit: 3
+        }
+      }
+    },{
+      choiceOpt: true,
+      cost: {
+        spice: 2
+      },
+      reward: {
+        acquire: { limit: 5 },
+        acquireToTopThisRound: true }
+    }]
   },
   {
     id: 6,
@@ -71,7 +95,12 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Pay 1 spice to take the Mentat from its designated space in the Landsraad.',
     image: '/intrigue/base/calculated_hire.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{
+      cost: { spice: 1 },
+      reward: {
+        mentat: true
+      }
+    }]
   },
   {
     id: 7,

@@ -63,14 +63,14 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       const aggregated = new Map<string, number>()
       
       gains.forEach(gain => {
-        const current = aggregated.get(gain.name) || 0
-        if (gain.type in [RewardType.INFLUENCE, RewardType.CARD]) {
+        if (gain.type === RewardType.INFLUENCE ||
+           gain.type === RewardType.CARD) {
+          const current = aggregated.get(gain.name) || 0
           aggregated.set(gain.name, current + gain.amount)
         } else {
+          const current = aggregated.get(gain.type) || 0
           aggregated.set(gain.type, current + gain.amount)
         }
-        
-        aggregated.set(gain.name, current + gain.amount)
       })
   
       return Array.from(aggregated.entries())

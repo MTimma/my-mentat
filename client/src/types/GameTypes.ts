@@ -178,6 +178,7 @@ export interface Reward {
   retreatTroops?: number
   retreatUnits?: number
   deployTroops?: number
+  mentat?: boolean
   // Intrigue: while active this round, acquired cards may be put on top of deck instead of discard.
   acquireToTopThisRound?: boolean
   // Endgame tiebreaker modifier (e.g. “counts as 10 spice for tiebreakers”)

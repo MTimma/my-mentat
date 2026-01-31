@@ -552,6 +552,11 @@ function handleIntrigueEffect(
         pushGain(amount, RewardType.INFLUENCE)
       })
     }
+    if (reward.mentat && !newState.mentatOwner) {
+      newState.mentatOwner = playerId
+      updatedPlayer.agents += 1
+      pushGain(1, RewardType.MENTAT)
+    }
   }
 
   card.playEffect?.forEach(effect => {
@@ -1589,6 +1594,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         currentTurn.gainedEffects = [...(currentTurn.gainedEffects || []), space.specialEffect]
         switch (space.specialEffect) {
           case 'mentat':
+            if(newState.mentatOwner) {
+              break
+            }
             newState.mentatOwner = playerId
             currPlayer.agents += 1
             updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: space.name, amount: 1, type: RewardType.MENTAT, source: GainSource.BOARD_SPACE })
