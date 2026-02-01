@@ -301,6 +301,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         <CardSearch
           isOpen={true}
           player={activePlayer!}
+          cards={activeCardSelect.cards}
           piles={activeCardSelect.piles}
           customFilter={activeCardSelect.filter}
           selectionCount={activeCardSelect.selectionCount}

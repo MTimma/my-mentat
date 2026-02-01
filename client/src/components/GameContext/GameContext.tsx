@@ -60,7 +60,7 @@ type GameAction =
   | { type: 'DEPLOY_TROOP'; playerId: number }
   | { type: 'RETREAT_TROOP'; playerId: number }
   | { type: 'PLAY_INTRIGUE'; cardId: number; playerId: number; targetPlayerId?: number }
-  | { type: 'ACQUIRE_CARD'; playerId: number; cardId: number }
+  | { type: 'ACQUIRE_CARD'; playerId: number; cardId: number; freeAcquire?: boolean }
   | { type: 'PLAY_COMBAT_INTRIGUE'; playerId: number; cardId: number }
   | { type: 'RESOLVE_COMBAT' }
   | { type: 'START_COMBAT_PHASE' }
@@ -602,6 +602,10 @@ function handleIntrigueEffect(
       }
       return
     }
+    // Acquire effects are handled in PLAY_INTRIGUE case, not here
+    if (effect.reward.acquire) {
+      return
+    }
     applyReward(effect.reward)
   })
 
@@ -1095,6 +1099,67 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       const updatedState = handleIntrigueEffect(state, card, playerId)
       
+      // Check if this intrigue card has acquire effects that need choices
+      const acquireEffects = card.playEffect?.filter(effect => 
+        effect.reward?.acquire && effect.choiceOpt
+      ) || []
+      
+      let pendingChoices: PendingChoice[] = []
+      
+      if (acquireEffects.length > 0) {
+        // Create FixedOptionsChoice for acquire effects
+        const choiceId = card.name + '-ACQUIRE-OR-' + crypto.randomUUID()
+        const options: ChoiceOption[] = acquireEffects.map(effect => {
+          const cost = effect.cost
+          const reward = effect.reward
+          const limit = reward.acquire?.limit || 0
+          const acquireToTop = Boolean(reward.acquireToTopThisRound)
+          
+          // Check if option is affordable
+          let disabled = false
+          if (cost?.spice && player.spice < cost.spice) {
+            disabled = true
+          }
+          if (cost?.solari && player.solari < cost.solari) {
+            disabled = true
+          }
+          if (cost?.water && player.water < cost.water) {
+            disabled = true
+          }
+          
+          // Check if there are any available cards in Imperium Row
+          const availableCards = state.imperiumRow.filter(c => (c.cost || 0) <= limit)
+          if (availableCards.length === 0) {
+            disabled = true
+          }
+          
+          return {
+            cost,
+            reward,
+            disabled
+          }
+        })
+        
+        const fixedOptionsChoice: FixedOptionsChoice = {
+          id: choiceId,
+          type: ChoiceType.FIXED_OPTIONS,
+          prompt: 'Choose one option',
+          options,
+          source: { type: GainSource.INTRIGUE, id: card.id, name: card.name }
+        }
+        
+        pendingChoices.push(fixedOptionsChoice)
+      }
+      
+      // Get or create current turn
+      const currentTurn = state.currTurn?.playerId === playerId 
+        ? { ...state.currTurn, pendingChoices: [...(state.currTurn.pendingChoices || []), ...pendingChoices] }
+        : {
+            playerId,
+            type: TurnType.ACTION,
+            pendingChoices
+          }
+      
       const newState = {
         ...updatedState,
         players: updatedState.players.map(p =>
@@ -1103,7 +1168,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             : p
         ),
         intrigueDeck: updatedState.intrigueDeck.filter(c => c.id !== cardId),
-        intrigueDiscard: [...updatedState.intrigueDiscard, card]
+        intrigueDiscard: [...updatedState.intrigueDiscard, card],
+        currTurn: currentTurn,
+        canEndTurn: pendingChoices.length > 0 ? false : updatedState.canEndTurn
       }
 
       return newState
@@ -1912,7 +1979,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
     case 'ACQUIRE_CARD': {
-      const { playerId, cardId } = action
+      const { playerId, cardId, freeAcquire } = action
       const player = state.players.find(p => p.id === playerId)
       if (!player) return state
 
@@ -1920,7 +1987,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (cardIndex === -1) return state
       const card = state.imperiumRow[cardIndex]
       const cost = card.cost || 0
-      if (player.persuasion < cost) return state
+      
+      // Only check persuasion cost if this is not a free acquire
+      if (!freeAcquire && player.persuasion < cost) return state
 
       const shouldAcquireToTop = Boolean(state.acquireToTopThisRound?.[playerId])
       const updatedDeck = shouldAcquireToTop ? [card, ...player.deck] : player.deck
@@ -1928,7 +1997,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       const updatedPlayer: Player = {
         ...player,
-        persuasion: player.persuasion - cost,
+        persuasion: freeAcquire ? player.persuasion : player.persuasion - cost,
         deck: updatedDeck,
         discardPile: updatedDiscardPile
       }
@@ -2209,11 +2278,98 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const { playerId, reward, source } = action
       if(!state.currTurn) return state
       
+      const player = state.players.find(p => p.id === playerId)
+      if(!player) return state
+      
+      // Check if this reward has an acquire effect
+      if(reward.acquire) {
+        // Find the choice to get the cost from the selected option
+        const choice = state.currTurn.pendingChoices?.find(c => c.id === action.choiceId)
+        if (!choice || choice.type !== ChoiceType.FIXED_OPTIONS) return state
+        
+        const fixedChoice = choice as FixedOptionsChoice
+        const selectedOption = fixedChoice.options.find(opt => 
+          opt.reward.acquire?.limit === reward.acquire?.limit &&
+          opt.reward.acquireToTopThisRound === reward.acquireToTopThisRound
+        )
+        
+        if (!selectedOption) return state
+        
+        // Find the intrigue card that triggered this
+        const intrigueCard = state.intrigueDiscard.find(c => c.id === source?.id) || 
+          state.intrigueDeck.find(c => c.id === source?.id)
+        
+        if (!intrigueCard) return state
+        
+        // Pay cost if there is one
+        let updatedPlayer = { ...player }
+        let updatedGains = [...state.gains]
+        const pushGain = (amount: number, type: RewardType) => {
+          if (!amount) return
+          updatedGains.push({
+            round: state.currentRound,
+            playerId,
+            sourceId: source?.id || 0,
+            name: source?.name || 'Unknown',
+            amount,
+            type,
+            source: source?.type || GainSource.INTRIGUE
+          })
+        }
+        
+        const cost = selectedOption.cost
+        if (cost) {
+          if (cost.spice) {
+            if (updatedPlayer.spice < cost.spice) return state // Should not happen, but safety check
+            updatedPlayer.spice -= cost.spice
+            pushGain(-cost.spice, RewardType.SPICE)
+          }
+          if (cost.solari) {
+            if (updatedPlayer.solari < cost.solari) return state
+            updatedPlayer.solari -= cost.solari
+            pushGain(-cost.solari, RewardType.SOLARI)
+          }
+          if (cost.water) {
+            if (updatedPlayer.water < cost.water) return state
+            updatedPlayer.water -= cost.water
+            pushGain(-cost.water, RewardType.WATER)
+          }
+        }
+        
+        // Set acquireToTopThisRound flag if needed
+        let updatedAcquireToTop = { ...state.acquireToTopThisRound }
+        if (reward.acquireToTopThisRound) {
+          updatedAcquireToTop[playerId] = true
+        }
+        
+        // Create CardSelectChoice for Imperium Row
+        const cardSelectChoice = createImperiumRowAcquireChoice(
+          playerId,
+          reward.acquire.limit,
+          Boolean(reward.acquireToTopThisRound),
+          intrigueCard,
+          state.imperiumRow
+        )
+        
+        const newTurn = { ...state.currTurn }
+        // Remove the current FixedOptionsChoice and add the CardSelectChoice
+        newTurn.pendingChoices = [
+          ...(state.currTurn.pendingChoices || []).filter(c => c.id !== action.choiceId),
+          cardSelectChoice
+        ]
+        
+        return {
+          ...state,
+          players: state.players.map(p => p.id === playerId ? updatedPlayer : p),
+          gains: updatedGains,
+          acquireToTopThisRound: updatedAcquireToTop,
+          currTurn: newTurn,
+          canEndTurn: false // Still have card selection pending
+        }
+      }
+      
       // Check if this reward has a custom effect that needs card selection
       if(reward.custom === CustomEffect.OTHER_MEMORY) {
-        const player = state.players.find(p => p.id === playerId)
-        if(!player) return state
-        
         // Create a CardSelectChoice for the custom effect
         const choiceId = 'OTHER_MEMORY-' + crypto.randomUUID()
         const cardSelectChoice: CardSelectChoice = {
@@ -3203,4 +3359,43 @@ function getEffectChoice(currPlayer: Player, card: Card, effect: PlayEffect): Ca
     options,
     source: { type: GainSource.CARD, id: card.id, name: card.name }
   };
+}
+
+// Helper function to create CardSelectChoice for Imperium Row acquisition
+function createImperiumRowAcquireChoice(
+  playerId: number,
+  limit: number,
+  acquireToTop: boolean,
+  intrigueCard: IntrigueCard,
+  imperiumRow: Card[]
+): CardSelectChoice {
+  const choiceId = intrigueCard.name + '-ACQUIRE-' + crypto.randomUUID()
+  
+  // Filter cards by cost limit - show all cards but disable those above limit
+  const availableCards = imperiumRow.filter(card => (card.cost || 0) <= limit)
+  
+  return {
+    id: choiceId,
+    type: ChoiceType.CARD_SELECT,
+    prompt: `Choose a card from Imperium Row (cost ${limit} or less)`,
+    piles: [], // We'll pass cards directly via cards prop
+    cards: imperiumRow, // Pass Imperium Row cards directly
+    filter: (c: Card) => {
+      // Filter to only show cards within limit
+      const cost = c.cost || 0
+      return cost <= limit
+    },
+    selectionCount: 1,
+    disabled: availableCards.length === 0,
+    onResolve: (cardIds: number[]) => {
+      // The acquireToTopThisRound flag should already be set in state from RESOLVE_CHOICE
+      return {
+        type: 'ACQUIRE_CARD',
+        playerId,
+        cardId: cardIds[0],
+        freeAcquire: true
+      } as GameAction
+    },
+    source: { type: GainSource.INTRIGUE, id: intrigueCard.id, name: intrigueCard.name }
+  }
 }

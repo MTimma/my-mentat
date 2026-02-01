@@ -181,10 +181,14 @@ export interface Reward {
   mentat?: boolean
   // Intrigue: while active this round, acquired cards may be put on top of deck instead of discard.
   acquireToTopThisRound?: boolean
-  // Endgame tiebreaker modifier (e.g. “counts as 10 spice for tiebreakers”)
+  // Endgame tiebreaker modifier (e.g. "counts as 10 spice for tiebreakers")
   tiebreakerSpice?: number
   custom?: CustomEffect
   influence?: InfluenceAmounts
+  // Acquire effect: allows acquiring a card from Imperium Row with a cost limit
+  acquire?: {
+    limit: number
+  }
 }
 
 export enum EffectTiming {
@@ -384,6 +388,7 @@ export interface FixedOptionsChoice extends PendingChoiceBase {
 export interface CardSelectChoice extends PendingChoiceBase {
   type: ChoiceType.CARD_SELECT
   piles: CardPile[]
+  cards?: Card[] // Optional: cards to select from directly (e.g., Imperium Row)
   filter?: (c: Card) => boolean
   selectionCount: number
   onResolve: (cardIds: number[]) => unknown // GameAction will be defined in GameContext
