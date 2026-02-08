@@ -618,3 +618,69 @@ button:disabled {
     width: 100%;
   }
 }
+
+.view-influence-button {
+  padding: 8px 16px;
+  background-color: #4a5568;
+  color: white;
+  border: 1px solid #2d3748;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s;
+}
+
+.view-influence-button:hover {
+  background-color: #5a6578;
+}
+
+.view-influence-button:active {
+  background-color: #3a4558;
+}
+
+.influence-table-modal {
+  background-color: #f4e4bc;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #ccc;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #000;
+  font-size: 1.5em;
+}
+
+.modal-header .close-button {
+  background: none;
+  border: none;
+  font-size: 2em;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.modal-header .close-button:hover {
+  background-color: #e0d4b0;
+  color: #000;
+}

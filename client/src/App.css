@@ -139,6 +139,44 @@
   flex-wrap: wrap;
 }
 
+.influence-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.influence-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #ccc;
+}
+
+.influence-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.9em;
+  font-weight: bold;
+  color: #000;
+}
+
+.influence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.influence-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85em;
+  color: #000;
+}
+
+.influence-item .influence-icon {
+  height: 20px;
+  width: auto;
+}
+
 .space-content {
   display: flex;
   flex-direction: column;

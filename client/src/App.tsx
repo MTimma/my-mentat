@@ -344,6 +344,7 @@ const GameContent = () => {
               isStartingPlayer={displayState.firstPlayerMarker === player.id}
               isOpen={openPlayerIndex === idx}
               onToggle={() => setOpenPlayerIndex(openPlayerIndex === idx ? null : idx)}
+              factionInfluence={displayState.factionInfluence}
             />
           ))}
         </div>
@@ -385,6 +386,7 @@ const GameContent = () => {
             combatStrength={gameState.combatStrength}
             combatPasses={gameState.combatPasses}
             players={gameState.players}
+            factionInfluence={displayState.factionInfluence}
             optionalEffects={gameState.currTurn?.optionalEffects || []}
             pendingChoices={gameState.currTurn?.pendingChoices || []}
             onResolveChoice={handleResolveChoice}

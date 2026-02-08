@@ -28,6 +28,7 @@ import {
   PendingChoice,
   CardSelectChoice,
   FixedOptionsChoice,
+  ChoiceOption,
   CustomEffect,
   ChoiceType,
   CardPile,
@@ -60,7 +61,7 @@ type GameAction =
   | { type: 'DEPLOY_TROOP'; playerId: number }
   | { type: 'RETREAT_TROOP'; playerId: number }
   | { type: 'PLAY_INTRIGUE'; cardId: number; playerId: number; targetPlayerId?: number }
-  | { type: 'ACQUIRE_CARD'; playerId: number; cardId: number; freeAcquire?: boolean }
+  | { type: 'ACQUIRE_CARD'; playerId: number; cardId: number; freeAcquire?: boolean; acquireToTop?: boolean }
   | { type: 'PLAY_COMBAT_INTRIGUE'; playerId: number; cardId: number }
   | { type: 'RESOLVE_COMBAT' }
   | { type: 'START_COMBAT_PHASE' }
@@ -593,17 +594,19 @@ function handleIntrigueEffect(
       }
       return
     }
+    // Acquire effects are handled in PLAY_INTRIGUE case, not here
+    // Check this BEFORE acquireToTopThisRound to prevent adding card to activeIntrigueThisRound
+    if (effect.reward.acquire) {
+      return
+    }
     // Immediate intrigue modifier (applies for the remainder of the round / reveal turn)
+    // Only process this if it's NOT part of an acquire effect (checked above)
     if (effect.reward.acquireToTopThisRound) {
       newState.acquireToTopThisRound[playerId] = true
       const active = newState.activeIntrigueThisRound[playerId] || []
       if (!active.some(c => c.id === card.id)) {
         newState.activeIntrigueThisRound[playerId] = [...active, card]
       }
-      return
-    }
-    // Acquire effects are handled in PLAY_INTRIGUE case, not here
-    if (effect.reward.acquire) {
       return
     }
     applyReward(effect.reward)
@@ -1104,7 +1107,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         effect.reward?.acquire && effect.choiceOpt
       ) || []
       
-      let pendingChoices: PendingChoice[] = []
+      const pendingChoices: PendingChoice[] = []
       
       if (acquireEffects.length > 0) {
         // Create FixedOptionsChoice for acquire effects
@@ -1113,7 +1116,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           const cost = effect.cost
           const reward = effect.reward
           const limit = reward.acquire?.limit || 0
-          const acquireToTop = Boolean(reward.acquireToTopThisRound)
           
           // Check if option is affordable
           let disabled = false
@@ -1979,7 +1981,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
     case 'ACQUIRE_CARD': {
-      const { playerId, cardId, freeAcquire } = action
+      const { playerId, cardId, freeAcquire, acquireToTop } = action
       const player = state.players.find(p => p.id === playerId)
       if (!player) return state
 
@@ -1991,7 +1993,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Only check persuasion cost if this is not a free acquire
       if (!freeAcquire && player.persuasion < cost) return state
 
-      const shouldAcquireToTop = Boolean(state.acquireToTopThisRound?.[playerId])
+      // Check acquireToTop parameter first (for single-card acquisitions like Bypass Protocol),
+      // then fall back to round flag (for round-long effects like Recruitment Mission)
+      const shouldAcquireToTop = acquireToTop !== undefined 
+        ? acquireToTop 
+        : Boolean(state.acquireToTopThisRound?.[playerId])
       const updatedDeck = shouldAcquireToTop ? [card, ...player.deck] : player.deck
       const updatedDiscardPile = shouldAcquireToTop ? player.discardPile : [...player.discardPile, card]
 
@@ -2302,8 +2308,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (!intrigueCard) return state
         
         // Pay cost if there is one
-        let updatedPlayer = { ...player }
-        let updatedGains = [...state.gains]
+        const updatedPlayer = { ...player }
+        const updatedGains = [...state.gains]
         const pushGain = (amount: number, type: RewardType) => {
           if (!amount) return
           updatedGains.push({
@@ -2313,7 +2319,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             name: source?.name || 'Unknown',
             amount,
             type,
-            source: source?.type || GainSource.INTRIGUE
+            source: (source?.type as GainSource) || GainSource.INTRIGUE
           })
         }
         
@@ -2336,11 +2342,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
         }
         
-        // Set acquireToTopThisRound flag if needed
-        let updatedAcquireToTop = { ...state.acquireToTopThisRound }
-        if (reward.acquireToTopThisRound) {
-          updatedAcquireToTop[playerId] = true
-        }
+        // For Bypass Protocol, we do NOT set acquireToTopThisRound round flag
+        // Instead, we pass acquireToTop directly to ACQUIRE_CARD action
+        // This ensures it only applies to the specific card being acquired
         
         // Create CardSelectChoice for Imperium Row
         const cardSelectChoice = createImperiumRowAcquireChoice(
@@ -2362,7 +2366,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ...state,
           players: state.players.map(p => p.id === playerId ? updatedPlayer : p),
           gains: updatedGains,
-          acquireToTopThisRound: updatedAcquireToTop,
           currTurn: newTurn,
           canEndTurn: false // Still have card selection pending
         }
@@ -3388,12 +3391,14 @@ function createImperiumRowAcquireChoice(
     selectionCount: 1,
     disabled: availableCards.length === 0,
     onResolve: (cardIds: number[]) => {
-      // The acquireToTopThisRound flag should already be set in state from RESOLVE_CHOICE
+      // Pass acquireToTop directly to ACQUIRE_CARD action for single-card acquisition
+      // This ensures it only applies to this specific card, not all cards for the round
       return {
         type: 'ACQUIRE_CARD',
         playerId,
         cardId: cardIds[0],
-        freeAcquire: true
+        freeAcquire: true,
+        acquireToTop: acquireToTop
       } as GameAction
     },
     source: { type: GainSource.INTRIGUE, id: intrigueCard.id, name: intrigueCard.name }

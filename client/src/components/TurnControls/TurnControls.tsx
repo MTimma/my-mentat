@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
-import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase } from '../../types/GameTypes'
+import React, { useState, useEffect } from 'react'
+import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
+import InfluenceTable from '../InfluenceTable/InfluenceTable'
 import './TurnControls.css'
 
 interface TurnControlsProps {
@@ -50,6 +51,7 @@ interface TurnControlsProps {
   intrigueDeck: IntrigueCard[]
   gamePhase: GamePhase
   activeIntrigueThisRound?: IntrigueCard[]
+  factionInfluence?: Record<FactionType, Record<number, number>>
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -95,9 +97,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onOpponentNoCardAck,
   intrigueDeck,
   gamePhase,
-  activeIntrigueThisRound = []
+  activeIntrigueThisRound = [],
+  factionInfluence
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
+  const [isInfluenceTableOpen, setIsInfluenceTableOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const [isIntrigueSelectionOpen, setIsIntrigueSelectionOpen] = useState(false)
@@ -108,6 +112,17 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const hasPendingVoiceReward = pendingRewards.some(r => r.reward.custom === CustomEffect.THE_VOICE && !r.disabled)
   const hasOpponentDiscard = Boolean(opponentDiscardState)
   const hasMandatoryRewards = pendingRewards.some(r => !r.disabled && !r.isTrash)
+
+  // Automatically open CardSelectChoice if it's the only pending choice and not already open
+  useEffect(() => {
+    const cardSelectChoices = pendingChoices.filter(c => c.type === ChoiceType.CARD_SELECT) as CardSelectChoice[]
+    if (cardSelectChoices.length === 1 && !activeCardSelect && !voiceSelectionActive && !hasOpponentDiscard) {
+      setActiveCardSelect(cardSelectChoices[0])
+    } else if (cardSelectChoices.length === 0 && activeCardSelect) {
+      // Clear activeCardSelect if there are no more card select choices
+      setActiveCardSelect(null)
+    }
+  }, [pendingChoices, activeCardSelect, voiceSelectionActive, hasOpponentDiscard])
 
   if (!activePlayer) return null
   const isEndGame = gamePhase === GamePhase.END_GAME
@@ -234,6 +249,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       })
     }
     if(reward.victoryPoints) right.push(<span key="vp">{reward.victoryPoints} VP</span>)
+    if(reward.acquire) {
+      const limit = reward.acquire.limit
+      const toTopText = reward.acquireToTopThisRound ? ' to top of deck' : ''
+      right.push(<span key="acquire">Acquire card (cost {limit} or less{toTopText})</span>)
+    }
     if(reward.custom) {
       // Special handling for SECRETS_STEAL to show player colors
       if(reward.custom === CustomEffect.SECRETS_STEAL && players) {
@@ -757,6 +777,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             </div>
           )}
         </div>
+        <div style={{ marginBottom: '8px' }}>
+          <button 
+            className="view-influence-button"
+            onClick={() => setIsInfluenceTableOpen(true)}
+            title="View Faction Influence Table"
+          >
+            View Influence Table
+          </button>
+        </div>
         <div className="control-buttons">
           <div className="button-pair">
             <button 
@@ -892,6 +921,29 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           isRevealTurn={false}
           text="Select card to trash"
         />
+
+        {isInfluenceTableOpen && factionInfluence && (
+          <div className="dialog-overlay" onClick={() => setIsInfluenceTableOpen(false)}>
+            <div 
+              className="influence-table-modal" 
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <h3>Faction Influence</h3>
+                <button 
+                  className="close-button"
+                  onClick={() => setIsInfluenceTableOpen(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <InfluenceTable 
+                players={players}
+                factionInfluence={factionInfluence}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </>
   )
