@@ -416,6 +416,7 @@ const GameContent = () => {
             intrigueDeck={gameState.intrigueDeck}
             gamePhase={gameState.phase}
             activeIntrigueThisRound={activePlayer ? (gameState.activeIntrigueThisRound?.[activePlayer.id] || []) : []}
+            gameState={gameState}
           />
         </div>
         <div className="endgame-container" hidden={gameState.phase !== GamePhase.END_GAME}>

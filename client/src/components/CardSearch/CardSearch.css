@@ -183,6 +183,7 @@
   object-fit: cover;
   border-radius: 4px;
   transform-origin: center;
+  z-index: 1;
 }
 
 .card.selected .card-image {
@@ -265,6 +266,41 @@
   line-height: 1.4;
 }
 
+.card.disabled {
+  opacity: 0.4;
+  filter: grayscale(0.8);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.card.disabled:hover {
+  transform: scale(0.7); /* No hover effect */
+}
+
+.card-disabled-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  z-index: 10;
+}
+
+.card-disabled-text {
+  color: #fff;
+  font-weight: bold;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 4px;
+  white-space: pre-line;
+}
 
 /* Scrollbar Styling */
 .cards-grid::-webkit-scrollbar {

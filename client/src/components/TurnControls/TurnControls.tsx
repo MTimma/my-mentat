@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType } from '../../types/GameTypes'
+import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
 import InfluenceTable from '../InfluenceTable/InfluenceTable'
+import { playRequirementSatisfied } from '../GameContext/requirements'
 import './TurnControls.css'
 
 interface TurnControlsProps {
@@ -52,6 +53,7 @@ interface TurnControlsProps {
   gamePhase: GamePhase
   activeIntrigueThisRound?: IntrigueCard[]
   factionInfluence?: Record<FactionType, Record<number, number>>
+  gameState?: GameState
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -98,7 +100,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   intrigueDeck,
   gamePhase,
   activeIntrigueThisRound = [],
-  factionInfluence
+  factionInfluence,
+  gameState
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isInfluenceTableOpen, setIsInfluenceTableOpen] = useState(false)
@@ -209,6 +212,106 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     if(cost.troops && activePlayer.troops < cost.troops) return false
     // trash costs always affordable (player chooses card)
     return true
+  }
+
+    const checkIntrigueCardPlayability = (card: IntrigueCard): { playable: boolean; reason?: string } => {
+      if (!activePlayer || !gameState) {
+        return { playable: false }
+      }
+
+      const effects = card.playEffect || []
+      if (effects.length === 0) {
+        return { playable: false, reason: "Coming soon" } 
+      }
+
+      // Filter effects valid for current phase
+      const validEffects = effects.filter(effect => {
+        if (effect.phase) {
+          const phases = Array.isArray(effect.phase) ? effect.phase : [effect.phase]
+          return phases.includes(gamePhase)
+        }
+        return true // No phase restriction means valid for all phases
+      })
+
+      if (validEffects.length === 0) {
+        return { playable: false, reason: "Invalid phase" }
+      }
+
+    // Check if there are any effects with choiceOpt (OR effects)
+    const hasChoiceOpt = validEffects.some(e => e.choiceOpt)
+    
+    if (hasChoiceOpt) {
+      // For OR effects, check if at least one option is playable
+      const playableOptions = validEffects.filter(effect => {
+        // Check requirements
+        if (effect.requirement) {
+          if (!playRequirementSatisfied(effect, card, gameState, activePlayer.id)) {
+            return false
+          }
+        }
+        
+        // Check costs
+        if (effect.cost) {
+          if (!isAffordable(effect.cost)) {
+            return false
+          }
+        }
+        
+        return true
+      })
+      
+      if (playableOptions.length === 0) {
+        // Check which reason to show
+        const hasUnaffordableCost = validEffects.some(e => e.cost && !isAffordable(e.cost))
+        const hasUnmetRequirement = validEffects.some(e => 
+          e.requirement && !playRequirementSatisfied(e, card, gameState, activePlayer.id)
+        )
+        
+        if (hasUnaffordableCost && hasUnmetRequirement) {
+          return { playable: false, reason: "Cannot afford\nRequirements not met" }
+        }
+        if (hasUnaffordableCost) {
+          return { playable: false, reason: "Cannot afford" }
+        }
+        if (hasUnmetRequirement) {
+          return { playable: false, reason: "Requirements not met" }
+        }
+        return { playable: false, reason: "Cannot afford" }
+      }
+      
+      return { playable: true }
+    } else {
+      // For non-OR effects, ALL effects must be playable
+      // Check all effects first to see if we have both issues
+      let hasUnaffordableCost = false
+      let hasUnmetRequirement = false
+      
+      for (const effect of validEffects) {
+        if (effect.requirement) {
+          if (!playRequirementSatisfied(effect, card, gameState, activePlayer.id)) {
+            hasUnmetRequirement = true
+          }
+        }
+        
+        if (effect.cost) {
+          if (!isAffordable(effect.cost)) {
+            hasUnaffordableCost = true
+          }
+        }
+      }
+      
+      if (hasUnaffordableCost && hasUnmetRequirement) {
+        return { playable: false, reason: "Cannot afford\nRequirements not met" }
+      }
+      if (hasUnaffordableCost) {
+        return { playable: false, reason: "Cannot afford" }
+      }
+      if (hasUnmetRequirement) {
+        return { playable: false, reason: "Requirements not met" }
+      }
+      
+      return { playable: true }
+    }
   }
 
   const Icon: React.FC<{ type: string; className?: string }> = ({ type, className }) =>
@@ -898,6 +1001,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           onCancel={() => setIsIntrigueSelectionOpen(false)}
           isRevealTurn={false}
           text="Select an Intrigue card to play"
+          getCardPlayability={(card) => checkIntrigueCardPlayability(card as IntrigueCard)}
         />
 
         <CardSearch

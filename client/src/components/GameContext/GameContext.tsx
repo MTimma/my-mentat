@@ -425,7 +425,8 @@ function applyChoiceReward(state: GameState, reward: Reward, playerId: number): 
   const newState = { 
     ...state,
     gains: [...state.gains], // Create a copy of the gains array too
-    combatStrength: { ...state.combatStrength } // Create a copy of combatStrength too
+    combatStrength: { ...state.combatStrength }, // Create a copy of combatStrength too
+    factionInfluence: { ...state.factionInfluence } // Create a copy of factionInfluence
   }
   const originalPlayer = newState.players.find(p => p.id === playerId)
   if (!originalPlayer) return state
@@ -466,6 +467,21 @@ function applyChoiceReward(state: GameState, reward: Reward, playerId: number): 
     pushGain(reward.deployTroops, RewardType.DEPLOY)
   }
   if (reward.victoryPoints) { player.victoryPoints += reward.victoryPoints; pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS)}
+  
+  // Handle influence rewards
+  if (reward.influence) {
+    reward.influence.amounts.forEach(({ faction, amount }) => {
+      const currentInfluence = newState.factionInfluence[faction]?.[playerId] || 0
+      newState.factionInfluence = {
+        ...newState.factionInfluence,
+        [faction]: {
+          ...newState.factionInfluence[faction],
+          [playerId]: currentInfluence + amount
+        }
+      }
+      pushGain(amount, RewardType.INFLUENCE)
+    })
+  }
 
   newState.players = newState.players.map(p => p.id === playerId ? player : p)
   return newState
@@ -558,6 +574,10 @@ function handleIntrigueEffect(
       updatedPlayer.agents += 1
       pushGain(1, RewardType.MENTAT)
     }
+    if (reward.custom === CustomEffect.SHUFFLE_DISCARD_INTO_DECK) {
+      updatedPlayer.deck = [...updatedPlayer.deck, ...updatedPlayer.discardPile]
+      updatedPlayer.discardPile = []
+    }
   }
 
   card.playEffect?.forEach(effect => {
@@ -609,6 +629,12 @@ function handleIntrigueEffect(
       }
       return
     }
+    
+    // Skip effects with costs or chooseOne influence - these need choices created in PLAY_INTRIGUE
+    if (effect.cost || effect.reward.influence?.chooseOne) {
+      return // Will be handled in PLAY_INTRIGUE case
+    }
+    
     applyReward(effect.reward)
   })
 
@@ -1102,12 +1128,63 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       const updatedState = handleIntrigueEffect(state, card, playerId)
       
+      const pendingChoices: PendingChoice[] = []
+      
+      // Check for effects that need choices (acquire or chooseOne influence)
+      card.playEffect?.forEach(effect => {
+        if (!effect.reward) return
+        if (!playRequirementSatisfied(effect, card, state, playerId)) return
+        
+        // Check phase gating
+        if (effect.phase) {
+          const phases = Array.isArray(effect.phase) ? effect.phase : [effect.phase]
+          if (!phases.includes(state.phase)) return
+        }
+        
+        // Skip timing-based effects
+        if (effect.timing === EffectTiming.ON_REVEAL_THIS_ROUND) return
+        if (effect.reward.tiebreakerSpice) return
+        if (effect.reward.acquire) return // Handled separately below
+        if (effect.reward.acquireToTopThisRound) return
+        
+        // Check if player can afford the cost
+        const canAfford = !effect.cost || (
+          (!effect.cost.spice || player.spice >= effect.cost.spice) &&
+          (!effect.cost.water || player.water >= effect.cost.water) &&
+          (!effect.cost.solari || player.solari >= effect.cost.solari) &&
+          (!effect.cost.troops || player.troops >= effect.cost.troops)
+        )
+        if (!canAfford) return
+        
+        // Handle chooseOne influence
+        if (effect.reward.influence?.chooseOne && effect.reward.influence.amounts.length > 0) {
+          const choiceId = card.name + '-INFLUENCE-CHOOSE-' + crypto.randomUUID()
+          const options: ChoiceOption[] = effect.reward.influence.amounts.map(({ faction, amount }) => ({
+            cost: effect.cost, // Same cost for all options
+            reward: {
+              influence: {
+                amounts: [{ faction, amount }]
+              }
+            },
+            disabled: false
+          }))
+          
+          const fixedOptionsChoice: FixedOptionsChoice = {
+            id: choiceId,
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Choose a faction to gain influence with',
+            options,
+            source: { type: GainSource.INTRIGUE, id: card.id, name: card.name }
+          }
+          
+          pendingChoices.push(fixedOptionsChoice)
+        }
+      })
+      
       // Check if this intrigue card has acquire effects that need choices
       const acquireEffects = card.playEffect?.filter(effect => 
         effect.reward?.acquire && effect.choiceOpt
       ) || []
-      
-      const pendingChoices: PendingChoice[] = []
       
       if (acquireEffects.length > 0) {
         // Create FixedOptionsChoice for acquire effects
@@ -2421,11 +2498,73 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       
       // Normal reward without custom effect
+      // Check if we need to pay a cost first
+      const choice = state.currTurn.pendingChoices?.find(c => c.id === action.choiceId)
+      const updatedPlayer = { ...player }
+      const updatedGains = [...state.gains]
+      
+      if (choice && choice.type === ChoiceType.FIXED_OPTIONS) {
+        const fixedChoice = choice as FixedOptionsChoice
+        const selectedOption = fixedChoice.options.find(opt => {
+          // Match the reward - for influence, match by faction
+          if (reward.influence && opt.reward.influence) {
+            return opt.reward.influence.amounts.some(a => 
+              reward.influence?.amounts.some(r => r.faction === a.faction && r.amount === a.amount)
+            )
+          }
+          // For other rewards, do a simple comparison
+          return JSON.stringify(opt.reward) === JSON.stringify(reward)
+        })
+        
+        if (selectedOption?.cost) {
+          const cost = selectedOption.cost
+          const pushGain = (amount: number, type: RewardType) => {
+            updatedGains.push({
+              round: state.currentRound,
+              playerId,
+              sourceId: source?.id || 0,
+              name: source?.name || 'Unknown',
+              amount,
+              type,
+              source: (source?.type as GainSource) || GainSource.INTRIGUE
+            })
+          }
+          
+          // Check affordability
+          if (cost.spice && updatedPlayer.spice < cost.spice) return state
+          if (cost.water && updatedPlayer.water < cost.water) return state
+          if (cost.solari && updatedPlayer.solari < cost.solari) return state
+          if (cost.troops && updatedPlayer.troops < cost.troops) return state
+          
+          // Deduct cost
+          if (cost.spice) {
+            updatedPlayer.spice -= cost.spice
+            pushGain(-cost.spice, RewardType.SPICE)
+          }
+          if (cost.water) {
+            updatedPlayer.water -= cost.water
+            pushGain(-cost.water, RewardType.WATER)
+          }
+          if (cost.solari) {
+            updatedPlayer.solari -= cost.solari
+            pushGain(-cost.solari, RewardType.SOLARI)
+          }
+          if (cost.troops) {
+            updatedPlayer.troops -= cost.troops
+            pushGain(-cost.troops, RewardType.TROOPS)
+          }
+        }
+      }
+      
       const newTurn = { ...state.currTurn }
-      newTurn.pendingChoices = []
-      const newState = applyChoiceReward(state, reward, playerId)
+      newTurn.pendingChoices = (newTurn.pendingChoices || []).filter(c => c.id !== action.choiceId)
+      const newState = applyChoiceReward(
+        { ...state, players: state.players.map(p => p.id === playerId ? updatedPlayer : p), gains: updatedGains },
+        reward,
+        playerId
+      )
       newState.currTurn = newTurn
-      newState.canEndTurn = true // No more choices pending
+      newState.canEndTurn = newTurn.pendingChoices.length === 0
       return newState
     }
     case 'RESOLVE_CARD_SELECT': {

@@ -527,15 +527,17 @@ export enum CustomEffect {
   KWISATZ_HADERACH = 'KWISATZ_HADERACH',
   LIET_KYNES = 'LIET_KYNES',
   SECRETS_STEAL = 'SECRETS_STEAL',
-  POWER_PLAY = 'POWER_PLAY', // TODO need to implement
-  REVEREND_MOTHER_MOHIAM = 'REVEREND_MOTHER_MOHIAM', // TODO need to implement
-  TEST_OF_HUMANITY = 'TEST_OF_HUMANITY', // TODO need to implement
-  THE_VOICE = 'THE_VOICE', // TODO need to implement
-  GUILD_BANKERS = 'GUILD_BANKERS', // TODO need to implement
+  POWER_PLAY = 'POWER_PLAY', 
+  REVEREND_MOTHER_MOHIAM = 'REVEREND_MOTHER_MOHIAM', 
+  TEST_OF_HUMANITY = 'TEST_OF_HUMANITY',
+  THE_VOICE = 'THE_VOICE',
+  GUILD_BANKERS = 'GUILD_BANKERS',
+  SHUFFLE_DISCARD_INTO_DECK = 'SHUFFLE_DISCARD_INTO_DECK',
 }
 
 // Custom effects that are auto-applied and don't need user input
 export const AUTO_APPLIED_CUSTOM_EFFECTS: CustomEffect[] = [
   CustomEffect.KWISATZ_HADERACH,
   CustomEffect.LIET_KYNES,
+  CustomEffect.SHUFFLE_DISCARD_INTO_DECK,
 ]

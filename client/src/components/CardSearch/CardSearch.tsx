@@ -15,6 +15,7 @@ interface CardSearchProps {
   text: string
   onSelectionChange?: (selectedCards: Card[]) => void
   hideTitle?: boolean
+  getCardPlayability?: (card: Card) => { playable: boolean; reason?: string }
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({
@@ -30,6 +31,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
   text,
   onSelectionChange,
   hideTitle = false,
+  getCardPlayability,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
@@ -99,6 +101,14 @@ const CardSearch: React.FC<CardSearchProps> = ({
   if (!isOpen) return null
 
   const handleCardClick = (card: Card) => {
+    // Check if card is playable
+    if (getCardPlayability) {
+      const playability = getCardPlayability(card)
+      if (!playability.playable) {
+        return // Don't allow selection of unplayable cards
+      }
+    }
+
     let nextSelected: Card[]
 
     if (!isRevealTurn) {
@@ -175,62 +185,72 @@ const CardSearch: React.FC<CardSearchProps> = ({
         </div>
       </div>
       <div className="cards-grid">
-        {filteredCards.map(card => (
-          <div
-            key={card.id}
-            className={`card ${selectedCards?.find(c => c.id === card.id) ? 'selected' : ''}`}
-            onClick={() => handleCardClick(card)}
-          >
-            {card.image && (
-              <img
-                src={card.image}
-                alt={card.name}
-                className="card-image"
-              />
-            )}
-            {!card.image && (
-              <>
-                <div className="card-header">
-                  <h3>{card.name}</h3>
-                  {card.cost && <span className="persuasion">Cost: {card.cost}</span>}
-                </div>
-                <div className="card-icons">
-                  {card.agentIcons.map((icon, index) => (
-                    <span
-                      key={index}
-                      className="agent-icon"
-                    >
-                      {icon}
-                    </span>
-                  ))}
-                </div>
-                {card.playEffect && (
-                  <div className="card-effect">
-                    {card.playEffect.map((effect, index) => (
-                      <div key={index}>
-                        Reveal: {JSON.stringify(effect.reward)}
-                      </div>
+        {filteredCards.map(card => {
+          const playability = getCardPlayability ? getCardPlayability(card) : { playable: true }
+          const isDisabled = !playability.playable
+          
+          return (
+            <div
+              key={card.id}
+              className={`card ${selectedCards?.find(c => c.id === card.id) ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+              onClick={() => handleCardClick(card)}
+            >
+              {card.image && (
+                <img
+                  src={card.image}
+                  alt={card.name}
+                  className="card-image"
+                />
+              )}
+              {!card.image && (
+                <>
+                  <div className="card-header">
+                    <h3>{card.name}</h3>
+                    {card.cost && <span className="persuasion">Cost: {card.cost}</span>}
+                  </div>
+                  <div className="card-icons">
+                    {card.agentIcons.map((icon, index) => (
+                      <span
+                        key={index}
+                        className="agent-icon"
+                      >
+                        {icon}
+                      </span>
                     ))}
                   </div>
-                )}
-                {card.playEffect && (
-                  <div className="card-effect">
-                    {card.playEffect.map((effect, index) => (
-                      <div key={index}>
-                        Play: {JSON.stringify(effect.reward)}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {card.acquireEffect && (
-                  <p className="card-acquire-effect">
-                    Acquire: {JSON.stringify(card.acquireEffect)}
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-        ))}
+                  {card.playEffect && (
+                    <div className="card-effect">
+                      {card.playEffect.map((effect, index) => (
+                        <div key={index}>
+                          Reveal: {JSON.stringify(effect.reward)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {card.playEffect && (
+                    <div className="card-effect">
+                      {card.playEffect.map((effect, index) => (
+                        <div key={index}>
+                          Play: {JSON.stringify(effect.reward)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {card.acquireEffect && (
+                    <p className="card-acquire-effect">
+                      Acquire: {JSON.stringify(card.acquireEffect)}
+                    </p>
+                  )}
+                </>
+              )}
+              {isDisabled && playability.reason && (
+                <div className="card-disabled-overlay">
+                  <div className="card-disabled-text">{playability.reason}</div>
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

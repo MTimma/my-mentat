@@ -9,6 +9,7 @@ export const PLAY_EFFECT_TEXTS: Partial<Record<CustomEffect, string>> = {
     [CustomEffect.REVEREND_MOTHER_MOHIAM]: "If you have another Bene Gesserit card in play, each opponent discards two cards.",
     [CustomEffect.TEST_OF_HUMANITY]: "Each opponent chooses: Discard a card -OR- Lose a deployed troop.",
     [CustomEffect.THE_VOICE]: "Choose any board space. Opponents can't send their next Agents there this round.",
+    [CustomEffect.SHUFFLE_DISCARD_INTO_DECK]: "Shuffle your discard pile into your deck.",
 }
 
 export const PLAY_EFFECT_DISABLED_TEXTS: Partial<Record<CustomEffect, string>> = {

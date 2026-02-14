@@ -1,4 +1,4 @@
-import { IntrigueCard, IntrigueCardType, FactionType, EffectTiming, GamePhase } from '../types/GameTypes'
+import { IntrigueCard, IntrigueCardType, FactionType, EffectTiming, GamePhase, CustomEffect } from '../types/GameTypes'
 
 export const intrigueCards: IntrigueCard[] = [
   {
@@ -137,7 +137,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'If you have a seat on the High Council: gain 2 spice.',
     image: '/intrigue/base/councilors_dispensation.png',
     agentIcons: [],
-    playEffect: [{ reward: { spice: 2 } }]
+    playEffect: [{ requirement: { highCouncil: true }, reward: { spice: 2 } }]
   },
   {
     id: 11,
@@ -251,7 +251,10 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Shuffle your discard pile into your deck, then draw 1 card.',
     image: '/intrigue/base/refocus.png',
     agentIcons: [],
-    playEffect: [{ reward: { drawCards: 1 } }]
+    playEffect: [
+      { reward: { custom: CustomEffect.SHUFFLE_DISCARD_INTO_DECK } },
+      { reward: { drawCards: 1 } }
+    ]
   },
   {
     id: 23,
