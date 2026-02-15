@@ -1,4 +1,4 @@
-import { Card, FactionType, GameState, PlayEffect, RevealEffect } from '../../types/GameTypes'
+import { Card, FactionType, GameState, PlayEffect, RevealEffect, IntriguePlayEffect, IntrigueCard } from '../../types/GameTypes'
 
 export function playRequirementSatisfied(
   effect: PlayEffect,
@@ -89,4 +89,50 @@ export function revealRequirementSatisfied(
   return satisfiesDirect() && satisfiesOrGroup()
 }
 
+export function intrigueRequirementSatisfied(
+  effect: IntriguePlayEffect,
+  currCard: IntrigueCard,
+  state: GameState,
+  playerId: number
+): boolean {
+  const req = effect?.requirement
+  if (!req) return true
+  if (effect.reward?.mentat === true) {
+    const hasOtherRewards = Object.keys(effect.reward).some(key => key !== 'mentat')
+    if (!hasOtherRewards && state.mentatOwner !== null) {
+      return false
+    }
+  }
+  const satisfiesDirect = (): boolean => {
+    if (req.influence) {
+      const factionType = req.influence.faction
+      const factionAmount = req.influence.amount
+      const have = state.factionInfluence[factionType]?.[playerId] || 0
+      if (have < factionAmount) return false
+    }
+    if (req.alliance) {
+      if (state.factionAlliances[req.alliance] !== playerId) return false
+    }
+    if (req.highCouncil !== undefined) {
+      const player = state.players.find(p => p.id === playerId)
+      if (!player) return false
+      if (req.highCouncil && !player.hasHighCouncilSeat) return false
+      if (!req.highCouncil && player.hasHighCouncilSeat) return false
+    }
+    return true
+  }
 
+  const satisfiesOrGroup = (): boolean => {
+    if (!req.or || req.or.length === 0) return true
+    return req.or.some(subReq =>
+      intrigueRequirementSatisfied(
+        { ...effect, requirement: subReq },
+        currCard,
+        state,
+        playerId
+      )
+    )
+  }
+
+  return satisfiesDirect() && satisfiesOrGroup()
+}

@@ -4,7 +4,7 @@ import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
 import InfluenceTable from '../InfluenceTable/InfluenceTable'
-import { playRequirementSatisfied } from '../GameContext/requirements'
+import { intrigueRequirementSatisfied } from '../GameContext/requirements'
 import './TurnControls.css'
 
 interface TurnControlsProps {
@@ -241,11 +241,19 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     const hasChoiceOpt = validEffects.some(e => e.choiceOpt)
     
     if (hasChoiceOpt) {
+      let mentatTaken = false
       // For OR effects, check if at least one option is playable
       const playableOptions = validEffects.filter(effect => {
-        // Check requirements
+        if (effect.reward?.mentat === true) {
+          const hasOtherRewards = Object.keys(effect.reward).some(key => key !== 'mentat')
+          if (!hasOtherRewards && gameState.mentatOwner !== null) {
+            mentatTaken = true
+            return false
+          }
+        }
+        
         if (effect.requirement) {
-          if (!playRequirementSatisfied(effect, card, gameState, activePlayer.id)) {
+          if (!intrigueRequirementSatisfied(effect, card, gameState, activePlayer.id)) {
             return false
           }
         }
@@ -264,19 +272,26 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         // Check which reason to show
         const hasUnaffordableCost = validEffects.some(e => e.cost && !isAffordable(e.cost))
         const hasUnmetRequirement = validEffects.some(e => 
-          e.requirement && !playRequirementSatisfied(e, card, gameState, activePlayer.id)
+          e.requirement && !intrigueRequirementSatisfied(e, card, gameState, activePlayer.id)
         )
         
-        if (hasUnaffordableCost && hasUnmetRequirement) {
-          return { playable: false, reason: "Cannot afford\nRequirements not met" }
+        // Build conditional message from flags
+        const reasons: string[] = []
+        if (mentatTaken) {
+          reasons.push("Mentat already taken")
         }
         if (hasUnaffordableCost) {
-          return { playable: false, reason: "Cannot afford" }
+          reasons.push("Cannot afford")
         }
         if (hasUnmetRequirement) {
-          return { playable: false, reason: "Requirements not met" }
+          reasons.push("Requirements not met")
         }
-        return { playable: false, reason: "Cannot afford" }
+        
+        const reason = reasons.length > 0 
+          ? reasons.join("\n") 
+          : "Cannot afford"
+        
+        return { playable: false, reason }
       }
       
       return { playable: true }
@@ -286,9 +301,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       let hasUnaffordableCost = false
       let hasUnmetRequirement = false
       
+      // Check if Mentat is unavailable (if any effect rewards a Mentat)
+      if (hasMentatUnavailable) {
+        hasUnaffordableCost = true
+      }
+      
       for (const effect of validEffects) {
         if (effect.requirement) {
-          if (!playRequirementSatisfied(effect, card, gameState, activePlayer.id)) {
+          if (!intrigueRequirementSatisfied(effect, card, gameState, activePlayer.id)) {
             hasUnmetRequirement = true
           }
         }

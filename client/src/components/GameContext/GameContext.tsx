@@ -43,7 +43,7 @@ import { FOLDSPACE_DECK } from '../../data/cards'
 import { CONFLICTS } from '../../data/conflicts'
 import { PLAY_EFFECT_TEXTS } from '../../data/effectTexts'
 import { intrigueCards } from '../../services/IntrigueDeckService'
-import { playRequirementSatisfied, revealRequirementSatisfied } from './requirements'
+import { playRequirementSatisfied, revealRequirementSatisfied, intrigueRequirementSatisfied } from './requirements'
 
 interface GameContextType {
   gameState: GameState
@@ -424,9 +424,9 @@ function applyRewardToPlayer(
 function applyChoiceReward(state: GameState, reward: Reward, playerId: number): GameState {
   const newState = { 
     ...state,
-    gains: [...state.gains], // Create a copy of the gains array too
-    combatStrength: { ...state.combatStrength }, // Create a copy of combatStrength too
-    factionInfluence: { ...state.factionInfluence } // Create a copy of factionInfluence
+    gains: [...state.gains], 
+    combatStrength: { ...state.combatStrength }, 
+    factionInfluence: { ...state.factionInfluence }
   }
   const originalPlayer = newState.players.find(p => p.id === playerId)
   if (!originalPlayer) return state
@@ -582,7 +582,7 @@ function handleIntrigueEffect(
 
   card.playEffect?.forEach(effect => {
     if (!effect.reward) return
-    if (!playRequirementSatisfied(effect, card, state, playerId)) return
+    if (!intrigueRequirementSatisfied(effect, card, state, playerId)) return
     // Optional phase gating on effects (used by multi-phase intrigue cards like Tiebreaker)
     if (effect.phase) {
       const phases = Array.isArray(effect.phase) ? effect.phase : [effect.phase]

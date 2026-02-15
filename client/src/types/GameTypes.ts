@@ -143,10 +143,16 @@ export interface CardEffectReq {
   alliance?: FactionType
 }
 
+export interface IntrigueReq extends CardEffectReq {
+  or?: IntrigueReq[]
+  highCouncil?: boolean
+}
+
 export type PlayEffect = CardEffect<PlayReq> & {
   beforePlaceAgent?: { recallAgent?: boolean } // This is only used for Kwisatz Haderach
 }
 export type RevealEffect = CardEffect<RevealReq>
+export type IntriguePlayEffect = CardEffect<IntrigueReq>
 
 export interface Cost {
   spice?: number
@@ -254,6 +260,7 @@ export interface IntrigueCard extends Card {
   type: IntrigueCardType
   description: string
   targetPlayer?: boolean
+  playEffect?: IntriguePlayEffect[]  // Override to use IntriguePlayEffect instead of PlayEffect
 }
 
 export interface ScheduledIntrigueEffect {
