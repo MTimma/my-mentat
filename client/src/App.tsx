@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import GameBoard from './components/GameBoard'
-import PlayerArea from './components/PlayerArea'
 import ImperiumRow from './components/ImperiumRow/ImperiumRow'
 import TurnHistory from './components/TurnHistory'
 import { GameProvider } from './components/GameContext/GameContext'
@@ -33,7 +32,6 @@ const GameContent = () => {
     undoToTurn
   } = useTimeTravel()
 
-  const [openPlayerIndex, setOpenPlayerIndex] = useState<number | null>(null)
   const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(false)
   const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
   const [onSelectiveBreedingSelect, setOnSelectiveBreedingSelect] = useState<((card: Card) => void) | null>(null)
@@ -335,19 +333,6 @@ const GameContent = () => {
           onVoiceSpaceSelect={handleVoiceSpaceSelect}
           blockedSpaces={displayState.blockedSpaces || []}
         />
-        <div className="players-area">
-          {displayState.players.map((player, idx) => (
-            <PlayerArea 
-              key={player.id} 
-              player={player} 
-              isActive={displayState.activePlayerId === player.id}
-              isStartingPlayer={displayState.firstPlayerMarker === player.id}
-              isOpen={openPlayerIndex === idx}
-              onToggle={() => setOpenPlayerIndex(openPlayerIndex === idx ? null : idx)}
-              factionInfluence={displayState.factionInfluence}
-            />
-          ))}
-        </div>
         </div>
         {needsImperiumSelection && (
           <ImperiumRowSelect
@@ -387,6 +372,10 @@ const GameContent = () => {
             combatPasses={gameState.combatPasses}
             players={gameState.players}
             factionInfluence={displayState.factionInfluence}
+            factionAlliances={gameState.factionAlliances}
+            controlMarkers={gameState.controlMarkers}
+            firstPlayerMarker={gameState.firstPlayerMarker}
+            mentatOwner={gameState.mentatOwner}
             optionalEffects={gameState.currTurn?.optionalEffects || []}
             pendingChoices={gameState.currTurn?.pendingChoices || []}
             onResolveChoice={handleResolveChoice}

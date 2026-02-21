@@ -1,9 +1,7 @@
 import React, { useState } from 'react'
 import { SpaceProps, AgentIcon, Player, ConflictCard, MakerSpace, Card } from '../types/GameTypes'
 import BoardSpace from './BoardSpace/BoardSpace'
-import CombatArea from './CombatArea'
 import { BOARD_SPACES } from '../data/boardSpaces'
-import ConflictSummary from './ConflictSummary/ConflictSummary'
 import SellMelangePopup from './SellMelangePopup/SellMelangePopup'
 
 interface SellMelangeData {
@@ -187,11 +185,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
           })}
         </div>
       ))}
-      {currentConflict && <ConflictSummary currentConflict={currentConflict} />}
-      <CombatArea
-        troops={combatTroops}
-        players={players}
-      />
       {showSellMelangePopup && (
         <SellMelangePopup
           playerSpice={players.find(p => p.id === currentPlayer)?.spice || 0}

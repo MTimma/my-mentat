@@ -1,0 +1,214 @@
+.player-overview-modal {
+  width: min(95vw, 980px);
+  max-height: 92vh;
+  overflow: auto;
+  background: #f0e2be;
+  border: 1px solid #8b6f39;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  color: #1c1a14;
+}
+
+.player-overview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #b79c64;
+  background: linear-gradient(180deg, #ead6a6 0%, #e0c98f 100%);
+}
+
+.player-overview-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.player-overview-close {
+  background: transparent;
+  border: 1px solid #8b6f39;
+  border-radius: 4px;
+  color: #3a2f18;
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.player-overview-close:hover {
+  background: #d9bf83;
+}
+
+.player-overview-footer {
+  display: none;
+}
+
+.player-overview-table-wrap {
+  padding: 12px;
+}
+
+.player-overview-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: #faf2dd;
+}
+
+.player-overview-table th,
+.player-overview-table td {
+  border: 1px solid #c5ab73;
+  text-align: center;
+  padding: 6px 4px;
+  font-size: 0.88rem;
+}
+
+.player-overview-table .stat-col {
+  width: 21%;
+  background: #e7d4a5;
+}
+
+.player-overview-table .player-col {
+  background: #efe0ba;
+  border-top: 4px solid #999;
+  vertical-align: top;
+}
+
+.player-overview-table .player-col.player-red {
+  border-top-color: #d64545;
+}
+
+.player-overview-table .player-col.player-green {
+  border-top-color: #49a75a;
+}
+
+.player-overview-table .player-col.player-yellow {
+  border-top-color: #c6a72e;
+}
+
+.player-overview-table .player-col.player-blue {
+  border-top-color: #3b79c5;
+}
+
+.player-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.player-badges {
+  margin-top: 4px;
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.player-badge,
+.inline-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  padding: 1px 4px;
+  border-radius: 8px;
+  border: 1px solid #8f7848;
+  background: #fff8e8;
+  font-size: 0.64rem;
+  font-weight: 700;
+  margin-left: 3px;
+}
+
+.stat-label {
+  text-align: left;
+  font-weight: 600;
+  background: #f2e6c9;
+  white-space: nowrap;
+}
+
+.stat-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.best-value {
+  background: #fff7ce;
+  font-weight: 700;
+}
+
+/* Slight red tint for garrison / deployed / strength rows */
+.player-overview-table tr.row-combat .stat-label,
+.player-overview-table tr.row-combat td {
+  background: rgba(210, 165, 155, 0.55);
+}
+
+.player-overview-table tr.row-combat td.best-value {
+  background: rgba(255, 247, 206, 0.9);
+}
+
+@media (max-width: 768px) {
+  .player-overview-modal {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .player-overview-close-top {
+    display: none;
+  }
+
+  .player-overview-footer {
+    display: flex;
+    justify-content: center;
+    padding: 14px;
+    border-top: 1px solid #b79c64;
+    background: linear-gradient(0deg, #ead6a6 0%, #e0c98f 100%);
+    margin-top: auto;
+    flex-shrink: 0;
+  }
+
+  .player-overview-close-bottom {
+    width: auto;
+    min-width: 120px;
+    padding: 10px 24px;
+    font-size: 1rem;
+  }
+
+  .player-overview-table-wrap {
+    flex: 1 1 auto;
+    overflow: auto;
+    padding: 8px;
+  }
+
+  .player-overview-table th,
+  .player-overview-table td {
+    padding: 4px 2px;
+    font-size: 0.67rem;
+    line-height: 1.1;
+  }
+
+  .player-overview-table .stat-col {
+    width: 20%;
+  }
+
+  .player-name {
+    font-size: 0.7rem;
+  }
+
+  .player-badge,
+  .inline-badge {
+    font-size: 0.55rem;
+    min-width: 11px;
+    padding: 0 3px;
+  }
+
+  .stat-icon {
+    width: 11px;
+    height: 11px;
+    margin-right: 2px;
+  }
+}
