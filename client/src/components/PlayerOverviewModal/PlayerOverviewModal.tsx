@@ -102,6 +102,7 @@ const PlayerOverviewModal = ({
             <tbody>
               {baseRows.slice(0, 4).map(row => {
                 const best = row.highlightBest ? getBestValue(row.value) : 0
+                const bestCount = row.highlightBest && best > 0 ? players.filter(p => row.value(p) === best).length : 0
                 return (
                   <tr key={row.key}>
                     <td className="stat-label">
@@ -110,7 +111,7 @@ const PlayerOverviewModal = ({
                     </td>
                     {players.map(player => {
                       const value = row.value(player)
-                      const isBest = row.highlightBest && best > 0 && value === best
+                      const isBest = row.highlightBest && best > 0 && value === best && bestCount === 1
                       return (
                         <td key={player.id} className={isBest ? 'best-value' : ''}>
                           {value}
@@ -135,6 +136,7 @@ const PlayerOverviewModal = ({
 
               {factions.map(({ type, label, icon }) => {
                 const best = Math.max(...players.map(player => factionInfluence[type]?.[player.id] || 0), 0)
+                const bestCount = best > 0 ? players.filter(p => (factionInfluence[type]?.[p.id] || 0) === best).length : 0
                 return (
                   <tr key={type}>
                     <td className="stat-label">
@@ -143,7 +145,7 @@ const PlayerOverviewModal = ({
                     </td>
                     {players.map(player => {
                       const influence = factionInfluence[type]?.[player.id] || 0
-                      const isBest = best > 0 && influence === best
+                      const isBest = best > 0 && influence === best && bestCount === 1
                       return (
                         <td key={player.id} className={isBest ? 'best-value' : ''}>
                           {influence}
@@ -157,6 +159,7 @@ const PlayerOverviewModal = ({
 
               {baseRows.slice(4).map(row => {
                 const best = row.highlightBest ? getBestValue(row.value) : 0
+                const bestCount = row.highlightBest && best > 0 ? players.filter(p => row.value(p) === best).length : 0
                 const isCombatRow = row.key === 'garrison' || row.key === 'deployed' || row.key === 'strength'
                 return (
                   <tr key={row.key} className={isCombatRow ? 'row-combat' : undefined}>
@@ -166,7 +169,7 @@ const PlayerOverviewModal = ({
                     </td>
                     {players.map(player => {
                       const value = row.value(player)
-                      const isBest = row.highlightBest && best > 0 && value === best
+                      const isBest = row.highlightBest && best > 0 && value === best && bestCount === 1
                       return (
                         <td key={player.id} className={isBest ? 'best-value' : ''}>
                           {value}

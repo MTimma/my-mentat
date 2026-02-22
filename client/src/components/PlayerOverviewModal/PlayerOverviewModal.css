@@ -150,11 +150,14 @@
   .player-overview-modal {
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0;
     border: none;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
   }
 
   .player-overview-close-top {
@@ -164,7 +167,9 @@
   .player-overview-footer {
     display: flex;
     justify-content: center;
+    align-items: center;
     padding: 14px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
     border-top: 1px solid #b79c64;
     background: linear-gradient(0deg, #ead6a6 0%, #e0c98f 100%);
     margin-top: auto;
@@ -174,7 +179,7 @@
   .player-overview-close-bottom {
     width: auto;
     min-width: 120px;
-    padding: 10px 24px;
+    padding: 12px 24px;
     font-size: 1rem;
   }
 
