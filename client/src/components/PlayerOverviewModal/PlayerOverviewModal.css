@@ -1,3 +1,8 @@
+/* Above turn controls (1000) but below bottom navigator (1200) */
+.dialog-overlay.player-overview-overlay {
+  z-index: 1001;
+}
+
 .player-overview-modal {
   width: min(95vw, 980px);
   max-height: 92vh;
@@ -173,6 +178,7 @@
     border-top: 1px solid #b79c64;
     background: linear-gradient(0deg, #ead6a6 0%, #e0c98f 100%);
     margin-top: auto;
+    margin-bottom: 20px;
     flex-shrink: 0;
   }
 

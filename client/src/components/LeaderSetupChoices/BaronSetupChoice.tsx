@@ -32,31 +32,35 @@ const BaronSetupChoice: React.FC<BaronSetupChoiceProps> = ({ initBaron, onComple
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
   >
-    <h3>{baron.name}'s Setup Choices</h3>
-    
-    <div className="faction-choice">
-        <h4>Choose 2 Factions for Masterstroke:</h4>
-        <div className="choice-buttons">
-            {FACTIONS.map((faction: FactionType) => (
-            <button
-                key={faction}
-                onClick={() => handleMasterStroke(faction)}
-                className={`faction-icon ${baron.masterStroke.factions?.includes(faction) ? 'selected' : ''}`}
-                disabled={baron.masterStroke.factions?.length === 2 && !baron.masterStroke.factions?.includes(faction)}
-            >
-              <img className="faction-icon" src={`/icon/${faction}.png`} alt={faction.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} />
-            </button>
-            ))}
-        </div>
+    <div className="leader-setup-choices-content">
+      <h3>{baron.name}'s Setup Choices</h3>
+      
+      <div className="faction-choice">
+          <h4>Choose 2 Factions for Masterstroke:</h4>
+          <div className="choice-buttons">
+              {FACTIONS.map((faction: FactionType) => (
+              <button
+                  key={faction}
+                  onClick={() => handleMasterStroke(faction)}
+                  className={`faction-icon ${baron.masterStroke.factions?.includes(faction) ? 'selected' : ''}`}
+                  disabled={baron.masterStroke.factions?.length === 2 && !baron.masterStroke.factions?.includes(faction)}
+              >
+                <img className="faction-icon" src={`/icon/${faction}.png`} alt={faction.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} />
+              </button>
+              ))}
+          </div>
+      </div>
     </div>
 
-    <button 
-      className="confirm-button"
-      onClick={() => onComplete(baron)}
-      disabled={!baron.masterStroke.factions|| baron.masterStroke.factions?.length !== 2}
-    >
-      Confirm Choices
-    </button>
+    <div className="leader-setup-choices-footer">
+      <button 
+        className="confirm-button"
+        onClick={() => onComplete(baron)}
+        disabled={!baron.masterStroke.factions|| baron.masterStroke.factions?.length !== 2}
+      >
+        Confirm Choices
+      </button>
+    </div>
   </motion.div>)
 }
 

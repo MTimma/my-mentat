@@ -148,41 +148,41 @@ const CardSearch: React.FC<CardSearchProps> = ({
 
   return (
     <div className="card-selection-dialog">
-      <div className="dialog-header">
+      <div className="dialog-title">
         {!hideTitle && <h2>{text}</h2>}
-        <div className="dialog-header-actions">
-          <div className="search-input-wrapper">
-            <input
-              type="text"
-              placeholder="Search cards..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-            {searchTerm && (
-              <button
-                className="search-clear-button"
-                onClick={() => setSearchTerm('')}
-                aria-label="Clear search"
-              >
-                ×
-              </button>
-            )}
-          </div>
-          <button
-            className="header-cancel-button"
-            onClick={handleCancel}
-          >
-            Clear all
-          </button>
-          <button
-            className="header-confirm-button"
-            onClick={handleConfirm}
-            disabled={selectedCards.length !== selectionCount}
-          >
-            Confirm
-          </button>
+      </div>
+      <div className="dialog-actions">
+        <div className="search-input-wrapper">
+          <input
+            type="text"
+            placeholder="Search cards..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          {searchTerm && (
+            <button
+              className="search-clear-button"
+              onClick={() => setSearchTerm('')}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
         </div>
+        <button
+          className="header-cancel-button"
+          onClick={handleCancel}
+        >
+          Clear all
+        </button>
+        <button
+          className="header-confirm-button"
+          onClick={handleConfirm}
+          disabled={selectedCards.length !== selectionCount}
+        >
+          Confirm
+        </button>
       </div>
       <div className="cards-grid">
         {filteredCards.map(card => {
@@ -190,64 +190,63 @@ const CardSearch: React.FC<CardSearchProps> = ({
           const isDisabled = !playability.playable
           
           return (
-            <div
-              key={card.id}
-              className={`card ${selectedCards?.find(c => c.id === card.id) ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
-              onClick={() => handleCardClick(card)}
-            >
-              {card.image && (
-                <img
-                  src={card.image}
-                  alt={card.name}
-                  className="card-image"
-                />
-              )}
-              {!card.image && (
-                <>
-                  <div className="card-header">
-                    <h3>{card.name}</h3>
-                    {card.cost && <span className="persuasion">Cost: {card.cost}</span>}
-                  </div>
-                  <div className="card-icons">
-                    {card.agentIcons.map((icon, index) => (
-                      <span
-                        key={index}
-                        className="agent-icon"
-                      >
-                        {icon}
-                      </span>
-                    ))}
-                  </div>
-                  {card.playEffect && (
-                    <div className="card-effect">
-                      {card.playEffect.map((effect, index) => (
-                        <div key={index}>
-                          Reveal: {JSON.stringify(effect.reward)}
-                        </div>
+            <div key={card.id} className="card-cell">
+              <div
+                className={`card ${selectedCards?.find(c => c.id === card.id) ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+                onClick={() => handleCardClick(card)}
+              >
+                {card.image && (
+                  <img
+                    src={card.image}
+                    alt={card.name}
+                    className="card-image"
+                  />
+                )}
+                {!card.image && (
+                  <>
+                    <div className="card-header">
+                      <h3>{card.name}</h3>
+                      {card.cost && <span className="persuasion">Cost: {card.cost}</span>}
+                    </div>
+                    <div className="card-icons">
+                      {card.agentIcons.map((icon, index) => (
+                        <span
+                          key={index}
+                          className="agent-icon"
+                        >
+                          {icon}
+                        </span>
                       ))}
                     </div>
-                  )}
-                  {card.playEffect && (
-                    <div className="card-effect">
-                      {card.playEffect.map((effect, index) => (
-                        <div key={index}>
-                          Play: {JSON.stringify(effect.reward)}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {card.acquireEffect && (
-                    <p className="card-acquire-effect">
-                      Acquire: {JSON.stringify(card.acquireEffect)}
-                    </p>
-                  )}
-                </>
-              )}
-              {isDisabled && playability.reason && (
-                <div className="card-disabled-overlay">
-                  <div className="card-disabled-text">{playability.reason}</div>
-                </div>
-              )}
+                    {card.playEffect && (
+                      <div className="card-effect">
+                        {card.playEffect.map((effect, index) => (
+                          <div key={index}>
+                            Reveal: {JSON.stringify(effect.reward)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {card.playEffect && (
+                      <div className="card-effect">
+                        {card.playEffect.map((effect, index) => (
+                          <div key={index}>
+                            Play: {JSON.stringify(effect.reward)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {card.acquireEffect && (
+                      <p className="card-acquire-effect">
+                        Acquire: {JSON.stringify(card.acquireEffect)}
+                      </p>
+                    )}
+                  </>
+                )}
+                {isDisabled && playability.reason && (
+                  <div className="card-disabled-reason" aria-label={playability.reason}>{playability.reason}</div>
+                )}
+              </div>
             </div>
           )
         })}

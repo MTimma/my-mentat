@@ -18,32 +18,36 @@
   width: 90%;
   max-width: 1200px;
   max-height: 90vh;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "dialog-title dialog-actions" "cards-grid cards-grid";
   gap: 20px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
-.dialog-header {
+.dialog-title {
+  grid-area: dialog-title;
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding-bottom: 16px;
   border-bottom: 1px solid #333;
-  gap: 16px;
 }
 
-.dialog-header h2 {
+.dialog-title h2 {
   margin: 0;
   color: #fff;
   font-size: 1.5rem;
 }
 
-.dialog-header-actions {
+.dialog-actions {
+  grid-area: dialog-actions;
   display: flex;
   align-items: center;
   gap: 8px;
-  justify-content: flex-start;
+  justify-content: flex-end;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #333;
 }
 
 .search-input-wrapper {
@@ -133,12 +137,13 @@
 }
 
 .cards-grid {
+  grid-area: cards-grid;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(135px, auto));
   gap: 4px;
   overflow-y: auto;
   padding: 16px;
-  max-height: calc(90vh - 200px);
+  min-height: 0;
   justify-items: center;
   justify-content: center;
 }
@@ -158,6 +163,13 @@
   margin: 0;
   transform: scale(0.7);
   z-index: 1;
+  overflow: hidden;
+}
+
+/* Cards with images: black behind image so corner gaps don’t show white */
+.card:has(.card-image) {
+  background-color: #000;
+  box-shadow: inset 0 0 0 4px #000;
 }
 
 .card:hover {
@@ -180,10 +192,13 @@
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   border-radius: 4px;
   transform-origin: center;
   z-index: 1;
+  display: block;
+  background-color: #000;
 }
 
 .card.selected .card-image {
@@ -277,29 +292,31 @@
   transform: scale(0.7); /* No hover effect */
 }
 
-.card-disabled-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+.card-cell {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  z-index: 10;
+  gap: 0;
+  width: fit-content;
+  justify-self: center;
 }
 
-.card-disabled-text {
-  color: #fff;
+/* Strip fixed to bottom of card so the reason clearly belongs to this card */
+.card-disabled-reason {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  color: #5c4a00;
   font-weight: bold;
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   text-align: center;
-  padding: 8px;
-  background-color: rgba(0, 0, 0, 0.7);
-  border-radius: 4px;
+  padding: 4px 6px;
+  background-color: #d4b84a;
+  border-radius: 0 0 4px 4px;
   white-space: pre-line;
+  z-index: 5;
+  line-height: 1.2;
 }
 
 /* Scrollbar Styling */
@@ -334,25 +351,50 @@
   .card-selection-dialog {
     padding: 12px;
     width: 95%;
-    max-height: 95vh;
-  }
-
-  .dialog-header {
+    height: 90vh;
+    max-height: 90vh;
+    display: flex;
     flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+    grid-template-areas: unset;
+    grid-template-columns: unset;
+    grid-template-rows: unset;
+    overflow: hidden;
+  }
+
+  .dialog-title {
+    order: 0;
+    flex: 0 0 auto;
+    flex-shrink: 0;
     padding-bottom: 12px;
+    border-bottom: 1px solid #333;
   }
 
-  .dialog-header h2 {
+  .dialog-title h2 {
     font-size: 1rem;
-    margin-bottom: 8px;
   }
 
-  .dialog-header-actions {
+  .dialog-actions {
+    order: 2;
+    flex: 0 0 auto;
+    flex-shrink: 0;
     flex-wrap: wrap;
-    gap: 6px;
-    width: 100%;
+    gap: 8px;
+    padding-top: 12px;
+    padding-bottom: 0;
+    border-bottom: none;
+    border-top: 1px solid #333;
+    justify-content: stretch;
+    background-color: #1a1a1a;
+    z-index: 2;
+  }
+
+  .cards-grid {
+    order: 1;
+    flex: 1 1 0;
+    min-height: 0;
+    padding: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .search-input-wrapper {
@@ -368,15 +410,10 @@
 
   .header-cancel-button,
   .header-confirm-button {
-    flex: 1 1 calc(50% - 3px);
+    flex: 1 1 calc(50% - 4px);
     min-width: 0;
-    padding: 6px 12px;
+    padding: 8px 12px;
     font-size: 0.85rem;
-  }
-
-  .cards-grid {
-    padding: 12px;
-    max-height: calc(95vh - 180px);
   }
 }
 

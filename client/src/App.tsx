@@ -8,7 +8,7 @@ import { useGame } from './components/GameContext/GameContext'
 import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, ControlMarkerType } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -16,6 +16,7 @@ import ConflictSelect from './components/ConflictSelect/ConflictSelect'
 import GameStateSetup from './components/GameStateSetup/GameStateSetup'
 import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
 import { buildImperiumDeck } from './data/cards'
+import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 
 const GameContent = () => {
   const {
@@ -33,6 +34,7 @@ const GameContent = () => {
   } = useTimeTravel()
 
   const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(false)
+  const [isPlayerOverviewOpen, setIsPlayerOverviewOpen] = useState(false)
   const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
   const [onSelectiveBreedingSelect, setOnSelectiveBreedingSelect] = useState<((card: Card) => void) | null>(null)
   const [voiceSelectionRewardId, setVoiceSelectionRewardId] = useState<string | null>(null)
@@ -239,15 +241,6 @@ const GameContent = () => {
 
   return (
     <div className="game-container">
-      <button
-        type="button"
-        className={"turn-history-toggle"}
-        aria-expanded={isTurnHistoryOpen}
-        aria-controls="turn-history-overlay"
-        onClick={() => setIsTurnHistoryOpen(open => !open)}
-      >
-        {isTurnHistoryOpen ? 'Close history' : 'Turn history'}
-      </button>
       {isTurnHistoryOpen && (
         <TurnHistory 
           turns={gameState.history}
@@ -406,6 +399,8 @@ const GameContent = () => {
             gamePhase={gameState.phase}
             activeIntrigueThisRound={activePlayer ? (gameState.activeIntrigueThisRound?.[activePlayer.id] || []) : []}
             gameState={gameState}
+            onOpenPlayerOverview={() => setIsPlayerOverviewOpen(true)}
+            onTurnHistoryToggle={() => setIsTurnHistoryOpen(open => !open)}
           />
         </div>
         <div className="endgame-container" hidden={gameState.phase !== GamePhase.END_GAME}>
@@ -437,6 +432,22 @@ const GameContent = () => {
           onConfirm={handleConfirmCombat}
         />
       </div>
+      {isPlayerOverviewOpen && (
+        <PlayerOverviewModal
+          players={displayState.players}
+          factionInfluence={displayState.factionInfluence}
+          factionAlliances={gameState.factionAlliances}
+          controlMarkers={gameState.controlMarkers}
+          combatTroops={displayState.combatTroops}
+          combatStrength={displayState.combatStrength ?? gameState.combatStrength}
+          combatPasses={gameState.combatPasses}
+          activePlayerId={displayState.activePlayerId}
+          firstPlayerMarker={gameState.firstPlayerMarker}
+          mentatOwner={gameState.mentatOwner}
+          isCombatPhase={gameState.phase === GamePhase.COMBAT}
+          onClose={() => setIsPlayerOverviewOpen(false)}
+        />
+      )}
     </div>
   )
 }

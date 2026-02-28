@@ -72,7 +72,7 @@ const PlayerOverviewModal = ({
   ]
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div className="dialog-overlay player-overview-overlay" onClick={onClose}>
       <div className="player-overview-modal" onClick={event => event.stopPropagation()}>
         <div className="player-overview-header">
           <h3>Player Overview</h3>

@@ -103,6 +103,34 @@
   list-style: disc inside;
 }
 
+.conflict-reward-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.conflict-reward-icon {
+  width: 1.2em;
+  height: 1.2em;
+  flex-shrink: 0;
+  vertical-align: middle;
+  object-fit: contain;
+}
+
+.conflict-reward-label {
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.conflict-reward-amount {
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
 .conflict-select-actions {
   display: flex;
   justify-content: flex-end;

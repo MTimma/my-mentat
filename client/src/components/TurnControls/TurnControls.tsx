@@ -3,7 +3,6 @@ import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoi
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
-import PlayerOverviewModal from '../PlayerOverviewModal/PlayerOverviewModal'
 import { intrigueRequirementSatisfied } from '../GameContext/requirements'
 import './TurnControls.css'
 
@@ -58,6 +57,8 @@ interface TurnControlsProps {
   firstPlayerMarker?: number
   mentatOwner?: number | null
   gameState?: GameState
+  onOpenPlayerOverview?: () => void
+  onTurnHistoryToggle?: () => void
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -109,10 +110,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   controlMarkers,
   firstPlayerMarker,
   mentatOwner,
-  gameState
+  gameState,
+  onOpenPlayerOverview,
+  onTurnHistoryToggle
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
-  const [isPlayerOverviewOpen, setIsPlayerOverviewOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const [isIntrigueSelectionOpen, setIsIntrigueSelectionOpen] = useState(false)
@@ -318,39 +320,35 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       return { playable: true }
     } else {
       // For non-OR effects, ALL effects must be playable
-      // Check all effects first to see if we have both issues
       let hasUnaffordableCost = false
       let hasUnmetRequirement = false
-      
-      // Check if Mentat is unavailable (if any effect rewards a Mentat)
-      if (hasMentatUnavailable) {
-        hasUnaffordableCost = true
-      }
-      
+      // Mentat as only reward and already taken → card not playable, separate from "cannot afford"
+      let mentatUnavailable = false
       for (const effect of validEffects) {
+        if (effect.reward?.mentat === true) {
+          const hasOtherRewards = Object.keys(effect.reward).some(key => key !== 'mentat')
+          if (!hasOtherRewards && gameState.mentatOwner !== null) {
+            mentatUnavailable = true
+          }
+        }
         if (effect.requirement) {
           if (!intrigueRequirementSatisfied(effect, card, gameState, activePlayer.id)) {
             hasUnmetRequirement = true
           }
         }
-        
         if (effect.cost) {
           if (!isAffordable(effect.cost)) {
             hasUnaffordableCost = true
           }
         }
       }
-      
-      if (hasUnaffordableCost && hasUnmetRequirement) {
-        return { playable: false, reason: "Cannot afford\nRequirements not met" }
+      const reasons: string[] = []
+      if (mentatUnavailable) reasons.push("Mentat already taken")
+      if (hasUnaffordableCost) reasons.push("Cannot afford")
+      if (hasUnmetRequirement) reasons.push("Requirements not met")
+      if (reasons.length > 0) {
+        return { playable: false, reason: reasons.join("\n") }
       }
-      if (hasUnaffordableCost) {
-        return { playable: false, reason: "Cannot afford" }
-      }
-      if (hasUnmetRequirement) {
-        return { playable: false, reason: "Requirements not met" }
-      }
-      
       return { playable: true }
     }
   }
@@ -921,10 +919,17 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             </div>
           )}
         </div>
-        <div style={{ marginBottom: '8px' }}>
+        <div className="utility-buttons">
           <button 
             className="view-influence-button"
-            onClick={() => setIsPlayerOverviewOpen(true)}
+            onClick={onTurnHistoryToggle}
+            title="View Turn History"
+          >
+            Turn History
+          </button>
+          <button 
+            className="view-influence-button"
+            onClick={onOpenPlayerOverview}
             title="View Player Overview"
           >
             Player Overview
@@ -1067,22 +1072,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           text="Select card to trash"
         />
 
-        {isPlayerOverviewOpen && factionInfluence && (
-          <PlayerOverviewModal
-            players={players}
-            factionInfluence={factionInfluence}
-            factionAlliances={resolvedFactionAlliances}
-            controlMarkers={resolvedControlMarkers}
-            combatTroops={combatTroops}
-            combatStrength={combatStrength}
-            combatPasses={combatPasses}
-            activePlayerId={activePlayer.id}
-            firstPlayerMarker={resolvedFirstPlayerMarker}
-            mentatOwner={resolvedMentatOwner}
-            isCombatPhase={isCombatPhase}
-            onClose={() => setIsPlayerOverviewOpen(false)}
-          />
-        )}
       </div>
     </>
   )
