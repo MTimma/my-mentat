@@ -40,6 +40,22 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCo
 
   const previewSlots = Array.from({ length: requiredCount }, (_, index) => selectedCards[index] || null)
 
+  const previewSection = (
+    <div className="imperium-select-preview">
+      {previewSlots.map((card, index) => (
+        <div key={index} className="imperium-select-preview-slot">
+          {card && card.image && (
+            <img
+              src={card.image}
+              alt={card.name}
+              className="imperium-select-preview-image"
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  )
+
   return (
     <div className="imperium-select-overlay">
       <div className="imperium-select-dialog">
@@ -50,20 +66,6 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCo
             Selected {selectedCards.length} / {requiredCount}
           </div>
         </header>
-
-        <div className="imperium-select-preview">
-          {previewSlots.map((card, index) => (
-            <div key={index} className="imperium-select-preview-slot">
-              {card && card.image && (
-                <img
-                  src={card.image}
-                  alt={card.name}
-                  className="imperium-select-preview-image"
-                />
-              )}
-            </div>
-          ))}
-        </div>
 
         <div className="imperium-select-cardsearch-wrapper">
           <CardSearch
@@ -76,6 +78,7 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCo
             text={`Select ${requiredCount} Imperium Row Cards`}
             onSelectionChange={handleSelectionChange}
             hideTitle={true}
+            slotBetweenCardsAndSearch={previewSection}
           />
         </div>
       </div>

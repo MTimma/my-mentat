@@ -6,6 +6,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1200;
+  overflow-y: auto;
 }
 
 .imperium-select-dialog {
@@ -16,10 +17,12 @@
   max-height: 90vh;
   border-radius: 12px;
   padding: 24px;
+  padding-top: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+  margin: auto;
 }
 
 .imperium-select-header h2 {
@@ -39,7 +42,6 @@
   display: flex;
   gap: 8px;
   margin-bottom: 8px;
-  padding-top: 70px;
 }
 
 .imperium-select-preview-slot {
@@ -83,18 +85,17 @@
   gap: 0;
 }
 
-/* Ensure dialog header has no left padding/margin when nested */
-.imperium-select-dialog .dialog-header {
+/* Hide CardSearch title when nested (Imperium has its own header) */
+.imperium-select-dialog .card-selection-dialog-search-at-bottom .dialog-title {
+  display: none;
+}
+
+/* Ensure dialog actions (search bar) have no extra padding when nested */
+.imperium-select-dialog .dialog-actions {
   padding-left: 0;
   margin-left: 0;
   padding-right: 0;
   margin-right: 0;
-}
-
-/* Ensure dialog header actions align to left */
-.imperium-select-dialog .dialog-header-actions {
-  padding-left: 0;
-  margin-left: 0;
 }
 
 /* Mobile layout: search bar and preview at bottom */
@@ -108,26 +109,31 @@
     height: 100vh;
     width: 100%;
     border-radius: 0;
-    padding: 16px;
+    padding: 6px 10px;
     gap: 0;
     position: relative;
   }
 
-  /* Header stays at top */
+  /* Header stays at top - compact so everything fits without scroll */
   .imperium-select-header {
     order: 1;
     flex-shrink: 0;
-    padding-bottom: 12px;
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: 4px;
     margin-bottom: 0;
   }
 
   .imperium-select-header h2 {
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
 
   .imperium-select-header p {
-    font-size: 0.9rem;
-    margin: 4px 0 8px;
+    font-size: 0.75rem;
+    margin: 1px 0 2px;
+  }
+
+  .imperium-select-count {
+    font-size: 0.85rem;
   }
 
   /* Cards grid in the middle - scrollable */
@@ -158,40 +164,64 @@
     gap: 0;
   }
 
-  /* Cards grid takes up available space and scrolls */
+  /* Cards grid: flex so filtered rows don't leave empty gaps; only scrollable area */
   .imperium-select-dialog .cards-grid {
     flex: 1;
     overflow-y: auto;
     min-height: 0;
     max-height: none;
-    padding: 12px;
+    padding: 9px 11px;
+    gap: 8px;
   }
 
-  /* Search bar at bottom - override CardSearch mobile styles */
-  .imperium-select-dialog .dialog-header {
+  /* Fixed-size cells so cards wrap without empty space when filtering */
+  .imperium-select-dialog .card-cell {
+    flex: 0 0 48px;
+    width: 48px;
+  }
+
+  .imperium-select-dialog .card {
+    width: 48px;
+    min-width: 48px;
+    transform: none;
+    padding: 3px;
+  }
+
+  .imperium-select-dialog .card:hover {
+    transform: scale(1.05);
+  }
+
+  .imperium-select-dialog .card.selected {
+    transform: none;
+  }
+
+  /* Preview (selected cards) above search bar - compact */
+  .imperium-select-dialog .imperium-select-preview {
+    order: 3;
+    flex-shrink: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    border-top: 1px solid #333;
+    border-bottom: 1px solid #333;
+    background: #10141b;
+    padding: 3px 0;
+  }
+
+  /* Search bar at bottom - compact */
+  .imperium-select-dialog .dialog-actions {
     order: 4;
     flex-shrink: 0;
     margin-top: 0;
-    padding: 12px 0;
+    padding: 6px 0;
     border-top: 1px solid #333;
     background: #10141b;
     position: sticky;
     bottom: 0;
-    z-index: 15; /* Lower than preview */
+    z-index: 15;
     margin-bottom: 0;
-    /* Override CardSearch mobile styles for consistent sizing */
     flex-direction: row;
     align-items: center;
     gap: 8px;
-  }
-
-  .imperium-select-dialog .dialog-header-actions {
-    flex-wrap: nowrap;
-    gap: 8px;
-    width: auto;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
   }
 
   .imperium-select-dialog .search-input-wrapper {
@@ -217,22 +247,19 @@
     white-space: nowrap;
   }
 
-  /* Preview at bottom, above search bar - positioned to sit above the search bar */
-  .imperium-select-preview {
-    order: 3;
-    flex-shrink: 0;
-    margin-top: 0;
-    margin-bottom: 0;
-    border-top: 1px solid #333;
-    border-bottom: 1px solid #333;
-    background: #10141b;
-    position: sticky;
-    /* Position above search bar - account for search bar height (~60-80px) */
-    bottom: 80px;
+  .imperium-select-dialog .imperium-select-preview-slot {
+    width: 32px;
+    height: 48px;
   }
 
-  .imperium-select-preview-slot {
-    width: 50px;
-    height: 75px;
+  .imperium-select-dialog .search-input {
+    padding: 6px 0 6px 10px;
+    font-size: 0.85rem;
+  }
+
+  .imperium-select-dialog .header-cancel-button,
+  .imperium-select-dialog .header-confirm-button {
+    padding: 5px 10px;
+    font-size: 0.8rem;
   }
 }

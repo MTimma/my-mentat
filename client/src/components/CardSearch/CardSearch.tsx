@@ -16,6 +16,8 @@ interface CardSearchProps {
   onSelectionChange?: (selectedCards: Card[]) => void
   hideTitle?: boolean
   getCardPlayability?: (card: Card) => { playable: boolean; reason?: string }
+  /** Rendered between cards grid and search bar (e.g. preview cards in Imperium Row Select) */
+  slotBetweenCardsAndSearch?: React.ReactNode
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({
@@ -32,6 +34,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
   onSelectionChange,
   hideTitle = false,
   getCardPlayability,
+  slotBetweenCardsAndSearch,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
@@ -147,42 +150,9 @@ const CardSearch: React.FC<CardSearchProps> = ({
   }
 
   return (
-    <div className="card-selection-dialog">
+    <div className={`card-selection-dialog ${slotBetweenCardsAndSearch ? 'card-selection-dialog-search-at-bottom' : ''}`}>
       <div className="dialog-title">
         {!hideTitle && <h2>{text}</h2>}
-      </div>
-      <div className="dialog-actions">
-        <div className="search-input-wrapper">
-          <input
-            type="text"
-            placeholder="Search cards..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-          {searchTerm && (
-            <button
-              className="search-clear-button"
-              onClick={() => setSearchTerm('')}
-              aria-label="Clear search"
-            >
-              ×
-            </button>
-          )}
-        </div>
-        <button
-          className="header-cancel-button"
-          onClick={handleCancel}
-        >
-          Clear all
-        </button>
-        <button
-          className="header-confirm-button"
-          onClick={handleConfirm}
-          disabled={selectedCards.length !== selectionCount}
-        >
-          Confirm
-        </button>
       </div>
       <div className="cards-grid">
         {filteredCards.map(card => {
@@ -250,6 +220,40 @@ const CardSearch: React.FC<CardSearchProps> = ({
             </div>
           )
         })}
+      </div>
+      {slotBetweenCardsAndSearch}
+      <div className="dialog-actions">
+        <div className="search-input-wrapper">
+          <input
+            type="text"
+            placeholder="Search cards..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          {searchTerm && (
+            <button
+              className="search-clear-button"
+              onClick={() => setSearchTerm('')}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
+        </div>
+        <button
+          className="header-cancel-button"
+          onClick={handleCancel}
+        >
+          Clear all
+        </button>
+        <button
+          className="header-confirm-button"
+          onClick={handleConfirm}
+          disabled={selectedCards.length !== selectionCount}
+        >
+          Confirm
+        </button>
       </div>
     </div>
   )
