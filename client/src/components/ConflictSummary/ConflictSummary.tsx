@@ -1,5 +1,5 @@
 import React from 'react'
-import { ConflictCard, ConflictReward } from '../../types/GameTypes'
+import { ConflictCard, ConflictReward, RewardType } from '../../types/GameTypes'
 import './ConflictSummary.css'
 
 interface ConflictSummaryProps {
@@ -8,9 +8,30 @@ interface ConflictSummaryProps {
 
 function formatRewards(rewards: ConflictReward[] = []) {
   if (!rewards.length) return <span className="no-reward">-</span>
-  return rewards.map((r, i) => (
-    <span key={i} className={`reward reward-${r.type}`}>{r.amount} {r.type}</span>
-  ))
+  return rewards.map((r, i) => {
+    if (r.choiceOptions && r.choiceOptions.length > 0) {
+      return (
+        <span key={i} className="reward reward-choice">
+          Choose one: {r.choiceOptions.map((opt, j) => (
+            <React.Fragment key={j}>
+              {j > 0 && ' or '}
+              {opt.amount} {opt.type}
+            </React.Fragment>
+          ))}
+        </span>
+      )
+    }
+    if (r.chooseFaction && r.type === RewardType.INFLUENCE) {
+      return (
+        <span key={i} className="reward reward-influence">
+          {r.amount} Influence (choose faction)
+        </span>
+      )
+    }
+    return (
+      <span key={i} className={`reward reward-${r.type}`}>{r.amount} {r.type}</span>
+    )
+  })
 }
 
 const ConflictSummary: React.FC<ConflictSummaryProps> = ({ currentConflict }) => {

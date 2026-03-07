@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType } from '../../types/GameTypes'
+import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
@@ -237,6 +237,17 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     return true
   }
 
+    const hasInfluenceForLoseEffect = (effect: IntriguePlayEffect): boolean => {
+      const influence = effect.reward?.influence
+      if (!influence?.chooseOne || !influence.amounts.length) return true
+      const hasPlayableOption = influence.amounts.some(({ faction, amount }) => {
+        if (amount >= 0) return true
+        const current = gameState!.factionInfluence[faction]?.[activePlayer!.id] ?? 0
+        return current >= -amount
+      })
+      return hasPlayableOption
+    }
+
     const checkIntrigueCardPlayability = (card: IntrigueCard): { playable: boolean; reason?: string } => {
       if (!activePlayer || !gameState) {
         return { playable: false }
@@ -287,6 +298,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             return false
           }
         }
+        if (!hasInfluenceForLoseEffect(effect)) {
+          return false
+        }
         
         return true
       })
@@ -297,6 +311,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         const hasUnmetRequirement = validEffects.some(e => 
           e.requirement && !intrigueRequirementSatisfied(e, card, gameState, activePlayer.id)
         )
+        const hasNoInfluenceToLose = validEffects.some(e => !hasInfluenceForLoseEffect(e))
         
         // Build conditional message from flags
         const reasons: string[] = []
@@ -308,6 +323,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         }
         if (hasUnmetRequirement) {
           reasons.push("Requirements not met")
+        }
+        if (hasNoInfluenceToLose) {
+          reasons.push("No influence to lose")
         }
         
         const reason = reasons.length > 0 
@@ -322,6 +340,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       // For non-OR effects, ALL effects must be playable
       let hasUnaffordableCost = false
       let hasUnmetRequirement = false
+      let hasNoInfluenceToLose = false
       // Mentat as only reward and already taken → card not playable, separate from "cannot afford"
       let mentatUnavailable = false
       for (const effect of validEffects) {
@@ -341,11 +360,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             hasUnaffordableCost = true
           }
         }
+        if (!hasInfluenceForLoseEffect(effect)) {
+          hasNoInfluenceToLose = true
+        }
       }
       const reasons: string[] = []
       if (mentatUnavailable) reasons.push("Mentat already taken")
       if (hasUnaffordableCost) reasons.push("Cannot afford")
       if (hasUnmetRequirement) reasons.push("Requirements not met")
+      if (hasNoInfluenceToLose) reasons.push("No influence to lose")
       if (reasons.length > 0) {
         return { playable: false, reason: reasons.join("\n") }
       }

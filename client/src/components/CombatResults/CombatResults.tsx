@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Player, GameState, RewardType, GainSource } from '../../types/GameTypes';
+import { Player, GameState, GainSource } from '../../types/GameTypes';
 import './CombatResults.css';
 
 interface PlayerResult {
@@ -13,13 +13,28 @@ interface CombatResultsProps {
   combatStrength: Record<number, number>;
   history: GameState[];
   onConfirm: () => void;
+  pendingConflictRewardChoices?: GameState['pendingConflictRewardChoices'];
+  onResolveConflictChoice?: (choiceId: string, reward: import('../../types/GameTypes').Reward) => void;
 }
 
-const CombatResults: React.FC<CombatResultsProps> = ({ 
-  players, 
-  combatStrength, 
-  history, 
-  onConfirm 
+function formatRewardLabel(reward: import('../../types/GameTypes').Reward): string {
+  if (reward.spice) return `${reward.spice} Spice`
+  if (reward.intrigueCards) return `${reward.intrigueCards} Intrigue`
+  if (reward.solari) return `${reward.solari} Solari`
+  if (reward.influence?.amounts?.[0]) {
+    const { faction, amount } = reward.influence.amounts[0]
+    return `${amount} Influence (${faction})`
+  }
+  return 'Choose'
+}
+
+const CombatResults: React.FC<CombatResultsProps> = ({
+  players,
+  combatStrength,
+  history,
+  onConfirm,
+  pendingConflictRewardChoices = [],
+  onResolveConflictChoice
 }) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
 
@@ -96,7 +111,6 @@ const CombatResults: React.FC<CombatResultsProps> = ({
             <th>Details</th>
           </tr>
         </thead>
-        {/* TODO add reward choices */}
         <tbody>
           {results.map((result) => (
             <tr key={result.playerId}>
@@ -115,9 +129,33 @@ const CombatResults: React.FC<CombatResultsProps> = ({
           ))}
         </tbody>
       </table>
-      <button className="confirm-button" onClick={onConfirm}>
-        Confirm
-      </button>
+      {pendingConflictRewardChoices && pendingConflictRewardChoices.length > 0 ? (
+        <div className="conflict-reward-choices">
+          <h3>Choose your conflict rewards</h3>
+          {pendingConflictRewardChoices.map((choice) => (
+            <div key={choice.id} className="conflict-choice-block">
+              <span className="choice-player">
+                {players[choice.playerId]?.leader.name || `Player ${choice.playerId + 1}`} ({choice.placement}):
+              </span>
+              <div className="choice-options">
+                {choice.options.map((opt, oidx) => (
+                  <button
+                    key={oidx}
+                    className="effect-btn choice"
+                    onClick={() => onResolveConflictChoice?.(choice.id, opt.reward)}
+                  >
+                    {opt.rewardLabel ?? formatRewardLabel(opt.reward)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <button className="confirm-button" onClick={onConfirm}>
+          Confirm
+        </button>
+      )}
 
       {selectedPlayerId !== null && (
         <div className="combat-details-modal">

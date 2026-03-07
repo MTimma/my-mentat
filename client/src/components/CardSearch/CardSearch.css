@@ -44,7 +44,9 @@
   grid-area: unset;
   flex: 1;
   min-height: 0;
+  flex-wrap: wrap;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .card-selection-dialog-search-at-bottom .dialog-actions {
@@ -166,10 +168,13 @@
   grid-area: cards-grid;
   display: flex;
   flex-wrap: wrap;
+  flex-direction: row;
   justify-content: flex-start;
+  align-items: flex-start;
   align-content: flex-start;
-  gap: 9px;
+  gap: 8px;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   min-height: 0;
 }
@@ -322,8 +327,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
   gap: 0;
   flex: 0 0 auto;
+  flex-shrink: 0;
 }
 
 /* Strip fixed to bottom of card so the reason clearly belongs to this card */
@@ -417,6 +424,29 @@
     padding: 12px;
     overflow-y: auto;
     overflow-x: hidden;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Compact card sizing on mobile - same as Imperium Row Select */
+  .card-selection-dialog .cards-grid .card-cell {
+    flex: 0 0 auto;
+    flex-shrink: 0;
+  }
+
+  .card-selection-dialog .cards-grid .card {
+    width: 72px;
+    min-width: 72px;
+    transform: none;
+    padding: 4px;
+  }
+
+  .card-selection-dialog .cards-grid .card:hover {
+    transform: scale(1.05);
+  }
+
+  .card-selection-dialog .cards-grid .card.selected {
+    transform: none;
   }
 
   .search-input-wrapper {

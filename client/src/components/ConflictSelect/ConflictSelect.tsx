@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ConflictCard, RewardType } from '../../types/GameTypes';
+import { ConflictCard, ConflictReward, RewardType } from '../../types/GameTypes';
 import { getRewardIcon, getRewardDisplayName } from '../../utils/rewardIcons';
 import './ConflictSelect.css';
 
@@ -12,32 +12,60 @@ const ConflictSelect: React.FC<ConflictSelectProps> = ({ conflicts, handleConfli
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [failedIconTypes, setFailedIconTypes] = useState<Set<RewardType>>(new Set());
 
-  const renderRewards = (rewards: { type: RewardType; amount: number }[]) => {
+  const renderSingleReward = (r: ConflictReward) => {
+    const iconPath = getRewardIcon(r.type);
+    const label = getRewardDisplayName(r.type);
+    const useText = !iconPath || failedIconTypes.has(r.type);
+    return (
+      <span key={`${r.type}-${r.amount}`} className="conflict-reward-item">
+        {useText ? (
+          <>
+            <span className="conflict-reward-label">{label}</span>
+            <span className="conflict-reward-amount">{r.amount}</span>
+          </>
+        ) : (
+          <>
+            <img
+              src={`/${iconPath}`}
+              alt=""
+              className="conflict-reward-icon"
+              aria-hidden
+              onError={() => setFailedIconTypes(prev => new Set(prev).add(r.type))}
+            />
+            <span className="conflict-reward-amount">{r.amount}</span>
+          </>
+        )}
+      </span>
+    );
+  };
+
+  const renderRewards = (rewards: ConflictReward[]) => {
     return (
       <ul className="conflict-rewards-list">
         {rewards.map((r, i) => {
-          const iconPath = getRewardIcon(r.type);
-          const label = getRewardDisplayName(r.type);
-          const useText = !iconPath || failedIconTypes.has(r.type);
+          if (r.choiceOptions && r.choiceOptions.length > 0) {
+            return (
+              <li key={i} className="conflict-reward-item">
+                <span className="conflict-reward-label">Choose one: </span>
+                {r.choiceOptions.map((opt, j) => (
+                  <React.Fragment key={j}>
+                    {j > 0 && <span className="conflict-reward-sep"> or </span>}
+                    {renderSingleReward(opt)}
+                  </React.Fragment>
+                ))}
+              </li>
+            );
+          }
+          if (r.chooseFaction && r.type === RewardType.INFLUENCE) {
+            return (
+              <li key={i} className="conflict-reward-item">
+                <span className="conflict-reward-label">{r.amount} Influence (choose faction)</span>
+              </li>
+            );
+          }
           return (
             <li key={i} className="conflict-reward-item">
-              {useText ? (
-                <>
-                  <span className="conflict-reward-label">{label}</span>
-                  <span className="conflict-reward-amount">{r.amount}</span>
-                </>
-              ) : (
-                <>
-                  <img
-                    src={`/${iconPath}`}
-                    alt=""
-                    className="conflict-reward-icon"
-                    aria-hidden
-                    onError={() => setFailedIconTypes(prev => new Set(prev).add(r.type))}
-                  />
-                  <span className="conflict-reward-amount">{r.amount}</span>
-                </>
-              )}
+              {renderSingleReward(r)}
             </li>
           );
         })}

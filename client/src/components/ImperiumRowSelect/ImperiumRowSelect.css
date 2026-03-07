@@ -67,6 +67,11 @@
   min-height: 0;
 }
 
+/* More space between cards in Select 5 Imperium Row Cards */
+.imperium-select-dialog .cards-grid {
+  gap: 16px;
+}
+
 /* Make CardSearch render inside the Imperium dialog instead of covering the whole screen */
 .imperium-select-dialog .card-selection-dialog-overlay {
   position: static;
@@ -164,27 +169,32 @@
     gap: 0;
   }
 
-  /* Cards grid: flex so filtered rows don't leave empty gaps; only scrollable area */
+  /* Cards grid: wrap into multiple rows, scroll vertically */
   .imperium-select-dialog .cards-grid {
     flex: 1;
+    flex-wrap: wrap;
     overflow-y: auto;
+    overflow-x: hidden;
     min-height: 0;
     max-height: none;
-    padding: 9px 11px;
-    gap: 8px;
+    padding: 4px 6px;
+    gap: 16px;
   }
 
-  /* Fixed-size cells so cards wrap without empty space when filtering */
+  /* Fixed-size cells so cards wrap without empty gaps when filtering */
   .imperium-select-dialog .card-cell {
-    flex: 0 0 48px;
-    width: 48px;
+    flex: 0 0 56px;
+    width: 56px;
+    flex-shrink: 0;
   }
 
   .imperium-select-dialog .card {
-    width: 48px;
-    min-width: 48px;
+    width: 56px;
+    min-width: 56px;
+    max-width: 56px;
     transform: none;
     padding: 3px;
+    box-sizing: border-box;
   }
 
   .imperium-select-dialog .card:hover {

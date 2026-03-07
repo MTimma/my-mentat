@@ -316,6 +316,10 @@ export interface IntrigueCardPlay {
 export interface ConflictReward {
   type: RewardType
   amount: number
+  /** When set, player chooses one of these options instead of receiving this reward directly */
+  choiceOptions?: ConflictReward[]
+  /** When true for INFLUENCE, player chooses which faction to gain influence with */
+  chooseFaction?: boolean
 }
 
 export interface Winners {
@@ -525,6 +529,19 @@ export interface GameState {
   blockedSpaces?: Array<{ spaceId: number; playerId: number }> // Spaces blocked by The Voice
   // Pending Imperium Row replacement: when a card is acquired, track the index where replacement is needed
   pendingImperiumRowReplacement: { cardIndex: number } | null
+  // Pending conflict reward choices: when a conflict reward requires player choice (e.g. Cloak and Dagger 3rd, Machinations 1st)
+  pendingConflictRewardChoices?: Array<{
+    id: string
+    playerId: number
+    placement: string
+    conflictId: number
+    conflictName: string
+    options: ChoiceOption[]
+  }>
+  // Stored when combat resolution is deferred for choices; used when completing the transition
+  combatResolutionDeferred?: {
+    mentatOwnerNextRound: number | null
+  }
 }
 
 export enum CustomEffect {

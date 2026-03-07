@@ -44,6 +44,7 @@ import { CONFLICTS } from '../../data/conflicts'
 import { PLAY_EFFECT_TEXTS } from '../../data/effectTexts'
 import { intrigueCards } from '../../services/IntrigueDeckService'
 import { playRequirementSatisfied, revealRequirementSatisfied, intrigueRequirementSatisfied } from './requirements'
+import { updateFactionInfluence, getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 
 interface GameContextType {
   gameState: GameState
@@ -64,6 +65,7 @@ type GameAction =
   | { type: 'ACQUIRE_CARD'; playerId: number; cardId: number; freeAcquire?: boolean; acquireToTop?: boolean }
   | { type: 'PLAY_COMBAT_INTRIGUE'; playerId: number; cardId: number }
   | { type: 'RESOLVE_COMBAT' }
+  | { type: 'RESOLVE_CONFLICT_REWARD_CHOICE'; choiceId: string; reward: Reward }
   | { type: 'START_COMBAT_PHASE' }
   | { type: 'PASS_COMBAT'; playerId: number }
   | { type: 'DRAW_INTRIGUE'; playerId: number }
@@ -222,8 +224,100 @@ function getPlacements4p(entries: {id: number, strength: number}[]): Placements 
   return placements
 }
 
+/** Complete combat resolution: makers, recall, draw, phase transition */
+function completeCombatTransition(
+  newState: GameState,
+  state: GameState,
+  mentatOwnerNextRound: number | null
+): GameState {
+  const bonusSpice = { ...newState.bonusSpice }
+  BOARD_SPACES.forEach(s => {
+    if (s.makerSpace && (!newState.occupiedSpaces[s.id] || newState.occupiedSpaces[s.id]?.length === 0)) {
+      bonusSpice[s.makerSpace] += 1
+    }
+  })
+  newState = { ...newState, bonusSpice, occupiedSpaces: {} }
+  newState.players = newState.players.map(p => {
+    let agents = 2
+    if (p.hasSwordmaster) agents += 1
+    if (p.id === mentatOwnerNextRound) agents += 1
+    return { ...p, agents }
+  })
+  if (mentatOwnerNextRound !== null) {
+    newState = { ...newState, mentatOwner: mentatOwnerNextRound }
+  }
+  newState.players = newState.players.map(p => {
+    if (p.deck.length < 5) {
+      return { ...p, revealed: false, deck: [...p.deck, ...p.discardPile], discardPile: [], handCount: 5 }
+    }
+    return { ...p, revealed: false, handCount: 5 }
+  })
+  newState.firstPlayerMarker = (newState.firstPlayerMarker + 1) % newState.players.length
+  const refreshedDeck = [...newState.imperiumRow, ...newState.imperiumRowDeck]
+  const updatedConflictsDiscard = [...state.conflictsDiscard, state.currentConflict]
+  const endgameTriggered =
+    newState.players.some(p => getTotalVictoryPoints(p, newState) >= 10) ||
+    state.currentRound >= 10
+  if (endgameTriggered) {
+    return {
+      ...newState,
+      phase: GamePhase.END_GAME,
+      activePlayerId: newState.firstPlayerMarker,
+      conflictsDiscard: updatedConflictsDiscard,
+      imperiumRow: [],
+      imperiumRowDeck: refreshedDeck,
+      canEndTurn: true,
+      canAcquireIR: false,
+      endgameDonePlayers: new Set(),
+      endgameWinners: null
+    }
+  }
+  return {
+    ...newState,
+    phase: GamePhase.ROUND_START,
+    combatStrength: {},
+    combatTroops: {},
+    currentRound: newState.currentRound + 1,
+    conflictsDiscard: updatedConflictsDiscard,
+    imperiumRow: [],
+    imperiumRowDeck: refreshedDeck
+  }
+}
+
+/** Convert ConflictReward to Reward for ChoiceOption */
+function conflictRewardToReward(r: ConflictReward): Reward {
+  switch (r.type) {
+    case RewardType.INTRIGUE: return { intrigueCards: r.amount }
+    case RewardType.SPICE: return { spice: r.amount }
+    case RewardType.SOLARI: return { solari: r.amount }
+    case RewardType.WATER: return { water: r.amount }
+    case RewardType.INFLUENCE: return { influence: { amounts: [{ faction: FactionType.EMPEROR, amount: r.amount }] } }
+    case RewardType.TROOPS: return { troops: r.amount }
+    case RewardType.VICTORY_POINTS: return { victoryPoints: r.amount }
+    default: return {}
+  }
+}
+
+/** Build ChoiceOptions for a conflict reward that requires choice */
+function buildConflictChoiceOptions(reward: ConflictReward): ChoiceOption[] {
+  if (reward.choiceOptions && reward.choiceOptions.length > 0) {
+    return reward.choiceOptions.map(opt => ({
+      reward: conflictRewardToReward(opt),
+      rewardLabel: `${opt.amount} ${opt.type}`
+    }))
+  }
+  if (reward.chooseFaction && reward.type === RewardType.INFLUENCE) {
+    const factions = [FactionType.EMPEROR, FactionType.SPACING_GUILD, FactionType.BENE_GESSERIT, FactionType.FREMEN]
+    return factions.map(f => ({
+      reward: { influence: { amounts: [{ faction: f, amount: reward.amount }] } },
+      rewardLabel: `${reward.amount} Influence (${f})`
+    }))
+  }
+  return []
+}
+
 function applyReward(state: GameState, reward: ConflictReward, placement: string, playerIds: number[]): GameState {
-  const newState = { ...state }
+  let newState = { ...state }
   newState.gains = newState.gains || []
   newState.gains.push({
     playerId: playerIds[0],
@@ -243,17 +337,10 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
       )
       break
 
-    case RewardType.INFLUENCE : {
-      // TODO player chooses faction
+    case RewardType.INFLUENCE: {
+      // chooseFaction rewards are handled via pendingConflictRewardChoices
       const faction = FactionType.EMPEROR
-      const currentInfluence = state.factionInfluence[faction][playerIds[0]] || 0
-      newState.factionInfluence = {
-        ...state.factionInfluence,
-        [faction]: {
-          ...state.factionInfluence[faction],
-          [playerIds[0]]: currentInfluence + reward.amount
-        }
-      }
+      newState = updateFactionInfluence(newState, faction, playerIds[0], reward.amount)
       break
     }
     case RewardType.CONTROL:
@@ -421,8 +508,58 @@ function applyRewardToPlayer(
   return updatedPlayer
 }
 
+/** Apply a conflict reward choice (from pendingConflictRewardChoices) */
+function applyConflictChoiceReward(
+  state: GameState,
+  reward: Reward,
+  playerId: number,
+  source: { id: number; name: string }
+): GameState {
+  let newState = {
+    ...state,
+    gains: [...state.gains],
+    combatStrength: { ...state.combatStrength },
+    factionInfluence: { ...state.factionInfluence }
+  }
+  const originalPlayer = newState.players.find(p => p.id === playerId)
+  if (!originalPlayer) return state
+  const player = { ...originalPlayer }
+
+  const pushGain = (amount: number | undefined, type: RewardType) => {
+    if (!amount) return
+    newState.gains.push({
+      playerId,
+      round: newState.currentRound,
+      source: GainSource.CONFLICT,
+      sourceId: source.id,
+      name: source.name,
+      amount,
+      type
+    })
+  }
+
+  if (reward.intrigueCards) {
+    player.intrigueCount += reward.intrigueCards
+    pushGain(reward.intrigueCards, RewardType.INTRIGUE)
+  }
+  if (reward.spice) { player.spice += reward.spice; pushGain(reward.spice, RewardType.SPICE) }
+  if (reward.water) { player.water += reward.water; pushGain(reward.water, RewardType.WATER) }
+  if (reward.solari) { player.solari += reward.solari; pushGain(reward.solari, RewardType.SOLARI) }
+  if (reward.troops) { player.troops += reward.troops; pushGain(reward.troops, RewardType.TROOPS) }
+  if (reward.victoryPoints) { player.victoryPoints += reward.victoryPoints; pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS) }
+  if (reward.influence) {
+    reward.influence.amounts.forEach(({ faction, amount }) => {
+      newState = updateFactionInfluence(newState, faction, playerId, amount)
+      pushGain(amount, RewardType.INFLUENCE)
+    })
+  }
+
+  newState.players = newState.players.map(p => (p.id === playerId ? player : p))
+  return newState
+}
+
 function applyChoiceReward(state: GameState, reward: Reward, playerId: number): GameState {
-  const newState = { 
+  let newState = { 
     ...state,
     gains: [...state.gains], 
     combatStrength: { ...state.combatStrength }, 
@@ -471,14 +608,7 @@ function applyChoiceReward(state: GameState, reward: Reward, playerId: number): 
   // Handle influence rewards
   if (reward.influence) {
     reward.influence.amounts.forEach(({ faction, amount }) => {
-      const currentInfluence = newState.factionInfluence[faction]?.[playerId] || 0
-      newState.factionInfluence = {
-        ...newState.factionInfluence,
-        [faction]: {
-          ...newState.factionInfluence[faction],
-          [playerId]: currentInfluence + amount
-        }
-      }
+      newState = updateFactionInfluence(newState, faction, playerId, amount)
       pushGain(amount, RewardType.INFLUENCE)
     })
   }
@@ -495,7 +625,7 @@ function handleIntrigueEffect(
   const player = state.players.find(p => p.id === playerId)
   if (!player) return state
 
-  const newState = { 
+  let newState = { 
     ...state, 
     gains: [...state.gains],
     combatStrength: { ...state.combatStrength },
@@ -558,14 +688,7 @@ function handleIntrigueEffect(
     }
     if (reward.influence) {
       reward.influence.amounts.forEach(({ faction, amount }) => {
-        const currentInfluence = newState.factionInfluence[faction]?.[playerId] || 0
-        newState.factionInfluence = {
-          ...newState.factionInfluence,
-          [faction]: {
-            ...newState.factionInfluence[faction],
-            [playerId]: currentInfluence + amount
-          }
-        }
+        newState = updateFactionInfluence(newState, faction, playerId, amount)
         pushGain(amount, RewardType.INFLUENCE)
       })
     }
@@ -1006,100 +1129,84 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!state.currentConflict) return state
       
       const strength = {...state.combatStrength}
-
       const placements = determinePlacements(strength, state.players.length) as Placements
-
       let newState = { ...state }
 
-      //TODO handle choices in CombatResults.tsx
-      let mentatOwnerNextRound = null;
+      const pendingChoices: NonNullable<GameState['pendingConflictRewardChoices']> = []
+      let mentatOwnerNextRound: number | null = null
+
+      const applyOrDeferReward = (reward: ConflictReward, placement: string, playerIds: number[]) => {
+        const options = buildConflictChoiceOptions(reward)
+        if (options.length > 0) {
+          pendingChoices.push({
+            id: `conflict-${state.currentConflict.id}-${placement}-${playerIds[0]}-${crypto.randomUUID()}`,
+            playerId: playerIds[0],
+            placement,
+            conflictId: state.currentConflict.id,
+            conflictName: state.currentConflict.name,
+            options
+          })
+        } else {
+          newState = applyReward(newState, reward, placement, playerIds)
+        }
+      }
+
       if (placements.first !== null && placements.first.length > 0) {
         state.currentConflict.rewards.first.forEach(reward => {
-          newState = applyReward(newState, reward, "1st place", placements.first || [])
+          applyOrDeferReward(reward, "1st place", placements.first || [])
         })
-        if(state.currentConflict.rewards.first.find(r => r.type === RewardType.AGENT)) {
+        if (state.currentConflict.rewards.first.find(r => r.type === RewardType.AGENT)) {
           mentatOwnerNextRound = placements.first[0]
         }
       }
 
       if (placements.second !== null && placements.second.length > 0) {
         state.currentConflict.rewards.second.forEach(reward => {
-          newState = applyReward(newState, reward, "2nd place", placements.second || [])
+          applyOrDeferReward(reward, "2nd place", placements.second || [])
         })
       }
 
-      if (placements.third !== null && placements.third.length > 0 &&state.players.length === 4) {
+      if (placements.third !== null && placements.third.length > 0 && state.players.length === 4) {
         state.currentConflict.rewards.third?.forEach(reward => {
-          newState = applyReward(newState, reward, "3rd place", placements.third || [])
+          applyOrDeferReward(reward, "3rd place", placements.third || [])
         })
       }
 
-      // Apply Makers
-      const bonusSpice = {...newState.bonusSpice}
-      BOARD_SPACES.forEach(s => {
-        if(s.makerSpace && (!newState.occupiedSpaces[s.id] || newState.occupiedSpaces[s.id]?.length === 0)) {
-          bonusSpice[s.makerSpace] += 1
-        }
-      })  
-      newState.bonusSpice = bonusSpice
-      // Recall Agents
-      newState.occupiedSpaces = {}
-      newState.players.forEach(p => {
-        newState.players[p.id].agents = 2
-        if(newState.players[p.id].hasSwordmaster) {
-          newState.players[p.id].agents += 1
-        }
-        if(newState.players[p.id].id === mentatOwnerNextRound) {
-          newState.mentatOwner = p.id
-          newState.players[p.id].agents += 1
-        }
-      })
-      
-      // Draw 5 cards
-      newState.players.forEach(p => {
-        p.revealed = false
-        if(p.deck.length < 5) {
-          p.deck = [...p.deck, ...p.discardPile]
-          p.discardPile = []
-        }
-        p.handCount = 5
-      })
-      newState.firstPlayerMarker = (newState.firstPlayerMarker + 1) % newState.players.length
-
-      // TODO If 10+ VP = End Game
-
-        const refreshedDeck = [...newState.imperiumRow, ...newState.imperiumRowDeck]
-
-        const updatedConflictsDiscard = [...state.conflictsDiscard, state.currentConflict]
-        const endgameTriggered =
-          newState.players.some(p => p.victoryPoints >= 10) ||
-          updatedConflictsDiscard.length >= CONFLICTS.length
-
-        if (endgameTriggered) {
-          return {
-            ...newState,
-            phase: GamePhase.END_GAME,
-            activePlayerId: newState.firstPlayerMarker,
-            conflictsDiscard: updatedConflictsDiscard,
-            imperiumRow: [],
-            imperiumRowDeck: refreshedDeck,
-            canEndTurn: true,
-            canAcquireIR: false,
-            endgameDonePlayers: new Set(),
-            endgameWinners: null
-          }
-        }
-
+      if (pendingChoices.length > 0) {
         return {
           ...newState,
-          phase: GamePhase.ROUND_START,
-          combatStrength: {},
-          combatTroops: {},
-          currentRound: newState.currentRound + 1,
-          conflictsDiscard: updatedConflictsDiscard,
-          imperiumRow: [],
-          imperiumRowDeck: refreshedDeck
+          pendingConflictRewardChoices: pendingChoices,
+          combatResolutionDeferred: { mentatOwnerNextRound }
         }
+      }
+
+      // Apply Makers (no pending choices - proceed with full transition)
+      return completeCombatTransition(newState, state, mentatOwnerNextRound)
+    }
+    case 'RESOLVE_CONFLICT_REWARD_CHOICE': {
+      const { choiceId, reward } = action
+      const pending = state.pendingConflictRewardChoices
+      if (!pending || state.phase !== GamePhase.COMBAT) return state
+      const choice = pending.find(c => c.id === choiceId)
+      if (!choice) return state
+
+      let newState = applyConflictChoiceReward(state, reward, choice.playerId, {
+        id: choice.conflictId,
+        name: choice.conflictName + ' - ' + choice.placement
+      })
+
+      const remaining = pending.filter(c => c.id !== choiceId)
+      newState = { ...newState, pendingConflictRewardChoices: remaining.length > 0 ? remaining : undefined }
+
+      if (remaining.length > 0) {
+        return newState
+      }
+
+      // Last choice resolved - complete the transition
+      const deferred = state.combatResolutionDeferred
+      const mentatOwnerNextRound = deferred?.mentatOwnerNextRound ?? null
+      newState = { ...newState, combatResolutionDeferred: undefined }
+      return completeCombatTransition(newState, state, mentatOwnerNextRound)
     }
     case 'PLAY_INTRIGUE': {
       const { cardId, playerId } = action
@@ -1159,15 +1266,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         // Handle chooseOne influence
         if (effect.reward.influence?.chooseOne && effect.reward.influence.amounts.length > 0) {
           const choiceId = card.name + '-INFLUENCE-CHOOSE-' + crypto.randomUUID()
-          const options: ChoiceOption[] = effect.reward.influence.amounts.map(({ faction, amount }) => ({
-            cost: effect.cost, // Same cost for all options
-            reward: {
-              influence: {
-                amounts: [{ faction, amount }]
-              }
-            },
-            disabled: false
-          }))
+          const options: ChoiceOption[] = effect.reward.influence.amounts.map(({ faction, amount }) => {
+            const currentInfluence = state.factionInfluence[faction]?.[playerId] ?? 0
+            const disabled = amount < 0 && currentInfluence < -amount
+            return {
+              cost: effect.cost, // Same cost for all options
+              reward: {
+                influence: {
+                  amounts: [{ faction, amount }]
+                }
+              },
+              disabled
+            }
+          })
           
           const fixedOptionsChoice: FixedOptionsChoice = {
             id: choiceId,
@@ -1259,8 +1370,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.phase !== GamePhase.END_GAME) return state
 
       // Winner by VP; ties broken by spice, Solari, water, garrisoned troops.
-      const maxVp = Math.max(...state.players.map(p => p.victoryPoints))
-      let contenders = state.players.filter(p => p.victoryPoints === maxVp)
+      const maxVp = Math.max(...state.players.map(p => getTotalVictoryPoints(p, state)))
+      let contenders = state.players.filter(p => getTotalVictoryPoints(p, state) === maxVp)
       if (contenders.length <= 1) {
         return { ...state, endgameWinners: contenders.map(p => p.id) }
       }
@@ -2119,18 +2230,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       applyResource('troops', card.acquireEffect?.troops, RewardType.TROOPS)
       applyResource('victoryPoints', card.acquireEffect?.victoryPoints, RewardType.VICTORY_POINTS)
 
-      let updatedFactionInfluence = state.factionInfluence
+      let workingState: GameState = { ...state, gains: updatedGains }
       if (card.acquireEffect?.influence) {
-        updatedFactionInfluence = { ...state.factionInfluence }
         card.acquireEffect.influence.amounts.forEach(({ faction, amount }) => {
-          const current = updatedFactionInfluence[faction][playerId] || 0
-          updatedFactionInfluence = {
-            ...updatedFactionInfluence,
-            [faction]: {
-              ...updatedFactionInfluence[faction],
-              [playerId]: current + amount
-            }
-          }
+          workingState = updateFactionInfluence(workingState, faction, playerId, amount, { appendGainsTo: updatedGains })
           pushGain(amount, RewardType.INFLUENCE)
         })
       }
@@ -2163,13 +2266,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         : state.currTurn
 
       return {
-        ...state,
+        ...workingState,
         players: state.players.map(p => (p.id === playerId ? updatedPlayer : p)),
         imperiumRow: updatedImperiumRow,
         imperiumRowDeck: [...state.imperiumRowDeck],
         currTurn: updatedCurrTurn,
         gains: updatedGains,
-        factionInfluence: updatedFactionInfluence,
         pendingImperiumRowReplacement: pendingReplacement
       }
     }
@@ -2810,7 +2912,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return state
       }
       
-      const newState = { ...state }
+      let newState = { ...state }
       let newPlayer = { ...player }
       const newGains = [...state.gains]
       
@@ -2848,17 +2950,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Handle influence updates (needs state modification)
       if (reward.reward.influence) {
         reward.reward.influence.amounts.forEach(inf => {
-          const currentInfluence = newState.factionInfluence[inf.faction]?.[playerId] || 0
-          // Power Play grants +1 extra influence
           const influenceAmount = reward.powerPlay ? inf.amount + 1 : inf.amount
+          newState = updateFactionInfluence(newState, inf.faction, playerId, influenceAmount, { appendGainsTo: newGains })
           newGains.push({ round: newState.currentRound, playerId: playerId, sourceId: reward.source.id, name: inf.faction, amount: influenceAmount, type: RewardType.INFLUENCE, source: reward.source.type })
-          newState.factionInfluence = {
-            ...newState.factionInfluence,
-            [inf.faction]: {
-              ...newState.factionInfluence[inf.faction],
-              [playerId]: currentInfluence + influenceAmount
-            }
-          }
         })
       }
       
@@ -2884,7 +2978,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const player = state.players.find(p => p.id === playerId)
       if (!player) return state
       
-      const newState = { ...state }
+      let newState = { ...state }
       let newPlayer = { ...player }
       const newGains = [...state.gains]
       
@@ -2920,17 +3014,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         // Handle influence updates (needs state modification)
         if (reward.reward.influence) {
           reward.reward.influence.amounts.forEach(inf => {
-            const currentInfluence = newState.factionInfluence[inf.faction]?.[playerId] || 0
-            // Power Play grants +1 extra influence
             const influenceAmount = reward.powerPlay ? inf.amount + 1 : inf.amount
+            newState = updateFactionInfluence(newState, inf.faction, playerId, influenceAmount, { appendGainsTo: newGains })
             newGains.push({ round: newState.currentRound, playerId: playerId, sourceId: reward.source.id, name: inf.faction, amount: influenceAmount, type: RewardType.INFLUENCE, source: reward.source.type })
-            newState.factionInfluence = {
-              ...newState.factionInfluence,
-              [inf.faction]: {
-                ...newState.factionInfluence[inf.faction],
-                [playerId]: currentInfluence + influenceAmount
-              }
-            }
           })
         }
       })

@@ -1,5 +1,6 @@
 import React from 'react'
-import { Player, FactionType } from '../types/GameTypes'
+import { Player, FactionType, GameState } from '../types/GameTypes'
+import { getTotalVictoryPoints } from '../utils/influenceVictoryPoints'
 
 interface PlayerAreaProps {
   player: Player
@@ -8,6 +9,7 @@ interface PlayerAreaProps {
   isOpen: boolean
   onToggle: () => void
   factionInfluence?: Record<FactionType, Record<number, number>>
+  gameState?: GameState
 }
 
 const PlayerArea: React.FC<PlayerAreaProps> = ({ 
@@ -16,8 +18,11 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
   isStartingPlayer,
   isOpen,
   onToggle,
-  factionInfluence
+  factionInfluence,
+  gameState
 }) => {
+  const totalVP = gameState ? getTotalVictoryPoints(player, gameState) : player.victoryPoints
+
   const getPlayerInfluence = (faction: FactionType): number => {
     if (!factionInfluence) return 0
     return factionInfluence[faction]?.[player.id] || 0
@@ -56,7 +61,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
               <div>
                 <div className="resource-row">
                   <div className="resource-stack">
-                    <span>{player.victoryPoints}</span>
+                    <span>{totalVP}</span>
                     <img className="resource-icon" src={"icon/vp.png"} alt="vp" />
                   </div>
                   <div className="resource-stack">
@@ -102,7 +107,7 @@ const PlayerArea: React.FC<PlayerAreaProps> = ({
         </div>
       </div>
       <div className="resources">
-        <div>VP: {player.victoryPoints}</div>
+        <div>VP: {totalVP}</div>
         <div>Spice: {player.spice}</div>
         <div>Water: {player.water}</div>
         <div>Solari: {player.solari}</div>

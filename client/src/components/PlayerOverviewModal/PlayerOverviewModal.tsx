@@ -1,10 +1,12 @@
-import { ControlMarkerType, FactionType, Player } from '../../types/GameTypes'
+import { ControlMarkerType, FactionType, GameState, Player } from '../../types/GameTypes'
+import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import './PlayerOverviewModal.css'
 
 interface PlayerOverviewModalProps {
   players: Player[]
   factionInfluence: Record<FactionType, Record<number, number>>
   factionAlliances: Record<FactionType, number | null>
+  gameState?: GameState
   controlMarkers: Record<ControlMarkerType, number | null>
   combatTroops: Record<number, number>
   combatStrength: Record<number, number>
@@ -51,14 +53,18 @@ const PlayerOverviewModal = ({
   firstPlayerMarker,
   mentatOwner,
   isCombatPhase,
-  onClose
+  onClose,
+  gameState
 }: PlayerOverviewModalProps) => {
   const getBestValue = (valueSelector: (player: Player) => number): number => {
     return Math.max(...players.map(valueSelector), 0)
   }
 
+  const vpValue = (player: Player) =>
+    gameState ? getTotalVictoryPoints(player, gameState) : player.victoryPoints
+
   const baseRows: NumericRow[] = [
-    { key: 'vp', label: 'VP', icon: 'vp', value: player => player.victoryPoints, highlightBest: true },
+    { key: 'vp', label: 'VP', icon: 'vp', value: vpValue, highlightBest: true },
     { key: 'spice', label: 'Spice', icon: 'spice', value: player => player.spice, highlightBest: true },
     { key: 'water', label: 'Water', icon: 'water', value: player => player.water, highlightBest: true },
     { key: 'solari', label: 'Solari', icon: 'solari', value: player => player.solari, highlightBest: true },

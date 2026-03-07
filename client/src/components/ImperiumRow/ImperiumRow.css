@@ -171,7 +171,7 @@
   }
 }
 
-/* Mobile breakpoint (375-600px) - All 7 cards in one row, very small */
+/* Mobile breakpoint (375-600px) - Cards in horizontal row, scroll if needed */
 @media (max-width: 600px) {
   :root {
     --card-padding: 1px;
@@ -200,12 +200,36 @@
   }
 
   .cards-grid.main-cards {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    grid-template-columns: unset;
     margin-bottom: var(--card-gap);
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 6px;
+  }
+
+  .cards-grid.main-cards .imperium-card {
+    flex: 0 0 auto;
+    width: 70px;
+    min-width: 70px;
+    max-width: 70px;
   }
 
   .cards-grid.fixed-cards-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    grid-template-columns: unset;
+    gap: 6px;
+  }
+
+  .cards-grid.fixed-cards-row .imperium-card {
+    flex: 0 0 auto;
+    width: 70px;
+    min-width: 70px;
+    max-width: 70px;
   }
 
   .imperium-card {

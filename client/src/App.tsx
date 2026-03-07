@@ -342,7 +342,15 @@ const GameContent = () => {
           />
         )}
         <div className="round-start-container" hidden={isViewingHistory || gameState.phase !== GamePhase.ROUND_START || needsImperiumSelection}>
-        <ConflictSelect conflicts={CONFLICTS.filter(c => !gameState.conflictsDiscard.includes(c))} handleConflictSelect={handleConflictSelect}/>
+        <ConflictSelect
+          conflicts={(() => {
+            const tierForRound = gameState.currentRound === 1 ? 1 : gameState.currentRound <= 6 ? 2 : 3
+            return CONFLICTS.filter(
+              c => c.tier === tierForRound && !gameState.conflictsDiscard.includes(c)
+            )
+          })()}
+          handleConflictSelect={handleConflictSelect}
+        />
       </div>
       <div className="turn-controls-spacer" />
         <div className="turn-controls-container" hidden={isViewingHistory || (gameState.phase !== GamePhase.PLAYER_TURNS && gameState.phase !== GamePhase.COMBAT && gameState.phase !== GamePhase.END_GAME)}>
@@ -425,11 +433,15 @@ const GameContent = () => {
           </div>
       </div>
       <div className="combat-results-container" hidden={gameState.phase !== GamePhase.COMBAT_REWARDS}>
-        <CombatResults 
+        <CombatResults
           players={gameState.players}
           combatStrength={gameState.combatStrength}
           history={gameState.history}
           onConfirm={handleConfirmCombat}
+          pendingConflictRewardChoices={gameState.pendingConflictRewardChoices}
+          onResolveConflictChoice={(choiceId, reward) =>
+            dispatch({ type: 'RESOLVE_CONFLICT_REWARD_CHOICE', choiceId, reward })
+          }
         />
       </div>
       {isPlayerOverviewOpen && (
@@ -437,6 +449,7 @@ const GameContent = () => {
           players={displayState.players}
           factionInfluence={displayState.factionInfluence}
           factionAlliances={gameState.factionAlliances}
+          gameState={gameState}
           controlMarkers={gameState.controlMarkers}
           combatTroops={displayState.combatTroops}
           combatStrength={displayState.combatStrength ?? gameState.combatStrength}
