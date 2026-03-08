@@ -42,6 +42,7 @@
   display: flex;
   gap: 8px;
   margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .imperium-select-preview-slot {
@@ -65,11 +66,38 @@
 .imperium-select-cardsearch-wrapper {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* More space between cards in Select 5 Imperium Row Cards */
 .imperium-select-dialog .cards-grid {
   gap: 16px;
+}
+
+/* Desktop: ensure cards grid scrolls and fits more cards per row */
+@media (min-width: 601px) {
+  .imperium-select-dialog .card-selection-dialog .cards-grid {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* Smaller cards on desktop so more fit in viewport */
+  .imperium-select-dialog .cards-grid .card {
+    width: 110px;
+    transform: scale(0.75);
+  }
+
+  .imperium-select-dialog .cards-grid .card:hover {
+    transform: scale(0.85);
+  }
+
+  .imperium-select-dialog .cards-grid .card.selected {
+    transform: scale(0.85);
+  }
 }
 
 /* Make CardSearch render inside the Imperium dialog instead of covering the whole screen */
@@ -88,6 +116,10 @@
   max-height: none;
   box-shadow: none;
   gap: 0;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Hide CardSearch title when nested (Imperium has its own header) */

@@ -149,7 +149,8 @@ const CardSearch: React.FC<CardSearchProps> = ({
     onCancel()
   }
 
-  return (
+  const isStandaloneModal = !slotBetweenCardsAndSearch
+  const dialog = (
     <div className={`card-selection-dialog ${slotBetweenCardsAndSearch ? 'card-selection-dialog-search-at-bottom' : ''}`}>
       <div className="dialog-title">
         {!hideTitle && <h2>{text}</h2>}
@@ -257,6 +258,15 @@ const CardSearch: React.FC<CardSearchProps> = ({
       </div>
     </div>
   )
+
+  if (isStandaloneModal) {
+    return (
+      <div className="card-selection-dialog-overlay card-selection-dialog-overlay-standalone">
+        {dialog}
+      </div>
+    )
+  }
+  return dialog
 }
 
 export default CardSearch

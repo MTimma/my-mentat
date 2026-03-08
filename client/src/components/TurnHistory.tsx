@@ -242,6 +242,16 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         </div>
       </div>
 
+      <div className="turn-history-footer">
+        <button
+          className="turn-history-return-button"
+          onClick={() => onClose?.()}
+          aria-label="Return to game"
+        >
+          Return
+        </button>
+      </div>
+
       {/* JSON Details Modal */}
       {selectedTurn !== null && (
         <div className="turn-details-modal">

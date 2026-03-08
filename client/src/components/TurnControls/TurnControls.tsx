@@ -892,7 +892,17 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         
       }
 
-      <div className="turn-controls">
+      <div
+        className="turn-controls"
+        hidden={
+          Boolean(activeCardSelect) ||
+          Boolean(opponentCardSelect) ||
+          isCardSelectionOpen ||
+          isIntrigueSelectionOpen ||
+          showSelectiveBreeding ||
+          showTrashPopup
+        }
+      >
         <div className="active-player-info">
           <div className={`color-indicator ${activePlayer.color}`}></div>
           {activePlayer.leader.name}
@@ -942,23 +952,24 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             </div>
           )}
         </div>
-        <div className="utility-buttons">
-          <button 
-            className="view-influence-button"
-            onClick={onTurnHistoryToggle}
-            title="View Turn History"
-          >
-            Turn History
-          </button>
-          <button 
-            className="view-influence-button"
-            onClick={onOpenPlayerOverview}
-            title="View Player Overview"
-          >
-            Player Overview
-          </button>
-        </div>
-        <div className="control-buttons">
+        <div className="turn-controls-buttons-grid">
+          <div className="utility-buttons">
+            <button 
+              className="view-influence-button"
+              onClick={onTurnHistoryToggle}
+              title="View Turn History"
+            >
+              Turn History
+            </button>
+            <button 
+              className="view-influence-button"
+              onClick={onOpenPlayerOverview}
+              title="View Player Overview"
+            >
+              Player Overview
+            </button>
+          </div>
+          <div className="control-buttons">
           <div className="button-pair">
             <button 
               className="play-card-button"
@@ -1051,51 +1062,52 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             </button>}
           </div>
         </div>
-
-        <CardSearch
-          isOpen={isCardSelectionOpen}
-          cards={activePlayer.deck}
-          selectionCount={isRevealTurn ? activePlayer.handCount: 1}
-          onSelect={handleCardSelection}
-          onCancel={() => setIsCardSelectionOpen(false)}
-          isRevealTurn={isRevealTurn}
-          text={isRevealTurn ? 'Select Cards to Reveal' : 'Select a Card to Play'}
-        />
-
-        <CardSearch
-          isOpen={isIntrigueSelectionOpen}
-          cards={playableIntrigueCards}
-          selectionCount={1}
-          onSelect={handleIntrigueSelection}
-          onCancel={() => setIsIntrigueSelectionOpen(false)}
-          isRevealTurn={false}
-          text="Select an Intrigue card to play"
-          getCardPlayability={(card) => checkIntrigueCardPlayability(card as IntrigueCard)}
-        />
-
-        <CardSearch
-          isOpen={showSelectiveBreeding}
-          player={activePlayer}
-          piles={[CardPile.HAND, CardPile.DISCARD, CardPile.PLAY_AREA]}
-          selectionCount={1}
-          onSelect={selected => selected[0] && onSelectiveBreedingSelect && onSelectiveBreedingSelect(selected[0])}
-          onCancel={onSelectiveBreedingCancel || (() => {})}
-          isRevealTurn={false}
-          text="Selective Breeding: select a card to trash"
-        />
-
-        <CardSearch
-          isOpen={showTrashPopup}
-          player={activePlayer}
-          piles={[CardPile.HAND, CardPile.DISCARD, CardPile.PLAY_AREA]}
-          selectionCount={1}
-          onSelect={selected => selected[0] && handleTrashSelect(selected[0])}
-          onCancel={() => { setShowTrashPopup(false); setPendingEffect(null);} }
-          isRevealTurn={false}
-          text="Select card to trash"
-        />
-
+        </div>
       </div>
+
+      {/* Card selection overlays - outside turn-controls so they stay visible when controls are hidden */}
+      <CardSearch
+        isOpen={isCardSelectionOpen}
+        cards={activePlayer.deck}
+        selectionCount={isRevealTurn ? activePlayer.handCount : 1}
+        onSelect={handleCardSelection}
+        onCancel={() => setIsCardSelectionOpen(false)}
+        isRevealTurn={isRevealTurn}
+        text={isRevealTurn ? 'Select Cards to Reveal' : 'Select a Card to Play'}
+      />
+
+      <CardSearch
+        isOpen={isIntrigueSelectionOpen}
+        cards={playableIntrigueCards}
+        selectionCount={1}
+        onSelect={handleIntrigueSelection}
+        onCancel={() => setIsIntrigueSelectionOpen(false)}
+        isRevealTurn={false}
+        text="Select an Intrigue card to play"
+        getCardPlayability={(card) => checkIntrigueCardPlayability(card as IntrigueCard)}
+      />
+
+      <CardSearch
+        isOpen={showSelectiveBreeding}
+        player={activePlayer}
+        piles={[CardPile.HAND, CardPile.DISCARD, CardPile.PLAY_AREA]}
+        selectionCount={1}
+        onSelect={selected => selected[0] && onSelectiveBreedingSelect && onSelectiveBreedingSelect(selected[0])}
+        onCancel={onSelectiveBreedingCancel || (() => {})}
+        isRevealTurn={false}
+        text="Selective Breeding: select a card to trash"
+      />
+
+      <CardSearch
+        isOpen={showTrashPopup}
+        player={activePlayer}
+        piles={[CardPile.HAND, CardPile.DISCARD, CardPile.PLAY_AREA]}
+        selectionCount={1}
+        onSelect={selected => selected[0] && handleTrashSelect(selected[0])}
+        onCancel={() => { setShowTrashPopup(false); setPendingEffect(null) }}
+        isRevealTurn={false}
+        text="Select card to trash"
+      />
     </>
   )
 }
