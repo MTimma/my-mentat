@@ -1,5 +1,9 @@
+import React, { useState } from 'react'
 import { ControlMarkerType, FactionType, GameState, Player } from '../../types/GameTypes'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
+import { getLeaderImage } from '../../data/leaders'
+import LeaderImageModal from '../LeaderImageModal/LeaderImageModal'
+import PlayerPlayAreaModal from '../PlayerPlayAreaModal/PlayerPlayAreaModal'
 import './PlayerOverviewModal.css'
 
 interface PlayerOverviewModalProps {
@@ -56,6 +60,9 @@ const PlayerOverviewModal = ({
   onClose,
   gameState
 }: PlayerOverviewModalProps) => {
+  const [leaderImagePlayer, setLeaderImagePlayer] = useState<Player | null>(null)
+  const [playAreaPlayer, setPlayAreaPlayer] = useState<Player | null>(null)
+
   const getBestValue = (valueSelector: (player: Player) => number): number => {
     return Math.max(...players.map(valueSelector), 0)
   }
@@ -72,6 +79,7 @@ const PlayerOverviewModal = ({
     { key: 'deployed', label: 'Deployed', value: player => combatTroops[player.id] || 0, highlightBest: true },
     { key: 'strength', label: 'Strength', value: player => combatStrength[player.id] || 0, highlightBest: true },
     { key: 'hand', label: 'Hand', value: player => player.handCount, highlightBest: true },
+    { key: 'playArea', label: 'Play Area', value: player => (player.playArea?.length ?? 0), highlightBest: true },
     { key: 'deck', label: 'Deck', value: player => player.deck.length, highlightBest: true },
     { key: 'discard', label: 'Discard', value: player => player.discardPile.length, highlightBest: true },
     { key: 'intrigue', label: 'Intrigue', value: player => player.intrigueCount, highlightBest: true }
@@ -95,6 +103,28 @@ const PlayerOverviewModal = ({
                 {players.map(player => (
                   <th key={player.id} className={`player-col player-${player.color}`}>
                     <div className="player-name">{player.leader.name}</div>
+                    <div className="player-overview-buttons">
+                      {getLeaderImage(player.leader.name) && (
+                        <button
+                          type="button"
+                          className="see-leader-button"
+                          onClick={() => setLeaderImagePlayer(player)}
+                          title="See Leader"
+                          aria-label={`View ${player.leader.name}`}
+                        >
+                          See Leader
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="see-play-area-button"
+                        onClick={() => setPlayAreaPlayer(player)}
+                        title="See Play Area"
+                        aria-label={`View ${player.leader.name} play area`}
+                      >
+                        See Play Area
+                      </button>
+                    </div>
                     <div className="player-badges">
                       {player.id === activePlayerId && <span className="player-badge">active</span>}
                       {player.id === firstPlayerMarker && <span className="player-badge">1st</span>}
@@ -206,6 +236,18 @@ const PlayerOverviewModal = ({
           </button>
         </div>
       </div>
+      {leaderImagePlayer && (
+        <LeaderImageModal
+          leader={leaderImagePlayer.leader}
+          isOpen={true}
+          onClose={() => setLeaderImagePlayer(null)}
+        />
+      )}
+      <PlayerPlayAreaModal
+        player={playAreaPlayer}
+        isOpen={!!playAreaPlayer}
+        onClose={() => setPlayAreaPlayer(null)}
+      />
     </div>
   )
 }

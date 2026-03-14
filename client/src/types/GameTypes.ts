@@ -230,7 +230,8 @@ export enum GainSource {
   INTRIGUE = 'intrigue',
   CONFLICT = 'conflict',
   HIGH_COUNCIL = 'high-council',
-  MENTAT = 'mentat'
+  MENTAT = 'mentat',
+  MASTERSTROKE = 'masterstroke'
 }
 
 export interface Card {
@@ -557,6 +558,7 @@ export enum CustomEffect {
   THE_VOICE = 'THE_VOICE',
   GUILD_BANKERS = 'GUILD_BANKERS',
   SHUFFLE_DISCARD_INTO_DECK = 'SHUFFLE_DISCARD_INTO_DECK',
+  SIGNET_RING = 'SIGNET_RING',
 }
 
 // Custom effects that are auto-applied and don't need user input

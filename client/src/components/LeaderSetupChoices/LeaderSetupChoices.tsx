@@ -1,7 +1,5 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Leader } from '../../types/GameTypes'
-import { Baron } from '../../data/leaders'
-import BaronSetupChoice from './BaronSetupChoice'
 
 import './LeaderSetupChoices.css'
 
@@ -11,16 +9,15 @@ interface LeaderSetupChoicesProps {
 }
 
 const LeaderSetupChoices: React.FC<LeaderSetupChoicesProps> = ({ selectedLeader, onComplete }) => {
+  useEffect(() => {
+    if (selectedLeader) {
+      onComplete(selectedLeader)
+    }
+  }, [selectedLeader, onComplete])
 
-  if (!selectedLeader) {
-    return <></>;
-  }
-
-  return (
-    <>
-    {selectedLeader instanceof Baron && <BaronSetupChoice initBaron={selectedLeader} onComplete={onComplete} />}
-    </>
-  )
+  // Baron no longer has setup choices - factions are chosen when Masterstroke is triggered.
+  // Proceed directly with selected leader.
+  return null
 }
 
 export default LeaderSetupChoices 

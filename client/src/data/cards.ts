@@ -308,6 +308,13 @@ export const STARTING_DECK: Card[] = [
     id: 10,
     name: "Signet Ring",
     image: "starter_deck/signet_ring.avif",
+    playEffect: [
+      {
+        reward: {
+          custom: CustomEffect.SIGNET_RING
+        }
+      }
+    ],
     revealEffect: [
       {
         reward: {

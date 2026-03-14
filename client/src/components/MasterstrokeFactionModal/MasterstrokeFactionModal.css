@@ -1,0 +1,138 @@
+.dialog-overlay.masterstroke-faction-overlay {
+  z-index: 1001;
+}
+
+.masterstroke-faction-modal {
+  width: min(95vw, 420px);
+  background: #f0e2be;
+  border: 1px solid #8b6f39;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  color: #1c1a14;
+}
+
+.masterstroke-faction-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #b79c64;
+  background: linear-gradient(180deg, #ead6a6 0%, #e0c98f 100%);
+}
+
+.masterstroke-faction-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.masterstroke-faction-close {
+  background: transparent;
+  border: 1px solid #8b6f39;
+  border-radius: 4px;
+  color: #3a2f18;
+  width: 30px;
+  height: 30px;
+  font-size: 1.25rem;
+  padding: 0;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.masterstroke-faction-close:hover {
+  background: #d9bf83;
+}
+
+.masterstroke-faction-body {
+  padding: 16px;
+}
+
+.masterstroke-faction-prompt {
+  margin: 0 0 12px 0;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.masterstroke-faction-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.masterstroke-faction-btn {
+  padding: 8px;
+  border: 2px solid #8b4513;
+  border-radius: 8px;
+  background: #4b443f;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.masterstroke-faction-btn:hover:not(:disabled) {
+  border-color: #5c2d0c;
+  background-color: rgba(139, 69, 19, 0.15);
+  transform: translateY(-2px);
+}
+
+.masterstroke-faction-btn.selected {
+  border-color: #5c2d0c;
+  background-color: rgba(139, 69, 19, 0.3);
+}
+
+.masterstroke-faction-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.masterstroke-faction-icon {
+  width: 64px;
+  height: auto;
+  display: block;
+}
+
+.masterstroke-faction-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 12px 16px;
+  border-top: 1px solid #b79c64;
+  background: linear-gradient(0deg, #ead6a6 0%, #e0c98f 100%);
+}
+
+.masterstroke-faction-confirm {
+  padding: 10px 24px;
+  background-color: #5c2d0c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.masterstroke-faction-confirm:hover:not(:disabled) {
+  background-color: #3d1f08;
+  transform: translateY(-1px);
+}
+
+.masterstroke-faction-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.masterstroke-faction-cancel {
+  padding: 10px 24px;
+  background: transparent;
+  color: #3a2f18;
+  border: 1px solid #8b6f39;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.masterstroke-faction-cancel:hover {
+  background: #d9bf83;
+}

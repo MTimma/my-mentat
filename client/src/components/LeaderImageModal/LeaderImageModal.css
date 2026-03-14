@@ -1,0 +1,62 @@
+.dialog-overlay.leader-image-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.leader-image-modal {
+  background: #f0e2be;
+  border: 1px solid #8b6f39;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  max-width: min(95vw, 400px);
+  overflow: hidden;
+}
+
+.leader-image-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #b79c64;
+  background: linear-gradient(180deg, #ead6a6 0%, #e0c98f 100%);
+}
+
+.leader-image-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1c1a14;
+}
+
+.leader-image-close {
+  background: transparent;
+  border: 1px solid #8b6f39;
+  border-radius: 4px;
+  color: #3a2f18;
+  width: 28px;
+  height: 28px;
+  font-size: 1.1rem;
+  padding: 0;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.leader-image-close:hover {
+  background: #d9bf83;
+}
+
+.leader-image-body {
+  padding: 12px;
+}
+
+.leader-image-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}

@@ -45,6 +45,8 @@ import { PLAY_EFFECT_TEXTS } from '../../data/effectTexts'
 import { intrigueCards } from '../../services/IntrigueDeckService'
 import { playRequirementSatisfied, revealRequirementSatisfied, intrigueRequirementSatisfied } from './requirements'
 import { updateFactionInfluence, getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
+import { resolveSignetRingEffect } from '../../data/signetRingEffects'
+import { checkAndApplyMasterstroke, revertMasterstrokeIfNeeded } from '../../data/leaderAbilities'
 
 interface GameContextType {
   gameState: GameState
@@ -977,7 +979,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         currTurn: currentTurn
       }
 
-      return newState
+      return checkAndApplyMasterstroke(newState, action.playerId)
     }
     case 'RETREAT_TROOP': {
       const currentTroops = state.combatTroops[action.playerId] || 0
@@ -1018,7 +1020,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         )
       }
 
-      return newState
+      return revertMasterstrokeIfNeeded(newState, action.playerId)
     }
     case 'START_COMBAT_PHASE': {
       const newState = {...state}
@@ -1539,6 +1541,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 }
               })
               break
+            case CustomEffect.SIGNET_RING: {
+              const result = resolveSignetRingEffect(newState, playerId, card)
+              if (result.optionalEffects) optionalEffects.push(...result.optionalEffects)
+              if (result.pendingChoices) tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices || []), ...result.pendingChoices]
+              if (result.pendingRewards) result.pendingRewards.forEach(r => addPendingReward(r.reward, r.source, r.isTrash ?? false))
+              break
+            }
             default:
               if (!AUTO_APPLIED_CUSTOM_EFFECTS.includes(effect.reward.custom)) {
                 addPendingReward({ custom: effect.reward.custom }, { type: GainSource.CARD, id: card.id, name: card.name })
@@ -2440,6 +2449,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if(reward.water) { player.water += reward.water; pushGain(reward.water, RewardType.WATER);} 
       if(reward.solari) { player.solari += reward.solari; pushGain(reward.solari, RewardType.SOLARI);} 
       if(reward.troops) { player.troops += reward.troops; pushGain(reward.troops, RewardType.TROOPS);} 
+      if(reward.intrigueCards) {
+        player.intrigueCount += reward.intrigueCards;
+        pushGain(reward.intrigueCards, RewardType.INTRIGUE);
+      }
       if(reward.deployTroops) {
         pushGain(reward.deployTroops, RewardType.DEPLOY);
         tempCurrTurn.troopLimit = tempCurrTurn.troopLimit ? tempCurrTurn.troopLimit + reward.deployTroops : reward.deployTroops;
@@ -2911,6 +2924,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (reward.reward.custom === CustomEffect.THE_VOICE && (typeof customData?.spaceId !== 'number')) {
         return state
       }
+      if (reward.source.type === GainSource.MASTERSTROKE) {
+        const factions = customData?.factions as FactionType[] | undefined
+        const validFactions = Object.values(FactionType) as FactionType[]
+        if (!Array.isArray(factions) || factions.length !== 2 || !factions.every(f => validFactions.includes(f))) {
+          return state
+        }
+      }
       
       let newState = { ...state }
       let newPlayer = { ...player }
@@ -2948,8 +2968,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       newPlayer = applyRewardToPlayer(reward.reward, newPlayer, newGains, state, reward.source)
       
       // Handle influence updates (needs state modification)
-      if (reward.reward.influence) {
-        reward.reward.influence.amounts.forEach(inf => {
+      const influenceAmounts = reward.source.type === GainSource.MASTERSTROKE && customData?.factions
+        ? (customData.factions as FactionType[]).map(f => ({ faction: f, amount: 1 }))
+        : reward.reward.influence?.amounts ?? []
+      if (influenceAmounts.length > 0) {
+        influenceAmounts.forEach(inf => {
           const influenceAmount = reward.powerPlay ? inf.amount + 1 : inf.amount
           newState = updateFactionInfluence(newState, inf.faction, playerId, influenceAmount, { appendGainsTo: newGains })
           newGains.push({ round: newState.currentRound, playerId: playerId, sourceId: reward.source.id, name: inf.faction, amount: influenceAmount, type: RewardType.INFLUENCE, source: reward.source.type })

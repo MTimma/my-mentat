@@ -4,6 +4,8 @@ import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
 import { intrigueRequirementSatisfied } from '../GameContext/requirements'
+import { getLeaderImage } from '../../data/leaders'
+import LeaderImageModal from '../LeaderImageModal/LeaderImageModal'
 import './TurnControls.css'
 
 interface TurnControlsProps {
@@ -47,6 +49,9 @@ interface TurnControlsProps {
   onVoiceSelectionStart?: (rewardId: string) => void
   voiceSelectionActive?: boolean
   onVoiceSelectionCancel?: () => void
+  onMasterstrokeSelectionStart?: (rewardId: string) => void
+  masterstrokeSelectionActive?: boolean
+  onMasterstrokeSelectionCancel?: () => void
   onOpponentNoCardAck?: (opponentId: number) => void
   intrigueDeck: IntrigueCard[]
   gamePhase: GamePhase
@@ -101,6 +106,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onVoiceSelectionStart,
   voiceSelectionActive = false,
   onVoiceSelectionCancel,
+  onMasterstrokeSelectionStart,
+  masterstrokeSelectionActive = false,
+  onMasterstrokeSelectionCancel,
   onOpponentNoCardAck,
   intrigueDeck,
   gamePhase,
@@ -119,6 +127,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const [isIntrigueSelectionOpen, setIsIntrigueSelectionOpen] = useState(false)
   const [showTrashPopup, setShowTrashPopup] = useState(false)
+  const [isLeaderImageOpen, setIsLeaderImageOpen] = useState(false)
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
   const [activeCardSelect, setActiveCardSelect] = useState<CardSelectChoice | null>(null)
   const [opponentCardSelect, setOpponentCardSelect] = useState<Player | null>(null)
@@ -142,13 +151,13 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   // Automatically open CardSelectChoice if it's the only pending choice and not already open
   useEffect(() => {
     const cardSelectChoices = pendingChoices.filter(c => c.type === ChoiceType.CARD_SELECT) as CardSelectChoice[]
-    if (cardSelectChoices.length === 1 && !activeCardSelect && !voiceSelectionActive && !hasOpponentDiscard) {
+    if (cardSelectChoices.length === 1 && !activeCardSelect && !voiceSelectionActive && !masterstrokeSelectionActive && !hasOpponentDiscard) {
       setActiveCardSelect(cardSelectChoices[0])
     } else if (cardSelectChoices.length === 0 && activeCardSelect) {
       // Clear activeCardSelect if there are no more card select choices
       setActiveCardSelect(null)
     }
-  }, [pendingChoices, activeCardSelect, voiceSelectionActive, hasOpponentDiscard])
+  }, [pendingChoices, activeCardSelect, voiceSelectionActive, masterstrokeSelectionActive, hasOpponentDiscard])
 
   if (!activePlayer) return null
   const isEndGame = gamePhase === GamePhase.END_GAME
@@ -627,10 +636,13 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               {/* Mandatory Rewards */}
               {card.rewards.map(reward => {
                 const isVoiceReward = reward.reward.custom === CustomEffect.THE_VOICE
-                const disabled = voiceSelectionActive || reward.disabled
+                const isMasterstrokeReward = reward.source.type === GainSource.MASTERSTROKE
+                const disabled = voiceSelectionActive || masterstrokeSelectionActive || reward.disabled
                 const tooltip = voiceSelectionActive
                   ? 'Finish The Voice selection before claiming other rewards.'
-                  : reward.isTrash
+                  : masterstrokeSelectionActive
+                    ? 'Finish Masterstroke faction selection before claiming other rewards.'
+                    : reward.isTrash
                     ? `⚠️ Trashing this card will cancel effects that haven't been applied yet. Cancels: ${getCancelledRewards(card, reward)}`
                     : undefined
                 return (
@@ -641,6 +653,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                     if (!onClaimReward) return
                     if (isVoiceReward && onVoiceSelectionStart) {
                       onVoiceSelectionStart(reward.id)
+                    } else if (isMasterstrokeReward && onMasterstrokeSelectionStart) {
+                      onMasterstrokeSelectionStart(reward.id)
                     } else {
                       onClaimReward(reward.id)
                     }
@@ -649,20 +663,20 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   title={tooltip}
                 >
                   {reward.isTrash && <span className="warning-icon">⚠️ </span>}
-                  {renderLabel({ reward: reward.reward })}
+                  {isMasterstrokeReward ? 'Masterstroke: Choose 2 factions' : renderLabel({ reward: reward.reward })}
                 </button>
               )})}
               
               {/* Optional Effects */}
               {card.optional.map((eff, idx) => {
-                const disabled = voiceSelectionActive || !isAffordable(eff.cost)
+                const disabled = voiceSelectionActive || masterstrokeSelectionActive || !isAffordable(eff.cost)
                 return (
                 <button 
                   key={idx}
                   className="effect-btn optional"
                   disabled={disabled}
                   onClick={() => handleEffectClick(eff)}
-                  title={voiceSelectionActive ? 'Finish The Voice selection before resolving other effects.' : undefined}
+                  title={voiceSelectionActive || masterstrokeSelectionActive ? 'Finish the current selection before resolving other effects.' : undefined}
                 >
                   {renderLabel(eff)}
                 </button>
@@ -679,8 +693,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                       key={choice.id}
                       className="effect-btn choice"
                       onClick={() => setActiveCardSelect(cardSelectChoice)}
-                      disabled={cardSelectChoice.disabled || voiceSelectionActive}
-                      title={voiceSelectionActive ? 'Finish The Voice selection before resolving other choices.' : undefined}
+                      disabled={cardSelectChoice.disabled || voiceSelectionActive || masterstrokeSelectionActive}
+                      title={voiceSelectionActive || masterstrokeSelectionActive ? 'Finish the current selection before resolving other choices.' : undefined}
                     >
                       {cardSelectChoice.prompt}
                     </button>
@@ -702,9 +716,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                             {oidx > 0 && <span className="or-separator">OR</span>}
                             <button
                               className="effect-btn choice or-option"
-                              disabled={option.disabled || !isAffordable(option.cost) || voiceSelectionActive}
+                              disabled={option.disabled || !isAffordable(option.cost) || voiceSelectionActive || masterstrokeSelectionActive}
                               onClick={() => onResolveChoice && onResolveChoice(choice.id, option.reward, choice.source)}
-                              title={voiceSelectionActive ? 'Finish The Voice selection before resolving other choices.' : disabledTooltip}
+                              title={voiceSelectionActive || masterstrokeSelectionActive ? 'Finish the current selection before resolving other choices.' : disabledTooltip}
                             >
                               {renderLabel(option)}
                             </button>
@@ -729,6 +743,20 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         <span>Select any board space to block with The Voice.</span>
         {onVoiceSelectionCancel && (
           <button className="secondary-btn" onClick={onVoiceSelectionCancel}>
+            Cancel
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  const renderMasterstrokeSelectionBanner = () => {
+    if (!masterstrokeSelectionActive) return null
+    return (
+      <div className="voice-selection-banner">
+        <span>Select 2 factions for Masterstroke.</span>
+        {onMasterstrokeSelectionCancel && (
+          <button className="secondary-btn" onClick={onMasterstrokeSelectionCancel}>
             Cancel
           </button>
         )}
@@ -885,6 +913,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         </div>
       )}
       {renderVoiceSelectionBanner()}
+      {renderMasterstrokeSelectionBanner()}
       {renderOpponentDiscardPanel()}
       {renderEffectsBar()}
       {
@@ -906,7 +935,23 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         <div className="active-player-info">
           <div className={`color-indicator ${activePlayer.color}`}></div>
           {activePlayer.leader.name}
+          {getLeaderImage(activePlayer.leader.name) && (
+            <button
+              type="button"
+              className="see-leader-button"
+              onClick={() => setIsLeaderImageOpen(true)}
+              title="See Leader"
+              aria-label={`View ${activePlayer.leader.name}`}
+            >
+              See Leader
+            </button>
+          )}
         </div>
+        <LeaderImageModal
+          leader={activePlayer.leader}
+          isOpen={isLeaderImageOpen}
+          onClose={() => setIsLeaderImageOpen(false)}
+        />
         {activeIntrigueThisRound.length > 0 && (
           <div className="active-intrigue-peek" aria-label="Active intrigue this round">
             <div className="active-intrigue-preview" title="Hover to view active intrigue this round">
@@ -1022,11 +1067,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           {!isCombatPhase && pendingRewards.length > 0 && pendingRewards.some(r => !r.disabled) && <button 
             className="get-mandatory-effects-button"
             onClick={() => onAutoApplyRewards && onAutoApplyRewards()}
-            disabled={voiceSelectionActive}
+            disabled={voiceSelectionActive || masterstrokeSelectionActive}
             title={
-              voiceSelectionActive
-                ? 'Finish The Voice selection before claiming rewards.'
-                : "Auto-apply non-interactive rewards (skips The Voice, Reverend Mother Mohiam, Test of Humanity, trash, and OR choices)"
+              voiceSelectionActive || masterstrokeSelectionActive
+                ? 'Finish the current selection before claiming rewards.'
+                : "Auto-apply non-interactive rewards (skips The Voice, Reverend Mother Mohiam, Test of Humanity, Masterstroke, trash, and OR choices)"
             }
           >
             Auto-Apply Effects

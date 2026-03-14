@@ -8,7 +8,7 @@ import { useGame } from './components/GameContext/GameContext'
 import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, ControlMarkerType } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, ControlMarkerType, GainSource } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -17,6 +17,7 @@ import GameStateSetup from './components/GameStateSetup/GameStateSetup'
 import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
 import { buildImperiumDeck } from './data/cards'
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
+import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
 
 const GameContent = () => {
   const {
@@ -38,15 +39,18 @@ const GameContent = () => {
   const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
   const [onSelectiveBreedingSelect, setOnSelectiveBreedingSelect] = useState<((card: Card) => void) | null>(null)
   const [voiceSelectionRewardId, setVoiceSelectionRewardId] = useState<string | null>(null)
+  const [masterstrokeSelectionRewardId, setMasterstrokeSelectionRewardId] = useState<string | null>(null)
 
   useEffect(() => {
     setVoiceSelectionRewardId(null)
+    setMasterstrokeSelectionRewardId(null)
   }, [gameState.activePlayerId])
 
-  // Clear voice selection when returning from history
+  // Clear voice and masterstroke selection when returning from history
   useEffect(() => {
     if (!isViewingHistory) return
     setVoiceSelectionRewardId(null)
+    setMasterstrokeSelectionRewardId(null)
   }, [isViewingHistory])
 
   // Use displayState for rendering, but gameState for actions
@@ -155,14 +159,18 @@ const GameContent = () => {
   const handleClaimReward = (rewardId: string, customData?: { [key: string]: unknown }) => {
     if (!activePlayer) return
     const hasVoiceSpace = Boolean(customData && typeof (customData as Record<string, unknown>).spaceId === 'number')
+    const hasMasterstrokeFactions = Boolean(customData && Array.isArray((customData as Record<string, unknown>).factions))
     if (voiceSelectionRewardId && rewardId !== voiceSelectionRewardId && !hasVoiceSpace) {
+      return
+    }
+    if (masterstrokeSelectionRewardId && rewardId !== masterstrokeSelectionRewardId && !hasMasterstrokeFactions) {
       return
     }
     dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId, customData })
   }
 
   const handleClaimAllRewards = () => {
-    if (!activePlayer || voiceSelectionRewardId) return
+    if (!activePlayer || voiceSelectionRewardId || masterstrokeSelectionRewardId) return
     dispatch({ type: 'CLAIM_ALL_REWARDS', playerId: activePlayer.id })
   }
 
@@ -177,6 +185,18 @@ const GameContent = () => {
   }
 
   const handleVoiceSelectionCancel = () => setVoiceSelectionRewardId(null)
+
+  const handleMasterstrokeSelectionStart = (rewardId: string) => {
+    setMasterstrokeSelectionRewardId(rewardId)
+  }
+
+  const handleMasterstrokeFactionConfirm = (factions: FactionType[]) => {
+    if (!activePlayer || !masterstrokeSelectionRewardId) return
+    handleClaimReward(masterstrokeSelectionRewardId, { factions })
+    setMasterstrokeSelectionRewardId(null)
+  }
+
+  const handleMasterstrokeSelectionCancel = () => setMasterstrokeSelectionRewardId(null)
 
   const handleOpponentDiscardChoice = (opponentId: number, choice: 'discard' | 'loseTroop') => {
     if (!activePlayer) return
@@ -215,6 +235,9 @@ const GameContent = () => {
       if (reward.reward.custom && interactiveEffects.includes(reward.reward.custom)) {
         return false
       }
+      
+      // Skip Masterstroke (requires faction selection when claimed)
+      if (reward.source.type === GainSource.MASTERSTROKE) return false
       
       // Skip rewards that are part of OR choices (pending choices)
       const isPartOfChoice = gameState.currTurn?.pendingChoices?.some(choice => 
@@ -402,6 +425,9 @@ const GameContent = () => {
             onVoiceSelectionStart={handleVoiceSelectionStart}
             voiceSelectionActive={Boolean(voiceSelectionRewardId)}
             onVoiceSelectionCancel={handleVoiceSelectionCancel}
+            onMasterstrokeSelectionStart={handleMasterstrokeSelectionStart}
+            masterstrokeSelectionActive={Boolean(masterstrokeSelectionRewardId)}
+            onMasterstrokeSelectionCancel={handleMasterstrokeSelectionCancel}
             onOpponentNoCardAck={handleOpponentNoCardAck}
             intrigueDeck={gameState.intrigueDeck}
             gamePhase={gameState.phase}
@@ -444,6 +470,13 @@ const GameContent = () => {
           }
         />
       </div>
+      {masterstrokeSelectionRewardId && (
+        <MasterstrokeFactionModal
+          open={true}
+          onConfirm={handleMasterstrokeFactionConfirm}
+          onCancel={handleMasterstrokeSelectionCancel}
+        />
+      )}
       {isPlayerOverviewOpen && (
         <PlayerOverviewModal
           players={displayState.players}

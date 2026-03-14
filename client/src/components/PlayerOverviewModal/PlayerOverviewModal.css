@@ -99,6 +99,30 @@
   font-size: 0.9rem;
 }
 
+.player-overview-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.player-overview-table .see-leader-button,
+.player-overview-table .see-play-area-button {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #8b6f39;
+  background: #e0c98f;
+  color: #3a2f18;
+  cursor: pointer;
+}
+
+.player-overview-table .see-leader-button:hover,
+.player-overview-table .see-play-area-button:hover {
+  background: #d9bf83;
+}
+
 .player-badges {
   margin-top: 4px;
   display: flex;
