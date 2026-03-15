@@ -15,7 +15,9 @@ export class Leader {
     public signetRingText: string,
     public complexity: 1 | 2 | 3, // Number of icons after name
     public sogChoice: boolean = false
-  ) {} 
+  ) {}
+  /** Optional display title for the signet ring (e.g. "Hidden Reservoir", "Scheme"). */
+  public signetRingTitle?: string
 }
 
 export interface MasterStroke {
@@ -231,7 +233,9 @@ export enum GainSource {
   CONFLICT = 'conflict',
   HIGH_COUNCIL = 'high-council',
   MENTAT = 'mentat',
-  MASTERSTROKE = 'masterstroke'
+  MASTERSTROKE = 'masterstroke',
+  LEADER_ABILITY = 'leader-ability',
+  MEMNON_HIGH_COUNCIL = 'memnon-high-council'
 }
 
 export interface Card {
@@ -543,6 +547,8 @@ export interface GameState {
   combatResolutionDeferred?: {
     mentatOwnerNextRound: number | null
   }
+  // Helena signet ring: card removed from Imperium Row this round; that player may acquire it for 1 less during Reveal
+  helenaRemovedCard?: { cardId: number; playerId: number; card: Card } | null
 }
 
 export enum CustomEffect {
@@ -559,6 +565,7 @@ export enum CustomEffect {
   GUILD_BANKERS = 'GUILD_BANKERS',
   SHUFFLE_DISCARD_INTO_DECK = 'SHUFFLE_DISCARD_INTO_DECK',
   SIGNET_RING = 'SIGNET_RING',
+  HELENA_SIGNET_RING = 'HELENA_SIGNET_RING',
 }
 
 // Custom effects that are auto-applied and don't need user input

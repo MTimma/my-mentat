@@ -8,21 +8,32 @@ interface MasterstrokeFactionModalProps {
   open: boolean
   onConfirm: (factions: FactionType[]) => void
   onCancel: () => void
+  maxSelections?: number
+  title?: string
+  prompt?: string
 }
 
 const MasterstrokeFactionModal: React.FC<MasterstrokeFactionModalProps> = ({
   open,
   onConfirm,
   onCancel,
+  maxSelections = 2,
+  title,
+  prompt,
 }) => {
   const [selectedFactions, setSelectedFactions] = useState<FactionType[]>([])
+
+  const defaultTitle = maxSelections === 1 ? 'Connections – Choose 1 Faction' : 'Masterstroke – Choose 2 Factions'
+  const defaultPrompt = maxSelections === 1
+    ? 'Select 1 faction to gain 1 Influence.'
+    : 'Select 2 factions to gain 1 Influence with each.'
 
   const handleFactionClick = (faction: FactionType) => {
     setSelectedFactions((prev) => {
       if (prev.includes(faction)) {
         return prev.filter((f) => f !== faction)
       }
-      if (prev.length < 2) {
+      if (prev.length < maxSelections) {
         return [...prev, faction]
       }
       return prev
@@ -30,7 +41,7 @@ const MasterstrokeFactionModal: React.FC<MasterstrokeFactionModalProps> = ({
   }
 
   const handleConfirm = () => {
-    if (selectedFactions.length === 2) {
+    if (selectedFactions.length === maxSelections) {
       onConfirm(selectedFactions)
       setSelectedFactions([])
     }
@@ -47,7 +58,7 @@ const MasterstrokeFactionModal: React.FC<MasterstrokeFactionModalProps> = ({
     <div className="dialog-overlay masterstroke-faction-overlay" onClick={handleCancel}>
       <div className="masterstroke-faction-modal" onClick={(e) => e.stopPropagation()}>
         <div className="masterstroke-faction-header">
-          <h3>Masterstroke – Choose 2 Factions</h3>
+          <h3>{title ?? defaultTitle}</h3>
           <button
             className="masterstroke-faction-close"
             onClick={handleCancel}
@@ -58,7 +69,7 @@ const MasterstrokeFactionModal: React.FC<MasterstrokeFactionModalProps> = ({
         </div>
         <div className="masterstroke-faction-body">
           <p className="masterstroke-faction-prompt">
-            Select 2 factions to gain 1 Influence with each.
+            {prompt ?? defaultPrompt}
           </p>
           <div className="masterstroke-faction-buttons">
             {FACTIONS.map((faction) => (
@@ -69,7 +80,7 @@ const MasterstrokeFactionModal: React.FC<MasterstrokeFactionModalProps> = ({
                   selectedFactions.includes(faction) ? 'selected' : ''
                 }`}
                 disabled={
-                  selectedFactions.length === 2 && !selectedFactions.includes(faction)
+                  selectedFactions.length === maxSelections && !selectedFactions.includes(faction)
                 }
               >
                 <img
@@ -88,7 +99,7 @@ const MasterstrokeFactionModal: React.FC<MasterstrokeFactionModalProps> = ({
           <button
             className="masterstroke-faction-confirm"
             onClick={handleConfirm}
-            disabled={selectedFactions.length !== 2}
+            disabled={selectedFactions.length !== maxSelections}
           >
             Confirm
           </button>

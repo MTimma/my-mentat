@@ -1,6 +1,13 @@
 import React, { useState } from 'react'
 import { Card } from '../../types/GameTypes'
+import { getLeaderIconPath, LEADER_NAMES } from '../../data/leaders'
 import './ImperiumRow.css'
+
+interface HelenaRemovedCard {
+  cardId: number
+  playerId: number
+  card: Card
+}
 
 interface ImperiumRowProps {
   cards: Card[]
@@ -11,11 +18,14 @@ interface ImperiumRowProps {
   onAcquireArrakisLiaison: () => void
   onAcquireSpiceMustFlow: () => void
   onAcquireCard: (cardId: number) => void
+  helenaRemovedCard?: HelenaRemovedCard | null
+  activePlayerId?: number
 }
 
 
-const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion, alCount, smfCount, onAcquireArrakisLiaison, onAcquireSpiceMustFlow, onAcquireCard }) => {
+const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion, alCount, smfCount, onAcquireArrakisLiaison, onAcquireSpiceMustFlow, onAcquireCard, helenaRemovedCard, activePlayerId }) => {
   const [isVisible, setIsVisible] = useState(true)
+  const showHelenaSlot = helenaRemovedCard?.card && helenaRemovedCard?.playerId === activePlayerId
 
   return (
     <div className="imperium-section">
@@ -28,6 +38,40 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
       </button>
       {isVisible && (
         <>
+          {/* Helena signet ring: removed card slot (1 Persuasion less to acquire) */}
+          {showHelenaSlot && (
+            <div className="helena-removed-slot cards-grid main-cards">
+              <div className={`imperium-card helena-card ${!canAcquire ? 'no-button' : ''}`}>
+                <div className="helena-card-image-wrapper">
+                  {getLeaderIconPath(LEADER_NAMES.HELENA_RICHESE) && (
+                    <img
+                      src={getLeaderIconPath(LEADER_NAMES.HELENA_RICHESE)!}
+                      alt="Helena"
+                      className="helena-head-corner-icon"
+                    />
+                  )}
+                  <img
+                    src={helenaRemovedCard.card.image}
+                    alt={helenaRemovedCard.card.name}
+                    className="card-image-ir"
+                  />
+                  <span className="helena-discount-badge">−1 Persuasion</span>
+                </div>
+                {canAcquire && (
+                  <button
+                    className="acquire-button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAcquireCard(helenaRemovedCard.card.id)
+                    }}
+                    disabled={((helenaRemovedCard.card.cost ?? 0) - 1) > persuasion}
+                  >
+                    Acquire
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           {/* Main imperium row cards - 5 cards */}
           <div className={`cards-grid main-cards ${!canAcquire ? 'no-buttons' : ''}`}>
             {cards.map((card) => (

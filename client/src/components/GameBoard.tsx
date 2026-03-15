@@ -3,6 +3,8 @@ import { SpaceProps, AgentIcon, Player, ConflictCard, MakerSpace, Card } from '.
 import BoardSpace from './BoardSpace/BoardSpace'
 import { BOARD_SPACES } from '../data/boardSpaces'
 import SellMelangePopup from './SellMelangePopup/SellMelangePopup'
+import { canPlaceDespiteOccupancy } from '../data/leaderAbilities/helenaUnblockedAgents'
+import { getEffectiveSolariCost } from '../data/leaderAbilities/letoLandsraadDiscount'
 
 interface SellMelangeData {
   spiceCost: number;
@@ -69,7 +71,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
     const player = players.find(p => p.id === currentPlayer)
     if (!player) return false
 
-    if (occupiedSpaces[space.id]?.length > 0 && !infiltrate) return false
+    if (occupiedSpaces[space.id]?.length > 0 && !infiltrate && !canPlaceDespiteOccupancy(space, player)) return false
 
     if (ignoreCosts) {
       return true
@@ -85,7 +87,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
     }
 
     if (space.cost) {
-      if (space.cost.solari && player.solari < space.cost.solari) return false
+      const effectiveSolari = getEffectiveSolariCost(space, player)
+      if (effectiveSolari > 0 && player.solari < effectiveSolari) return false
       if (space.cost.spice && player.spice < space.cost.spice) return false
       if (space.cost.water && player.water < space.cost.water) return false
     }

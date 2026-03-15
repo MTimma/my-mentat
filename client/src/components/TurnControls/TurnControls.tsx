@@ -52,6 +52,8 @@ interface TurnControlsProps {
   onMasterstrokeSelectionStart?: (rewardId: string) => void
   masterstrokeSelectionActive?: boolean
   onMasterstrokeSelectionCancel?: () => void
+  onMemnonHighCouncilSelectionStart?: (rewardId: string) => void
+  memnonHighCouncilSelectionActive?: boolean
   onOpponentNoCardAck?: (opponentId: number) => void
   intrigueDeck: IntrigueCard[]
   gamePhase: GamePhase
@@ -109,6 +111,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onMasterstrokeSelectionStart,
   masterstrokeSelectionActive = false,
   onMasterstrokeSelectionCancel,
+  onMemnonHighCouncilSelectionStart,
+  memnonHighCouncilSelectionActive = false,
   onOpponentNoCardAck,
   intrigueDeck,
   gamePhase,
@@ -637,11 +641,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               {card.rewards.map(reward => {
                 const isVoiceReward = reward.reward.custom === CustomEffect.THE_VOICE
                 const isMasterstrokeReward = reward.source.type === GainSource.MASTERSTROKE
-                const disabled = voiceSelectionActive || masterstrokeSelectionActive || reward.disabled
+                const isMemnonReward = reward.source.type === GainSource.MEMNON_HIGH_COUNCIL
+                const selectionActive = voiceSelectionActive || masterstrokeSelectionActive || memnonHighCouncilSelectionActive
+                const disabled = selectionActive || reward.disabled
                 const tooltip = voiceSelectionActive
                   ? 'Finish The Voice selection before claiming other rewards.'
                   : masterstrokeSelectionActive
                     ? 'Finish Masterstroke faction selection before claiming other rewards.'
+                    : memnonHighCouncilSelectionActive
+                    ? 'Finish faction selection before claiming other rewards.'
                     : reward.isTrash
                     ? `⚠️ Trashing this card will cancel effects that haven't been applied yet. Cancels: ${getCancelledRewards(card, reward)}`
                     : undefined
@@ -655,6 +663,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                       onVoiceSelectionStart(reward.id)
                     } else if (isMasterstrokeReward && onMasterstrokeSelectionStart) {
                       onMasterstrokeSelectionStart(reward.id)
+                    } else if (isMemnonReward && onMemnonHighCouncilSelectionStart) {
+                      onMemnonHighCouncilSelectionStart(reward.id)
                     } else {
                       onClaimReward(reward.id)
                     }
@@ -663,7 +673,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   title={tooltip}
                 >
                   {reward.isTrash && <span className="warning-icon">⚠️ </span>}
-                  {isMasterstrokeReward ? 'Masterstroke: Choose 2 factions' : renderLabel({ reward: reward.reward })}
+                  {isMasterstrokeReward ? 'Masterstroke: Choose 2 factions' : isMemnonReward ? 'Connections: Choose 1 faction' : renderLabel({ reward: reward.reward })}
                 </button>
               )})}
               

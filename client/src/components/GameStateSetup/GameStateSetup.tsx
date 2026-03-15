@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { PlayerSetup, Player } from '../../types/GameTypes'
 import { motion } from 'framer-motion'
+import { getStartingSpice, getStartingSolari } from '../../data/leaderAbilities/beastSetup'
 import './GameStateSetup.css'
 
 interface GameStateSetupProps {
@@ -19,9 +20,9 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({ playerSetups, onComplet
       id: index,
       leader: setup.leader,
       color: setup.color,
-      spice: 0,
+      spice: getStartingSpice(setup.leader),
       water: 1,
-      solari: 0,
+      solari: getStartingSolari(setup.leader),
       troops: 3,
       combatValue: 0,
       agents: 2,

@@ -109,6 +109,51 @@
   font-weight: 600;
 }
 
+/* Helena signet ring: removed card slot */
+.helena-removed-slot {
+  grid-template-columns: minmax(0, 1fr);
+  margin-bottom: var(--card-gap);
+  max-width: 120px;
+}
+
+.helena-removed-slot .imperium-card.helena-card {
+  border-color: #6b3410;
+  background-color: #e8dcc8;
+}
+
+.helena-card-image-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.helena-head-corner-icon {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 50%;
+  z-index: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.helena-discount-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.6em;
+  color: #5a3a0a;
+  background-color: #d4b16a;
+  padding: 1px 4px;
+  border-radius: 3px;
+  z-index: 1;
+  font-weight: 600;
+}
+
 .imperium-card button.acquire-button {
   margin-top: 2px;
   padding: 4px 6px;

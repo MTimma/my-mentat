@@ -1,6 +1,7 @@
 import { CustomEffect } from "../types/GameTypes";
 
 export const PLAY_EFFECT_TEXTS: Partial<Record<CustomEffect, string>> = {
+    [CustomEffect.HELENA_SIGNET_RING]: "Remove and replace a card in the Imperium Row. During your Reveal turn this round, you may acquire the removed card for 1 Persuasion less.",
     [CustomEffect.OTHER_MEMORY]: "Draw a Bene Gesserit card from your discard pile.",
     [CustomEffect.CARRYALL]: "Double the base (not bonus) spice you harvest with this agent",
     [CustomEffect.GUN_THOPTER]: "Each opponent loses 1 garrisoned troop.",

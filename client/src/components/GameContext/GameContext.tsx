@@ -47,6 +47,12 @@ import { playRequirementSatisfied, revealRequirementSatisfied, intrigueRequireme
 import { updateFactionInfluence, getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { resolveSignetRingEffect } from '../../data/signetRingEffects'
 import { checkAndApplyMasterstroke, revertMasterstrokeIfNeeded } from '../../data/leaderAbilities'
+import { isArianaHarvestReward, getArianaAdjustedReward } from '../../data/leaderAbilities/arianaHarvest'
+import { getSecretFactions } from '../../data/leaderAbilities/baronSecretFaction'
+import { canPlaceDespiteOccupancy } from '../../data/leaderAbilities/helenaUnblockedAgents'
+import { shouldGrantIlbanSolariDraw } from '../../data/leaderAbilities/ilbanSolariDraw'
+import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraadDiscount'
+import { shouldGrantMemnonInfluence, buildMemnonInfluenceReward } from '../../data/leaderAbilities/memnonHighCouncilInfluence'
 
 interface GameContextType {
   gameState: GameState
@@ -167,7 +173,8 @@ const initialGameState: GameState = {
   endgameDonePlayers: new Set(),
   endgameWinners: null,
   blockedSpaces: [],
-  pendingImperiumRowReplacement: null
+  pendingImperiumRowReplacement: null,
+  helenaRemovedCard: null
 }
 
 function determinePlacements(
@@ -271,7 +278,8 @@ function completeCombatTransition(
       canEndTurn: true,
       canAcquireIR: false,
       endgameDonePlayers: new Set(),
-      endgameWinners: null
+      endgameWinners: null,
+      helenaRemovedCard: null
     }
   }
   return {
@@ -282,7 +290,8 @@ function completeCombatTransition(
     currentRound: newState.currentRound + 1,
     conflictsDiscard: updatedConflictsDiscard,
     imperiumRow: [],
-    imperiumRowDeck: refreshedDeck
+    imperiumRowDeck: refreshedDeck,
+    helenaRemovedCard: null
   }
 }
 
@@ -1649,9 +1658,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Check if player has any agents left
       if (currPlayer.agents <= 0) return state
 
-      // Check if player can afford the space
+      // Check if player can afford the space (Leto pays 1 less for Landsraad spaces)
       if (space.cost && !ignoreSpaceCostAndReq) {
-        if (space.cost.solari && currPlayer.solari < space.cost.solari) return state
+        const effectiveSolari = getEffectiveSolariCost(space, currPlayer)
+        if (effectiveSolari > 0 && currPlayer.solari < effectiveSolari) return state
         if (space.cost.spice && currPlayer.spice < space.cost.spice) return state
         if (space.cost.water && currPlayer.water < space.cost.water) return state
       }
@@ -1663,8 +1673,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return state
       }
 
-      // Check if space is already occupied or card has infiltrate
-      if (newState.occupiedSpaces[spaceId]?.length > 0 && !card.infiltrate) return state
+      // Check if space is already occupied or card has infiltrate (Helena can ignore occupancy on Landsraad/City)
+      if (newState.occupiedSpaces[spaceId]?.length > 0 && !card.infiltrate && !canPlaceDespiteOccupancy(space, currPlayer)) return state
 
       // Check if player has required influence
       if (space.requiresInfluence && !ignoreSpaceCostAndReq) {
@@ -1724,9 +1734,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           source: GainSource.BOARD_SPACE
         })
       } else if (space.cost && !ignoreSpaceCostAndReq) {
-        if (space.cost.solari) currPlayer.solari -= space.cost.solari
+        if (space.cost.solari) currPlayer.solari -= getEffectiveSolariCost(space, currPlayer)
         if (space.cost.spice) currPlayer.spice -= space.cost.spice
         if (space.cost.water) currPlayer.water -= space.cost.water
+        // Ilban: draw 1 card whenever he pays Solari for a board space
+        if (shouldGrantIlbanSolariDraw(space, currPlayer)) {
+          addPendingReward({ drawCards: 1 }, { type: GainSource.LEADER_ABILITY, id: 0, name: 'Solari Draw (Ilban)' }, false)
+        }
       }
       
       if (space.effects) {
@@ -1882,6 +1896,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: 'Foldspace' , amount: 1, type: RewardType.CARD, source: GainSource.BOARD_SPACE })
             break
           }
+
+          case 'highCouncil':
+            currPlayer.hasHighCouncilSeat = true
+            if (shouldGrantMemnonInfluence(currPlayer)) {
+              pendingRewards.push(buildMemnonInfluenceReward(space.id))
+            }
+            break
 
         }
       }
@@ -2182,13 +2203,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const player = state.players.find(p => p.id === playerId)
       if (!player) return state
 
-      const cardIndex = state.imperiumRow.findIndex(card => card.id === cardId)
-      if (cardIndex === -1) return state
-      const card = state.imperiumRow[cardIndex]
+      const isHelenaRemovedCard = state.helenaRemovedCard?.cardId === cardId && state.helenaRemovedCard?.playerId === playerId
+      let card: Card
+      let cardIndex: number
+      if (isHelenaRemovedCard && state.helenaRemovedCard?.card) {
+        card = state.helenaRemovedCard.card
+        cardIndex = -1
+      } else {
+        cardIndex = state.imperiumRow.findIndex(c => c.id === cardId)
+        if (cardIndex === -1) return state
+        card = state.imperiumRow[cardIndex]
+      }
       const cost = card.cost || 0
-      
+      const effectiveCost = freeAcquire ? 0 : (isHelenaRemovedCard ? Math.max(0, cost - 1) : cost)
+
       // Only check persuasion cost if this is not a free acquire
-      if (!freeAcquire && player.persuasion < cost) return state
+      if (!freeAcquire && player.persuasion < effectiveCost) return state
 
       // Check acquireToTop parameter first (for single-card acquisitions like Bypass Protocol),
       // then fall back to round flag (for round-long effects like Recruitment Mission)
@@ -2200,7 +2230,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       const updatedPlayer: Player = {
         ...player,
-        persuasion: freeAcquire ? player.persuasion : player.persuasion - cost,
+        persuasion: freeAcquire ? player.persuasion : player.persuasion - effectiveCost,
         deck: updatedDeck,
         discardPile: updatedDiscardPile
       }
@@ -2247,25 +2277,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         })
       }
 
-      const updatedImperiumRow = [...state.imperiumRow]
-      updatedImperiumRow.splice(cardIndex, 1)
-
-      // Adjust existing pending replacement index if this acquisition affects it
-      // If we remove a card at an index before the pending replacement position,
-      // we need to decrement the pending replacement index
-      let existingPendingReplacement = state.pendingImperiumRowReplacement
-      if (existingPendingReplacement && cardIndex < existingPendingReplacement.cardIndex) {
-        existingPendingReplacement = {
-          cardIndex: existingPendingReplacement.cardIndex - 1
+      let updatedImperiumRow = state.imperiumRow
+      let pendingReplacement = state.pendingImperiumRowReplacement
+      if (!isHelenaRemovedCard) {
+        const updatedRow = [...state.imperiumRow]
+        updatedRow.splice(cardIndex, 1)
+        updatedImperiumRow = updatedRow
+        let existingPendingReplacement = state.pendingImperiumRowReplacement
+        if (existingPendingReplacement && cardIndex < existingPendingReplacement.cardIndex) {
+          existingPendingReplacement = { cardIndex: existingPendingReplacement.cardIndex - 1 }
         }
+        pendingReplacement = state.imperiumRowDeck.length > 0 ? { cardIndex } : null
       }
-
-      // Set pending replacement if there are cards available in the deck
-      // Note: If there's already a pending replacement, we'll overwrite it.
-      // The modal will show for each replacement sequentially.
-      const pendingReplacement = state.imperiumRowDeck.length > 0
-        ? { cardIndex }
-        : null
 
       const updatedCurrTurn = state.currTurn?.playerId === playerId
         ? {
@@ -2281,7 +2304,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         imperiumRowDeck: [...state.imperiumRowDeck],
         currTurn: updatedCurrTurn,
         gains: updatedGains,
-        pendingImperiumRowReplacement: pendingReplacement
+        pendingImperiumRowReplacement: isHelenaRemovedCard ? state.pendingImperiumRowReplacement : pendingReplacement,
+        helenaRemovedCard: isHelenaRemovedCard ? null : state.helenaRemovedCard
       }
     }
     case 'SELECT_IMPERIUM_REPLACEMENT': {
@@ -2309,7 +2333,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         imperiumRow: updatedImperiumRow,
         imperiumRowDeck: updatedDeck,
-        pendingImperiumRowReplacement: null
+        pendingImperiumRowReplacement: null,
+        helenaRemovedCard: null
       }
     }
     case 'ACQUIRE_AL': {
@@ -2865,6 +2890,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             } : null
           }
         }
+        case CustomEffect.HELENA_SIGNET_RING: {
+          // Remove and replace a card in the Imperium Row; player may acquire the removed card for 1 Persuasion less this Reveal
+          const selectedCardId = (data?.cardId ?? data?.imperiumRowCardId) as number | undefined
+          if (typeof selectedCardId !== 'number') return state
+          const cardIndex = state.imperiumRow.findIndex((c) => c.id === selectedCardId)
+          if (cardIndex === -1) return state
+          if (state.imperiumRowDeck.length === 0) return state
+          const removedCard = state.imperiumRow[cardIndex]
+          const [replacementCard, ...restDeck] = state.imperiumRowDeck
+          const updatedImperiumRow = [...state.imperiumRow]
+          updatedImperiumRow[cardIndex] = replacementCard
+          return {
+            ...state,
+            imperiumRow: updatedImperiumRow,
+            imperiumRowDeck: restDeck,
+            helenaRemovedCard: { cardId: removedCard.id, playerId, card: removedCard }
+          }
+        }
         default: {
           console.log("Custom effect not implemented: ", customEffect)
           return state
@@ -2924,12 +2967,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (reward.reward.custom === CustomEffect.THE_VOICE && (typeof customData?.spaceId !== 'number')) {
         return state
       }
+      // Resolved factions for Masterstroke / Memnon influence rewards
+      let resolvedInfluenceFactions: FactionType[] | null = null
       if (reward.source.type === GainSource.MASTERSTROKE) {
-        const factions = customData?.factions as FactionType[] | undefined
         const validFactions = Object.values(FactionType) as FactionType[]
-        if (!Array.isArray(factions) || factions.length !== 2 || !factions.every(f => validFactions.includes(f))) {
+        const rawFactions = customData?.factions as FactionType[] | undefined
+        // Fall back to Baron's secretly chosen factions if no customData.factions provided
+        const factions = (Array.isArray(rawFactions) && rawFactions.length === 2 && rawFactions.every(f => validFactions.includes(f)))
+          ? rawFactions
+          : getSecretFactions(player.leader)
+        if (!factions || factions.length !== 2 || !factions.every(f => validFactions.includes(f))) {
           return state
         }
+        resolvedInfluenceFactions = factions
+      }
+      if (reward.source.type === GainSource.MEMNON_HIGH_COUNCIL) {
+        const factions = customData?.factions as FactionType[] | undefined
+        const validFactions = Object.values(FactionType) as FactionType[]
+        if (!Array.isArray(factions) || factions.length !== 1 || !factions.every(f => validFactions.includes(f))) {
+          return state
+        }
+        resolvedInfluenceFactions = factions
       }
       
       let newState = { ...state }
@@ -2947,6 +3005,49 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         newState.pendingRewards = state.pendingRewards.filter(r => r.id !== rewardId)
       }
       
+      // Helena signet ring: either claim with customData.imperiumRowCardId (card picker in claim UI) or show CardSelectChoice
+      if (reward.reward.custom === CustomEffect.HELENA_SIGNET_RING) {
+        const imperiumRowCardId = customData?.imperiumRowCardId as number | undefined
+        if (typeof imperiumRowCardId === 'number') {
+          // Claim with chosen card id: remove reward and run CUSTOM_EFFECT
+          const customEffectState = {
+            ...newState,
+            pendingRewards: state.pendingRewards.filter(r => r.id !== rewardId),
+            players: state.players.map(p => p.id === playerId ? newPlayer : p),
+            gains: newGains
+          }
+          return gameReducer(customEffectState, {
+            type: 'CUSTOM_EFFECT',
+            playerId,
+            customEffect: CustomEffect.HELENA_SIGNET_RING,
+            data: { imperiumRowCardId }
+          })
+        }
+        // No card chosen yet: create CardSelectChoice (resolved as CUSTOM_EFFECT with imperiumRowCardId)
+        const choiceId = 'HELENA_SIGNET_RING-' + crypto.randomUUID()
+        const cardSelectChoice: CardSelectChoice = {
+          id: choiceId,
+          type: ChoiceType.CARD_SELECT,
+          prompt: PLAY_EFFECT_TEXTS[CustomEffect.HELENA_SIGNET_RING] ?? 'Choose a card to remove from the Imperium Row.',
+          piles: [],
+          cards: state.imperiumRow,
+          selectionCount: 1,
+          onResolve: (cardIds: number[]) => ({
+            type: 'CUSTOM_EFFECT',
+            playerId,
+            customEffect: CustomEffect.HELENA_SIGNET_RING,
+            data: { imperiumRowCardId: cardIds[0] }
+          }),
+          source: reward.source
+        }
+        const newTurn = state.currTurn ? { ...state.currTurn, pendingChoices: [...(state.currTurn.pendingChoices || []), cardSelectChoice] } : null
+        return {
+          ...newState,
+          currTurn: newTurn,
+          canEndTurn: false
+        }
+      }
+
       // Handle custom effects before applying reward
       if (reward.reward.custom) {
         // Dispatch CUSTOM_EFFECT action for other custom effects
@@ -2964,12 +3065,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         })
       }
       
-      // Apply the reward using shared helper
-      newPlayer = applyRewardToPlayer(reward.reward, newPlayer, newGains, state, reward.source)
+      // Apply the reward using shared helper (Ariana gains 1 less spice and draws 1 when harvesting)
+      const rewardToApply = isArianaHarvestReward(player, reward) ? getArianaAdjustedReward(reward) : reward.reward
+      newPlayer = applyRewardToPlayer(rewardToApply, newPlayer, newGains, state, reward.source)
       
       // Handle influence updates (needs state modification)
-      const influenceAmounts = reward.source.type === GainSource.MASTERSTROKE && customData?.factions
-        ? (customData.factions as FactionType[]).map(f => ({ faction: f, amount: 1 }))
+      const influenceAmounts = resolvedInfluenceFactions
+        ? resolvedInfluenceFactions.map(f => ({ faction: f, amount: 1 }))
         : reward.reward.influence?.amounts ?? []
       if (influenceAmounts.length > 0) {
         influenceAmounts.forEach(inf => {
@@ -3502,6 +3604,7 @@ function deepCopyGameState(state: GameState): GameState {
     controlMarkers: { ...state.controlMarkers },
     blockedSpaces: state.blockedSpaces ? [...state.blockedSpaces] : [],
     pendingImperiumRowReplacement: state.pendingImperiumRowReplacement ? { ...state.pendingImperiumRowReplacement } : null,
+    helenaRemovedCard: state.helenaRemovedCard ? { ...state.helenaRemovedCard, card: state.helenaRemovedCard.card } : null,
     // History should be empty for the initial state snapshot
     history: []
   }

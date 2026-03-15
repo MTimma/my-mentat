@@ -18,6 +18,7 @@ import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
 import { buildImperiumDeck } from './data/cards'
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
+import { getSecretFactions } from './data/leaderAbilities/baronSecretFaction'
 
 const GameContent = () => {
   const {
@@ -40,10 +41,12 @@ const GameContent = () => {
   const [onSelectiveBreedingSelect, setOnSelectiveBreedingSelect] = useState<((card: Card) => void) | null>(null)
   const [voiceSelectionRewardId, setVoiceSelectionRewardId] = useState<string | null>(null)
   const [masterstrokeSelectionRewardId, setMasterstrokeSelectionRewardId] = useState<string | null>(null)
+  const [memnonHighCouncilRewardId, setMemnonHighCouncilRewardId] = useState<string | null>(null)
 
   useEffect(() => {
     setVoiceSelectionRewardId(null)
     setMasterstrokeSelectionRewardId(null)
+    setMemnonHighCouncilRewardId(null)
   }, [gameState.activePlayerId])
 
   // Clear voice and masterstroke selection when returning from history
@@ -51,6 +54,7 @@ const GameContent = () => {
     if (!isViewingHistory) return
     setVoiceSelectionRewardId(null)
     setMasterstrokeSelectionRewardId(null)
+    setMemnonHighCouncilRewardId(null)
   }, [isViewingHistory])
 
   // Use displayState for rendering, but gameState for actions
@@ -166,11 +170,14 @@ const GameContent = () => {
     if (masterstrokeSelectionRewardId && rewardId !== masterstrokeSelectionRewardId && !hasMasterstrokeFactions) {
       return
     }
+    if (memnonHighCouncilRewardId && rewardId !== memnonHighCouncilRewardId && !hasMasterstrokeFactions) {
+      return
+    }
     dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId, customData })
   }
 
   const handleClaimAllRewards = () => {
-    if (!activePlayer || voiceSelectionRewardId || masterstrokeSelectionRewardId) return
+    if (!activePlayer || voiceSelectionRewardId || masterstrokeSelectionRewardId || memnonHighCouncilRewardId) return
     dispatch({ type: 'CLAIM_ALL_REWARDS', playerId: activePlayer.id })
   }
 
@@ -187,6 +194,12 @@ const GameContent = () => {
   const handleVoiceSelectionCancel = () => setVoiceSelectionRewardId(null)
 
   const handleMasterstrokeSelectionStart = (rewardId: string) => {
+    // If Baron has pre-selected secret factions, auto-claim without showing modal
+    const secretFactions = activePlayer?.leader ? getSecretFactions(activePlayer.leader) : undefined
+    if (secretFactions && secretFactions.length === 2) {
+      handleClaimReward(rewardId, {})
+      return
+    }
     setMasterstrokeSelectionRewardId(rewardId)
   }
 
@@ -197,6 +210,18 @@ const GameContent = () => {
   }
 
   const handleMasterstrokeSelectionCancel = () => setMasterstrokeSelectionRewardId(null)
+
+  const handleMemnonHighCouncilSelectionStart = (rewardId: string) => {
+    setMemnonHighCouncilRewardId(rewardId)
+  }
+
+  const handleMemnonHighCouncilFactionConfirm = (factions: FactionType[]) => {
+    if (!activePlayer || !memnonHighCouncilRewardId) return
+    handleClaimReward(memnonHighCouncilRewardId, { factions })
+    setMemnonHighCouncilRewardId(null)
+  }
+
+  const handleMemnonHighCouncilCancel = () => setMemnonHighCouncilRewardId(null)
 
   const handleOpponentDiscardChoice = (opponentId: number, choice: 'discard' | 'loseTroop') => {
     if (!activePlayer) return
@@ -327,7 +352,9 @@ const GameContent = () => {
         persuasion={isViewingHistory ? 0 : (activePlayer?.persuasion || 0)} 
         onAcquireArrakisLiaison={handleAcquireArrakisLiaison} 
         onAcquireSpiceMustFlow={handleAcquireSpiceMustFlow} 
-        onAcquireCard={handleAcquireCard} />
+        onAcquireCard={handleAcquireCard}
+        helenaRemovedCard={displayState.helenaRemovedCard ?? null}
+        activePlayerId={displayState.activePlayerId} />
       </div>
       <div className="main-area">
         <GameBoard 
@@ -428,6 +455,8 @@ const GameContent = () => {
             onMasterstrokeSelectionStart={handleMasterstrokeSelectionStart}
             masterstrokeSelectionActive={Boolean(masterstrokeSelectionRewardId)}
             onMasterstrokeSelectionCancel={handleMasterstrokeSelectionCancel}
+            onMemnonHighCouncilSelectionStart={handleMemnonHighCouncilSelectionStart}
+            memnonHighCouncilSelectionActive={Boolean(memnonHighCouncilRewardId)}
             onOpponentNoCardAck={handleOpponentNoCardAck}
             intrigueDeck={gameState.intrigueDeck}
             gamePhase={gameState.phase}
@@ -475,6 +504,14 @@ const GameContent = () => {
           open={true}
           onConfirm={handleMasterstrokeFactionConfirm}
           onCancel={handleMasterstrokeSelectionCancel}
+        />
+      )}
+      {memnonHighCouncilRewardId && (
+        <MasterstrokeFactionModal
+          open={true}
+          onConfirm={handleMemnonHighCouncilFactionConfirm}
+          onCancel={handleMemnonHighCouncilCancel}
+          maxSelections={1}
         />
       )}
       {isPlayerOverviewOpen && (
