@@ -10,9 +10,14 @@ interface GameStateSetupProps {
     players: Player[]
     currentRound: number
   }) => void
+  onOpenCardCreator: () => void
 }
 
-const GameStateSetup: React.FC<GameStateSetupProps> = ({ playerSetups, onComplete }) => {
+const GameStateSetup: React.FC<GameStateSetupProps> = ({
+  playerSetups,
+  onComplete,
+  onOpenCardCreator,
+}) => {
   const [currentRound, setCurrentRound] = useState(1)
   const [showResourceEditor, setShowResourceEditor] = useState(false)
   const [playerStates, setPlayerStates] = useState<Player[]>(
@@ -89,9 +94,10 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({ playerSetups, onComplet
             </button>
             <button
               className="toggle-editor-button"
-              disabled
+              type="button"
+              onClick={onOpenCardCreator}
             >
-              Edit Imperium deck (coming soon)
+              Open card creator
             </button>
           </div>
 

@@ -6,9 +6,10 @@ import { STARTING_DECK } from '../data/cards'
 
 interface GameSetupProps {
   onComplete: (playerSetups: PlayerSetup[]) => void
+  onOpenCardCreator: () => void
 }
 
-const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
+const GameSetup: React.FC<GameSetupProps> = ({ onComplete, onOpenCardCreator }) => {
   const [gameName, setGameName] = useState('Test Game')
   const [playerCount, setPlayerCount] = useState<number>(4)
   const [players, setPlayers] = useState<PlayerSetup[]>([
@@ -140,6 +141,9 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
           onClick={() => onComplete(players)}
         >
           Start Game
+        </button>
+        <button className="secondary-setup-button" type="button" onClick={onOpenCardCreator}>
+          Open card creator
         </button>
       </div>
     </motion.div>

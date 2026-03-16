@@ -15,6 +15,7 @@ import { CONFLICTS } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
 import GameStateSetup from './components/GameStateSetup/GameStateSetup'
 import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
+import CardCreator from './components/CardCreator/CardCreator'
 import { buildImperiumDeck } from './data/cards'
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
@@ -564,6 +565,7 @@ const GameContentWithTimeTravel = () => {
 
 function App() {
   const [screenState, setScreenState] = useState<ScreenState>(ScreenState.SETUP)
+  const [creatorReturnScreen, setCreatorReturnScreen] = useState<ScreenState>(ScreenState.SETUP)
   const [playerSetups, setPlayerSetups] = useState<PlayerSetup[]>([])
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
   const [initialGameState, setInitialGameState] = useState<{
@@ -593,6 +595,15 @@ function App() {
       setScreenState(ScreenState.GAME)
   }
 
+  const handleOpenCardCreator = () => {
+    setCreatorReturnScreen(screenState)
+    setScreenState(ScreenState.CARD_CREATOR)
+  }
+
+  const handleCloseCardCreator = () => {
+    setScreenState(creatorReturnScreen)
+  }
+
   const renderLeaderChoices = () => {
     if (!playerSetups[currentPlayerIndex]) return null;
 
@@ -614,15 +625,20 @@ function App() {
   return (
     <div className="app">
       {screenState === ScreenState.SETUP && (
-        <GameSetup onComplete={handleSetupComplete} />
+        <GameSetup onComplete={handleSetupComplete} onOpenCardCreator={handleOpenCardCreator} />
       )}
 
       {screenState === ScreenState.LEADER_CHOICES && renderLeaderChoices()}
+
+      {screenState === ScreenState.CARD_CREATOR && (
+        <CardCreator onBack={handleCloseCardCreator} />
+      )}
 
       {screenState === ScreenState.GAME_STATE_SETUP && (
         <GameStateSetup 
           playerSetups={playerSetups}
           onComplete={handleGameStateSetupComplete}
+          onOpenCardCreator={handleOpenCardCreator}
         />
       )}
 
