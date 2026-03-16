@@ -306,7 +306,7 @@ const GameContent = () => {
         />
       )}
       {/* History viewing banner */}
-      {(
+      {isViewingHistory && (
         <div className="history-viewing-banner">
           <button 
             className="history-nav-btn"
@@ -466,7 +466,7 @@ const GameContent = () => {
             onTurnHistoryToggle={() => setIsTurnHistoryOpen(open => !open)}
           />
         </div>
-        <div className="endgame-container" hidden={gameState.phase !== GamePhase.END_GAME}>
+        <div className="endgame-container" hidden={isViewingHistory || gameState.phase !== GamePhase.END_GAME}>
           <div style={{ color: 'white', marginTop: '12px' }}>
             <h3>Endgame</h3>
             <div>

@@ -175,6 +175,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         return phases.includes(GamePhase.END_GAME)
       }))
     }
+    if (gamePhase === GamePhase.COMBAT) {
+      return card.type === IntrigueCardType.COMBAT
+    }
     // In normal Player Turns, only Plot intrigue can be played (combat handled separately)
     return card.type === IntrigueCardType.PLOT
   })
@@ -203,7 +206,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const handlePlayCombatIntrigue = () => {
     setIsRevealTurn(false)
     setSelectedCards([])
-    onPlayCombatIntrigue(activePlayer.id, selectedCards[0].id)
+    setIsIntrigueSelectionOpen(true)
   }
 
   const handleRevealTurn = () => {
@@ -234,7 +237,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const handleIntrigueSelection = (selectedCards: Card[]) => {
     setIsIntrigueSelectionOpen(false)
     if (selectedCards[0]) {
-      onPlayIntrigue(activePlayer.id, selectedCards[0].id)
+      if (isCombatPhase) {
+        onPlayCombatIntrigue(activePlayer.id, selectedCards[0].id)
+      } else {
+        onPlayIntrigue(activePlayer.id, selectedCards[0].id)
+      }
     }
   }
 
@@ -1098,7 +1105,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             {isCombatPhase && <button 
               className="play-intrigue-button"
               onClick={handlePlayCombatIntrigue}
-              disabled={activePlayer.intrigueCount === 0}
+              disabled={activePlayer.intrigueCount === 0 || playableIntrigueCards.length === 0}
+              title={playableIntrigueCards.length === 0 ? 'No combat intrigue cards available in the deck.' : undefined}
             >
               Play Combat Intrigue ({activePlayer.intrigueCount})
             </button>}
