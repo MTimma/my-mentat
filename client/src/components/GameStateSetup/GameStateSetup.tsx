@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
-import { PlayerSetup, Player } from '../../types/GameTypes'
+import { PlayerSetup, Player, Card } from '../../types/GameTypes'
 import { motion } from 'framer-motion'
 import { getStartingSpice, getStartingSolari } from '../../data/leaderAbilities/beastSetup'
+import StarterDeckEditor from '../StarterDeckEditor/StarterDeckEditor'
+import { buildSetupImperiumDeck } from '../../services/starterDeckSetup'
 import './GameStateSetup.css'
 
 interface GameStateSetupProps {
@@ -9,12 +11,21 @@ interface GameStateSetupProps {
   onComplete: (initialState: {
     players: Player[]
     currentRound: number
+    imperiumRowDeck: Card[]
   }) => void
 }
 
 const GameStateSetup: React.FC<GameStateSetupProps> = ({ playerSetups, onComplete }) => {
   const [currentRound, setCurrentRound] = useState(1)
   const [showResourceEditor, setShowResourceEditor] = useState(false)
+  const [showStarterDeckEditor, setShowStarterDeckEditor] = useState(false)
+  const [editablePlayerSetups, setEditablePlayerSetups] = useState<PlayerSetup[]>(
+    playerSetups.map(setup => ({
+      ...setup,
+      deck: [...setup.deck],
+      startingHand: [...setup.startingHand]
+    }))
+  )
   const [playerStates, setPlayerStates] = useState<Player[]>(
     playerSetups.map((setup, index) => ({
       id: index,
@@ -28,7 +39,7 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({ playerSetups, onComplet
       agents: 2,
       handCount: 5,
       intrigueCount: 0,
-      deck: setup.deck,
+      deck: [...setup.deck],
       discardPile: [],
       trash: [],
       hasHighCouncilSeat: false,
@@ -48,10 +59,35 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({ playerSetups, onComplet
     ))
   }
 
+  const handleStarterDeckChange = (playerIndex: number, deck: Card[]) => {
+    setEditablePlayerSetups(prev =>
+      prev.map((setup, index) => (
+        index === playerIndex
+          ? { ...setup, deck: [...deck] }
+          : setup
+      ))
+    )
+
+    setPlayerStates(prev =>
+      prev.map(player => (
+        player.id === playerIndex
+          ? { ...player, deck: [...deck] }
+          : player
+      ))
+    )
+  }
+
   const handleSubmit = () => {
     onComplete({
-      players: playerStates,
-      currentRound
+      players: playerStates.map(player => ({
+        ...player,
+        deck: [...player.deck],
+        discardPile: [...player.discardPile],
+        trash: [...player.trash],
+        playArea: [...player.playArea]
+      })),
+      currentRound,
+      imperiumRowDeck: buildSetupImperiumDeck(editablePlayerSetups.map(setup => setup.deck))
     })
   }
 
@@ -89,9 +125,9 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({ playerSetups, onComplet
             </button>
             <button
               className="toggle-editor-button"
-              disabled
+              onClick={() => setShowStarterDeckEditor(prev => !prev)}
             >
-              Edit Imperium deck (coming soon)
+              {showStarterDeckEditor ? 'Hide player starter decks' : 'Edit player starter decks'}
             </button>
           </div>
 
@@ -154,6 +190,15 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({ playerSetups, onComplet
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {showStarterDeckEditor && (
+            <div className="setup-editor-panel">
+              <StarterDeckEditor
+                playerSetups={editablePlayerSetups}
+                onPlayerDeckChange={handleStarterDeckChange}
+              />
             </div>
           )}
 

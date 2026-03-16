@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Card, Player, CardPile } from '../../types/GameTypes'
 import './CardSearch.css'
+
+const EMPTY_SELECTED_CARDS: Card[] = []
 
 interface CardSearchProps {
   isOpen: boolean
@@ -18,6 +20,8 @@ interface CardSearchProps {
   getCardPlayability?: (card: Card) => { playable: boolean; reason?: string }
   /** Rendered between cards grid and search bar (e.g. preview cards in Imperium Row Select) */
   slotBetweenCardsAndSearch?: React.ReactNode
+  initialSelectedCards?: Card[]
+  cancelButtonText?: string
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({
@@ -35,9 +39,25 @@ const CardSearch: React.FC<CardSearchProps> = ({
   hideTitle = false,
   getCardPlayability,
   slotBetweenCardsAndSearch,
+  initialSelectedCards = EMPTY_SELECTED_CARDS,
+  cancelButtonText = 'Clear all',
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
+  const onSelectionChangeRef = useRef(onSelectionChange)
+
+  useEffect(() => {
+    onSelectionChangeRef.current = onSelectionChange
+  }, [onSelectionChange])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    setSelectedCards(initialSelectedCards)
+    if (onSelectionChangeRef.current) {
+      onSelectionChangeRef.current(initialSelectedCards)
+    }
+  }, [initialSelectedCards, isOpen])
 
   // Derive available cards from piles or use provided cards
   const availableCards = useMemo(() => {
@@ -246,7 +266,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
           className="header-cancel-button"
           onClick={handleCancel}
         >
-          Clear all
+          {cancelButtonText}
         </button>
         <button
           className="header-confirm-button"

@@ -569,6 +569,7 @@ function App() {
   const [initialGameState, setInitialGameState] = useState<{
     players: Player[]
     currentRound: number
+    imperiumRowDeck: Card[]
   } | null>(null)
   const [setupImperiumDeck, setSetupImperiumDeck] = useState<Card[]>(() => buildImperiumDeck())
 
@@ -587,9 +588,9 @@ function App() {
     }
   }
 
-  const handleGameStateSetupComplete = (state: { players: Player[], currentRound: number }) => {
+  const handleGameStateSetupComplete = (state: { players: Player[], currentRound: number, imperiumRowDeck: Card[] }) => {
       setInitialGameState(state)
-      setSetupImperiumDeck(buildImperiumDeck())
+      setSetupImperiumDeck(state.imperiumRowDeck)
       setScreenState(ScreenState.GAME)
   }
 
