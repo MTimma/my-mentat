@@ -21,6 +21,22 @@ type InfluenceFieldKey =
   | 'retreatTroops'
   | 'retreatUnits'
   | 'deployTroops'
+type RewardNumericField =
+  | 'persuasion'
+  | 'combat'
+  | 'spice'
+  | 'water'
+  | 'solari'
+  | 'troops'
+  | 'drawCards'
+  | 'victoryPoints'
+  | 'intrigueCards'
+  | 'trash'
+  | 'retreatTroops'
+  | 'retreatUnits'
+  | 'deployTroops'
+  | 'tiebreakerSpice'
+type AcquireEffectNumericField = 'victoryPoints' | 'spice' | 'troops' | 'trash' | 'water'
 
 interface InfluenceAmountEditor {
   id: string
@@ -140,7 +156,7 @@ const COST_FIELD_CONFIG: Array<{ key: InfluenceFieldKey | 'discard'; label: stri
   { key: 'deployTroops', label: 'Deploy troops' },
 ]
 
-const REWARD_FIELD_CONFIG: Array<{ key: keyof RewardEditor; label: string }> = [
+const REWARD_FIELD_CONFIG: Array<{ key: RewardNumericField; label: string }> = [
   { key: 'persuasion', label: 'Persuasion' },
   { key: 'combat', label: 'Combat' },
   { key: 'spice', label: 'Spice' },
@@ -157,7 +173,7 @@ const REWARD_FIELD_CONFIG: Array<{ key: keyof RewardEditor; label: string }> = [
   { key: 'tiebreakerSpice', label: 'Tiebreaker spice' },
 ]
 
-const ACQUIRE_EFFECT_CONFIG: Array<{ key: keyof AcquireEffectEditor; label: string }> = [
+const ACQUIRE_EFFECT_CONFIG: Array<{ key: AcquireEffectNumericField; label: string }> = [
   { key: 'victoryPoints', label: 'Victory points' },
   { key: 'spice', label: 'Spice' },
   { key: 'troops', label: 'Troops' },
@@ -341,7 +357,7 @@ const buildRequirement = (
     return undefined
   }
 
-  const requirement = buildRequirementOption(editor, specificKey) ?? {}
+  const requirement: Record<string, unknown> = buildRequirementOption(editor, specificKey) ?? {}
   const orRequirements = editor.orRequirements
     .map(option => buildRequirementOption(option, specificKey))
     .filter(isDefined)
