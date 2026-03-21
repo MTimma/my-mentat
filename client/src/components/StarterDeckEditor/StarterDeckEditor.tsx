@@ -63,7 +63,7 @@ const StarterDeckEditor: React.FC<StarterDeckEditorProps> = ({ playerSetups, onP
   return (
     <div className="starter-deck-editor">
       <p className="starter-deck-editor-note">
-        Cards assigned to a player starter deck are removed from the shared Imperium deck before the game starts.
+        Only cards you add beyond the default starter deck are removed from the shared Imperium deck before the game starts.
       </p>
 
       <div className="starter-deck-editor-list">
