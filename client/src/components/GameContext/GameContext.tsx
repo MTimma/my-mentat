@@ -519,6 +519,12 @@ function applyRewardToPlayer(
   return updatedPlayer
 }
 
+function getResolvedRewardForPlayer(player: Player, pendingReward: PendingReward): Reward {
+  return isArianaHarvestReward(player, pendingReward)
+    ? getArianaAdjustedReward(pendingReward)
+    : pendingReward.reward
+}
+
 /** Apply a conflict reward choice (from pendingConflictRewardChoices) */
 function applyConflictChoiceReward(
   state: GameState,
@@ -3066,7 +3072,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       
       // Apply the reward using shared helper (Ariana gains 1 less spice and draws 1 when harvesting)
-      const rewardToApply = isArianaHarvestReward(player, reward) ? getArianaAdjustedReward(reward) : reward.reward
+      const rewardToApply = getResolvedRewardForPlayer(player, reward)
       newPlayer = applyRewardToPlayer(rewardToApply, newPlayer, newGains, state, reward.source)
       
       // Handle influence updates (needs state modification)
@@ -3129,11 +3135,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Apply each reward using shared helper
       rewardsToApply.forEach(reward => {
-        newPlayer = applyRewardToPlayer(reward.reward, newPlayer, newGains, state, reward.source)
+        const rewardToApply = getResolvedRewardForPlayer(player, reward)
+        newPlayer = applyRewardToPlayer(rewardToApply, newPlayer, newGains, state, reward.source)
         
         // Track troops recruited
-        if (reward.reward.troops) {
-          totalTroopsRecruited += reward.reward.troops
+        if (rewardToApply.troops) {
+          totalTroopsRecruited += rewardToApply.troops
         }
         
         // Handle influence updates (needs state modification)

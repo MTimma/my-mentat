@@ -81,4 +81,8 @@
 .player-setup-row h3 {
   color: #8b4513;
   margin-bottom: 1rem;
-} 
+}
+
+.setup-editor-panel {
+  margin-top: 1rem;
+}

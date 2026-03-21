@@ -2,31 +2,35 @@ import React, { useState } from 'react'
 import { PlayerColor, PlayerSetup } from '../types/GameTypes'
 import { LEADERS } from '../data/leaders'
 import { motion } from 'framer-motion'
-import { STARTING_DECK } from '../data/cards'
+import { buildStartingDeck } from '../services/starterDeckSetup'
 
 interface GameSetupProps {
   onComplete: (playerSetups: PlayerSetup[]) => void
   onOpenCardCreator: () => void
 }
 
-const GameSetup: React.FC<GameSetupProps> = ({ onComplete, onOpenCardCreator }) => {
+const createPlayerSetup = (playerNumber: number, color: PlayerColor, leaderIndex: number): PlayerSetup => ({
+  playerNumber,
+  color,
+  leader: leaderIndex === 4 ? LEADERS[4] : LEADERS[leaderIndex],
+  deck: buildStartingDeck(),
+  startingHand: []
+})
+
+const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
   const [gameName, setGameName] = useState('Test Game')
   const [playerCount, setPlayerCount] = useState<number>(4)
   const [players, setPlayers] = useState<PlayerSetup[]>([
-    { playerNumber: 1, color: PlayerColor.RED, leader: LEADERS[4], deck: STARTING_DECK, startingHand: [] },
-    { playerNumber: 2, color: PlayerColor.GREEN, leader: LEADERS[0], deck: STARTING_DECK, startingHand: [] },
-    { playerNumber: 3, color: PlayerColor.YELLOW, leader: LEADERS[1], deck: STARTING_DECK, startingHand: [] },
-    { playerNumber: 4, color: PlayerColor.BLUE, leader: LEADERS[2], deck: STARTING_DECK, startingHand: [] }
+    createPlayerSetup(1, PlayerColor.RED, 4),
+    createPlayerSetup(2, PlayerColor.GREEN, 0),
+    createPlayerSetup(3, PlayerColor.YELLOW, 1),
+    createPlayerSetup(4, PlayerColor.BLUE, 2)
   ])
 
   const handlePlayerCountChange = (count: number) => {
     setPlayerCount(count)
     const newPlayers = Array.from({ length: count }, (_, i) => ({
-      playerNumber: i + 1,
-      color: Object.values(PlayerColor)[i],
-      leader: i === 0 ? LEADERS[4] : LEADERS[i - 1], 
-      deck: STARTING_DECK,
-      startingHand: []
+      ...createPlayerSetup(i + 1, Object.values(PlayerColor)[i], i === 0 ? 4 : i - 1)
     }))
     setPlayers(newPlayers)
   }
