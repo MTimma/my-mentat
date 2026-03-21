@@ -8,7 +8,7 @@ import { useGame } from './components/GameContext/GameContext'
 import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, ControlMarkerType, GainSource } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -32,7 +32,6 @@ const GameContent = () => {
     viewingTurnIndex,
     goToTurn,
     returnToCurrent,
-    undoToTurn
   } = useTimeTravel()
 
   const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(false)
@@ -59,7 +58,6 @@ const GameContent = () => {
 
   // Use displayState for rendering, but gameState for actions
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
-  const displayActivePlayer = displayState.players.find(p => p.id === displayState.activePlayerId) || null
 
   const handleCardSelect = (playerId: number, cardId: number) => {
     dispatch({ type: 'PLAY_CARD', playerId, cardId })
@@ -569,6 +567,7 @@ function App() {
   const [initialGameState, setInitialGameState] = useState<{
     players: Player[]
     currentRound: number
+    imperiumRowDeck: Card[]
   } | null>(null)
   const [setupImperiumDeck, setSetupImperiumDeck] = useState<Card[]>(() => buildImperiumDeck())
 
@@ -587,9 +586,9 @@ function App() {
     }
   }
 
-  const handleGameStateSetupComplete = (state: { players: Player[], currentRound: number }) => {
+  const handleGameStateSetupComplete = (state: { players: Player[], currentRound: number, imperiumRowDeck: Card[] }) => {
       setInitialGameState(state)
-      setSetupImperiumDeck(buildImperiumDeck())
+      setSetupImperiumDeck(state.imperiumRowDeck)
       setScreenState(ScreenState.GAME)
   }
 

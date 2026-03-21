@@ -1,0 +1,144 @@
+.starter-deck-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.starter-deck-editor-note {
+  margin: 0;
+  color: #5f3a17;
+  font-weight: 500;
+}
+
+.starter-deck-editor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.starter-deck-editor-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 8px;
+  background: white;
+}
+
+.starter-deck-editor-info h3 {
+  margin: 0 0 0.25rem;
+  color: #8b4513;
+}
+
+.starter-deck-editor-info p {
+  margin: 0 0 0.75rem;
+  color: #5f3a17;
+}
+
+.starter-deck-editor-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.starter-deck-editor-chip {
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(139, 69, 19, 0.12);
+  color: #6f2d05;
+  font-size: 0.9rem;
+}
+
+.starter-deck-editor-chip-muted {
+  background: rgba(95, 58, 23, 0.08);
+}
+
+.starter-deck-editor-button {
+  padding: 0.75rem 1rem;
+  border: 2px solid #8b4513;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #8b4513;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.starter-deck-editor-button:hover {
+  background: white;
+}
+
+.starter-deck-editor-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(43, 25, 10, 0.82);
+  z-index: 1100;
+  padding: 1.5rem;
+}
+
+.starter-deck-editor-dialog {
+  width: min(1200px, 100%);
+  max-height: calc(100vh - 3rem);
+  overflow: auto;
+  padding: 1.5rem;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f7e9d0 0%, #f2dcc0 100%);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.starter-deck-editor-header h2 {
+  margin: 0 0 0.5rem;
+  color: #6f2d05;
+}
+
+.starter-deck-editor-header p {
+  margin: 0;
+  color: #5f3a17;
+}
+
+.starter-deck-editor-count {
+  margin-top: 0.75rem;
+  font-weight: 700;
+  color: #8b4513;
+}
+
+.starter-deck-editor-search {
+  margin-top: 1rem;
+}
+
+.starter-deck-editor-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.starter-deck-editor-preview-slot {
+  min-height: 108px;
+  border-radius: 8px;
+  border: 2px dashed rgba(111, 45, 5, 0.2);
+  background: rgba(255, 255, 255, 0.55);
+  overflow: hidden;
+}
+
+.starter-deck-editor-preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .starter-deck-editor-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .starter-deck-editor-button {
+    width: 100%;
+  }
+}
