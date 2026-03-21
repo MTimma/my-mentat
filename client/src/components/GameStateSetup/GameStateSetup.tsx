@@ -13,9 +13,14 @@ interface GameStateSetupProps {
     currentRound: number
     imperiumRowDeck: Card[]
   }) => void
+  onOpenCardCreator: () => void
 }
 
-const GameStateSetup: React.FC<GameStateSetupProps> = ({ playerSetups, onComplete }) => {
+const GameStateSetup: React.FC<GameStateSetupProps> = ({
+  playerSetups,
+  onComplete,
+  onOpenCardCreator,
+}) => {
   const [currentRound, setCurrentRound] = useState(1)
   const [showResourceEditor, setShowResourceEditor] = useState(false)
   const [showStarterDeckEditor, setShowStarterDeckEditor] = useState(false)
@@ -125,6 +130,10 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({ playerSetups, onComplet
             </button>
             <button
               className="toggle-editor-button"
+              type="button"
+              onClick={onOpenCardCreator}
+            >
+              Open card creator
               onClick={() => setShowStarterDeckEditor(prev => !prev)}
             >
               {showStarterDeckEditor ? 'Hide player starter decks' : 'Edit player starter decks'}

@@ -6,6 +6,7 @@ import { buildStartingDeck } from '../services/starterDeckSetup'
 
 interface GameSetupProps {
   onComplete: (playerSetups: PlayerSetup[]) => void
+  onOpenCardCreator: () => void
 }
 
 const createPlayerSetup = (playerNumber: number, color: PlayerColor, leaderIndex: number): PlayerSetup => ({
@@ -144,6 +145,9 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
           onClick={() => onComplete(players)}
         >
           Start Game
+        </button>
+        <button className="secondary-setup-button" type="button" onClick={onOpenCardCreator}>
+          Open card creator
         </button>
       </div>
     </motion.div>
