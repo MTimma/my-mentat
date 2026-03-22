@@ -134,6 +134,10 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
               onClick={onOpenCardCreator}
             >
               Open card creator
+            </button>
+            <button
+              className="toggle-editor-button"
+              type="button"
               onClick={() => setShowStarterDeckEditor(prev => !prev)}
             >
               {showStarterDeckEditor ? 'Hide player starter decks' : 'Edit player starter decks'}
