@@ -554,7 +554,7 @@ export interface GameState {
   }
   // Helena signet ring: card removed from Imperium Row this round; that player may acquire it for 1 less during Reveal
   helenaRemovedCard?: { cardId: number; playerId: number; card: Card } | null
-  /** Dispatch an Envoy: next Agent placement this turn unions four faction icons with the played card (Agent turn only). */
+  /** Dispatch an Envoy: next Agent placement only — unions four faction icons with that card for board matching. Cleared after Agent placement or when Reveal resolves (no effect on revealed cards). */
   dispatchEnvoyActive?: Record<number, boolean>
   /** Infiltrate intrigue: next Agent placement ignores enemy occupancy once */
   infiltrateIgnoreOccupancyOnce?: Record<number, boolean>

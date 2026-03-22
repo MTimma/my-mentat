@@ -2511,6 +2511,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedCombatStrength = hasTroopsInCombat
         ? { ...state.combatStrength, [playerId]: (state.combatStrength[playerId] || 0) + swordCount }
         : state.combatStrength
+
+      // Dispatch an Envoy only affects the next Agent card played; it does not modify revealed cards.
+      // Clear the flag on Reveal so a wasted Dispatch (played before/during Reveal with no Agent play) does not linger.
+      const dispatchEnvoyActiveAfterReveal = (() => {
+        const next = { ...(state.dispatchEnvoyActive || {}) }
+        delete next[playerId]
+        return next
+      })()
+
       return {
         ...state,
         gains: updatedGains,
@@ -2533,7 +2542,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         pendingRewards,
         canEndTurn: (pendingChoices.length > 0 || pendingRewards.filter(r => !r.disabled).length > 0) ? false : true,
         canAcquireIR: true,
-        scheduledIntrigueOnReveal: { ...(state.scheduledIntrigueOnReveal || {}), [playerId]: [] }
+        scheduledIntrigueOnReveal: { ...(state.scheduledIntrigueOnReveal || {}), [playerId]: [] },
+        dispatchEnvoyActive: dispatchEnvoyActiveAfterReveal
       }
     }
     case 'ACQUIRE_CARD': {

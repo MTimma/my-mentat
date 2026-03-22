@@ -8,7 +8,8 @@ import { useGame } from './components/GameContext/GameContext'
 import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, DISPATCH_ENVOY_FACTION_ICONS } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource } from './types/GameTypes'
+import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -547,12 +548,13 @@ function getSelectedCard(gameState: GameState): Card | null {
   return gameState.selectedCard ? gameState.players[gameState.activePlayerId].deck.find(c => c.id === gameState.selectedCard) || null : null
 }
 
+/** Board highlights for Agent placement only. Dispatch an Envoy does not add icons for Reveal. */
 function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
   const card = getSelectedCard(gameState)
   if (!card) return []
   const base = [...card.agentIcons]
   if (gameState.dispatchEnvoyActive?.[gameState.activePlayerId]) {
-    return [...new Set([...base, ...DISPATCH_ENVOY_FACTION_ICONS])]
+    return mergeDispatchEnvoyIcons(base)
   }
   return base
 }
