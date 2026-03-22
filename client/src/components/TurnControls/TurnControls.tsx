@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect } from '../../types/GameTypes'
+import { intrigueCardHasCustom } from '../../utils/intrigueCardCustom'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
 import { intrigueRequirementSatisfied } from '../GameContext/requirements'
 import { getLeaderImage } from '../../data/leaders'
 import LeaderImageModal from '../LeaderImageModal/LeaderImageModal'
+import PlayerTargetDialog from '../PlayerTargetDialog'
 import './TurnControls.css'
 
 interface TurnControlsProps {
   activePlayer: Player | null
   onPlayCard: (playerId: number, cardId: number) => void
-  onPlayIntrigue: (playerId: number, cardId: number) => void
+  onPlayIntrigue: (playerId: number, cardId: number, targetPlayerId?: number) => void
+  onMobilizeGarrison?: (playerId: number, count: number) => void
   onPlayCombatIntrigue: (playerId: number, cardId: number) => void
   onReveal: (playerId: number, cardIds: number[]) => void
   canEndTurn: boolean
@@ -73,6 +76,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   canEndTurn,
   onPlayCard,
   onPlayIntrigue,
+  onMobilizeGarrison,
   onPlayCombatIntrigue,
   onReveal,
   onEndTurn,
@@ -132,6 +136,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [isIntrigueSelectionOpen, setIsIntrigueSelectionOpen] = useState(false)
   const [showTrashPopup, setShowTrashPopup] = useState(false)
   const [isLeaderImageOpen, setIsLeaderImageOpen] = useState(false)
+  const [pendingIntrigueTarget, setPendingIntrigueTarget] = useState<IntrigueCard | null>(null)
+  const [mobilizeCount, setMobilizeCount] = useState(0)
+
+  useEffect(() => {
+    if (activePlayer && gameState?.pendingRapidMobilization === activePlayer.id) {
+      setMobilizeCount(0)
+    }
+  }, [gameState?.pendingRapidMobilization, activePlayer?.id])
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
   const [activeCardSelect, setActiveCardSelect] = useState<CardSelectChoice | null>(null)
   const [opponentCardSelect, setOpponentCardSelect] = useState<Player | null>(null)
@@ -237,6 +249,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const handleIntrigueSelection = (selectedCards: Card[]) => {
     setIsIntrigueSelectionOpen(false)
     if (selectedCards[0]) {
+      const picked = selectedCards[0] as IntrigueCard
+      if (!isCombatPhase && picked.targetPlayer) {
+        setPendingIntrigueTarget(picked)
+        return
+      }
       if (isCombatPhase) {
         onPlayCombatIntrigue(activePlayer.id, selectedCards[0].id)
       } else {
@@ -271,6 +288,32 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     const checkIntrigueCardPlayability = (card: IntrigueCard): { playable: boolean; reason?: string } => {
       if (!activePlayer || !gameState) {
         return { playable: false }
+      }
+
+      if (intrigueCardHasCustom(card, CustomEffect.BINDU_SUSPENSION)) {
+        if (activePlayer.revealed) return { playable: false, reason: 'Bindu: only before Reveal' }
+        if (selectedCard) return { playable: false, reason: 'Bindu: before playing a card' }
+        if (agentPlaced) return { playable: false, reason: 'Bindu: before Agent placement' }
+      }
+
+      if (intrigueCardHasCustom(card, CustomEffect.STAGED_INCIDENT) && gamePhase === GamePhase.COMBAT) {
+        if ((combatTroops[activePlayer.id] || 0) < 3) {
+          return { playable: false, reason: 'Need at least 3 troops in the Conflict' }
+        }
+      }
+
+      if (intrigueCardHasCustom(card, CustomEffect.DOUBLE_CROSS) && gamePhase === GamePhase.PLAYER_TURNS) {
+        if (activePlayer.solari < 1) return { playable: false, reason: 'Cannot afford 1 Solari' }
+        if (activePlayer.troops < 1) return { playable: false, reason: 'Need a troop in supply to deploy' }
+        const hasTarget = players.some(
+          p => p.id !== activePlayer.id && (combatTroops[p.id] || 0) >= 1
+        )
+        if (!hasTarget) return { playable: false, reason: 'No opponent with troops in the Conflict' }
+      }
+
+      if (intrigueCardHasCustom(card, CustomEffect.URGENT_MISSION)) {
+        const hasAgent = Object.entries(gameState.occupiedSpaces).some(([, occ]) => occ.includes(activePlayer.id))
+        if (!hasAgent) return { playable: false, reason: 'No Agent on the board to recall' }
       }
 
       const effects = card.playEffect || []
@@ -1171,6 +1214,48 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         isRevealTurn={false}
         text="Select card to trash"
       />
+
+      {pendingIntrigueTarget && (
+        <PlayerTargetDialog
+          card={pendingIntrigueTarget}
+          players={players}
+          currentPlayerId={activePlayer.id}
+          onSelectTarget={tid => {
+            onPlayIntrigue(activePlayer.id, pendingIntrigueTarget.id, tid)
+            setPendingIntrigueTarget(null)
+          }}
+          onCancel={() => setPendingIntrigueTarget(null)}
+        />
+      )}
+
+      {gameState?.pendingRapidMobilization === activePlayer.id && onMobilizeGarrison && (
+        <div className="dialog-overlay">
+          <div className="target-dialog">
+            <h3>Rapid Mobilization</h3>
+            <p>Deploy troops from garrison to the Conflict (0–{activePlayer.troops}).</p>
+            <input
+              type="number"
+              min={0}
+              max={activePlayer.troops}
+              value={mobilizeCount}
+              onChange={e =>
+                setMobilizeCount(
+                  Math.max(0, Math.min(activePlayer.troops, Number(e.target.value) || 0))
+                )
+              }
+            />
+            <button
+              type="button"
+              onClick={() => {
+                onMobilizeGarrison(activePlayer.id, mobilizeCount)
+                setMobilizeCount(0)
+              }}
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }

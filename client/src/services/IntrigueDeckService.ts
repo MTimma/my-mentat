@@ -40,7 +40,7 @@ export const intrigueCards: IntrigueCard[] = [
       'At the start of your turn: draw 1 card. You may pass your turn (instead of taking an Agent or Reveal turn).',
     image: '/intrigue/base/bindu_suspension.png',
     agentIcons: [],
-    playEffect: [] //TODO custom timing
+    playEffect: [{ reward: { custom: CustomEffect.BINDU_SUSPENSION } }]
   },
   {
     id: 4,
@@ -128,7 +128,7 @@ export const intrigueCards: IntrigueCard[] = [
       'Endgame: If you have at least two The Spice Must Flow, gain 1 VP. If you have more The Spice Must Flow than each opponent, gain 1 VP.',
     image: '/intrigue/base/corner_the_market.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ phase: GamePhase.END_GAME, reward: { custom: CustomEffect.CORNER_THE_MARKET } }]
   },
   {
     id: 10,
@@ -146,7 +146,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'The card you play this turn has the following icons.',
     image: '/intrigue/base/dispatch_an_envoy.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ reward: { custom: CustomEffect.DISPATCH_ENVOY } }]
   },
   {
     id: 12,
@@ -156,7 +156,8 @@ export const intrigueCards: IntrigueCard[] = [
       'An opponent of your choice loses 1 troop in the Conflict and you deploy 1 troop from your supply to the Conflict.',
     image: '/intrigue/base/double_cross.png',
     agentIcons: [],
-    playEffect: []
+    targetPlayer: true,
+    playEffect: [{ cost: { solari: 1 }, reward: { custom: CustomEffect.DOUBLE_CROSS } }]
   },
   {
     id: 13,
@@ -183,7 +184,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Enemy Agents don’t block your next Agent at board spaces this turn.',
     image: '/intrigue/base/infiltrate.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ reward: { custom: CustomEffect.INFILTRATE_INTRIGUE } }]
   },
   {
     id: 16,
@@ -201,7 +202,11 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Combat: +3 strength —OR— Retreat up to three of your troops.',
     image: '/intrigue/base/master_tactitian.png',
     agentIcons: [],
-    playEffect: [{ reward: { combat: 3 } }]
+    playEffect: [
+      { reward: { custom: CustomEffect.MASTER_TACTICIAN } },
+      { choiceOpt: true, phase: GamePhase.COMBAT, reward: { combat: 3 } },
+      { choiceOpt: true, phase: GamePhase.COMBAT, reward: { retreatFromConflict: 0 } }
+    ]
   },
   {
     id: 18,
@@ -211,7 +216,7 @@ export const intrigueCards: IntrigueCard[] = [
       'Endgame: If you have 3+ influence on three faction tracks, gain 1 VP —OR— if you have 3+ influence on four faction tracks, gain 2 VP.',
     image: '/intrigue/base/plans_within_plans.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ phase: GamePhase.END_GAME, reward: { custom: CustomEffect.PLANS_WITHIN_PLANS } }]
   },
   {
     id: 19,
@@ -229,7 +234,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Deploy any number of your garrisoned troops to the Conflict.',
     image: '/intrigue/base/rapid_mobilization.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ reward: { custom: CustomEffect.RAPID_MOBILIZATION } }]
   },
   {
     id: 21,
@@ -281,7 +286,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Lose three of your troops in the Conflict to gain 1 VP.',
     image: '/intrigue/base/staged_incident.png',
     agentIcons: [],
-    playEffect: [{ reward: { victoryPoints: 1 } }]
+    playEffect: [{ reward: { custom: CustomEffect.STAGED_INCIDENT } }]
   },
   {
     id: 26,
@@ -311,7 +316,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'When you win a Conflict: gain 3 spice.',
     image: '/intrigue/base/to_the_victor.png',
     agentIcons: [],
-    playEffect: [{ reward: { spice: 3 } }]
+    playEffect: [{ reward: { custom: CustomEffect.TO_THE_VICTOR } }]
   },
   {
     id: 29,
@@ -320,7 +325,7 @@ export const intrigueCards: IntrigueCard[] = [
     description: 'Recall one of your Agents.',
     image: '/intrigue/base/urgent_mission.png',
     agentIcons: [],
-    playEffect: []
+    playEffect: [{ reward: { custom: CustomEffect.URGENT_MISSION } }]
   },
   {
     id: 30,
@@ -350,6 +355,11 @@ export const intrigueCards: IntrigueCard[] = [
     playEffect: [{ reward: { solari: 2 } }]
   }
 ]
+
+/** Resolve static intrigue definition by a custom effect marker (avoids hard-coded card ids in reducers). */
+export function getIntrigueCardByCustom(effect: CustomEffect): IntrigueCard | undefined {
+  return intrigueCards.find(c => c.playEffect?.some(e => e.reward?.custom === effect))
+}
 
 export class IntrigueDeckService {
   private deck: IntrigueCard[]

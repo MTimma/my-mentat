@@ -197,6 +197,10 @@ export interface Reward {
   acquire?: {
     limit: number
   }
+  /** Urgent Mission: recall agent from this board space id */
+  recallSpaceId?: number
+  /** Master Tactician: retreat this many troops from Conflict to garrison */
+  retreatFromConflict?: number
 }
 
 export enum EffectTiming {
@@ -550,7 +554,23 @@ export interface GameState {
   }
   // Helena signet ring: card removed from Imperium Row this round; that player may acquire it for 1 less during Reveal
   helenaRemovedCard?: { cardId: number; playerId: number; card: Card } | null
+  /** Dispatch an Envoy: next Agent placement this turn unions four faction icons with the played card (Agent turn only). */
+  dispatchEnvoyActive?: Record<number, boolean>
+  /** Infiltrate intrigue: next Agent placement ignores enemy occupancy once */
+  infiltrateIgnoreOccupancyOnce?: Record<number, boolean>
+  /** Rapid Mobilization: player must choose how many garrison troops to deploy */
+  pendingRapidMobilization?: number | null
+  /** To the Victor…: if true, grant 3 spice when this player wins the current Conflict */
+  pendingVictorSpiceThisCombat?: Record<number, boolean>
 }
+
+/** Faction agent icons added by Dispatch an Envoy (union with card icons). */
+export const DISPATCH_ENVOY_FACTION_ICONS: AgentIcon[] = [
+  AgentIcon.EMPEROR,
+  AgentIcon.SPACING_GUILD,
+  AgentIcon.BENE_GESSERIT,
+  AgentIcon.FREMEN
+]
 
 export enum CustomEffect {
   OTHER_MEMORY = 'OTHER_MEMORY',
@@ -567,6 +587,28 @@ export enum CustomEffect {
   SHUFFLE_DISCARD_INTO_DECK = 'SHUFFLE_DISCARD_INTO_DECK',
   SIGNET_RING = 'SIGNET_RING',
   HELENA_SIGNET_RING = 'HELENA_SIGNET_RING',
+  /** Plot intrigue: next Agent placement merges four faction icons (Emperor, Guild, BG, Fremen) with the played card */
+  DISPATCH_ENVOY = 'DISPATCH_ENVOY',
+  /** Plot intrigue Infiltrate: ignore enemy occupancy once */
+  INFILTRATE_INTRIGUE = 'INFILTRATE_INTRIGUE',
+  /** Plot intrigue Double Cross: resolved in PLAY_INTRIGUE with targetPlayerId */
+  DOUBLE_CROSS = 'DOUBLE_CROSS',
+  /** Plot intrigue Rapid Mobilization: sets pending garrison mobilization */
+  RAPID_MOBILIZATION = 'RAPID_MOBILIZATION',
+  /** Plot intrigue Urgent Mission: no-op in apply; recall via pending choice */
+  URGENT_MISSION = 'URGENT_MISSION',
+  /** Endgame Corner the Market: VP from TSMF counts */
+  CORNER_THE_MARKET = 'CORNER_THE_MARKET',
+  /** Endgame Plans Within Plans: VP from influence thresholds */
+  PLANS_WITHIN_PLANS = 'PLANS_WITHIN_PLANS',
+  /** Combat Staged Incident: lose 3 conflict troops then +1 VP */
+  STAGED_INCIDENT = 'STAGED_INCIDENT',
+  /** Combat To the Victor: defer spice to conflict win */
+  TO_THE_VICTOR = 'TO_THE_VICTOR',
+  /** Plot Bindu Suspension: draw 1 to handCount then may end turn early (PLAY_INTRIGUE special-case) */
+  BINDU_SUSPENSION = 'BINDU_SUSPENSION',
+  /** Combat Master Tactician: marker for pending OR-choice UI (PLAY_COMBAT_INTRIGUE); choice lines use choiceOpt */
+  MASTER_TACTICIAN = 'MASTER_TACTICIAN',
 }
 
 // Custom effects that are auto-applied and don't need user input

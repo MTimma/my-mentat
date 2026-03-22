@@ -42,7 +42,8 @@ import { SPICE_MUST_FLOW_DECK } from '../../data/cards'
 import { FOLDSPACE_DECK } from '../../data/cards'
 import { CONFLICTS } from '../../data/conflicts'
 import { PLAY_EFFECT_TEXTS } from '../../data/effectTexts'
-import { intrigueCards } from '../../services/IntrigueDeckService'
+import { intrigueCards, getIntrigueCardByCustom } from '../../services/IntrigueDeckService'
+import { intrigueCardHasCustom } from '../../utils/intrigueCardCustom'
 import { playRequirementSatisfied, revealRequirementSatisfied, intrigueRequirementSatisfied } from './requirements'
 import { updateFactionInfluence, getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { resolveSignetRingEffect } from '../../data/signetRingEffects'
@@ -53,6 +54,7 @@ import { canPlaceDespiteOccupancy } from '../../data/leaderAbilities/helenaUnblo
 import { shouldGrantIlbanSolariDraw } from '../../data/leaderAbilities/ilbanSolariDraw'
 import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraadDiscount'
 import { shouldGrantMemnonInfluence, buildMemnonInfluenceReward } from '../../data/leaderAbilities/memnonHighCouncilInfluence'
+import { countSpiceMustFlowCards } from '../../utils/spiceMustFlow'
 
 interface GameContextType {
   gameState: GameState
@@ -70,6 +72,7 @@ type GameAction =
   | { type: 'DEPLOY_TROOP'; playerId: number }
   | { type: 'RETREAT_TROOP'; playerId: number }
   | { type: 'PLAY_INTRIGUE'; cardId: number; playerId: number; targetPlayerId?: number }
+  | { type: 'MOBILIZE_GARRISON'; playerId: number; count: number }
   | { type: 'ACQUIRE_CARD'; playerId: number; cardId: number; freeAcquire?: boolean; acquireToTop?: boolean }
   | { type: 'PLAY_COMBAT_INTRIGUE'; playerId: number; cardId: number }
   | { type: 'RESOLVE_COMBAT' }
@@ -174,7 +177,11 @@ const initialGameState: GameState = {
   endgameWinners: null,
   blockedSpaces: [],
   pendingImperiumRowReplacement: null,
-  helenaRemovedCard: null
+  helenaRemovedCard: null,
+  dispatchEnvoyActive: {},
+  infiltrateIgnoreOccupancyOnce: {},
+  pendingRapidMobilization: null,
+  pendingVictorSpiceThisCombat: {}
 }
 
 function determinePlacements(
@@ -279,7 +286,8 @@ function completeCombatTransition(
       canAcquireIR: false,
       endgameDonePlayers: new Set(),
       endgameWinners: null,
-      helenaRemovedCard: null
+      helenaRemovedCard: null,
+      pendingVictorSpiceThisCombat: {}
     }
   }
   return {
@@ -291,7 +299,40 @@ function completeCombatTransition(
     conflictsDiscard: updatedConflictsDiscard,
     imperiumRow: [],
     imperiumRowDeck: refreshedDeck,
-    helenaRemovedCard: null
+    helenaRemovedCard: null,
+    pendingVictorSpiceThisCombat: {},
+    pendingRapidMobilization: null
+  }
+}
+
+/** After Bindu Suspension: +hand and skip Agent/Reveal by advancing First Player rotation (mirrors END_TURN tail). */
+function advanceActivePlayerAfterBindu(state: GameState, playerId: number): GameState {
+  const newState = { ...state }
+  let nextIndex = (playerId + 1) % newState.players.length
+  let nextPlayer = newState.players[nextIndex]
+  while (nextPlayer.revealed) {
+    nextIndex = (nextIndex + 1) % newState.players.length
+    nextPlayer = newState.players[nextIndex]
+  }
+  const clearedBlockedSpaces = (newState.blockedSpaces || []).filter(bs => bs.playerId !== nextPlayer.id)
+  const nextDispatch = { ...(newState.dispatchEnvoyActive || {}) }
+  delete nextDispatch[playerId]
+  const nextInfiltrate = { ...(newState.infiltrateIgnoreOccupancyOnce || {}) }
+  delete nextInfiltrate[playerId]
+  return {
+    ...newState,
+    blockedSpaces: clearedBlockedSpaces,
+    dispatchEnvoyActive: nextDispatch,
+    infiltrateIgnoreOccupancyOnce: nextInfiltrate,
+    players: newState.players.map(p => (p.id === playerId ? { ...p, selectedCard: null } : p)),
+    activePlayerId: nextPlayer.id,
+    history: [...newState.history, newState],
+    currTurn: null,
+    canEndTurn: false,
+    selectedCard: null,
+    canAcquireIR: false,
+    gains: [],
+    pendingRewards: []
   }
 }
 
@@ -649,7 +690,11 @@ function handleIntrigueEffect(
     scheduledIntrigueOnReveal: { ...(state.scheduledIntrigueOnReveal || {}) },
     activeIntrigueThisRound: { ...(state.activeIntrigueThisRound || {}) },
     acquireToTopThisRound: { ...(state.acquireToTopThisRound || {}) },
-    endgameTiebreakerSpice: { ...(state.endgameTiebreakerSpice || {}) }
+    endgameTiebreakerSpice: { ...(state.endgameTiebreakerSpice || {}) },
+    dispatchEnvoyActive: { ...(state.dispatchEnvoyActive || {}) },
+    infiltrateIgnoreOccupancyOnce: { ...(state.infiltrateIgnoreOccupancyOnce || {}) },
+    pendingVictorSpiceThisCombat: { ...(state.pendingVictorSpiceThisCombat || {}) },
+    pendingRapidMobilization: state.pendingRapidMobilization ?? null
   }
   const updatedPlayers = state.players.map(p => ({ ...p }))
   const playerIndex = updatedPlayers.findIndex(p => p.id === playerId)
@@ -705,7 +750,7 @@ function handleIntrigueEffect(
     }
     if (reward.influence) {
       reward.influence.amounts.forEach(({ faction, amount }) => {
-        newState = updateFactionInfluence(newState, faction, playerId, amount)
+        newState = updateFactionInfluence(newState, faction, playerId, amount) as typeof newState
         pushGain(amount, RewardType.INFLUENCE)
       })
     }
@@ -767,6 +812,83 @@ function handleIntrigueEffect(
       if (!active.some(c => c.id === card.id)) {
         newState.activeIntrigueThisRound[playerId] = [...active, card]
       }
+      return
+    }
+
+    // OR-branches: resolved in PLAY_INTRIGUE / PLAY_COMBAT_INTRIGUE (pending choices)
+    if (effect.choiceOpt) {
+      return
+    }
+
+    const custom = effect.reward.custom
+    if (custom === CustomEffect.BINDU_SUSPENSION) {
+      updatedPlayer.handCount += 1
+      pushGain(1, RewardType.DRAW)
+      return
+    }
+    if (custom === CustomEffect.MASTER_TACTICIAN) {
+      return
+    }
+    if (custom === CustomEffect.DISPATCH_ENVOY) {
+      newState.dispatchEnvoyActive[playerId] = true
+      return
+    }
+    if (custom === CustomEffect.INFILTRATE_INTRIGUE) {
+      newState.infiltrateIgnoreOccupancyOnce[playerId] = true
+      return
+    }
+    if (custom === CustomEffect.RAPID_MOBILIZATION) {
+      newState.pendingRapidMobilization = playerId
+      return
+    }
+    if (custom === CustomEffect.URGENT_MISSION) {
+      return
+    }
+    if (custom === CustomEffect.CORNER_THE_MARKET) {
+      const my = countSpiceMustFlowCards(updatedPlayer)
+      let vp = 0
+      if (my >= 2) vp += 1
+      const opponents = state.players.filter(p => p.id !== playerId)
+      const moreThanEach =
+        opponents.length === 0 || opponents.every(o => countSpiceMustFlowCards(o) < my)
+      if (moreThanEach) vp += 1
+      if (vp > 0) {
+        updatedPlayer.victoryPoints += vp
+        pushGain(vp, RewardType.VICTORY_POINTS)
+      }
+      return
+    }
+    if (custom === CustomEffect.PLANS_WITHIN_PLANS) {
+      const factions = [FactionType.EMPEROR, FactionType.SPACING_GUILD, FactionType.BENE_GESSERIT, FactionType.FREMEN]
+      const at3 = factions.filter(f => (state.factionInfluence[f]?.[playerId] ?? 0) >= 3).length
+      let vp = 0
+      if (at3 >= 4) vp = 2
+      else if (at3 === 3) vp = 1
+      if (vp > 0) {
+        updatedPlayer.victoryPoints += vp
+        pushGain(vp, RewardType.VICTORY_POINTS)
+      }
+      return
+    }
+    if (custom === CustomEffect.STAGED_INCIDENT) {
+      const ct = state.combatTroops[playerId] || 0
+      if (ct < 3) return
+      const newCt = ct - 3
+      const prevStr = newState.combatStrength[playerId] || 0
+      const newStr = Math.max(0, prevStr - 6)
+      if (newStr <= 0) {
+        delete newState.combatStrength[playerId]
+      } else {
+        newState.combatStrength[playerId] = newStr
+      }
+      updatedPlayer.combatValue = Math.max(0, (updatedPlayer.combatValue || 0) - 6)
+      newState.combatTroops = { ...newState.combatTroops, [playerId]: newCt }
+      updatedPlayer.victoryPoints += 1
+      pushGain(1, RewardType.VICTORY_POINTS)
+      return
+    }
+    if (custom === CustomEffect.TO_THE_VICTOR) {
+      newState.pendingVictorSpiceThisCombat[playerId] = true
       return
     }
     
@@ -938,9 +1060,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         bs => bs.playerId !== nextPlayer.id
       )
 
+      const clearDispatch = { ...(newState.dispatchEnvoyActive || {}) }
+      delete clearDispatch[playerId]
+      const clearInfiltrate = { ...(newState.infiltrateIgnoreOccupancyOnce || {}) }
+      delete clearInfiltrate[playerId]
+
       return {
         ...newState,
         blockedSpaces: clearedBlockedSpaces,
+        dispatchEnvoyActive: clearDispatch,
+        infiltrateIgnoreOccupancyOnce: clearInfiltrate,
         players: newState.players.map(p =>
           p.id === playerId
             ? {
@@ -1059,6 +1188,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         phase: GamePhase.COMBAT,
         activePlayerId: nextIndex,
+        pendingVictorSpiceThisCombat: {}
       }
     }
     case 'PASS_COMBAT': {
@@ -1128,7 +1258,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (!card || card.type !== IntrigueCardType.COMBAT) return state
 
+      if (
+        intrigueCardHasCustom(card, CustomEffect.STAGED_INCIDENT) &&
+        (state.combatTroops[playerId] || 0) < 3
+      ) {
+        return state
+      }
+
       const updatedState = handleIntrigueEffect(state, card, playerId)
+      const pendingCombatChoices: PendingChoice[] = []
+      if (intrigueCardHasCustom(card, CustomEffect.MASTER_TACTICIAN)) {
+        const ct = state.combatTroops[playerId] || 0
+        pendingCombatChoices.push({
+          id: `master-tactician-${crypto.randomUUID()}`,
+          type: ChoiceType.FIXED_OPTIONS,
+          prompt: 'Master Tactician: choose one',
+          options: [
+            { reward: { combat: 3 }, rewardLabel: '+3 strength' },
+            { reward: { retreatFromConflict: 0 }, rewardLabel: 'Retreat 0 troops' },
+            { reward: { retreatFromConflict: 1 }, rewardLabel: 'Retreat 1 troop', disabled: ct < 1 },
+            { reward: { retreatFromConflict: 2 }, rewardLabel: 'Retreat 2 troops', disabled: ct < 2 },
+            { reward: { retreatFromConflict: 3 }, rewardLabel: 'Retreat 3 troops', disabled: ct < 3 }
+          ],
+          source: { type: GainSource.INTRIGUE, id: card.id, name: card.name }
+        })
+      }
       const newState = {
         ...updatedState,
         players: updatedState.players.map(p =>
@@ -1137,10 +1291,32 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             : p
         ),
         intrigueDeck: updatedState.intrigueDeck.filter(c => c.id !== cardId),
-        intrigueDiscard: [...updatedState.intrigueDiscard, card]
+        intrigueDiscard: [...updatedState.intrigueDiscard, card],
+        currTurn:
+          pendingCombatChoices.length > 0
+            ? {
+                playerId,
+                type: TurnType.ACTION,
+                pendingChoices: pendingCombatChoices
+              }
+            : updatedState.currTurn,
+        canEndTurn: pendingCombatChoices.length > 0 ? false : updatedState.canEndTurn
       }
 
       return newState
+    }
+    case 'MOBILIZE_GARRISON': {
+      const { playerId, count } = action
+      if (playerId !== state.activePlayerId) return state
+      if (state.pendingRapidMobilization !== playerId) return state
+      if (count < 0) return state
+      const p = state.players.find(pl => pl.id === playerId)
+      if (!p || count > p.troops) return state
+      let s = state
+      for (let i = 0; i < count; i++) {
+        s = gameReducer(s, { type: 'DEPLOY_TROOP', playerId })
+      }
+      return { ...s, pendingRapidMobilization: null }
     }
     case 'RESOLVE_COMBAT': {
       if (!state.currentConflict) return state
@@ -1189,6 +1365,34 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         })
       }
 
+      // To the Victor… — +3 spice when the Conflict winner had played this combat intrigue
+      if (placements.first !== null && placements.first.length > 0) {
+        const winnerId = placements.first[0]
+        if (state.pendingVictorSpiceThisCombat?.[winnerId]) {
+          const extraGains: Gain[] = [...(newState.gains || [])]
+          extraGains.push({
+            round: state.currentRound,
+            playerId: winnerId,
+            sourceId: getIntrigueCardByCustom(CustomEffect.TO_THE_VICTOR)?.id ?? 0,
+            name: 'To the Victor…',
+            amount: 3,
+            type: RewardType.SPICE,
+            source: GainSource.INTRIGUE
+          })
+          newState = {
+            ...newState,
+            gains: extraGains,
+            players: newState.players.map(p =>
+              p.id === winnerId ? { ...p, spice: p.spice + 3 } : p
+            ),
+            pendingVictorSpiceThisCombat: {
+              ...(state.pendingVictorSpiceThisCombat || {}),
+              [winnerId]: false
+            }
+          }
+        }
+      }
+
       if (pendingChoices.length > 0) {
         return {
           ...newState,
@@ -1226,18 +1430,43 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return completeCombatTransition(newState, state, mentatOwnerNextRound)
     }
     case 'PLAY_INTRIGUE': {
-      const { cardId, playerId } = action
+      const { cardId, playerId, targetPlayerId } = action
       if (playerId !== state.activePlayerId) return state
       if (state.phase !== GamePhase.PLAYER_TURNS && state.phase !== GamePhase.END_GAME) return state
 
       const player = state.players.find(p => p.id === playerId)
       if (!player || player.intrigueCount < 1) return state
-      // If player has already revealed, their turns are skipped for the rest of the Player Turns phase
-      if (state.phase === GamePhase.PLAYER_TURNS && player.revealed) return state
 
       const card = state.intrigueDeck.find(c => c.id === cardId)
 
       if (!card) return state
+
+      // Bindu Suspension: start of Agent turn only — before Play card / Agent placement / Reveal
+      if (intrigueCardHasCustom(card, CustomEffect.BINDU_SUSPENSION)) {
+        if (player.revealed || state.selectedCard !== null || state.currTurn?.agentSpace) return state
+        if (state.phase !== GamePhase.PLAYER_TURNS) return state
+        const afterEffect = handleIntrigueEffect(state, card, playerId)
+        const afterSpend = {
+          ...afterEffect,
+          players: afterEffect.players.map(p =>
+            p.id === playerId ? { ...p, intrigueCount: p.intrigueCount - 1 } : p
+          ),
+          intrigueDeck: afterEffect.intrigueDeck.filter(c => c.id !== cardId),
+          intrigueDiscard: [...afterEffect.intrigueDiscard, card]
+        }
+        return advanceActivePlayerAfterBindu(afterSpend, playerId)
+      }
+
+      // Plot intrigue may be played during Reveal turn except Bindu (handled above).
+      if (state.phase === GamePhase.PLAYER_TURNS && player.revealed) {
+        if (
+          card.type !== IntrigueCardType.PLOT ||
+          intrigueCardHasCustom(card, CustomEffect.BINDU_SUSPENSION)
+        ) {
+          return state
+        }
+      }
+
       // In Player Turns: only Plot intrigue (Combat intrigue is handled by PLAY_COMBAT_INTRIGUE)
       if (state.phase === GamePhase.PLAYER_TURNS && card.type !== IntrigueCardType.PLOT) return state
       // In Endgame: allow Endgame intrigue, plus any Combat intrigue that has an endgame effect (e.g. Tiebreaker)
@@ -1250,7 +1479,72 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (!hasEndgameEffect) return state
       }
 
-      const updatedState = handleIntrigueEffect(state, card, playerId)
+      if (intrigueCardHasCustom(card, CustomEffect.DOUBLE_CROSS)) {
+        if (targetPlayerId === undefined || targetPlayerId === playerId) return state
+        if (player.solari < 1) return state
+        if ((state.combatTroops[targetPlayerId] || 0) < 1) return state
+        if (player.troops < 1) return state
+      }
+      if (intrigueCardHasCustom(card, CustomEffect.URGENT_MISSION)) {
+        const hasOccupied = Object.entries(state.occupiedSpaces).some(([, occ]) => occ.includes(playerId))
+        if (!hasOccupied) return state
+      }
+
+      let updatedState = handleIntrigueEffect(state, card, playerId)
+
+      if (intrigueCardHasCustom(card, CustomEffect.DOUBLE_CROSS) && targetPlayerId !== undefined) {
+        const tid = targetPlayerId
+        const pGain = updatedState.players.find(p => p.id === playerId)
+        const tGain = updatedState.players.find(p => p.id === tid)
+        if (!pGain || !tGain) return state
+        const extraGains: Gain[] = [...updatedState.gains]
+        const pushG = (amount: number, type: RewardType, pid: number) => {
+          extraGains.push({
+            round: state.currentRound,
+            playerId: pid,
+            sourceId: card.id,
+            name: card.name,
+            amount,
+            type,
+            source: GainSource.INTRIGUE
+          })
+        }
+        pushG(-1, RewardType.SOLARI, playerId)
+        pushG(1, RewardType.TROOPS, playerId)
+        pushG(2, RewardType.COMBAT, playerId)
+        pushG(-2, RewardType.COMBAT, tid)
+        updatedState = {
+          ...updatedState,
+          gains: extraGains,
+          players: updatedState.players.map(p => {
+            if (p.id === playerId) {
+              return {
+                ...p,
+                solari: p.solari - 1,
+                troops: p.troops - 1,
+                combatValue: (p.combatValue || 0) + 2
+              }
+            }
+            if (p.id === tid) {
+              return {
+                ...p,
+                combatValue: Math.max(0, (p.combatValue || 0) - 2)
+              }
+            }
+            return p
+          }),
+          combatStrength: {
+            ...updatedState.combatStrength,
+            [playerId]: (updatedState.combatStrength[playerId] || 0) + 2,
+            [tid]: Math.max(0, (updatedState.combatStrength[tid] || 0) - 2)
+          },
+          combatTroops: {
+            ...updatedState.combatTroops,
+            [playerId]: (updatedState.combatTroops[playerId] || 0) + 1,
+            [tid]: Math.max(0, (updatedState.combatTroops[tid] || 0) - 1)
+          }
+        }
+      }
       
       const pendingChoices: PendingChoice[] = []
       
@@ -1356,6 +1650,29 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
         
         pendingChoices.push(fixedOptionsChoice)
+      }
+
+      if (intrigueCardHasCustom(card, CustomEffect.URGENT_MISSION)) {
+        const spaceOpts: ChoiceOption[] = []
+        for (const [sid, occ] of Object.entries(state.occupiedSpaces)) {
+          if (occ.includes(playerId)) {
+            const space = BOARD_SPACES.find(s => s.id === Number(sid))
+            if (!space) continue
+            spaceOpts.push({
+              reward: { recallSpaceId: Number(sid) },
+              rewardLabel: space.name
+            })
+          }
+        }
+        if (spaceOpts.length > 0) {
+          pendingChoices.push({
+            id: `urgent-mission-${crypto.randomUUID()}`,
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Recall one of your Agents from a space',
+            options: spaceOpts,
+            source: { type: GainSource.INTRIGUE, id: card.id, name: card.name }
+          })
+        }
       }
       
       // Get or create current turn
@@ -1680,7 +1997,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       // Check if space is already occupied or card has infiltrate (Helena can ignore occupancy on Landsraad/City)
-      if (newState.occupiedSpaces[spaceId]?.length > 0 && !card.infiltrate && !canPlaceDespiteOccupancy(space, currPlayer)) return state
+      const allowInfiltrateIntrigue = Boolean(newState.infiltrateIgnoreOccupancyOnce?.[playerId])
+      if (
+        newState.occupiedSpaces[spaceId]?.length > 0 &&
+        !card.infiltrate &&
+        !canPlaceDespiteOccupancy(space, currPlayer) &&
+        !allowInfiltrateIntrigue
+      ) {
+        return state
+      }
 
       // Check if player has required influence
       if (space.requiresInfluence && !ignoreSpaceCostAndReq) {
@@ -1916,6 +2241,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       currPlayer.agents -= 1
       currPlayer.handCount -= 1
 
+      const nextDispatch = { ...(newState.dispatchEnvoyActive || {}) }
+      delete nextDispatch[playerId]
+      const nextInfiltrate = { ...(newState.infiltrateIgnoreOccupancyOnce || {}) }
+      delete nextInfiltrate[playerId]
+
       return {
         ...newState,
         gains: updatedGains,
@@ -1932,6 +2262,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         occupiedSpaces: updatedOccupiedSpaces,
         currTurn: currentTurn,
         pendingRewards,
+        dispatchEnvoyActive: nextDispatch,
+        infiltrateIgnoreOccupancyOnce: nextInfiltrate,
         canEndTurn: (currentTurn.pendingChoices?.length || pendingRewards.filter(r => !r.disabled).length) ? false : true
       }
     }
@@ -2153,7 +2485,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ? {
             ...state.currTurn,
             type: TurnType.REVEAL,
-            ccanDeployTroops: tempCurrTurn.canDeployTroops,
+            canDeployTroops: tempCurrTurn.canDeployTroops,
             troopLimit: tempCurrTurn.troopLimit,
             removableTroops: tempCurrTurn.removableTroops,
             persuasionCount: (state.currTurn?.persuasionCount || 0) + persuasionCount,
@@ -2509,6 +2841,44 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       const player = state.players.find(p => p.id === playerId)
       if(!player) return state
+
+      if (reward.recallSpaceId !== undefined) {
+        const spaceId = reward.recallSpaceId
+        const occ = state.occupiedSpaces[spaceId] || []
+        if (!occ.includes(playerId)) return state
+        const newOccupied = {
+          ...state.occupiedSpaces,
+          [spaceId]: occ.filter(id => id !== playerId)
+        }
+        const newPending = (state.currTurn.pendingChoices || []).filter(c => c.id !== action.choiceId)
+        const newTurn = { ...state.currTurn, pendingChoices: newPending }
+        return {
+          ...state,
+          occupiedSpaces: newOccupied,
+          players: state.players.map(p =>
+            p.id === playerId ? { ...p, agents: p.agents + 1 } : p
+          ),
+          currTurn: newTurn,
+          canEndTurn: newPending.length === 0
+        }
+      }
+
+      if (reward.retreatFromConflict !== undefined) {
+        const n = reward.retreatFromConflict
+        if (n < 0) return state
+        if ((state.combatTroops[playerId] || 0) < n) return state
+        let s = state
+        for (let i = 0; i < n; i++) {
+          s = gameReducer(s, { type: 'RETREAT_TROOP', playerId })
+        }
+        const newPending = (s.currTurn?.pendingChoices || []).filter(c => c.id !== action.choiceId)
+        const newTurn = s.currTurn ? { ...s.currTurn, pendingChoices: newPending } : null
+        return {
+          ...s,
+          currTurn: newTurn,
+          canEndTurn: (newPending.length || 0) === 0
+        }
+      }
       
       // Check if this reward has an acquire effect
       if(reward.acquire) {

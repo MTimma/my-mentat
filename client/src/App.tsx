@@ -8,7 +8,7 @@ import { useGame } from './components/GameContext/GameContext'
 import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, DISPATCH_ENVOY_FACTION_ICONS } from './types/GameTypes'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
 import { CONFLICTS } from './data/conflicts'
@@ -64,8 +64,12 @@ const GameContent = () => {
     dispatch({ type: 'PLAY_CARD', playerId, cardId })
   }
 
-  const handlePlayIntrigue = (playerId: number, cardId: number) => {
-    dispatch({ type: 'PLAY_INTRIGUE', playerId, cardId })
+  const handlePlayIntrigue = (playerId: number, cardId: number, targetPlayerId?: number) => {
+    dispatch({ type: 'PLAY_INTRIGUE', playerId, cardId, targetPlayerId })
+  }
+
+  const handleMobilizeGarrison = (playerId: number, count: number) => {
+    dispatch({ type: 'MOBILIZE_GARRISON', playerId, count })
   }
   
   const handleConflictSelect = (conflictId: number) => {
@@ -408,6 +412,7 @@ const GameContent = () => {
             canEndTurn={gameState.canEndTurn}
             onPlayCard={handleCardSelect}
             onPlayIntrigue={handlePlayIntrigue}
+            onMobilizeGarrison={handleMobilizeGarrison}
             onPlayCombatIntrigue={handlePlayCombatIntrigue}
             onReveal={handleRevealCards}
             onEndTurn={handleEndTurn}
@@ -543,7 +548,13 @@ function getSelectedCard(gameState: GameState): Card | null {
 }
 
 function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
-  return getSelectedCard(gameState)?.agentIcons || []
+  const card = getSelectedCard(gameState)
+  if (!card) return []
+  const base = [...card.agentIcons]
+  if (gameState.dispatchEnvoyActive?.[gameState.activePlayerId]) {
+    return [...new Set([...base, ...DISPATCH_ENVOY_FACTION_ICONS])]
+  }
+  return base
 }
 
 // Wrapper component that provides TimeTravel context to GameContent
