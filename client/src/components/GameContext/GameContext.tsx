@@ -49,7 +49,6 @@ import { updateFactionInfluence, getTotalVictoryPoints } from '../../utils/influ
 import { resolveSignetRingEffect } from '../../data/signetRingEffects'
 import { checkAndApplyMasterstroke, revertMasterstrokeIfNeeded } from '../../data/leaderAbilities'
 import { isArianaHarvestReward, getArianaAdjustedReward } from '../../data/leaderAbilities/arianaHarvest'
-import { getSecretFactions } from '../../data/leaderAbilities/baronSecretFaction'
 import { canPlaceDespiteOccupancy } from '../../data/leaderAbilities/helenaUnblockedAgents'
 import { shouldGrantIlbanSolariDraw } from '../../data/leaderAbilities/ilbanSolariDraw'
 import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraadDiscount'
@@ -3358,14 +3357,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (reward.source.type === GainSource.MASTERSTROKE) {
         const validFactions = Object.values(FactionType) as FactionType[]
         const rawFactions = customData?.factions as FactionType[] | undefined
-        // Fall back to Baron's secretly chosen factions if no customData.factions provided
-        const factions = (Array.isArray(rawFactions) && rawFactions.length === 2 && rawFactions.every(f => validFactions.includes(f)))
-          ? rawFactions
-          : getSecretFactions(player.leader)
-        if (!factions || factions.length !== 2 || !factions.every(f => validFactions.includes(f))) {
+        if (
+          !Array.isArray(rawFactions) ||
+          rawFactions.length !== 2 ||
+          !rawFactions.every(f => validFactions.includes(f))
+        ) {
           return state
         }
-        resolvedInfluenceFactions = factions
+        resolvedInfluenceFactions = rawFactions
       }
       if (reward.source.type === GainSource.MEMNON_HIGH_COUNCIL) {
         const factions = customData?.factions as FactionType[] | undefined

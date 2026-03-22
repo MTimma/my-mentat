@@ -46,7 +46,8 @@ export class Baron extends Leader {
       LEADER_NAMES.BARON_VLADIMIR,
       {
         name: "Masterstroke",
-        description: "At the start of the game, secretly choose 2 Factions. When you deploy 4+ troops to the Conflict in a turn, reveal your choices and gain one Influence with each."
+        description:
+          "When you deploy 4+ troops to the Conflict in a turn, choose 2 Factions and gain 1 Influence with each."
       },
       "Pay 1 Solari to gain 1 Intrigue card.",
       2
@@ -54,7 +55,7 @@ export class Baron extends Leader {
     this.signetRingTitle = "Scheme"
     this.masterStroke = { triggered: false }
     this.signetRing = null
-    this.sogChoice = true
+    this.sogChoice = false
   }
 
   masterStroke: MasterStroke

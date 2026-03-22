@@ -6,7 +6,6 @@ import { buildStartingDeck } from '../services/starterDeckSetup'
 
 interface GameSetupProps {
   onComplete: (playerSetups: PlayerSetup[]) => void
-  onOpenCardCreator: () => void
 }
 
 const createPlayerSetup = (playerNumber: number, color: PlayerColor, leaderIndex: number): PlayerSetup => ({
@@ -21,16 +20,16 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
   const [gameName, setGameName] = useState('Test Game')
   const [playerCount, setPlayerCount] = useState<number>(4)
   const [players, setPlayers] = useState<PlayerSetup[]>([
-    createPlayerSetup(1, PlayerColor.RED, 4),
+    createPlayerSetup(1, PlayerColor.RED, 1),
     createPlayerSetup(2, PlayerColor.GREEN, 0),
-    createPlayerSetup(3, PlayerColor.YELLOW, 1),
-    createPlayerSetup(4, PlayerColor.BLUE, 2)
+    createPlayerSetup(3, PlayerColor.YELLOW, 2),
+    createPlayerSetup(4, PlayerColor.BLUE, 3)
   ])
 
   const handlePlayerCountChange = (count: number) => {
     setPlayerCount(count)
     const newPlayers = Array.from({ length: count }, (_, i) => ({
-      ...createPlayerSetup(i + 1, Object.values(PlayerColor)[i], i === 0 ? 4 : i - 1)
+      ...createPlayerSetup(i + 1, Object.values(PlayerColor)[i], i === 0 ? 1 : i - 1)
     }))
     setPlayers(newPlayers)
   }
@@ -145,9 +144,6 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
           onClick={() => onComplete(players)}
         >
           Start Game
-        </button>
-        <button className="secondary-setup-button" type="button" onClick={onOpenCardCreator}>
-          Open card creator
         </button>
       </div>
     </motion.div>

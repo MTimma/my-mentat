@@ -20,7 +20,7 @@ import CardCreator from './components/CardCreator/CardCreator'
 import { buildImperiumDeck } from './data/cards'
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
-import { getSecretFactions } from './data/leaderAbilities/baronSecretFaction'
+import { LEADER_NAMES } from './data/leaders'
 
 const GameContent = () => {
   const {
@@ -198,12 +198,6 @@ const GameContent = () => {
   const handleVoiceSelectionCancel = () => setVoiceSelectionRewardId(null)
 
   const handleMasterstrokeSelectionStart = (rewardId: string) => {
-    // If Baron has pre-selected secret factions, auto-claim without showing modal
-    const secretFactions = activePlayer?.leader ? getSecretFactions(activePlayer.leader) : undefined
-    if (secretFactions && secretFactions.length === 2) {
-      handleClaimReward(rewardId, {})
-      return
-    }
     setMasterstrokeSelectionRewardId(rewardId)
   }
 
@@ -588,7 +582,12 @@ function App() {
 
   const handleSetupComplete = (setups: PlayerSetup[]) => {
     setPlayerSetups(setups)
-    setScreenState(ScreenState.LEADER_CHOICES)
+    if (setups.every(s => !s.leader.sogChoice)) {
+      setScreenState(ScreenState.GAME_STATE_SETUP)
+    } else {
+      setCurrentPlayerIndex(0)
+      setScreenState(ScreenState.LEADER_CHOICES)
+    }
   }
 
   const handleLeaderChoicesComplete = (leader: Leader) => {
@@ -634,10 +633,13 @@ function App() {
     );
   };
 
+  const baronPlayerIndex = playerSetups.findIndex(p => p.leader.name === LEADER_NAMES.BARON_VLADIMIR)
+  const firstPlayerId = baronPlayerIndex >= 0 ? baronPlayerIndex : 0
+
   return (
     <div className="app">
       {screenState === ScreenState.SETUP && (
-        <GameSetup onComplete={handleSetupComplete} onOpenCardCreator={handleOpenCardCreator} />
+        <GameSetup onComplete={handleSetupComplete} />
       )}
 
       {screenState === ScreenState.LEADER_CHOICES && renderLeaderChoices()}
@@ -658,6 +660,8 @@ function App() {
         <GameProvider initialState={{
           players: initialGameState.players,
           currentRound: initialGameState.currentRound,
+          firstPlayerMarker: firstPlayerId,
+          activePlayerId: firstPlayerId,
           factionInfluence:{
             [FactionType.EMPEROR]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0])),
             [FactionType.SPACING_GUILD]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0])),
