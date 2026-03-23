@@ -42,7 +42,7 @@
   width: 100%;
   max-width: 960px;
   margin: 0 auto;
-  background-color: #d4b16a;
+  background-color: var(--color-arrakis-sand);
   padding: 8px;
   border-radius: 8px;
   z-index: 0;
@@ -80,12 +80,12 @@
 }
 
 .card-hand::-webkit-scrollbar-track {
-  background: #f4e4bc;
+  background: var(--color-arrakis-parchment);
   border-radius: 4px;
 }
 
 .card-hand::-webkit-scrollbar-thumb {
-  background: #8b4513;
+  background: var(--color-arrakis-earth);
   border-radius: 4px;
 }
 
@@ -95,10 +95,10 @@
   margin-right: -150px;
   flex: 0 0 150px;
   min-height: 200px;
-  border: 2px solid #8b4513;
+  border: 2px solid var(--color-arrakis-earth);
   border-radius: 8px;
   padding: 10px;
-  background-color: #f4e4bc;
+  background-color: var(--color-arrakis-parchment);
   cursor: pointer;
   transition: all 0.2s ease;
   color: #000;
@@ -120,7 +120,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #8b4513;
+  border-bottom: 1px solid var(--color-arrakis-earth);
   padding-bottom: 5px;
   margin-bottom: 10px;
 }
@@ -149,7 +149,7 @@
   font-style: italic;
   margin-top: auto;
   padding-top: 10px;
-  border-top: 1px solid #8b4513;
+  border-top: 1px solid var(--color-arrakis-earth);
   color: #000;
 }
 
@@ -229,12 +229,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background-color: #f4e4bc;
+  background-color: var(--color-arrakis-parchment);
   padding: 15px;
   border-radius: 8px;
   overflow-x: auto;
-  border: 2px solid #8b4513;
-  box-shadow: 0 2px 4px rgba(139, 69, 19, 0.2);
+  border: 2px solid var(--color-arrakis-earth);
+  box-shadow: 0 2px 4px var(--color-arrakis-earth-shadow);
   min-height: 100px;
   min-width: 300px;
 }
@@ -242,14 +242,14 @@
 /* Add when there are no turns yet */
 .turn-history:empty::before {
   content: 'No turns yet';
-  color: #8b4513;
+  color: var(--color-arrakis-earth);
   font-style: italic;
   margin: auto;
 }
 
 .turn-box {
-  background-color: #f4e4bc;
-  border: 2px solid #8b4513;
+  background-color: var(--color-arrakis-parchment);
+  border: 2px solid var(--color-arrakis-earth);
   border-radius: 6px;
   padding: 8px;
   min-width: 100px;
@@ -259,19 +259,19 @@
 }
 
 .turn-box.current {
-  background-color: #e6d5a7;
+  background-color: var(--color-arrakis-parchment-muted);
   box-shadow: 0 0 0 2px #ffd700;
 }
 
 .turn-arrow {
-  color: #8b4513;
+  color: var(--color-arrakis-earth);
   font-size: 1.5em;
   font-weight: bold;
 }
 
 .turn-player {
   font-weight: bold;
-  color: #8b4513;
+  color: var(--color-arrakis-earth);
 }
 
 .turn-type {
@@ -321,8 +321,8 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  background-color: #f4e4bc;
-  border: 2px solid #8b4513;
+  background-color: var(--color-arrakis-parchment);
+  border: 2px solid var(--color-arrakis-earth);
   border-radius: 6px;
   padding: 12px;
   white-space: nowrap;
@@ -342,7 +342,7 @@
   right: 8px;
   font-size: 20px;
   cursor: pointer;
-  color: #8b4513;
+  color: var(--color-arrakis-earth);
   line-height: 1;
 }
 
@@ -406,7 +406,7 @@
 .combat-area {
   margin-top: 8px;
   padding: 8px;
-  background-color: #8b4513;
+  background-color: var(--color-arrakis-earth);
   border-radius: 8px;
   color: white;
 }
@@ -491,8 +491,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.95);
-  background-color: #f4e4bc;
-  border: 2px solid #8b4513;
+  background-color: var(--color-arrakis-parchment);
+  border: 2px solid var(--color-arrakis-earth);
   border-radius: 8px;
   padding: 20px;
   min-width: 300px;
@@ -502,7 +502,7 @@
 }
 
 .combat-dialog h3 {
-  color: #8b4513;
+  color: var(--color-arrakis-earth);
   margin: 0 0 16px 0;
   text-align: center;
   font-size: 1.2em;
@@ -521,8 +521,8 @@
 }
 
 .combat-options button {
-  background-color: #d4b16a;
-  border: 1px solid #8b4513;
+  background-color: var(--color-arrakis-sand);
+  border: 1px solid var(--color-arrakis-earth);
   border-radius: 4px;
   padding: 8px 16px;
   color: #000;
@@ -536,7 +536,7 @@
 
 .combat-options button:last-child {
   margin-top: 8px;
-  background-color: #8b4513;
+  background-color: var(--color-arrakis-earth);
   color: white;
 }
 
@@ -595,7 +595,7 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
-  background-color: rgba(139, 69, 19, 0.1);
+  background-color: var(--color-arrakis-earth-glow-soft);
   border-radius: 8px;
   animation: fadeIn 0.3s ease-out;
 }
@@ -609,7 +609,7 @@
 
 .combat-phase-title {
   font-size: 1.4em;
-  color: #8b4513;
+  color: var(--color-arrakis-earth);
   font-weight: bold;
 }
 
@@ -627,7 +627,7 @@
 
 .combat-phase .combat-area {
   margin-top: 0;
-  background-color: rgba(139, 69, 19, 0.9);
+  background-color: var(--color-arrakis-earth-overlay);
 }
 
 /* Combat phase transitions */
@@ -677,7 +677,7 @@
   left: 50%;
   transform: translateX(-50%);
   background-color: #ffd700;
-  color: #8b4513;
+  color: var(--color-arrakis-earth);
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 0.8em;
@@ -695,8 +695,8 @@
   width: 200px;
   padding: 12px;
   border-radius: 8px;
-  background-color: #f4e4bc;
-  border: 2px solid #8b4513;
+  background-color: var(--color-arrakis-parchment);
+  border: 2px solid var(--color-arrakis-earth);
 }
 
 .intrigue-card.combat {
@@ -744,8 +744,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: #f4e4bc;
-  border: 2px solid #8b4513;
+  background-color: var(--color-arrakis-parchment);
+  border: 2px solid var(--color-arrakis-earth);
   border-radius: 8px;
   padding: 20px;
   min-width: 300px;
@@ -754,7 +754,7 @@
 }
 
 .target-dialog h3 {
-  color: #8b4513;
+  color: var(--color-arrakis-earth);
   margin: 0 0 12px 0;
   text-align: center;
   font-size: 1.2em;
@@ -776,7 +776,7 @@
 
 .target-button {
   background-color: #fff;
-  border: 1px solid #8b4513;
+  border: 1px solid var(--color-arrakis-earth);
   border-radius: 4px;
   padding: 8px 12px;
   cursor: pointer;
@@ -801,7 +801,7 @@
 .cancel-button {
   width: 100%;
   padding: 8px;
-  background-color: #8b4513;
+  background-color: var(--color-arrakis-earth);
   color: white;
   border: none;
   border-radius: 4px;
@@ -837,11 +837,11 @@
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #f4e4bc;
+  background-color: var(--color-arrakis-parchment);
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 0.9em;
-  color: #8b4513;
+  color: var(--color-arrakis-earth);
 }
 
 .player-indicator {
@@ -858,7 +858,7 @@
 }
 
 .setup-container {
-  background-color: #f4e4bc;
+  background-color: var(--color-arrakis-parchment);
   padding: 1rem 1rem 0.5rem 1rem;
   border-radius: 12px;
   max-width: 800px;
@@ -872,7 +872,7 @@
 }
 
 .setup-container h1 {
-  color: #8b4513;
+  color: var(--color-arrakis-earth);
   margin-bottom: 0.5rem;
 }
 
@@ -889,7 +889,7 @@
 .game-name-input {
   width: 100%;
   padding: 0.5rem;
-  border: 2px solid #8b4513;
+  border: 2px solid var(--color-arrakis-earth);
   border-radius: 4px;
   margin-top: 0.5rem;
 }
@@ -897,7 +897,7 @@
 .player-count-select {
   width: 100%;
   padding: 0.5rem;
-  border: 2px solid #8b4513;
+  border: 2px solid var(--color-arrakis-earth);
   border-radius: 4px;
   margin-top: 0.5rem;
 }
@@ -918,7 +918,7 @@
 .color-select, .leader-select {
   flex: 1;
   padding: 0.5rem;
-  border: 2px solid #8b4513;
+  border: 2px solid var(--color-arrakis-earth);
   border-radius: 4px;
 }
 
@@ -930,7 +930,7 @@
 .start-game-button {
   width: 100%;
   padding: 1rem;
-  background-color: #8b4513;
+  background-color: var(--color-arrakis-earth);
   color: white;
   border: none;
   border-radius: 8px;
@@ -941,7 +941,7 @@
   bottom: 0;
   left: 0;
   z-index: 10;
-  box-shadow: 0 -2px 8px rgba(139, 69, 19, 0.08);
+  box-shadow: 0 -2px 8px var(--color-arrakis-earth-footer-glow);
 }
 
 .start-game-button:disabled {
@@ -954,8 +954,9 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: var(--color-footer-bg);
   padding: 1rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
   z-index: 1000;
 }
 
@@ -1033,6 +1034,7 @@
   
   .turn-controls-container {
     padding: 0.3rem;
+    padding-bottom: max(0.3rem, env(safe-area-inset-bottom, 0px));
   }
   
   .turn-controls-spacer {
@@ -1124,6 +1126,7 @@
   background: #1c1e22;
   color: #e0e0e0;
   padding: 6px 16px;
+  padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1172,7 +1175,7 @@
 .history-viewing-banner .return-btn {
   background: rgba(244, 228, 188, 0.08);
   border: 1px solid rgba(244, 228, 188, 0.25);
-  color: #f4e4bc;
+  color: var(--color-arrakis-parchment);
   padding: 4px 14px;
   border-radius: 4px;
   cursor: pointer;
@@ -1202,6 +1205,7 @@
   }
   .history-viewing-banner {
     padding: 4px 8px;
+    padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
     gap: 8px;
   }
   
@@ -1227,6 +1231,7 @@
   }
   .history-viewing-banner {
     padding: 3px 6px;
+    padding-bottom: max(3px, env(safe-area-inset-bottom, 0px));
     gap: 6px;
   }
   

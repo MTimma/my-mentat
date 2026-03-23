@@ -261,7 +261,7 @@
 
 .play-intrigue-button {
     padding: 6px;
-    background-color: #8b4513;
+    background-color: var(--color-arrakis-earth);
     color: white;
     border: none;
     border-radius: 4px;
@@ -270,7 +270,7 @@
 }
 
 .play-intrigue-button:hover {
-    background-color: #723a0f;
+    background-color: var(--color-arrakis-earth-hover);
 }
 
 
@@ -278,10 +278,10 @@
 .add-troop-button,
 .remove-troop-button {
   padding: 4px 8px;
-  border: 2px solid #8b4513;
+  border: 2px solid var(--color-arrakis-earth);
   border-radius: 4px;
-  background-color: #f4e4bc;
-  color: #8b4513;
+  background-color: var(--color-arrakis-parchment);
+  color: var(--color-arrakis-earth);
   font-weight: bold;
   cursor: pointer;
   font-size: 0.8em;
@@ -290,7 +290,7 @@
 .end-turn-button:hover,
 .add-troop-button:hover,
 .remove-troop-button:hover {
-  background-color: #e6d5a7;
+  background-color: var(--color-arrakis-parchment-muted);
 }
 
 .remove-troop-button {
@@ -732,7 +732,7 @@
 }
 
 .influence-table-modal {
-  background-color: #f4e4bc;
+  background-color: var(--color-arrakis-parchment);
   border-radius: 8px;
   padding: 20px;
   max-width: 800px;
@@ -774,6 +774,6 @@
 }
 
 .modal-header .close-button:hover {
-  background-color: #e0d4b0;
+  background-color: var(--color-arrakis-parchment-muted);
   color: #000;
 }

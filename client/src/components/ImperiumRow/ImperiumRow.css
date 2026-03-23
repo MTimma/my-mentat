@@ -10,7 +10,7 @@
 
 .imperium-section {
   padding: var(--section-padding);
-  background-color: #d4b16a;
+  background-color: var(--color-arrakis-sand);
   border-radius: 8px;
   margin-bottom: 2px;
   width: 100%;
@@ -43,9 +43,9 @@
   max-width: 120px;
   aspect-ratio: 100 / 140;
   height: auto;
-  border: 2px solid #8b4513;
+  border: 2px solid var(--color-arrakis-earth);
   border-radius: 6px;
-  background-color: #f4e4bc;
+  background-color: var(--color-arrakis-parchment);
   padding: var(--card-padding);
   display: flex;
   flex-direction: column;
@@ -56,25 +56,25 @@
 /* Cards without buttons are more compact */
 .imperium-card.no-button {
   aspect-ratio: 100 / 100;
-  border: 1px solid #8b4513;
+  border: 1px solid var(--color-arrakis-earth);
   padding: 1px;
   justify-content: center;
   border-radius: 4px;
 }
 
 .imperium-card.fixed-card {
-  background-color: #e6d5a7;
+  background-color: var(--color-arrakis-parchment-muted);
 }
 
 .imperium-card h4 {
   margin: 0;
   text-align: center;
-  color: #8b4513;
+  color: var(--color-arrakis-earth);
   font-size: 12px;
 }
 
 .persuasion-cost {
-  background-color: #8b4513;
+  background-color: var(--color-arrakis-earth);
   color: white;
   padding: 1px 4px;
   border-radius: 3px;
@@ -103,7 +103,7 @@
 
 .count-display {
   font-size: 0.75em;
-  color: #8b4513;
+  color: var(--color-arrakis-earth);
   text-align: center;
   margin: 0;
   font-weight: 600;
@@ -117,8 +117,8 @@
 }
 
 .helena-removed-slot .imperium-card.helena-card {
-  border-color: #6b3410;
-  background-color: #e8dcc8;
+  border-color: var(--color-arrakis-earth-dark);
+  background-color: var(--color-arrakis-parchment-helena);
 }
 
 .helena-card-image-wrapper {
@@ -146,8 +146,8 @@
   top: 2px;
   right: 2px;
   font-size: 0.6em;
-  color: #5a3a0a;
-  background-color: #d4b16a;
+  color: var(--color-arrakis-earth-dark);
+  background-color: var(--color-arrakis-sand);
   padding: 1px 4px;
   border-radius: 3px;
   z-index: 1;
@@ -159,8 +159,8 @@
   padding: 4px 6px;
   font-size: 0.75em;
   min-height: 44px;
-  border: 1px solid #8b4513;
-  background-color: #8b4513;
+  border: 1px solid var(--color-arrakis-earth);
+  background-color: var(--color-arrakis-earth);
   color: white;
   border-radius: 4px;
   cursor: pointer;
@@ -169,7 +169,7 @@
 }
 
 .imperium-card button.acquire-button:hover:not(:disabled) {
-  background-color: #6b3410;
+  background-color: var(--color-arrakis-earth-dark);
 }
 
 .imperium-card button.acquire-button:disabled {
@@ -207,7 +207,7 @@
   .imperium-card.no-button {
     aspect-ratio: 100 / 95;
     max-height: 90px;
-    border: 1px solid #8b4513;
+    border: 1px solid var(--color-arrakis-earth);
     padding: 1px;
   }
 
@@ -230,9 +230,9 @@
     width: 100%;
     padding: 4px;
     margin-bottom: 2px;
-    background-color: #8b4513;
+    background-color: var(--color-arrakis-earth);
     color: white;
-    border: 2px solid #6b3410;
+    border: 2px solid var(--color-arrakis-earth-dark);
     border-radius: 6px;
     font-size: 0.85em;
     font-weight: 600;
@@ -241,7 +241,7 @@
   }
 
   .imperium-toggle-mobile:hover {
-    background-color: #6b3410;
+    background-color: var(--color-arrakis-earth-dark);
   }
 
   .cards-grid.main-cards {
@@ -291,7 +291,7 @@
     aspect-ratio: 100 / 90;
     max-height: 60px;
     min-height: 50px;
-    border: 1px solid #8b4513;
+    border: 1px solid var(--color-arrakis-earth);
     padding: 1px;
   }
 
@@ -349,7 +349,7 @@
     aspect-ratio: 100 / 85;
     max-height: 55px;
     min-height: 45px;
-    border: 1px solid #8b4513;
+    border: 1px solid var(--color-arrakis-earth);
     padding: 1px;
   }
 

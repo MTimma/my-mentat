@@ -1,0 +1,26 @@
+/**
+ * Arrakis Sun — default UI theme (warm sand, parchment, sienna).
+ * Default is applied via :root and html[data-theme="arrakis-sun"].
+ * Future themes: set data-theme on <html> and override these custom properties.
+ */
+:root,
+html[data-theme="arrakis-sun"] {
+  --color-arrakis-sand: #d4b16a;
+  --color-arrakis-parchment: #f4e4bc;
+  --color-arrakis-parchment-muted: #e6d5a7;
+  --color-arrakis-earth: #8b4513;
+  --color-arrakis-earth-dark: #6b3410;
+  --color-arrakis-earth-hover: #723a0f;
+  --color-arrakis-parchment-helena: #e8dcc8;
+  --color-arrakis-earth-shadow: rgba(139, 69, 19, 0.2);
+  --color-arrakis-earth-glow-soft: rgba(139, 69, 19, 0.1);
+  --color-arrakis-earth-overlay: rgba(139, 69, 19, 0.9);
+  --color-arrakis-earth-footer-glow: rgba(139, 69, 19, 0.08);
+
+  --color-app-bg: #242424;
+  --color-app-text: rgba(255, 255, 255, 0.92);
+  --color-app-text-muted: #888;
+
+  --color-footer-bg: rgba(26, 22, 18, 0.94);
+  --color-text-on-parchment: #1c1410;
+}
