@@ -7,7 +7,8 @@
   max-width: 100%;
   margin: 0;
   padding: 1rem;
-  text-align: center;
+  /* Avoid inheriting centered text across the whole app (warps layouts and buttons). */
+  text-align: initial;
 }
 
 .card {
@@ -29,18 +30,18 @@
 }
 
 .main-area {
-  display: grid;
-  grid-template-columns: minmax(400px, 1fr) minmax(600px, 2fr) minmax(400px, 1fr);
-  grid-template-rows: 300px 1fr 300px;
-  gap: 0;
-  min-height: 800px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: auto;
   padding: 0;
   margin: 0;
 }
 
 .game-board {
-  grid-column: 2;
-  grid-row: 1 / 4;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
   background-color: #d4b16a;
   padding: 8px;
   border-radius: 8px;
@@ -979,14 +980,9 @@
 /* Responsive layout */
 @media (max-width: 1200px) {
   .main-area {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
-    min-height: auto;
     margin: 0;
   }
   .game-board {
-    grid-column: 1;
-    grid-row: auto;
     padding: 6px;
   }
 }
@@ -1250,10 +1246,9 @@
   }
 }
 
-/* When viewing history, add bottom padding to game container to account for banner */
-.game-container:has(+ .history-viewing-banner),
+/* When viewing history, add bottom padding so content isn't hidden behind the fixed banner */
 .game-container:has(.history-viewing-banner) {
-  padding-bottom: 50px;
+  padding-bottom: calc(var(--footer-height, 84px) + 12px);
 }
 
 /* Dimmed state for disabled areas when viewing history */
