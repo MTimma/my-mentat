@@ -86,3 +86,17 @@
 .setup-editor-panel {
   margin-top: 1rem;
 }
+
+.setup-editor-panel-imperium {
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 12px;
+  padding: 16px 14px 20px;
+  border: 1px solid rgba(139, 69, 19, 0.35);
+}
+
+.imperium-deck-setup-note {
+  margin: 0 0 14px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #5c3d24;
+}

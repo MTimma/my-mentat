@@ -3,7 +3,9 @@ import { PlayerSetup, Player, Card } from '../../types/GameTypes'
 import { motion } from 'framer-motion'
 import { getStartingSpice, getStartingSolari } from '../../data/leaderAbilities/beastSetup'
 import StarterDeckEditor from '../StarterDeckEditor/StarterDeckEditor'
-import { buildSetupImperiumDeck } from '../../services/starterDeckSetup'
+import ImperiumRowDeckCreator from '../ImperiumRowDeckCreator/ImperiumRowDeckCreator'
+import { applyStarterDeckReservationToImperium } from '../../services/starterDeckSetup'
+import { buildImperiumDeck } from '../../data/cards'
 import './GameStateSetup.css'
 
 interface GameStateSetupProps {
@@ -24,6 +26,8 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
   const [currentRound, setCurrentRound] = useState(1)
   const [showResourceEditor, setShowResourceEditor] = useState(false)
   const [showStarterDeckEditor, setShowStarterDeckEditor] = useState(false)
+  const [showImperiumDeckCreator, setShowImperiumDeckCreator] = useState(false)
+  const [imperiumRowDeckDraft, setImperiumRowDeckDraft] = useState<Card[]>(() => buildImperiumDeck())
   const [editablePlayerSetups, setEditablePlayerSetups] = useState<PlayerSetup[]>(
     playerSetups.map(setup => ({
       ...setup,
@@ -92,7 +96,10 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
         playArea: [...player.playArea]
       })),
       currentRound,
-      imperiumRowDeck: buildSetupImperiumDeck(editablePlayerSetups.map(setup => setup.deck))
+      imperiumRowDeck: applyStarterDeckReservationToImperium(
+        imperiumRowDeckDraft,
+        editablePlayerSetups.map(setup => setup.deck)
+      )
     })
   }
 
@@ -141,6 +148,13 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
               onClick={() => setShowStarterDeckEditor(prev => !prev)}
             >
               {showStarterDeckEditor ? 'Hide player starter decks' : 'Edit player starter decks'}
+            </button>
+            <button
+              className="toggle-editor-button"
+              type="button"
+              onClick={() => setShowImperiumDeckCreator(prev => !prev)}
+            >
+              {showImperiumDeckCreator ? 'Hide Imperium row deck' : 'Edit Imperium row deck'}
             </button>
           </div>
 
@@ -211,7 +225,18 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
               <StarterDeckEditor
                 playerSetups={editablePlayerSetups}
                 onPlayerDeckChange={handleStarterDeckChange}
+                imperiumBaseDeck={imperiumRowDeckDraft}
               />
+            </div>
+          )}
+
+          {showImperiumDeckCreator && (
+            <div className="setup-editor-panel setup-editor-panel-imperium">
+              <p className="imperium-deck-setup-note">
+                Cards on player starter decks are still removed from this Imperium deck when the game starts (same as
+                before).
+              </p>
+              <ImperiumRowDeckCreator deck={imperiumRowDeckDraft} onDeckChange={setImperiumRowDeckDraft} />
             </div>
           )}
 
