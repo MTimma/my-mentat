@@ -2664,6 +2664,18 @@ export const IMPERIUM_CARD_LIBRARY = IMPERIUM_ROW_DECK.reduce<Record<string, Omi
   return acc
 }, {})
 
+/** Distinct Imperium Row cards (same card pool as {@link IMPERIUM_ROW_DECK}, one object per card name). */
+export const ALL_IMPERIUM_ROW_CARDS: Card[] = (() => {
+  const seen = new Set<string>()
+  const list: Card[] = []
+  for (const card of IMPERIUM_ROW_DECK) {
+    if (seen.has(card.name)) continue
+    seen.add(card.name)
+    list.push(card)
+  }
+  return list.sort((a, b) => a.name.localeCompare(b.name))
+})()
+
 export const buildImperiumDeck = (startId = 2000): Card[] => {
   let nextId = startId
   return IMPERIUM_ROW_DECK.map(card => ({

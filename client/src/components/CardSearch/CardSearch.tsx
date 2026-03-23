@@ -22,6 +22,8 @@ interface CardSearchProps {
   slotBetweenCardsAndSearch?: React.ReactNode
   initialSelectedCards?: Card[]
   cancelButtonText?: string
+  /** Placed after the cancel control and before Confirm (e.g. quantity stepper). */
+  confirmAdornment?: React.ReactNode
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({
@@ -41,6 +43,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
   slotBetweenCardsAndSearch,
   initialSelectedCards = EMPTY_SELECTED_CARDS,
   cancelButtonText = 'Clear all',
+  confirmAdornment,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
@@ -268,6 +271,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
         >
           {cancelButtonText}
         </button>
+        {confirmAdornment}
         <button
           className="header-confirm-button"
           onClick={handleConfirm}
