@@ -1,5 +1,5 @@
+import { beforeEach, describe, expect, it } from 'vitest'
 import { IntrigueDeckService, intrigueCards } from '../IntrigueDeckService'
-import { IntrigueCardType } from '../../types/GameTypes'
 
 describe('IntrigueDeckService', () => {
   let service: IntrigueDeckService
