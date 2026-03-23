@@ -95,14 +95,16 @@ export function intrigueRequirementSatisfied(
   state: GameState,
   playerId: number
 ): boolean {
-  const req = effect?.requirement
-  if (!req) return true
+  // Mentat-only rewards must run even when the effect has no `requirement` object (e.g. Calculated Hire).
   if (effect.reward?.mentat === true) {
     const hasOtherRewards = Object.keys(effect.reward).some(key => key !== 'mentat')
     if (!hasOtherRewards && state.mentatOwner !== null) {
       return false
     }
   }
+
+  const req = effect?.requirement
+  if (!req) return true
   const satisfiesDirect = (): boolean => {
     if (req.influence) {
       const factionType = req.influence.faction

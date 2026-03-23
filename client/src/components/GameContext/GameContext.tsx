@@ -65,7 +65,7 @@ interface GameContextType {
 
 type CustomEffectData = { cardId?: number; [key: string]: unknown }
 
-type GameAction = 
+export type GameAction = 
   | { type: 'END_TURN'; playerId: number }
   | { type: 'PLAY_CARD'; playerId: number; cardId: number }
   | { type: 'DEPLOY_TROOP'; playerId: number }
@@ -890,12 +890,47 @@ function handleIntrigueEffect(
       newState.pendingVictorSpiceThisCombat[playerId] = true
       return
     }
-    
-    // Skip effects with costs or chooseOne influence - these need choices created in PLAY_INTRIGUE
-    if (effect.cost || effect.reward.influence?.chooseOne) {
-      return // Will be handled in PLAY_INTRIGUE case
+
+    // Bribery: choose-one influence is resolved via pending choices in PLAY_INTRIGUE
+    if (effect.reward.influence?.chooseOne) {
+      return
     }
-    
+    // Double Cross: cost + troop/combat changes are applied in PLAY_INTRIGUE
+    if (custom === CustomEffect.DOUBLE_CROSS) {
+      return
+    }
+
+    // Paid intrigue lines that do not need extra UI (CHOAM, Water of Life, Private Army, Allied Armada, …)
+    if (effect.cost) {
+      const c = effect.cost
+      if (
+        (c.spice && updatedPlayer.spice < c.spice) ||
+        (c.water && updatedPlayer.water < c.water) ||
+        (c.solari && updatedPlayer.solari < c.solari) ||
+        (c.troops && updatedPlayer.troops < c.troops)
+      ) {
+        return
+      }
+      if (c.spice) {
+        updatedPlayer.spice -= c.spice
+        pushGain(-c.spice, RewardType.SPICE)
+      }
+      if (c.water) {
+        updatedPlayer.water -= c.water
+        pushGain(-c.water, RewardType.WATER)
+      }
+      if (c.solari) {
+        updatedPlayer.solari -= c.solari
+        pushGain(-c.solari, RewardType.SOLARI)
+      }
+      if (c.troops) {
+        updatedPlayer.troops -= c.troops
+        pushGain(-c.troops, RewardType.TROOPS)
+      }
+      applyReward(effect.reward)
+      return
+    }
+
     applyReward(effect.reward)
   })
 
@@ -4028,7 +4063,17 @@ export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, c
       {children}
     </GameContext.Provider>
   )
-} 
+}
+
+/** Isolated default state for unit tests (deep copy). */
+export function getFreshDefaultGameState(): GameState {
+  return deepCopyGameState(initialGameState)
+}
+
+/** Run one reducer step (unit tests). */
+export function applyGameAction(state: GameState, action: GameAction): GameState {
+  return gameReducer(state, action)
+}
 
 function getEffectChoice(currPlayer: Player, card: Card, effect: PlayEffect): CardSelectChoice | FixedOptionsChoice {
   const choiceId = card.name + '-OR-' + crypto.randomUUID();
