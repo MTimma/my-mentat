@@ -45,20 +45,8 @@
     gap: 10px;
 }
 
-button {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    background-color: #007bff;
-    color: white;
-}
-
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background-color: #808080;
-} 
+/* Intentionally no bare `button { }` rules here — they applied globally via this imported
+   stylesheet and fought with index.css / setup screens. All footer controls use classes. */
 
 .turn-controls {
     display: flex;
@@ -494,7 +482,6 @@ button:disabled {
   font-weight:bold;
   font-size:0.8rem;
   pointer-events:none;
-  margin-top: 10px;
 }
 
 .resource-icon {
