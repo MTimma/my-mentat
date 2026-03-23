@@ -5,8 +5,15 @@ const cloneCards = (cards: Card[]): Card[] => cards.map(card => JSON.parse(JSON.
 
 export const buildStartingDeck = (): Card[] => cloneCards(STARTING_DECK)
 
-export const buildSetupImperiumDeck = (playerDecks: Card[][]): Card[] => {
-  const remainingDeck = buildImperiumDeck()
+/**
+ * Removes copies from `imperiumDeck` that are reserved by player starter decks (matched by card name),
+ * same rules as the default Imperium setup.
+ */
+export const applyStarterDeckReservationToImperium = (
+  imperiumDeck: Card[],
+  playerDecks: Card[][]
+): Card[] => {
+  const remainingDeck = cloneCards(imperiumDeck)
   const reservedByName = playerDecks
     .flat()
     .reduce<Map<string, number>>((counts, card) => {
@@ -24,3 +31,6 @@ export const buildSetupImperiumDeck = (playerDecks: Card[][]): Card[] => {
     return false
   })
 }
+
+export const buildSetupImperiumDeck = (playerDecks: Card[][]): Card[] =>
+  applyStarterDeckReservationToImperium(buildImperiumDeck(), playerDecks)

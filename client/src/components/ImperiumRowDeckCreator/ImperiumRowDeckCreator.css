@@ -1,0 +1,484 @@
+.imperium-deck-creator {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.imperium-deck-creator-heading {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  color: #3d2914;
+}
+
+.imperium-deck-creator-lead {
+  margin: 0 0 20px;
+  color: #5c4033;
+  line-height: 1.45;
+}
+
+.imperium-deck-creator-templates {
+  text-align: left;
+}
+
+.imperium-deck-creator-template-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 540px) {
+  .imperium-deck-creator-template-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.imperium-deck-creator-template-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 20px 18px;
+  border-radius: 12px;
+  border: 2px solid #8b4513;
+  background: linear-gradient(145deg, #fffefb 0%, #f5ebe0 100%);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  min-height: 120px;
+}
+
+.imperium-deck-creator-template-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(61, 41, 20, 0.12);
+  border-color: #a0522d;
+}
+
+.imperium-deck-creator-template-card:active {
+  transform: translateY(0);
+}
+
+.imperium-deck-creator-template-card-alt {
+  background: linear-gradient(145deg, #faf8f5 0%, #ebe4db 100%);
+}
+
+.imperium-deck-creator-template-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #3d2914;
+}
+
+.imperium-deck-creator-template-desc {
+  font-size: 0.9rem;
+  color: #6b5344;
+  line-height: 1.4;
+}
+
+.imperium-deck-creator-editor-header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 520px) {
+  .imperium-deck-creator-editor-header {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.imperium-deck-creator-count {
+  margin: 4px 0 0;
+  font-weight: 600;
+  color: #6b5344;
+}
+
+.imperium-deck-creator-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.imperium-deck-creator-text-btn {
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: #8b4513;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.imperium-deck-creator-text-btn:hover {
+  color: #5c2e0a;
+}
+
+.imperium-deck-creator-primary-btn {
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 2px solid #8b4513;
+  background: #8b4513;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.imperium-deck-creator-primary-btn:hover {
+  background: #6b3410;
+  border-color: #6b3410;
+}
+
+.imperium-deck-creator-primary-btn:active {
+  transform: scale(0.98);
+}
+
+.imperium-deck-creator-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: min(50vh, 420px);
+  overflow-y: auto;
+  padding: 4px 2px 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.imperium-deck-creator-empty {
+  margin: 12px 0;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 10px;
+  border: 1px dashed #b8956a;
+  color: #5c4033;
+  line-height: 1.5;
+}
+
+.imperium-deck-creator-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto auto;
+  gap: 10px 12px;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 10px;
+  border: 1px solid #d4b896;
+  box-shadow: 0 1px 3px rgba(61, 41, 20, 0.06);
+}
+
+@media (max-width: 400px) {
+  .imperium-deck-creator-row {
+    grid-template-columns: 40px 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .imperium-deck-creator-row-qty,
+  .imperium-deck-creator-row-btns {
+    grid-column: 2;
+  }
+
+  .imperium-deck-creator-row-btns {
+    justify-self: end;
+  }
+}
+
+.imperium-deck-creator-row-thumb {
+  width: 44px;
+  height: 64px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #1a1a1a;
+  flex-shrink: 0;
+}
+
+.imperium-deck-creator-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imperium-deck-creator-thumb-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #c4a574;
+  font-size: 1.1rem;
+}
+
+.imperium-deck-creator-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.imperium-deck-creator-row-name {
+  font-weight: 700;
+  color: #3d2914;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imperium-deck-creator-row-cost {
+  font-size: 0.8rem;
+  color: #7a6558;
+}
+
+.imperium-deck-creator-row-qty {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #8b4513;
+  font-size: 1rem;
+}
+
+.imperium-deck-creator-row-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.imperium-deck-creator-row-btn {
+  min-width: 40px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #c4a882;
+  background: #fff;
+  color: #3d2914;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.imperium-deck-creator-row-btn:hover {
+  background: #faf5ef;
+}
+
+.imperium-deck-creator-row-btn-danger {
+  border-color: #c17a5c;
+  color: #8b3a2f;
+}
+
+.imperium-deck-creator-row-btn-danger:hover {
+  background: #fff0eb;
+}
+
+/* Add-cards modal */
+.imperium-deck-creator-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.imperium-deck-creator-modal {
+  width: 100%;
+  max-width: 1100px;
+  max-height: min(92vh, 900px);
+  background: #10141b;
+  color: #f0ece6;
+  border-radius: 14px;
+  padding: 16px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45);
+}
+
+.imperium-deck-creator-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.imperium-deck-creator-modal-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.imperium-deck-creator-modal-close {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.imperium-deck-creator-modal-close:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.imperium-deck-creator-modal-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #b8b4ad;
+}
+
+.imperium-deck-creator-modal-search {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.imperium-deck-creator-modal-search .card-selection-dialog-overlay {
+  position: static;
+  inset: auto;
+  background: transparent;
+  width: 100%;
+  padding: 0;
+  display: block;
+  overflow: visible;
+}
+
+.imperium-deck-creator-modal-search .card-selection-dialog {
+  background: transparent;
+  padding: 0;
+  max-height: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: min(65vh, 560px);
+}
+
+.imperium-deck-creator-modal-search .card-selection-dialog-search-at-bottom {
+  flex: 1;
+  min-height: 0;
+}
+
+.imperium-deck-creator-search-slot {
+  flex-shrink: 0;
+  min-height: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.imperium-deck-creator-modal-search .dialog-title {
+  display: none;
+}
+
+.imperium-deck-creator-modal-search .cards-grid {
+  flex: 1;
+  min-height: 200px;
+  overflow-y: auto;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.imperium-deck-creator-modal-search .dialog-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #333;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.imperium-deck-creator-modal-search .search-input-wrapper {
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .imperium-deck-creator-modal {
+    max-height: 100vh;
+    height: 100%;
+    border-radius: 0;
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+
+  .imperium-deck-creator-modal-overlay {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .imperium-deck-creator-modal-search .cards-grid .card {
+    width: 64px;
+    min-width: 64px;
+    transform: none;
+  }
+
+  .imperium-deck-creator-modal-search .card-cell {
+    flex: 0 0 64px;
+  }
+}
+
+/* Copies control next to Confirm */
+.imperium-deck-creator-copies {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.imperium-deck-creator-copies-label {
+  font-size: 0.85rem;
+  color: #ccc;
+  font-weight: 600;
+}
+
+.imperium-deck-creator-copies-stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 4px 6px;
+  border: 1px solid #444;
+}
+
+.imperium-deck-creator-stepper-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: #3d3d3d;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.imperium-deck-creator-stepper-btn:hover {
+  background: #505050;
+}
+
+.imperium-deck-creator-copies-input {
+  width: 44px;
+  text-align: center;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  -moz-appearance: textfield;
+}
+
+.imperium-deck-creator-copies-input::-webkit-outer-spin-button,
+.imperium-deck-creator-copies-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

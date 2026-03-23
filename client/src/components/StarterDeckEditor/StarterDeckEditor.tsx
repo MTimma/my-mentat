@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Card, PlayerSetup } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
-import { buildSetupImperiumDeck } from '../../services/starterDeckSetup'
+import { applyStarterDeckReservationToImperium } from '../../services/starterDeckSetup'
 import './StarterDeckEditor.css'
 
 interface StarterDeckEditorProps {
   playerSetups: PlayerSetup[]
   onPlayerDeckChange: (playerIndex: number, deck: Card[]) => void
+  /** Imperium row deck before starter cards are reserved (same list as in “Edit Imperium row deck”). */
+  imperiumBaseDeck: Card[]
 }
 
 const sortCards = (cards: Card[]): Card[] =>
@@ -15,7 +17,11 @@ const sortCards = (cards: Card[]): Card[] =>
     return nameCompare !== 0 ? nameCompare : a.id - b.id
   })
 
-const StarterDeckEditor: React.FC<StarterDeckEditorProps> = ({ playerSetups, onPlayerDeckChange }) => {
+const StarterDeckEditor: React.FC<StarterDeckEditorProps> = ({
+  playerSetups,
+  onPlayerDeckChange,
+  imperiumBaseDeck,
+}) => {
   const [editingPlayerIndex, setEditingPlayerIndex] = useState<number | null>(null)
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
 
@@ -30,8 +36,9 @@ const StarterDeckEditor: React.FC<StarterDeckEditorProps> = ({ playerSetups, onP
   }, [editingPlayerIndex])
 
   const sharedImperiumDeck = useMemo(
-    () => buildSetupImperiumDeck(playerSetups.map(playerSetup => playerSetup.deck)),
-    [playerSetups]
+    () =>
+      applyStarterDeckReservationToImperium(imperiumBaseDeck, playerSetups.map(playerSetup => playerSetup.deck)),
+    [playerSetups, imperiumBaseDeck]
   )
 
   const editingPlayer = editingPlayerIndex === null ? null : playerSetups[editingPlayerIndex]
