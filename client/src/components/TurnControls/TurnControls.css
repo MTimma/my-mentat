@@ -258,6 +258,13 @@
     filter: brightness(1.1);
 }
 
+/* Primary actions: clearly dimmed when disabled (per-class backgrounds otherwise looked identical) */
+.control-buttons .play-card-button:disabled,
+.control-buttons .reveal-turn-button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(0.35) brightness(0.85);
+}
 
 .play-intrigue-button {
     padding: 6px;
@@ -269,8 +276,14 @@
     transition: background-color 0.2s;
 }
 
-.play-intrigue-button:hover {
+.play-intrigue-button:hover:not(:disabled) {
     background-color: var(--color-arrakis-earth-hover);
+}
+
+.play-intrigue-button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(0.35);
 }
 
 
@@ -287,9 +300,9 @@
   font-size: 0.8em;
 }
 
-.end-turn-button:hover,
-.add-troop-button:hover,
-.remove-troop-button:hover {
+.end-turn-button:hover:not(:disabled),
+.add-troop-button:hover:not(:disabled),
+.remove-troop-button:hover:not(:disabled) {
   background-color: var(--color-arrakis-parchment-muted);
 }
 
@@ -298,8 +311,17 @@
   color: #d32f2f;
 }
 
-.remove-troop-button:hover {
+.remove-troop-button:hover:not(:disabled) {
   background-color: #ffebee;
+}
+
+.add-troop-button:disabled,
+.remove-troop-button:disabled,
+.end-turn-button:disabled,
+.pass-combat-button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(0.35);
 }
 
 .color-indicator {

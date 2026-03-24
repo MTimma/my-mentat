@@ -439,6 +439,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
   }
 
+  const hasPlayableIntrigue = playableIntrigueCards.some(card =>
+    checkIntrigueCardPlayability(card as IntrigueCard).playable
+  )
+
   const Icon: React.FC<{ type: string; className?: string }> = ({ type, className }) =>
     <img src={`/icon/${type}.png`} alt={type} className={className ?? 'resource-icon'} />
 
@@ -1079,14 +1083,25 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             <button 
               className="play-card-button"
               onClick={handlePlayCard}
-              disabled={activePlayer.agents === 0 || canEndTurn || agentPlaced || hasOpponentDiscard || hasMandatoryRewards}
+              disabled={
+                activePlayer.agents === 0 ||
+                activePlayer.handCount === 0 ||
+                canEndTurn ||
+                agentPlaced ||
+                hasOpponentDiscard ||
+                hasMandatoryRewards
+              }
               hidden={isCombatPhase || isEndGame}
               title={
                 hasOpponentDiscard
                   ? 'Resolve opponent discard instructions before taking new actions.'
                   : hasMandatoryRewards
                     ? 'Claim pending rewards before taking new actions.'
-                    : agentPlaced ? "You have already placed an agent this turn" : undefined
+                    : agentPlaced
+                      ? 'You have already placed an agent this turn'
+                      : activePlayer.handCount === 0
+                        ? 'No cards in hand.'
+                        : undefined
               }
             >
               Play Card
@@ -1140,16 +1155,36 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             {!isCombatPhase && <button 
               className="play-intrigue-button"
               onClick={handlePlayIntrigueClick}
-              disabled={activePlayer.intrigueCount === 0 || playableIntrigueCards.length === 0}
-              title={playableIntrigueCards.length === 0 ? 'No intrigue cards available in the deck.' : undefined}
+              disabled={
+                activePlayer.intrigueCount === 0 ||
+                playableIntrigueCards.length === 0 ||
+                !hasPlayableIntrigue
+              }
+              title={
+                playableIntrigueCards.length === 0
+                  ? 'No intrigue cards available in the deck.'
+                  : !hasPlayableIntrigue
+                    ? 'No intrigue card can be played in the current situation.'
+                    : undefined
+              }
             >
               Play Intrigue ({activePlayer.intrigueCount})
             </button>}
             {isCombatPhase && <button 
               className="play-intrigue-button"
               onClick={handlePlayCombatIntrigue}
-              disabled={activePlayer.intrigueCount === 0 || playableIntrigueCards.length === 0}
-              title={playableIntrigueCards.length === 0 ? 'No combat intrigue cards available in the deck.' : undefined}
+              disabled={
+                activePlayer.intrigueCount === 0 ||
+                playableIntrigueCards.length === 0 ||
+                !hasPlayableIntrigue
+              }
+              title={
+                playableIntrigueCards.length === 0
+                  ? 'No combat intrigue cards available in the deck.'
+                  : !hasPlayableIntrigue
+                    ? 'No combat intrigue card can be played in the current situation.'
+                    : undefined
+              }
             >
               Play Combat Intrigue ({activePlayer.intrigueCount})
             </button>}
