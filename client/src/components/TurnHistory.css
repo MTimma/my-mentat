@@ -2,7 +2,7 @@
   position: fixed;
   top: 0;
   right: 0;
-  bottom: var(--footer-height, 84px);
+  bottom: var(--footer-height, var(--footer-height-static, 84px));
   width: 380px;
   height: auto;
   background: rgba(20, 20, 20, 0.98);
@@ -354,7 +354,7 @@
     top: 0;
     left: 0;
     right: 0;
-    bottom: var(--footer-height, 84px);
+    bottom: var(--footer-height, var(--footer-height-static, 84px));
     width: 100vw;
     height: auto;
     box-shadow: none;
@@ -365,7 +365,7 @@
 @media (max-width: 600px) {
   .turn-history-overlay {
     width: 100vw;
-    bottom: var(--footer-height, 84px);
+    bottom: var(--footer-height, var(--footer-height-static, 84px));
   }
   
   .turn-history-header {

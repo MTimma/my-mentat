@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import './App.css'
 import GameBoard from './components/GameBoard'
 import ImperiumRow from './components/ImperiumRow/ImperiumRow'
@@ -285,8 +285,69 @@ const GameContent = () => {
   const needsImperiumSelection = gameState.phase === GamePhase.ROUND_START && imperiumSelectionCount > 0
   const needsReplacementSelection = gameState.pendingImperiumRowReplacement !== null && gameState.imperiumRowDeck.length > 0
 
+  const gameContainerRef = useRef<HTMLDivElement>(null)
+  const turnControlsFooterRef = useRef<HTMLDivElement>(null)
+  const historyBannerRef = useRef<HTMLDivElement>(null)
+
+  const showTurnControlsFooter =
+    !isViewingHistory &&
+    (gameState.phase === GamePhase.PLAYER_TURNS ||
+      gameState.phase === GamePhase.COMBAT ||
+      gameState.phase === GamePhase.END_GAME)
+
+  useLayoutEffect(() => {
+    const root = gameContainerRef.current
+    if (!root) return
+
+    const measureFooterStack = () => {
+      let h = 0
+      const tc = turnControlsFooterRef.current
+      if (tc) {
+        const rect = tc.getBoundingClientRect()
+        h += rect.height
+      }
+      const banner = historyBannerRef.current
+      if (banner) {
+        const rect = banner.getBoundingClientRect()
+        h += rect.height
+      }
+      const rounded = Math.max(0, Math.ceil(h))
+      root.style.setProperty('--footer-measured-height', `${rounded}px`)
+    }
+
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(measureFooterStack)
+    })
+
+    if (turnControlsFooterRef.current) ro.observe(turnControlsFooterRef.current)
+    if (historyBannerRef.current) ro.observe(historyBannerRef.current)
+
+    measureFooterStack()
+
+    window.addEventListener('resize', measureFooterStack)
+    window.visualViewport?.addEventListener('resize', measureFooterStack)
+
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', measureFooterStack)
+      window.visualViewport?.removeEventListener('resize', measureFooterStack)
+    }
+  }, [
+    showTurnControlsFooter,
+    isViewingHistory,
+    gameState.phase,
+    gameState.pendingRewards?.length,
+    gameState.currTurn?.optionalEffects?.length,
+    gameState.currTurn?.pendingChoices?.length,
+    gameState.currTurn?.opponentDiscardState,
+    voiceSelectionRewardId,
+    masterstrokeSelectionRewardId,
+    memnonHighCouncilRewardId,
+    showSelectiveBreeding,
+  ])
+
   return (
-    <div className="game-container">
+    <div ref={gameContainerRef} className="game-container">
       {isTurnHistoryOpen && (
         <TurnHistory 
           turns={gameState.history}
@@ -305,7 +366,7 @@ const GameContent = () => {
       )}
       {/* History viewing banner */}
       {isViewingHistory && (
-        <div className="history-viewing-banner">
+        <div ref={historyBannerRef} className="history-viewing-banner">
           <button 
             className="history-nav-btn"
             onClick={() => goToTurn(Math.max(0, (viewingTurnIndex ?? gameState.history.length) - 1))} 
@@ -401,7 +462,11 @@ const GameContent = () => {
         />
       </div>
       <div className="turn-controls-spacer" />
-        <div className="turn-controls-container" hidden={isViewingHistory || (gameState.phase !== GamePhase.PLAYER_TURNS && gameState.phase !== GamePhase.COMBAT && gameState.phase !== GamePhase.END_GAME)}>
+        <div
+          ref={turnControlsFooterRef}
+          className="turn-controls-container"
+          hidden={isViewingHistory || (gameState.phase !== GamePhase.PLAYER_TURNS && gameState.phase !== GamePhase.COMBAT && gameState.phase !== GamePhase.END_GAME)}
+        >
           <TurnControls
             activePlayer={activePlayer}
             canEndTurn={gameState.canEndTurn}

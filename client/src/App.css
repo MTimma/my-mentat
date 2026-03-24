@@ -1,6 +1,6 @@
 :root {
-  /* Footer height: turn-controls / history-viewing-banner. Used by Turn History overlay. */
-  --footer-height: 84px;
+  /* Fallback before JS measures the fixed footer (turn controls + history banner). */
+  --footer-height-static: 84px;
 }
 
 #root {
@@ -20,6 +20,8 @@
 }
 
 .game-container {
+  /* Spacer, endgame chip, Turn History overlay, and history padding use --footer-height. */
+  --footer-height: var(--footer-measured-height, var(--footer-height-static));
   max-width: 100%;
   margin: 0;
   padding: 10px;
@@ -1201,7 +1203,7 @@
 
 @media (max-width: 600px) {
   :root {
-    --footer-height: 50px;
+    --footer-height-static: 50px;
   }
   .history-viewing-banner {
     padding: 4px 8px;
@@ -1227,7 +1229,7 @@
 
 @media (max-width: 400px) {
   :root {
-    --footer-height: 44px;
+    --footer-height-static: 44px;
   }
   .history-viewing-banner {
     padding: 3px 6px;
@@ -1253,7 +1255,7 @@
 
 /* When viewing history, add bottom padding so content isn't hidden behind the fixed banner */
 .game-container:has(.history-viewing-banner) {
-  padding-bottom: calc(var(--footer-height, 84px) + 12px);
+  padding-bottom: calc(var(--footer-height) + 12px);
 }
 
 /* Dimmed state for disabled areas when viewing history */
