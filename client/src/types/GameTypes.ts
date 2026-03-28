@@ -511,6 +511,8 @@ export interface GameState {
   firstPlayerMarker: number
   currentRound: number
   mentatOwner: number | null
+  /** Player ids in order they first took a High Council seat (for board UI). */
+  highCouncilSeatOrder: number[]
   activePlayerId: number
   gains: Gain[]
   selectedCard: number | null

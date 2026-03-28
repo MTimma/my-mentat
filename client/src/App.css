@@ -980,6 +980,31 @@
   max-width: min(360px, calc(100vw - 32px));
 }
 
+/* Board toggle button */
+.board-toggle-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.board-toggle-btn {
+  background: rgba(139, 69, 19, 0.15);
+  border: 1px solid var(--color-arrakis-earth, #8b4513);
+  color: var(--color-arrakis-earth, #8b4513);
+  padding: 4px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+
+.board-toggle-btn:hover {
+  background: rgba(139, 69, 19, 0.25);
+  border-color: #5d3a1a;
+}
+
 /* Responsive layout */
 @media (max-width: 1200px) {
   .main-area {

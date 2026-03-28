@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import './App.css'
 import GameBoard from './components/GameBoard'
+import ImageBoard from './components/ImageBoard/ImageBoard'
 import ImperiumRow from './components/ImperiumRow/ImperiumRow'
 import TurnHistory from './components/TurnHistory'
 import { GameProvider } from './components/GameContext/GameContext'
@@ -36,6 +37,7 @@ const GameContent = () => {
     returnToCurrent,
   } = useTimeTravel()
 
+  const [useImageBoard, setUseImageBoard] = useState(false)
   const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(false)
   const [isPlayerOverviewOpen, setIsPlayerOverviewOpen] = useState(false)
   const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
@@ -365,7 +367,7 @@ const GameContent = () => {
         />
       )}
       {/* History viewing banner */}
-      {isViewingHistory && (
+      {(
         <div ref={historyBannerRef} className="history-viewing-banner">
           <button 
             className="history-nav-btn"
@@ -415,26 +417,60 @@ const GameContent = () => {
         helenaRemovedCard={displayState.helenaRemovedCard ?? null}
         activePlayerId={displayState.activePlayerId} />
       </div>
+      <div className="board-toggle-container">
+        <button 
+          className="board-toggle-btn"
+          onClick={() => setUseImageBoard(prev => !prev)}
+          title={useImageBoard ? 'Switch to legacy board' : 'Switch to image board'}
+        >
+          {useImageBoard ? 'Legacy Board' : 'Image Board'}
+        </button>
+      </div>
       <div className="main-area">
-        <GameBoard 
-          currentPlayer={displayState.activePlayerId}
-          highlightedAreas={isViewingHistory ? [] : getSelectedCardAgentIcons(gameState)}
-          infiltrate={isViewingHistory ? false : getInfiltrate(gameState)}
-          onSpaceClick={isViewingHistory ? () => {} : handlePlaceAgent}
-          occupiedSpaces={displayState.occupiedSpaces}
-          canPlaceAgent={isViewingHistory ? false : !gameState.canEndTurn}
-          combatTroops={displayState.combatTroops}
-          players={displayState.players}
-          factionInfluence={displayState.factionInfluence}
-          currentConflict={displayState.currentConflict}
-          bonusSpice={displayState.bonusSpice}
-          onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
-          recallMode={isViewingHistory ? false : Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
-          ignoreCosts={isViewingHistory ? false : Boolean(getSelectedCard(gameState)?.playEffect?.find(e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH))}
-          voiceSelectionActive={isViewingHistory ? false : Boolean(voiceSelectionRewardId)}
-          onVoiceSpaceSelect={handleVoiceSpaceSelect}
-          blockedSpaces={displayState.blockedSpaces || []}
-        />
+        {useImageBoard ? (
+          <ImageBoard 
+            currentPlayer={displayState.activePlayerId}
+            highlightedAreas={isViewingHistory ? [] : getSelectedCardAgentIcons(gameState)}
+            infiltrate={isViewingHistory ? false : getInfiltrate(gameState)}
+            onSpaceClick={isViewingHistory ? () => {} : handlePlaceAgent}
+            occupiedSpaces={displayState.occupiedSpaces}
+            canPlaceAgent={isViewingHistory ? false : !gameState.canEndTurn}
+            combatTroops={displayState.combatTroops}
+            players={displayState.players}
+            factionInfluence={displayState.factionInfluence}
+            currentConflict={displayState.currentConflict}
+            bonusSpice={displayState.bonusSpice}
+            onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
+            recallMode={isViewingHistory ? false : Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
+            ignoreCosts={isViewingHistory ? false : Boolean(getSelectedCard(gameState)?.playEffect?.find(e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH))}
+            voiceSelectionActive={isViewingHistory ? false : Boolean(voiceSelectionRewardId)}
+            onVoiceSpaceSelect={handleVoiceSpaceSelect}
+            blockedSpaces={displayState.blockedSpaces || []}
+            gameStateForMarkers={displayState}
+            combatStrength={displayState.combatStrength ?? gameState.combatStrength}
+            controlMarkers={displayState.controlMarkers}
+          />
+        ) : (
+          <GameBoard 
+            currentPlayer={displayState.activePlayerId}
+            highlightedAreas={isViewingHistory ? [] : getSelectedCardAgentIcons(gameState)}
+            infiltrate={isViewingHistory ? false : getInfiltrate(gameState)}
+            onSpaceClick={isViewingHistory ? () => {} : handlePlaceAgent}
+            occupiedSpaces={displayState.occupiedSpaces}
+            canPlaceAgent={isViewingHistory ? false : !gameState.canEndTurn}
+            combatTroops={displayState.combatTroops}
+            players={displayState.players}
+            factionInfluence={displayState.factionInfluence}
+            currentConflict={displayState.currentConflict}
+            bonusSpice={displayState.bonusSpice}
+            onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
+            recallMode={isViewingHistory ? false : Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
+            ignoreCosts={isViewingHistory ? false : Boolean(getSelectedCard(gameState)?.playEffect?.find(e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH))}
+            voiceSelectionActive={isViewingHistory ? false : Boolean(voiceSelectionRewardId)}
+            onVoiceSpaceSelect={handleVoiceSpaceSelect}
+            blockedSpaces={displayState.blockedSpaces || []}
+          />
+        )}
         </div>
         {needsImperiumSelection && (
           <ImperiumRowSelect

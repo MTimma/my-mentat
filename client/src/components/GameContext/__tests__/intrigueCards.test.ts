@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { applyGameAction, getFreshDefaultGameState } from '../GameContext'
+import { SPICE_MUST_FLOW_DECK } from '../../../data/cards'
 import { intrigueCards } from '../../../services/IntrigueDeckService'
 import {
   AgentIcon,
@@ -8,6 +9,7 @@ import {
   GainSource,
   Leader,
   PlayerColor,
+  RewardType,
   TurnType,
   type Card,
   type GameState,
@@ -495,5 +497,36 @@ describe('Intrigue cards — endgame', () => {
     }
     s = applyGameAction(s, { type: 'RESOLVE_ENDGAME' })
     expect(s.endgameWinners).toEqual([0])
+  })
+})
+
+describe('Acquire — The Spice Must Flow', () => {
+  it('persists +1 VP on the player when acquired (acquire effect)', () => {
+    const smfTop = SPICE_MUST_FLOW_DECK[0]
+    expect(smfTop.acquireEffect?.victoryPoints).toBe(1)
+
+    let s = getFreshDefaultGameState()
+    s = {
+      ...s,
+      players: [makePlayer(0, { persuasion: 9, victoryPoints: 0, discardPile: [] })],
+      spiceMustFlowDeck: [smfTop],
+      activePlayerId: 0,
+    }
+
+    s = applyGameAction(s, { type: 'ACQUIRE_SMF', playerId: 0 })
+
+    expect(s.players[0].victoryPoints).toBe(1)
+    expect(s.players[0].persuasion).toBe(0)
+    expect(s.players[0].discardPile).toEqual([smfTop])
+    expect(s.spiceMustFlowDeck).toHaveLength(0)
+    expect(
+      s.gains.some(
+        g =>
+          g.type === RewardType.VICTORY_POINTS &&
+          g.playerId === 0 &&
+          g.amount === 1 &&
+          g.name.includes('Acquire Effect')
+      )
+    ).toBe(true)
   })
 })

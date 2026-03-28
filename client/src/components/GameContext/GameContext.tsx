@@ -117,6 +117,7 @@ const initialGameState: GameState = {
   phase: GamePhase.ROUND_START,
   currTurn: null,
   mentatOwner: null,
+  highCouncilSeatOrder: [],
   factionInfluence: {
     [FactionType.EMPEROR]: {},
     [FactionType.SPACING_GUILD]: {},
@@ -2262,12 +2263,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             break
           }
 
-          case 'highCouncil':
+          case 'highCouncil': {
             currPlayer.hasHighCouncilSeat = true
+            const prevOrder = newState.highCouncilSeatOrder ?? []
+            if (!prevOrder.includes(playerId)) {
+              newState.highCouncilSeatOrder = [...prevOrder, playerId]
+            }
             if (shouldGrantMemnonInfluence(currPlayer)) {
               pendingRewards.push(buildMemnonInfluenceReward(space.id))
             }
             break
+          }
 
         }
       }
@@ -2765,7 +2771,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         spiceMustFlowDeck: smfDeck,
         gains: updatedGains,
         currTurn: newCurrTurn,
-        players: state.players.map(p => p.id === playerId ? { ...p,discardPile: player.discardPile, persuasion: player.persuasion } : p)
+        players: state.players.map(p =>
+          p.id === playerId
+            ? { ...p, discardPile: player.discardPile, persuasion: player.persuasion, victoryPoints: player.victoryPoints }
+            : p
+        )
       }
     }
     case 'PAY_COST': {
@@ -3977,6 +3987,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 function deepCopyGameState(state: GameState): GameState {
   return {
     ...state,
+    highCouncilSeatOrder: [...(state.highCouncilSeatOrder ?? [])],
     // Deep copy arrays
     players: state.players.map(p => ({
       ...p,
