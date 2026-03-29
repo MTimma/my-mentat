@@ -55,10 +55,10 @@ export const INFLUENCE_TRACKS: Record<FactionType, InfluenceTrackLayout> = {
  * - At **1** VP, it sits at **`baselineY + stepY`** (one step up). If everyone starts at 1, all markers start one step above the “0” row; at **2** VP they move up again, etc.
  */
 export const VP_LANES: Array<{ x: number; baselineY: number; stepY: number }> = [
-  { x: 95, baselineY: 93, stepY: -5 },
-  { x: 97, baselineY: 93, stepY: -5 },
-  { x: 95, baselineY: 91, stepY: -5 },
-  { x: 97, baselineY: 91, stepY: -5 },
+  { x: 96, baselineY: 97, stepY: -5.5 },
+  { x: 98, baselineY: 97, stepY: -5.5 },
+  { x: 96, baselineY: 95, stepY: -5.5 },
+  { x: 98, baselineY: 95, stepY: -5.5 },
 ]
 
 /** Left→right seat slots (inner %) next to High Council */
