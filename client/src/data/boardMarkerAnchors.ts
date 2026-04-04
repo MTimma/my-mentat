@@ -22,24 +22,24 @@ export interface InfluenceTrackLayout {
 
 export const INFLUENCE_TRACKS: Record<FactionType, InfluenceTrackLayout> = {
   [FactionType.EMPEROR]: {
-    laneCenterX: [12.8, 14.2, 15.6, 17],
+    laneCenterX: [4, 5.8, 7.6, 9.4],
     baselineY: 24,
-    stepY: -2.1,
+    stepY: -3.5,
   },
   [FactionType.SPACING_GUILD]: {
-    laneCenterX: [12.8, 14.2, 15.6, 17],
-    baselineY: 38,
-    stepY: -2.1,
+    laneCenterX: [4, 5.8, 7.6, 9.4],
+    baselineY: 49,
+    stepY: -3.5,
   },
   [FactionType.BENE_GESSERIT]: {
-    laneCenterX: [12.8, 14.2, 15.6, 17],
-    baselineY: 60,
-    stepY: -2.1,
+    laneCenterX: [4, 5.8, 7.6, 9.4],
+    baselineY: 73,
+    stepY: -3.5,
   },
   [FactionType.FREMEN]: {
-    laneCenterX: [12.8, 14.2, 15.6, 17],
-    baselineY: 84,
-    stepY: -2.1,
+    laneCenterX: [4, 5.8, 7.6, 9.4],
+    baselineY: 98,  
+    stepY: -3.5,
   },
 }
 
@@ -63,10 +63,10 @@ export const VP_LANES: Array<{ x: number; baselineY: number; stepY: number }> = 
 
 /** Left→right seat slots (inner %) next to High Council */
 export const HIGH_COUNCIL_SLOTS: Array<{ x: number; y: number }> = [
-  { x: 42, y: 5 },
-  { x: 44.8, y: 5 },
-  { x: 47.6, y: 5 },
-  { x: 50.4, y: 5 },
+  { x: 42, y: 6 },
+  { x: 44.8, y: 6 },
+  { x: 52.6, y: 6 },
+  { x: 56.0, y: 6 },
 ]
 
 /** Conflict card panel **/
@@ -78,13 +78,13 @@ export const CONFLICT_CARD_RECT = {
 } as const
 
 /** First combat strength row (inner %); align with conflict panel column */
-export const COMBAT_STRENGTH_ORIGIN = { x: 56, y: 38 }
-export const COMBAT_STRENGTH_ROW_STEP_Y = 2.6
+export const COMBAT_STRENGTH_ORIGIN = { x: 56, y: 65 }
+export const COMBAT_STRENGTH_ROW_STEP_Y = 6
 
 export const CONTROL_MARKER_POINTS: Record<ControlMarkerType, { x: number; y: number }> = {
-  [ControlMarkerType.ARRAKIN]: { x: 80.5, y: 34 },
-  [ControlMarkerType.CARTHAG]: { x: 62.5, y: 37 },
-  [ControlMarkerType.IMPERIAL_BASIN]: { x: 80.5, y: 51 },
+  [ControlMarkerType.ARRAKIN]: { x: 78, y: 34 },
+  [ControlMarkerType.CARTHAG]: { x: 60, y: 37 },
+  [ControlMarkerType.IMPERIAL_BASIN]: { x: 76, y: 51 },
 }
 
 /** Optional extracted card art: run scripts/extract-conflicts-assets.py → public/conflicts/cards/ */
