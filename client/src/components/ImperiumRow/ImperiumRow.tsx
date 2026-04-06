@@ -25,10 +25,10 @@ interface ImperiumRowProps {
 
 const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion, alCount, smfCount, onAcquireArrakisLiaison, onAcquireSpiceMustFlow, onAcquireCard, helenaRemovedCard, activePlayerId }) => {
   const [isVisible, setIsVisible] = useState(true)
-  const helenaSlotData =
-    helenaRemovedCard?.card && helenaRemovedCard?.playerId === activePlayerId
-      ? helenaRemovedCard
-      : null
+  const helenaSlotData = helenaRemovedCard?.card ? helenaRemovedCard : null
+  const helenaCanAcquire = Boolean(
+    canAcquire && helenaSlotData && activePlayerId === helenaSlotData.playerId
+  )
 
   return (
     <div className="imperium-section">
@@ -45,39 +45,6 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
           <div
             className={`imperium-row-primary ${!canAcquire ? 'no-buttons' : ''}`}
           >
-            {helenaSlotData && (
-              <div
-                className={`imperium-card helena-card ${!canAcquire ? 'no-button' : ''}`}
-              >
-                <div className="helena-card-image-wrapper">
-                  {getLeaderIconPath(LEADER_NAMES.HELENA_RICHESE) && (
-                    <img
-                      src={getLeaderIconPath(LEADER_NAMES.HELENA_RICHESE)!}
-                      alt="Helena"
-                      className="helena-head-corner-icon"
-                    />
-                  )}
-                  <img
-                    src={helenaSlotData.card.image}
-                    alt={helenaSlotData.card.name}
-                    className="card-image-ir"
-                  />
-                  <span className="helena-discount-badge">−1 Persuasion</span>
-                </div>
-                {canAcquire && (
-                  <button
-                    className="acquire-button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onAcquireCard(helenaSlotData.card.id)
-                    }}
-                    disabled={((helenaSlotData.card.cost ?? 0) - 1) > persuasion}
-                  >
-                    Acquire
-                  </button>
-                )}
-              </div>
-            )}
             {cards.map((card) => (
               <div
                 key={card.id}
@@ -104,8 +71,47 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
               </div>
             ))}
           </div>
-          {/* Reserve: Arrakis Liaison + Spice Must Flow — second row, stays on screen */}
+          {/* Reserve: Helena removed slot (when present) + Arrakis Liaison + Spice Must Flow */}
           <div className={`imperium-row-reserve ${!canAcquire ? 'no-buttons' : ''}`}>
+            {helenaSlotData && (
+              <div
+                className={`imperium-card helena-card ${!helenaCanAcquire ? 'no-button' : ''}`}
+                onClick={() => helenaCanAcquire && onAcquireCard?.(helenaSlotData.card.id)}
+                title={
+                  helenaCanAcquire
+                    ? undefined
+                    : 'Helena may acquire this card for 1 Persuasion less during her Reveal turn.'
+                }
+              >
+                <div className="helena-card-image-wrapper">
+                  {getLeaderIconPath(LEADER_NAMES.HELENA_RICHESE) && (
+                    <img
+                      src={getLeaderIconPath(LEADER_NAMES.HELENA_RICHESE)!}
+                      alt="Helena"
+                      className="helena-head-corner-icon"
+                    />
+                  )}
+                  <img
+                    src={helenaSlotData.card.image}
+                    alt={helenaSlotData.card.name}
+                    className="card-image-ir"
+                  />
+                  <span className="helena-discount-badge">−1 Persuasion</span>
+                </div>
+                {helenaCanAcquire && (
+                  <button
+                    className="acquire-button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAcquireCard(helenaSlotData.card.id)
+                    }}
+                    disabled={((helenaSlotData.card.cost ?? 0) - 1) > persuasion}
+                  >
+                    Acquire
+                  </button>
+                )}
+              </div>
+            )}
             <div className={`imperium-card fixed-card ${!canAcquire ? 'no-button' : ''}`}>
               <img 
                 src={'imperium_row/arrakis_liaison.avif'} 
