@@ -1,19 +1,20 @@
-/* CSS Custom Properties for consistent sizing */
+/* Imperium row: primary strip (Helena + 5 cards) + reserve row (AL + SMF), all scaled to fit width */
+
 :root {
-  --card-width: 100px;
-  --card-height: 140px;
-  --card-padding: 2px;
-  --card-gap: 1px;
-  --section-padding: 2px;
-  --image-max-height: 85px;
+  --ir-gap: 4px;
+  --ir-section-pad: 4px;
+  --ir-image-max: min(88px, 14vw);
+  --ir-card-pad: 2px;
 }
 
 .imperium-section {
-  padding: var(--section-padding);
+  padding: var(--ir-section-pad);
   background-color: var(--color-arrakis-sand);
   border-radius: 8px;
   margin-bottom: 2px;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   position: relative;
 }
 
@@ -21,102 +22,101 @@
   display: none;
 }
 
-/* Desktop: CSS Grid with 7 columns to fill available width */
-.cards-grid {
-  display: grid;
-  gap: var(--card-gap);
-  overflow-x: visible;
+.imperium-row-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ir-gap);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
-.cards-grid.main-cards {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  margin-bottom: var(--card-gap);
+/* Single horizontal row; equal flex slots so everything stays on screen */
+.imperium-row-primary,
+.imperium-row-reserve {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: center;
+  gap: var(--ir-gap);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
-.cards-grid.fixed-cards-row {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.imperium-row-primary .imperium-card,
+.imperium-row-reserve .imperium-card {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  width: auto;
 }
 
 .imperium-card {
-  width: 100%;
-  min-width: 0;
-  max-width: 120px;
-  aspect-ratio: 100 / 140;
-  height: auto;
   border: 2px solid var(--color-arrakis-earth);
   border-radius: 6px;
   background-color: var(--color-arrakis-parchment);
-  padding: var(--card-padding);
+  padding: var(--ir-card-pad);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   justify-content: flex-start;
+  align-self: stretch;
+  min-height: 0;
+  height: auto;
+  max-height: clamp(100px, 22vw, 168px);
 }
 
-/* Cards without buttons are more compact */
+.imperium-row-primary.no-buttons .imperium-card,
+.imperium-row-reserve.no-buttons .imperium-card {
+  max-height: clamp(88px, 18vw, 140px);
+}
+
 .imperium-card.no-button {
-  aspect-ratio: 100 / 100;
-  border: 1px solid var(--color-arrakis-earth);
+  border-width: 1px;
   padding: 1px;
   justify-content: center;
   border-radius: 4px;
+  max-height: clamp(80px, 16vw, 120px);
 }
 
 .imperium-card.fixed-card {
   background-color: var(--color-arrakis-parchment-muted);
 }
 
-.imperium-card h4 {
-  margin: 0;
-  text-align: center;
-  color: var(--color-arrakis-earth);
-  font-size: 12px;
-}
-
-.persuasion-cost {
-  background-color: var(--color-arrakis-earth);
-  color: white;
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-size: 0.8em;
-  font-weight: bold;
-}
-
 .card-image-ir {
   width: 100%;
   height: auto;
-  max-height: var(--image-max-height);
+  max-height: var(--ir-image-max);
   object-fit: contain;
   border-radius: 4px;
   margin-bottom: 1px;
   display: block;
-  position: relative;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-height: 0;
 }
 
-/* Images in no-button cards take more space */
 .imperium-card.no-button .card-image-ir {
-  max-height: calc(100% - 4px);
+  max-height: min(100%, calc(100% - 4px));
   margin-bottom: 0;
   border-radius: 2px;
 }
 
 .count-display {
-  font-size: 0.75em;
+  font-size: clamp(0.55rem, 1.8vw, 0.75rem);
   color: var(--color-arrakis-earth);
   text-align: center;
   margin: 0;
   font-weight: 600;
+  line-height: 1.1;
+  flex-shrink: 0;
 }
 
-/* Helena signet ring: removed card slot */
-.helena-removed-slot {
-  grid-template-columns: minmax(0, 1fr);
-  margin-bottom: var(--card-gap);
-  max-width: 120px;
-}
-
-.helena-removed-slot .imperium-card.helena-card {
+/* Helena signet ring slot */
+.imperium-card.helena-card {
   border-color: var(--color-arrakis-earth-dark);
   background-color: var(--color-arrakis-parchment-helena);
 }
@@ -125,6 +125,7 @@
   position: relative;
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -133,8 +134,8 @@
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 24px;
-  height: 24px;
+  width: clamp(18px, 4vw, 24px);
+  height: clamp(18px, 4vw, 24px);
   object-fit: contain;
   border-radius: 50%;
   z-index: 1;
@@ -145,20 +146,23 @@
   position: absolute;
   top: 2px;
   right: 2px;
-  font-size: 0.6em;
+  font-size: clamp(0.45rem, 1.4vw, 0.6rem);
   color: var(--color-arrakis-earth-dark);
   background-color: var(--color-arrakis-sand);
-  padding: 1px 4px;
+  padding: 1px 3px;
   border-radius: 3px;
   z-index: 1;
   font-weight: 600;
+  max-width: calc(100% - 4px);
+  text-align: right;
+  line-height: 1.1;
 }
 
 .imperium-card button.acquire-button {
-  margin-top: 2px;
-  padding: 4px 6px;
-  font-size: 0.75em;
-  min-height: 44px;
+  margin-top: auto;
+  padding: clamp(2px, 0.8vw, 4px) clamp(4px, 1.2vw, 6px);
+  font-size: clamp(0.55rem, 1.8vw, 0.75rem);
+  min-height: clamp(28px, 7vw, 44px);
   border: 1px solid var(--color-arrakis-earth);
   background-color: var(--color-arrakis-earth);
   color: white;
@@ -177,52 +181,25 @@
   cursor: not-allowed;
 }
 
-/* Tablet breakpoint (600-900px) - All 7 cards in one row */
+/* Tablet */
 @media (max-width: 900px) {
   :root {
-    --card-padding: 2px;
-    --card-gap: 1px;
-    --section-padding: 2px;
-    --image-max-height: 70px;
-  }
-
-  .cards-grid.main-cards {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    margin-bottom: var(--card-gap);
-  }
-
-  .cards-grid.fixed-cards-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    --ir-gap: 3px;
+    --ir-section-pad: 3px;
+    --ir-image-max: min(72px, 13vw);
   }
 
   .imperium-card {
-    width: 100%;
-    min-width: 0;
-    max-width: none;
-    aspect-ratio: 100 / 130;
-    height: auto;
-    max-height: 110px;
-  }
-
-  .imperium-card.no-button {
-    aspect-ratio: 100 / 95;
-    max-height: 90px;
-    border: 1px solid var(--color-arrakis-earth);
-    padding: 1px;
-  }
-
-  .card-image-ir {
-    max-height: 60px;
+    max-height: clamp(92px, 24vw, 150px);
   }
 }
 
-/* Mobile breakpoint (375-600px) - Cards in horizontal row, scroll if needed */
+/* Mobile: keep rows on screen, tighter chrome */
 @media (max-width: 600px) {
   :root {
-    --card-padding: 1px;
-    --card-gap: 1px;
-    --section-padding: 1px;
-    --image-max-height: 50px;
+    --ir-gap: 3px;
+    --ir-section-pad: 2px;
+    --ir-image-max: min(52px, 11vw);
   }
 
   .imperium-toggle-mobile {
@@ -244,133 +221,38 @@
     background-color: var(--color-arrakis-earth-dark);
   }
 
-  .cards-grid.main-cards {
-    display: flex;
-    flex-wrap: nowrap;
-    flex-direction: row;
-    grid-template-columns: unset;
-    margin-bottom: var(--card-gap);
-    overflow-x: auto;
-    overflow-y: hidden;
-    gap: 6px;
-  }
-
-  .cards-grid.main-cards .imperium-card {
-    flex: 0 0 auto;
-    width: 70px;
-    min-width: 70px;
-    max-width: 70px;
-  }
-
-  .cards-grid.fixed-cards-row {
-    display: flex;
-    flex-wrap: nowrap;
-    flex-direction: row;
-    grid-template-columns: unset;
-    gap: 6px;
-  }
-
-  .cards-grid.fixed-cards-row .imperium-card {
-    flex: 0 0 auto;
-    width: 70px;
-    min-width: 70px;
-    max-width: 70px;
-  }
-
   .imperium-card {
-    width: 100%;
-    min-width: 0;
-    max-width: none;
-    aspect-ratio: 100 / 120;
-    height: auto;
-    max-height: 70px;
-    min-height: 60px;
+    max-height: clamp(78px, 26vw, 120px);
+    border-radius: 4px;
   }
 
   .imperium-card.no-button {
-    aspect-ratio: 100 / 90;
-    max-height: 60px;
-    min-height: 50px;
-    border: 1px solid var(--color-arrakis-earth);
-    padding: 1px;
-  }
-
-  .card-image-ir {
-    max-height: 45px;
-  }
-
-  .imperium-card.no-button .card-image-ir {
-    max-height: calc(100% - 2px);
+    max-height: clamp(68px, 22vw, 100px);
   }
 
   .imperium-card button.acquire-button {
-    min-height: 32px;
-    font-size: 0.6em;
-    padding: 2px 4px;
-    margin-top: 1px;
+    min-height: 30px;
+    font-size: 0.6rem;
+    padding: 2px 3px;
   }
 
   .count-display {
-    font-size: 0.6em;
-    margin: 0;
-    line-height: 1;
+    font-size: 0.58rem;
   }
 }
 
-/* Small mobile breakpoint (< 375px) - All 7 cards in one row, even smaller */
-@media (max-width: 375px) {
+@media (max-width: 400px) {
   :root {
-    --card-padding: 1px;
-    --card-gap: 1px;
-    --section-padding: 1px;
-    --image-max-height: 45px;
-  }
-
-  .cards-grid.main-cards {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    margin-bottom: var(--card-gap);
-  }
-
-  .cards-grid.fixed-cards-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    --ir-gap: 2px;
+    --ir-image-max: min(44px, 10vw);
   }
 
   .imperium-card {
-    width: 100%;
-    min-width: 0;
-    max-width: none;
-    aspect-ratio: 100 / 110;
-    height: auto;
-    max-height: 65px;
-    min-height: 55px;
-  }
-
-  .imperium-card.no-button {
-    aspect-ratio: 100 / 85;
-    max-height: 55px;
-    min-height: 45px;
-    border: 1px solid var(--color-arrakis-earth);
-    padding: 1px;
-  }
-
-  .card-image-ir {
-    max-height: 40px;
-  }
-
-  .imperium-card.no-button .card-image-ir {
-    max-height: calc(100% - 2px);
+    max-height: clamp(70px, 28vw, 108px);
   }
 
   .imperium-card button.acquire-button {
-    min-height: 28px;
-    font-size: 0.55em;
-    padding: 2px 3px;
-    margin-top: 1px;
-  }
-
-  .count-display {
-    font-size: 0.55em;
-    margin: 0;
-    line-height: 1;
+    min-height: 26px;
+    font-size: 0.55rem;
   }
 }
