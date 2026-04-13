@@ -530,3 +530,35 @@ describe('Acquire — The Spice Must Flow', () => {
     ).toBe(true)
   })
 })
+
+describe('REVEAL_CARDS validation', () => {
+  it('rejects partial reveal when hand has more cards than selection', () => {
+    const c1 = stubDeckCard(9001)
+    const c2 = stubDeckCard(9002)
+    let s = basePlotState([
+      makePlayer(0, {
+        deck: [c1, c2],
+        handCount: 2,
+      }),
+    ])
+    const before = s
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [9001] })
+    expect(s).toBe(before)
+  })
+
+  it('accepts reveal when cardIds match full hand', () => {
+    const c1 = stubDeckCard(9001)
+    const c2 = stubDeckCard(9002)
+    let s = basePlotState([
+      makePlayer(0, {
+        deck: [c1, c2],
+        handCount: 2,
+      }),
+    ])
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [9001, 9002] })
+    expect(s.players[0].deck).toHaveLength(0)
+    expect(s.players[0].handCount).toBe(0)
+    expect(s.players[0].revealed).toBe(true)
+    expect(s.players[0].playArea.map(c => c.id)).toEqual([9001, 9002])
+  })
+})

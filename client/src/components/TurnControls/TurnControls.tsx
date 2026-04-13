@@ -1109,14 +1109,25 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             <button 
               className="reveal-turn-button"
               onClick={handleRevealTurn}
-              disabled={canEndTurn || isCombatPhase || agentPlaced || hasOpponentDiscard || hasMandatoryRewards}
+              disabled={
+                canEndTurn ||
+                isCombatPhase ||
+                agentPlaced ||
+                hasOpponentDiscard ||
+                hasMandatoryRewards ||
+                activePlayer.deck.length === 0
+              }
               hidden={isCombatPhase || isEndGame}
               title={
                 hasOpponentDiscard
                   ? 'Resolve opponent discard instructions before taking new actions.'
                   : hasMandatoryRewards
                     ? 'Claim pending rewards before taking new actions.'
-                    : agentPlaced ? "You have already placed an agent this turn" : undefined
+                    : agentPlaced
+                      ? 'You have already placed an agent this turn'
+                      : activePlayer.deck.length === 0
+                        ? 'No cards in hand.'
+                        : undefined
               }
             >
               Reveal Turn
@@ -1210,7 +1221,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       <CardSearch
         isOpen={isCardSelectionOpen}
         cards={activePlayer.deck}
-        selectionCount={isRevealTurn ? activePlayer.handCount : 1}
+        selectionCount={isRevealTurn ? activePlayer.deck.length : 1}
         onSelect={handleCardSelection}
         onCancel={() => setIsCardSelectionOpen(false)}
         isRevealTurn={isRevealTurn}
