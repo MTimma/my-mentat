@@ -2310,6 +2310,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'REVEAL_CARDS': {
       const { playerId, cardIds } = action
       const player: Player = {...state.players.find(p => p.id === playerId)} as Player
+      // Hand is the deck pile in this app; reject partial or wrong-card reveals so state stays consistent.
+      if (
+        !player ||
+        cardIds.length !== player.deck.length ||
+        new Set(cardIds).size !== cardIds.length ||
+        !player.deck.every(c => cardIds.includes(c.id))
+      ) {
+        return state
+      }
       const tempCurrTurn: GameTurn = {
         ...state.currTurn,
         playerId,
