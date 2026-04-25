@@ -69,6 +69,8 @@ interface TurnControlsProps {
   gameState?: GameState
   onOpenPlayerOverview?: () => void
   onTurnHistoryToggle?: () => void
+  useImageBoard?: boolean
+  onToggleImageBoard?: () => void
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -128,7 +130,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   mentatOwner,
   gameState,
   onOpenPlayerOverview,
-  onTurnHistoryToggle
+  onTurnHistoryToggle,
+  useImageBoard = false,
+  onToggleImageBoard
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -1077,6 +1081,16 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             >
               Player Overview
             </button>
+            {onToggleImageBoard && (
+            <button
+              type="button"
+              className="view-influence-button board-toggle-btn"
+              onClick={onToggleImageBoard}
+              title={useImageBoard ? 'Switch to legacy board' : 'Switch to image board'}
+            >
+              {useImageBoard ? 'Legacy Board' : 'Image Board'}
+            </button>
+            )}
           </div>
           <div className="control-buttons">
           <div className="button-pair">
