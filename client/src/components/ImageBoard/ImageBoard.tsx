@@ -96,6 +96,9 @@ const MAKER_SPACE_IDS: Record<string, number> = {
   [MakerSpace.HAGGA_BASIN]: 6,
 }
 
+/** Same path as The Voice cards in `cards.ts` — small board marker for blocked spaces */
+const VOICE_CARD_IMAGE_SRC = 'imperium_row/the_voice.avif'
+
 function playerMarkerColor(player: Player): string {
   switch (player.color) {
     case PlayerColor.RED:
@@ -314,6 +317,28 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             )
           })}
 
+          {/* The Voice — same anchor as agent figures; drawn under agents so figures stay visible when occupied */}
+          {[...blockedSpaceMap.entries()].map(([spaceId, blockerPlayerId]) => {
+            const anchor = MARKER_ANCHORS.find(a => a.spaceId === spaceId)
+            if (!anchor) return null
+            const ring = PLAYER_COLORS[blockerPlayerId] || '#ffa726'
+            return (
+              <div
+                key={`voice-thumb-${spaceId}`}
+                className="image-board__voice-block-thumb"
+                style={{
+                  left: `${anchor.x}%`,
+                  top: `${anchor.y}%`,
+                  transform: 'translate(-50%, -50%)',
+                  boxShadow: `0 0 0 2px ${ring}, 0 2px 8px rgba(0,0,0,0.5)`,
+                }}
+                title="Blocked by The Voice this round"
+              >
+                <img src={VOICE_CARD_IMAGE_SRC} alt="" draggable={false} />
+              </div>
+            )
+          })}
+
           {MARKER_ANCHORS.map(anchor => {
             const occupied = occupiedSpaces[anchor.spaceId] || []
             if (occupied.length === 0) return null
@@ -365,7 +390,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             return playersSorted.map((player, laneIdx) => {
               const raw = factionInfluence[faction]?.[player.id] ?? 0
               const step = clampInfluenceStep(raw)
-              if (step <= 0) return null
               const cx = track.laneCenterX[laneIdx]
               const cy = track.baselineY + track.stepY * step
               const st = stagePoint(cx, cy)

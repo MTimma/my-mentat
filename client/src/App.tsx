@@ -417,15 +417,6 @@ const GameContent = () => {
         helenaRemovedCard={displayState.helenaRemovedCard ?? null}
         activePlayerId={displayState.activePlayerId} />
       </div>
-      <div className="board-toggle-container">
-        <button 
-          className="board-toggle-btn"
-          onClick={() => setUseImageBoard(prev => !prev)}
-          title={useImageBoard ? 'Switch to legacy board' : 'Switch to image board'}
-        >
-          {useImageBoard ? 'Legacy Board' : 'Image Board'}
-        </button>
-      </div>
       <div className="main-area">
         {useImageBoard ? (
           <ImageBoard 
@@ -564,6 +555,8 @@ const GameContent = () => {
             gameState={gameState}
             onOpenPlayerOverview={() => setIsPlayerOverviewOpen(true)}
             onTurnHistoryToggle={() => setIsTurnHistoryOpen(open => !open)}
+            useImageBoard={useImageBoard}
+            onToggleImageBoard={() => setUseImageBoard(prev => !prev)}
           />
         </div>
         <div className="endgame-container" hidden={isViewingHistory || gameState.phase !== GamePhase.END_GAME}>

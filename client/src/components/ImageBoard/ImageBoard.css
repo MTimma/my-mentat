@@ -133,6 +133,26 @@
   font-weight: 700;
 }
 
+/* The Voice — same center as `.image-board__marker` (MARKER_ANCHORS); under agents in paint order */
+.image-board__voice-block-thumb {
+  position: absolute;
+  width: clamp(20px, 4.2vmin, 40px);
+  border-radius: 4px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+  line-height: 0;
+  background: rgba(12, 10, 8, 0.5);
+}
+
+.image-board__voice-block-thumb img {
+  width: 100%;
+  height: auto;
+  display: block;
+  vertical-align: top;
+  object-fit: cover;
+}
+
 .image-board__tracker-circle {
   position: absolute;
   width: clamp(7px, 1.55vmin, 15px);
