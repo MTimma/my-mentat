@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect } from '../../types/GameTypes'
+import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount } from '../../types/GameTypes'
 import { intrigueCardHasCustom } from '../../utils/intrigueCardCustom'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
@@ -54,7 +54,6 @@ interface TurnControlsProps {
   onVoiceSelectionCancel?: () => void
   onMasterstrokeSelectionStart?: (rewardId: string) => void
   masterstrokeSelectionActive?: boolean
-  onMasterstrokeSelectionCancel?: () => void
   onMemnonHighCouncilSelectionStart?: (rewardId: string) => void
   memnonHighCouncilSelectionActive?: boolean
   onOpponentNoCardAck?: (opponentId: number) => void
@@ -69,8 +68,6 @@ interface TurnControlsProps {
   gameState?: GameState
   onOpenPlayerOverview?: () => void
   onTurnHistoryToggle?: () => void
-  useImageBoard?: boolean
-  onToggleImageBoard?: () => void
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -116,7 +113,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onVoiceSelectionCancel,
   onMasterstrokeSelectionStart,
   masterstrokeSelectionActive = false,
-  onMasterstrokeSelectionCancel,
   onMemnonHighCouncilSelectionStart,
   memnonHighCouncilSelectionActive = false,
   onOpponentNoCardAck,
@@ -130,9 +126,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   mentatOwner,
   gameState,
   onOpenPlayerOverview,
-  onTurnHistoryToggle,
-  useImageBoard = false,
-  onToggleImageBoard
+  onTurnHistoryToggle
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -154,6 +148,18 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const hasPendingVoiceReward = pendingRewards.some(r => r.reward.custom === CustomEffect.THE_VOICE && !r.disabled)
   const hasOpponentDiscard = Boolean(opponentDiscardState)
   const hasMandatoryRewards = pendingRewards.some(r => !r.disabled && !r.isTrash)
+  const hasUnresolvedPendingRewards = pendingRewards.some(r => !r.disabled)
+  const hasPendingChoicesToResolve = pendingChoices.length > 0
+  const selectionBlocksEndTurn =
+    voiceSelectionActive || masterstrokeSelectionActive || memnonHighCouncilSelectionActive
+  const endTurnDisabled =
+    !canEndTurn ||
+    hasUnresolvedPendingRewards ||
+    hasOpponentDiscard ||
+    hasPendingChoicesToResolve ||
+    selectionBlocksEndTurn
+  const showAutoApplyRewardsButton =
+    !isCombatPhase && pendingRewards.length > 0 && pendingRewards.some(r => !r.disabled)
   const resolvedFactionAlliances = factionAlliances ?? gameState?.factionAlliances ?? {
     [FactionType.EMPEROR]: null,
     [FactionType.SPACING_GUILD]: null,
@@ -179,8 +185,17 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
   }, [pendingChoices, activeCardSelect, voiceSelectionActive, masterstrokeSelectionActive, hasOpponentDiscard])
 
-  if (!activePlayer) return null
   const isEndGame = gamePhase === GamePhase.END_GAME
+
+  if (!activePlayer) return null
+  /** Same strip as Deploy/Retreat chips; show only when at least one troop action applies. */
+  const showTroopActionRail =
+    canDeployTroops &&
+    ((deployableTroops > 0 && activePlayer.troops > 0) || retreatableTroops > 0)
+
+  /** After agent placement or while in reveal flow / post-reveal, hide primary turn actions. */
+  const hidePlayAndReveal =
+    !isCombatPhase && !isEndGame && (Boolean(agentPlaced) || activePlayer.revealed || isRevealTurn)
   const playableIntrigueCards = intrigueDeck.filter(card => {
     if (gamePhase === GamePhase.END_GAME) {
       if (card.type === IntrigueCardType.ENDGAME) return true
@@ -240,13 +255,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     onPassCombat(activePlayer.id)
   }
 
-  const handleCardSelection = (selectedCards: Card[]) => {
+  const handleCardSelection = (picked: Card[]) => {
     setIsCardSelectionOpen(false)
-    setSelectedCards(selectedCards)
     if (isRevealTurn) {
-      onReveal(activePlayer.id, selectedCards.map(card => card.id))
-    } else if (selectedCards.length === 1) {
-      onPlayCard(activePlayer.id, selectedCards[0].id)
+      setSelectedCards(picked)
+      onReveal(activePlayer.id, picked.map(card => card.id))
+      setIsRevealTurn(false)
+    } else if (picked.length === 1) {
+      setSelectedCards([])
+      onPlayCard(activePlayer.id, picked[0].id)
     }
   }
 
@@ -468,7 +485,18 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       left.push(renderAmt(cost.spice,'spice'))
       left.push(renderAmt(cost.water,'water'))
       left.push(renderAmt(cost.solari,'solari'))
-      if(cost.influence) left.push(<span key="influence">Influence</span>)
+      if (cost.influence?.amounts?.length) {
+        cost.influence.amounts.forEach((inf: InfluenceAmount, idx: number) => {
+          left!.push(
+            <span key={`cost-influence-${idx}`} className="effect-influence-line" title={`${inf.faction} influence`}>
+              <img src={`/icon/${inf.faction}.png`} alt="" className="effect-faction-icon" />
+              <span className="effect-influence-amt">{inf.amount}</span>
+            </span>
+          )
+        })
+      } else if (cost.influence) {
+        left.push(<span key="influence">Influence</span>)
+      }
       if(cost.trash || cost.trashThisCard) left.push(<span key="trash">Trash</span>)
       if(costLabel) left.push(<span key="cost">{costLabel}</span>)
     }
@@ -479,9 +507,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     if(reward.drawCards) right.push(<span key="draw">Draw {reward.drawCards}</span>)
     if(reward.troops) right.push(<span key="troops">{reward.troops} Troops</span>)
     if(reward.intrigueCards) right.push(<span key="intrigue">Intrigue +{reward.intrigueCards}</span>)
-    if(reward.influence) {
-      reward.influence.amounts.forEach((inf, idx) => {
-        right.push(<span key={`influence-${idx}`}>{inf.faction} Influence +{inf.amount}</span>)
+    if (reward.influence?.amounts?.length) {
+      reward.influence.amounts.forEach((inf: InfluenceAmount, idx: number) => {
+        right.push(
+          <span key={`influence-${idx}`} className="effect-influence-line" title={`${inf.faction} influence +${inf.amount}`}>
+            <img src={`/icon/${inf.faction}.png`} alt="" className="effect-faction-icon" />
+            <span className="effect-influence-amt">+{inf.amount}</span>
+          </span>
+        )
       })
     }
     if(reward.victoryPoints) right.push(<span key="vp">{reward.victoryPoints} VP</span>)
@@ -818,20 +851,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     )
   }
 
-  const renderMasterstrokeSelectionBanner = () => {
-    if (!masterstrokeSelectionActive) return null
-    return (
-      <div className="voice-selection-banner">
-        <span>Select 2 factions for Masterstroke.</span>
-        {onMasterstrokeSelectionCancel && (
-          <button className="secondary-btn" onClick={onMasterstrokeSelectionCancel}>
-            Cancel
-          </button>
-        )}
-      </div>
-    )
-  }
-
   const renderOpponentDiscardPanel = () => {
     const effect = opponentDiscardState?.effect
     if (!effect) return null
@@ -981,9 +1000,30 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         </div>
       )}
       {renderVoiceSelectionBanner()}
-      {renderMasterstrokeSelectionBanner()}
       {renderOpponentDiscardPanel()}
       {renderEffectsBar()}
+      {showTroopActionRail && (
+        <div className="turn-controls-troop-rail" role="group" aria-label="Conflict troops">
+          <button
+            type="button"
+            className="add-troop-button"
+            onClick={() => onAddTroop(activePlayer.id)}
+            disabled={
+              !canDeployTroops || activePlayer.troops <= 0 || deployableTroops <= 0
+            }
+          >
+            Deploy Troop ({deployableTroops})
+          </button>
+          <button
+            type="button"
+            className="remove-troop-button"
+            onClick={() => onRemoveTroop(activePlayer.id)}
+            disabled={!canDeployTroops || retreatableTroops <= 0}
+          >
+            Retreat Troop ({retreatableTroops})
+          </button>
+        </div>
+      )}
       {
         <ChoiceDialog />
         
@@ -1000,73 +1040,68 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           showTrashPopup
         }
       >
-        <div className="active-player-info">
-          <div className={`color-indicator ${activePlayer.color}`}></div>
-          {activePlayer.leader.name}
-          {getLeaderImage(activePlayer.leader.name) && (
-            <button
-              type="button"
-              className="see-leader-button"
-              onClick={() => setIsLeaderImageOpen(true)}
-              title="See Leader"
-              aria-label={`View ${activePlayer.leader.name}`}
-            >
-              See Leader
-            </button>
+        <div className="turn-controls-expanded-only">
+          {showAutoApplyRewardsButton && (
+            <div className="turn-controls-auto-apply-row">
+              <button
+                type="button"
+                className="get-mandatory-effects-button"
+                onClick={() => onAutoApplyRewards && onAutoApplyRewards()}
+                disabled={voiceSelectionActive || masterstrokeSelectionActive}
+                title={
+                  voiceSelectionActive || masterstrokeSelectionActive
+                    ? 'Finish the current selection before claiming rewards.'
+                    : 'Auto-apply non-interactive rewards (skips The Voice, Reverend Mother Mohiam, Test of Humanity, Masterstroke, trash, and OR choices)'
+                }
+              >
+                Auto-Apply Effects
+              </button>
+            </div>
           )}
-        </div>
-        <LeaderImageModal
-          leader={activePlayer.leader}
-          isOpen={isLeaderImageOpen}
-          onClose={() => setIsLeaderImageOpen(false)}
-        />
-        {activeIntrigueThisRound.length > 0 && (
-          <div className="active-intrigue-peek" aria-label="Active intrigue this round">
-            <div className="active-intrigue-preview" title="Hover to view active intrigue this round">
-              <img
-                src={activeIntrigueThisRound[0].image}
-                alt={activeIntrigueThisRound[0].name}
-                className="active-intrigue-preview-img"
-              />
-            </div>
-            <div className="active-intrigue-panel" role="region" aria-label="Active intrigue cards">
-              {activeIntrigueThisRound.map(card => (
-                <img
-                  key={card.id}
-                  src={card.image}
-                  alt={card.name}
-                  className="active-intrigue-img"
-                  title={card.name}
-                />
-              ))}
-            </div>
+          <div className="active-player-info">
+            <div className={`color-indicator ${activePlayer.color}`}></div>
+            {activePlayer.leader.name}
+            {getLeaderImage(activePlayer.leader.name) && (
+              <button
+                type="button"
+                className="see-leader-button"
+                onClick={() => setIsLeaderImageOpen(true)}
+                title="See Leader"
+                aria-label={`View ${activePlayer.leader.name}`}
+              >
+                See Leader
+              </button>
+            )}
           </div>
-        )}
-        <div className="selected-cards">
-          {selectedCard && (
-            <div className="selected-card-info">
-              <div className="card-name">
-                {selectedCard.name}
+          <LeaderImageModal
+            leader={activePlayer.leader}
+            isOpen={isLeaderImageOpen}
+            onClose={() => setIsLeaderImageOpen(false)}
+          />
+          {activeIntrigueThisRound.length > 0 && (
+            <div className="active-intrigue-peek" aria-label="Active intrigue this round">
+              <div className="active-intrigue-preview" title="Hover to view active intrigue this round">
+                <img
+                  src={activeIntrigueThisRound[0].image}
+                  alt={activeIntrigueThisRound[0].name}
+                  className="active-intrigue-preview-img"
+                />
               </div>
-              <div className="instruction">
-                {recallMode ? '⬅️ Recall an agent from the board' : '➡️ Place the agent on board'}
+              <div className="active-intrigue-panel" role="region" aria-label="Active intrigue cards">
+                {activeIntrigueThisRound.map(card => (
+                  <img
+                    key={card.id}
+                    src={card.image}
+                    alt={card.name}
+                    className="active-intrigue-img"
+                    title={card.name}
+                  />
+                ))}
               </div>
             </div>
           )}
-          {selectedCards.length > 0 && !selectedCard && (
-            <div>
-              {selectedCards.map(card => card.name).join(', ')}
-            </div>
-          )}
-          {/* Reveal summaries removed for now */}
-          {selectedCards.length === 0 && !selectedCard && (
-            <div>
-              No card selected
-            </div>
-          )}
-        </div>
         <div className="turn-controls-buttons-grid">
-          <div className="utility-buttons">
+          <div className="utility-buttons utility-buttons--with-inline-card">
             <button 
               className="view-influence-button"
               onClick={onTurnHistoryToggle}
@@ -1081,16 +1116,51 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             >
               Player Overview
             </button>
-            {onToggleImageBoard && (
-            <button
-              type="button"
-              className="view-influence-button board-toggle-btn"
-              onClick={onToggleImageBoard}
-              title={useImageBoard ? 'Switch to legacy board' : 'Switch to image board'}
+            <div
+              className="selected-card-inline-slot"
+              aria-label={
+                selectedCards.length > 0
+                  ? `Reveal: ${selectedCards.map(c => c.name).join(', ')}`
+                  : selectedCard
+                    ? `Played card: ${selectedCard.name}`
+                    : 'No card selected'
+              }
             >
-              {useImageBoard ? 'Legacy Board' : 'Image Board'}
-            </button>
-            )}
+              {selectedCards.length > 0 ? (
+                <div className="selected-cards-reveal-strip">
+                  {selectedCards.map(card =>
+                    card.image ? (
+                      <img
+                        key={card.id}
+                        className="selected-card-inline-img selected-card-inline-img--sm"
+                        src={card.image}
+                        alt={card.name}
+                        title={card.name}
+                      />
+                    ) : (
+                      <span key={card.id} className="selected-card-name-fallback">
+                        {card.name}
+                      </span>
+                    )
+                  )}
+                </div>
+              ) : selectedCard &&
+                !activePlayer.revealed &&
+                !isRevealTurn ? (
+                selectedCard.image ? (
+                  <img
+                    className="selected-card-inline-img"
+                    src={selectedCard.image}
+                    alt={selectedCard.name}
+                    title={selectedCard.name}
+                  />
+                ) : (
+                  <span className="selected-card-inline-name">{selectedCard.name}</span>
+                )
+              ) : (
+                <span className="selected-card-inline-placeholder" aria-hidden />
+              )}
+            </div>
           </div>
           <div className="control-buttons">
           <div className="button-pair">
@@ -1105,7 +1175,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 hasOpponentDiscard ||
                 hasMandatoryRewards
               }
-              hidden={isCombatPhase || isEndGame}
+              hidden={isCombatPhase || isEndGame || hidePlayAndReveal}
               title={
                 hasOpponentDiscard
                   ? 'Resolve opponent discard instructions before taking new actions.'
@@ -1124,7 +1194,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               className="reveal-turn-button"
               onClick={handleRevealTurn}
               disabled={canEndTurn || isCombatPhase || agentPlaced || hasOpponentDiscard || hasMandatoryRewards}
-              hidden={isCombatPhase || isEndGame}
+              hidden={isCombatPhase || isEndGame || hidePlayAndReveal}
               title={
                 hasOpponentDiscard
                   ? 'Resolve opponent discard instructions before taking new actions.'
@@ -1136,35 +1206,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               Reveal Turn
             </button>
           </div>
-          <div className="button-pair">
-            <button 
-              className="add-troop-button"
-              onClick={() => onAddTroop(activePlayer.id)}
-              disabled={!canDeployTroops || 
-                        activePlayer.troops <= 0 || deployableTroops <= 0}
-            >
-              Deploy Troop ({deployableTroops})
-            </button>
-            <button 
-              className="remove-troop-button"
-              onClick={() => onRemoveTroop(activePlayer.id)}
-              disabled={!canDeployTroops || retreatableTroops <= 0 }
-            >
-              Retreat Troop ({retreatableTroops})
-            </button>
-          </div>
-          {!isCombatPhase && pendingRewards.length > 0 && pendingRewards.some(r => !r.disabled) && <button 
-            className="get-mandatory-effects-button"
-            onClick={() => onAutoApplyRewards && onAutoApplyRewards()}
-            disabled={voiceSelectionActive || masterstrokeSelectionActive}
-            title={
-              voiceSelectionActive || masterstrokeSelectionActive
-                ? 'Finish the current selection before claiming rewards.'
-                : "Auto-apply non-interactive rewards (skips The Voice, Reverend Mother Mohiam, Test of Humanity, Masterstroke, trash, and OR choices)"
-            }
-          >
-            Auto-Apply Effects
-          </button>}
           <div className="button-pair">
             {!isCombatPhase && <button 
               className="play-intrigue-button"
@@ -1205,7 +1246,20 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             {!isCombatPhase && <button 
               className="end-turn-button"
               onClick={handleEndTurn}
-              disabled={!canEndTurn}
+              disabled={endTurnDisabled}
+              title={
+                endTurnDisabled && canEndTurn
+                  ? hasUnresolvedPendingRewards
+                    ? 'Claim or resolve all pending rewards before ending your turn.'
+                    : hasOpponentDiscard
+                      ? 'Resolve opponent discard instructions before ending your turn.'
+                      : hasPendingChoicesToResolve
+                        ? 'Resolve pending choices before ending your turn.'
+                        : selectionBlocksEndTurn
+                          ? 'Finish the current selection before ending your turn.'
+                          : undefined
+                  : undefined
+              }
             >
               End Turn
             </button>}
@@ -1218,6 +1272,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           </div>
         </div>
         </div>
+        </div>
       </div>
 
       {/* Card selection overlays - outside turn-controls so they stay visible when controls are hidden */}
@@ -1226,7 +1281,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         cards={activePlayer.deck}
         selectionCount={isRevealTurn ? activePlayer.handCount : 1}
         onSelect={handleCardSelection}
-        onCancel={() => setIsCardSelectionOpen(false)}
+        onCancel={() => {
+          setIsCardSelectionOpen(false)
+          setIsRevealTurn(false)
+        }}
         isRevealTurn={isRevealTurn}
         text={isRevealTurn ? 'Select Cards to Reveal' : 'Select a Card to Play'}
       />

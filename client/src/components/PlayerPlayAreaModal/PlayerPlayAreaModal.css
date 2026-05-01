@@ -5,7 +5,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1200;
+  /* Above history strip (1200), Player Overview (1300), and leader mini-modal (1310) */
+  z-index: 1320;
 }
 
 .player-play-area-modal {

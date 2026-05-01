@@ -37,7 +37,7 @@ const GameContent = () => {
     returnToCurrent,
   } = useTimeTravel()
 
-  const [useImageBoard, setUseImageBoard] = useState(false)
+  const [useImageBoard] = useState(true)
   const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(false)
   const [isPlayerOverviewOpen, setIsPlayerOverviewOpen] = useState(false)
   const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
@@ -302,19 +302,22 @@ const GameContent = () => {
     if (!root) return
 
     const measureFooterStack = () => {
-      let h = 0
-      const tc = turnControlsFooterRef.current
-      if (tc) {
-        const rect = tc.getBoundingClientRect()
-        h += rect.height
-      }
+      let total = 0
       const banner = historyBannerRef.current
       if (banner) {
         const rect = banner.getBoundingClientRect()
-        h += rect.height
+        const bh = Math.max(0, Math.ceil(rect.height))
+        total += bh
+        root.style.setProperty('--history-banner-measured-height', `${bh}px`)
+      } else {
+        root.style.setProperty('--history-banner-measured-height', '0px')
       }
-      const rounded = Math.max(0, Math.ceil(h))
-      root.style.setProperty('--footer-measured-height', `${rounded}px`)
+      const tc = turnControlsFooterRef.current
+      if (tc) {
+        const rect = tc.getBoundingClientRect()
+        total += Math.max(0, Math.ceil(rect.height))
+      }
+      root.style.setProperty('--footer-measured-height', `${Math.max(0, total)}px`)
     }
 
     const ro = new ResizeObserver(() => {
@@ -349,7 +352,16 @@ const GameContent = () => {
   ])
 
   return (
-    <div ref={gameContainerRef} className="game-container">
+    <div
+      ref={gameContainerRef}
+      className={[
+        'game-container',
+        'game-container--play',
+        isViewingHistory ? 'viewing-history' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       {isTurnHistoryOpen && (
         <TurnHistory 
           turns={gameState.history}
@@ -545,7 +557,6 @@ const GameContent = () => {
             onVoiceSelectionCancel={handleVoiceSelectionCancel}
             onMasterstrokeSelectionStart={handleMasterstrokeSelectionStart}
             masterstrokeSelectionActive={Boolean(masterstrokeSelectionRewardId)}
-            onMasterstrokeSelectionCancel={handleMasterstrokeSelectionCancel}
             onMemnonHighCouncilSelectionStart={handleMemnonHighCouncilSelectionStart}
             memnonHighCouncilSelectionActive={Boolean(memnonHighCouncilRewardId)}
             onOpponentNoCardAck={handleOpponentNoCardAck}
@@ -555,8 +566,6 @@ const GameContent = () => {
             gameState={gameState}
             onOpenPlayerOverview={() => setIsPlayerOverviewOpen(true)}
             onTurnHistoryToggle={() => setIsTurnHistoryOpen(open => !open)}
-            useImageBoard={useImageBoard}
-            onToggleImageBoard={() => setUseImageBoard(prev => !prev)}
           />
         </div>
         <div className="endgame-container" hidden={isViewingHistory || gameState.phase !== GamePhase.END_GAME}>
@@ -629,15 +638,21 @@ const GameContent = () => {
 }
 
 function getInfiltrate(gameState: GameState): boolean {
-  return gameState.selectedCard ? gameState.players[gameState.activePlayerId].deck.find(c => c.id === gameState.selectedCard)?.infiltrate || false : false
+  return Boolean(getSelectedCard(gameState)?.infiltrate)
 }
 
+/** While choosing a board space the card stays in deck; after PLACE_AGENT it lives in playArea — check both */
 function getSelectedCard(gameState: GameState): Card | null {
-  return gameState.selectedCard ? gameState.players[gameState.activePlayerId].deck.find(c => c.id === gameState.selectedCard) || null : null
+  const id = gameState.selectedCard
+  if (id === null || id === undefined) return null
+  const player = gameState.players[gameState.activePlayerId]
+  if (!player) return null
+  return player.deck.find(c => c.id === id) ?? player.playArea.find(c => c.id === id) ?? null
 }
 
-/** Board highlights for Agent placement only. Dispatch an Envoy does not add icons for Reveal. */
+/** Board hotspots: only while picking a space — not after agent is placed for this action (`currTurn.agentSpace`). */
 function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
+  if (gameState.currTurn?.agentSpace) return []
   const card = getSelectedCard(gameState)
   if (!card) return []
   const base = [...card.agentIcons]

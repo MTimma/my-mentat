@@ -253,24 +253,24 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   return (
     <div className={rootClass}>
       <div className="image-board__stage">
-        {imgError ? (
-          <div
-            className="image-board__fallback"
-            style={{ aspectRatio: BOARD_ASPECT_RATIO }}
-            role="img"
-            aria-label="Game board (no image file)"
-          />
-        ) : (
-          <img
-            className="image-board__img"
-            src={boardImageSrc}
-            alt="Dune: Imperium game board"
-            draggable={false}
-            onError={() => setImgError(true)}
-          />
-        )}
+        <div className="image-board__media" style={{ aspectRatio: BOARD_ASPECT_RATIO }}>
+          {imgError ? (
+            <div
+              className="image-board__fallback"
+              role="img"
+              aria-label="Game board (no image file)"
+            />
+          ) : (
+            <img
+              className="image-board__img"
+              src={boardImageSrc}
+              alt="Dune: Imperium game board"
+              draggable={false}
+              onError={() => setImgError(true)}
+            />
+          )}
 
-        <div className="image-board__overlay">
+          <div className="image-board__overlay">
           {BOARD_HOTSPOTS.map(hotspot => {
             const space = spaceMap.get(hotspot.spaceId)
             if (!space) return null
@@ -620,6 +620,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
               })}
             </div>
           )}
+          </div>
         </div>
       </div>
 

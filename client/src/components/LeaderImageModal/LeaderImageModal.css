@@ -5,7 +5,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1100;
+  /* Above turn controls (1100) and Player Overview (1300) when opened from overview */
+  z-index: 1310;
 }
 
 .leader-image-modal {

@@ -22,22 +22,140 @@
 .game-container {
   /* Spacer, endgame chip, Turn History overlay, and history padding use --footer-height. */
   --footer-height: var(--footer-measured-height, var(--footer-height-static));
+  /* Height of the fixed history strip; turn controls sit above it (see measureFooterStack). */
+  --history-banner-measured-height: 0px;
   max-width: 100%;
   margin: 0;
   padding: 10px;
+  box-sizing: border-box;
 }
 
 .imperium-row-container {
   margin-bottom: 4px;
 }
 
+/* Playing surface: lock to one viewport tall so the board scales instead of scrolling the page */
+html:has(.game-container--play) {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+body:has(.game-container--play) {
+  margin: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#root:has(.game-container--play) {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#root:has(.game-container--play) .app {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.game-container--play {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.game-container--play > .imperium-row-container {
+  flex: 0 0 auto;
+}
+
+.game-container--play > .main-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  align-self: stretch;
+}
+
+.game-container--play > .main-area .image-board {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-container--play > .main-area .image-board__stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-container--play > .main-area .image-board__media {
+  /* Match BOARD_ASPECT_RATIO on .image-board__media (inline style) — width/max-height fights
+     must shrink width when max-height binds (expanded mobile footer); fit-content broke that
+     alignment vs overlay % when shorter than collapsed layout. */
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  flex-shrink: 1;
+  margin-inline: auto;
+  align-self: center;
+}
+
+.game-container--play > .main-area .image-board__img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+}
+
+.game-container--play > .main-area .image-board .image-board__fallback {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  box-sizing: border-box;
+}
+
+.game-container--play > .main-area .game-board {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.game-container--play > .round-start-container:not([hidden]) {
+  flex: 0 0 auto;
+}
+
+.game-container--play > .turn-controls-spacer {
+  flex: 0 0 auto;
+}
+
 .main-area {
   display: flex;
   justify-content: center;
   width: 100%;
+  max-width: 100%;
   min-height: auto;
   padding: 0;
   margin: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .game-board {
@@ -48,6 +166,8 @@
   padding: 8px;
   border-radius: 8px;
   z-index: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .board-spaces {
@@ -953,13 +1073,14 @@
 
 .turn-controls-container {
   position: fixed;
-  bottom: 0;
+  /* Stack above the history strip so both stay visible (history stays at bottom). */
+  bottom: var(--history-banner-measured-height, 0px);
   left: 0;
   right: 0;
   background-color: var(--color-footer-bg);
   padding: 1rem;
   padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
-  z-index: 1000;
+  z-index: 1100;
 }
 
 .turn-controls-spacer {
@@ -1036,6 +1157,23 @@
   .turn-controls-container {
     padding: 0.3rem;
     padding-bottom: max(0.3rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Tight vertical rhythm between stacked panels inside the footer (TurnControls fragment children). */
+  .turn-controls-container > .combat-container {
+    margin-bottom: 6px !important;
+  }
+
+  .turn-controls-container > .voice-selection-banner {
+    margin-bottom: 4px;
+  }
+
+  .turn-controls-container > .effects-bar {
+    margin-bottom: 4px;
+  }
+
+  .turn-controls-container > .opponent-discard-panel {
+    margin-bottom: 6px;
   }
   
   .turn-controls-spacer {
@@ -1253,7 +1391,7 @@
 }
 
 /* When viewing history, add bottom padding so content isn't hidden behind the fixed banner */
-.game-container:has(.history-viewing-banner) {
+.game-container.game-container--play.viewing-history {
   padding-bottom: calc(var(--footer-height) + 12px);
 }
 

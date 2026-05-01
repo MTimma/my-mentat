@@ -38,12 +38,17 @@ export function checkAndApplyMasterstroke(
     masterStroke: { ...masterStroke, triggered: true },
   }
 
+  const pendingRewards = [...state.pendingRewards, pendingReward]
   return {
     ...state,
-    pendingRewards: [...state.pendingRewards, pendingReward],
+    pendingRewards,
     players: state.players.map((p) =>
       p.id === playerId ? { ...p, leader: updatedLeader } : p
     ),
+    canEndTurn:
+      pendingRewards.filter((r) => !r.disabled).length === 0 &&
+      !(state.currTurn?.pendingChoices?.length) &&
+      state.currTurn?.opponentDiscardState === undefined,
   }
 }
 
@@ -119,10 +124,18 @@ export function revertMasterstrokeIfNeeded(
     masterStroke: { ...masterStroke, triggered: false },
   }
 
-  return {
+  const withPlayers = {
     ...newState,
     players: newState.players.map((p) =>
       p.id === playerId ? { ...p, leader: updatedLeader } : p
     ),
+  }
+
+  return {
+    ...withPlayers,
+    canEndTurn:
+      withPlayers.pendingRewards.filter((r) => !r.disabled).length === 0 &&
+      !(withPlayers.currTurn?.pendingChoices?.length) &&
+      withPlayers.currTurn?.opponentDiscardState === undefined,
   }
 }

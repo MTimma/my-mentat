@@ -3,10 +3,19 @@
   width: 100%;
   max-width: 960px;
   margin: 0 auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .image-board__stage {
   position: relative;
+  width: 100%;
+}
+
+/* Wraps the raster + overlay so hotspots/markers use %-of-image, not the padded stage (see .game-container--play). */
+.image-board__media {
+  position: relative;
+  display: block;
   width: 100%;
 }
 
@@ -73,7 +82,9 @@
   cursor: not-allowed;
 }
 
-.image-board__hotspot.combat-space {
+/* Combat hint (desert / swords) — only when not in “valid play” gold highlight, which
+   would otherwise lose to this rule’s border-color and look reddish vs non-combat picks */
+.image-board__hotspot.combat-space:not(.highlighted) {
   border-color: rgba(191, 54, 12, 0.5);
 }
 

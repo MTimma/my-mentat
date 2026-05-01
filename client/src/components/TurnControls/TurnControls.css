@@ -1,9 +1,22 @@
 .turn-controls {
-  padding:  10px 10px 50px 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  /* background-color: #f9f9f9; */
   position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0;
+  padding: 10px 10px 50px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--color-arrakis-sand, #d4b16a) 28%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-arrakis-earth, #8b4513) 12%, var(--color-footer-bg, rgba(26, 22, 18, 0.94))) 0%,
+      var(--color-footer-bg, rgba(26, 22, 18, 0.94)) 100%
+    );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .selected-cards {
@@ -24,20 +37,111 @@
     color: #ffd700;
 }
 
-.selected-card-info .instruction {
-    font-size: 1rem;
-    color: #00ff00;
-    font-weight: bold;
-    animation: pulse 2s ease-in-out infinite;
+.selected-card-preview-img {
+  display: block;
+  max-height: clamp(52px, 10vh, 72px);
+  width: auto;
+  max-width: min(118px, 36vw);
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
 }
 
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.6;
-    }
+.selected-card-preview-img--sm {
+  max-height: clamp(36px, 7vh, 48px);
+  max-width: 44px;
+}
+
+.selected-cards-reveal-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.selected-cards-reveal-strip .selected-card-name-fallback {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* Above fixed .turn-controls, same stacking as .effects-bar (pending rewards). */
+.turn-controls-troop-rail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 auto 6px auto;
+  padding: 4px 6px;
+  max-width: 1200px;
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.turn-controls-troop-rail .add-troop-button,
+.turn-controls-troop-rail .remove-troop-button {
+  padding: 3px 7px;
+  font-size: 0.74rem;
+}
+
+/* Toolbar: Turn History · Player Overview · selected card (replaces board toggle) */
+.utility-buttons--with-inline-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.selected-card-inline-slot {
+  min-width: 44px;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 1 auto;
+  padding: 2px 4px;
+  border-radius: 6px;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.22);
+  box-sizing: border-box;
+}
+
+.selected-card-inline-img {
+  display: block;
+  max-height: clamp(40px, 10vh, 68px);
+  max-width: min(96px, 26vw);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.selected-card-inline-img--sm {
+  max-height: 34px;
+  max-width: 42px;
+}
+
+.selected-card-inline-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffd700;
+  text-align: center;
+  padding: 2px 4px;
+  max-width: 92px;
+  line-height: 1.15;
+}
+
+.selected-card-inline-placeholder {
+  display: block;
+  width: 36px;
+  height: 24px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .control-buttons {
@@ -47,14 +151,6 @@
 
 /* Intentionally no bare `button { }` rules here — they applied globally via this imported
    stylesheet and fought with index.css / setup screens. All footer controls use classes. */
-
-.turn-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1200px;
-    margin: 0;
-}
 
 .active-player-info {
     display: flex;
@@ -197,29 +293,23 @@
     min-width: 0;
   }
 
-  /* Row 1: Play Card, Reveal Turn, Turn History, Player Overview, Image/Legacy board */
+  /* Row 1: Play Card, Reveal Turn, Turn History, Player Overview, selected card */
   .turn-controls-buttons-grid .play-card-button { order: 1; }
   .turn-controls-buttons-grid .reveal-turn-button { order: 2; }
   .turn-controls-buttons-grid .utility-buttons .view-influence-button:nth-child(1) { order: 3; }
   .turn-controls-buttons-grid .utility-buttons .view-influence-button:nth-child(2) { order: 4; }
-  .turn-controls-buttons-grid .utility-buttons .view-influence-button:nth-child(3) { order: 5; }
-  /* Row 2: Deploy Troop, Retreat Troop, Play Intrigue, End Turn / Pass Combat */
-  .turn-controls-buttons-grid .add-troop-button { order: 6; }
-  .turn-controls-buttons-grid .remove-troop-button { order: 7; }
-  .turn-controls-buttons-grid .play-intrigue-button { order: 8; }
+  .turn-controls-buttons-grid .utility-buttons .selected-card-inline-slot { order: 5; }
+  /* Row 2: Play Intrigue, End Turn / Pass Combat (deploy/retreat live in .turn-controls-troop-rail) */
+  .turn-controls-buttons-grid .play-intrigue-button { order: 6; }
   .turn-controls-buttons-grid .end-turn-button,
-  .turn-controls-buttons-grid .pass-combat-button { order: 9; }
-  .turn-controls-buttons-grid .get-mandatory-effects-button { order: 10; }
+  .turn-controls-buttons-grid .pass-combat-button { order: 7; }
 
   .turn-controls-buttons-grid .view-influence-button,
   .turn-controls-buttons-grid .play-card-button,
   .turn-controls-buttons-grid .reveal-turn-button,
-  .turn-controls-buttons-grid .add-troop-button,
-  .turn-controls-buttons-grid .remove-troop-button,
   .turn-controls-buttons-grid .play-intrigue-button,
   .turn-controls-buttons-grid .end-turn-button,
-  .turn-controls-buttons-grid .pass-combat-button,
-  .turn-controls-buttons-grid .get-mandatory-effects-button {
+  .turn-controls-buttons-grid .pass-combat-button {
     padding: 0.5rem 0.75rem;
     font-size: 0.9rem;
   }
@@ -445,8 +535,78 @@
 
 @media (max-width: 600px) {
   .active-player-info {
-    font-size: 1rem;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
   }
+
+  .turn-controls {
+    padding: 6px 8px 10px 8px;
+    gap: 4px;
+  }
+
+  .selected-cards {
+    margin-bottom: 4px;
+    font-size: 0.88rem;
+  }
+
+  .utility-buttons {
+    margin-bottom: 4px;
+  }
+
+  .voice-selection-banner {
+    padding: 5px 8px;
+    margin-bottom: 4px;
+    font-size: 0.78rem;
+    line-height: 1.25;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .voice-selection-banner > span {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .voice-selection-banner .secondary-btn {
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+  }
+
+  .combat-container {
+    margin: 0 auto 6px auto;
+  }
+
+  .combat-phase-indicator {
+    padding: 5px 8px;
+    margin-bottom: 6px;
+    font-size: 0.82rem;
+  }
+
+  .combat-rankings {
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .opponent-discard-panel {
+    padding: 8px;
+    margin-bottom: 6px;
+  }
+
+  .effect-card-header {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .effect-btn {
+    font-size: 0.74rem;
+    padding: 3px 7px;
+    line-height: 1.25;
+  }
+
   .turn-controls-buttons-grid .control-buttons {
     flex-direction: column;
     gap: 0.5rem;
@@ -516,9 +676,9 @@
 /* Effects Bar - Unified display for all effect types */
 .effects-bar {
   display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding: 8px;
+  gap: 6px;
+  margin-bottom: 6px;
+  padding: 4px 6px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 6px;
   overflow-x: auto;
@@ -526,18 +686,19 @@
 }
 
 .effect-card {
-  min-width: 200px;
+  min-width: min(200px, 72vw);
+  flex: 0 0 auto;
   background: rgba(40, 40, 40, 0.9);
-  border: 2px solid #666;
-  border-radius: 6px;
-  padding: 8px;
+  border: 1px solid #555;
+  border-radius: 5px;
+  padding: 5px 6px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
 }
 
 .effect-card.mandatory {
-  border-color: #4CAF50;
+  border-color: #43a047;
 }
 
 .effect-card.optional {
@@ -548,30 +709,35 @@
 
 .effect-card-header {
   font-weight: bold;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
+  line-height: 1.2;
   color: #fff;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #666;
+  padding-bottom: 2px;
+  margin-bottom: 1px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 6px;
 }
 
 .optional-tag {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: #FFC107;
   font-style: italic;
+  flex-shrink: 0;
 }
 
 .effect-card-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .effect-btn {
-  padding: 6px 10px;
-  font-size: 0.85rem;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  line-height: 1.25;
   border: 1px solid #666;
   border-radius: 4px;
   background-color: #555;
@@ -580,6 +746,42 @@
   transition: all 0.2s;
   text-align: left;
   width: 100%;
+}
+
+.effect-label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.effect-influence-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.effect-faction-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+
+.effect-influence-amt {
+  font-weight: 600;
+  font-size: 0.8em;
+}
+
+.effect-btn .resource-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.effect-btn .res-amt {
+  font-size: 0.72rem;
 }
 
 .effect-btn:hover:not(:disabled) {
@@ -594,7 +796,7 @@
 }
 
 .effect-btn.trash-reward {
-  border: 2px solid #ff6b6b;
+  border: 1px solid #ff6b6b;
   background-color: #8b0000;
   position: relative;
 }
@@ -679,24 +881,43 @@
   background-color: rgba(33, 150, 243, 0.2);
 }
 
+.turn-controls-auto-apply-row {
+  flex: 1 1 100%;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.turn-controls-auto-apply-row .get-mandatory-effects-button {
+  width: 100%;
+  padding: 0.45rem 0.65rem !important;
+  font-size: 0.82rem !important;
+}
+
 .get-mandatory-effects-button {
   background-color: #4CAF50 !important;
   color: white !important;
   font-weight: bold;
-  padding: 0.75rem 1.5rem !important;
-  font-size: 1rem !important;
-  border: 2px solid #45a049 !important;
+  padding: 0.55rem 1rem !important;
+  font-size: 0.9rem !important;
+  border: 1px solid #45a049 !important;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
 .get-mandatory-effects-button:hover:not(:disabled) {
   background-color: #45a049 !important;
 }
 
+.get-mandatory-effects-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Horizontal OR choice layout */
 .or-choice-container {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   flex-wrap: wrap;
 }
 
@@ -815,6 +1036,84 @@
 }
 
 .modal-header .close-button:hover {
-  background-color: var(--color-arrakis-parchment-muted);
-  color: #000;
+    background-color: var(--color-arrakis-parchment-muted);
+    color: #000;
+}
+
+/* Mobile compact dock: one row (leader + primary + More); full grid in expanded panel */
+.turn-controls-compact-dock {
+  display: none;
+}
+
+.turn-controls-collapse-btn {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .turn-controls--compact .turn-controls-expanded-only {
+    display: none;
+  }
+
+  .turn-controls--compact .turn-controls-compact-dock {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    width: 100%;
+    margin-top: 2px;
+  }
+
+  .turn-controls:not(.turn-controls--compact) .turn-controls-compact-dock {
+    display: none;
+  }
+
+  .turn-controls-expanded-only .turn-controls-collapse-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 4px;
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+  }
+
+  .turn-controls--compact .turn-controls-collapse-btn {
+    display: none;
+  }
+
+  .turn-controls-compact-name {
+    flex: 1;
+    min-width: 0;
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .turn-controls-compact-primary {
+    flex: 0 0 auto;
+    padding: 6px 10px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .turn-controls-more-btn {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    border-radius: 4px;
+    border: 1px solid var(--color-arrakis-sand, #d4b16a);
+    background: rgba(212, 177, 106, 0.12);
+    color: var(--color-arrakis-parchment, #f4e4bc);
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .turn-controls-more-btn:active {
+    background: rgba(212, 177, 106, 0.22);
+  }
 }

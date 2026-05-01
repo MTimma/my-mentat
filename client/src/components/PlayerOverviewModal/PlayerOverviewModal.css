@@ -1,6 +1,6 @@
-/* Above turn controls (1000) but below bottom navigator (1200) */
+/* Above fixed footer (.turn-controls-container 1100) and history strip (1200) */
 .dialog-overlay.player-overview-overlay {
-  z-index: 1001;
+  z-index: 1300;
 }
 
 .player-overview-modal {

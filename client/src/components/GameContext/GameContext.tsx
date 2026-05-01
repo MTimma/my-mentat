@@ -987,6 +987,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const player = newState.players[playerId]
       if (!player) return state
 
+      // Do not advance the turn while mandatory resolutions are pending (e.g. Masterstroke faction pick).
+      if (state.phase !== GamePhase.END_GAME) {
+        if (state.pendingRewards.some((r) => !r.disabled)) return state
+        if (state.currTurn?.pendingChoices?.length) return state
+        if (state.currTurn?.opponentDiscardState) return state
+      }
+
       // Endgame uses a simpler “done” turn rotation (no agent/reveal structure).
       if (state.phase === GamePhase.END_GAME) {
         const done = new Set(newState.endgameDonePlayers || [])
