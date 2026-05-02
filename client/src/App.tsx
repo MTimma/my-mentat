@@ -60,6 +60,15 @@ const GameContent = () => {
     setMemnonHighCouncilRewardId(null)
   }, [isViewingHistory])
 
+  // Masterstroke modal is UI-only state; retreat can remove the pending reward from game state — close the modal when that happens
+  useEffect(() => {
+    if (!masterstrokeSelectionRewardId) return
+    const stillPending = gameState.pendingRewards.some(
+      (r) => r.id === masterstrokeSelectionRewardId
+    )
+    if (!stillPending) setMasterstrokeSelectionRewardId(null)
+  }, [gameState.pendingRewards, masterstrokeSelectionRewardId])
+
   // Use displayState for rendering, but gameState for actions
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
 
