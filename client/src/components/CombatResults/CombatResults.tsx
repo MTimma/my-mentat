@@ -106,7 +106,12 @@ const CombatResults: React.FC<CombatResultsProps> = ({
         <thead>
           <tr>
             <th>Player</th>
-            <th>Strength</th>
+            <th>
+              <span className="combat-results-strength-heading">
+                <img src="/icon/dagger.png" alt="" className="combat-results-strength-icon" aria-hidden="true" />
+                Strength
+              </span>
+            </th>
             <th>Place</th>
             <th>Details</th>
           </tr>
@@ -115,7 +120,12 @@ const CombatResults: React.FC<CombatResultsProps> = ({
           {results.map((result) => (
             <tr key={result.playerId}>
               <td>{players[result.playerId]?.leader.name || `Player ${result.playerId + 1}`}</td>
-              <td>{result.strength}</td>
+              <td>
+                <span className="combat-results-strength-value">
+                  <img src="/icon/dagger.png" alt="" className="combat-results-strength-icon" aria-hidden="true" />
+                  {result.strength}
+                </span>
+              </td>
               <td>{result.place}</td>
               <td>
                 <button 

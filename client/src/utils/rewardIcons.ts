@@ -3,17 +3,17 @@ import { RewardType } from '../types/GameTypes'
 /**
  * Maps RewardType enum values to their corresponding icon file paths
  */
-export const REWARD_ICON_MAP: Record<RewardType, string> = {
+export const REWARD_ICON_MAP: Partial<Record<RewardType, string>> = {
   [RewardType.SPICE]: 'icon/spice.png',
   [RewardType.WATER]: 'icon/water.png',
   [RewardType.SOLARI]: 'icon/solari.png',
   [RewardType.VICTORY_POINTS]: 'icon/vp.png',
   [RewardType.INTRIGUE]: 'icon/intrigue.png',
-  [RewardType.TROOPS]: 'icon/troops.png',
-  [RewardType.INFLUENCE]: 'icon/influence.png',
+  [RewardType.TROOPS]: 'icon/troop.png',
+  [RewardType.INFLUENCE]: 'icon/bump.png',
   [RewardType.CONTROL]: 'icon/control.png',
   [RewardType.AGENT]: 'icon/agent.png',
-  [RewardType.COMBAT]: 'icon/combat.png',
+  [RewardType.COMBAT]: 'icon/dagger.png',
   [RewardType.DRAW]: 'icon/draw.png',
   [RewardType.DISCARD]: 'icon/discard.png',
   [RewardType.TRASH]: 'icon/trash.png',

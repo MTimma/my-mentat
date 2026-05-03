@@ -464,8 +464,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     checkIntrigueCardPlayability(card as IntrigueCard).playable
   )
 
-  const Icon: React.FC<{ type: string; className?: string }> = ({ type, className }) =>
-    <img src={`/icon/${type}.png`} alt={type} className={className ?? 'resource-icon'} />
+  const Icon: React.FC<{ type: string; className?: string; alt?: string }> = ({ type, className, alt }) =>
+    <img src={`/icon/${type}.png`} alt={alt ?? type} className={className ?? 'resource-icon'} />
+
+  const renderIconValue = (type: string, amount: number, label: string, prefix = '') => (
+    <span className="effect-icon-token" title={`${label} ${prefix}${amount}`}>
+      <Icon type={type} className="effect-token-icon" alt="" />
+      <span className="effect-token-amt">{prefix}{amount}</span>
+    </span>
+  )
 
   const renderAmt = (amount: number | undefined, type: string) => {
     if (!amount) return null
@@ -497,16 +504,30 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       } else if (cost.influence) {
         left.push(<span key="influence">Influence</span>)
       }
-      if(cost.trash || cost.trashThisCard) left.push(<span key="trash">Trash</span>)
+      if(cost.trash || cost.trashThisCard) {
+        left.push(
+          <span key="trash" className="effect-icon-token" title="Trash">
+            <Icon type="trash" className="effect-token-icon" alt="" />
+          </span>
+        )
+      }
       if(costLabel) left.push(<span key="cost">{costLabel}</span>)
     }
     const right: React.ReactNode[] = []
     right.push(renderAmt(reward.spice,'spice'))
     right.push(renderAmt(reward.water,'water'))
     right.push(renderAmt(reward.solari,'solari'))
-    if(reward.drawCards) right.push(<span key="draw">Draw {reward.drawCards}</span>)
-    if(reward.troops) right.push(<span key="troops">{reward.troops} Troops</span>)
-    if(reward.intrigueCards) right.push(<span key="intrigue">Intrigue +{reward.intrigueCards}</span>)
+    if(reward.combat) right.push(<React.Fragment key="combat">{renderIconValue('dagger', reward.combat, 'Combat', '+')}</React.Fragment>)
+    if(reward.drawCards) right.push(<React.Fragment key="draw">{renderIconValue('draw', reward.drawCards, 'Draw')}</React.Fragment>)
+    if(reward.troops) right.push(<React.Fragment key="troops">{renderIconValue('troop', reward.troops, 'Troops')}</React.Fragment>)
+    if(reward.intrigueCards) right.push(<React.Fragment key="intrigue">{renderIconValue('intrigue', reward.intrigueCards, 'Intrigue', '+')}</React.Fragment>)
+    if(reward.trash || reward.trashThisCard) {
+      right.push(
+        <span key="trash" className="effect-icon-token" title="Trash">
+          <Icon type="trash" className="effect-token-icon" alt="" />
+        </span>
+      )
+    }
     if (reward.influence?.amounts?.length) {
       reward.influence.amounts.forEach((inf: InfluenceAmount, idx: number) => {
         right.push(
@@ -764,7 +785,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   title={tooltip}
                 >
                   {reward.isTrash && <span className="warning-icon">⚠️ </span>}
-                  {isMasterstrokeReward ? 'Masterstroke: Choose 2 factions' : isMemnonReward ? 'Connections: Choose 1 faction' : renderLabel({ reward: reward.reward })}
+                  {isMasterstrokeReward ? (
+                    <span className="effect-label">
+                      Masterstroke: Choose 2 <Icon type="bump" className="effect-token-icon" alt="" />
+                    </span>
+                  ) : isMemnonReward ? (
+                    <span className="effect-label">
+                      Connections: Choose 1 <Icon type="bump" className="effect-token-icon" alt="" />
+                    </span>
+                  ) : renderLabel({ reward: reward.reward })}
                 </button>
               )})}
               
@@ -990,7 +1019,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               const hasPassed = combatPasses.has(playerId)
               return (
                 <div key={playerId} className={`combat-rank rank-${rank} ${hasPassed ? 'passed' : ''}`}>
-                  {rank}. <AgentIcon playerId={playerId} />: {strength} strength 
+                  {rank}. <AgentIcon playerId={playerId} />:
+                  <span className="combat-strength-token" title={`${strength} strength`}>
+                    <Icon type="dagger" className="combat-strength-icon" alt="" />
+                    {strength}
+                  </span>
                   {player && ` (${player.leader.name})`}
                   {hasPassed && <span className="pass-indicator"> ✓ Passed</span>}
                 </div>
@@ -1006,21 +1039,32 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         <div className="turn-controls-troop-rail" role="group" aria-label="Conflict troops">
           <button
             type="button"
-            className="add-troop-button"
+            className="troop-action-button troop-deploy-button"
             onClick={() => onAddTroop(activePlayer.id)}
             disabled={
               !canDeployTroops || activePlayer.troops <= 0 || deployableTroops <= 0
             }
+            aria-label={`Deploy one troop. ${deployableTroops} available to deploy.`}
+            title={`Deploy troop (${deployableTroops} available)`}
           >
-            Deploy Troop ({deployableTroops})
+            <span className="troop-available-count">{deployableTroops}</span>
+            <img src="/icon/troop.png" alt="" className="troop-action-icon" />
+            <span className="troop-action-arrow" aria-hidden="true">➤</span>
           </button>
+          <div className="troop-action-status" aria-label={`${retreatableTroops} troops deployed this turn`}>
+            <span className="troop-status-label">Deployed</span>
+            <span className="troop-deployed-count">{retreatableTroops}</span>
+          </div>
           <button
             type="button"
-            className="remove-troop-button"
+            className="troop-action-button troop-retreat-button"
             onClick={() => onRemoveTroop(activePlayer.id)}
             disabled={!canDeployTroops || retreatableTroops <= 0}
+            aria-label={`Retreat one troop. ${retreatableTroops} can retreat.`}
+            title={`Retreat troop (${retreatableTroops} available)`}
           >
-            Retreat Troop ({retreatableTroops})
+            <span className="troop-action-arrow" aria-hidden="true">◄</span>
+            <img src="/icon/troop.png" alt="" className="troop-action-icon" />
           </button>
         </div>
       )}

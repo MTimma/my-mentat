@@ -24,7 +24,9 @@ function formatRewards(rewards: ConflictReward[] = []) {
     if (r.chooseFaction && r.type === RewardType.INFLUENCE) {
       return (
         <span key={i} className="reward reward-influence">
-          {r.amount} Influence (choose faction)
+          <img src="/icon/bump.png" alt="" className="reward-icon" aria-hidden="true" />
+          <span>{r.amount}</span>
+          <span>(choose faction)</span>
         </span>
       )
     }

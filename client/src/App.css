@@ -573,6 +573,19 @@ body:has(.game-container--play) {
   border-radius: 4px;
 }
 
+.strength-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.combat-area-strength-icon {
+  width: 1.1em;
+  height: 1.1em;
+  object-fit: contain;
+}
+
 .combat-rewards {
   display: flex;
   flex-direction: column;

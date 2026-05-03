@@ -82,10 +82,122 @@
   border-radius: 4px;
 }
 
-.turn-controls-troop-rail .add-troop-button,
-.turn-controls-troop-rail .remove-troop-button {
-  padding: 3px 7px;
-  font-size: 0.74rem;
+.troop-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(22, 18, 14, 0.92), rgba(8, 7, 6, 0.88));
+  color: var(--color-arrakis-parchment);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+.troop-action-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.troop-action-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+
+.troop-action-arrow {
+  font-size: 1.1rem;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.troop-available-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-arrakis-parchment);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.troop-action-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.24);
+  color: rgba(255, 255, 255, 0.76);
+  box-sizing: border-box;
+}
+
+.troop-status-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.troop-deployed-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #d32f2f;
+  color: white;
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.troop-deploy-button {
+  border-color: rgba(211, 47, 47, 0.78);
+}
+
+.troop-deploy-button .troop-action-arrow {
+  color: #ff3b30;
+  text-shadow: 0 0 7px rgba(255, 59, 48, 0.5);
+}
+
+.troop-deploy-button:hover:not(:disabled) {
+  border-color: #ff5a4f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 12px rgba(211, 47, 47, 0.42);
+}
+
+.troop-retreat-button {
+  border-color: rgba(154, 91, 44, 0.82);
+}
+
+.troop-retreat-button .troop-action-arrow {
+  color: #c56a52;
+}
+
+.troop-retreat-button:hover:not(:disabled) {
+  border-color: #c38b5f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 12px rgba(154, 91, 44, 0.36);
+}
+
+.troop-action-button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(0.45);
 }
 
 /* Toolbar: Turn History · Player Overview · selected card (replaces board toggle) */
@@ -378,9 +490,7 @@
 }
 
 
-.end-turn-button,
-.add-troop-button,
-.remove-troop-button {
+.end-turn-button {
   padding: 4px 8px;
   border: 2px solid var(--color-arrakis-earth);
   border-radius: 4px;
@@ -391,23 +501,10 @@
   font-size: 0.8em;
 }
 
-.end-turn-button:hover:not(:disabled),
-.add-troop-button:hover:not(:disabled),
-.remove-troop-button:hover:not(:disabled) {
+.end-turn-button:hover:not(:disabled) {
   background-color: var(--color-arrakis-parchment-muted);
 }
 
-.remove-troop-button {
-  border-color: #d32f2f;
-  color: #d32f2f;
-}
-
-.remove-troop-button:hover:not(:disabled) {
-  background-color: #ffebee;
-}
-
-.add-troop-button:disabled,
-.remove-troop-button:disabled,
 .end-turn-button:disabled,
 .pass-combat-button:disabled {
   opacity: 0.42;
@@ -471,6 +568,20 @@
   border-radius: 4px;
   background-color: rgba(0, 0, 0, 0.2);
   transition: opacity 0.3s;
+}
+
+.combat-strength-token {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 800;
+}
+
+.combat-strength-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.55));
 }
 
 .combat-rank.passed {
@@ -753,6 +864,27 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 6px;
+}
+
+.effect-icon-token {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.effect-token-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+
+.effect-token-amt {
+  font-weight: 800;
+  line-height: 1;
 }
 
 .effect-influence-line {

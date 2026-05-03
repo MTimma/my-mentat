@@ -24,12 +24,22 @@
   font-weight: 500;
   margin-right: 4px;
 }
-.reward {
+.conflict-summary .reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   background: rgba(255,255,255,0.1);
   border-radius: 4px;
   padding: 2px 6px;
   margin-right: 4px;
   font-size: 0.95em;
+}
+
+.conflict-summary .reward-icon {
+  width: 1.2em;
+  height: 1.2em;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 .first-place .place { color: #ffd700; }
 .second-place .place { color: #c0c0c0; }

@@ -529,11 +529,24 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   >
                     <span className="image-board__combat-stat-p">{p.leader.name}</span>
                     <span className="image-board__combat-stat-n">
-                      str&nbsp;{str}
+                      <img
+                        src="/icon/dagger.png"
+                        alt=""
+                        className="image-board__combat-stat-icon"
+                        aria-hidden="true"
+                      />
+                      {str}
                       {troops > 0 ? (
                         <>
                           {' '}
-                          <span className="image-board__combat-stat-sep">·</span> trp&nbsp;{troops}
+                          <span className="image-board__combat-stat-sep">·</span>
+                          <img
+                            src="/icon/troop.png"
+                            alt=""
+                            className="image-board__combat-stat-icon"
+                            aria-hidden="true"
+                          />
+                          {troops}
                         </>
                       ) : null}
                     </span>

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Player, ConflictCard, FactionType } from '../types/GameTypes'
+import { Player, ConflictCard } from '../types/GameTypes'
 
 interface CombatAreaProps {
   troops: Record<number, number>  // playerId -> number of troops
@@ -11,7 +11,6 @@ interface CombatAreaProps {
 const CombatArea: React.FC<CombatAreaProps> = ({
   troops,
   players,
-  currentConflict,
   combatStrength = {}
 }) => {
   const renderTroops = (playerId: number) => {
@@ -31,7 +30,10 @@ const CombatArea: React.FC<CombatAreaProps> = ({
 
     return (
       <div className="combat-strength">
-        <span className="strength-value">⚔️ {strength}</span>
+        <span className="strength-value">
+          <img src="/icon/dagger.png" alt="" className="combat-area-strength-icon" aria-hidden="true" />
+          {strength}
+        </span>
       </div>
     )
   }

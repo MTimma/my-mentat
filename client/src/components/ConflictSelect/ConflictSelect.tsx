@@ -59,7 +59,14 @@ const ConflictSelect: React.FC<ConflictSelectProps> = ({ conflicts, handleConfli
           if (r.chooseFaction && r.type === RewardType.INFLUENCE) {
             return (
               <li key={i} className="conflict-reward-item">
-                <span className="conflict-reward-label">{r.amount} Influence (choose faction)</span>
+                <img
+                  src="/icon/bump.png"
+                  alt=""
+                  className="conflict-reward-icon"
+                  aria-hidden
+                />
+                <span className="conflict-reward-amount">{r.amount}</span>
+                <span className="conflict-reward-label">(choose faction)</span>
               </li>
             );
           }

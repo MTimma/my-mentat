@@ -62,6 +62,20 @@
   text-align: center;
 }
 
+.combat-results-strength-heading,
+.combat-results-strength-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.combat-results-strength-icon {
+  width: 1.1em;
+  height: 1.1em;
+  object-fit: contain;
+}
+
 .confirm-button, .details-button, .close-button {
   padding: 8px 16px;
   background-color: #d4af37;

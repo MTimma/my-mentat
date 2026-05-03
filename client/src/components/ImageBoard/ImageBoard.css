@@ -251,7 +251,17 @@
 }
 
 .image-board__combat-stat-n {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
   font-variant-numeric: tabular-nums;
+}
+
+.image-board__combat-stat-icon {
+  width: 1.15em;
+  height: 1.15em;
+  object-fit: contain;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
 }
 
 /* ?markerDebug=1 — tune anchors in boardMarkerAnchors.ts (same workflow as hotspotDebug) */
