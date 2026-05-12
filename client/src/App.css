@@ -1,6 +1,7 @@
 :root {
   /* Fallback before JS measures the fixed footer (turn controls + history banner). */
   --footer-height-static: 84px;
+  --play-shell-max-width: 1000px;
 }
 
 #root {
@@ -34,45 +35,36 @@
   margin-bottom: 4px;
 }
 
-/* Playing surface: lock to one viewport tall so the board scales instead of scrolling the page */
+/* Playing surface: keep the board at its natural image size so marker coordinates stay aligned. */
 html:has(.game-container--play) {
-  height: 100dvh;
-  max-height: 100dvh;
-  overflow: hidden;
+  min-height: 100dvh;
 }
 
 body:has(.game-container--play) {
   margin: 0;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
+  min-height: 100dvh;
 }
 
 #root:has(.game-container--play) {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
-  height: 100dvh;
-  max-height: 100dvh;
-  overflow: hidden;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 
 #root:has(.game-container--play) .app {
   flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .game-container--play {
-  flex: 1;
-  min-height: 0;
+  width: min(100%, var(--play-shell-max-width));
+  margin-inline: auto;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .game-container--play > .imperium-row-container {
@@ -80,55 +72,34 @@ body:has(.game-container--play) {
 }
 
 .game-container--play > .main-area {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
+  flex: 0 0 auto;
+  overflow: visible;
   align-self: stretch;
 }
 
 .game-container--play > .main-area .image-board {
-  flex: 1 1 auto;
-  min-height: 0;
-  height: auto;
-  max-height: none;
-  display: flex;
-  flex-direction: column;
+  flex: 0 0 auto;
 }
 
 .game-container--play > .main-area .image-board__stage {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
 }
 
 .game-container--play > .main-area .image-board__media {
-  /* Match BOARD_ASPECT_RATIO on .image-board__media (inline style) — width/max-height fights
-     must shrink width when max-height binds (expanded mobile footer); fit-content broke that
-     alignment vs overlay % when shorter than collapsed layout. */
   width: 100%;
+  height: auto;
   max-width: 100%;
-  max-height: 100%;
-  min-width: 0;
-  flex-shrink: 1;
   margin-inline: auto;
-  align-self: center;
 }
 
 .game-container--play > .main-area .image-board__img {
   width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  object-fit: contain;
+  height: auto;
+  object-fit: initial;
 }
 
 .game-container--play > .main-area .image-board .image-board__fallback {
   width: 100%;
-  height: 100%;
-  min-height: 0;
-  flex: 1 1 auto;
   box-sizing: border-box;
 }
 
@@ -143,7 +114,7 @@ body:has(.game-container--play) {
 }
 
 .game-container--play > .turn-controls-spacer {
-  flex: 0 0 auto;
+  display: none;
 }
 
 .main-area {
@@ -950,6 +921,7 @@ body:has(.game-container--play) {
 
 .app {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -994,16 +966,27 @@ body:has(.game-container--play) {
 
 .setup-container {
   background-color: var(--color-arrakis-parchment);
-  padding: 1rem 1rem 0.5rem 1rem;
+  padding: 1rem;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
   border-radius: 12px;
   max-width: 800px;
   width: 90%;
-  margin: 2rem auto 1rem auto;
-  max-height: 90vh;
-  overflow-y: auto;
+  margin: max(12px, env(safe-area-inset-top)) auto max(12px, env(safe-area-inset-bottom));
+  /* iOS/Safari: vh excludes dynamic chrome inconsistently — dvh tracks visible viewport better */
+  max-height: min(90dvh, calc(100dvh - 32px));
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
+  box-sizing: border-box;
+}
+
+.setup-container-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .setup-container h1 {
@@ -1071,10 +1054,10 @@ body:has(.game-container--play) {
   border-radius: 8px;
   font-size: 1.2rem;
   cursor: pointer;
-  margin-top: 1rem;
-  position: sticky;
-  bottom: 0;
-  left: 0;
+  margin-top: 0.75rem;
+  flex-shrink: 0;
+  position: relative;
+  left: auto;
   z-index: 10;
   box-shadow: 0 -2px 8px var(--color-arrakis-earth-footer-glow);
 }
@@ -1087,13 +1070,21 @@ body:has(.game-container--play) {
 .turn-controls-container {
   position: fixed;
   /* Stack above the history strip so both stay visible (history stays at bottom). */
-  bottom: var(--history-banner-measured-height, 0px);
-  left: 0;
-  right: 0;
+  bottom: calc(var(--history-banner-measured-height, 0px) + var(--vv-layout-gap-bottom, 0px));
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(calc(100vw - 24px), var(--play-shell-max-width));
   background-color: var(--color-footer-bg);
   padding: 1rem;
+  /* constant() = legacy iOS; env() = current — both need viewport-fit=cover */
+  padding-bottom: max(1rem, constant(safe-area-inset-bottom));
   padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
   z-index: 1100;
+  border: 1px solid rgba(212, 177, 106, 0.22);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  box-sizing: border-box;
 }
 
 .turn-controls-spacer {
@@ -1104,7 +1095,7 @@ body:has(.game-container--play) {
 .endgame-container {
   position: fixed;
   right: 16px;
-  bottom: calc(var(--footer-height) + 16px);
+  bottom: calc(var(--footer-height) + 16px + var(--vv-layout-gap-bottom, 0px));
   z-index: 1101;
   background: rgba(28, 30, 34, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1168,7 +1159,15 @@ body:has(.game-container--play) {
   }
   
   .turn-controls-container {
+    width: 100%;
+    left: 0;
+    right: 0;
+    transform: none;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
     padding: 0.3rem;
+    padding-bottom: max(0.3rem, constant(safe-area-inset-bottom));
     padding-bottom: max(0.3rem, env(safe-area-inset-bottom, 0px));
   }
 
@@ -1196,7 +1195,7 @@ body:has(.game-container--play) {
   .endgame-container {
     left: 8px;
     right: 8px;
-    bottom: calc(var(--footer-height) + 8px);
+    bottom: calc(var(--footer-height) + 8px + var(--vv-layout-gap-bottom, 0px));
     max-width: none;
     padding: 10px 12px;
   }
@@ -1272,12 +1271,13 @@ body:has(.game-container--play) {
 /* Time Travel / History Viewing Banner */
 .history-viewing-banner {
   position: fixed;
-  bottom: 0;
+  bottom: var(--vv-layout-gap-bottom, 0px);
   left: 0;
   right: 0;
   background: #1c1e22;
   color: #e0e0e0;
   padding: 6px 16px;
+  padding-bottom: max(6px, constant(safe-area-inset-bottom));
   padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
   display: flex;
   align-items: center;
@@ -1357,6 +1357,7 @@ body:has(.game-container--play) {
   }
   .history-viewing-banner {
     padding: 4px 8px;
+    padding-bottom: max(4px, constant(safe-area-inset-bottom));
     padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
     gap: 8px;
   }
@@ -1383,6 +1384,7 @@ body:has(.game-container--play) {
   }
   .history-viewing-banner {
     padding: 3px 6px;
+    padding-bottom: max(3px, constant(safe-area-inset-bottom));
     padding-bottom: max(3px, env(safe-area-inset-bottom, 0px));
     gap: 6px;
   }

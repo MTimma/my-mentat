@@ -1,13 +1,16 @@
 .game-state-setup {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: max(12px, env(safe-area-inset-top, 0px)) env(safe-area-inset-right, 0px)
+    max(12px, env(safe-area-inset-bottom, 0px)) env(safe-area-inset-left, 0px);
   background-color: rgba(139, 69, 19, 0.95);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   z-index: 1000;
 }
 
@@ -49,6 +52,40 @@
   flex-direction: column;
   gap: 12px;
   margin: 1.5rem 0;
+}
+
+.setup-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 2px solid rgba(139, 69, 19, 0.45);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.setup-option-row p {
+  margin: 4px 0 0;
+  color: #5c3d24;
+  font-size: 0.9rem;
+}
+
+.setup-toggle-button {
+  min-width: 72px;
+  padding: 10px 14px;
+  border: 2px solid #8b4513;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #8b4513;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.setup-toggle-button-on {
+  background: #2f6f35;
+  border-color: #2f6f35;
+  color: #fff;
 }
 
 .toggle-editor-button {

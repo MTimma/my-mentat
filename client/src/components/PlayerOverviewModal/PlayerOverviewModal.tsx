@@ -82,6 +82,7 @@ const PlayerOverviewModal = ({
     { key: 'playArea', label: 'Play Area', value: player => (player.playArea?.length ?? 0), highlightBest: true },
     { key: 'deck', label: 'Deck', value: player => player.deck.length, highlightBest: true },
     { key: 'discard', label: 'Discard', value: player => player.discardPile.length, highlightBest: true },
+    { key: 'trash', label: 'Trash', icon: 'trash', value: player => player.trash.length, highlightBest: true },
     { key: 'intrigue', label: 'Intrigue', value: player => player.intrigueCount, highlightBest: true }
   ]
 

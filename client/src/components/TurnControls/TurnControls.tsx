@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react'
-import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount } from '../../types/GameTypes'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS } from '../../types/GameTypes'
 import { intrigueCardHasCustom } from '../../utils/intrigueCardCustom'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
 import { intrigueRequirementSatisfied } from '../GameContext/requirements'
-import { getLeaderImage } from '../../data/leaders'
+import { getLeaderIconPath, getLeaderImage } from '../../data/leaders'
 import LeaderImageModal from '../LeaderImageModal/LeaderImageModal'
 import PlayerTargetDialog from '../PlayerTargetDialog'
 import './TurnControls.css'
@@ -41,9 +41,11 @@ interface TurnControlsProps {
   selectedCard?: Card | null
   recallMode?: boolean
   pendingRewards?: PendingReward[]
-  onClaimReward?: (rewardId: string) => void
+  onClaimReward?: (rewardId: string, customData?: { trashedCardId?: number; [key: string]: unknown }) => void
   onClaimAllRewards?: () => void
   onAutoApplyRewards?: () => void
+  autoApplyMandatoryRewards?: boolean
+  autoAppliedRewardSummary?: Array<{ id: string; sourceName: string; reward: Reward }>
   agentPlaced?: boolean
   opponentDiscardState?: GameTurn['opponentDiscardState']
   onOpponentDiscardChoice?: (opponentId: number, choice: 'discard' | 'loseTroop') => void
@@ -66,8 +68,50 @@ interface TurnControlsProps {
   firstPlayerMarker?: number
   mentatOwner?: number | null
   gameState?: GameState
+  isHistoryView?: boolean
   onOpenPlayerOverview?: () => void
   onTurnHistoryToggle?: () => void
+}
+
+const TurnHistoryIcon = () => (
+  <svg className="utility-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M5 6.5h8.5" />
+    <path d="M5 11.5h6.5" />
+    <path d="M5 16.5h5" />
+    <circle cx="16.5" cy="15.5" r="4.25" />
+    <path d="M16.5 13v2.7l2 1.1" />
+    <path d="M3.5 6.5h.01M3.5 11.5h.01M3.5 16.5h.01" />
+  </svg>
+)
+
+const PlayerOverviewIcon = () => (
+  <svg className="utility-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <circle cx="7.25" cy="7.25" r="2.25" />
+    <path d="M3.75 13.25c.6-1.85 1.85-2.75 3.5-2.75s2.9.9 3.5 2.75" />
+    <circle cx="15.75" cy="6.75" r="1.85" />
+    <path d="M12.85 11.75c.5-1.35 1.5-2 2.9-2s2.4.65 2.9 2" />
+    <path d="M5 20v-3.25" />
+    <path d="M11 20v-5.25" />
+    <path d="M17 20v-7.25" />
+    <path d="M3.5 20h16.75" />
+  </svg>
+)
+
+const MagnifyingGlassIcon = () => (
+  <svg className="see-leader-magnifier" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <circle cx="10.5" cy="10.5" r="5.5" />
+    <path d="M15 15l4.5 4.5" />
+  </svg>
+)
+
+/** Rewards that require a tap / modal / board step (not plain +resource claims), e.g. The Voice. */
+function rewardNeedsInteractionHighlight(reward: Reward): boolean {
+  if (reward.custom) {
+    return !AUTO_APPLIED_CUSTOM_EFFECTS.includes(reward.custom)
+  }
+  if (reward.mentat || reward.acquire) return true
+  if (reward.influence?.chooseOne) return true
+  return false
 }
 
 const TurnControls: React.FC<TurnControlsProps> = ({
@@ -98,11 +142,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onResolveChoice,
   onResolveCardSelect,
   selectedCard = null,
-  recallMode = false,
   pendingRewards = [],
   onClaimReward,
-  onClaimAllRewards,
   onAutoApplyRewards,
+  autoApplyMandatoryRewards = true,
+  autoAppliedRewardSummary = [],
   agentPlaced = false,
   opponentDiscardState,
   onOpponentDiscardChoice,
@@ -110,7 +154,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   combatTroops = {},
   onVoiceSelectionStart,
   voiceSelectionActive = false,
-  onVoiceSelectionCancel,
   onMasterstrokeSelectionStart,
   masterstrokeSelectionActive = false,
   onMemnonHighCouncilSelectionStart,
@@ -119,12 +162,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   intrigueDeck,
   gamePhase,
   activeIntrigueThisRound = [],
-  factionInfluence,
-  factionAlliances,
-  controlMarkers,
-  firstPlayerMarker,
-  mentatOwner,
   gameState,
+  isHistoryView = false,
   onOpenPlayerOverview,
   onTurnHistoryToggle
 }) => {
@@ -138,14 +177,25 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [mobilizeCount, setMobilizeCount] = useState(0)
 
   useEffect(() => {
-    if (activePlayer && gameState?.pendingRapidMobilization === activePlayer.id) {
+    if (activePlayer?.id !== undefined && gameState?.pendingRapidMobilization === activePlayer.id) {
       setMobilizeCount(0)
     }
   }, [gameState?.pendingRapidMobilization, activePlayer?.id])
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
+  const [pendingTrashReward, setPendingTrashReward] = useState<PendingReward | null>(null)
   const [activeCardSelect, setActiveCardSelect] = useState<CardSelectChoice | null>(null)
   const [opponentCardSelect, setOpponentCardSelect] = useState<Player | null>(null)
-  const hasPendingVoiceReward = pendingRewards.some(r => r.reward.custom === CustomEffect.THE_VOICE && !r.disabled)
+  const [activeFixedChoice, setActiveFixedChoice] = useState<FixedOptionsChoice | null>(null)
+  const [activeCardEffectSource, setActiveCardEffectSource] = useState<{ type: GainSource; id: number } | null>(null)
+  const [activeCardPreviewId, setActiveCardPreviewId] = useState<number | null>(null)
+  const [activeIntriguePreviewCard, setActiveIntriguePreviewCard] = useState<IntrigueCard | null>(null)
+
+  /** Clears played-card overlay; avoids stale preview ids matching deck/discard after trash. */
+  const closeCardEffectsDialog = useCallback(() => {
+    setActiveCardPreviewId(null)
+    setActiveCardEffectSource(null)
+  }, [])
+
   const hasOpponentDiscard = Boolean(opponentDiscardState)
   const hasMandatoryRewards = pendingRewards.some(r => !r.disabled && !r.isTrash)
   const hasUnresolvedPendingRewards = pendingRewards.some(r => !r.disabled)
@@ -153,31 +203,16 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const selectionBlocksEndTurn =
     voiceSelectionActive || masterstrokeSelectionActive || memnonHighCouncilSelectionActive
   const endTurnDisabled =
+    isHistoryView ||
     !canEndTurn ||
     hasUnresolvedPendingRewards ||
     hasOpponentDiscard ||
     hasPendingChoicesToResolve ||
     selectionBlocksEndTurn
-  const showAutoApplyRewardsButton =
-    !isCombatPhase && pendingRewards.length > 0 && pendingRewards.some(r => !r.disabled)
-  const resolvedFactionAlliances = factionAlliances ?? gameState?.factionAlliances ?? {
-    [FactionType.EMPEROR]: null,
-    [FactionType.SPACING_GUILD]: null,
-    [FactionType.BENE_GESSERIT]: null,
-    [FactionType.FREMEN]: null
-  }
-  const resolvedControlMarkers = controlMarkers ?? gameState?.controlMarkers ?? {
-    [ControlMarkerType.ARRAKIN]: null,
-    [ControlMarkerType.CARTHAG]: null,
-    [ControlMarkerType.IMPERIAL_BASIN]: null
-  }
-  const resolvedFirstPlayerMarker = firstPlayerMarker ?? gameState?.firstPlayerMarker ?? -1
-  const resolvedMentatOwner = mentatOwner ?? gameState?.mentatOwner ?? null
-
   // Automatically open CardSelectChoice if it's the only pending choice and not already open
   useEffect(() => {
     const cardSelectChoices = pendingChoices.filter(c => c.type === ChoiceType.CARD_SELECT) as CardSelectChoice[]
-    if (cardSelectChoices.length === 1 && !activeCardSelect && !voiceSelectionActive && !masterstrokeSelectionActive && !hasOpponentDiscard) {
+    if (!isHistoryView && cardSelectChoices.length === 1 && !activeCardSelect && !voiceSelectionActive && !masterstrokeSelectionActive && !hasOpponentDiscard) {
       setActiveCardSelect(cardSelectChoices[0])
     } else if (cardSelectChoices.length === 0 && activeCardSelect) {
       // Clear activeCardSelect if there are no more card select choices
@@ -185,33 +220,176 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
   }, [pendingChoices, activeCardSelect, voiceSelectionActive, masterstrokeSelectionActive, hasOpponentDiscard])
 
+  useEffect(() => {
+    if (activeFixedChoice && !pendingChoices.some(choice => choice.id === activeFixedChoice.id)) {
+      setActiveFixedChoice(null)
+    }
+  }, [activeFixedChoice, pendingChoices])
+
+  useEffect(() => {
+    if (!isHistoryView) return
+
+    setActiveCardPreviewId(null)
+    setActiveCardEffectSource(null)
+    setActiveCardSelect(null)
+    setOpponentCardSelect(null)
+    setActiveFixedChoice(null)
+    setPendingEffect(null)
+    setPendingTrashReward(null)
+    setIsCardSelectionOpen(false)
+    setIsIntrigueSelectionOpen(false)
+    setShowTrashPopup(false)
+    setPendingIntrigueTarget(null)
+    setIsRevealTurn(false)
+    setSelectedCards([])
+    setActiveIntriguePreviewCard(null)
+  }, [
+    isHistoryView,
+    activePlayer?.id,
+    gameState?.currTurn?.playerId,
+    gameState?.currTurn?.type,
+    gameState?.currTurn?.cardId,
+    gameState?.currTurn?.revealedCardIds?.join(',')
+  ])
+
   const isEndGame = gamePhase === GamePhase.END_GAME
 
+  const playedIntrigueCards = (gameState?.currTurn?.playedIntrigueCard || [])
+    .map(play =>
+      gameState?.intrigueDiscard.find(card => card.id === play.cardId) ||
+      gameState?.intrigueDeck.find(card => card.id === play.cardId) ||
+      activeIntrigueThisRound.find(card => card.id === play.cardId)
+    )
+    .filter((card): card is IntrigueCard => Boolean(card))
+  const playedIntriguePreviewIdsKeyEarly = playedIntrigueCards.map(c => c.id).join(',')
+  const playAreaPreviewIdsKeyEarly = activePlayer
+    ? [
+        ...activePlayer.playArea,
+        ...selectedCards,
+        ...(selectedCard && !activePlayer.revealed && !isRevealTurn ? [selectedCard] : [])
+      ]
+        .filter((card, index, cards) => cards.findIndex(c => c.id === card.id) === index)
+        .map(c => c.id)
+        .join(',')
+    : ''
+
+  useEffect(() => {
+    if (!activePlayer || isHistoryView || activeCardPreviewId === null) return
+    const ids =
+      playAreaPreviewIdsKeyEarly.length > 0
+        ? playAreaPreviewIdsKeyEarly.split(',').map(Number)
+        : []
+    if (!ids.includes(activeCardPreviewId)) {
+      setActiveCardPreviewId(null)
+      setActiveCardEffectSource(null)
+    }
+  }, [activePlayer, isHistoryView, activeCardPreviewId, playAreaPreviewIdsKeyEarly])
+
+  useEffect(() => {
+    if (isHistoryView || activeIntriguePreviewCard === null) return
+    const ids =
+      playedIntriguePreviewIdsKeyEarly.length > 0
+        ? playedIntriguePreviewIdsKeyEarly.split(',').map(Number)
+        : []
+    if (!ids.includes(activeIntriguePreviewCard.id)) {
+      setActiveIntriguePreviewCard(null)
+      setActiveCardEffectSource(null)
+    }
+  }, [activeIntriguePreviewCard, isHistoryView, playedIntriguePreviewIdsKeyEarly])
+
   if (!activePlayer) return null
+  const activeLeaderIconPath = getLeaderIconPath(activePlayer.leader.name)
   /** Same strip as Deploy/Retreat chips; show only when at least one troop action applies. */
   const showTroopActionRail =
     canDeployTroops &&
     ((deployableTroops > 0 && activePlayer.troops > 0) || retreatableTroops > 0)
+  const isKwisatzHaderach = (card: Card) =>
+    card.playEffect?.some(effect =>
+      effect.beforePlaceAgent?.recallAgent ||
+      effect.reward?.custom === CustomEffect.KWISATZ_HADERACH
+    ) ?? false
+  const hasRecallableAgent = Object.values(gameState?.occupiedSpaces ?? {}).some(playerIds =>
+    playerIds.includes(activePlayer.id)
+  )
+  const canPlayKwisatzWithNoAgents =
+    activePlayer.agents === 0 &&
+    hasRecallableAgent &&
+    activePlayer.deck.some(isKwisatzHaderach)
 
   /** After agent placement or while in reveal flow / post-reveal, hide primary turn actions. */
   const hidePlayAndReveal =
     !isCombatPhase && !isEndGame && (Boolean(agentPlaced) || activePlayer.revealed || isRevealTurn)
-  const playableIntrigueCards = intrigueDeck.filter(card => {
-    if (gamePhase === GamePhase.END_GAME) {
-      if (card.type === IntrigueCardType.ENDGAME) return true
-      // Allow special cases like Tiebreaker (combat intrigue with an endgame effect).
-      return Boolean(card.playEffect?.some(e => {
-        if (!e.phase) return false
-        const phases = Array.isArray(e.phase) ? e.phase : [e.phase]
-        return phases.includes(GamePhase.END_GAME)
-      }))
-    }
-    if (gamePhase === GamePhase.COMBAT) {
-      return card.type === IntrigueCardType.COMBAT
-    }
-    // In normal Player Turns, only Plot intrigue can be played (combat handled separately)
-    return card.type === IntrigueCardType.PLOT
-  })
+  const primaryTurnActionsHidden = isHistoryView || isCombatPhase || isEndGame || hidePlayAndReveal
+  const playActionDisabled =
+    (activePlayer.agents === 0 && !canPlayKwisatzWithNoAgents) ||
+    activePlayer.handCount === 0 ||
+    isHistoryView ||
+    canEndTurn ||
+    agentPlaced ||
+    hasOpponentDiscard ||
+    hasMandatoryRewards
+  const revealActionDisabled =
+    isHistoryView || canEndTurn || isCombatPhase || agentPlaced || hasOpponentDiscard || hasMandatoryRewards
+  const playActionTitle =
+    hasOpponentDiscard
+      ? 'Resolve opponent discard instructions before taking new actions.'
+      : hasMandatoryRewards
+        ? 'Claim pending rewards before taking new actions.'
+        : agentPlaced
+          ? 'You have already placed an agent this turn'
+          : activePlayer.handCount === 0
+            ? 'No cards in hand.'
+            : activePlayer.agents === 0 && canPlayKwisatzWithNoAgents
+              ? 'Play Kwisatz Haderach by recalling one of your agents.'
+              : activePlayer.agents === 0
+                ? 'No agents remaining.'
+                : undefined
+  const remainingAgentsLabel = `${activePlayer.agents} agent${activePlayer.agents === 1 ? '' : 's'} left`
+  const showRevealPersuasion = activePlayer.revealed && Boolean(gameState?.canAcquireIR)
+  const revealTurn = gameState?.currTurn?.type === TurnType.REVEAL ? gameState.currTurn : null
+  const revealPersuasionTotal =
+    revealTurn
+      ? revealTurn.persuasionCount ?? activePlayer.persuasion
+      : activePlayer.persuasion
+  const revealActionTitle =
+    hasOpponentDiscard
+      ? 'Resolve opponent discard instructions before taking new actions.'
+      : hasMandatoryRewards
+        ? 'Claim pending rewards before taking new actions.'
+        : agentPlaced ? 'You have already placed an agent this turn' : undefined
+  const playableIntrigueCards = useMemo(
+    () =>
+      intrigueDeck.filter(card => {
+        if (gamePhase === GamePhase.END_GAME) {
+          if (card.type === IntrigueCardType.ENDGAME) return true
+          // Allow special cases like Tiebreaker (combat intrigue with an endgame effect).
+          return Boolean(
+            card.playEffect?.some(e => {
+              if (!e.phase) return false
+              const phases = Array.isArray(e.phase) ? e.phase : [e.phase]
+              return phases.includes(GamePhase.END_GAME)
+            })
+          )
+        }
+        if (gamePhase === GamePhase.COMBAT) {
+          return card.type === IntrigueCardType.COMBAT
+        }
+        // In normal Player Turns, only Plot intrigue can be played (combat handled separately)
+        return card.type === IntrigueCardType.PLOT
+      }),
+    [intrigueDeck, gamePhase]
+  )
+
+  const handCardSearchIdsKey = [...activePlayer.deck]
+    .map(c => c.id)
+    .sort((a, b) => a - b)
+    .join(',')
+  const handCardsForCardSearch = useMemo(() => activePlayer.deck, [handCardSearchIdsKey])
+
+  const playCardPickerPlayabilityKey = useMemo(
+    () => `${activePlayer.agents}|${JSON.stringify(gameState?.occupiedSpaces ?? {})}`,
+    [activePlayer.agents, gameState?.occupiedSpaces],
+  )
 
   const getRankings = () => {
     const entries = Object.entries(combatStrength)
@@ -265,6 +443,13 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       setSelectedCards([])
       onPlayCard(activePlayer.id, picked[0].id)
     }
+  }
+
+  const checkPlayCardPlayability = (card: Card): { playable: boolean; reason?: string } => {
+    if (!isRevealTurn && activePlayer.agents === 0 && !isKwisatzHaderach(card)) {
+      return { playable: false, reason: 'No agents remaining' }
+    }
+    return { playable: true }
   }
 
   const handleIntrigueSelection = (selectedCards: Card[]) => {
@@ -460,6 +645,45 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
   }
 
+  const intriguePlayabilityKey = useMemo(() => {
+    const inf = gameState?.factionInfluence
+    const infSig = inf
+      ? Object.values(FactionType)
+          .map(f => `${f}:${Object.values(inf[f] ?? {}).join(',')}`)
+          .join(';')
+      : ''
+    const pl = players?.map(p => `${p.id}i${p.intrigueCount}`).join(',') ?? ''
+    return [
+      gamePhase,
+      gameState?.mentatOwner,
+      selectedCard?.id,
+      agentPlaced ? 1 : 0,
+      activePlayer.revealed ? 1 : 0,
+      activePlayer.spice,
+      activePlayer.water,
+      activePlayer.solari,
+      activePlayer.troops,
+      JSON.stringify(gameState?.occupiedSpaces ?? {}),
+      JSON.stringify(combatTroops ?? {}),
+      infSig,
+      pl,
+    ].join('|')
+  }, [
+    gamePhase,
+    gameState?.mentatOwner,
+    gameState?.occupiedSpaces,
+    gameState?.factionInfluence,
+    selectedCard?.id,
+    agentPlaced,
+    activePlayer.revealed,
+    activePlayer.spice,
+    activePlayer.water,
+    activePlayer.solari,
+    activePlayer.troops,
+    combatTroops,
+    players,
+  ])
+
   const hasPlayableIntrigue = playableIntrigueCards.some(card =>
     checkIntrigueCardPlayability(card as IntrigueCard).playable
   )
@@ -482,6 +706,41 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         <span className="res-amt">{amount}</span>
       </span>
     )
+  }
+
+  const renderWaterReward = (amount: number | undefined) => {
+    if (!amount) return null
+    return (
+      <span className="res-part" key="water" title={`Water +${amount}`}>
+        {Array.from({ length: Math.max(0, amount) }, (_, index) => (
+          <Icon key={index} type="water" alt="" />
+        ))}
+      </span>
+    )
+  }
+
+  const renderRepeatedIconReward = (key: string, type: string, amount: number | undefined, label: string) => {
+    if (!amount) return null
+    return (
+      <span className="effect-icon-token" key={key} title={`${label} +${amount}`}>
+        {Array.from({ length: Math.max(0, amount) }, (_, index) => (
+          <Icon key={index} type={type} className="effect-token-icon" alt="" />
+        ))}
+      </span>
+    )
+  }
+
+  const getFactionBumpIcon = (faction: FactionType) => {
+    switch (faction) {
+      case FactionType.SPACING_GUILD:
+        return '/icon/guild_bump.png'
+      case FactionType.BENE_GESSERIT:
+        return '/icon/bene_bump.png'
+      case FactionType.EMPEROR:
+        return '/icon/emperor_bump.png'
+      case FactionType.FREMEN:
+        return '/icon/fremen_bump.png'
+    }
   }
 
   const renderLabel = (opt: {cost?: Cost; reward: Reward; costLabel?: string; rewardLabel?: string}): React.ReactNode => {
@@ -515,12 +774,20 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
     const right: React.ReactNode[] = []
     right.push(renderAmt(reward.spice,'spice'))
-    right.push(renderAmt(reward.water,'water'))
+    right.push(renderWaterReward(reward.water))
     right.push(renderAmt(reward.solari,'solari'))
+    if(reward.persuasion) {
+      right.push(
+        <span key="persuasion" className="effect-icon-token" title={`Persuasion +${reward.persuasion}`}>
+          <span className="effect-persuasion-diamond" aria-hidden="true" />
+          <span className="effect-token-amt">+{reward.persuasion}</span>
+        </span>
+      )
+    }
     if(reward.combat) right.push(<React.Fragment key="combat">{renderIconValue('dagger', reward.combat, 'Combat', '+')}</React.Fragment>)
-    if(reward.drawCards) right.push(<React.Fragment key="draw">{renderIconValue('draw', reward.drawCards, 'Draw')}</React.Fragment>)
+    right.push(renderRepeatedIconReward('draw', 'draw', reward.drawCards, 'Draw'))
     if(reward.troops) right.push(<React.Fragment key="troops">{renderIconValue('troop', reward.troops, 'Troops')}</React.Fragment>)
-    if(reward.intrigueCards) right.push(<React.Fragment key="intrigue">{renderIconValue('intrigue', reward.intrigueCards, 'Intrigue', '+')}</React.Fragment>)
+    right.push(renderRepeatedIconReward('intrigue', 'intrigue', reward.intrigueCards, 'Intrigue'))
     if(reward.trash || reward.trashThisCard) {
       right.push(
         <span key="trash" className="effect-icon-token" title="Trash">
@@ -532,8 +799,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       reward.influence.amounts.forEach((inf: InfluenceAmount, idx: number) => {
         right.push(
           <span key={`influence-${idx}`} className="effect-influence-line" title={`${inf.faction} influence +${inf.amount}`}>
-            <img src={`/icon/${inf.faction}.png`} alt="" className="effect-faction-icon" />
-            <span className="effect-influence-amt">+{inf.amount}</span>
+            <img src={getFactionBumpIcon(inf.faction)} alt="" className="effect-faction-icon effect-faction-bump-icon" />
+            {inf.amount > 1 && <span className="effect-influence-amt">+{inf.amount}</span>}
           </span>
         )
       })
@@ -592,17 +859,29 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       // need popup
       setPendingEffect(effect)
       setShowTrashPopup(true)
+      closeCardEffectsDialog()
     } else {
       if(onPayCost){onPayCost(effect)}
+      if (
+        effect.cost?.trashThisCard ||
+        effect.reward?.custom ||
+        (effect.reward && (effect.reward.trash || effect.reward.trashThisCard))
+      ) {
+        closeCardEffectsDialog()
+      }
     }
   }
 
   const handleTrashSelect = (card: Card) => {
     if(pendingEffect && onPayCost) {
       onPayCost({ ...pendingEffect, data: { trashedCardId: card.id } })
+    } else if (pendingTrashReward && onClaimReward) {
+      onClaimReward(pendingTrashReward.id, { trashedCardId: card.id })
     }
     setShowTrashPopup(false)
     setPendingEffect(null)
+    setPendingTrashReward(null)
+    closeCardEffectsDialog()
   }
 
   const ChoiceDialog = () => {
@@ -654,22 +933,75 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     return null;
   }
 
-  // Render unified effects bar with cards grouped by source
-  const renderEffectsBar = () => {
-    // Group effects by source
-    type EffectSource = {
-      type: GainSource
-      id: number
-      name: string
-    }
-    
-    type EffectCard = {
-      source: EffectSource
-      rewards: PendingReward[]
-      optional: OptionalEffect[]
-      choices: PendingChoice[]
-    }
-    
+  const renderFixedChoiceOptions = (
+    fixedChoice: FixedOptionsChoice,
+    variant: 'dialog' | 'compact',
+    onResolvedCompactOption?: (option: { reward: Reward; cost?: Cost }) => void
+  ) => (
+    <div className={`fixed-choice-options fixed-choice-options--${variant}`}>
+      {fixedChoice.options.map((option, index) => {
+        let disabledTooltip: string | undefined
+        if (option.disabled && option.reward.custom) {
+          disabledTooltip = PLAY_EFFECT_DISABLED_TEXTS[option.reward.custom] || 'This option is not available'
+        }
+        const cannotAfford = !isAffordable(option.cost)
+        return (
+          <button
+            key={`${fixedChoice.id}-${index}`}
+            className={`effect-btn choice fixed-choice-option fixed-choice-option--${variant}`}
+            disabled={option.disabled || cannotAfford || voiceSelectionActive || masterstrokeSelectionActive}
+            onClick={() => {
+              if (onResolveChoice) {
+                onResolveChoice(fixedChoice.id, option.reward, fixedChoice.source)
+              }
+              setActiveFixedChoice(null)
+              if (variant === 'compact') {
+                onResolvedCompactOption?.(option)
+              }
+            }}
+            title={cannotAfford ? 'Cannot afford this option.' : disabledTooltip}
+          >
+            {renderLabel(option)}
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  const FixedChoiceDialog = () => {
+    if (!activeFixedChoice) return null
+
+    return (
+      <div className="dialog-overlay">
+        <div className="target-dialog fixed-choice-dialog">
+          <h3>{activeFixedChoice.prompt || 'Choose one option'}</h3>
+          {renderFixedChoiceOptions(activeFixedChoice, 'dialog')}
+          <button
+            type="button"
+            className="secondary-btn fixed-choice-cancel"
+            onClick={() => setActiveFixedChoice(null)}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  type EffectSource = {
+    type: GainSource
+    id: number
+    name: string
+  }
+
+  type EffectCard = {
+    source: EffectSource
+    rewards: PendingReward[]
+    optional: OptionalEffect[]
+    choices: PendingChoice[]
+  }
+
+  const buildEffectCards = () => {
     const sourceMap = new Map<string, EffectCard>()
     
     // Add pending rewards
@@ -713,169 +1045,309 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       }
       sourceMap.get(key)!.choices.push(choice)
     })
-    
-    if (sourceMap.size === 0) return null
-    
-    const effectCards = Array.from(sourceMap.values())
-    
-    // Helper to get list of rewards that would be cancelled by trash
-    const getCancelledRewards = (card: EffectCard, trashReward: PendingReward): string => {
-      const cancelled = card.rewards
-        .filter(r => r.id !== trashReward.id)
-        .map(r => {
-          const parts: string[] = []
-          if (r.reward.spice) parts.push(`Spice +${r.reward.spice}`)
-          if (r.reward.water) parts.push(`Water +${r.reward.water}`)
-          if (r.reward.solari) parts.push(`Solari +${r.reward.solari}`)
-          if (r.reward.troops) parts.push(`Troop +${r.reward.troops}`)
-          if (r.reward.drawCards) parts.push(`Draw +${r.reward.drawCards}`)
-          if (r.reward.intrigueCards) parts.push(`Intrigue +${r.reward.intrigueCards}`)
-          if (r.reward.influence) parts.push(`Influence +${r.reward.influence.amounts.map(i => i.amount).join('+')}`)
-          return parts.join(', ')
-        })
-        .join('; ')
-      return cancelled
+    return Array.from(sourceMap.values())
+  }
+
+  const getCancelledRewards = (card: EffectCard, trashReward: PendingReward): string => {
+    const cancelled = card.rewards
+      .filter(r => r.id !== trashReward.id)
+      .map(r => {
+        const parts: string[] = []
+        if (r.reward.spice) parts.push(`Spice +${r.reward.spice}`)
+        if (r.reward.water) parts.push(`Water +${r.reward.water}`)
+        if (r.reward.solari) parts.push(`Solari +${r.reward.solari}`)
+        if (r.reward.troops) parts.push(`Troop +${r.reward.troops}`)
+        if (r.reward.drawCards) parts.push(`Draw +${r.reward.drawCards}`)
+        if (r.reward.intrigueCards) parts.push(`Intrigue +${r.reward.intrigueCards}`)
+        if (r.reward.influence) parts.push(`Influence +${r.reward.influence.amounts.map(i => i.amount).join('+')}`)
+        return parts.join(', ')
+      })
+      .join('; ')
+    return cancelled
+  }
+
+  const renderRewardContent = (reward: PendingReward) => {
+    const isMasterstrokeReward = reward.source.type === GainSource.MASTERSTROKE
+    const isMemnonReward = reward.source.type === GainSource.MEMNON_HIGH_COUNCIL
+    if (isMasterstrokeReward) {
+      return (
+        <span className="effect-label">
+          Choose 2 <Icon type="bump" className="effect-token-icon" alt="" />
+        </span>
+      )
     }
-    
+    if (isMemnonReward) {
+      return (
+        <span className="effect-label">
+          Choose 1 <Icon type="bump" className="effect-token-icon" alt="" />
+        </span>
+      )
+    }
+    return renderLabel({ reward: reward.reward })
+  }
+
+  const closesPreviewAfterPendingReward = (reward: PendingReward) =>
+    reward.isTrash || Boolean(reward.reward.custom)
+
+  const closesPreviewAfterCompactFixedOption = (option: { reward: Reward; cost?: Cost }) =>
+    Boolean(option.reward.custom) ||
+    Boolean(option.reward.trash) ||
+    Boolean(option.reward.trashThisCard) ||
+    Boolean(option.cost?.trash) ||
+    Boolean(option.cost?.trashThisCard)
+
+  const onCompactFixedOptionResolved = (option: { reward: Reward; cost?: Cost }) => {
+    if (closesPreviewAfterCompactFixedOption(option)) closeCardEffectsDialog()
+  }
+
+  const renderEffectActions = (card: EffectCard, variant: 'overlay' | 'compact') => {
+    const selectionActive = voiceSelectionActive || masterstrokeSelectionActive || memnonHighCouncilSelectionActive
     return (
-      <div className="effects-bar">
-        {effectCards.map((card, idx) => (
-          <div 
-            key={idx} 
-            className={`effect-card ${card.optional.length > 0 ? 'optional' : 'mandatory'}`}
-          >
-            <div className="effect-card-header">
-              {card.source.name}
-              {card.optional.length > 0 && <span className="optional-tag">(Optional)</span>}
-            </div>
-            <div className="effect-card-body">
-              {/* Mandatory Rewards */}
-              {card.rewards.map(reward => {
-                const isVoiceReward = reward.reward.custom === CustomEffect.THE_VOICE
-                const isMasterstrokeReward = reward.source.type === GainSource.MASTERSTROKE
-                const isMemnonReward = reward.source.type === GainSource.MEMNON_HIGH_COUNCIL
-                const selectionActive = voiceSelectionActive || masterstrokeSelectionActive || memnonHighCouncilSelectionActive
-                const disabled = selectionActive || reward.disabled
-                const tooltip = voiceSelectionActive
-                  ? 'Finish The Voice selection before claiming other rewards.'
-                  : masterstrokeSelectionActive
-                    ? 'Finish Masterstroke faction selection before claiming other rewards.'
-                    : memnonHighCouncilSelectionActive
-                    ? 'Finish faction selection before claiming other rewards.'
-                    : reward.isTrash
-                    ? `⚠️ Trashing this card will cancel effects that haven't been applied yet. Cancels: ${getCancelledRewards(card, reward)}`
-                    : undefined
-                return (
-                <button
-                  key={reward.id}
-                  className={`effect-btn ${reward.isTrash ? 'trash-reward' : ''}`}
-                  onClick={() => {
-                    if (!onClaimReward) return
-                    if (isVoiceReward && onVoiceSelectionStart) {
-                      onVoiceSelectionStart(reward.id)
-                    } else if (isMasterstrokeReward && onMasterstrokeSelectionStart) {
-                      onMasterstrokeSelectionStart(reward.id)
-                    } else if (isMemnonReward && onMemnonHighCouncilSelectionStart) {
-                      onMemnonHighCouncilSelectionStart(reward.id)
-                    } else {
-                      onClaimReward(reward.id)
-                    }
-                  }}
-                  disabled={disabled}
-                  title={tooltip}
-                >
-                  {reward.isTrash && <span className="warning-icon">⚠️ </span>}
-                  {isMasterstrokeReward ? (
-                    <span className="effect-label">
-                      Masterstroke: Choose 2 <Icon type="bump" className="effect-token-icon" alt="" />
-                    </span>
-                  ) : isMemnonReward ? (
-                    <span className="effect-label">
-                      Connections: Choose 1 <Icon type="bump" className="effect-token-icon" alt="" />
-                    </span>
-                  ) : renderLabel({ reward: reward.reward })}
-                </button>
-              )})}
-              
-              {/* Optional Effects */}
-              {card.optional.map((eff, idx) => {
-                const disabled = voiceSelectionActive || masterstrokeSelectionActive || !isAffordable(eff.cost)
-                return (
-                <button 
-                  key={idx}
-                  className="effect-btn optional"
-                  disabled={disabled}
-                  onClick={() => handleEffectClick(eff)}
-                  title={voiceSelectionActive || masterstrokeSelectionActive ? 'Finish the current selection before resolving other effects.' : undefined}
-                >
-                  {renderLabel(eff)}
-                </button>
-              )})}
-              
-              {/* Pending Choices */}
-              {card.choices.map(choice => {
-                if (choice.type === ChoiceType.CARD_SELECT) {
-                  const cardSelectChoice = choice as CardSelectChoice
-                  // Prompt is already set with the correct text from GameContext
-                  
-                  return (
-                    <button
-                      key={choice.id}
-                      className="effect-btn choice"
-                      onClick={() => setActiveCardSelect(cardSelectChoice)}
-                      disabled={cardSelectChoice.disabled || voiceSelectionActive || masterstrokeSelectionActive}
-                      title={voiceSelectionActive || masterstrokeSelectionActive ? 'Finish the current selection before resolving other choices.' : undefined}
-                    >
-                      {cardSelectChoice.prompt}
-                    </button>
-                  )
+      <>
+        {card.rewards.map(reward => {
+          const isVoiceReward = reward.reward.custom === CustomEffect.THE_VOICE
+          const isMasterstrokeReward = reward.source.type === GainSource.MASTERSTROKE
+          const isMemnonReward = reward.source.type === GainSource.MEMNON_HIGH_COUNCIL
+          const interactionHighlight =
+            !reward.isTrash &&
+            (reward.source.type === GainSource.MASTERSTROKE ||
+              reward.source.type === GainSource.MEMNON_HIGH_COUNCIL ||
+              rewardNeedsInteractionHighlight(reward.reward))
+          const disabled = selectionActive || reward.disabled
+          const tooltip = voiceSelectionActive
+            ? 'Finish The Voice selection before claiming other rewards.'
+            : masterstrokeSelectionActive
+              ? 'Finish Masterstroke faction selection before claiming other rewards.'
+              : memnonHighCouncilSelectionActive
+                ? 'Finish faction selection before claiming other rewards.'
+                : reward.isTrash
+                  ? `Trashing this card will cancel effects that haven't been applied yet. Cancels: ${getCancelledRewards(card, reward)}`
+                  : undefined
+          return (
+            <button
+              key={reward.id}
+              className={`effect-btn effect-btn--${variant} ${reward.isTrash ? 'trash-reward' : ''} ${interactionHighlight ? 'effect-btn--interaction-choice' : ''}`.trim()}
+              onClick={() => {
+                if (!onClaimReward) return
+                if (isVoiceReward && onVoiceSelectionStart) {
+                  onVoiceSelectionStart(reward.id)
+                  closeCardEffectsDialog()
+                } else if (isMasterstrokeReward && onMasterstrokeSelectionStart) {
+                  onMasterstrokeSelectionStart(reward.id)
+                } else if (isMemnonReward && onMemnonHighCouncilSelectionStart) {
+                  onMemnonHighCouncilSelectionStart(reward.id)
+                } else if (reward.isTrash && reward.reward.trash && !reward.reward.trashThisCard) {
+                  setPendingTrashReward(reward)
+                  setShowTrashPopup(true)
+                  closeCardEffectsDialog()
                 } else {
-                  // Render FixedOptionsChoice with all options horizontally with OR separator
-                  const fixedChoice = choice as FixedOptionsChoice
-                  return (
-                    <div key={choice.id} className="or-choice-container">
-                      {fixedChoice.options.map((option, oidx) => {
-                        // Get disabled tooltip text if option is disabled and has a custom effect
-                        let disabledTooltip: string | undefined
-                        if (option.disabled && option.reward.custom) {
-                          disabledTooltip = PLAY_EFFECT_DISABLED_TEXTS[option.reward.custom] || 'This option is not available'
-                        }
-                        
-                        return (
-                          <React.Fragment key={`${choice.id}-${oidx}`}>
-                            {oidx > 0 && <span className="or-separator">OR</span>}
-                            <button
-                              className="effect-btn choice or-option"
-                              disabled={option.disabled || !isAffordable(option.cost) || voiceSelectionActive || masterstrokeSelectionActive}
-                              onClick={() => onResolveChoice && onResolveChoice(choice.id, option.reward, choice.source)}
-                              title={voiceSelectionActive || masterstrokeSelectionActive ? 'Finish the current selection before resolving other choices.' : disabledTooltip}
-                            >
-                              {renderLabel(option)}
-                            </button>
-                          </React.Fragment>
-                        )
-                      })}
-                    </div>
-                  )
+                  onClaimReward(reward.id)
+                  if (closesPreviewAfterPendingReward(reward)) {
+                    closeCardEffectsDialog()
+                  }
                 }
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
+              }}
+              disabled={disabled}
+              title={tooltip}
+            >
+              {reward.isTrash && <span className="warning-icon">! </span>}
+              {renderRewardContent(reward)}
+            </button>
+          )
+        })}
+
+        {card.optional.map((eff, idx) => {
+          const disabled = voiceSelectionActive || masterstrokeSelectionActive || !isAffordable(eff.cost)
+          return (
+            <button
+              key={`${eff.id}-${idx}`}
+              className={`effect-btn effect-btn--${variant} optional effect-btn--interaction-choice`}
+              disabled={disabled}
+              onClick={() => handleEffectClick(eff)}
+              title={
+                voiceSelectionActive || masterstrokeSelectionActive
+                  ? 'Finish the current selection before resolving other effects.'
+                  : disabled
+                    ? 'Cannot afford this optional effect.'
+                    : undefined
+              }
+            >
+              {renderLabel(eff)}
+            </button>
+          )
+        })}
+
+        {card.choices.map(choice => {
+          if (choice.type === ChoiceType.CARD_SELECT) {
+            const cardSelectChoice = choice as CardSelectChoice
+            return (
+              <button
+                key={choice.id}
+                className={`effect-btn effect-btn--${variant} choice`}
+                onClick={() => setActiveCardSelect(cardSelectChoice)}
+                disabled={cardSelectChoice.disabled || voiceSelectionActive || masterstrokeSelectionActive}
+                title={voiceSelectionActive || masterstrokeSelectionActive ? 'Finish the current selection before resolving other choices.' : undefined}
+              >
+                {cardSelectChoice.prompt}
+              </button>
+            )
+          }
+
+          const fixedChoice = choice as FixedOptionsChoice
+          if (variant === 'compact') {
+            return (
+              <div key={choice.id} className="card-effects-inline-choice">
+                <div className="card-effects-inline-choice-title">{fixedChoice.prompt || 'Choose one option'}</div>
+                {renderFixedChoiceOptions(fixedChoice, 'compact', onCompactFixedOptionResolved)}
+              </div>
+            )
+          }
+
+          return (
+            <button
+              key={choice.id}
+              className={`effect-btn effect-btn--${variant} choice`}
+              onClick={() => setActiveFixedChoice(fixedChoice)}
+              disabled={fixedChoice.disabled || voiceSelectionActive || masterstrokeSelectionActive}
+              title={
+                voiceSelectionActive || masterstrokeSelectionActive
+                  ? 'Finish the current selection before resolving other choices.'
+                  : undefined
+              }
+            >
+              {fixedChoice.prompt || 'Choose one'}
+            </button>
+          )
+        })}
+      </>
     )
   }
 
-  const renderVoiceSelectionBanner = () => {
-    if (!voiceSelectionActive) return null
+  const renderTurnCard = (card: Card, mode: 'played' | 'revealed', effectCards: EffectCard[]) => {
+    const effectCard = effectCards.find(entry => entry.source.type === GainSource.CARD && entry.source.id === card.id)
+    const hasPendingCardEffects = Boolean(effectCard)
     return (
-      <div className="voice-selection-banner">
-        <span>Select any board space to block with The Voice.</span>
-        {onVoiceSelectionCancel && (
-          <button className="secondary-btn" onClick={onVoiceSelectionCancel}>
-            Cancel
-          </button>
+      <button
+        key={card.id}
+        type="button"
+        className={`turn-card-frame turn-card-frame--${mode} ${hasPendingCardEffects ? 'turn-card-frame--has-effects' : ''}`}
+        onClick={() => {
+          setActiveIntriguePreviewCard(null)
+          setActiveCardPreviewId(card.id)
+          if (effectCard) {
+            setActiveCardEffectSource({ type: effectCard.source.type, id: effectCard.source.id })
+          } else {
+            setActiveCardEffectSource(null)
+          }
+        }}
+        aria-label={effectCard ? `Resolve pending rewards for ${card.name}` : card.name}
+        title={effectCard ? `View ${card.name} and resolve pending rewards` : `View ${card.name}`}
+      >
+        {card.image ? (
+          <img
+            className="selected-card-inline-img"
+            src={card.image}
+            alt={card.name}
+            title={card.name}
+          />
+        ) : (
+          <span className="selected-card-inline-name">{card.name}</span>
         )}
+      </button>
+    )
+  }
+
+  const renderPlayCardPlaceholder = () => {
+    const isChangingSelectedCard = Boolean(selectedCard && !agentPlaced && !activePlayer.revealed && !isRevealTurn)
+    const actionLabel = isChangingSelectedCard ? 'Change' : 'Play'
+
+    return (
+      <button
+        key="play-card-placeholder"
+        type="button"
+        className="selected-card-inline-placeholder selected-card-action-placeholder selected-card-action-placeholder--play"
+        onClick={handlePlayCard}
+        disabled={playActionDisabled}
+        title={playActionTitle ?? remainingAgentsLabel}
+        aria-label={`${actionLabel} card, ${remainingAgentsLabel}`}
+      >
+        <span className="selected-card-action-label selected-card-action-label--play">{actionLabel}</span>
+        <span className="selected-card-play-agent-badge" aria-hidden="true">
+          <span className="selected-card-agent-badge">
+            <AgentIcon playerId={activePlayer.id} className="selected-card-agent-icon" />
+            <span className="selected-card-agent-count">{activePlayer.agents}</span>
+          </span>
+        </span>
+      </button>
+    )
+  }
+
+  const renderIntrigueActionButton = () => {
+    const disabled =
+      activePlayer.intrigueCount === 0 ||
+      playableIntrigueCards.length === 0 ||
+      !hasPlayableIntrigue
+    const title =
+      activePlayer.intrigueCount === 0
+        ? 'No intrigue cards.'
+        : playableIntrigueCards.length === 0
+          ? isCombatPhase ? 'No combat intrigue cards available in the deck.' : 'No intrigue cards available in the deck.'
+          : !hasPlayableIntrigue
+            ? isCombatPhase ? 'No combat intrigue card can be played in the current situation.' : 'No intrigue card can be played in the current situation.'
+            : undefined
+
+    return (
+      <button
+        type="button"
+        className="selected-card-inline-slot selected-card-action-placeholder selected-card-action-placeholder--intrigue"
+        onClick={isCombatPhase ? handlePlayCombatIntrigue : handlePlayIntrigueClick}
+        disabled={disabled}
+        title={title}
+        aria-label={`Play intrigue card. ${activePlayer.intrigueCount} intrigue cards available.`}
+      >
+        <span className="selected-card-action-intrigue-stack">
+          <img
+            src="/icon/intrigue.png"
+            alt=""
+            className="selected-card-action-intrigue-icon"
+            decoding="sync"
+            fetchPriority="high"
+          />
+          <span className="selected-card-action-count selected-card-action-count--intrigue-overlay">
+            {activePlayer.intrigueCount}
+          </span>
+        </span>
+      </button>
+    )
+  }
+
+  const renderIntegratedEffects = (
+    effectCards: EffectCard[],
+    visibleCardIds: Set<number>,
+    stripIntrigueCards: IntrigueCard[]
+  ) => {
+    const playedIntrigueIds = new Set(stripIntrigueCards.map(c => c.id))
+    const fallbackCards = effectCards.filter(card => {
+      if (card.source.type === GainSource.CARD) {
+        return !visibleCardIds.has(card.source.id)
+      }
+      if (card.source.type === GainSource.INTRIGUE) {
+        return !playedIntrigueIds.has(card.source.id)
+      }
+      return true
+    })
+    if (fallbackCards.length === 0) return null
+
+    return (
+      <div className="effects-inline-panel" aria-label="Other pending effects">
+        {fallbackCards.map(card => (
+          <div key={`${card.source.type}-${card.source.id}`} className="effect-chip-group">
+            <span className="effect-chip-source">{card.source.name}</span>
+            <div className="effect-chip-actions">
+              {renderEffectActions(card, 'compact')}
+            </div>
+          </div>
+        ))}
       </div>
     )
   }
@@ -1006,6 +1478,173 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     )
   }
 
+  const effectCards = buildEffectCards()
+  const playAreaCards = [
+    ...activePlayer.playArea,
+    ...selectedCards,
+    ...(selectedCard && !activePlayer.revealed && !isRevealTurn ? [selectedCard] : [])
+  ].filter((card, index, cards) => cards.findIndex(c => c.id === card.id) === index)
+
+  const historicalRevealedCardIds =
+    isHistoryView && gameState?.currTurn?.type === TurnType.REVEAL
+      ? gameState.currTurn.revealedCardIds?.length
+        ? gameState.currTurn.revealedCardIds
+        : activePlayer.playArea
+            .filter(card => card.id !== gameState.currTurn?.cardId)
+            .map(card => card.id)
+      : []
+  const revealedCardIds = new Set([
+    ...selectedCards.map(card => card.id),
+    ...historicalRevealedCardIds
+  ])
+  const playedAreaCards = playAreaCards.filter(card => !revealedCardIds.has(card.id))
+  const revealedAreaCards = playAreaCards.filter(card => revealedCardIds.has(card.id))
+  /** Intrigue thumbnails live in this strip too; empty playArea after trash still shows them. */
+  const showPlayedCardStrip =
+    playAreaCards.length > 0 || playedIntrigueCards.length > 0
+  const visibleCardIds = new Set(playAreaCards.map(card => card.id))
+  const turnGains = gameState?.currTurn
+    ? (gameState.gains || []).filter(gain => gain.playerId === gameState.currTurn?.playerId)
+    : []
+  const gainToReward = (gain: (typeof turnGains)[number]): Reward => {
+    switch (gain.type) {
+      case RewardType.PERSUASION:
+        return { persuasion: gain.amount }
+      case RewardType.COMBAT:
+        return { combat: gain.amount }
+      case RewardType.SPICE:
+        return { spice: gain.amount }
+      case RewardType.WATER:
+        return { water: gain.amount }
+      case RewardType.SOLARI:
+        return { solari: gain.amount }
+      case RewardType.TROOPS:
+        return { troops: gain.amount }
+      case RewardType.INTRIGUE:
+        return { intrigueCards: gain.amount }
+      case RewardType.INFLUENCE: {
+        const rawName = gain.name.endsWith(' Acquire')
+          ? gain.name.slice(0, -' Acquire'.length)
+          : gain.name
+        return { influence: { amounts: [{ faction: rawName as FactionType, amount: gain.amount }] } }
+      }
+      case RewardType.VICTORY_POINTS:
+        return { victoryPoints: gain.amount }
+      case RewardType.DRAW:
+      case RewardType.CARD:
+        return { drawCards: gain.amount }
+      case RewardType.DEPLOY:
+        return { deployTroops: gain.amount }
+      case RewardType.RETREAT:
+        return { retreatTroops: gain.amount }
+      default:
+        return {}
+    }
+  }
+  const imperiumAcquireGainsLive: Gain[] =
+    !isHistoryView && gameState?.currTurn?.acquiredCards?.length && (gameState.gains?.length || 0) > 0
+      ? (() => {
+          const ct = gameState.currTurn!
+          const acquiredIds = new Set(ct.acquiredCards!.map(c => c.id))
+          return gameState.gains!.filter(g => {
+            if (g.playerId !== ct.playerId || g.round !== gameState!.currentRound) return false
+            if (g.source !== GainSource.CARD || !acquiredIds.has(g.sourceId)) return false
+            if (g.name.endsWith(' Acquire')) return true
+            return false
+          })
+        })()
+      : []
+
+  type VisibleGainChip = {
+    id: string
+    groupId: string
+    title: string
+    reward: Reward
+    rewardLabel?: string
+  }
+
+  const imperiumAcquisitionChipItems: VisibleGainChip[] = imperiumAcquireGainsLive.map((gain, index) => {
+    const cardMeta = gameState?.currTurn?.acquiredCards?.find(c => c.id === gain.sourceId)
+    const cardTitle = cardMeta?.name ?? gain.name.replace(/ Acquire$/, '')
+    return {
+      id: `imperium-acquire-${gain.sourceId}-${gain.type}-${gain.name}-${index}`,
+      groupId: `Acquire · ${cardTitle}`,
+      title: `${cardTitle} (acquired)`,
+      reward: gainToReward(gain)
+    }
+  })
+
+  const visibleGainItems: VisibleGainChip[] = isHistoryView
+    ? turnGains.map((gain, index) => ({
+        id: `${gain.source}-${gain.sourceId}-${gain.type}-${index}`,
+        groupId: `${gain.source}-${gain.sourceId}-${gain.name}`,
+        title: gain.name,
+        reward: gainToReward(gain)
+      }))
+    : [
+        ...autoAppliedRewardSummary.map(item => ({
+          id: item.id,
+          groupId: item.sourceName,
+          title: item.sourceName,
+          reward: item.reward
+        })),
+        ...imperiumAcquisitionChipItems
+      ]
+  const visibleGainGroups = Array.from(
+    visibleGainItems.reduce((groups, item) => {
+      const group = groups.get(item.groupId) || {
+        id: item.groupId,
+        title: item.title,
+        items: [] as typeof visibleGainItems
+      }
+      group.items.push(item)
+      groups.set(item.groupId, group)
+      return groups
+    }, new Map<string, { id: string; title: string; items: typeof visibleGainItems }>())
+      .values()
+  )
+  const autoApplySkipsCustom = [
+    CustomEffect.THE_VOICE,
+    CustomEffect.REVEREND_MOTHER_MOHIAM,
+    CustomEffect.TEST_OF_HUMANITY
+  ]
+  const trashThisCardSourceKeys = new Set(
+    pendingRewards
+      .filter(reward => !reward.disabled && reward.source.type === GainSource.CARD && reward.reward.trashThisCard)
+      .map(reward => `${reward.source.type}:${reward.source.id}`)
+  )
+  const simpleAutoApplyCount = pendingRewards.filter(
+    reward =>
+      !reward.disabled &&
+      !reward.isTrash &&
+      !trashThisCardSourceKeys.has(`${reward.source.type}:${reward.source.id}`) &&
+      reward.source.type !== GainSource.MASTERSTROKE &&
+      (!reward.reward.custom || !autoApplySkipsCustom.includes(reward.reward.custom))
+  ).length
+  const showAutoApplyRewardsButton =
+    !isHistoryView && !autoApplyMandatoryRewards && !isCombatPhase && simpleAutoApplyCount > 0
+  const activeCardEffect = activeCardEffectSource
+    ? effectCards.find(card =>
+      card.source.type === activeCardEffectSource.type && card.source.id === activeCardEffectSource.id
+    )
+    : null
+  const activeCardPreviewCard = activeCardPreviewId !== null
+    ? playAreaCards.find(card => card.id === activeCardPreviewId) ?? null
+    : null
+  const activeCardLietKynesPersuasion =
+    activeCardPreviewCard?.revealEffect?.some(effect => effect.reward?.custom === CustomEffect.LIET_KYNES)
+      ? gameState?.gains.find(gain =>
+        gain.playerId === activePlayer.id &&
+        gain.source === GainSource.CARD &&
+        gain.sourceId === activeCardPreviewCard.id &&
+        gain.type === RewardType.PERSUASION
+      )?.amount ?? null
+      : null
+  const activeCardLietKynesCountedCards =
+    activeCardLietKynesPersuasion !== null
+      ? playAreaCards.filter(card => card.faction?.includes(FactionType.FREMEN))
+      : []
+
   return (
     <>
       {isCombatPhase && (
@@ -1032,46 +1671,96 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           </div>
         </div>
       )}
-      {renderVoiceSelectionBanner()}
       {renderOpponentDiscardPanel()}
-      {renderEffectsBar()}
-      {showTroopActionRail && (
-        <div className="turn-controls-troop-rail" role="group" aria-label="Conflict troops">
-          <button
-            type="button"
-            className="troop-action-button troop-deploy-button"
-            onClick={() => onAddTroop(activePlayer.id)}
-            disabled={
-              !canDeployTroops || activePlayer.troops <= 0 || deployableTroops <= 0
-            }
-            aria-label={`Deploy one troop. ${deployableTroops} available to deploy.`}
-            title={`Deploy troop (${deployableTroops} available)`}
-          >
-            <span className="troop-available-count">{deployableTroops}</span>
-            <img src="/icon/troop.png" alt="" className="troop-action-icon" />
-            <span className="troop-action-arrow" aria-hidden="true">➤</span>
-          </button>
-          <div className="troop-action-status" aria-label={`${retreatableTroops} troops deployed this turn`}>
-            <span className="troop-status-label">Deployed</span>
-            <span className="troop-deployed-count">{retreatableTroops}</span>
-          </div>
-          <button
-            type="button"
-            className="troop-action-button troop-retreat-button"
-            onClick={() => onRemoveTroop(activePlayer.id)}
-            disabled={!canDeployTroops || retreatableTroops <= 0}
-            aria-label={`Retreat one troop. ${retreatableTroops} can retreat.`}
-            title={`Retreat troop (${retreatableTroops} available)`}
-          >
-            <span className="troop-action-arrow" aria-hidden="true">◄</span>
-            <img src="/icon/troop.png" alt="" className="troop-action-icon" />
-          </button>
-        </div>
-      )}
       {
         <ChoiceDialog />
         
       }
+      <FixedChoiceDialog />
+      {activeCardPreviewCard && (
+        <div className="dialog-overlay">
+          <div className="target-dialog card-effects-dialog">
+            {activeCardPreviewCard.image ? (
+              <img
+                src={activeCardPreviewCard.image}
+                alt={activeCardPreviewCard.name}
+                className="card-effects-dialog-image"
+              />
+            ) : (
+              <h3>{activeCardPreviewCard.name}</h3>
+            )}
+            {activeCardLietKynesPersuasion !== null && (
+              <div className="card-effects-dialog-note">
+                Liet Kynes reveal: {activeCardLietKynesPersuasion} persuasion
+                {activeCardLietKynesCountedCards.length > 0 && (
+                  <div className="liet-counted-cards" aria-label="Fremen cards counted for Liet Kynes">
+                    {activeCardLietKynesCountedCards.map(card => (
+                      <img
+                        key={card.id}
+                        src={card.image}
+                        alt={card.name}
+                        title={card.name}
+                        className="liet-counted-card-image"
+                        draggable={false}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {activeCardEffect && (
+              <div className="card-effects-dialog-actions">
+                {renderEffectActions(activeCardEffect, 'compact')}
+              </div>
+            )}
+            <button
+              type="button"
+              className="secondary-btn fixed-choice-cancel"
+              onClick={closeCardEffectsDialog}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeIntriguePreviewCard && (
+        <div
+          className="dialog-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label={activeIntriguePreviewCard.name}
+        >
+          <div className="target-dialog card-effects-dialog intrigue-preview-dialog">
+            {activeIntriguePreviewCard.image ? (
+              <img
+                src={activeIntriguePreviewCard.image}
+                alt={activeIntriguePreviewCard.name}
+                className="card-effects-dialog-image"
+              />
+            ) : (
+              <h3>{activeIntriguePreviewCard.name}</h3>
+            )}
+            {activeCardEffect &&
+              activeCardEffect.source.type === GainSource.INTRIGUE &&
+              activeCardEffect.source.id === activeIntriguePreviewCard.id && (
+                <div className="card-effects-dialog-actions">
+                  {renderEffectActions(activeCardEffect, 'compact')}
+                </div>
+              )}
+            <button
+              type="button"
+              className="secondary-btn fixed-choice-cancel"
+              onClick={() => {
+                setActiveIntriguePreviewCard(null)
+                setActiveCardEffectSource(null)
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       <div
         className="turn-controls"
@@ -1085,44 +1774,151 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         }
       >
         <div className="turn-controls-expanded-only">
-          {showAutoApplyRewardsButton && (
-            <div className="turn-controls-auto-apply-row">
-              <button
-                type="button"
-                className="get-mandatory-effects-button"
-                onClick={() => onAutoApplyRewards && onAutoApplyRewards()}
-                disabled={voiceSelectionActive || masterstrokeSelectionActive}
-                title={
-                  voiceSelectionActive || masterstrokeSelectionActive
-                    ? 'Finish the current selection before claiming rewards.'
-                    : 'Auto-apply non-interactive rewards (skips The Voice, Reverend Mother Mohiam, Test of Humanity, Masterstroke, trash, and OR choices)'
-                }
-              >
-                Auto-Apply Effects
-              </button>
+          {effectCards.length > 0 && (
+            <div className="turn-controls-effects-row">
+              {renderIntegratedEffects(effectCards, visibleCardIds, playedIntrigueCards)}
             </div>
           )}
           <div className="active-player-info">
             <div className={`color-indicator ${activePlayer.color}`}></div>
-            {activePlayer.leader.name}
-            {getLeaderImage(activePlayer.leader.name) && (
-              <button
-                type="button"
-                className="see-leader-button"
-                onClick={() => setIsLeaderImageOpen(true)}
-                title="See Leader"
-                aria-label={`View ${activePlayer.leader.name}`}
-              >
-                See Leader
-              </button>
-            )}
+            <div className="active-player-actions" aria-label="Active player shortcuts">
+              <div className="active-player-main-actions">
+                {getLeaderImage(activePlayer.leader.name) && (
+                  <button
+                    type="button"
+                    className="see-leader-button"
+                    onClick={() => setIsLeaderImageOpen(true)}
+                    title="See Leader"
+                    aria-label={`View ${activePlayer.leader.name}`}
+                  >
+                    {activeLeaderIconPath ? (
+                      <img
+                        src={activeLeaderIconPath}
+                        alt=""
+                        className="see-leader-icon"
+                        draggable={false}
+                      />
+                    ) : (
+                      <span className="see-leader-icon-fallback" aria-hidden="true">
+                        {activePlayer.leader.name.charAt(0)}
+                      </span>
+                    )}
+                    <MagnifyingGlassIcon />
+                  </button>
+                )}
+                {visibleGainGroups.length > 0 && (
+                  <>
+                    {visibleGainGroups.map(group => (
+                      <div
+                        key={group.id}
+                        className="auto-applied-gains-summary"
+                        aria-label={`${isHistoryView ? 'Turn gains' : 'Automatically gained rewards'} from ${group.title}`}
+                        title={group.title}
+                      >
+                        {group.items.map(item => (
+                          <span key={item.id} className="auto-applied-gain-chip" title={item.title}>
+                            {renderLabel({ reward: item.reward, rewardLabel: item.rewardLabel })}
+                          </span>
+                        ))}
+                      </div>
+                    ))}
+                  </>
+                )}
+                {showRevealPersuasion && (
+                  <>
+                    <div
+                      className="reveal-total-chip reveal-persuasion-total"
+                      title={`${revealPersuasionTotal} total reveal persuasion`}
+                      aria-label={`${revealPersuasionTotal} total reveal persuasion`}
+                    >
+                      <span className="reveal-persuasion-diamond" aria-hidden="true" />
+                      <span className="reveal-total-count">{revealPersuasionTotal}</span>
+                    </div>
+                    <div
+                      className="reveal-total-chip reveal-dagger-total"
+                      title={`${activePlayer.combatValue} total strength`}
+                      aria-label={`${activePlayer.combatValue} total strength`}
+                    >
+                      <Icon type="dagger" className="reveal-total-icon" alt="" />
+                      <span className="reveal-total-count">{activePlayer.combatValue}</span>
+                    </div>
+                  </>
+                )}
+                {showTroopActionRail && (
+                  <div className="turn-controls-troop-rail turn-controls-troop-rail--inline" role="group" aria-label="Conflict troops">
+                    <button
+                      type="button"
+                      className="troop-action-button troop-deploy-button"
+                      onClick={() => onAddTroop(activePlayer.id)}
+                      disabled={
+                        !canDeployTroops || activePlayer.troops <= 0 || deployableTroops <= 0
+                      }
+                      aria-label={`Deploy one troop. ${deployableTroops} available to deploy.`}
+                      title={`Deploy troop (${deployableTroops} available)`}
+                    >
+                      <span className="troop-available-count">{deployableTroops}</span>
+                      <img src="/icon/troop.png" alt="" className="troop-action-icon" />
+                      <span className="troop-action-arrow" aria-hidden="true">➤</span>
+                    </button>
+                    <div className="troop-action-status" aria-label={`${retreatableTroops} troops deployed this turn`}>
+                      <span className="troop-deployed-count">{retreatableTroops}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="troop-action-button troop-retreat-button"
+                      onClick={() => onRemoveTroop(activePlayer.id)}
+                      disabled={!canDeployTroops || retreatableTroops <= 0}
+                      aria-label={`Retreat one troop. ${retreatableTroops} can retreat.`}
+                      title={`Retreat troop (${retreatableTroops} available)`}
+                    >
+                      <span className="troop-action-arrow" aria-hidden="true">◄</span>
+                    </button>
+                  </div>
+                )}
+                {showAutoApplyRewardsButton && (
+                  <button
+                    type="button"
+                    className="get-mandatory-effects-button"
+                    onClick={() => onAutoApplyRewards && onAutoApplyRewards()}
+                    disabled={voiceSelectionActive || masterstrokeSelectionActive || simpleAutoApplyCount === 0}
+                    title={
+                      voiceSelectionActive || masterstrokeSelectionActive
+                        ? 'Finish the current selection before claiming rewards.'
+                        : 'Apply non-interactive rewards; choices, trash, and target selections stay pending.'
+                    }
+                  >
+                    Auto Take{simpleAutoApplyCount > 0 ? ` (${simpleAutoApplyCount})` : ''}
+                  </button>
+                )}
+              </div>
+              <div className="active-player-utility-actions">
+                <button
+                  type="button"
+                  className="view-influence-button utility-action-button active-player-action-button active-player-overview-button"
+                  onClick={onOpenPlayerOverview}
+                  title="View Player Overview"
+                  aria-label="View player overview and stats"
+                >
+                  <PlayerOverviewIcon />
+                </button>
+                <button
+                  type="button"
+                  className="view-influence-button utility-action-button active-player-action-button"
+                  onClick={onTurnHistoryToggle}
+                  title="View Turn History"
+                  aria-label="View turn history"
+                >
+                  <TurnHistoryIcon />
+                </button>
+              </div>
+            </div>
           </div>
           <LeaderImageModal
             leader={activePlayer.leader}
             isOpen={isLeaderImageOpen}
             onClose={() => setIsLeaderImageOpen(false)}
           />
-          {activeIntrigueThisRound.length > 0 && (
+          {!isHistoryView && activeIntrigueThisRound.length > 0 && (
             <div className="active-intrigue-peek" aria-label="Active intrigue this round">
               <div className="active-intrigue-preview" title="Hover to view active intrigue this round">
                 <img
@@ -1146,148 +1942,89 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           )}
         <div className="turn-controls-buttons-grid">
           <div className="utility-buttons utility-buttons--with-inline-card">
-            <button 
-              className="view-influence-button"
-              onClick={onTurnHistoryToggle}
-              title="View Turn History"
-            >
-              Turn History
-            </button>
-            <button 
-              className="view-influence-button"
-              onClick={onOpenPlayerOverview}
-              title="View Player Overview"
-            >
-              Player Overview
-            </button>
             <div
               className="selected-card-inline-slot"
               aria-label={
-                selectedCards.length > 0
-                  ? `Reveal: ${selectedCards.map(c => c.name).join(', ')}`
-                  : selectedCard
-                    ? `Played card: ${selectedCard.name}`
-                    : 'No card selected'
+                showPlayedCardStrip
+                  ? [
+                      playAreaCards.length > 0 &&
+                        `Play area: ${playAreaCards.map(c => c.name).join(', ')}`,
+                      playedIntrigueCards.length > 0 &&
+                        `Played intrigue: ${playedIntrigueCards.map(c => c.name).join(', ')}`
+                    ]
+                      .filter(Boolean)
+                      .join('. ')
+                  : 'Play area is empty'
               }
             >
-              {selectedCards.length > 0 ? (
+              {showPlayedCardStrip ? (
                 <div className="selected-cards-reveal-strip">
-                  {selectedCards.map(card =>
-                    card.image ? (
-                      <img
-                        key={card.id}
-                        className="selected-card-inline-img selected-card-inline-img--sm"
-                        src={card.image}
-                        alt={card.name}
-                        title={card.name}
-                      />
-                    ) : (
-                      <span key={card.id} className="selected-card-name-fallback">
-                        {card.name}
-                      </span>
+                  {playedAreaCards.map(card => renderTurnCard(card, 'played', effectCards))}
+                  {playedIntrigueCards.map(card => {
+                    const intrigueEffectBundle = effectCards.find(
+                      e => e.source.type === GainSource.INTRIGUE && e.source.id === card.id
                     )
+                    const hasIntrigueRewards = Boolean(intrigueEffectBundle)
+                    return (
+                    <button
+                      key={`intrigue-${card.id}`}
+                      type="button"
+                      className={`turn-card-frame turn-card-frame--intrigue ${hasIntrigueRewards ? 'turn-card-frame--has-effects' : ''}`}
+                      aria-label={
+                        hasIntrigueRewards
+                          ? `Resolve pending rewards for ${card.name}`
+                          : `View played intrigue card: ${card.name}`
+                      }
+                      title={hasIntrigueRewards ? `View ${card.name} and resolve pending rewards` : `View ${card.name}`}
+                      onClick={() => {
+                        closeCardEffectsDialog()
+                        setActiveIntriguePreviewCard(card)
+                        setActiveCardEffectSource(
+                          intrigueEffectBundle
+                            ? { type: GainSource.INTRIGUE, id: card.id }
+                            : null
+                        )
+                      }}
+                    >
+                      <img
+                        className="selected-card-inline-img selected-card-inline-img--intrigue"
+                        src={card.image}
+                        alt=""
+                        draggable={false}
+                      />
+                    </button>
+                    )
+                  })}
+                  {!primaryTurnActionsHidden && renderPlayCardPlaceholder()}
+                  {playedAreaCards.length > 0 && revealedAreaCards.length > 0 && (
+                    <div className="play-area-card-divider" aria-hidden="true" />
                   )}
+                  {revealedAreaCards.map(card => renderTurnCard(card, 'revealed', effectCards))}
                 </div>
-              ) : selectedCard &&
-                !activePlayer.revealed &&
-                !isRevealTurn ? (
-                selectedCard.image ? (
-                  <img
-                    className="selected-card-inline-img"
-                    src={selectedCard.image}
-                    alt={selectedCard.name}
-                    title={selectedCard.name}
-                  />
-                ) : (
-                  <span className="selected-card-inline-name">{selectedCard.name}</span>
-                )
+              ) : !primaryTurnActionsHidden ? (
+                renderPlayCardPlaceholder()
               ) : (
                 <span className="selected-card-inline-placeholder" aria-hidden />
               )}
             </div>
+            {!primaryTurnActionsHidden && (
+              <button
+                type="button"
+                className="selected-card-inline-slot selected-card-action-placeholder selected-card-action-placeholder--reveal"
+                onClick={handleRevealTurn}
+                disabled={revealActionDisabled}
+                title={revealActionTitle}
+                aria-label={`Reveal hand with ${activePlayer.handCount} cards`}
+              >
+                <span className="selected-card-action-count">{activePlayer.handCount}</span>
+                <span className="selected-card-action-label">Reveal</span>
+              </button>
+            )}
+            {!isHistoryView && !isEndGame && renderIntrigueActionButton()}
           </div>
           <div className="control-buttons">
           <div className="button-pair">
-            <button 
-              className="play-card-button"
-              onClick={handlePlayCard}
-              disabled={
-                activePlayer.agents === 0 ||
-                activePlayer.handCount === 0 ||
-                canEndTurn ||
-                agentPlaced ||
-                hasOpponentDiscard ||
-                hasMandatoryRewards
-              }
-              hidden={isCombatPhase || isEndGame || hidePlayAndReveal}
-              title={
-                hasOpponentDiscard
-                  ? 'Resolve opponent discard instructions before taking new actions.'
-                  : hasMandatoryRewards
-                    ? 'Claim pending rewards before taking new actions.'
-                    : agentPlaced
-                      ? 'You have already placed an agent this turn'
-                      : activePlayer.handCount === 0
-                        ? 'No cards in hand.'
-                        : undefined
-              }
-            >
-              Play Card
-            </button>
-            <button 
-              className="reveal-turn-button"
-              onClick={handleRevealTurn}
-              disabled={canEndTurn || isCombatPhase || agentPlaced || hasOpponentDiscard || hasMandatoryRewards}
-              hidden={isCombatPhase || isEndGame || hidePlayAndReveal}
-              title={
-                hasOpponentDiscard
-                  ? 'Resolve opponent discard instructions before taking new actions.'
-                  : hasMandatoryRewards
-                    ? 'Claim pending rewards before taking new actions.'
-                    : agentPlaced ? "You have already placed an agent this turn" : undefined
-              }
-            >
-              Reveal Turn
-            </button>
-          </div>
-          <div className="button-pair">
-            {!isCombatPhase && <button 
-              className="play-intrigue-button"
-              onClick={handlePlayIntrigueClick}
-              disabled={
-                activePlayer.intrigueCount === 0 ||
-                playableIntrigueCards.length === 0 ||
-                !hasPlayableIntrigue
-              }
-              title={
-                playableIntrigueCards.length === 0
-                  ? 'No intrigue cards available in the deck.'
-                  : !hasPlayableIntrigue
-                    ? 'No intrigue card can be played in the current situation.'
-                    : undefined
-              }
-            >
-              Play Intrigue ({activePlayer.intrigueCount})
-            </button>}
-            {isCombatPhase && <button 
-              className="play-intrigue-button"
-              onClick={handlePlayCombatIntrigue}
-              disabled={
-                activePlayer.intrigueCount === 0 ||
-                playableIntrigueCards.length === 0 ||
-                !hasPlayableIntrigue
-              }
-              title={
-                playableIntrigueCards.length === 0
-                  ? 'No combat intrigue cards available in the deck.'
-                  : !hasPlayableIntrigue
-                    ? 'No combat intrigue card can be played in the current situation.'
-                    : undefined
-              }
-            >
-              Play Combat Intrigue ({activePlayer.intrigueCount})
-            </button>}
-            {!isCombatPhase && <button 
+            {!isHistoryView && !isCombatPhase && <button
               className="end-turn-button"
               onClick={handleEndTurn}
               disabled={endTurnDisabled}
@@ -1307,7 +2044,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             >
               End Turn
             </button>}
-            {isCombatPhase && <button 
+            {!isHistoryView && isCombatPhase && <button
               className="pass-combat-button"
               onClick={handlePassCombat}
             >
@@ -1322,7 +2059,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       {/* Card selection overlays - outside turn-controls so they stay visible when controls are hidden */}
       <CardSearch
         isOpen={isCardSelectionOpen}
-        cards={activePlayer.deck}
+        cards={handCardsForCardSearch}
         selectionCount={isRevealTurn ? activePlayer.handCount : 1}
         onSelect={handleCardSelection}
         onCancel={() => {
@@ -1331,6 +2068,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         }}
         isRevealTurn={isRevealTurn}
         text={isRevealTurn ? 'Select Cards to Reveal' : 'Select a Card to Play'}
+        getCardPlayability={isRevealTurn ? undefined : checkPlayCardPlayability}
+        playabilityInvalidateKey={isRevealTurn ? undefined : playCardPickerPlayabilityKey}
       />
 
       <CardSearch
@@ -1342,6 +2081,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         isRevealTurn={false}
         text="Select an Intrigue card to play"
         getCardPlayability={(card) => checkIntrigueCardPlayability(card as IntrigueCard)}
+        playabilityInvalidateKey={intriguePlayabilityKey}
       />
 
       <CardSearch
@@ -1361,7 +2101,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         piles={[CardPile.HAND, CardPile.DISCARD, CardPile.PLAY_AREA]}
         selectionCount={1}
         onSelect={selected => selected[0] && handleTrashSelect(selected[0])}
-        onCancel={() => { setShowTrashPopup(false); setPendingEffect(null) }}
+        onCancel={() => { setShowTrashPopup(false); setPendingEffect(null); setPendingTrashReward(null) }}
         isRevealTurn={false}
         text="Select card to trash"
       />

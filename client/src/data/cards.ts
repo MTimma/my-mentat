@@ -290,10 +290,10 @@ export const STARTING_DECK: Card[] = [
     id: 9,
     name: "Seek Allies",
     image: "starter_deck/seek_allies.avif",
-    revealEffect: [
+    playEffect: [
       {
         reward: {
-          persuasion: 1
+          trashThisCard: true
         }
       }
     ],

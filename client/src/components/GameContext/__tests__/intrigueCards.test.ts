@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { applyGameAction, getFreshDefaultGameState } from '../GameContext'
-import { SPICE_MUST_FLOW_DECK } from '../../../data/cards'
+import { IMPERIUM_ROW_DECK, SPICE_MUST_FLOW_DECK, STARTING_DECK } from '../../../data/cards'
 import { intrigueCards } from '../../../services/IntrigueDeckService'
 import {
   AgentIcon,
@@ -88,6 +88,18 @@ function smfCard(id: number): Card {
     agentIcons: [AgentIcon.SPICE_TRADE],
     cost: 9,
   }
+}
+
+function powerPlayCard(): Card {
+  const card = IMPERIUM_ROW_DECK.find(c => c.name === 'Power Play')
+  if (!card) throw new Error('Power Play card not found')
+  return structuredClone(card)
+}
+
+function startingCard(name: string): Card {
+  const card = STARTING_DECK.find(c => c.name === name)
+  if (!card) throw new Error(`${name} card not found`)
+  return structuredClone(card)
 }
 
 describe('Intrigue cards — player turns (plot)', () => {
@@ -410,6 +422,22 @@ describe('Intrigue cards — combat phase', () => {
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
     expect(s.players[0].spice).toBe(3)
   })
+
+  it('keeps the Imperium Row intact when starting the next round', () => {
+    const rowCards = [stubDeckCard(7001), stubDeckCard(7002), stubDeckCard(7003), stubDeckCard(7004), stubDeckCard(7005)]
+    const deckCards = [stubDeckCard(8001), stubDeckCard(8002)]
+    let s = {
+      ...combatFourPlayerState(),
+      imperiumRow: rowCards,
+      imperiumRowDeck: deckCards,
+    }
+
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+
+    expect(s.phase).toBe(GamePhase.ROUND_START)
+    expect(s.imperiumRow.map(card => card.id)).toEqual(rowCards.map(card => card.id))
+    expect(s.imperiumRowDeck.map(card => card.id)).toEqual(deckCards.map(card => card.id))
+  })
 })
 
 describe('Intrigue cards — endgame', () => {
@@ -528,5 +556,91 @@ describe('Acquire — The Spice Must Flow', () => {
           g.name.includes('Acquire Effect')
       )
     ).toBe(true)
+  })
+})
+
+describe('Imperium Row card effects — Power Play', () => {
+  it('does not double the faction bump if Power Play is trashed first', () => {
+    let s = basePlotState([makePlayer(0, { deck: [powerPlayCard()], handCount: 1 })])
+
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: 1040 })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 15 })
+
+    const trashReward = s.pendingRewards.find(r => r.isTrash && r.source.name === 'Power Play')
+    expect(trashReward).toBeDefined()
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: trashReward!.id })
+
+    expect(s.players[0].playArea.some(card => card.name === 'Power Play')).toBe(false)
+    expect(s.players[0].trash.some(card => card.name === 'Power Play')).toBe(true)
+
+    const influenceReward = s.pendingRewards.find(r => r.reward.influence)
+    expect(influenceReward?.powerPlay).toBeUndefined()
+    expect(influenceReward).toBeDefined()
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: influenceReward!.id })
+
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(1)
+  })
+
+  it('doubles the faction bump when Power Play is resolved before the bump', () => {
+    let s = basePlotState([makePlayer(0, { deck: [powerPlayCard()], handCount: 1 })])
+
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: 1040 })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 15 })
+
+    const powerPlayReward = s.pendingRewards.find(r => r.reward.custom && r.source.name === 'Power Play')
+    expect(powerPlayReward).toBeDefined()
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: powerPlayReward!.id })
+
+    const influenceReward = s.pendingRewards.find(r => r.reward.influence)
+    expect(influenceReward?.powerPlay).toBe(true)
+    expect(influenceReward).toBeDefined()
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: influenceReward!.id })
+
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(2)
+  })
+})
+
+describe('Starter deck — Seek Allies', () => {
+  it('discards itself to trash when revealed (trash-this-card on reveal)', () => {
+    const seek = startingCard('Seek Allies')
+    let s = basePlotState([
+      makePlayer(0, {
+        deck: [seek],
+        handCount: 1,
+        playArea: [],
+      }),
+    ])
+
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [seek.id] })
+
+    expect(s.players[0].persuasion).toBe(1)
+    expect(s.players[0].trash.some(card => card.id === seek.id)).toBe(true)
+    expect(s.players[0].playArea.some(card => card.id === seek.id)).toBe(false)
+  })
+})
+
+describe('Pending rewards — trash', () => {
+  it('trashes the selected card for generic trash rewards', () => {
+    const seekAllies = startingCard('Seek Allies')
+    let s = basePlotState([makePlayer(0, { playArea: [seekAllies] })])
+    s = {
+      ...s,
+      pendingRewards: [{
+        id: 'trash-one',
+        source: { type: GainSource.CARD, id: 999, name: 'Trash Source' },
+        reward: { trash: 1 },
+        isTrash: true,
+      }],
+    }
+
+    s = applyGameAction(s, {
+      type: 'CLAIM_REWARD',
+      playerId: 0,
+      rewardId: 'trash-one',
+      customData: { trashedCardId: seekAllies.id },
+    })
+
+    expect(s.players[0].playArea.some(card => card.id === seekAllies.id)).toBe(false)
+    expect(s.players[0].trash.some(card => card.id === seekAllies.id)).toBe(true)
   })
 })

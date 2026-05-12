@@ -3,6 +3,7 @@ import { PlayerColor, PlayerSetup } from '../types/GameTypes'
 import { LEADERS } from '../data/leaders'
 import { motion } from 'framer-motion'
 import { buildStartingDeck } from '../services/starterDeckSetup'
+import './GameSetup/GameSetup.css'
 
 interface GameSetupProps {
   onComplete: (playerSetups: PlayerSetup[]) => void
@@ -66,6 +67,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
       animate={{ opacity: 1 }}
     >
       <div className="setup-container">
+        <div className="setup-container-scroll">
         <h1>Dune: Imperium</h1>
         <p className="game-description">
           Lead your house to victory through strategic card play, 
@@ -136,6 +138,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
               </div>
             </div>
           ))}
+        </div>
         </div>
 
         <button

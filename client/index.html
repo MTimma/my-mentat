@@ -3,8 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover: required on iOS Safari/Chrome so env(safe-area-inset-*) is non-zero -->
+<meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
     <title>Vite + React + TS</title>
+    <!-- Small toolbar icon — warm cache before bundle hydrates (mobile first paint). -->
+    <link rel="preload" href="/icon/intrigue.png" as="image" type="image/png" />
   </head>
   <body>
     <div id="root"></div>

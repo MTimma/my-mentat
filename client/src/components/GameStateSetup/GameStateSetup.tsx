@@ -16,12 +16,16 @@ interface GameStateSetupProps {
     imperiumRowDeck: Card[]
   }) => void
   onOpenCardCreator: () => void
+  autoApplyMandatoryRewards: boolean
+  onAutoApplyMandatoryRewardsChange: (enabled: boolean) => void
 }
 
 const GameStateSetup: React.FC<GameStateSetupProps> = ({
   playerSetups,
   onComplete,
   onOpenCardCreator,
+  autoApplyMandatoryRewards,
+  onAutoApplyMandatoryRewardsChange,
 }) => {
   const [currentRound, setCurrentRound] = useState(1)
   const [showResourceEditor, setShowResourceEditor] = useState(false)
@@ -110,6 +114,7 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
       animate={{ opacity: 1 }}
     >
       <div className="setup-container">
+        <div className="setup-container-scroll">
         <h1>Customize Game State</h1>
         <p className="game-description">
           Set initial resources and game state for each player
@@ -126,6 +131,21 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
                 className="round-input"
               />
             </label>
+          </div>
+
+          <div className="setup-section setup-option-row">
+            <div>
+              <strong>Auto-apply mandatory rewards</strong>
+              <p>Automatically claim non-interactive rewards during play.</p>
+            </div>
+            <button
+              type="button"
+              className={`setup-toggle-button ${autoApplyMandatoryRewards ? 'setup-toggle-button-on' : ''}`}
+              onClick={() => onAutoApplyMandatoryRewardsChange(!autoApplyMandatoryRewards)}
+              aria-pressed={autoApplyMandatoryRewards}
+            >
+              {autoApplyMandatoryRewards ? 'On' : 'Off'}
+            </button>
           </div>
 
           <div className="setup-actions">
@@ -239,6 +259,7 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
               <ImperiumRowDeckCreator deck={imperiumRowDeckDraft} onDeckChange={setImperiumRowDeckDraft} />
             </div>
           )}
+        </div>
 
           <button
             className="start-game-button"

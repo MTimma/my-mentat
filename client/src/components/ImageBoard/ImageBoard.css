@@ -10,6 +10,8 @@
 .image-board__stage {
   position: relative;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Wraps the raster + overlay so hotspots/markers use %-of-image, not the padded stage (see .game-container--play). */
@@ -17,13 +19,15 @@
   position: relative;
   display: block;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .image-board__img {
   width: 100%;
+  height: auto;
   display: block;
   pointer-events: none;
-  vertical-align: top;
 }
 
 .image-board__fallback {
@@ -160,7 +164,6 @@
   width: 100%;
   height: auto;
   display: block;
-  vertical-align: top;
   object-fit: cover;
 }
 

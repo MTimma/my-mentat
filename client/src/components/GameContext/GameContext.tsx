@@ -269,7 +269,6 @@ function completeCombatTransition(
     return { ...p, revealed: false, handCount: 5 }
   })
   newState.firstPlayerMarker = (newState.firstPlayerMarker + 1) % newState.players.length
-  const refreshedDeck = [...newState.imperiumRow, ...newState.imperiumRowDeck]
   const updatedConflictsDiscard = [...state.conflictsDiscard, state.currentConflict]
   const endgameTriggered =
     newState.players.some(p => getTotalVictoryPoints(p, newState) >= 10) ||
@@ -280,8 +279,6 @@ function completeCombatTransition(
       phase: GamePhase.END_GAME,
       activePlayerId: newState.firstPlayerMarker,
       conflictsDiscard: updatedConflictsDiscard,
-      imperiumRow: [],
-      imperiumRowDeck: refreshedDeck,
       canEndTurn: true,
       canAcquireIR: false,
       endgameDonePlayers: new Set(),
@@ -297,8 +294,6 @@ function completeCombatTransition(
     combatTroops: {},
     currentRound: newState.currentRound + 1,
     conflictsDiscard: updatedConflictsDiscard,
-    imperiumRow: [],
-    imperiumRowDeck: refreshedDeck,
     helenaRemovedCard: null,
     pendingVictorSpiceThisCombat: {},
     pendingRapidMobilization: null
@@ -549,10 +544,15 @@ function applyRewardToPlayer(
   }
   
   if (reward.trash || reward.trashThisCard) {
-    const trashedCardId = reward.trashThisCard || reward.trash
-    const trashedCard = updatedPlayer.deck.find(c => c.id === trashedCardId)
+    const trashedCardId = reward.trashThisCard ? source.id : reward.trash
+    const trashedCard =
+      updatedPlayer.deck.find(c => c.id === trashedCardId) ??
+      updatedPlayer.discardPile.find(c => c.id === trashedCardId) ??
+      updatedPlayer.playArea.find(c => c.id === trashedCardId)
     if (trashedCard) {
       updatedPlayer.deck = updatedPlayer.deck.filter(c => c.id !== trashedCardId)
+      updatedPlayer.discardPile = updatedPlayer.discardPile.filter(c => c.id !== trashedCardId)
+      updatedPlayer.playArea = updatedPlayer.playArea.filter(c => c.id !== trashedCardId)
       updatedPlayer.trash = [...updatedPlayer.trash, trashedCard]
     }
   }
@@ -1339,9 +1339,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             ? {
                 playerId,
                 type: TurnType.ACTION,
+                playedIntrigueCard: [
+                  ...(updatedState.currTurn?.playedIntrigueCard || []),
+                  { cardId }
+                ],
                 pendingChoices: pendingCombatChoices
               }
-            : updatedState.currTurn,
+            : {
+                ...(updatedState.currTurn || { playerId, type: TurnType.ACTION }),
+                playedIntrigueCard: [
+                  ...(updatedState.currTurn?.playedIntrigueCard || []),
+                  { cardId }
+                ]
+              },
         canEndTurn: pendingCombatChoices.length > 0 ? false : updatedState.canEndTurn
       }
 
@@ -1719,10 +1729,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Get or create current turn
       const currentTurn = state.currTurn?.playerId === playerId 
-        ? { ...state.currTurn, pendingChoices: [...(state.currTurn.pendingChoices || []), ...pendingChoices] }
+        ? {
+            ...state.currTurn,
+            pendingChoices: [...(state.currTurn.pendingChoices || []), ...pendingChoices],
+            playedIntrigueCard: [...(state.currTurn.playedIntrigueCard || []), { cardId }]
+          }
         : {
             playerId,
             type: TurnType.ACTION,
+            playedIntrigueCard: [{ cardId }],
             pendingChoices
           }
       
@@ -1782,7 +1797,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!card || playerId !== state.activePlayerId || !player) return state
       // Create or update the current turn
       const currentTurn = state.currTurn?.playerId === playerId 
-        ? { ...state.currTurn }
+        ? { ...state.currTurn, type: TurnType.ACTION, cardId }
         : {
             playerId,
             type: TurnType.ACTION,
@@ -2190,15 +2205,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Add influence to pending rewards (single bumps)
       if (space.influence) {
-        // Check if Power Play effect is active for this placement
-        const hasPowerPlay = card.playEffect?.some(e => e.reward.custom === CustomEffect.POWER_PLAY)
         const influenceReward = { influence: { amounts: [space.influence] } }
         const pendingReward = {
           id: `${GainSource.BOARD_SPACE}-${space.id}-${crypto.randomUUID()}`,
           source: { type: GainSource.BOARD_SPACE, id: space.id, name: space.name },
           reward: influenceReward,
-          isTrash: false,
-          powerPlay: hasPowerPlay
+          isTrash: false
         }
         pendingRewards.push(pendingReward)
       }
@@ -2338,7 +2350,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         .filter((card): card is Card => card !== undefined)
 
       const updatedDeck = player.deck.filter(card => !cardIds.includes(card.id))
-      const updatedPlayArea = [...player.playArea, ...revealedCards]
+      let mutablePlayArea = [...player.playArea, ...revealedCards]
+      let mutableTrash = [...player.trash]
 
       // Calculate reveal effects - pooled resources
       let persuasionCount = 0
@@ -2458,7 +2471,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             if(effect.reward?.intrigueCards) {
               addPendingReward({ intrigueCards: effect.reward.intrigueCards }, { type: GainSource.CARD, id: card.id, name: card.name })
             }
-            
+            if(effect.reward?.drawCards) {
+              addPendingReward({ drawCards: effect.reward.drawCards }, { type: GainSource.CARD, id: card.id, name: card.name })
+            }
+            // Pick-a-card trash on reveal (trash counts as N); trashThisCard is mandatory and applied immediately below
+            if (effect.reward?.trash && !effect.reward?.trashThisCard) {
+              addPendingReward(
+                { trash: effect.reward.trash, trashThisCard: effect.reward.trashThisCard },
+                { type: GainSource.CARD, id: card.id, name: card.name },
+                true
+              )
+            }
+
             // Auto-apply pooled: deployTroops
             if(effect.reward?.deployTroops) {
               updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name, amount: effect.reward.deployTroops, type: RewardType.DEPLOY, source: GainSource.CARD } )
@@ -2483,6 +2507,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                   break
                 default:
                   break
+              }
+            }
+            if (effect.reward?.trashThisCard) {
+              const ix = mutablePlayArea.findIndex(c => c.id === card.id)
+              if (ix >= 0) {
+                const removed = mutablePlayArea.splice(ix, 1)[0]
+                mutableTrash.push(removed)
               }
             }
           })
@@ -2536,6 +2567,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             troopLimit: tempCurrTurn.troopLimit,
             removableTroops: tempCurrTurn.removableTroops,
             persuasionCount: (state.currTurn?.persuasionCount || 0) + persuasionCount,
+            revealedCardIds: [...(state.currTurn.revealedCardIds || []), ...revealedCards.map(card => card.id)],
             optionalEffects: [...(state.currTurn?.optionalEffects||[]), ...optionalEffects],
             pendingChoices: pendingChoices
           }
@@ -2548,6 +2580,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             persuasionCount: persuasionCount,
             gainedEffects: [],
             acquiredCards: [],
+            revealedCardIds: revealedCards.map(card => card.id),
             optionalEffects,
             pendingChoices
           }
@@ -2575,7 +2608,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             ? {
                 ...player,
                 deck: updatedDeck,
-                playArea: updatedPlayArea,
+                playArea: mutablePlayArea,
+                trash: mutableTrash,
                 selectedCard: null,
                 combatValue: updatedCombatValue,
                 handCount: 0,
@@ -2668,7 +2702,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (card.acquireEffect?.influence) {
         card.acquireEffect.influence.amounts.forEach(({ faction, amount }) => {
           workingState = updateFactionInfluence(workingState, faction, playerId, amount, { appendGainsTo: updatedGains })
-          pushGain(amount, RewardType.INFLUENCE)
+          updatedGains.push({
+            round: state.currentRound,
+            playerId,
+            sourceId: card.id,
+            name: `${faction} Acquire`,
+            amount,
+            type: RewardType.INFLUENCE,
+            source: GainSource.CARD
+          })
         })
       }
 
@@ -2804,7 +2846,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if(cost.solari && player.solari < cost.solari) return false;
         if(cost.troops && player.troops < cost.troops) return false;
         if(cost.trash && !data?.trashedCardId) return false;
-        if(cost.trashThisCard && !data?.trashedCardId) return false;
         return true;
       }
 
@@ -2815,9 +2856,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if(cost.water) player.water -= cost.water;
       if(cost.solari) player.solari -= cost.solari;
       if(cost.troops) player.troops -= cost.troops;
-
-      if(cost.trash) player.trash = [...(player.trash||[]), ...player.playArea.filter(c => c.id === data?.trashedCardId)];
-      if(cost.trashThisCard) player.trash = [...(player.trash||[]), ...player.playArea.filter(c => c.id === source.id)];
 
       // Handle trashing this card (card assumed to be in playArea)
       if(cost.trashThisCard && source.type === GainSource.CARD) {
@@ -3404,6 +3442,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (reward.reward.custom === CustomEffect.THE_VOICE && (typeof customData?.spaceId !== 'number')) {
         return state
       }
+      if (reward.reward.trash && !reward.reward.trashThisCard && typeof customData?.trashedCardId !== 'number') {
+        return state
+      }
       // Resolved factions for Masterstroke / Memnon influence rewards
       let resolvedInfluenceFactions: FactionType[] | null = null
       if (reward.source.type === GainSource.MASTERSTROKE) {
@@ -3503,7 +3544,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       
       // Apply the reward using shared helper (Ariana gains 1 less spice and draws 1 when harvesting)
-      const rewardToApply = getResolvedRewardForPlayer(player, reward)
+      const resolvedReward = getResolvedRewardForPlayer(player, reward)
+      const rewardToApply =
+        resolvedReward.trash && !resolvedReward.trashThisCard
+          ? { ...resolvedReward, trash: customData?.trashedCardId as number }
+          : resolvedReward
       newPlayer = applyRewardToPlayer(rewardToApply, newPlayer, newGains, state, reward.source)
       
       // Handle influence updates (needs state modification)

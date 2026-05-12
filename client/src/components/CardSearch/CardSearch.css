@@ -14,11 +14,31 @@
 /* Full-screen overlay for standalone modals (Play Card, Intrigue, etc.) */
 .card-selection-dialog-overlay-standalone {
   inset: 0;
+  left: 0;
   right: 0;
+  top: 0;
   bottom: 0;
   z-index: 1100;
-  overflow-y: auto;
-  padding: 20px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  padding-top: max(16px, env(safe-area-inset-top, 0px), constant(safe-area-inset-top, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px), constant(safe-area-inset-right, 0px));
+  padding-bottom: calc(max(16px, env(safe-area-inset-bottom, 0px), constant(safe-area-inset-bottom, 0px)) + var(--vv-layout-gap-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px), constant(safe-area-inset-left, 0px));
+  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Dialog is the single scroll owner for the card grid; keep search/actions in view */
+.card-selection-dialog-overlay-standalone > .card-selection-dialog {
+  flex: 0 1 auto;
+  width: min(1200px, 100%);
+  max-width: 1200px;
+  min-height: 0;
+  max-height: 100%;
+  margin: 0 auto;
 }
 
 .card-selection-dialog {
@@ -27,7 +47,7 @@
   padding: 20px;
   width: 90%;
   max-width: 1200px;
-  max-height: 90vh;
+  max-height: min(90dvh, calc(100% - env(safe-area-inset-bottom, 0px)));
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-rows: auto 1fr;
@@ -109,7 +129,8 @@
   border: none;
   background: transparent;
   color: #fff;
-  font-size: 1rem;
+  /* min 16px: iOS WebKit avoids auto-zoom-on-focus below this threshold */
+  font-size: max(16px, 1rem);
 }
 
 .search-input:focus {
@@ -388,8 +409,8 @@
 
 /* Desktop: standalone overlay - ensure dialog and cards grid work properly */
 @media (min-width: 601px) {
-  .card-selection-dialog-overlay-standalone .card-selection-dialog {
-    max-height: 85vh;
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog {
+    max-height: min(85vh, 100%);
     display: flex;
     flex-direction: column;
     grid-template-areas: unset;
@@ -398,12 +419,12 @@
     overflow: hidden;
   }
 
-  .card-selection-dialog-overlay-standalone .card-selection-dialog .dialog-title,
-  .card-selection-dialog-overlay-standalone .card-selection-dialog .dialog-actions {
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog .dialog-title,
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog .dialog-actions {
     flex-shrink: 0;
   }
 
-  .card-selection-dialog-overlay-standalone .card-selection-dialog .cards-grid {
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog .cards-grid {
     grid-area: unset;
     flex: 1;
     min-height: 200px;
@@ -412,16 +433,16 @@
   }
 
   /* Smaller cards so more fit in viewport */
-  .card-selection-dialog-overlay-standalone .cards-grid .card {
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog .cards-grid .card {
     width: 110px;
     transform: scale(0.75);
   }
 
-  .card-selection-dialog-overlay-standalone .cards-grid .card:hover {
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog .cards-grid .card:hover {
     transform: scale(0.85);
   }
 
-  .card-selection-dialog-overlay-standalone .cards-grid .card.selected {
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog .cards-grid .card.selected {
     transform: scale(0.85);
   }
 }
@@ -430,8 +451,8 @@
   .card-selection-dialog {
     padding: 12px;
     width: 95%;
-    height: 90vh;
-    max-height: 90vh;
+    height: 90dvh;
+    max-height: 90dvh;
     display: flex;
     flex-direction: column;
     grid-template-areas: unset;
@@ -506,7 +527,7 @@
   }
 
   .search-input {
-    font-size: 0.9rem;
+    font-size: max(16px, 0.9rem);
     padding: 6px 6px 6px 10px;
   }
 
@@ -516,6 +537,19 @@
     min-width: 0;
     padding: 8px 12px;
     font-size: 0.85rem;
+  }
+
+  /* Standalone: fill padded overlay — no 90vh + outer scroll (fixes Android / mobile bottom bar) */
+  .card-selection-dialog-overlay-standalone {
+    justify-content: flex-start;
+  }
+
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
   }
 }
 

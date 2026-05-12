@@ -9,7 +9,7 @@ import { useGame } from './components/GameContext/GameContext'
 import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward } from './types/GameTypes'
 import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
 import TurnControls from './components/TurnControls/TurnControls'
 import CombatResults from './components/CombatResults/CombatResults'
@@ -23,7 +23,11 @@ import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverview
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
 import { LEADER_NAMES } from './data/leaders'
 
-const GameContent = () => {
+interface GameContentProps {
+  autoApplyMandatoryRewards: boolean
+}
+
+const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   const {
     gameState,
     dispatch,
@@ -38,6 +42,11 @@ const GameContent = () => {
   } = useTimeTravel()
 
   const [useImageBoard] = useState(true)
+  const [autoAppliedRewardSummary, setAutoAppliedRewardSummary] = useState<Array<{
+    id: string
+    sourceName: string
+    reward: Reward
+  }>>([])
   const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(false)
   const [isPlayerOverviewOpen, setIsPlayerOverviewOpen] = useState(false)
   const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
@@ -45,6 +54,10 @@ const GameContent = () => {
   const [voiceSelectionRewardId, setVoiceSelectionRewardId] = useState<string | null>(null)
   const [masterstrokeSelectionRewardId, setMasterstrokeSelectionRewardId] = useState<string | null>(null)
   const [memnonHighCouncilRewardId, setMemnonHighCouncilRewardId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setAutoAppliedRewardSummary([])
+  }, [gameState.activePlayerId, gameState.currentRound])
 
   useEffect(() => {
     setVoiceSelectionRewardId(null)
@@ -69,8 +82,10 @@ const GameContent = () => {
     if (!stillPending) setMasterstrokeSelectionRewardId(null)
   }, [gameState.pendingRewards, masterstrokeSelectionRewardId])
 
-  // Use displayState for rendering, but gameState for actions
+  // Keep actions on live state, but let the footer inspect history snapshots read-only.
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
+  const turnControlsState = isViewingHistory ? displayState : gameState
+  const turnControlsActivePlayer = turnControlsState.players.find(p => p.id === turnControlsState.activePlayerId) || null
 
   const handleCardSelect = (playerId: number, cardId: number) => {
     dispatch({ type: 'PLAY_CARD', playerId, cardId })
@@ -247,34 +262,40 @@ const GameContent = () => {
     dispatch({ type: 'OPPONENT_NO_CARD_ACK', playerId: activePlayer.id, opponentId })
   }
 
-  const handleAutoApplyRewards = () => {
-    if (!activePlayer) return
-    
+  const getAutoApplicableRewards = (state: GameState): PendingReward[] => {
     // Interactive custom effects that require user input
     const interactiveEffects = [
       CustomEffect.THE_VOICE,
       CustomEffect.REVEREND_MOTHER_MOHIAM,
       CustomEffect.TEST_OF_HUMANITY
     ]
-    
+    const trashThisCardSourceKeys = new Set(
+      state.pendingRewards
+        .filter(reward => !reward.disabled && reward.source.type === GainSource.CARD && reward.reward.trashThisCard)
+        .map(reward => `${reward.source.type}:${reward.source.id}`)
+    )
+
     // Filter rewards to only include non-interactive ones
-    const autoApplicableRewards = gameState.pendingRewards.filter(reward => {
+    return state.pendingRewards.filter(reward => {
       // Skip disabled rewards
       if (reward.disabled) return false
-      
+
       // Skip trash rewards (require user selection)
       if (reward.isTrash) return false
-      
+
+      // If a card can trash itself, the player must choose the resolution order.
+      if (trashThisCardSourceKeys.has(`${reward.source.type}:${reward.source.id}`)) return false
+
       // Skip rewards with interactive custom effects
       if (reward.reward.custom && interactiveEffects.includes(reward.reward.custom)) {
         return false
       }
-      
+
       // Skip Masterstroke (requires faction selection when claimed)
       if (reward.source.type === GainSource.MASTERSTROKE) return false
-      
+
       // Skip rewards that are part of OR choices (pending choices)
-      const isPartOfChoice = gameState.currTurn?.pendingChoices?.some(choice => 
+      const isPartOfChoice = state.currTurn?.pendingChoices?.some(choice =>
         choice.type === ChoiceType.FIXED_OPTIONS &&
         (choice as FixedOptionsChoice).options.some(opt => {
           const optSource = (opt as unknown as { source?: { id: number; type: string } }).source
@@ -285,12 +306,48 @@ const GameContent = () => {
       
       return true
     })
-    
+  }
+
+  const summarizeAutoAppliedRewards = (rewards: PendingReward[]) => {
+    setAutoAppliedRewardSummary(rewards.map(reward => ({
+      id: reward.id,
+      sourceName: reward.source.name,
+      reward: reward.reward
+    })))
+  }
+
+  const handleAutoApplyRewards = () => {
+    if (!activePlayer) return
+    const autoApplicableRewards = getAutoApplicableRewards(gameState)
+    summarizeAutoAppliedRewards(autoApplicableRewards)
+
     // Dispatch CLAIM_REWARD for each auto-applicable reward
     autoApplicableRewards.forEach(reward => {
       dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId: reward.id })
     })
   }
+
+  useEffect(() => {
+    if (!autoApplyMandatoryRewards || !activePlayer || isViewingHistory) return
+    if (voiceSelectionRewardId || masterstrokeSelectionRewardId || memnonHighCouncilRewardId) return
+
+    const autoApplicableRewards = getAutoApplicableRewards(gameState)
+    if (autoApplicableRewards.length === 0) return
+
+    summarizeAutoAppliedRewards(autoApplicableRewards)
+    autoApplicableRewards.forEach(reward => {
+      dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId: reward.id })
+    })
+  }, [
+    autoApplyMandatoryRewards,
+    activePlayer?.id,
+    isViewingHistory,
+    gameState.pendingRewards,
+    gameState.currTurn?.pendingChoices,
+    voiceSelectionRewardId,
+    masterstrokeSelectionRewardId,
+    memnonHighCouncilRewardId
+  ])
 
   const imperiumSelectionCount = Math.min(Math.max(0, 5 - gameState.imperiumRow.length), gameState.imperiumRowDeck.length)
   const needsImperiumSelection = gameState.phase === GamePhase.ROUND_START && imperiumSelectionCount > 0
@@ -506,6 +563,7 @@ const GameContent = () => {
               c => c.tier === tierForRound && !gameState.conflictsDiscard.includes(c)
             )
           })()}
+          currentRound={gameState.currentRound}
           handleConflictSelect={handleConflictSelect}
         />
       </div>
@@ -513,11 +571,11 @@ const GameContent = () => {
         <div
           ref={turnControlsFooterRef}
           className="turn-controls-container"
-          hidden={isViewingHistory || (gameState.phase !== GamePhase.PLAYER_TURNS && gameState.phase !== GamePhase.COMBAT && gameState.phase !== GamePhase.END_GAME)}
+          hidden={turnControlsState.phase !== GamePhase.PLAYER_TURNS && turnControlsState.phase !== GamePhase.COMBAT && turnControlsState.phase !== GamePhase.END_GAME}
         >
           <TurnControls
-            activePlayer={activePlayer}
-            canEndTurn={gameState.canEndTurn}
+            activePlayer={turnControlsActivePlayer}
+            canEndTurn={isViewingHistory ? false : gameState.canEndTurn}
             onPlayCard={handleCardSelect}
             onPlayIntrigue={handlePlayIntrigue}
             onMobilizeGarrison={handleMobilizeGarrison}
@@ -525,54 +583,57 @@ const GameContent = () => {
             onReveal={handleRevealCards}
             onEndTurn={handleEndTurn}
             onPassCombat={handlePassCombat}
-            canDeployTroops={gameState.currTurn?.canDeployTroops || false}
+            canDeployTroops={isViewingHistory ? false : gameState.currTurn?.canDeployTroops || false}
             onAddTroop={handleAddTroop}
             onRemoveTroop={handleRemoveTroop}
-            retreatableTroops={gameState.currTurn?.removableTroops || 0}
-            deployableTroops={Math.min((gameState.currTurn?.troopLimit || 0) - (gameState.currTurn?.removableTroops || 0), activePlayer?.troops || 0)}
-            isCombatPhase={gameState.phase === GamePhase.COMBAT}
-            combatStrength={gameState.combatStrength}
-            combatPasses={gameState.combatPasses}
-            players={gameState.players}
-            factionInfluence={displayState.factionInfluence}
-            factionAlliances={gameState.factionAlliances}
-            controlMarkers={gameState.controlMarkers}
-            firstPlayerMarker={gameState.firstPlayerMarker}
-            mentatOwner={gameState.mentatOwner}
-            optionalEffects={gameState.currTurn?.optionalEffects || []}
-            pendingChoices={gameState.currTurn?.pendingChoices || []}
+            retreatableTroops={isViewingHistory ? 0 : gameState.currTurn?.removableTroops || 0}
+            deployableTroops={isViewingHistory ? 0 : Math.min((gameState.currTurn?.troopLimit || 0) - (gameState.currTurn?.removableTroops || 0), activePlayer?.troops || 0)}
+            isCombatPhase={turnControlsState.phase === GamePhase.COMBAT}
+            combatStrength={turnControlsState.combatStrength}
+            combatPasses={turnControlsState.combatPasses}
+            players={turnControlsState.players}
+            factionInfluence={turnControlsState.factionInfluence}
+            factionAlliances={turnControlsState.factionAlliances}
+            controlMarkers={turnControlsState.controlMarkers}
+            firstPlayerMarker={turnControlsState.firstPlayerMarker}
+            mentatOwner={turnControlsState.mentatOwner}
+            optionalEffects={isViewingHistory ? [] : gameState.currTurn?.optionalEffects || []}
+            pendingChoices={isViewingHistory ? [] : gameState.currTurn?.pendingChoices || []}
             onResolveChoice={handleResolveChoice}
             onResolveCardSelect={handleResolveCardSelect}
             onPayCost={handlePayCost}
             showSelectiveBreeding={showSelectiveBreeding}
-            selectedCard={getSelectedCard(gameState)}
-            recallMode={Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
+            selectedCard={isViewingHistory ? null : getSelectedCard(gameState)}
+            recallMode={!isViewingHistory && Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
             onSelectiveBreedingSelect={card => {
               if (onSelectiveBreedingSelect) onSelectiveBreedingSelect(card)
               setShowSelectiveBreeding(false)
             }}
             onSelectiveBreedingCancel={() => setShowSelectiveBreeding(false)}
-            pendingRewards={gameState.pendingRewards}
+            pendingRewards={isViewingHistory ? [] : gameState.pendingRewards}
             onClaimReward={handleClaimReward}
             onClaimAllRewards={handleClaimAllRewards}
             onAutoApplyRewards={handleAutoApplyRewards}
-            agentPlaced={Boolean(gameState.currTurn?.agentSpace)}
-            opponentDiscardState={gameState.currTurn?.opponentDiscardState}
+            autoApplyMandatoryRewards={autoApplyMandatoryRewards}
+            autoAppliedRewardSummary={autoAppliedRewardSummary}
+            agentPlaced={Boolean(turnControlsState.currTurn?.agentSpace)}
+            opponentDiscardState={isViewingHistory ? undefined : gameState.currTurn?.opponentDiscardState}
             onOpponentDiscardChoice={handleOpponentDiscardChoice}
             onOpponentDiscardCard={handleOpponentDiscardCard}
-            combatTroops={gameState.combatTroops}
+            combatTroops={turnControlsState.combatTroops}
             onVoiceSelectionStart={handleVoiceSelectionStart}
-            voiceSelectionActive={Boolean(voiceSelectionRewardId)}
+            voiceSelectionActive={!isViewingHistory && Boolean(voiceSelectionRewardId)}
             onVoiceSelectionCancel={handleVoiceSelectionCancel}
             onMasterstrokeSelectionStart={handleMasterstrokeSelectionStart}
-            masterstrokeSelectionActive={Boolean(masterstrokeSelectionRewardId)}
+            masterstrokeSelectionActive={!isViewingHistory && Boolean(masterstrokeSelectionRewardId)}
             onMemnonHighCouncilSelectionStart={handleMemnonHighCouncilSelectionStart}
-            memnonHighCouncilSelectionActive={Boolean(memnonHighCouncilRewardId)}
+            memnonHighCouncilSelectionActive={!isViewingHistory && Boolean(memnonHighCouncilRewardId)}
             onOpponentNoCardAck={handleOpponentNoCardAck}
-            intrigueDeck={gameState.intrigueDeck}
-            gamePhase={gameState.phase}
-            activeIntrigueThisRound={activePlayer ? (gameState.activeIntrigueThisRound?.[activePlayer.id] || []) : []}
-            gameState={gameState}
+            intrigueDeck={turnControlsState.intrigueDeck}
+            gamePhase={turnControlsState.phase}
+            activeIntrigueThisRound={turnControlsActivePlayer ? (turnControlsState.activeIntrigueThisRound?.[turnControlsActivePlayer.id] || []) : []}
+            gameState={turnControlsState}
+            isHistoryView={isViewingHistory}
             onOpenPlayerOverview={() => setIsPlayerOverviewOpen(true)}
             onTurnHistoryToggle={() => setIsTurnHistoryOpen(open => !open)}
           />
@@ -672,7 +733,11 @@ function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
 }
 
 // Wrapper component that provides TimeTravel context to GameContent
-const GameContentWithTimeTravel = () => {
+interface GameContentWithTimeTravelProps {
+  autoApplyMandatoryRewards: boolean
+}
+
+const GameContentWithTimeTravel = ({ autoApplyMandatoryRewards }: GameContentWithTimeTravelProps) => {
   const { gameState, dispatch } = useGame()
   
   const handleUndoToTurn = (turnIndex: number) => {
@@ -681,13 +746,16 @@ const GameContentWithTimeTravel = () => {
   
   return (
     <TimeTravelProvider gameState={gameState} onUndoToTurn={handleUndoToTurn}>
-      <GameContent />
+      <GameContent autoApplyMandatoryRewards={autoApplyMandatoryRewards} />
     </TimeTravelProvider>
   )
 }
 
 function App() {
   const [screenState, setScreenState] = useState<ScreenState>(ScreenState.SETUP)
+  const [autoApplyMandatoryRewards, setAutoApplyMandatoryRewards] = useState(() => {
+    return localStorage.getItem('myMentat.autoApplyMandatoryRewards') !== 'false'
+  })
   const [creatorReturnScreen, setCreatorReturnScreen] = useState<ScreenState>(ScreenState.SETUP)
   const [playerSetups, setPlayerSetups] = useState<PlayerSetup[]>([])
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
@@ -697,6 +765,46 @@ function App() {
     imperiumRowDeck: Card[]
   } | null>(null)
   const [setupImperiumDeck, setSetupImperiumDeck] = useState<Card[]>(() => buildImperiumDeck())
+
+  useEffect(() => {
+    localStorage.setItem('myMentat.autoApplyMandatoryRewards', autoApplyMandatoryRewards ? 'true' : 'false')
+  }, [autoApplyMandatoryRewards])
+
+  // iOS Safari: fixed bottom UIs anchor to the layout viewport, which extends below the visible
+  // area when chrome shows. Shift up by this gap so turn controls/modals align with VisualViewport bottom.
+  useLayoutEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    let frame = 0
+    const sync = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        // iOS Chrome sometimes reports transient visualViewport sizes; absurd gaps break fixed footers
+        // and can leave the playing area blank after closing a modal.
+        if (!vv.height || vv.height < 80) {
+          document.documentElement.style.setProperty('--vv-layout-gap-bottom', '0px')
+          return
+        }
+        const raw = Math.max(0, window.innerHeight - vv.offsetTop - vv.height)
+        const gapBottom =
+          raw > window.innerHeight * 0.34 ? 0 : Math.min(raw, 160)
+        document.documentElement.style.setProperty('--vv-layout-gap-bottom', `${gapBottom}px`)
+      })
+    }
+    sync()
+    vv.addEventListener('resize', sync)
+    vv.addEventListener('scroll', sync)
+    window.addEventListener('resize', sync)
+    window.addEventListener('orientationchange', sync)
+    return () => {
+      cancelAnimationFrame(frame)
+      vv.removeEventListener('resize', sync)
+      vv.removeEventListener('scroll', sync)
+      window.removeEventListener('resize', sync)
+      window.removeEventListener('orientationchange', sync)
+      document.documentElement.style.removeProperty('--vv-layout-gap-bottom')
+    }
+  }, [])
 
   const handleSetupComplete = (setups: PlayerSetup[]) => {
     setPlayerSetups(setups)
@@ -771,6 +879,8 @@ function App() {
           playerSetups={playerSetups}
           onComplete={handleGameStateSetupComplete}
           onOpenCardCreator={handleOpenCardCreator}
+          autoApplyMandatoryRewards={autoApplyMandatoryRewards}
+          onAutoApplyMandatoryRewardsChange={setAutoApplyMandatoryRewards}
         />
       )}
 
@@ -789,7 +899,7 @@ function App() {
           phase: GamePhase.ROUND_START,
           imperiumRowDeck: setupImperiumDeck
         }}>
-          <GameContentWithTimeTravel />
+          <GameContentWithTimeTravel autoApplyMandatoryRewards={autoApplyMandatoryRewards} />
         </GameProvider>
       )}
     </div>

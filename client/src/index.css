@@ -21,16 +21,44 @@ a {
 a:hover {
   color: #535bf2;
 }
+#root {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+html {
+  height: 100%;
+  /* iOS Safari: stable min height when URL bar shows/hides (pairs with 100dvh on children) */
+  min-height: -webkit-fill-available;
+  /* Avoid post-load “slightly zoomed” text scaling in iOS Chrome / WebKit */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: -webkit-fill-available;
   display: block;
-  /* Padding keeps content clear of notches when using fixed footers elsewhere */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Padding keeps content clear of lateral notches (viewport-fit=cover in index.html enables safe-area insets app-wide). */
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
+}
+
+/*
+ * iOS Safari/Chrome zoom the page when focusing inputs with computed font-size under ~16px.
+ * Use at least 16px on form controls (search, selects) so the viewport scale stays stable.
+ */
+@media (max-width: 600px) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
 }
 
 h1 {

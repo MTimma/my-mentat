@@ -1,8 +1,107 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Card, Player, CardPile } from '../../types/GameTypes'
 import './CardSearch.css'
 
 const EMPTY_SELECTED_CARDS: Card[] = []
+
+/** Lowercased substring blob for filtering — computed once per `availableCards` change, not on every keystroke. */
+function buildCardSearchBlob(card: Card): string {
+  const cardDescription = (card as { description?: string }).description || ''
+  let effectBlob = ''
+  const pe = card.playEffect
+  if (pe?.length) {
+    const chunks: string[] = []
+    for (const effect of pe) {
+      chunks.push(JSON.stringify(effect.reward), JSON.stringify(effect.requirement), JSON.stringify(effect.cost))
+    }
+    effectBlob = chunks.join(' ')
+  }
+
+  return [
+    card.name,
+    cardDescription,
+    effectBlob,
+    card.acquireEffect ? JSON.stringify(card.acquireEffect) : '',
+    card.cost?.toString() ?? '',
+    card.agentIcons.join(' '),
+  ]
+    .join(' ')
+    .toLowerCase()
+}
+
+type GridItemPlayability = { playable: boolean; reason?: string }
+
+const PLAYABLE_CARD: GridItemPlayability = { playable: true }
+
+type CardGridItemProps = {
+  card: Card
+  isSelected: boolean
+  playability: GridItemPlayability
+  onPick: (card: Card) => void
+}
+
+const CardGridItem = React.memo(function CardGridItem({
+  card,
+  isSelected,
+  playability,
+  onPick,
+}: CardGridItemProps) {
+  const isDisabled = !playability.playable
+
+  const handleClick = () => {
+    if (isDisabled) return
+    onPick(card)
+  }
+
+  return (
+    <div className="card-cell">
+      <div
+        className={`card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+        onClick={handleClick}
+      >
+        {card.image && <img src={card.image} alt={card.name} className="card-image" />}
+        {!card.image && (
+          <>
+            <div className="card-header">
+              <h3>{card.name}</h3>
+              {card.cost && <span className="persuasion">Cost: {card.cost}</span>}
+            </div>
+            <div className="card-icons">
+              {card.agentIcons.map((icon, index) => (
+                <span key={index} className="agent-icon">
+                  {icon}
+                </span>
+              ))}
+            </div>
+            {card.playEffect && (
+              <div className="card-effect">
+                {card.playEffect.map((effect, index) => (
+                  <div key={index}>Reveal: {JSON.stringify(effect.reward)}</div>
+                ))}
+              </div>
+            )}
+            {card.playEffect && (
+              <div className="card-effect">
+                {card.playEffect.map((effect, index) => (
+                  <div key={index}>Play: {JSON.stringify(effect.reward)}</div>
+                ))}
+              </div>
+            )}
+            {card.acquireEffect && (
+              <p className="card-acquire-effect">Acquire: {JSON.stringify(card.acquireEffect)}</p>
+            )}
+          </>
+        )}
+        {isDisabled && playability.reason && (
+          <div className="card-disabled-reason" aria-label={playability.reason}>
+            {playability.reason}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+})
 
 interface CardSearchProps {
   isOpen: boolean
@@ -24,6 +123,8 @@ interface CardSearchProps {
   cancelButtonText?: string
   /** Placed after the cancel control and before Confirm (e.g. quantity stepper). */
   confirmAdornment?: React.ReactNode
+  /** Bust playability caches when rules inputs change without a new `cards` array identity. */
+  playabilityInvalidateKey?: unknown
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({
@@ -44,10 +145,13 @@ const CardSearch: React.FC<CardSearchProps> = ({
   initialSelectedCards = EMPTY_SELECTED_CARDS,
   cancelButtonText = 'Clear all',
   confirmAdornment,
+  playabilityInvalidateKey,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const onSelectionChangeRef = useRef(onSelectionChange)
+  const getCardPlayabilityRef = useRef(getCardPlayability)
+  getCardPlayabilityRef.current = getCardPlayability
 
   useEffect(() => {
     onSelectionChangeRef.current = onSelectionChange
@@ -101,59 +205,56 @@ const CardSearch: React.FC<CardSearchProps> = ({
     return baseCards
   }, [cards, player, piles, customFilter])
 
+  const searchBlobById = useMemo(() => {
+    const m = new Map<number, string>()
+    for (const card of availableCards) {
+      m.set(card.id, buildCardSearchBlob(card))
+    }
+    return m
+  }, [availableCards])
+
+  const deferredSearch = useDeferredValue(searchTerm)
   const filteredCards = useMemo(() => {
-    if (!searchTerm) return availableCards
+    const q = deferredSearch.trim().toLowerCase()
+    if (!q) return availableCards
+    return availableCards.filter(card => searchBlobById.get(card.id)?.includes(q))
+  }, [availableCards, deferredSearch, searchBlobById])
 
-    const searchLower = searchTerm.toLowerCase()
-    return availableCards.filter(card => {
-      const searchableText = [
-        card.name,
-        card.description || '',
-        card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
-        card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
-        card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
-        card.playEffect?.map(effect => JSON.stringify(effect.reward)).join(' '),
-        card.playEffect?.map(effect => JSON.stringify(effect.requirement)).join(' '),
-        card.playEffect?.map(effect => JSON.stringify(effect.cost)).join(' '),
-        card.acquireEffect ? JSON.stringify(card.acquireEffect) : '',
-        card.cost?.toString(),
-        card.agentIcons.join(' '),
-      ].join(' ').toLowerCase()
+  /** Playability does not depend on search. Callback identity from parents is often unstable — use a ref + explicit bust key. */
+  const playabilityByCardId = useMemo(() => {
+    const m = new Map<number, GridItemPlayability>()
+    const fn = getCardPlayabilityRef.current
+    if (!fn) return m
+    for (const card of availableCards) {
+      m.set(card.id, fn(card))
+    }
+    return m
+  }, [availableCards, playabilityInvalidateKey])
 
-      return searchableText.includes(searchLower)
-    })
-  }, [availableCards, searchTerm])
+  const selectedIds = useMemo(() => new Set(selectedCards.map(c => c.id)), [selectedCards])
 
-  if (!isOpen) return null
-
-  const handleCardClick = (card: Card) => {
-    // Check if card is playable
-    if (getCardPlayability) {
-      const playability = getCardPlayability(card)
-      if (!playability.playable) {
-        return // Don't allow selection of unplayable cards
-      }
+  const handleCardPick = useCallback((card: Card) => {
+    const fn = getCardPlayabilityRef.current
+    if (fn) {
+      const p = fn(card)
+      if (!p.playable) return
     }
 
-    let nextSelected: Card[]
-
-    if (!isRevealTurn) {
-      nextSelected = [card]
-    } else {
-      if (selectedCards.find(c => c.id === card.id)) {
-        nextSelected = selectedCards.filter(c => c.id !== card.id)
-      } else if (selectedCards.length < selectionCount) {
-        nextSelected = [...selectedCards, card]
+    setSelectedCards(prev => {
+      let next: Card[]
+      if (!isRevealTurn) {
+        next = [card]
+      } else if (prev.find(c => c.id === card.id)) {
+        next = prev.filter(c => c.id !== card.id)
+      } else if (prev.length < selectionCount) {
+        next = [...prev, card]
       } else {
-        nextSelected = selectedCards
+        next = prev
       }
-    }
-
-    setSelectedCards(nextSelected)
-    if (onSelectionChange) {
-      onSelectionChange(nextSelected)
-    }
-  }
+      onSelectionChangeRef.current?.(next)
+      return next
+    })
+  }, [isRevealTurn, selectionCount])
 
   const handleConfirm = () => {
     if (selectedCards.length === selectionCount) {
@@ -172,6 +273,8 @@ const CardSearch: React.FC<CardSearchProps> = ({
     onCancel()
   }
 
+  if (!isOpen) return null
+
   const isStandaloneModal = !slotBetweenCardsAndSearch
   const dialog = (
     <div className={`card-selection-dialog ${slotBetweenCardsAndSearch ? 'card-selection-dialog-search-at-bottom' : ''}`}>
@@ -179,71 +282,17 @@ const CardSearch: React.FC<CardSearchProps> = ({
         {!hideTitle && <h2>{text}</h2>}
       </div>
       <div className="cards-grid">
-        {filteredCards.map(card => {
-          const playability = getCardPlayability ? getCardPlayability(card) : { playable: true }
-          const isDisabled = !playability.playable
-          
-          return (
-            <div key={card.id} className="card-cell">
-              <div
-                className={`card ${selectedCards?.find(c => c.id === card.id) ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
-                onClick={() => handleCardClick(card)}
-              >
-                {card.image && (
-                  <img
-                    src={card.image}
-                    alt={card.name}
-                    className="card-image"
-                  />
-                )}
-                {!card.image && (
-                  <>
-                    <div className="card-header">
-                      <h3>{card.name}</h3>
-                      {card.cost && <span className="persuasion">Cost: {card.cost}</span>}
-                    </div>
-                    <div className="card-icons">
-                      {card.agentIcons.map((icon, index) => (
-                        <span
-                          key={index}
-                          className="agent-icon"
-                        >
-                          {icon}
-                        </span>
-                      ))}
-                    </div>
-                    {card.playEffect && (
-                      <div className="card-effect">
-                        {card.playEffect.map((effect, index) => (
-                          <div key={index}>
-                            Reveal: {JSON.stringify(effect.reward)}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {card.playEffect && (
-                      <div className="card-effect">
-                        {card.playEffect.map((effect, index) => (
-                          <div key={index}>
-                            Play: {JSON.stringify(effect.reward)}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {card.acquireEffect && (
-                      <p className="card-acquire-effect">
-                        Acquire: {JSON.stringify(card.acquireEffect)}
-                      </p>
-                    )}
-                  </>
-                )}
-                {isDisabled && playability.reason && (
-                  <div className="card-disabled-reason" aria-label={playability.reason}>{playability.reason}</div>
-                )}
-              </div>
-            </div>
-          )
-        })}
+        {filteredCards.map(card => (
+          <CardGridItem
+            key={card.id}
+            card={card}
+            isSelected={selectedIds.has(card.id)}
+            playability={
+              getCardPlayability ? playabilityByCardId.get(card.id) ?? PLAYABLE_CARD : PLAYABLE_CARD
+            }
+            onPick={handleCardPick}
+          />
+        ))}
       </div>
       {slotBetweenCardsAndSearch}
       <div className="dialog-actions">
@@ -265,10 +314,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
             </button>
           )}
         </div>
-        <button
-          className="header-cancel-button"
-          onClick={handleCancel}
-        >
+        <button className="header-cancel-button" onClick={handleCancel}>
           {cancelButtonText}
         </button>
         {confirmAdornment}
@@ -284,11 +330,13 @@ const CardSearch: React.FC<CardSearchProps> = ({
   )
 
   if (isStandaloneModal) {
-    return (
+    const overlay = (
       <div className="card-selection-dialog-overlay card-selection-dialog-overlay-standalone">
         {dialog}
       </div>
     )
+
+    return typeof document === 'undefined' ? overlay : createPortal(overlay, document.body)
   }
   return dialog
 }

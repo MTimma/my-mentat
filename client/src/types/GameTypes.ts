@@ -428,6 +428,7 @@ export interface GameTurn {
   persuasionCount?: number
   gainedEffects?: string[]
   acquiredCards?: Card[]
+  revealedCardIds?: number[]
   playedIntrigueCard?: IntrigueCardPlay[]
   optionalEffects?: OptionalEffect[]
   pendingChoices?: PendingChoice[]

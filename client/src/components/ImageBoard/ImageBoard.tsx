@@ -179,21 +179,21 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     }
 
     const space = BOARD_SPACES.find(s => s.id === spaceId)
-    if (space?.name === "Sell Melange") {
+    if (space?.name === 'Sell Melange') {
       setSelectedSpaceId(spaceId)
       setShowSellMelangePopup(true)
-    } else {
-      onSpaceClick(spaceId)
+      return
     }
-    if (space?.name === "Selective Breeding") {
+    if (space?.name === 'Selective Breeding') {
       const player = players.find(p => p.id === currentPlayer)
       if (!player) return
       onSelectiveBreedingRequested(
         [...player.deck, ...player.discardPile, ...player.playArea],
-        (card) => onSpaceClick(spaceId, { trashedCardId: card.id })
+        card => onSpaceClick(spaceId, { trashedCardId: card.id })
       )
       return
     }
+    onSpaceClick(spaceId)
   }
 
   const handleSellMelangeOptionSelect = (option: { spiceCost: number; solariReward: number }) => {
