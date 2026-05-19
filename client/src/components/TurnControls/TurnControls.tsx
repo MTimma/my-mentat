@@ -351,6 +351,19 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     revealTurn
       ? revealTurn.persuasionCount ?? activePlayer.persuasion
       : activePlayer.persuasion
+  const troopsInConflict = combatTroops[activePlayer.id] || 0
+  const revealTroopStrength = troopsInConflict * 2
+  const revealCombatTotal =
+    troopsInConflict > 0
+      ? Math.max(
+          activePlayer.combatValue || 0,
+          gameState?.combatStrength?.[activePlayer.id] ?? 0,
+          revealTroopStrength
+        )
+      : 0
+  const revealSwordStrength = Math.max(0, revealCombatTotal - revealTroopStrength)
+  const isActiveRevealTurn = activePlayer.revealed && gameState?.currTurn?.type === TurnType.REVEAL
+  const showRevealCombat = isActiveRevealTurn && revealCombatTotal > 0
   const revealActionTitle =
     hasOpponentDiscard
       ? 'Resolve opponent discard instructions before taking new actions.'
@@ -1265,7 +1278,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       <button
         key="play-card-placeholder"
         type="button"
-        className="selected-card-inline-placeholder selected-card-action-placeholder selected-card-action-placeholder--play"
+        className="selected-card-inline-slot selected-card-inline-placeholder selected-card-action-placeholder selected-card-action-placeholder--play"
         onClick={handlePlayCard}
         disabled={playActionDisabled}
         title={playActionTitle ?? remainingAgentsLabel}
@@ -1825,24 +1838,28 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   </>
                 )}
                 {showRevealPersuasion && (
-                  <>
-                    <div
-                      className="reveal-total-chip reveal-persuasion-total"
-                      title={`${revealPersuasionTotal} total reveal persuasion`}
-                      aria-label={`${revealPersuasionTotal} total reveal persuasion`}
-                    >
-                      <span className="reveal-persuasion-diamond" aria-hidden="true" />
-                      <span className="reveal-total-count">{revealPersuasionTotal}</span>
-                    </div>
-                    <div
-                      className="reveal-total-chip reveal-dagger-total"
-                      title={`${activePlayer.combatValue} total strength`}
-                      aria-label={`${activePlayer.combatValue} total strength`}
-                    >
-                      <Icon type="dagger" className="reveal-total-icon" alt="" />
-                      <span className="reveal-total-count">{activePlayer.combatValue}</span>
-                    </div>
-                  </>
+                  <div
+                    className="reveal-total-chip reveal-persuasion-total"
+                    title={`${revealPersuasionTotal} total reveal persuasion`}
+                    aria-label={`${revealPersuasionTotal} total reveal persuasion`}
+                  >
+                    <span className="reveal-persuasion-diamond" aria-hidden="true" />
+                    <span className="reveal-total-count">{revealPersuasionTotal}</span>
+                  </div>
+                )}
+                {showRevealCombat && (
+                  <div
+                    className="reveal-total-chip reveal-dagger-total"
+                    title={
+                      revealSwordStrength > 0
+                        ? `${revealCombatTotal} total strength (${revealTroopStrength} from ${troopsInConflict} troop${troopsInConflict === 1 ? '' : 's'}, ${revealSwordStrength} from swords)`
+                        : `${revealCombatTotal} total strength (${revealTroopStrength} from ${troopsInConflict} troop${troopsInConflict === 1 ? '' : 's'})`
+                    }
+                    aria-label={`${revealCombatTotal} total combat strength`}
+                  >
+                    <Icon type="dagger" className="reveal-total-icon" alt="" />
+                    <span className="reveal-total-count">{revealCombatTotal}</span>
+                  </div>
                 )}
                 {showTroopActionRail && (
                   <div className="turn-controls-troop-rail turn-controls-troop-rail--inline" role="group" aria-label="Conflict troops">
@@ -1942,22 +1959,18 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           )}
         <div className="turn-controls-buttons-grid">
           <div className="utility-buttons utility-buttons--with-inline-card">
+            {showPlayedCardStrip && (
             <div
-              className="selected-card-inline-slot"
-              aria-label={
-                showPlayedCardStrip
-                  ? [
-                      playAreaCards.length > 0 &&
-                        `Play area: ${playAreaCards.map(c => c.name).join(', ')}`,
-                      playedIntrigueCards.length > 0 &&
-                        `Played intrigue: ${playedIntrigueCards.map(c => c.name).join(', ')}`
-                    ]
-                      .filter(Boolean)
-                      .join('. ')
-                  : 'Play area is empty'
-              }
+              className="selected-card-inline-slot selected-card-play-area"
+              aria-label={[
+                playAreaCards.length > 0 &&
+                  `Play area: ${playAreaCards.map(c => c.name).join(', ')}`,
+                playedIntrigueCards.length > 0 &&
+                  `Played intrigue: ${playedIntrigueCards.map(c => c.name).join(', ')}`
+              ]
+                .filter(Boolean)
+                .join('. ')}
             >
-              {showPlayedCardStrip ? (
                 <div className="selected-cards-reveal-strip">
                   {playedAreaCards.map(card => renderTurnCard(card, 'played', effectCards))}
                   {playedIntrigueCards.map(card => {
@@ -1995,32 +2008,32 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                     </button>
                     )
                   })}
-                  {!primaryTurnActionsHidden && renderPlayCardPlaceholder()}
                   {playedAreaCards.length > 0 && revealedAreaCards.length > 0 && (
                     <div className="play-area-card-divider" aria-hidden="true" />
                   )}
                   {revealedAreaCards.map(card => renderTurnCard(card, 'revealed', effectCards))}
                 </div>
-              ) : !primaryTurnActionsHidden ? (
-                renderPlayCardPlaceholder()
-              ) : (
-                <span className="selected-card-inline-placeholder" aria-hidden />
-              )}
             </div>
-            {!primaryTurnActionsHidden && (
-              <button
-                type="button"
-                className="selected-card-inline-slot selected-card-action-placeholder selected-card-action-placeholder--reveal"
-                onClick={handleRevealTurn}
-                disabled={revealActionDisabled}
-                title={revealActionTitle}
-                aria-label={`Reveal hand with ${activePlayer.handCount} cards`}
-              >
-                <span className="selected-card-action-count">{activePlayer.handCount}</span>
-                <span className="selected-card-action-label">Reveal</span>
-              </button>
             )}
-            {!isHistoryView && !isEndGame && renderIntrigueActionButton()}
+            {(!primaryTurnActionsHidden || (!isHistoryView && !isEndGame)) && (
+              <div className="selected-card-turn-actions" aria-label="Turn actions">
+                {!primaryTurnActionsHidden && renderPlayCardPlaceholder()}
+                {!primaryTurnActionsHidden && (
+                  <button
+                    type="button"
+                    className="selected-card-inline-slot selected-card-action-placeholder selected-card-action-placeholder--reveal"
+                    onClick={handleRevealTurn}
+                    disabled={revealActionDisabled}
+                    title={revealActionTitle}
+                    aria-label={`Reveal hand with ${activePlayer.handCount} cards`}
+                  >
+                    <span className="selected-card-action-count">{activePlayer.handCount}</span>
+                    <span className="selected-card-action-label">Reveal</span>
+                  </button>
+                )}
+                {!isHistoryView && !isEndGame && renderIntrigueActionButton()}
+              </div>
+            )}
           </div>
           <div className="control-buttons">
           <div className="button-pair">

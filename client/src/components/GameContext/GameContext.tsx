@@ -675,6 +675,47 @@ function applyChoiceReward(state: GameState, reward: Reward, playerId: number): 
   return newState
 }
 
+function canAffordIntrigueCost(player: Player, cost: Cost): boolean {
+  if (cost.spice && player.spice < cost.spice) return false
+  if (cost.water && player.water < cost.water) return false
+  if (cost.solari && player.solari < cost.solari) return false
+  if (cost.troops && player.troops < cost.troops) return false
+  return true
+}
+
+/** Returns false when the card cannot be played because no applicable effect can be paid for. */
+function canPlayIntrigueCardNow(state: GameState, player: Player, card: IntrigueCard): boolean {
+  const effects = (card.playEffect ?? []).filter(effect => {
+    if (!effect.reward) return false
+    if (!intrigueRequirementSatisfied(effect, card, state, player.id)) return false
+    if (effect.phase) {
+      const phases = Array.isArray(effect.phase) ? effect.phase : [effect.phase]
+      if (!phases.includes(state.phase)) return false
+    }
+    return true
+  })
+
+  if (effects.length === 0) return false
+
+  const isAffordableEffect = (effect: (typeof effects)[number]) => {
+    if (effect.cost && !canAffordIntrigueCost(player, effect.cost)) return false
+    return true
+  }
+
+  if (effects.some(e => e.choiceOpt)) {
+    return effects.some(effect => isAffordableEffect(effect))
+  }
+
+  return effects.every(effect => {
+    if (effect.timing === EffectTiming.ON_REVEAL_THIS_ROUND) return true
+    if (effect.reward?.acquire) return true
+    if (effect.reward?.influence?.chooseOne) return true
+    if (effect.reward?.custom === CustomEffect.DOUBLE_CROSS) return true
+    if (effect.reward?.custom === CustomEffect.URGENT_MISSION) return true
+    return isAffordableEffect(effect)
+  })
+}
+
 function handleIntrigueEffect(
   state: GameState,
   card: IntrigueCard,
@@ -1307,6 +1348,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return state
       }
 
+      if (!canPlayIntrigueCardNow(state, player, card)) return state
+
       const updatedState = handleIntrigueEffect(state, card, playerId)
       const pendingCombatChoices: PendingChoice[] = []
       if (intrigueCardHasCustom(card, CustomEffect.MASTER_TACTICIAN)) {
@@ -1541,6 +1584,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const hasOccupied = Object.entries(state.occupiedSpaces).some(([, occ]) => occ.includes(playerId))
         if (!hasOccupied) return state
       }
+
+      if (!canPlayIntrigueCardNow(state, player, card)) return state
 
       let updatedState = handleIntrigueEffect(state, card, playerId)
 
@@ -2587,7 +2632,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Update combat strength even if not in combat (so can be used later)
       const hasTroopsInCombat = (state.combatTroops[playerId] || 0) > 0
-      const updatedCombatValue = player.combatValue ? player.combatValue + swordCount : swordCount + (state.combatTroops[playerId] ? (state.combatTroops[playerId] * 2): 0)
+      const updatedCombatValue = hasTroopsInCombat
+        ? (player.combatValue
+            ? player.combatValue + swordCount
+            : swordCount + (state.combatTroops[playerId] || 0) * 2)
+        : 0
       const updatedCombatStrength = hasTroopsInCombat
         ? { ...state.combatStrength, [playerId]: (state.combatStrength[playerId] || 0) + swordCount }
         : state.combatStrength
@@ -2921,6 +2970,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         tempCurrTurn.canDeployTroops = true;
       }
       if(reward.victoryPoints) { player.victoryPoints += reward.victoryPoints; pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS);} 
+      let nextCombatStrength = { ...state.combatStrength }
+      if (reward.combat) {
+        pushGain(reward.combat, RewardType.COMBAT)
+        const troopsInConflict = state.combatTroops[playerId] || 0
+        if (troopsInConflict > 0) {
+          player.combatValue = (player.combatValue || 0) + reward.combat
+          nextCombatStrength = {
+            ...nextCombatStrength,
+            [playerId]: (nextCombatStrength[playerId] || 0) + reward.combat
+          }
+        }
+      }
 
       // Remove cost from optionalEffects
       tempCurrTurn.optionalEffects = tempCurrTurn.optionalEffects?.filter(
@@ -2930,6 +2991,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         gains: newGains,
+        combatStrength: nextCombatStrength,
         players: state.players.map(p => p.id===playerId? player: p),
         currTurn: tempCurrTurn
       }

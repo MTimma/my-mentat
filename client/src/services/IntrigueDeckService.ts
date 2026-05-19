@@ -265,10 +265,11 @@ export const intrigueCards: IntrigueCard[] = [
     id: 23,
     name: 'Reinforcements',
     type: IntrigueCardType.PLOT,
-    description: 'Gain 3 troops. If it’s your Reveal turn, you may deploy any of these troops to the Conflict.',
+    description:
+      'Pay 3 Solari to gain 3 troops. If it’s your Reveal turn, you may deploy any of these troops to the Conflict.',
     image: '/intrigue/base/reinforcements.png',
     agentIcons: [],
-    playEffect: [{ reward: { troops: 3 } }]
+    playEffect: [{ cost: { solari: 3 }, reward: { troops: 3 } }]
   },
   {
     id: 24,

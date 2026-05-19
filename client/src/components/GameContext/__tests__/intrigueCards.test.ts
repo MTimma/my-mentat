@@ -178,10 +178,19 @@ describe('Intrigue cards — player turns (plot)', () => {
     expect(s.players[0].agents).toBe(2)
   })
 
-  it('Reinforcements (23): +3 troops', () => {
+  it('Reinforcements (23): pay 3 Solari for +3 troops', () => {
     let s = basePlotState([makePlayer(0)])
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 23 })
+    expect(s.players[0].solari).toBe(17)
     expect(s.players[0].troops).toBe(11)
+  })
+
+  it('Reinforcements (23): cannot play without 3 Solari', () => {
+    let s = basePlotState([makePlayer(0, { solari: 2 })])
+    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 23 })
+    expect(s.players[0].solari).toBe(2)
+    expect(s.players[0].troops).toBe(8)
+    expect(s.players[0].intrigueCount).toBe(1)
   })
 
   it('Refocus (22): shuffles discard into deck and +1 hand', () => {

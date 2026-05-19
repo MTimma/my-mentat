@@ -241,6 +241,22 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.utility-buttons--with-inline-card .selected-card-play-area {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-start;
+}
+
+.utility-buttons--with-inline-card .selected-card-turn-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .selected-card-inline-slot {
@@ -966,7 +982,7 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     align-items: center;
     justify-content: flex-end;
     gap: 8px;
-    width: auto;
+    width: 100%;
     min-width: 0;
     flex-basis: auto;
   }
@@ -1223,6 +1239,11 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   }
   .turn-controls-buttons-grid .utility-buttons {
     display: flex;
+    width: 100%;
+  }
+
+  .turn-controls-buttons-grid .utility-buttons--with-inline-card .selected-card-turn-actions {
+    margin-left: auto;
   }
   .turn-controls-buttons-grid .control-buttons {
     display: flex;
