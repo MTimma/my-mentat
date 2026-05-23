@@ -96,7 +96,7 @@
 .imperium-card {
   border: 1px solid rgba(88, 54, 28, 0.72);
   border-radius: 8px;
-  background: transparent;
+  background-color: var(--card-art-backing, #0f0d0a);
   padding: var(--ir-card-pad);
   display: flex;
   flex-direction: column;
@@ -125,7 +125,7 @@
 
 .imperium-card.can-acquire {
   border-color: #5faadc;
-  background: transparent;
+  background-color: var(--card-art-backing, #0f0d0a);
   box-shadow:
     0 0 0 1px rgba(95, 170, 220, 0.48),
     0 0 14px rgba(95, 170, 220, 0.42),
@@ -150,6 +150,7 @@
   justify-content: center;
   border-radius: 8px;
   max-height: clamp(80px, 16vw, 120px);
+  background-color: var(--card-art-backing, #0f0d0a);
 }
 
 .imperium-card.fixed-card {
@@ -161,18 +162,18 @@
   height: auto;
   max-height: var(--ir-image-max);
   object-fit: contain;
-  border-radius: 5px;
+  object-position: center;
   margin-bottom: 0;
   display: block;
   flex-shrink: 1;
   min-height: 0;
+  background-color: var(--card-art-backing, #0f0d0a);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
 }
 
 .imperium-card.no-button .card-image-ir {
   max-height: min(100%, calc(100% - 4px));
   margin-bottom: 0;
-  border-radius: 5px;
 }
 
 .count-display {
@@ -198,6 +199,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  background-color: var(--card-art-backing, #0f0d0a);
 }
 
 .helena-head-corner-icon {
@@ -289,6 +291,8 @@
   max-width: min(78vw, 340px);
   max-height: min(68vh, 520px);
   object-fit: contain;
+  object-position: center;
+  background-color: var(--card-art-backing, #0f0d0a);
   border-radius: 10px;
   border: 1px solid rgba(212, 177, 106, 0.2);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
@@ -401,5 +405,48 @@
   .imperium-preview-image {
     max-width: 84vw;
     max-height: 66vh;
+  }
+}
+
+@media (min-width: 901px) {
+  :root {
+    --ir-gap: 4px;
+    --ir-section-pad: 3px;
+    --ir-image-max: min(58px, 7vw);
+    --ir-card-pad: 2px;
+  }
+
+  .imperium-section {
+    margin-bottom: 0;
+    border-radius: 8px;
+  }
+
+  .imperium-card {
+    max-height: clamp(68px, 9vh, 88px);
+    border-radius: 6px;
+  }
+
+  .imperium-row-divider {
+    min-height: 0.85rem;
+    margin: 2px 1px;
+  }
+
+  .imperium-preview-overlay {
+    top: 0;
+    bottom: calc(var(--footer-height, var(--footer-height-static, 84px)) + var(--vv-layout-gap-bottom, 0px));
+    padding-bottom: 16px;
+    box-sizing: border-box;
+  }
+
+  .imperium-preview-modal {
+    max-height: min(92vh, 100%);
+    overflow-y: auto;
+  }
+
+  .imperium-preview-image {
+    max-height: min(
+      520px,
+      calc(100dvh - var(--footer-height, var(--footer-height-static, 84px)) - 180px)
+    );
   }
 }

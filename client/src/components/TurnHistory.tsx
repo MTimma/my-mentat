@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { Player, GameState, Gain, RewardType } from '../types/GameTypes'
+import { Player, GameState, Gain, RewardType, TurnType } from '../types/GameTypes'
 import { getRewardIcon, getRewardDisplayName } from '../utils/rewardIcons'
+import { getRevealTurnStats } from '../utils/revealTurnStats'
+import RevealTurnStatsPanel from './RevealTurnStatsPanel/RevealTurnStatsPanel'
 import UndoConfirmDialog from './TimeTravel/UndoConfirmDialog'
 import './TurnHistory.css'
 
@@ -181,6 +183,10 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           const aggregatedGains = aggregateGains(gains)
           const isViewing = viewingTurnIndex === index
           const isCurrent = index === currentTurn && !isViewingHistory
+          const revealStats =
+            turn.currTurn?.type === TurnType.REVEAL && turn.currTurn.playerId != null
+              ? getRevealTurnStats(turn, turn.currTurn.playerId)
+              : null
           
           return (
             <div 
@@ -191,6 +197,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleTurnClick(index)}
             >
+              <div className="turn-history-row-main">
               <div className="turn-number">
                 {index === 0 ? 'Initial' : index}
               </div>
@@ -219,11 +226,22 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                   Undo
                 </button>
               </div>
+              </div>
+              {revealStats && (
+                <div className="turn-history-reveal-stats" onClick={e => e.stopPropagation()}>
+                  <RevealTurnStatsPanel stats={revealStats} compact />
+                </div>
+              )}
             </div>
           )
         })}
         
         {/* Current turn pseudo-entry */}
+        {(() => {
+          const liveRevealStats = currentGameState.currTurn?.type === TurnType.REVEAL
+            ? getRevealTurnStats(currentGameState, currentGameState.currTurn.playerId)
+            : null
+          return (
         <div 
           className={`turn-history-row current-turn-entry ${!isViewingHistory ? 'current viewing' : ''}`}
           onClick={() => onReturnToCurrent()}
@@ -231,6 +249,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && onReturnToCurrent()}
         >
+          <div className="turn-history-row-main">
           <div className="turn-number">{turns.length}</div>
           <div className={`turn-player-indicator ${players.find(p => p.id === currentGameState.activePlayerId)?.color || 'gray'}`}></div>
           <div className="turn-player-name">
@@ -239,7 +258,15 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           <div className="turn-type">
             {currentGameState.currTurn?.type || 'In Progress'}
           </div>
+          </div>
+          {liveRevealStats && (
+            <div className="turn-history-reveal-stats" onClick={e => e.stopPropagation()}>
+              <RevealTurnStatsPanel stats={liveRevealStats} compact />
+            </div>
+          )}
         </div>
+          )
+        })()}
       </div>
 
       <div className="turn-history-footer">

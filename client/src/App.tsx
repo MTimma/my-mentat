@@ -20,8 +20,10 @@ import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
 import CardCreator from './components/CardCreator/CardCreator'
 import { buildImperiumDeck } from './data/cards'
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
+import LeaderResourceStrip from './components/LeaderResourceStrip/LeaderResourceStrip'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
-import { LEADER_NAMES } from './data/leaders'
+import { getLeaderIconPath, LEADER_NAMES } from './data/leaders'
+import { getEndTurnButtonState } from './utils/endTurnState'
 
 interface GameContentProps {
   autoApplyMandatoryRewards: boolean
@@ -85,7 +87,24 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   // Keep actions on live state, but let the footer inspect history snapshots read-only.
   const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId) || null
   const turnControlsState = isViewingHistory ? displayState : gameState
-  const turnControlsActivePlayer = turnControlsState.players.find(p => p.id === turnControlsState.activePlayerId) || null
+  const turnControlsActivePlayer =
+    turnControlsState.players.find(p => {
+      const turnPlayerId = turnControlsState.currTurn?.playerId
+      return p.id === (turnPlayerId ?? turnControlsState.activePlayerId)
+    }) || null
+  const historyBannerPlayer =
+    (isViewingHistory ? displayState : gameState).players.find(p => {
+      const state = isViewingHistory ? displayState : gameState
+      const turnPlayerId = state.currTurn?.playerId
+      return p.id === (turnPlayerId ?? state.activePlayerId)
+    }) ?? activePlayer
+
+  const liveTurnPlayer =
+    gameState.players.find(p => {
+      const id = gameState.currTurn?.playerId ?? gameState.activePlayerId
+      return p.id === id
+    }) ?? activePlayer
+  const liveLeaderIconPath = liveTurnPlayer ? getLeaderIconPath(liveTurnPlayer.leader.name) : undefined
 
   const handleCardSelect = (playerId: number, cardId: number) => {
     dispatch({ type: 'PLAY_CARD', playerId, cardId })
@@ -354,6 +373,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   const needsReplacementSelection = gameState.pendingImperiumRowReplacement !== null && gameState.imperiumRowDeck.length > 0
 
   const gameContainerRef = useRef<HTMLDivElement>(null)
+  const imperiumRowRef = useRef<HTMLDivElement>(null)
   const turnControlsFooterRef = useRef<HTMLDivElement>(null)
   const historyBannerRef = useRef<HTMLDivElement>(null)
 
@@ -363,11 +383,28 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       gameState.phase === GamePhase.COMBAT ||
       gameState.phase === GamePhase.END_GAME)
 
+  const endTurnButtonState = getEndTurnButtonState({
+    isHistoryView: isViewingHistory,
+    canEndTurn: gameState.canEndTurn,
+    pendingRewards: gameState.pendingRewards,
+    opponentDiscardState: gameState.currTurn?.opponentDiscardState,
+    pendingChoices: gameState.currTurn?.pendingChoices || [],
+    voiceSelectionActive: Boolean(voiceSelectionRewardId),
+    masterstrokeSelectionActive: Boolean(masterstrokeSelectionRewardId),
+    memnonHighCouncilSelectionActive: Boolean(memnonHighCouncilRewardId),
+  })
+
+  const showFooterEndTurn =
+    !isViewingHistory && gameState.phase === GamePhase.PLAYER_TURNS && activePlayer
+
+  const showFooterPassCombat =
+    !isViewingHistory && gameState.phase === GamePhase.COMBAT && activePlayer
+
   useLayoutEffect(() => {
     const root = gameContainerRef.current
     if (!root) return
 
-    const measureFooterStack = () => {
+    const measurePlayLayout = () => {
       let total = 0
       const banner = historyBannerRef.current
       if (banner) {
@@ -383,25 +420,40 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         const rect = tc.getBoundingClientRect()
         total += Math.max(0, Math.ceil(rect.height))
       }
-      root.style.setProperty('--footer-measured-height', `${Math.max(0, total)}px`)
+      const imperium = imperiumRowRef.current
+      const topChrome = imperium
+        ? Math.max(0, Math.ceil(imperium.getBoundingClientRect().height))
+        : 0
+      const topChromePx = `${topChrome}px`
+      root.style.setProperty('--play-top-chrome-height', topChromePx)
+      document.documentElement.style.setProperty('--play-top-chrome-height', topChromePx)
+
+      const heightPx = `${Math.max(0, total)}px`
+      root.style.setProperty('--footer-measured-height', heightPx)
+      document.documentElement.style.setProperty('--footer-measured-height', heightPx)
     }
 
     const ro = new ResizeObserver(() => {
-      requestAnimationFrame(measureFooterStack)
+      requestAnimationFrame(measurePlayLayout)
     })
 
     if (turnControlsFooterRef.current) ro.observe(turnControlsFooterRef.current)
     if (historyBannerRef.current) ro.observe(historyBannerRef.current)
+    if (imperiumRowRef.current) ro.observe(imperiumRowRef.current)
 
-    measureFooterStack()
+    measurePlayLayout()
 
-    window.addEventListener('resize', measureFooterStack)
-    window.visualViewport?.addEventListener('resize', measureFooterStack)
+    window.addEventListener('resize', measurePlayLayout)
+    window.visualViewport?.addEventListener('resize', measurePlayLayout)
 
     return () => {
       ro.disconnect()
-      window.removeEventListener('resize', measureFooterStack)
-      window.visualViewport?.removeEventListener('resize', measureFooterStack)
+      window.removeEventListener('resize', measurePlayLayout)
+      window.visualViewport?.removeEventListener('resize', measurePlayLayout)
+      root.style.removeProperty('--footer-measured-height')
+      root.style.removeProperty('--play-top-chrome-height')
+      document.documentElement.style.removeProperty('--footer-measured-height')
+      document.documentElement.style.removeProperty('--play-top-chrome-height')
     }
   }, [
     showTurnControlsFooter,
@@ -415,6 +467,8 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     masterstrokeSelectionRewardId,
     memnonHighCouncilRewardId,
     showSelectiveBreeding,
+    gameState.selectedCard,
+    turnControlsActivePlayer?.handCount,
   ])
 
   return (
@@ -446,43 +500,104 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       )}
       {/* History viewing banner */}
       {(
-        <div ref={historyBannerRef} className="history-viewing-banner">
-          <button 
-            className="history-nav-btn"
-            onClick={() => goToTurn(Math.max(0, (viewingTurnIndex ?? gameState.history.length) - 1))} 
-            disabled={viewingTurnIndex === 0}
-            title="Previous turn"
-          >
-            &lt;
-          </button>
-          <button 
-            className="history-nav-btn"
-            onClick={() => {
-              const effectiveViewIndex = viewingTurnIndex ?? gameState.history.length
-              if (effectiveViewIndex < gameState.history.length) {
-                goToTurn(effectiveViewIndex + 1)
-              } else {
-                returnToCurrent()
-              }
-            }}
-            hidden={viewingTurnIndex === null}
-            title="Next turn"
-          >
-            &gt;
-          </button>
-          <span>
-            { viewingTurnIndex === null ? `Turn ${gameState.history.length}, round ${gameState.currentRound}` : (viewingTurnIndex === 0 ? `Viewing the initial state` : `Turn ${viewingTurnIndex} of ${gameState.history.length}`) }
-          </span>
-        
-          <button 
-              className="return-btn" 
-              onClick={returnToCurrent} 
-              hidden={viewingTurnIndex === null}>
-            Return to Current
-          </button>
+        <div
+          ref={historyBannerRef}
+          className={[
+            'history-viewing-banner',
+            isTurnHistoryOpen ? 'history-viewing-banner--panel-open' : '',
+            isViewingHistory ? 'history-viewing-banner--scrubbing' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          <div className="history-banner-nav">
+            <button
+              type="button"
+              className="history-nav-btn"
+              onClick={() => goToTurn(Math.max(0, (viewingTurnIndex ?? gameState.history.length) - 1))}
+              disabled={viewingTurnIndex === 0}
+              title="Previous turn"
+              aria-label="Previous turn"
+            >
+              &lt;
+            </button>
+            {isViewingHistory && liveTurnPlayer && (
+              <button
+                type="button"
+                className="history-return-leader-btn"
+                onClick={returnToCurrent}
+                title={`Return to current turn (${liveTurnPlayer.leader.name})`}
+                aria-label={`Return to current turn, ${liveTurnPlayer.leader.name}`}
+              >
+                {liveLeaderIconPath ? (
+                  <img
+                    className="history-return-leader-icon"
+                    src={liveLeaderIconPath}
+                    alt=""
+                    draggable={false}
+                  />
+                ) : (
+                  <span className="history-return-leader-fallback" aria-hidden="true">
+                    {liveTurnPlayer.leader.name.charAt(0)}
+                  </span>
+                )}
+              </button>
+            )}
+            <button
+              type="button"
+              className="history-nav-btn"
+              onClick={() => {
+                const effectiveViewIndex = viewingTurnIndex ?? gameState.history.length
+                if (effectiveViewIndex < gameState.history.length) {
+                  goToTurn(effectiveViewIndex + 1)
+                } else {
+                  returnToCurrent()
+                }
+              }}
+              hidden={viewingTurnIndex === null}
+              title="Next turn"
+              aria-label="Next turn"
+            >
+              &gt;
+            </button>
+          </div>
+          <div className="history-banner-center">
+            {isViewingHistory && historyBannerPlayer && (
+              <LeaderResourceStrip
+                compact
+                player={historyBannerPlayer}
+                gameState={displayState}
+              />
+            )}
+            <span className="history-banner-turn-label">
+              { viewingTurnIndex === null ? `Turn ${gameState.history.length}, round ${gameState.currentRound}` : (viewingTurnIndex === 0 ? `Initial state` : `Turn ${viewingTurnIndex} of ${gameState.history.length}`) }
+            </span>
+          </div>
+          <div className="history-banner-actions">
+            {showFooterEndTurn && (
+              <button
+                type="button"
+                className="footer-end-turn-button"
+                onClick={() => handleEndTurn(activePlayer!.id)}
+                disabled={endTurnButtonState.disabled}
+                title={endTurnButtonState.title}
+              >
+                End Turn
+              </button>
+            )}
+            {showFooterPassCombat && (
+              <button
+                type="button"
+                className="footer-pass-combat-button"
+                onClick={() => handlePassCombat(activePlayer!.id)}
+              >
+                Pass Combat
+              </button>
+            )}
+          </div>
         </div>
       )}
-      <div className="imperium-row-container">
+      <div ref={imperiumRowRef} className="imperium-row-container">
         <ImperiumRow 
         canAcquire={isViewingHistory ? false : gameState.canAcquireIR}
         cards={displayState.imperiumRow} 
@@ -518,6 +633,32 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             gameStateForMarkers={displayState}
             combatStrength={displayState.combatStrength ?? gameState.combatStrength}
             controlMarkers={displayState.controlMarkers}
+            canDeployTroops={
+              !isViewingHistory && Boolean(gameState.currTurn?.canDeployTroops)
+            }
+            deployableTroops={
+              isViewingHistory
+                ? 0
+                : Math.min(
+                    (gameState.currTurn?.troopLimit || 0) -
+                      (gameState.currTurn?.removableTroops || 0),
+                    activePlayer?.troops || 0
+                  )
+            }
+            retreatableTroops={
+              isViewingHistory ? 0 : gameState.currTurn?.removableTroops || 0
+            }
+            activePlayerTroops={activePlayer?.troops ?? 0}
+            onDeployTroop={
+              isViewingHistory || !activePlayer
+                ? undefined
+                : () => handleAddTroop(activePlayer.id)
+            }
+            onRetreatTroop={
+              isViewingHistory || !activePlayer
+                ? undefined
+                : () => handleRemoveTroop(activePlayer.id)
+            }
           />
         ) : (
           <GameBoard 
@@ -581,13 +722,6 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             onMobilizeGarrison={handleMobilizeGarrison}
             onPlayCombatIntrigue={handlePlayCombatIntrigue}
             onReveal={handleRevealCards}
-            onEndTurn={handleEndTurn}
-            onPassCombat={handlePassCombat}
-            canDeployTroops={isViewingHistory ? false : gameState.currTurn?.canDeployTroops || false}
-            onAddTroop={handleAddTroop}
-            onRemoveTroop={handleRemoveTroop}
-            retreatableTroops={isViewingHistory ? 0 : gameState.currTurn?.removableTroops || 0}
-            deployableTroops={isViewingHistory ? 0 : Math.min((gameState.currTurn?.troopLimit || 0) - (gameState.currTurn?.removableTroops || 0), activePlayer?.troops || 0)}
             isCombatPhase={turnControlsState.phase === GamePhase.COMBAT}
             combatStrength={turnControlsState.combatStrength}
             combatPasses={turnControlsState.combatPasses}
@@ -690,8 +824,8 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         <PlayerOverviewModal
           players={displayState.players}
           factionInfluence={displayState.factionInfluence}
-          factionAlliances={gameState.factionAlliances}
-          gameState={gameState}
+          factionAlliances={displayState.factionAlliances}
+          gameState={displayState}
           controlMarkers={gameState.controlMarkers}
           combatTroops={displayState.combatTroops}
           combatStrength={displayState.combatStrength ?? gameState.combatStrength}

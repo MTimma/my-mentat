@@ -24,6 +24,13 @@
 .turn-controls-expanded-only {
   width: 100%;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.turn-controls-expanded-only .turn-controls-buttons-grid {
+  margin-top: 0;
 }
 
 .selected-cards {
@@ -63,12 +70,19 @@
 
 .selected-cards-reveal-strip {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  padding: 4px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 .play-area-card-divider {
+  flex-shrink: 0;
   align-self: stretch;
   width: 4px;
   min-height: 92px;
@@ -87,168 +101,29 @@
   color: rgba(255, 255, 255, 0.88);
 }
 
-/* Above fixed .turn-controls, same stacking as .effects-bar (pending rewards). */
-.turn-controls-troop-rail {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin: 0 auto 6px auto;
-  padding: 4px 6px;
-  max-width: 100%;
-  width: 100%;
-  box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
-}
-
-.turn-controls-troop-rail--inline {
-  flex: 0 0 auto;
-  width: auto;
-  margin: 0;
-  padding: 0;
-  gap: 2px;
-  background: transparent;
-}
-
-.troop-action-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-height: 28px;
-  padding: 3px 7px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(22, 18, 14, 0.92), rgba(8, 7, 6, 0.88));
-  color: var(--color-arrakis-parchment);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.22);
-  cursor: pointer;
-  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease, filter 120ms ease;
-}
-
-.troop-action-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
-.troop-action-icon {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
-}
-
-.troop-action-arrow {
-  font-size: 1.1rem;
-  line-height: 1;
-  font-weight: 900;
-}
-
-.troop-available-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--color-arrakis-parchment);
-  font-size: 0.72rem;
-  font-weight: 800;
-  line-height: 1;
-  box-sizing: border-box;
-}
-
-.troop-action-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 28px;
-  padding: 3px 5px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 20px;
-  background: rgba(0, 0, 0, 0.24);
-  color: rgba(255, 255, 255, 0.76);
-  box-sizing: border-box;
-}
-
-.troop-status-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.troop-deployed-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: #d32f2f;
-  color: white;
-  font-size: 0.76rem;
-  font-weight: 900;
-  line-height: 1;
-  box-sizing: border-box;
-}
-
-.turn-controls-troop-rail--inline .troop-retreat-button {
-  min-width: 28px;
-  padding-inline: 7px;
-}
-
-.troop-deploy-button {
-  border-color: rgba(211, 47, 47, 0.78);
-}
-
-.troop-deploy-button .troop-action-arrow {
-  color: #ff3b30;
-  text-shadow: 0 0 7px rgba(255, 59, 48, 0.5);
-}
-
-.troop-deploy-button:hover:not(:disabled) {
-  border-color: #ff5a4f;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 12px rgba(211, 47, 47, 0.42);
-}
-
-.troop-retreat-button {
-  border-color: rgba(154, 91, 44, 0.82);
-}
-
-.troop-retreat-button .troop-action-arrow {
-  color: #c56a52;
-}
-
-.troop-retreat-button:hover:not(:disabled) {
-  border-color: #c38b5f;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 12px rgba(154, 91, 44, 0.36);
-}
-
-.troop-action-button:disabled {
-  opacity: 0.42;
-  cursor: not-allowed;
-  filter: grayscale(0.45);
-}
-
 /* Toolbar: selected card (leader shortcuts live beside the leader name). */
 .utility-buttons--with-inline-card {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px;
   flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
 }
 
 .utility-buttons--with-inline-card .selected-card-play-area {
   flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
   justify-content: flex-start;
+  align-items: center;
+  overflow: hidden;
+}
+
+.utility-buttons--with-inline-card .selected-card-play-area .selected-cards-reveal-strip {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .utility-buttons--with-inline-card .selected-card-turn-actions {
@@ -278,9 +153,11 @@
   width: auto;
   height: clamp(92px, 16vh, 138px);
   max-width: min(96px, 26vw);
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  object-fit: contain;
+  object-position: center;
+  background-color: var(--card-art-backing, #0f0d0a);
+  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .selected-card-inline-img--sm {
@@ -576,6 +453,10 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   opacity: 0.82;
 }
 
+.selected-cards-reveal-strip .turn-card-frame {
+  flex-shrink: 0;
+}
+
 .turn-card-frame {
   position: relative;
   display: inline-flex;
@@ -586,7 +467,7 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   border-radius: 7px;
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.38);
-  background: transparent;
+  background: var(--card-art-backing, #0f0d0a);
   cursor: default;
 }
 
@@ -594,16 +475,65 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   max-width: none;
 }
 
+/* Glassy spice-gold ring — ::before so overflow:hidden on the frame does not clip it */
 .turn-card-frame--has-effects {
+  overflow: visible;
   cursor: pointer;
+  z-index: 1;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.38);
+}
+
+.turn-card-frame--has-effects::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 3;
+  border: 2px solid rgba(255, 214, 120, 0.95);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 248, 215, 0.42) 0%,
+    rgba(255, 220, 140, 0.16) 45%,
+    rgba(212, 177, 106, 0.1) 100%
+  );
   box-shadow:
-    0 0 0 2px rgba(212, 177, 106, 0.92),
-    0 0 16px rgba(212, 177, 106, 0.4),
-    0 2px 10px rgba(0, 0, 0, 0.38);
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 4px rgba(180, 120, 40, 0.25),
+    0 0 20px rgba(255, 185, 60, 0.55),
+    0 0 6px rgba(255, 240, 200, 0.35);
+}
+
+.turn-card-frame--has-effects .selected-card-inline-img,
+.turn-card-frame--has-effects .selected-card-inline-name {
+  position: relative;
+  z-index: 1;
+  border-radius: 6px;
 }
 
 .turn-card-frame--has-effects:hover:not(:disabled) {
   transform: translateY(-1px);
+}
+
+.turn-card-frame--has-effects:hover:not(:disabled)::before {
+  border-color: rgba(255, 236, 175, 1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 5px rgba(180, 120, 40, 0.3),
+    0 0 26px rgba(255, 195, 70, 0.68),
+    0 0 8px rgba(255, 245, 210, 0.45);
+}
+
+.turn-card-frame--has-effects:focus-visible {
+  outline: none;
+}
+
+.turn-card-frame--has-effects:focus-visible::before {
+  border-color: rgba(255, 245, 200, 1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 0 0 2px rgba(255, 200, 80, 0.35),
+    0 0 24px rgba(255, 190, 55, 0.7);
 }
 
 .turn-card-frame:disabled {
@@ -614,8 +544,8 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   grid-column: 1 / -1;
   display: flex;
   align-items: stretch;
-  gap: 8px;
-  margin-bottom: 7px;
+  gap: 6px;
+  margin-bottom: 2px;
   min-width: 0;
 }
 
@@ -673,7 +603,7 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     align-items: center;
     gap: 6px;
     font-weight: bold;
-    margin-bottom: 6px;
+    margin-bottom: 0;
     color: white;
     font-size: 1.2rem;
     min-width: 0;
@@ -830,6 +760,15 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
       rgba(30, 12, 10, 0.86);
 }
 
+.reveal-persuasion-remaining-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(244, 228, 188, 0.78);
+  line-height: 1;
+}
+
 .reveal-persuasion-diamond {
     width: 15px;
     height: 15px;
@@ -900,6 +839,12 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     cursor: pointer;
 }
 
+.active-intrigue-preview-img,
+.active-intrigue-img {
+  background-color: var(--card-art-backing, #0f0d0a);
+  object-position: center;
+}
+
 .active-intrigue-preview-img {
     width: 120px;
     height: 80px;
@@ -935,7 +880,7 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 .active-intrigue-img {
     width: 120px;
     height: 80px;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.18);
 }
@@ -955,20 +900,72 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 @media (min-width: 901px) {
   .turn-controls {
     flex-wrap: nowrap;
-    gap: 10px;
-    padding: 10px 12px;
+    gap: 6px;
+    padding: 6px 8px;
   }
 
   .turn-controls-expanded-only {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 8px 12px;
+    gap: 4px 8px;
     width: 100%;
   }
 
   .active-player-info {
     margin-bottom: 0;
+    font-size: 0.95rem;
+    gap: 4px;
+  }
+
+  .active-player-actions {
+    gap: 6px;
+  }
+
+  .effects-bar,
+  .optional-effects-bar {
+    margin-bottom: 4px;
+  }
+
+  .selected-card-inline-slot {
+    min-width: 52px;
+    min-height: 68px;
+    border-radius: 6px;
+  }
+
+  .selected-card-inline-img {
+    height: clamp(60px, 8.5vh, 80px);
+    max-width: 68px;
+  }
+
+  .selected-card-inline-img--sm,
+  .selected-card-inline-img--intrigue {
+    height: clamp(56px, 8vh, 74px);
+    max-width: 62px;
+  }
+
+  .selected-card-inline-placeholder {
+    width: 52px;
+    height: 68px;
+  }
+
+  .selected-card-action-placeholder--play {
+    min-width: 52px;
+    min-height: 68px;
+  }
+
+  .selected-card-action-placeholder--reveal {
+    min-width: 52px;
+    min-height: 68px;
+  }
+
+  .selected-card-action-placeholder--intrigue {
+    min-width: 52px;
+    min-height: 68px;
+  }
+
+  .utility-buttons--with-inline-card .selected-card-turn-actions {
+    gap: 6px;
   }
 
   .selected-cards {
@@ -1025,8 +1022,22 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   .turn-controls-buttons-grid .play-intrigue-button,
   .turn-controls-buttons-grid .end-turn-button,
   .turn-controls-buttons-grid .pass-combat-button {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.82rem;
+  }
+
+  .turn-controls-buttons-grid {
+    gap: 6px;
+  }
+
+  .card-effects-dialog-image {
+    height: min(
+      200px,
+      calc(
+        100dvh - var(--footer-height, var(--footer-height-static, 84px)) -
+          var(--play-top-chrome-height, 96px) - 140px
+      )
+    );
   }
 }
 
@@ -1343,13 +1354,15 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 
   .card-effects-dialog-actions .effect-btn.optional:not(:disabled):not(.trash-reward),
   .card-effects-dialog-actions .effect-btn.effect-btn--interaction-choice:not(:disabled):not(.trash-reward) {
-    border-width: 2px;
-    border-color: rgba(255, 210, 120, 0.95);
-    background: linear-gradient(180deg, rgba(154, 105, 42, 0.97), rgba(96, 60, 24, 0.99));
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.14),
-      0 0 14px rgba(255, 170, 50, 0.25),
-      0 2px 8px rgba(0, 0, 0, 0.4);
+    border-width: 1px;
+    border-color: color-mix(in srgb, var(--color-arrakis-earth, #8b4513) 48%, transparent);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-arrakis-parchment-muted, #e6d5a7) 92%, #fff 8%),
+      color-mix(in srgb, var(--color-arrakis-parchment-helena, #e8dcc8) 88%, #c9b896 12%)
+    );
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    color: var(--color-text-on-parchment, #1c1410);
   }
 
   .turn-controls-buttons-grid .control-buttons {
@@ -1496,16 +1509,30 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 }
 
 .effect-btn--overlay {
-  min-height: 22px;
-  padding: 2px 5px;
+  width: auto;
+  min-height: 24px;
+  padding: 4px 8px;
   border-color: rgba(244, 228, 188, 0.45);
-  background: rgba(17, 13, 10, 0.74);
+  background: rgba(17, 13, 10, 0.88);
   color: #fff8df;
   font-size: 0.68rem;
   line-height: 1.1;
   text-align: center;
   backdrop-filter: blur(2px);
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.42);
+}
+
+.effect-btn--overlay.trash-reward {
+  border-color: rgba(255, 140, 140, 0.85);
+  background: linear-gradient(180deg, rgba(120, 24, 24, 0.96), rgba(72, 10, 10, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.effect-btn--overlay.trash-reward:hover:not(:disabled) {
+  border-color: rgba(255, 180, 180, 0.95);
+  background: linear-gradient(180deg, rgba(148, 32, 32, 0.98), rgba(88, 14, 14, 1));
 }
 
 .effect-btn--compact {
@@ -1598,14 +1625,46 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 }
 
 .effect-btn.trash-reward {
-  border: 1px solid #ff6b6b;
-  background-color: #8b0000;
+  border: 1px solid rgba(255, 120, 120, 0.88);
+  background: linear-gradient(180deg, rgba(128, 28, 28, 0.96), rgba(88, 12, 12, 0.98));
   position: relative;
 }
 
 .effect-btn.trash-reward:hover:not(:disabled) {
-  background-color: #a00000;
-  border-color: #ff4444;
+  background: linear-gradient(180deg, rgba(152, 36, 36, 0.98), rgba(104, 16, 16, 1));
+  border-color: rgba(255, 170, 170, 0.95);
+}
+
+.trash-reward-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.trash-reward-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
+}
+
+.trash-reward-text {
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.effect-btn--overlay .trash-reward-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.effect-btn--overlay .trash-reward-text {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .warning-icon {
@@ -1767,6 +1826,9 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   align-items: center;
   gap: 10px;
   min-width: min(380px, calc(100vw - 32px));
+  max-height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .card-effects-dialog-image {
@@ -1775,6 +1837,8 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   height: min(42vh, 260px);
   max-width: min(220px, 78vw);
   object-fit: contain;
+  object-position: center;
+  background-color: var(--card-art-backing, #0f0d0a);
   border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.2);
   box-shadow: 0 3px 14px rgba(0, 0, 0, 0.28);
@@ -1783,8 +1847,10 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 .card-effects-dialog-actions {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
   width: 100%;
+  max-width: min(220px, 78vw);
 }
 
 .card-effects-dialog-note {
@@ -1798,6 +1864,54 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   font-weight: 800;
   text-align: center;
   box-sizing: border-box;
+}
+
+.card-effects-dialog-note--signet {
+  border-color: rgba(212, 177, 106, 0.5);
+  background: rgba(48, 38, 18, 0.45);
+  text-align: left;
+}
+
+.signet-ring-effect-heading {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--color-arrakis-parchment, #f4e4bc);
+}
+
+.signet-ring-effect-applied {
+  font-weight: 600;
+  color: rgba(166, 206, 143, 0.95);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+
+.signet-ring-effect-text {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(244, 228, 188, 0.78);
+  line-height: 1.25;
+}
+
+.signet-ring-applied-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.signet-ring-applied-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(166, 206, 143, 0.38);
+  background: rgba(26, 48, 28, 0.55);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .liet-counted-cards {
@@ -1819,10 +1933,117 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 }
 
 .card-effects-dialog-actions .effect-btn--compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  min-height: 38px;
-  justify-content: flex-start;
-  white-space: normal;
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid color-mix(in srgb, var(--color-arrakis-earth, #8b4513) 42%, transparent);
+  border-radius: 4px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-arrakis-parchment-muted, #e6d5a7) 92%, #fff 8%),
+    color-mix(in srgb, var(--color-arrakis-parchment-helena, #e8dcc8) 88%, #c9b896 12%)
+  );
+  color: var(--color-text-on-parchment, #1c1410);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+}
+
+.card-effects-dialog-actions .effect-btn--compact:hover:not(:disabled),
+.card-effects-dialog-actions .effect-btn.optional:not(:disabled):not(.trash-reward):hover,
+.card-effects-dialog-actions .effect-btn.effect-btn--interaction-choice:not(:disabled):not(.trash-reward):hover {
+  border-color: color-mix(in srgb, var(--color-arrakis-earth, #8b4513) 58%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-arrakis-parchment, #f4e4bc) 90%, #fff 10%),
+    var(--color-arrakis-parchment-muted, #e6d5a7)
+  );
+}
+
+.card-effects-dialog-actions .effect-btn.optional:not(:disabled):not(.trash-reward),
+.card-effects-dialog-actions .effect-btn.effect-btn--interaction-choice:not(:disabled):not(.trash-reward) {
+  border: 1px solid color-mix(in srgb, var(--color-arrakis-earth, #8b4513) 42%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-arrakis-parchment-muted, #e6d5a7) 92%, #fff 8%),
+    color-mix(in srgb, var(--color-arrakis-parchment-helena, #e8dcc8) 88%, #c9b896 12%)
+  );
+  color: var(--color-text-on-parchment, #1c1410);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.card-effects-dialog-actions .effect-btn--compact .effect-label {
+  justify-content: center;
+  width: 100%;
+  gap: 6px;
+}
+
+.card-effects-dialog-actions .effect-arrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 2px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.card-effects-dialog-actions .effect-resource-cost {
+  position: relative;
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.card-effects-dialog-actions .effect-resource-cost-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+}
+
+.card-effects-dialog-actions .effect-resource-cost-amt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -54%);
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.85), 0 1px 2px rgba(0, 0, 0, 0.65);
+  pointer-events: none;
+}
+
+.card-effects-dialog-actions .effect-faction-bump-icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* OR branches: one line like printed card text (icon — OR — text), not stacked full-width bars */
+.card-effects-dialog-actions .fixed-choice-options--or .effect-btn--compact,
+.fixed-choice-dialog .fixed-choice-options--or .effect-btn {
+  width: auto;
+  max-width: min(72vw, 300px);
+  min-height: 30px;
+  min-width: 0;
+  padding: 4px 8px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.card-effects-dialog-actions .fixed-choice-options--or .effect-btn--compact .effect-label,
+.fixed-choice-dialog .fixed-choice-options--or .effect-btn .effect-label {
+  flex-wrap: nowrap;
+  font-size: 0.78rem;
+  line-height: 1.15;
 }
 
 .fixed-choice-options {
@@ -1831,8 +2052,38 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   gap: 8px;
 }
 
+.fixed-choice-options--or {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 6px;
+}
+
 .fixed-choice-options--compact {
   width: 100%;
+}
+
+.fixed-choice-options--compact.fixed-choice-options--or {
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  flex: 1 1 auto;
+}
+
+.fixed-choice-options--or .fixed-choice-option {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.fixed-choice-options--or .or-separator {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 0 2px;
+  line-height: 1;
 }
 
 .fixed-choice-option {
@@ -1843,8 +2094,20 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 .card-effects-inline-choice {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
   width: 100%;
+}
+
+.card-effects-inline-choice--or {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.card-effects-inline-choice--or .fixed-choice-options--or {
+  justify-content: center;
 }
 
 .card-effects-inline-choice-title {
@@ -1894,6 +2157,12 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   .turn-card-frame {
     border-radius: 5px;
     box-shadow: 0 1px 7px rgba(0, 0, 0, 0.38);
+  }
+
+  .turn-card-frame--has-effects::before {
+    inset: -3px;
+    border-radius: 8px;
+    border-width: 1.5px;
   }
 
   .selected-card-inline-slot {
@@ -2032,8 +2301,14 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     padding: 4px 0;
   }
   
-  .effect-btn.or-option {
-    width: 100%;
+  .card-effects-dialog-actions .fixed-choice-options--or {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .card-effects-dialog-actions .fixed-choice-options--or .effect-btn--compact {
+    max-width: min(88vw, 300px);
+    white-space: normal;
   }
 }
 

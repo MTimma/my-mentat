@@ -15,6 +15,13 @@
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--vv-layout-gap-bottom, 0px));
 }
 
+.imperium-select-overlay.vv-overlay-anchored {
+  inset: auto;
+  right: auto;
+  bottom: auto;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 .imperium-select-dialog {
   background: #10141b;
   color: #f5f5f5;
@@ -43,31 +50,6 @@
 
 .imperium-select-count {
   font-weight: bold;
-}
-
-.imperium-select-preview {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-  flex-shrink: 0;
-}
-
-.imperium-select-preview-slot {
-  width: 60px;
-  height: 90px;
-  border-radius: 4px;
-  border: 1px dashed #555;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.imperium-select-preview-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .imperium-select-cardsearch-wrapper {
@@ -153,6 +135,11 @@
     max-height: 100vh;
     max-height: 100dvh;
     padding-top: max(6px, env(safe-area-inset-top, 0px));
+  }
+
+  .imperium-select-overlay.vv-overlay-anchored {
+    height: auto;
+    max-height: none;
   }
 
   .imperium-select-dialog {
@@ -255,7 +242,7 @@
   }
 
   /* Preview (selected cards) above search bar - compact */
-  .imperium-select-dialog .imperium-select-preview {
+  .imperium-select-dialog .card-search-selection-preview {
     order: 3;
     flex-shrink: 0;
     margin-top: 0;
@@ -305,7 +292,7 @@
     white-space: nowrap;
   }
 
-  .imperium-select-dialog .imperium-select-preview-slot {
+  .imperium-select-dialog .card-search-selection-preview-slot {
     width: 32px;
     height: 48px;
   }

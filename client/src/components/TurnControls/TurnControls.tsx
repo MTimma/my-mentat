@@ -1,10 +1,17 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS } from '../../types/GameTypes'
+import React, { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
+import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, InfluenceAmounts, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS } from '../../types/GameTypes'
 import { intrigueCardHasCustom } from '../../utils/intrigueCardCustom'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
 import { intrigueRequirementSatisfied } from '../GameContext/requirements'
+import { getPlayAreaCardsForTurnView } from '../../utils/playAreaDisplay'
+import {
+  getAnyFactionInfluenceGainIcon,
+  getAnyFactionInfluenceLossIcon,
+  isAnyFactionInfluenceChoice,
+} from '../../utils/influenceDisplay'
+import { canAffordInfluenceOptionalEffect } from '../../utils/influenceChoices'
 import { getLeaderIconPath, getLeaderImage } from '../../data/leaders'
 import LeaderImageModal from '../LeaderImageModal/LeaderImageModal'
 import PlayerTargetDialog from '../PlayerTargetDialog'
@@ -18,13 +25,6 @@ interface TurnControlsProps {
   onPlayCombatIntrigue: (playerId: number, cardId: number) => void
   onReveal: (playerId: number, cardIds: number[]) => void
   canEndTurn: boolean
-  onEndTurn: (playerId: number) => void
-  onPassCombat: (playerId: number) => void
-  canDeployTroops: boolean
-  onAddTroop: (playerId: number) => void
-  onRemoveTroop: (playerId: number) => void
-  retreatableTroops: number
-  deployableTroops: number
   isCombatPhase: boolean
   combatStrength: Record<number, number>
   combatPasses?: Set<number>
@@ -122,13 +122,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onMobilizeGarrison,
   onPlayCombatIntrigue,
   onReveal,
-  onEndTurn,
-  onPassCombat,
-  canDeployTroops,
-  onAddTroop,
-  onRemoveTroop,
-  retreatableTroops,
-  deployableTroops,
   isCombatPhase,
   combatStrength,
   combatPasses = new Set(),
@@ -169,7 +162,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
-  const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const [isIntrigueSelectionOpen, setIsIntrigueSelectionOpen] = useState(false)
   const [showTrashPopup, setShowTrashPopup] = useState(false)
   const [isLeaderImageOpen, setIsLeaderImageOpen] = useState(false)
@@ -181,6 +173,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       setMobilizeCount(0)
     }
   }, [gameState?.pendingRapidMobilization, activePlayer?.id])
+
+  useEffect(() => {
+    setIsRevealTurn(false)
+  }, [activePlayer?.id])
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
   const [pendingTrashReward, setPendingTrashReward] = useState<PendingReward | null>(null)
   const [activeCardSelect, setActiveCardSelect] = useState<CardSelectChoice | null>(null)
@@ -198,17 +194,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
   const hasOpponentDiscard = Boolean(opponentDiscardState)
   const hasMandatoryRewards = pendingRewards.some(r => !r.disabled && !r.isTrash)
-  const hasUnresolvedPendingRewards = pendingRewards.some(r => !r.disabled)
-  const hasPendingChoicesToResolve = pendingChoices.length > 0
-  const selectionBlocksEndTurn =
-    voiceSelectionActive || masterstrokeSelectionActive || memnonHighCouncilSelectionActive
-  const endTurnDisabled =
-    isHistoryView ||
-    !canEndTurn ||
-    hasUnresolvedPendingRewards ||
-    hasOpponentDiscard ||
-    hasPendingChoicesToResolve ||
-    selectionBlocksEndTurn
   // Automatically open CardSelectChoice if it's the only pending choice and not already open
   useEffect(() => {
     const cardSelectChoices = pendingChoices.filter(c => c.type === ChoiceType.CARD_SELECT) as CardSelectChoice[]
@@ -241,7 +226,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     setShowTrashPopup(false)
     setPendingIntrigueTarget(null)
     setIsRevealTurn(false)
-    setSelectedCards([])
     setActiveIntriguePreviewCard(null)
   }, [
     isHistoryView,
@@ -265,7 +249,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const playAreaPreviewIdsKeyEarly = activePlayer
     ? [
         ...activePlayer.playArea,
-        ...selectedCards,
         ...(selectedCard && !activePlayer.revealed && !isRevealTurn ? [selectedCard] : [])
       ]
         .filter((card, index, cards) => cards.findIndex(c => c.id === card.id) === index)
@@ -299,10 +282,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
   if (!activePlayer) return null
   const activeLeaderIconPath = getLeaderIconPath(activePlayer.leader.name)
-  /** Same strip as Deploy/Retreat chips; show only when at least one troop action applies. */
-  const showTroopActionRail =
-    canDeployTroops &&
-    ((deployableTroops > 0 && activePlayer.troops > 0) || retreatableTroops > 0)
   const isKwisatzHaderach = (card: Card) =>
     card.playEffect?.some(effect =>
       effect.beforePlaceAgent?.recallAgent ||
@@ -345,12 +324,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 ? 'No agents remaining.'
                 : undefined
   const remainingAgentsLabel = `${activePlayer.agents} agent${activePlayer.agents === 1 ? '' : 's'} left`
-  const showRevealPersuasion = activePlayer.revealed && Boolean(gameState?.canAcquireIR)
-  const revealTurn = gameState?.currTurn?.type === TurnType.REVEAL ? gameState.currTurn : null
-  const revealPersuasionTotal =
-    revealTurn
-      ? revealTurn.persuasionCount ?? activePlayer.persuasion
-      : activePlayer.persuasion
+  const showRevealPersuasionRemaining =
+    activePlayer.revealed && Boolean(gameState?.canAcquireIR)
+  const revealPersuasionRemaining = activePlayer.persuasion
   const troopsInConflict = combatTroops[activePlayer.id] || 0
   const revealTroopStrength = troopsInConflict * 2
   const revealCombatTotal =
@@ -427,7 +403,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
   const handlePlayCombatIntrigue = () => {
     setIsRevealTurn(false)
-    setSelectedCards([])
     setIsIntrigueSelectionOpen(true)
   }
 
@@ -435,25 +410,12 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     setIsRevealTurn(true)
     setIsCardSelectionOpen(true)
   }
-  const handleEndTurn = () => {
-    setIsRevealTurn(false)
-    setSelectedCards([])
-    onEndTurn(activePlayer.id)
-  }
-  const handlePassCombat = () => {
-    setIsRevealTurn(false)
-    setSelectedCards([])
-    onPassCombat(activePlayer.id)
-  }
-
   const handleCardSelection = (picked: Card[]) => {
     setIsCardSelectionOpen(false)
     if (isRevealTurn) {
-      setSelectedCards(picked)
       onReveal(activePlayer.id, picked.map(card => card.id))
       setIsRevealTurn(false)
     } else if (picked.length === 1) {
-      setSelectedCards([])
       onPlayCard(activePlayer.id, picked[0].id)
     }
   }
@@ -482,15 +444,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }
 
   /* ---------- Optional effects helpers ---------- */
-  const isAffordable = (cost: Cost | undefined): boolean => {
-    if(!cost) return true
-    if (!activePlayer) return false
-    if(cost.spice && activePlayer.spice < cost.spice) return false
-    if(cost.water && activePlayer.water < cost.water) return false
-    if(cost.solari && activePlayer.solari < cost.solari) return false
-    if(cost.troops && activePlayer.troops < cost.troops) return false
-    // trash costs always affordable (player chooses card)
-    return true
+  const isAffordable = (cost: Cost | undefined, reward?: Reward): boolean => {
+    if (!cost && !reward) return true
+    if (!activePlayer || !gameState) return false
+    return canAffordInfluenceOptionalEffect(gameState, activePlayer.id, cost, reward)
   }
 
     const hasInfluenceForLoseEffect = (effect: IntriguePlayEffect): boolean => {
@@ -721,6 +678,18 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     )
   }
 
+  const renderCostResource = (amount: number | undefined, type: string) => {
+    if (!amount) return null
+    return (
+      <span className="effect-resource-cost" key={type} title={`Pay ${amount} ${type}`}>
+        <Icon type={type} className="effect-resource-cost-icon" alt="" />
+        <span className="effect-resource-cost-amt" aria-hidden="true">
+          {amount}
+        </span>
+      </span>
+    )
+  }
+
   const renderWaterReward = (amount: number | undefined) => {
     if (!amount) return null
     return (
@@ -756,26 +725,62 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
   }
 
+  const renderInfluenceAmounts = (
+    influence: InfluenceAmounts,
+    side: 'cost' | 'reward',
+    keyPrefix: string
+  ): React.ReactNode[] => {
+    if (isAnyFactionInfluenceChoice(influence)) {
+      const amount = influence.amounts[0].amount
+      const icon =
+        side === 'cost'
+          ? getAnyFactionInfluenceLossIcon()
+          : getAnyFactionInfluenceGainIcon(amount)
+      const title =
+        side === 'cost'
+          ? `Lose ${amount} influence with any faction`
+          : `Gain ${amount} influence with any faction`
+      return [
+        <span key={`${keyPrefix}-any`} className="effect-influence-line" title={title}>
+          <img src={icon} alt="" className="effect-faction-icon effect-faction-bump-icon" />
+          {side === 'cost' && amount > 1 && (
+            <span className="effect-influence-amt">{amount}</span>
+          )}
+        </span>,
+      ]
+    }
+
+    return influence.amounts.map((inf: InfluenceAmount, idx: number) => {
+      if (side === 'cost') {
+        return (
+          <span key={`${keyPrefix}-${idx}`} className="effect-influence-line" title={`${inf.faction} influence`}>
+            <img src={`/icon/${inf.faction}.png`} alt="" className="effect-faction-icon" />
+            <span className="effect-influence-amt">{inf.amount}</span>
+          </span>
+        )
+      }
+      return (
+        <span key={`${keyPrefix}-${idx}`} className="effect-influence-line" title={`${inf.faction} influence +${inf.amount}`}>
+          <img src={getFactionBumpIcon(inf.faction)} alt="" className="effect-faction-icon effect-faction-bump-icon" />
+          {inf.amount > 1 && <span className="effect-influence-amt">+{inf.amount}</span>}
+        </span>
+      )
+    })
+  }
+
   const renderLabel = (opt: {cost?: Cost; reward: Reward; costLabel?: string; rewardLabel?: string}): React.ReactNode => {
     const {cost,reward,costLabel,rewardLabel} = opt
     let left = null;
     if(cost){
       left = []
-      left.push(renderAmt(cost.spice,'spice'))
-      left.push(renderAmt(cost.water,'water'))
-      left.push(renderAmt(cost.solari,'solari'))
       if (cost.influence?.amounts?.length) {
-        cost.influence.amounts.forEach((inf: InfluenceAmount, idx: number) => {
-          left!.push(
-            <span key={`cost-influence-${idx}`} className="effect-influence-line" title={`${inf.faction} influence`}>
-              <img src={`/icon/${inf.faction}.png`} alt="" className="effect-faction-icon" />
-              <span className="effect-influence-amt">{inf.amount}</span>
-            </span>
-          )
-        })
+        left!.push(...renderInfluenceAmounts(cost.influence, 'cost', 'cost-influence'))
       } else if (cost.influence) {
         left.push(<span key="influence">Influence</span>)
       }
+      left.push(renderCostResource(cost.spice, 'spice'))
+      left.push(renderCostResource(cost.water, 'water'))
+      left.push(renderCostResource(cost.solari, 'solari'))
       if(cost.trash || cost.trashThisCard) {
         left.push(
           <span key="trash" className="effect-icon-token" title="Trash">
@@ -809,14 +814,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       )
     }
     if (reward.influence?.amounts?.length) {
-      reward.influence.amounts.forEach((inf: InfluenceAmount, idx: number) => {
-        right.push(
-          <span key={`influence-${idx}`} className="effect-influence-line" title={`${inf.faction} influence +${inf.amount}`}>
-            <img src={getFactionBumpIcon(inf.faction)} alt="" className="effect-faction-icon effect-faction-bump-icon" />
-            {inf.amount > 1 && <span className="effect-influence-amt">+{inf.amount}</span>}
-          </span>
-        )
-      })
+      right.push(...renderInfluenceAmounts(reward.influence, 'reward', 'influence'))
     }
     if(reward.victoryPoints) right.push(<span key="vp">{reward.victoryPoints} VP</span>)
     if(reward.acquire) {
@@ -860,9 +858,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
     return (
       <span className="effect-label">
-        {left?.filter(Boolean).map((n,idx)=> <React.Fragment key={idx}>{n} </React.Fragment>)}
-        {left && right && <>&nbsp;→&nbsp;</>}
-        {right.filter(Boolean).map((n,idx)=> <React.Fragment key={idx}>{n} </React.Fragment>)}
+        {left?.filter(Boolean).map((n, idx) => <React.Fragment key={idx}>{n}</React.Fragment>)}
+        {left && right.some(Boolean) && <span className="effect-arrow" aria-hidden="true">→</span>}
+        {right.filter(Boolean).map((n, idx) => <React.Fragment key={idx}>{n}</React.Fragment>)}
       </span>
     )
   }
@@ -950,36 +948,56 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     fixedChoice: FixedOptionsChoice,
     variant: 'dialog' | 'compact',
     onResolvedCompactOption?: (option: { reward: Reward; cost?: Cost }) => void
-  ) => (
-    <div className={`fixed-choice-options fixed-choice-options--${variant}`}>
-      {fixedChoice.options.map((option, index) => {
-        let disabledTooltip: string | undefined
-        if (option.disabled && option.reward.custom) {
-          disabledTooltip = PLAY_EFFECT_DISABLED_TEXTS[option.reward.custom] || 'This option is not available'
-        }
-        const cannotAfford = !isAffordable(option.cost)
-        return (
-          <button
-            key={`${fixedChoice.id}-${index}`}
-            className={`effect-btn choice fixed-choice-option fixed-choice-option--${variant}`}
-            disabled={option.disabled || cannotAfford || voiceSelectionActive || masterstrokeSelectionActive}
-            onClick={() => {
-              if (onResolveChoice) {
-                onResolveChoice(fixedChoice.id, option.reward, fixedChoice.source)
-              }
-              setActiveFixedChoice(null)
-              if (variant === 'compact') {
-                onResolvedCompactOption?.(option)
-              }
-            }}
-            title={cannotAfford ? 'Cannot afford this option.' : disabledTooltip}
-          >
-            {renderLabel(option)}
-          </button>
-        )
-      })}
-    </div>
-  )
+  ) => {
+    const showOrBetween = fixedChoice.options.length > 1
+    return (
+      <div
+        className={[
+          'fixed-choice-options',
+          `fixed-choice-options--${variant}`,
+          showOrBetween ? 'fixed-choice-options--or' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        role="group"
+        aria-label={fixedChoice.prompt || 'Choose one option'}
+      >
+        {fixedChoice.options.map((option, index) => {
+          let disabledTooltip: string | undefined
+          if (option.disabled && option.reward.custom) {
+            disabledTooltip = PLAY_EFFECT_DISABLED_TEXTS[option.reward.custom] || 'This option is not available'
+          }
+          const cannotAfford = !isAffordable(option.cost)
+          return (
+            <Fragment key={`${fixedChoice.id}-${index}`}>
+              {showOrBetween && index > 0 && (
+                <span className="or-separator" aria-hidden="true">
+                  OR
+                </span>
+              )}
+              <button
+                type="button"
+                className={`effect-btn choice fixed-choice-option fixed-choice-option--${variant}${showOrBetween ? ' or-option' : ''}`}
+                disabled={option.disabled || cannotAfford || voiceSelectionActive || masterstrokeSelectionActive}
+                onClick={() => {
+                  if (onResolveChoice) {
+                    onResolveChoice(fixedChoice.id, option.reward, fixedChoice.source)
+                  }
+                  setActiveFixedChoice(null)
+                  if (variant === 'compact') {
+                    onResolvedCompactOption?.(option)
+                  }
+                }}
+                title={cannotAfford ? 'Cannot afford this option.' : disabledTooltip}
+              >
+                {renderLabel(option)}
+              </button>
+            </Fragment>
+          )
+        })}
+      </div>
+    )
+  }
 
   const FixedChoiceDialog = () => {
     if (!activeFixedChoice) return null
@@ -1013,6 +1031,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     optional: OptionalEffect[]
     choices: PendingChoice[]
   }
+
+  const effectCardHasPendingInput = (effectCard: EffectCard | undefined): boolean =>
+    Boolean(
+      effectCard &&
+        (effectCard.rewards.some(r => !r.disabled) ||
+          effectCard.optional.length > 0 ||
+          effectCard.choices.some(c => !c.disabled))
+    )
 
   const buildEffectCards = () => {
     const sourceMap = new Map<string, EffectCard>()
@@ -1113,6 +1139,22 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     if (closesPreviewAfterCompactFixedOption(option)) closeCardEffectsDialog()
   }
 
+  const renderTrashRewardButtonContent = (reward: PendingReward, variant: 'overlay' | 'compact') => {
+    const label = reward.reward.trashThisCard
+      ? variant === 'overlay'
+        ? 'Trash'
+        : 'Trash this card'
+      : variant === 'overlay'
+        ? 'Trash'
+        : 'Choose card to trash'
+    return (
+      <span className="trash-reward-label">
+        <Icon type="trash" className="trash-reward-icon" alt="" />
+        <span className="trash-reward-text">{label}</span>
+      </span>
+    )
+  }
+
   const renderEffectActions = (card: EffectCard, variant: 'overlay' | 'compact') => {
     const selectionActive = voiceSelectionActive || masterstrokeSelectionActive || memnonHighCouncilSelectionActive
     return (
@@ -1162,15 +1204,23 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               }}
               disabled={disabled}
               title={tooltip}
+              aria-label={
+                reward.isTrash
+                  ? reward.reward.trashThisCard
+                    ? `Trash ${card.source.name}`
+                    : `Choose a card to trash (${card.source.name})`
+                  : undefined
+              }
             >
-              {reward.isTrash && <span className="warning-icon">! </span>}
-              {renderRewardContent(reward)}
+              {reward.isTrash
+                ? renderTrashRewardButtonContent(reward, variant)
+                : renderRewardContent(reward)}
             </button>
           )
         })}
 
         {card.optional.map((eff, idx) => {
-          const disabled = voiceSelectionActive || masterstrokeSelectionActive || !isAffordable(eff.cost)
+          const disabled = voiceSelectionActive || masterstrokeSelectionActive || !isAffordable(eff.cost, eff.reward)
           return (
             <button
               key={`${eff.id}-${idx}`}
@@ -1208,9 +1258,22 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
           const fixedChoice = choice as FixedOptionsChoice
           if (variant === 'compact') {
+            const isInlineOrChoice = fixedChoice.options.length > 1
+            const defaultOrPrompt =
+              fixedChoice.prompt === 'Choose one reward' || fixedChoice.prompt === 'Choose one option'
             return (
-              <div key={choice.id} className="card-effects-inline-choice">
-                <div className="card-effects-inline-choice-title">{fixedChoice.prompt || 'Choose one option'}</div>
+              <div
+                key={choice.id}
+                className={[
+                  'card-effects-inline-choice',
+                  isInlineOrChoice ? 'card-effects-inline-choice--or' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                {!isInlineOrChoice && !defaultOrPrompt && fixedChoice.prompt && (
+                  <div className="card-effects-inline-choice-title">{fixedChoice.prompt}</div>
+                )}
                 {renderFixedChoiceOptions(fixedChoice, 'compact', onCompactFixedOptionResolved)}
               </div>
             )
@@ -1238,12 +1301,18 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
   const renderTurnCard = (card: Card, mode: 'played' | 'revealed', effectCards: EffectCard[]) => {
     const effectCard = effectCards.find(entry => entry.source.type === GainSource.CARD && entry.source.id === card.id)
-    const hasPendingCardEffects = Boolean(effectCard)
+    const hasPendingInput = effectCardHasPendingInput(effectCard)
     return (
       <button
         key={card.id}
         type="button"
-        className={`turn-card-frame turn-card-frame--${mode} ${hasPendingCardEffects ? 'turn-card-frame--has-effects' : ''}`}
+        className={[
+          'turn-card-frame',
+          `turn-card-frame--${mode}`,
+          hasPendingInput ? 'turn-card-frame--has-effects' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         onClick={() => {
           setActiveIntriguePreviewCard(null)
           setActiveCardPreviewId(card.id)
@@ -1253,8 +1322,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             setActiveCardEffectSource(null)
           }
         }}
-        aria-label={effectCard ? `Resolve pending rewards for ${card.name}` : card.name}
-        title={effectCard ? `View ${card.name} and resolve pending rewards` : `View ${card.name}`}
+        aria-label={hasPendingInput ? `Resolve pending effects for ${card.name}` : card.name}
+        title={hasPendingInput ? `Resolve pending effects for ${card.name}` : card.name}
       >
         {card.image ? (
           <img
@@ -1492,22 +1561,28 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }
 
   const effectCards = buildEffectCards()
+  const basePlayAreaCards = isHistoryView && gameState
+    ? getPlayAreaCardsForTurnView(gameState, activePlayer)
+    : activePlayer.playArea
   const playAreaCards = [
-    ...activePlayer.playArea,
-    ...selectedCards,
+    ...basePlayAreaCards,
     ...(selectedCard && !activePlayer.revealed && !isRevealTurn ? [selectedCard] : [])
   ].filter((card, index, cards) => cards.findIndex(c => c.id === card.id) === index)
 
   const historicalRevealedCardIds =
-    isHistoryView && gameState?.currTurn?.type === TurnType.REVEAL
-      ? gameState.currTurn.revealedCardIds?.length
-        ? gameState.currTurn.revealedCardIds
-        : activePlayer.playArea
-            .filter(card => card.id !== gameState.currTurn?.cardId)
-            .map(card => card.id)
+    isHistoryView &&
+    gameState?.currTurn?.type === TurnType.REVEAL &&
+    gameState.currTurn.playerId === activePlayer.id
+      ? gameState.currTurn.revealedCardIds ?? []
+      : []
+  const liveRevealedCardIds =
+    !isHistoryView &&
+    gameState?.currTurn?.type === TurnType.REVEAL &&
+    gameState.currTurn.playerId === activePlayer.id
+      ? gameState.currTurn.revealedCardIds ?? []
       : []
   const revealedCardIds = new Set([
-    ...selectedCards.map(card => card.id),
+    ...liveRevealedCardIds,
     ...historicalRevealedCardIds
   ])
   const playedAreaCards = playAreaCards.filter(card => !revealedCardIds.has(card.id))
@@ -1657,6 +1732,18 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     activeCardLietKynesPersuasion !== null
       ? playAreaCards.filter(card => card.faction?.includes(FactionType.FREMEN))
       : []
+  const activeCardIsSignetRing =
+    activeCardPreviewCard?.playEffect?.some(effect => effect.reward?.custom === CustomEffect.SIGNET_RING) ?? false
+  const activeCardSignetGains =
+    activeCardIsSignetRing && activeCardPreviewCard
+      ? (gameState?.gains ?? []).filter(
+          gain =>
+            gain.playerId === activePlayer.id &&
+            gain.round === gameState?.currentRound &&
+            gain.source === GainSource.CARD &&
+            gain.sourceId === activeCardPreviewCard.id
+        )
+      : []
 
   return (
     <>
@@ -1719,6 +1806,26 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+            {activeCardSignetGains.length > 0 && (
+              <div className="card-effects-dialog-note card-effects-dialog-note--signet">
+                <div className="signet-ring-effect-heading">
+                  {activePlayer.leader.signetRingTitle
+                    ? `${activePlayer.leader.signetRingTitle}`
+                    : 'Signet ring'}
+                  <span className="signet-ring-effect-applied"> · applied</span>
+                </div>
+                {activePlayer.leader.signetRingText && (
+                  <div className="signet-ring-effect-text">{activePlayer.leader.signetRingText}</div>
+                )}
+                <div className="signet-ring-applied-chips" aria-label="Signet ring effects applied">
+                  {activeCardSignetGains.map((gain, index) => (
+                    <span key={`${gain.type}-${gain.amount}-${index}`} className="signet-ring-applied-chip">
+                      {renderLabel({ reward: gainToReward(gain) })}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
             {activeCardEffect && (
@@ -1837,14 +1944,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                     ))}
                   </>
                 )}
-                {showRevealPersuasion && (
+                {showRevealPersuasionRemaining && (
                   <div
-                    className="reveal-total-chip reveal-persuasion-total"
-                    title={`${revealPersuasionTotal} total reveal persuasion`}
-                    aria-label={`${revealPersuasionTotal} total reveal persuasion`}
+                    className="reveal-total-chip reveal-persuasion-total reveal-persuasion-remaining"
+                    title={`${revealPersuasionRemaining} persuasion remaining to spend`}
+                    aria-label={`${revealPersuasionRemaining} persuasion remaining`}
                   >
                     <span className="reveal-persuasion-diamond" aria-hidden="true" />
-                    <span className="reveal-total-count">{revealPersuasionTotal}</span>
+                    <span className="reveal-total-count">{revealPersuasionRemaining}</span>
+                    <span className="reveal-persuasion-remaining-label">left</span>
                   </div>
                 )}
                 {showRevealCombat && (
@@ -1859,37 +1967,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   >
                     <Icon type="dagger" className="reveal-total-icon" alt="" />
                     <span className="reveal-total-count">{revealCombatTotal}</span>
-                  </div>
-                )}
-                {showTroopActionRail && (
-                  <div className="turn-controls-troop-rail turn-controls-troop-rail--inline" role="group" aria-label="Conflict troops">
-                    <button
-                      type="button"
-                      className="troop-action-button troop-deploy-button"
-                      onClick={() => onAddTroop(activePlayer.id)}
-                      disabled={
-                        !canDeployTroops || activePlayer.troops <= 0 || deployableTroops <= 0
-                      }
-                      aria-label={`Deploy one troop. ${deployableTroops} available to deploy.`}
-                      title={`Deploy troop (${deployableTroops} available)`}
-                    >
-                      <span className="troop-available-count">{deployableTroops}</span>
-                      <img src="/icon/troop.png" alt="" className="troop-action-icon" />
-                      <span className="troop-action-arrow" aria-hidden="true">➤</span>
-                    </button>
-                    <div className="troop-action-status" aria-label={`${retreatableTroops} troops deployed this turn`}>
-                      <span className="troop-deployed-count">{retreatableTroops}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="troop-action-button troop-retreat-button"
-                      onClick={() => onRemoveTroop(activePlayer.id)}
-                      disabled={!canDeployTroops || retreatableTroops <= 0}
-                      aria-label={`Retreat one troop. ${retreatableTroops} can retreat.`}
-                      title={`Retreat troop (${retreatableTroops} available)`}
-                    >
-                      <span className="troop-action-arrow" aria-hidden="true">◄</span>
-                    </button>
                   </div>
                 )}
                 {showAutoApplyRewardsButton && (
@@ -1977,18 +2054,22 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                     const intrigueEffectBundle = effectCards.find(
                       e => e.source.type === GainSource.INTRIGUE && e.source.id === card.id
                     )
-                    const hasIntrigueRewards = Boolean(intrigueEffectBundle)
+                    const hasIntriguePendingInput = effectCardHasPendingInput(intrigueEffectBundle)
                     return (
                     <button
                       key={`intrigue-${card.id}`}
                       type="button"
-                      className={`turn-card-frame turn-card-frame--intrigue ${hasIntrigueRewards ? 'turn-card-frame--has-effects' : ''}`}
+                      className={`turn-card-frame turn-card-frame--intrigue ${hasIntriguePendingInput ? 'turn-card-frame--has-effects' : ''}`}
                       aria-label={
-                        hasIntrigueRewards
-                          ? `Resolve pending rewards for ${card.name}`
+                        hasIntriguePendingInput
+                          ? `Resolve pending effects for ${card.name}`
                           : `View played intrigue card: ${card.name}`
                       }
-                      title={hasIntrigueRewards ? `View ${card.name} and resolve pending rewards` : `View ${card.name}`}
+                      title={
+                        hasIntriguePendingInput
+                          ? `Resolve pending effects for ${card.name}`
+                          : `View ${card.name}`
+                      }
                       onClick={() => {
                         closeCardEffectsDialog()
                         setActiveIntriguePreviewCard(card)
@@ -2035,36 +2116,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               </div>
             )}
           </div>
-          <div className="control-buttons">
-          <div className="button-pair">
-            {!isHistoryView && !isCombatPhase && <button
-              className="end-turn-button"
-              onClick={handleEndTurn}
-              disabled={endTurnDisabled}
-              title={
-                endTurnDisabled && canEndTurn
-                  ? hasUnresolvedPendingRewards
-                    ? 'Claim or resolve all pending rewards before ending your turn.'
-                    : hasOpponentDiscard
-                      ? 'Resolve opponent discard instructions before ending your turn.'
-                      : hasPendingChoicesToResolve
-                        ? 'Resolve pending choices before ending your turn.'
-                        : selectionBlocksEndTurn
-                          ? 'Finish the current selection before ending your turn.'
-                          : undefined
-                  : undefined
-              }
-            >
-              End Turn
-            </button>}
-            {!isHistoryView && isCombatPhase && <button
-              className="pass-combat-button"
-              onClick={handlePassCombat}
-            >
-              Pass Combat
-            </button>}
-          </div>
-        </div>
         </div>
         </div>
       </div>
@@ -2081,6 +2132,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         }}
         isRevealTurn={isRevealTurn}
         text={isRevealTurn ? 'Select Cards to Reveal' : 'Select a Card to Play'}
+        confirmButtonText={isRevealTurn ? 'Reveal' : 'Play'}
         getCardPlayability={isRevealTurn ? undefined : checkPlayCardPlayability}
         playabilityInvalidateKey={isRevealTurn ? undefined : playCardPickerPlayabilityKey}
       />

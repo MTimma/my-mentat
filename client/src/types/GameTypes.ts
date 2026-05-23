@@ -399,9 +399,17 @@ interface PendingChoiceBase {
   source: { type: GainSource; id: number; name: string }
 }
 // Fixed options choice (current reward selection system)
+export interface InfluenceResolutionMeta {
+  /** Paid when the player confirms the lose-influence choice (before applying that choice). */
+  payOnResolve?: Cost
+  /** After lose-influence resolves, prompt to gain influence with any faction. */
+  thenGain?: InfluenceAmounts
+}
+
 export interface FixedOptionsChoice extends PendingChoiceBase {
   type: ChoiceType.FIXED_OPTIONS
   options: ChoiceOption[] // one must be chosen
+  influenceResolution?: InfluenceResolutionMeta
 }
 
 // Card selection choice

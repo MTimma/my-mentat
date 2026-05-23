@@ -6,6 +6,8 @@
   color-scheme: dark;
   color: var(--color-app-text, rgba(255, 255, 255, 0.92));
   background-color: var(--color-app-bg, #242424);
+  /* Matte behind card PNG/AVIF art so transparent or premultiplied corners don’t read as white */
+  --card-art-backing: #0f0d0a;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

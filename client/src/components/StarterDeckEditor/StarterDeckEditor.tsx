@@ -48,8 +48,6 @@ const StarterDeckEditor: React.FC<StarterDeckEditorProps> = ({
     return sortCards([...editingPlayer.deck, ...sharedImperiumDeck])
   }, [editingPlayer, sharedImperiumDeck])
 
-  const previewCards = selectedCards
-
   const handleOpenEditor = (playerIndex: number) => {
     setEditingPlayerIndex(playerIndex)
     setSelectedCards(playerSetups[playerIndex].deck)
@@ -131,21 +129,6 @@ const StarterDeckEditor: React.FC<StarterDeckEditorProps> = ({
                 hideTitle={true}
                 initialSelectedCards={editingPlayer.deck}
                 cancelButtonText="Cancel"
-                slotBetweenCardsAndSearch={
-                  <div className="starter-deck-editor-preview">
-                    {previewCards.map(card => (
-                      <div key={card.id} className="starter-deck-editor-preview-slot" title={card.name}>
-                        {card.image && (
-                          <img
-                            src={card.image}
-                            alt={card.name}
-                            className="starter-deck-editor-preview-image"
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                }
               />
             </div>
           </div>

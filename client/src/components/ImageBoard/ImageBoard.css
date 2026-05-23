@@ -225,6 +225,23 @@
   font-weight: 600;
 }
 
+.image-board__combat-troop-slot {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  transform: translate(0, -100%);
+  margin-top: -4px;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.image-board__combat-troop-slot .combat-troop-controls {
+  pointer-events: auto;
+  max-width: min(220px, 42vw);
+}
+
 .image-board__combat-stat {
   position: absolute;
   transform: translate(0, -50%);

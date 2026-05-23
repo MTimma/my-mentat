@@ -6,8 +6,12 @@
   justify-content: center;
   align-items: center;
   padding: 12px;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px) + var(--vv-layout-gap-bottom, 0px));
-  z-index: 1000;
+  /* Above turn-controls (1100) and history banner (1200); keep clear of fixed footer */
+  padding-bottom: calc(
+    12px + var(--footer-height, var(--footer-height-static, 84px)) + env(safe-area-inset-bottom, 0px) +
+      var(--vv-layout-gap-bottom, 0px)
+  );
+  z-index: 1250;
   box-sizing: border-box;
 }
 
@@ -81,7 +85,8 @@
   width: 100%;
   aspect-ratio: 488 / 680;
   object-fit: contain;
-  background: #0f0d0a;
+  object-position: center;
+  background: var(--card-art-backing, #0f0d0a);
   user-select: none;
 }
 

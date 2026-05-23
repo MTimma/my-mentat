@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { ControlMarkerType, FactionType, GameState, Player } from '../../types/GameTypes'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
+import { getRevealTurnStats } from '../../utils/revealTurnStats'
 import { getLeaderImage } from '../../data/leaders'
 import LeaderImageModal from '../LeaderImageModal/LeaderImageModal'
 import PlayerPlayAreaModal from '../PlayerPlayAreaModal/PlayerPlayAreaModal'
+import RevealTurnStatsPanel from '../RevealTurnStatsPanel/RevealTurnStatsPanel'
 import './PlayerOverviewModal.css'
 
 interface PlayerOverviewModalProps {
@@ -62,6 +64,16 @@ const PlayerOverviewModal = ({
 }: PlayerOverviewModalProps) => {
   const [leaderImagePlayer, setLeaderImagePlayer] = useState<Player | null>(null)
   const [playAreaPlayer, setPlayAreaPlayer] = useState<Player | null>(null)
+
+  const revealStatsByPlayer = useMemo(() => {
+    if (!gameState) return new Map<number, ReturnType<typeof getRevealTurnStats>>()
+    const map = new Map<number, ReturnType<typeof getRevealTurnStats>>()
+    for (const player of players) {
+      const stats = getRevealTurnStats(gameState, player.id)
+      if (stats) map.set(player.id, stats)
+    }
+    return map
+  }, [gameState, players])
 
   const getBestValue = (valueSelector: (player: Player) => number): number => {
     return Math.max(...players.map(valueSelector), 0)
@@ -231,6 +243,25 @@ const PlayerOverviewModal = ({
             </tbody>
           </table>
         </div>
+
+        {revealStatsByPlayer.size > 0 && (
+          <div className="player-overview-reveal-section">
+            <h4 className="player-overview-reveal-heading">Reveal turn</h4>
+            <div className="player-overview-reveal-grid">
+              {players.map(player => {
+                const stats = revealStatsByPlayer.get(player.id)
+                if (!stats) return null
+                return (
+                  <div key={player.id} className={`player-overview-reveal-card player-${player.color}`}>
+                    <div className="player-overview-reveal-card-title">{player.leader.name}</div>
+                    <RevealTurnStatsPanel stats={stats} />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="player-overview-footer">
           <button className="player-overview-close player-overview-close-bottom" onClick={onClose} aria-label="Close player overview">
             ×

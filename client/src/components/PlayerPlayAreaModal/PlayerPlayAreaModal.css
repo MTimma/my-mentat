@@ -21,6 +21,19 @@
   flex-direction: column;
 }
 
+@media (min-width: 901px) {
+  .dialog-overlay.player-play-area-overlay {
+    top: 0;
+    bottom: calc(var(--footer-height, var(--footer-height-static, 84px)) + var(--vv-layout-gap-bottom, 0px));
+    padding: 16px;
+    box-sizing: border-box;
+  }
+
+  .player-play-area-modal {
+    max-height: min(90vh, 100%);
+  }
+}
+
 .player-play-area-header {
   display: flex;
   align-items: center;
@@ -99,6 +112,7 @@
   object-fit: contain;
   object-position: center;
   display: block;
+  background-color: var(--card-art-backing, #0f0d0a);
 }
 
 .player-play-area-card-fallback {

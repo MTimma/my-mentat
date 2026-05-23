@@ -1,33 +1,69 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Card, Player, CardPile } from '../../types/GameTypes'
+import { Card, CustomEffect, Player, CardPile } from '../../types/GameTypes'
+import { PLAY_EFFECT_TEXTS, REVEAL_EFFECT_TEXTS } from '../../data/effectTexts'
+import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import './CardSearch.css'
+
+/** iOS often scrolls the cards grid after the keyboard opens; re-apply scrollTop a few times. */
+function scrollCardsGridToTop(grid: HTMLDivElement | null) {
+  if (!grid) return
+  const snap = () => {
+    grid.scrollTop = 0
+    grid.scrollLeft = 0
+  }
+  snap()
+  requestAnimationFrame(snap)
+  window.setTimeout(snap, 50)
+  window.setTimeout(snap, 150)
+  window.setTimeout(snap, 320)
+}
 
 const EMPTY_SELECTED_CARDS: Card[] = []
 
+type SearchableEffect = {
+  reward?: { custom?: CustomEffect }
+  requirement?: unknown
+  cost?: unknown
+}
+
+function appendEffectBlobParts(
+  effects: SearchableEffect[] | undefined,
+  chunks: string[],
+  customTexts: Partial<Record<CustomEffect, string>>
+) {
+  if (!effects?.length) return
+  for (const effect of effects) {
+    chunks.push(JSON.stringify(effect.reward), JSON.stringify(effect.requirement), JSON.stringify(effect.cost))
+    const custom = effect.reward?.custom
+    if (custom && customTexts[custom]) {
+      chunks.push(customTexts[custom])
+    }
+  }
+}
+
 /** Lowercased substring blob for filtering — computed once per `availableCards` change, not on every keystroke. */
 function buildCardSearchBlob(card: Card): string {
-  const cardDescription = (card as { description?: string }).description || ''
-  let effectBlob = ''
-  const pe = card.playEffect
-  if (pe?.length) {
-    const chunks: string[] = []
-    for (const effect of pe) {
-      chunks.push(JSON.stringify(effect.reward), JSON.stringify(effect.requirement), JSON.stringify(effect.cost))
-    }
-    effectBlob = chunks.join(' ')
-  }
+  const chunks: string[] = [card.name]
+  const cardDescription = (card as { description?: string }).description
+  if (cardDescription) chunks.push(cardDescription)
+  if (card.faction?.length) chunks.push(...card.faction)
+  if (card.infiltrate) chunks.push('infiltrate')
+  appendEffectBlobParts(card.playEffect, chunks, PLAY_EFFECT_TEXTS)
+  appendEffectBlobParts(card.revealEffect, chunks, REVEAL_EFFECT_TEXTS)
+  appendEffectBlobParts(card.trashEffect, chunks, { ...PLAY_EFFECT_TEXTS, ...REVEAL_EFFECT_TEXTS })
+  if (card.acquireEffect) chunks.push(JSON.stringify(card.acquireEffect))
+  if (card.cost != null) chunks.push(String(card.cost))
+  if (card.agentIcons.length) chunks.push(...card.agentIcons)
+  return chunks.join(' ').toLowerCase()
+}
 
-  return [
-    card.name,
-    cardDescription,
-    effectBlob,
-    card.acquireEffect ? JSON.stringify(card.acquireEffect) : '',
-    card.cost?.toString() ?? '',
-    card.agentIcons.join(' '),
-  ]
-    .join(' ')
-    .toLowerCase()
+function parseSearchTokens(search: string): string[] {
+  return search.trim().toLowerCase().split(/\s+/).filter(Boolean)
+}
+
+function cardMatchesTokens(blob: string, tokens: string[], matchAll: boolean): boolean {
+  return matchAll ? tokens.every(token => blob.includes(token)) : tokens.some(token => blob.includes(token))
 }
 
 type GridItemPlayability = { playable: boolean; reason?: string }
@@ -117,10 +153,13 @@ interface CardSearchProps {
   onSelectionChange?: (selectedCards: Card[]) => void
   hideTitle?: boolean
   getCardPlayability?: (card: Card) => { playable: boolean; reason?: string }
-  /** Rendered between cards grid and search bar (e.g. preview cards in Imperium Row Select) */
+  /** Rendered between cards grid and search bar (e.g. spacer for bottom search layout) */
   slotBetweenCardsAndSearch?: React.ReactNode
+  /** Selected-card preview strip above search; click a card to deselect. Defaults on for multi-select or `onSelectionChange`. */
+  showSelectionPreview?: boolean
   initialSelectedCards?: Card[]
   cancelButtonText?: string
+  confirmButtonText?: string
   /** Placed after the cancel control and before Confirm (e.g. quantity stepper). */
   confirmAdornment?: React.ReactNode
   /** Bust playability caches when rules inputs change without a new `cards` array identity. */
@@ -142,16 +181,30 @@ const CardSearch: React.FC<CardSearchProps> = ({
   hideTitle = false,
   getCardPlayability,
   slotBetweenCardsAndSearch,
+  showSelectionPreview,
   initialSelectedCards = EMPTY_SELECTED_CARDS,
   cancelButtonText = 'Clear all',
+  confirmButtonText = 'Confirm',
   confirmAdornment,
   playabilityInvalidateKey,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const cardsGridRef = useRef<HTMLDivElement>(null)
   const onSelectionChangeRef = useRef(onSelectionChange)
   const getCardPlayabilityRef = useRef(getCardPlayability)
   getCardPlayabilityRef.current = getCardPlayability
+
+  const showPreview =
+    showSelectionPreview ?? (selectionCount > 1 || Boolean(onSelectionChange))
+  const searchAtBottom = showPreview || Boolean(slotBetweenCardsAndSearch)
+  const isStandaloneModal = !searchAtBottom
+
+  useVisualViewportOverlay(overlayRef, {
+    enabled: isOpen && isStandaloneModal,
+    lockDocumentScroll: true,
+  })
 
   useEffect(() => {
     onSelectionChangeRef.current = onSelectionChange
@@ -215,10 +268,24 @@ const CardSearch: React.FC<CardSearchProps> = ({
 
   const deferredSearch = useDeferredValue(searchTerm)
   const filteredCards = useMemo(() => {
-    const q = deferredSearch.trim().toLowerCase()
-    if (!q) return availableCards
-    return availableCards.filter(card => searchBlobById.get(card.id)?.includes(q))
+    const tokens = parseSearchTokens(deferredSearch)
+    if (tokens.length === 0) return availableCards
+
+    const match = (matchAll: boolean) =>
+      availableCards.filter(card => {
+        const blob = searchBlobById.get(card.id)
+        return blob ? cardMatchesTokens(blob, tokens, matchAll) : false
+      })
+
+    const andMatches = match(true)
+    if (andMatches.length > 0 || tokens.length === 1) return andMatches
+    return match(false)
   }, [availableCards, deferredSearch, searchBlobById])
+
+  useEffect(() => {
+    if (!isOpen) return
+    scrollCardsGridToTop(cardsGridRef.current)
+  }, [deferredSearch, isOpen, filteredCards.length])
 
   /** Playability does not depend on search. Callback identity from parents is often unstable — use a ref + explicit bust key. */
   const playabilityByCardId = useMemo(() => {
@@ -256,6 +323,15 @@ const CardSearch: React.FC<CardSearchProps> = ({
     })
   }, [isRevealTurn, selectionCount])
 
+  const handleRemoveFromPreview = useCallback((card: Card) => {
+    setSelectedCards(prev => {
+      if (!prev.some(c => c.id === card.id)) return prev
+      const next = isRevealTurn ? prev.filter(c => c.id !== card.id) : []
+      onSelectionChangeRef.current?.(next)
+      return next
+    })
+  }, [isRevealTurn])
+
   const handleConfirm = () => {
     if (selectedCards.length === selectionCount) {
       onSelect(selectedCards)
@@ -273,15 +349,47 @@ const CardSearch: React.FC<CardSearchProps> = ({
     onCancel()
   }
 
+  const handleSearchFocus = useCallback(() => {
+    scrollCardsGridToTop(cardsGridRef.current)
+  }, [])
+
   if (!isOpen) return null
 
-  const isStandaloneModal = !slotBetweenCardsAndSearch
+  const selectionPreview = showPreview ? (
+    <div className="card-search-selection-preview" aria-label="Selected cards">
+      {Array.from({ length: selectionCount }, (_, index) => {
+        const card = selectedCards[index] ?? null
+        return (
+          <button
+            key={index}
+            type="button"
+            className={`card-search-selection-preview-slot${
+              card ? ' card-search-selection-preview-slot--filled' : ''
+            }`}
+            disabled={!card}
+            onClick={() => card && handleRemoveFromPreview(card)}
+            title={card ? `Remove ${card.name}` : undefined}
+            aria-label={
+              card
+                ? `Remove ${card.name} from selection`
+                : `Empty slot ${index + 1} of ${selectionCount}`
+            }
+          >
+            {card?.image ? (
+              <img src={card.image} alt="" className="card-search-selection-preview-image" />
+            ) : null}
+          </button>
+        )
+      })}
+    </div>
+  ) : null
+
   const dialog = (
-    <div className={`card-selection-dialog ${slotBetweenCardsAndSearch ? 'card-selection-dialog-search-at-bottom' : ''}`}>
+    <div className={`card-selection-dialog ${searchAtBottom ? 'card-selection-dialog-search-at-bottom' : ''}`}>
       <div className="dialog-title">
         {!hideTitle && <h2>{text}</h2>}
       </div>
-      <div className="cards-grid">
+      <div className="cards-grid" ref={cardsGridRef}>
         {filteredCards.map(card => (
           <CardGridItem
             key={card.id}
@@ -294,6 +402,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
           />
         ))}
       </div>
+      {selectionPreview}
       {slotBetweenCardsAndSearch}
       <div className="dialog-actions">
         <div className="search-input-wrapper">
@@ -302,6 +411,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
             placeholder="Search cards..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
+            onFocus={handleSearchFocus}
             className="search-input"
           />
           {searchTerm && (
@@ -323,7 +433,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
           onClick={handleConfirm}
           disabled={selectedCards.length !== selectionCount}
         >
-          Confirm
+          {confirmButtonText}
         </button>
       </div>
     </div>
@@ -331,7 +441,10 @@ const CardSearch: React.FC<CardSearchProps> = ({
 
   if (isStandaloneModal) {
     const overlay = (
-      <div className="card-selection-dialog-overlay card-selection-dialog-overlay-standalone">
+      <div
+        ref={overlayRef}
+        className="card-selection-dialog-overlay card-selection-dialog-overlay-standalone"
+      >
         {dialog}
       </div>
     )

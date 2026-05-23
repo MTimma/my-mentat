@@ -18,7 +18,8 @@
   right: 0;
   top: 0;
   bottom: 0;
-  z-index: 1100;
+  /* Above .turn-controls-container (1100) and .history-viewing-banner (1200) */
+  z-index: 1320;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -29,6 +30,14 @@
   padding-left: max(16px, env(safe-area-inset-left, 0px), constant(safe-area-inset-left, 0px));
   overflow: hidden;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Sized to visualViewport via useVisualViewportOverlay — height already excludes the keyboard */
+.card-selection-dialog-overlay-standalone.vv-overlay-anchored {
+  inset: auto;
+  right: auto;
+  bottom: auto;
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 0px), constant(safe-area-inset-bottom, 0px));
 }
 
 /* Dialog is the single scroll owner for the card grid; keep search/actions in view */
@@ -82,6 +91,52 @@
 .card-selection-dialog-search-at-bottom .dialog-actions {
   grid-area: unset;
   flex-shrink: 0;
+}
+
+.card-search-selection-preview {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.card-search-selection-preview-slot {
+  width: 60px;
+  height: 90px;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px dashed #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  cursor: default;
+}
+
+.card-search-selection-preview-slot--filled {
+  border-style: solid;
+  border-color: #666;
+  cursor: pointer;
+}
+
+.card-search-selection-preview-slot--filled:hover {
+  border-color: #c9a227;
+  box-shadow: 0 0 0 1px rgba(201, 162, 39, 0.35);
+}
+
+.card-search-selection-preview-slot:disabled {
+  opacity: 1;
+}
+
+.card-search-selection-preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  background-color: var(--card-art-backing, #0f0d0a);
+  pointer-events: none;
 }
 
 .dialog-title {
@@ -206,6 +261,8 @@
   gap: 8px;
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 16px;
   min-height: 0;
 }
@@ -228,10 +285,10 @@
   overflow: hidden;
 }
 
-/* Cards with images: black behind image so corner gaps don’t show white */
+/* Cards with images: dark matte behind art so transparent / letterboxed corners don’t read as white */
 .card:has(.card-image) {
-  background-color: #000;
-  box-shadow: inset 0 0 0 4px #000;
+  background-color: var(--card-art-backing, #0f0d0a);
+  box-shadow: inset 0 0 0 4px var(--card-art-backing, #0f0d0a);
 }
 
 .card:hover {
@@ -260,7 +317,7 @@
   transform-origin: center;
   z-index: 1;
   display: block;
-  background-color: #000;
+  background-color: var(--card-art-backing, #0f0d0a);
 }
 
 .card.selected .card-image {
@@ -531,16 +588,30 @@
     padding: 6px 6px 6px 10px;
   }
 
-  .header-cancel-button,
+  .header-cancel-button {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    margin-left: 0;
+  }
+
   .header-confirm-button {
     flex: 1 1 calc(50% - 4px);
     min-width: 0;
     padding: 8px 12px;
     font-size: 0.85rem;
+    /* Keep Confirm above iOS home-indicator / sibling layers inside the dialog */
+    position: relative;
+    z-index: 3;
   }
 
   /* Standalone: fill padded overlay — no 90vh + outer scroll (fixes Android / mobile bottom bar) */
   .card-selection-dialog-overlay-standalone {
+    justify-content: flex-start;
+  }
+
+  .card-selection-dialog-overlay-standalone.vv-overlay-anchored {
     justify-content: flex-start;
   }
 
@@ -550,6 +621,12 @@
     max-width: none;
     height: auto;
     max-height: none;
+    min-height: 0;
+  }
+
+  .card-selection-dialog-overlay-standalone.vv-overlay-anchored > .card-selection-dialog {
+    max-height: 100%;
+    height: 100%;
   }
 }
 

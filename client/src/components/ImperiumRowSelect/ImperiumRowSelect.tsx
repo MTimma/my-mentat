@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { Card } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
+import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import './ImperiumRowSelect.css'
 
 interface ImperiumRowSelectProps {
@@ -11,15 +12,9 @@ interface ImperiumRowSelectProps {
 
 const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCount, onConfirm }) => {
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
+  const overlayRef = useRef<HTMLDivElement>(null)
 
-  // Lock body scroll while the modal is mounted
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previousOverflow
-    }
-  }, [])
+  useVisualViewportOverlay(overlayRef, { enabled: true, lockDocumentScroll: true })
 
   const sortedCards = useMemo(
     () => [...cards].sort((a, b) => a.name.localeCompare(b.name)),
@@ -38,26 +33,8 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCo
     setSelectedCards(cards)
   }
 
-  const previewSlots = Array.from({ length: requiredCount }, (_, index) => selectedCards[index] || null)
-
-  const previewSection = (
-    <div className="imperium-select-preview">
-      {previewSlots.map((card, index) => (
-        <div key={index} className="imperium-select-preview-slot">
-          {card && card.image && (
-            <img
-              src={card.image}
-              alt={card.name}
-              className="imperium-select-preview-image"
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  )
-
   return (
-    <div className="imperium-select-overlay">
+    <div ref={overlayRef} className="imperium-select-overlay">
       <div className="imperium-select-dialog">
         <header className="imperium-select-header">
           <h2>Select {requiredCount} Imperium Row Cards</h2>
@@ -78,7 +55,6 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCo
             text={`Select ${requiredCount} Imperium Row Cards`}
             onSelectionChange={handleSelectionChange}
             hideTitle={true}
-            slotBetweenCardsAndSearch={previewSection}
           />
         </div>
       </div>

@@ -1,0 +1,113 @@
+.reveal-turn-stats-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(47, 158, 234, 0.35);
+  background: rgba(20, 36, 52, 0.55);
+  min-width: 0;
+}
+
+.reveal-turn-stats-panel--compact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 14px;
+  padding: 6px 8px;
+}
+
+.reveal-turn-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.reveal-turn-stats-panel--compact .reveal-turn-stat {
+  flex: 1 1 140px;
+}
+
+.reveal-turn-stat-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(244, 228, 188, 0.72);
+}
+
+.reveal-turn-stat-value {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  min-width: 0;
+}
+
+.reveal-turn-stat-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.reveal-turn-stat-number {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #f4e4bc;
+}
+
+.reveal-turn-stat-meta {
+  font-size: 0.78rem;
+  color: rgba(244, 228, 188, 0.65);
+}
+
+.reveal-turn-stat-acquired-list {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.reveal-turn-stats-panel--compact .reveal-turn-stat-acquired-list {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.reveal-turn-acquired-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 2px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  max-width: 100%;
+}
+
+.reveal-turn-acquired-thumb {
+  width: 22px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.reveal-turn-acquired-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #f4e4bc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+
+.reveal-turn-acquired-cost {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #7ec8f0;
+}
+
+.reveal-turn-stat-empty {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.85rem;
+}

@@ -3,6 +3,19 @@
   z-index: 1300;
 }
 
+@media (min-width: 901px) {
+  .dialog-overlay.player-overview-overlay {
+    top: 0;
+    bottom: calc(var(--footer-height, var(--footer-height-static, 84px)) + var(--vv-layout-gap-bottom, 0px));
+    padding: 16px;
+    box-sizing: border-box;
+  }
+
+  .player-overview-modal {
+    max-height: min(92vh, 100%);
+  }
+}
+
 .player-overview-modal {
   width: min(95vw, 980px);
   max-height: 92vh;
@@ -246,4 +259,38 @@
     height: 11px;
     margin-right: 2px;
   }
+}
+
+.player-overview-reveal-section {
+  padding: 12px 14px 0;
+  border-top: 1px solid #b79c64;
+}
+
+.player-overview-reveal-heading {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #3a2f18;
+}
+
+.player-overview-reveal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.player-overview-reveal-card {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #b79c64;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.player-overview-reveal-card-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #3a2f18;
 }

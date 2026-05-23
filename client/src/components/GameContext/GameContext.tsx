@@ -46,6 +46,12 @@ import { intrigueCards, getIntrigueCardByCustom } from '../../services/IntrigueD
 import { intrigueCardHasCustom } from '../../utils/intrigueCardCustom'
 import { playRequirementSatisfied, revealRequirementSatisfied, intrigueRequirementSatisfied } from './requirements'
 import { updateFactionInfluence, getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
+import {
+  canAffordInfluenceOptionalEffect,
+  createGainInfluenceChoice,
+  createLoseInfluenceChoice,
+  requiresInfluenceChoices,
+} from '../../utils/influenceChoices'
 import { resolveSignetRingEffect } from '../../data/signetRingEffects'
 import { checkAndApplyMasterstroke, revertMasterstrokeIfNeeded } from '../../data/leaderAbilities'
 import { isArianaHarvestReward, getArianaAdjustedReward } from '../../data/leaderAbilities/arianaHarvest'
@@ -1978,8 +1984,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             case CustomEffect.SIGNET_RING: {
               const result = resolveSignetRingEffect(newState, playerId, card)
               if (result.optionalEffects) optionalEffects.push(...result.optionalEffects)
-              if (result.pendingChoices) tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices || []), ...result.pendingChoices]
-              if (result.pendingRewards) result.pendingRewards.forEach(r => addPendingReward(r.reward, r.source, r.isTrash ?? false))
+              if (result.pendingChoices) {
+                tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices || []), ...result.pendingChoices]
+              }
+              if (result.pendingRewards) {
+                result.pendingRewards.forEach(r => {
+                  if (r.reward.custom) {
+                    addPendingReward(r.reward, r.source, r.isTrash ?? false)
+                    return
+                  }
+                  Object.assign(
+                    currPlayer,
+                    applyRewardToPlayer(r.reward, currPlayer, updatedGains, newState, r.source)
+                  )
+                })
+              }
               break
             }
             default:
@@ -2898,6 +2917,43 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return true;
       }
 
+      if (requiresInfluenceChoices(cost, reward)) {
+        if (!canAffordInfluenceOptionalEffect(state, playerId, cost, reward)) return state
+
+        const influenceChoices: PendingChoice[] = []
+        const choiceSource = { type: source.type, id: source.id, name: source.name }
+
+        if (cost.influence?.chooseOne) {
+          influenceChoices.push(
+            createLoseInfluenceChoice(state, playerId, cost.influence, choiceSource, {
+              payOnResolve: {
+                spice: cost.spice,
+                water: cost.water,
+                solari: cost.solari,
+                troops: cost.troops,
+              },
+              thenGain: reward.influence?.chooseOne ? reward.influence : undefined,
+            })
+          )
+        } else if (reward.influence?.chooseOne) {
+          if (cost.spice) player.spice -= cost.spice
+          if (cost.water) player.water -= cost.water
+          if (cost.solari) player.solari -= cost.solari
+          if (cost.troops) player.troops -= cost.troops
+          influenceChoices.push(createGainInfluenceChoice(reward.influence, choiceSource))
+        }
+
+        tempCurrTurn.optionalEffects = tempCurrTurn.optionalEffects?.filter(e => e.id !== effect.id)
+        tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices || []), ...influenceChoices]
+
+        return {
+          ...state,
+          players: state.players.map(p => (p.id === playerId ? player : p)),
+          currTurn: tempCurrTurn,
+          canEndTurn: false,
+        }
+      }
+
       if(!canPayCost(player)) return state; // cannot afford
 
       // Deduct numeric resources
@@ -3180,6 +3236,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedPlayer = { ...player }
       const updatedGains = [...state.gains]
       
+      let followUpGainChoice: FixedOptionsChoice | null = null
+
       if (choice && choice.type === ChoiceType.FIXED_OPTIONS) {
         const fixedChoice = choice as FixedOptionsChoice
         const selectedOption = fixedChoice.options.find(opt => {
@@ -3193,48 +3251,63 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           return JSON.stringify(opt.reward) === JSON.stringify(reward)
         })
         
+        const pushGain = (amount: number, type: RewardType) => {
+          updatedGains.push({
+            round: state.currentRound,
+            playerId,
+            sourceId: source?.id || 0,
+            name: source?.name || 'Unknown',
+            amount,
+            type,
+            source: (source?.type as GainSource) || GainSource.INTRIGUE
+          })
+        }
+
+        const payNumericCost = (costToPay: Cost) => {
+          if (costToPay.spice && updatedPlayer.spice < costToPay.spice) return false
+          if (costToPay.water && updatedPlayer.water < costToPay.water) return false
+          if (costToPay.solari && updatedPlayer.solari < costToPay.solari) return false
+          if (costToPay.troops && updatedPlayer.troops < costToPay.troops) return false
+          if (costToPay.spice) {
+            updatedPlayer.spice -= costToPay.spice
+            pushGain(-costToPay.spice, RewardType.SPICE)
+          }
+          if (costToPay.water) {
+            updatedPlayer.water -= costToPay.water
+            pushGain(-costToPay.water, RewardType.WATER)
+          }
+          if (costToPay.solari) {
+            updatedPlayer.solari -= costToPay.solari
+            pushGain(-costToPay.solari, RewardType.SOLARI)
+          }
+          if (costToPay.troops) {
+            updatedPlayer.troops -= costToPay.troops
+            pushGain(-costToPay.troops, RewardType.TROOPS)
+          }
+          return true
+        }
+
+        if (fixedChoice.influenceResolution?.payOnResolve) {
+          if (!payNumericCost(fixedChoice.influenceResolution.payOnResolve)) return state
+        }
+        
         if (selectedOption?.cost) {
-          const cost = selectedOption.cost
-          const pushGain = (amount: number, type: RewardType) => {
-            updatedGains.push({
-              round: state.currentRound,
-              playerId,
-              sourceId: source?.id || 0,
-              name: source?.name || 'Unknown',
-              amount,
-              type,
-              source: (source?.type as GainSource) || GainSource.INTRIGUE
-            })
-          }
-          
-          // Check affordability
-          if (cost.spice && updatedPlayer.spice < cost.spice) return state
-          if (cost.water && updatedPlayer.water < cost.water) return state
-          if (cost.solari && updatedPlayer.solari < cost.solari) return state
-          if (cost.troops && updatedPlayer.troops < cost.troops) return state
-          
-          // Deduct cost
-          if (cost.spice) {
-            updatedPlayer.spice -= cost.spice
-            pushGain(-cost.spice, RewardType.SPICE)
-          }
-          if (cost.water) {
-            updatedPlayer.water -= cost.water
-            pushGain(-cost.water, RewardType.WATER)
-          }
-          if (cost.solari) {
-            updatedPlayer.solari -= cost.solari
-            pushGain(-cost.solari, RewardType.SOLARI)
-          }
-          if (cost.troops) {
-            updatedPlayer.troops -= cost.troops
-            pushGain(-cost.troops, RewardType.TROOPS)
-          }
+          if (!payNumericCost(selectedOption.cost)) return state
+        }
+
+        if (fixedChoice.influenceResolution?.thenGain) {
+          followUpGainChoice = createGainInfluenceChoice(
+            fixedChoice.influenceResolution.thenGain,
+            fixedChoice.source
+          )
         }
       }
       
       const newTurn = { ...state.currTurn }
       newTurn.pendingChoices = (newTurn.pendingChoices || []).filter(c => c.id !== action.choiceId)
+      if (followUpGainChoice) {
+        newTurn.pendingChoices = [...(newTurn.pendingChoices || []), followUpGainChoice]
+      }
       const newState = applyChoiceReward(
         { ...state, players: state.players.map(p => p.id === playerId ? updatedPlayer : p), gains: updatedGains },
         reward,
