@@ -410,25 +410,58 @@
 
 @media (min-width: 901px) {
   :root {
-    --ir-gap: 4px;
-    --ir-section-pad: 3px;
-    --ir-image-max: min(58px, 7vw);
-    --ir-card-pad: 2px;
+    --ir-gap: 3px;
+    --ir-section-pad: 2px;
+    --ir-image-max: min(38px, 4.2vw);
+    --ir-card-pad: 1px;
   }
 
   .imperium-section {
     margin-bottom: 0;
-    border-radius: 8px;
-  }
-
-  .imperium-card {
-    max-height: clamp(68px, 9vh, 88px);
     border-radius: 6px;
   }
 
+  .imperium-row-strip {
+    padding: 0;
+  }
+
+  .imperium-card {
+    max-height: 48px;
+    border-radius: 5px;
+  }
+
+  .imperium-row-strip.no-buttons .imperium-card {
+    max-height: 46px;
+  }
+
+  .imperium-card.no-button {
+    max-height: 44px;
+    padding: 0;
+  }
+
+  .imperium-card.no-button .card-image-ir {
+    max-height: 42px;
+  }
+
+  .count-display {
+    font-size: 0.5rem;
+    line-height: 1;
+  }
+
+  .helena-head-corner-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .helena-discount-badge {
+    font-size: 0.42rem;
+    padding: 1px 3px;
+  }
+
   .imperium-row-divider {
-    min-height: 0.85rem;
-    margin: 2px 1px;
+    min-height: 0.65rem;
+    margin: 1px;
+    width: 2px;
   }
 
   .imperium-preview-overlay {

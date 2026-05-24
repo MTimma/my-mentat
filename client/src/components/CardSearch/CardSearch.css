@@ -502,6 +502,33 @@
   .card-selection-dialog-overlay-standalone > .card-selection-dialog .cards-grid .card.selected {
     transform: scale(0.85);
   }
+
+  /* Multi-select / reveal: preview strip + bottom search bar */
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog-search-at-bottom {
+    width: min(1200px, 100%);
+  }
+
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog-search-at-bottom .dialog-title {
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog-search-at-bottom .card-search-selection-preview {
+    flex-shrink: 0;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-top: 1px solid #333;
+  }
+
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog-search-at-bottom .dialog-actions {
+    width: 100%;
+    flex-shrink: 0;
+    border-top: 1px solid #333;
+    border-bottom: none;
+    padding-top: 16px;
+    padding-bottom: 0;
+  }
 }
 
 @media (max-width: 600px) {

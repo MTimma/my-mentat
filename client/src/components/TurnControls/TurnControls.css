@@ -896,7 +896,7 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     gap: 0.5rem;
 }
 
-/* Desktop: 2 rows of 4 buttons - compact, styled layout */
+/* Desktop: compact single-row toolbar (matches mobile), optional effects row above */
 @media (min-width: 901px) {
   .turn-controls {
     flex-wrap: nowrap;
@@ -904,22 +904,51 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     padding: 6px 8px;
   }
 
+  /* One toolbar row (leader chips + play area + actions), like mobile; effects span full width above. */
   .turn-controls-expanded-only {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     gap: 4px 8px;
     width: 100%;
   }
 
+  .turn-controls-expanded-only:not(:has(.turn-controls-effects-row)) {
+    flex-wrap: nowrap;
+  }
+
+  .turn-controls-effects-row {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
   .active-player-info {
+    flex: 0 1 auto;
+    width: auto;
+    max-width: min(440px, 46%);
     margin-bottom: 0;
     font-size: 0.95rem;
     gap: 4px;
   }
 
+  .active-player-info .color-indicator {
+    display: none;
+  }
+
   .active-player-actions {
     gap: 6px;
+    min-width: 0;
+  }
+
+  .active-player-main-actions {
+    flex-wrap: nowrap;
+  }
+
+  .turn-controls-buttons-grid {
+    flex: 1 1 200px;
+    min-width: 0;
+    margin-left: auto;
   }
 
   .effects-bar,
@@ -968,6 +997,21 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     gap: 6px;
   }
 
+  .selected-cards-reveal-strip {
+    max-height: 80px;
+    align-items: center;
+  }
+
+  .selected-cards-reveal-strip .turn-card-frame {
+    max-height: 80px;
+    overflow: hidden;
+  }
+
+  .selected-cards-reveal-strip .selected-card-inline-img {
+    height: clamp(56px, 8vh, 76px);
+    max-width: 58px;
+  }
+
   .selected-cards {
     flex: 1;
     min-width: 0;
@@ -979,14 +1023,14 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     align-items: center;
     justify-content: flex-end;
     gap: 8px;
-    width: 100%;
     min-width: 0;
-    flex-basis: auto;
   }
 
   .turn-controls-buttons-grid .utility-buttons {
     display: flex;
     align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
     margin: 0;
   }
 

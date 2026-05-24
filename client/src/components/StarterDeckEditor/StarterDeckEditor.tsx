@@ -129,6 +129,7 @@ const StarterDeckEditor: React.FC<StarterDeckEditorProps> = ({
                 hideTitle={true}
                 initialSelectedCards={editingPlayer.deck}
                 cancelButtonText="Cancel"
+                embedded
               />
             </div>
           </div>

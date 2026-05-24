@@ -431,29 +431,62 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       const heightPx = `${Math.max(0, total)}px`
       root.style.setProperty('--footer-measured-height', heightPx)
       document.documentElement.style.setProperty('--footer-measured-height', heightPx)
+
+      const isDesktopPlay =
+        typeof window !== 'undefined' && window.matchMedia('(min-width: 901px)').matches
+      if (isDesktopPlay) {
+        const shellWidth = Math.max(0, Math.floor(root.getBoundingClientRect().width))
+        const viewportH = window.visualViewport?.height ?? window.innerHeight
+        const gapBottom = Number.parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue('--vv-layout-gap-bottom')
+        ) || 0
+        const layoutGap = 10
+        const boardEdge = Math.max(
+          160,
+          Math.min(shellWidth, Math.floor(viewportH - total - topChrome - layoutGap - gapBottom))
+        )
+        const boardEdgePx = `${boardEdge}px`
+        root.style.setProperty('--play-board-max-edge', boardEdgePx)
+        document.documentElement.style.setProperty('--play-board-max-edge', boardEdgePx)
+      } else {
+        root.style.removeProperty('--play-board-max-edge')
+        document.documentElement.style.removeProperty('--play-board-max-edge')
+      }
     }
 
-    const ro = new ResizeObserver(() => {
-      requestAnimationFrame(measurePlayLayout)
-    })
+    const scheduleMeasure = () => {
+      requestAnimationFrame(() => {
+        measurePlayLayout()
+        requestAnimationFrame(measurePlayLayout)
+      })
+    }
+
+    const ro = new ResizeObserver(scheduleMeasure)
 
     if (turnControlsFooterRef.current) ro.observe(turnControlsFooterRef.current)
     if (historyBannerRef.current) ro.observe(historyBannerRef.current)
     if (imperiumRowRef.current) ro.observe(imperiumRowRef.current)
 
-    measurePlayLayout()
+    const desktopMq = window.matchMedia('(min-width: 901px)')
+    const onDesktopMqChange = () => scheduleMeasure()
+    desktopMq.addEventListener('change', onDesktopMqChange)
 
-    window.addEventListener('resize', measurePlayLayout)
-    window.visualViewport?.addEventListener('resize', measurePlayLayout)
+    scheduleMeasure()
+
+    window.addEventListener('resize', scheduleMeasure)
+    window.visualViewport?.addEventListener('resize', scheduleMeasure)
 
     return () => {
       ro.disconnect()
-      window.removeEventListener('resize', measurePlayLayout)
-      window.visualViewport?.removeEventListener('resize', measurePlayLayout)
+      desktopMq.removeEventListener('change', onDesktopMqChange)
+      window.removeEventListener('resize', scheduleMeasure)
+      window.visualViewport?.removeEventListener('resize', scheduleMeasure)
       root.style.removeProperty('--footer-measured-height')
       root.style.removeProperty('--play-top-chrome-height')
+      root.style.removeProperty('--play-board-max-edge')
       document.documentElement.style.removeProperty('--footer-measured-height')
       document.documentElement.style.removeProperty('--play-top-chrome-height')
+      document.documentElement.style.removeProperty('--play-board-max-edge')
     }
   }, [
     showTurnControlsFooter,
@@ -469,6 +502,8 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     showSelectiveBreeding,
     gameState.selectedCard,
     turnControlsActivePlayer?.handCount,
+    displayState.imperiumRow.length,
+    displayState.helenaRemovedCard?.id,
   ])
 
   return (

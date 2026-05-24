@@ -55,6 +55,7 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCo
             text={`Select ${requiredCount} Imperium Row Cards`}
             onSelectionChange={handleSelectionChange}
             hideTitle={true}
+            embedded
           />
         </div>
       </div>

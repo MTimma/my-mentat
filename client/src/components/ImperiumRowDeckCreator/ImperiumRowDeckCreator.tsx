@@ -303,6 +303,7 @@ const ImperiumRowDeckCreator: React.FC<ImperiumRowDeckCreatorProps> = ({
                 cancelButtonText="Close"
                 confirmAdornment={addModalCopiesControl}
                 slotBetweenCardsAndSearch={<div className="imperium-deck-creator-search-slot" aria-hidden />}
+                embedded
               />
             </div>
           </div>

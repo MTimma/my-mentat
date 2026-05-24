@@ -15,7 +15,6 @@ import { BOARD_SPACES } from '../../data/boardSpaces'
 import {
   BOARD_HOTSPOTS,
   MARKER_ANCHORS,
-  BOARD_ASPECT_RATIO,
   layoutHotspotPercent,
 } from '../../data/boardHotspots'
 import {
@@ -270,7 +269,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   return (
     <div className={rootClass}>
       <div className="image-board__stage">
-        <div className="image-board__media" style={{ aspectRatio: BOARD_ASPECT_RATIO }}>
+        <div className="image-board__media">
           {imgError ? (
             <div
               className="image-board__fallback"

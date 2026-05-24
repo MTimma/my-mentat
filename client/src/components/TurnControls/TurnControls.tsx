@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
+import { createPortal } from 'react-dom'
 import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, InfluenceAmounts, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS } from '../../types/GameTypes'
 import { intrigueCardHasCustom } from '../../utils/intrigueCardCustom'
 import CardSearch from '../CardSearch/CardSearch'
@@ -999,10 +1000,13 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     )
   }
 
+  const portalOverlay = (overlay: React.ReactNode) =>
+    typeof document !== 'undefined' ? createPortal(overlay, document.body) : overlay
+
   const FixedChoiceDialog = () => {
     if (!activeFixedChoice) return null
 
-    return (
+    return portalOverlay(
       <div className="dialog-overlay">
         <div className="target-dialog fixed-choice-dialog">
           <h3>{activeFixedChoice.prompt || 'Choose one option'}</h3>
@@ -1777,110 +1781,112 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         
       }
       <FixedChoiceDialog />
-      {activeCardPreviewCard && (
-        <div className="dialog-overlay">
-          <div className="target-dialog card-effects-dialog">
-            {activeCardPreviewCard.image ? (
-              <img
-                src={activeCardPreviewCard.image}
-                alt={activeCardPreviewCard.name}
-                className="card-effects-dialog-image"
-              />
-            ) : (
-              <h3>{activeCardPreviewCard.name}</h3>
-            )}
-            {activeCardLietKynesPersuasion !== null && (
-              <div className="card-effects-dialog-note">
-                Liet Kynes reveal: {activeCardLietKynesPersuasion} persuasion
-                {activeCardLietKynesCountedCards.length > 0 && (
-                  <div className="liet-counted-cards" aria-label="Fremen cards counted for Liet Kynes">
-                    {activeCardLietKynesCountedCards.map(card => (
-                      <img
-                        key={card.id}
-                        src={card.image}
-                        alt={card.name}
-                        title={card.name}
-                        className="liet-counted-card-image"
-                        draggable={false}
-                      />
+      {activeCardPreviewCard &&
+        portalOverlay(
+          <div className="dialog-overlay">
+            <div className="target-dialog card-effects-dialog">
+              {activeCardPreviewCard.image ? (
+                <img
+                  src={activeCardPreviewCard.image}
+                  alt={activeCardPreviewCard.name}
+                  className="card-effects-dialog-image"
+                />
+              ) : (
+                <h3>{activeCardPreviewCard.name}</h3>
+              )}
+              {activeCardLietKynesPersuasion !== null && (
+                <div className="card-effects-dialog-note">
+                  Liet Kynes reveal: {activeCardLietKynesPersuasion} persuasion
+                  {activeCardLietKynesCountedCards.length > 0 && (
+                    <div className="liet-counted-cards" aria-label="Fremen cards counted for Liet Kynes">
+                      {activeCardLietKynesCountedCards.map(card => (
+                        <img
+                          key={card.id}
+                          src={card.image}
+                          alt={card.name}
+                          title={card.name}
+                          className="liet-counted-card-image"
+                          draggable={false}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {activeCardSignetGains.length > 0 && (
+                <div className="card-effects-dialog-note card-effects-dialog-note--signet">
+                  <div className="signet-ring-effect-heading">
+                    {activePlayer.leader.signetRingTitle
+                      ? `${activePlayer.leader.signetRingTitle}`
+                      : 'Signet ring'}
+                    <span className="signet-ring-effect-applied"> · applied</span>
+                  </div>
+                  {activePlayer.leader.signetRingText && (
+                    <div className="signet-ring-effect-text">{activePlayer.leader.signetRingText}</div>
+                  )}
+                  <div className="signet-ring-applied-chips" aria-label="Signet ring effects applied">
+                    {activeCardSignetGains.map((gain, index) => (
+                      <span key={`${gain.type}-${gain.amount}-${index}`} className="signet-ring-applied-chip">
+                        {renderLabel({ reward: gainToReward(gain) })}
+                      </span>
                     ))}
                   </div>
-                )}
-              </div>
-            )}
-            {activeCardSignetGains.length > 0 && (
-              <div className="card-effects-dialog-note card-effects-dialog-note--signet">
-                <div className="signet-ring-effect-heading">
-                  {activePlayer.leader.signetRingTitle
-                    ? `${activePlayer.leader.signetRingTitle}`
-                    : 'Signet ring'}
-                  <span className="signet-ring-effect-applied"> · applied</span>
                 </div>
-                {activePlayer.leader.signetRingText && (
-                  <div className="signet-ring-effect-text">{activePlayer.leader.signetRingText}</div>
-                )}
-                <div className="signet-ring-applied-chips" aria-label="Signet ring effects applied">
-                  {activeCardSignetGains.map((gain, index) => (
-                    <span key={`${gain.type}-${gain.amount}-${index}`} className="signet-ring-applied-chip">
-                      {renderLabel({ reward: gainToReward(gain) })}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {activeCardEffect && (
-              <div className="card-effects-dialog-actions">
-                {renderEffectActions(activeCardEffect, 'compact')}
-              </div>
-            )}
-            <button
-              type="button"
-              className="secondary-btn fixed-choice-cancel"
-              onClick={closeCardEffectsDialog}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {activeIntriguePreviewCard && (
-        <div
-          className="dialog-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label={activeIntriguePreviewCard.name}
-        >
-          <div className="target-dialog card-effects-dialog intrigue-preview-dialog">
-            {activeIntriguePreviewCard.image ? (
-              <img
-                src={activeIntriguePreviewCard.image}
-                alt={activeIntriguePreviewCard.name}
-                className="card-effects-dialog-image"
-              />
-            ) : (
-              <h3>{activeIntriguePreviewCard.name}</h3>
-            )}
-            {activeCardEffect &&
-              activeCardEffect.source.type === GainSource.INTRIGUE &&
-              activeCardEffect.source.id === activeIntriguePreviewCard.id && (
+              )}
+              {activeCardEffect && (
                 <div className="card-effects-dialog-actions">
                   {renderEffectActions(activeCardEffect, 'compact')}
                 </div>
               )}
-            <button
-              type="button"
-              className="secondary-btn fixed-choice-cancel"
-              onClick={() => {
-                setActiveIntriguePreviewCard(null)
-                setActiveCardEffectSource(null)
-              }}
-            >
-              Close
-            </button>
+              <button
+                type="button"
+                className="secondary-btn fixed-choice-cancel"
+                onClick={closeCardEffectsDialog}
+              >
+                Close
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+      {activeIntriguePreviewCard &&
+        portalOverlay(
+          <div
+            className="dialog-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-label={activeIntriguePreviewCard.name}
+          >
+            <div className="target-dialog card-effects-dialog intrigue-preview-dialog">
+              {activeIntriguePreviewCard.image ? (
+                <img
+                  src={activeIntriguePreviewCard.image}
+                  alt={activeIntriguePreviewCard.name}
+                  className="card-effects-dialog-image"
+                />
+              ) : (
+                <h3>{activeIntriguePreviewCard.name}</h3>
+              )}
+              {activeCardEffect &&
+                activeCardEffect.source.type === GainSource.INTRIGUE &&
+                activeCardEffect.source.id === activeIntriguePreviewCard.id && (
+                  <div className="card-effects-dialog-actions">
+                    {renderEffectActions(activeCardEffect, 'compact')}
+                  </div>
+                )}
+              <button
+                type="button"
+                className="secondary-btn fixed-choice-cancel"
+                onClick={() => {
+                  setActiveIntriguePreviewCard(null)
+                  setActiveCardEffectSource(null)
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
 
       <div
         className="turn-controls"
@@ -2184,34 +2190,36 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         />
       )}
 
-      {gameState?.pendingRapidMobilization === activePlayer.id && onMobilizeGarrison && (
-        <div className="dialog-overlay">
-          <div className="target-dialog">
-            <h3>Rapid Mobilization</h3>
-            <p>Deploy troops from garrison to the Conflict (0–{activePlayer.troops}).</p>
-            <input
-              type="number"
-              min={0}
-              max={activePlayer.troops}
-              value={mobilizeCount}
-              onChange={e =>
-                setMobilizeCount(
-                  Math.max(0, Math.min(activePlayer.troops, Number(e.target.value) || 0))
-                )
-              }
-            />
-            <button
-              type="button"
-              onClick={() => {
-                onMobilizeGarrison(activePlayer.id, mobilizeCount)
-                setMobilizeCount(0)
-              }}
-            >
-              Confirm
-            </button>
+      {gameState?.pendingRapidMobilization === activePlayer.id &&
+        onMobilizeGarrison &&
+        portalOverlay(
+          <div className="dialog-overlay">
+            <div className="target-dialog">
+              <h3>Rapid Mobilization</h3>
+              <p>Deploy troops from garrison to the Conflict (0–{activePlayer.troops}).</p>
+              <input
+                type="number"
+                min={0}
+                max={activePlayer.troops}
+                value={mobilizeCount}
+                onChange={e =>
+                  setMobilizeCount(
+                    Math.max(0, Math.min(activePlayer.troops, Number(e.target.value) || 0))
+                  )
+                }
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  onMobilizeGarrison(activePlayer.id, mobilizeCount)
+                  setMobilizeCount(0)
+                }}
+              >
+                Confirm
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </>
   )
 }

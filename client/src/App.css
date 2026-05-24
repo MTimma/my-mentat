@@ -1072,9 +1072,10 @@ body:has(.game-container--play) {
   position: fixed;
   /* Stack above the history strip so both stay visible (history stays at bottom). */
   bottom: calc(var(--history-banner-measured-height, 0px) + var(--vv-layout-gap-bottom, 0px));
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
+  /* No transform — it traps position:fixed overlays (card/signet modals) inside the footer */
+  left: 0;
+  right: 0;
+  margin-inline: auto;
   width: min(calc(100vw - 24px), var(--play-shell-max-width));
   background-color: var(--color-footer-bg);
   padding: 1rem;
@@ -1359,7 +1360,15 @@ body:has(.game-container--play) {
 
   .game-container--play > .imperium-row-container {
     flex-shrink: 0;
+    align-self: center;
+    width: var(--play-board-max-edge, min(100%, 72vh));
+    max-width: 100%;
     margin-bottom: 2px;
+    box-sizing: border-box;
+  }
+
+  .game-container--play > .imperium-row-container .imperium-section {
+    width: 100%;
   }
 
   .game-container--play > .main-area {
@@ -1373,49 +1382,56 @@ body:has(.game-container--play) {
   }
 
   .game-container--play > .main-area .image-board {
-    flex: 0 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
     max-width: 100%;
     width: 100%;
     margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   .game-container--play > .main-area .image-board__stage {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    min-height: 0;
+    align-items: center;
+    width: var(--play-board-max-edge, min(100%, 72vh));
+    max-width: 100%;
+    flex: 0 0 auto;
   }
 
+  /* Square box from measured edge — width:100% + aspect-ratio ignores max-height */
   .game-container--play > .main-area .image-board__media {
-    flex: 0 1 auto;
-    min-height: 0;
-    width: 100%;
+    flex: 0 0 auto;
+    width: var(--play-board-max-edge, min(100%, 72vh));
+    height: var(--play-board-max-edge, min(100%, 72vh));
     max-width: 100%;
-    max-height: calc(
-      100dvh - var(--footer-height, var(--footer-height-static, 84px)) -
-        var(--play-top-chrome-height, 96px) - var(--vv-layout-gap-bottom, 0px) - 12px
-    );
+    max-height: var(--play-board-max-edge, min(100%, 72vh));
     margin-inline: auto;
+    box-sizing: border-box;
   }
 
   .game-container--play > .main-area .image-board__img {
     width: 100%;
-    height: auto;
-    object-fit: initial;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
   }
 
   .turn-controls-container {
-    width: min(calc(100vw - 24px), var(--play-shell-max-width));
+    width: var(--play-board-max-edge, min(calc(100vw - 24px), var(--play-shell-max-width)));
     padding: 0.35rem 0.5rem;
     padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
   }
 
   .history-viewing-banner {
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    width: min(calc(100vw - 24px), var(--play-shell-max-width));
+    left: 0;
+    right: 0;
+    margin-inline: auto;
+    width: var(--play-board-max-edge, min(calc(100vw - 24px), var(--play-shell-max-width)));
     box-sizing: border-box;
     padding: 4px 10px;
     padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));

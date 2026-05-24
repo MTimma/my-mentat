@@ -164,6 +164,8 @@ interface CardSearchProps {
   confirmAdornment?: React.ReactNode
   /** Bust playability caches when rules inputs change without a new `cards` array identity. */
   playabilityInvalidateKey?: unknown
+  /** When true, render inline inside a parent dialog instead of a full-screen portal overlay. */
+  embedded?: boolean
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({
@@ -187,6 +189,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
   confirmButtonText = 'Confirm',
   confirmAdornment,
   playabilityInvalidateKey,
+  embedded = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
@@ -199,7 +202,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
   const showPreview =
     showSelectionPreview ?? (selectionCount > 1 || Boolean(onSelectionChange))
   const searchAtBottom = showPreview || Boolean(slotBetweenCardsAndSearch)
-  const isStandaloneModal = !searchAtBottom
+  const isStandaloneModal = !embedded
 
   useVisualViewportOverlay(overlayRef, {
     enabled: isOpen && isStandaloneModal,

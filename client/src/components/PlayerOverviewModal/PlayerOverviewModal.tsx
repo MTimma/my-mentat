@@ -104,10 +104,11 @@ const PlayerOverviewModal = ({
         <div className="player-overview-header">
           <h3>Player Overview</h3>
           <button className="player-overview-close player-overview-close-top" onClick={onClose} aria-label="Close player overview">
-            x
+            ×
           </button>
         </div>
 
+        <div className="player-overview-body">
         <div className="player-overview-table-wrap">
           <table className="player-overview-table">
             <thead>
@@ -261,6 +262,8 @@ const PlayerOverviewModal = ({
             </div>
           </div>
         )}
+
+        </div>
 
         <div className="player-overview-footer">
           <button className="player-overview-close player-overview-close-bottom" onClick={onClose} aria-label="Close player overview">
