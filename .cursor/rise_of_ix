@@ -1,0 +1,112 @@
+Add rise of ix expansion option to the current dune imperium base app
+1. it should be a configurable flag for the game.
+2. if enabled, riseofix1 or riseofix4 should overlap the top right corner of image board 
+add riseofix3.png should be added to the free space in middle-top left side
+add gameboard fields repsectively in these places
+
+read the rules and the available images and implemnet the plan for implementing the new rules.
+create icon for dreadnaught, it is like a basic spaceship figure
+
+in imperium_row/rise_of_ix we have dune imperium cards from the expansion
+same for other places, like conflcit, etc, there should be rise_of_ix folder that includse the new cards
+
+also, technologies is a new part only for rise_of_ix
+similar to imperium row, there will be 3 open technologies from the deck. theya re displaye horizontally. ppthere willl probbalby not be any space on image board for them, so maybe need a button next to the board field image we are adding in the middle-top-left part
+
+here is the full rules for rise of ix:
+https://d19y2ttatozxjp.cloudfront.net/pdfs/DUNE_IMPERIUM_RISE_OF_IX_Rulebook_22-2-11.pdf
+here is full rules for all expansions ( do not need immoratliy/uprising yet)
+https://docs.google.com/document/d/15FrreNVs2eAnEWlNCmChQuBr5LLg0HHgC7BqWGk7KYw/edit?tab=t.0
+
+Here is list of Rise of Ix Imperium row cards and their descriptions
+
+find the cards by name in duneimperiumassets.com
+
+
+Imperium Card Name	Qty	Cost	Acquire	Faction	Agent Icons	Infiltrate	Graft	Agent Box	Reveal (Per)	Reveal (Sword)	Reveal (Other)	Unload	Base/Ix/Immo	Notes
+Appropriate	1	5	+1 Ship	EM	Gr, Yw	no	 	If 2x Inf EM: +1 Tech and you may use Sol to buy	2	0	 	no	2. Ix	 
+Bounty Hunter	1	1	 	 	Bl	yes	 	+2 Sol if used to send agent to occupied space	1	1	 	no	2. Ix	 
+CHOAM Delegate	1	1	 	 	Yw	yes	 	 	0	0	+3 Sol	yes	2. Ix	 
+Court Intrigue	1	2	 	EM	EM	yes	 	-1 Intrigue -> +1 intrigue	1	1	 	no	2. Ix	 
+Desert Ambush	1	3	 	FR	Yw	no	 	1 enemy unit retreats per troop you deploy this turn	1	1K53	 	no	2. Ix	 
+Embedded Agent	1	5	 	BG	Gr	yes	 	+2 shipping if you have another BG in play	1	0	+1 Intrigue	no	2. Ix	 
+Esmar Tuek	1	5	 	SG	Bl, Yw	no	 	-1 Sp -> +1 inf SG and 1x draw	0	0	+2 Sp and +2 Sol	yes	2. Ix	 
+Freighter Fleet	2	2	 	 	Yw	no	 	 	0	0	+1 Ship	yes	2. Ix	 
+Full-Scale Assault	1	8	+1 Dread	EM	EM, Bl	no	 	+2 troops	2	3 per Dread in conflict	 	no	2. Ix	 
+Guild Accord	1	6	 	SG	SG	yes	 	heighliner costs 2 spice less this turn	0	0	+1 Wa and SG alliance: +3 spice	yes	2. Ix	 
+Guild Chief Administrator	1	4	 	SG	SG, Bl, Yw	no	 	1x discard -> 1x trash	1	0	+1 Ship	no	2. Ix	 
+Imperial Bashar	1	4	 	EM	Bl	no	 	+1 troop or 1x trash	1	2 and +1 per card with sword	 	no	2. Ix	 
+Imperial Shock Trooper	1	3	 	EM	 	NA	 	 	1	2 or 5 if agent on EM space	 	no	2. Ix	 
+In the Shadows	2	2	 	BG	Gr, Bl	no	 	If 2x Inf BG: 1x discard -> +1 inf EM or SG or FR 	0	0	+1 inf BG	yes	2. Ix	 
+Ix-Guild Compact	1	3	 	SG	SG	no	 	2x discard -> +1 dreadnought	0	0	+2 negotiator	yes	2. Ix	 
+Ixian Engineer	2	5	 	 	Yw	no	 	+1 Tech	0	0	If 3 Tech: Trash this card -> +1 VP	no	2. Ix	 
+Jamis	1	2	 	FR	FR	yes	 	1x trash	1	2	 	no	2. Ix	 
+Landing Rights	1	4	 	SG	Bl	no	 	+1 Ship	2	0	 	no	2. Ix	 
+Local Fence	1	3	 	 	Bl	no	 	-2 Sp -> +5 Sol or -5 Sol -> +4 Sp	2	0	 	no	2. Ix	 
+Negotiated Withdrawel	2	4	+1 troop	 	Gr, Bl, Yw	no	 	 	2	0	Retreat 3x troops - > +1 inf ?	no	2. Ix	 
+Satellite Ban	1	5	 	SG, FR	SG, FR	no	 	1x discard -> +1 Sp, +1 Wa	1	0	Retreat up to 2 troops	no	2. Ix	 
+Sayyadina	1	3	 	BG, FR	BG, FR	no	 	-3 Wa -> +1 VP	3 if FR Bond	0	 	no	2. Ix	 
+Shai-Hulud	1	7	1x trash	FR	Yw	no	 	1x trash -> +2 troops	0	5 if FR Bond	 	no	2. Ix	 
+Spice Trader	1	4	 	FR	Bl, Yw	no	 	If 2x Inf FR: 1x discard -> +2 Sp	2	1	 	no	2. Ix	 
+Treachery	2	6	 	 	EM, SG, BG, FR	no	 	Gain 2 Inf instead of 1 and trash this card	0	0	+2 troops and deploy them to conflict	yes	2. Ix	 
+Truthsayer	2	3	 	EM, BG	EM, BG, Gr	no	 	1x discard -> 1x draw	1	1	 	no	2. Ix	 
+Water Peddler	1	1	1x Wa	 	 	NA	 	 	0	0	+1 Wa	yes	2. Ix	 
+Web of Power	1	4	 	BG	BG	yes	 	If 2x inf (each): EM = +2 Sol, SG = 1x draw, FR = +1 Wa	1	0	+1 inf ?	no	2. Ix	 
+Weirding Way	1	3	 	BG	Bl, Yw	no	 	may take another turn after this one	1	2	 	no	2. Ix
+
+
+
+
+
+
+here is for technologies:
+Tech Tile Name	Qty	Cost	When	Acquire	Effect
+Artillery	1	1	Reveal	 	Reveal: +1 sword for each revealed card that provides 1 or more swords this turn
+Chaumurky	1	4	Endgame	2 intrigue	Endgame: You win tiebreakers
+Detonation Devices	1	3	After Conflict	 	1 VP when you win a conflict with a dreadnought and return dreadnought to supply instead of taking control of a board space
+Disposal Facility	1	3	Reveal	1 trash	Reveal: If you have 6 or more persuasion, you may trash one of your cards in play
+Flagship	1	8	Agent, Reveal (Once Per Round)	1 VP	-4 solari --> +3 troops
+Holoprojectors	1	3	Agent, Reveal (Once Per Round)	 	1 discard --> 1 draw
+Holtzman Engine	1	6	Round Start, Endgame	 	Round Start: 1 Draw. Endgame: 1 VP if you have at least 2 Spice Must Flow
+Invasion Ships	1	5	Agent (Once Per Round)	4 troops	1 discard --> Enemy agents don’t block your agent this turn
+Memocorders	1	2	Endgame	+1 inf ?	Endgame: 1 VP if 3 influence (or more) on all four tracks
+Minimic Film	1	2	Reveal	 	Reveal: +1 persuasion
+Restricted Ordinance	1	4	Reveal	 	Reveal: +4 swords if you have a seat on the high councl
+Shuttle Fleet	1	6	Round Start	+inf on 2 of 4	Round Start: +2 solari
+Sonic Snoopers	1	2	Agent, Reveal (One Time)	1 intrigue	Trash this --> Put any number of your intrigue cards on the bottom of the intrigue deck, then draw that many intrigue cards
+Spaceport	1	5	Agent, Reveal (Always)	2 draw	You may put cards you acquire on top of your deck
+Spy Satellites	1	4	Agent, Reveal (Once), Endgame	 	3 spice, trash this--> 1 VP. OR: Endgame: Worth 1 VP for each faction where you have 1 or less influenceF20
+Training Drones	1	3	Agent, Reveal (Once Per Round)	 	+1 troop
+Troop Transports	1	2	Agent, Reveal (Always)	 	Whenever you recruit troops from the shipping track, recruit an additional troop. You may deploy them to the conflict
+Windtraps	1	2	After Conflict	1 water	When you win a conflict: +1 water
+
+
+
+new intrigues:
+
+Blackmail	1	Combat	Win Combat	 	-1 inf ? -> +5 swords	ix	 	 	 	 	 	 
+Cannon Turrets	1	Combat	Win Combat	+2 swords and each opp retreats one Dreadnought	+2 swords, opp retreats 1 Dread	ix	 	 	 	 	 	 
+Strategic Push	1	Combat	Win Combat and Resources	2 swords and if you win +2 Solari	2	ix	 	 	 	 	 	 
+Second Wave	1	Combat	Win Combat	 	+2 sword and deploy up to 2 units from garrisson	ix	 	 	 	 	 	 
+War Chest	1	Combat or Endgame	Win Combat or VP	(combat) -2 Solari -> 4 swords. Or (endgame) If you have 10 Solari: +1 VP	-2 Solari -> +4 swords	ix	 	 	 	 	 	 
+Finesse	1	Combat or Plot	Win Combat or Influece	(combat) 2 swords. Or (plot) -1 influence ? -> +1 influence ? (plot)	2	ix	 	 	 	 	 	 
+Advanced Weaponry	1	Combat or Plot	Win Combat or Resources	(combat) If you have 3 tech: +4 sword. Or (plot) -3 solari -> +1 dreadnought	If you have 3 tech: +4 sword	ix	 	 	 	 	 	 
+Grand Conspiracy	1	Endgame	VP	If you have (2 dread, 1 SMF, 4 inf on 2 tracks, council): 3 = 1 VP, 4 = 2 VP	 	ix	 	 	 	 	 	 
+Strongarm	1	Plot	Influence	Lose a troop -> +1 influece on track where you placed an agent this turn	 	ix	 	 	 	 	 	 
+Ixian Probe	1	Plot	Deck	2x discard -> 2x draw	 	ix	 	 	 	 	 	 
+Cull	1	Plot	Deck	-1 Solari -> 1x trash	 	ix	 	 	 	 	 	 
+Secret Forces	1	Plot	Win Combat	+2 troops if you have a seat on high council	 	ix	 	 	 	 	 	 
+Quid Pro Quo	1	Plot	Influence	-2 Spice -> +1 influence on each track where you currently have an agent	 	ix	 	 	 	 	 	 
+Glimpse the Path	1	Plot	Resources	-1 Spice -> +1 Water and 1x draw	 	ix	 	 	 	 	 	 
+Diversion	1	Plot	Resources	+1 shipping when you deploy 4 units to conflict in 1 turn	 	ix	 	 	 	 	 	 
+Expedite	1	Plot	Resources	-1 Spice -> +1 shipping	 	ix	 	 	 	 	 	 
+Machine Culture	1	Plot or Endgame	Resources or VP	(plot) +1 Tech. Or (endgame) If you have 3 tech: +1 VP	 	ix	 	 	 	 	 	 
+
+new leaders:
+Prince Rhombur Vernius	1	1	Your dreadnoughts have a strength of 4 instead of 3	Buy 1 tech, or add 1 tech negotiator	Ix
+Viscount Hudro Moritani	1	1	Game start: look at top 2 intrigue cards, keep one (once per game)	1 spice -> +1 on shipping track	Ix
+"Princess" Yuna Moritani	1	2	You start with no water. When you gain Solari on your turn, increase the amount by 1	7 Solari -> 1 inf ?, 1 spice, 1 troop	Ix
+Archduke Armand Ecaz	1	2	If you have 2 agents on Yellow/Blue/Green upon reveal, you may trash 1 card in play	you may aquire a card that costs 3 or less	Ix
+Baron Vladimir Harkonnen	1	3	Game start: choose 2 factions: when you deploy 4 troops in 1 turn, +1 in each (once per game)	1 Solari -> 1 Intrigue card	
+Ilesa Ecaz	1	3	Round start: Set a card aside, when played on 2nd turn: +1 solari, or if only 1 agent icon +1 spice	1 Solari -> 1 Foldspace card	Ix
+Tessia Vernius	1	4	Place snooper tokens on influece tracks (too much for this small text field)	-1 inf ? -> +1 inf with a faction where you have a snooper token	Ix
