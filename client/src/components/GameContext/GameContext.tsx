@@ -54,7 +54,12 @@ import {
 } from '../../utils/influenceChoices'
 import { resolveSignetRingEffect } from '../../data/signetRingEffects'
 import { checkAndApplyMasterstroke, revertMasterstrokeIfNeeded } from '../../data/leaderAbilities'
-import { isArianaHarvestReward, getArianaAdjustedReward } from '../../data/leaderAbilities/arianaHarvest'
+import { getResolvedRewardForPlayer } from '../../data/leaderAbilities/arianaHarvest'
+import {
+  findPowerPlayInfluenceTarget,
+  resolvePowerPlayOnPendingRewards,
+  applyPowerPlayBonusAfterInfluenceClaimed,
+} from '../../data/leaderAbilities/powerPlay'
 import { canPlaceDespiteOccupancy } from '../../data/leaderAbilities/helenaUnblockedAgents'
 import { shouldGrantIlbanSolariDraw } from '../../data/leaderAbilities/ilbanSolariDraw'
 import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraadDiscount'
@@ -564,12 +569,6 @@ function applyRewardToPlayer(
   }
   
   return updatedPlayer
-}
-
-function getResolvedRewardForPlayer(player: Player, pendingReward: PendingReward): Reward {
-  return isArianaHarvestReward(player, pendingReward)
-    ? getArianaAdjustedReward(pendingReward)
-    : pendingReward.reward
 }
 
 /** Apply a conflict reward choice (from pendingConflictRewardChoices) */
@@ -2297,6 +2296,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ? {
             ...newState.currTurn,
             agentSpace: space.agentIcon,
+            agentSpaceId: spaceId,
             canDeployTroops: canDeployTroops,
             troopLimit: troopLimit,
             removableTroops: newState.currTurn?.removableTroops || 0,
@@ -2309,6 +2309,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             type: TurnType.ACTION,
             cardId: card.id,
             agentSpace: space.agentIcon,
+            agentSpaceId: spaceId,
             canDeployTroops: canDeployTroops,
             troopLimit: troopLimit,
             removableTroops: 0,
@@ -3408,16 +3409,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
         }
         case CustomEffect.POWER_PLAY: {
-          const pendingRewards = state.pendingRewards.map(r => ({ ...r }))
-          const target = pendingRewards.find(r => 
-            r.source.type === GainSource.BOARD_SPACE && Boolean(r.reward.influence)
-          )
-          if (!target) return state
-          target.powerPlay = true
-          return {
-            ...state,
-            pendingRewards
+          if (findPowerPlayInfluenceTarget(state.pendingRewards)) {
+            return {
+              ...state,
+              pendingRewards: resolvePowerPlayOnPendingRewards(state.pendingRewards),
+            }
           }
+          return applyPowerPlayBonusAfterInfluenceClaimed(state, playerId)
         }
         case CustomEffect.REVEREND_MOTHER_MOHIAM: {
           const player = state.players.find(p => p.id === playerId)
@@ -3719,7 +3717,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const { playerId } = action
       const player = state.players.find(p => p.id === playerId)
       if (!player) return state
-      
+
+      const hasUnclaimedPowerPlay = state.pendingRewards.some(
+        r => !r.disabled && r.reward.custom === CustomEffect.POWER_PLAY
+      )
+
       let newState = { ...state }
       let newPlayer = { ...player }
       const newGains = [...state.gains]
@@ -3738,7 +3740,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const rewardsToApply = state.pendingRewards.filter(r => 
         !sourcesWithTrash.has(`${r.source.type}-${r.source.id}`) &&
         !r.disabled &&
-        !r.reward.custom
+        !r.reward.custom &&
+        !(
+          hasUnclaimedPowerPlay &&
+          r.source.type === GainSource.BOARD_SPACE &&
+          r.reward.influence
+        )
       )
       
       // Track total troops recruited for troopLimit update
@@ -3774,7 +3781,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Remove all applied rewards from pendingRewards (keep only trash sources and disabled rewards)
       newState.pendingRewards = state.pendingRewards.filter(r => 
-        sourcesWithTrash.has(`${r.source.type}-${r.source.id}`) || r.disabled
+        sourcesWithTrash.has(`${r.source.type}-${r.source.id}`) || r.disabled ||
+        (hasUnclaimedPowerPlay && r.source.type === GainSource.BOARD_SPACE && r.reward.influence) ||
+        r.reward.custom === CustomEffect.POWER_PLAY
       )
       
       // Update player and gains

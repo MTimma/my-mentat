@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { Player, IntrigueCard } from '../types/GameTypes'
 
 interface PlayerTargetDialogProps {
@@ -18,9 +19,9 @@ const PlayerTargetDialog: React.FC<PlayerTargetDialogProps> = ({
 }) => {
   const eligibleTargets = players.filter(p => p.id !== currentPlayerId)
 
-  return (
+  const dialog = (
     <div className="dialog-overlay" onClick={onCancel}>
-      <div 
+      <div
         className="target-dialog"
         onClick={e => e.stopPropagation()}
       >
@@ -40,15 +41,14 @@ const PlayerTargetDialog: React.FC<PlayerTargetDialogProps> = ({
             </button>
           ))}
         </div>
-        <button 
-          className="cancel-button"
-          onClick={onCancel}
-        >
+        <button className="cancel-button" onClick={onCancel}>
           Clear all
         </button>
       </div>
     </div>
   )
+
+  return typeof document !== 'undefined' ? createPortal(dialog, document.body) : dialog
 }
 
 export default PlayerTargetDialog 

@@ -7,6 +7,9 @@ import {
   InfluenceAmounts,
   Reward,
 } from '../types/GameTypes'
+
+/** Resource kinds that can appear as optional-effect costs. */
+export type OptionalCostResourceKind = 'spice' | 'water' | 'solari' | 'troops' | 'influence'
 import { isAnyFactionInfluenceChoice } from './influenceDisplay'
 
 const ALL_FACTIONS: FactionType[] = [
@@ -61,6 +64,37 @@ export function canAffordInfluenceOptionalEffect(
     return false
   }
   return true
+}
+
+/** Which cost resources the player cannot pay across the given optional costs. */
+export function getLackingOptionalCostResources(
+  state: GameState,
+  playerId: number,
+  costs: Array<Cost | undefined>
+): OptionalCostResourceKind[] {
+  const player = state.players.find(p => p.id === playerId)
+  if (!player) return []
+
+  const lacking = new Set<OptionalCostResourceKind>()
+  for (const cost of costs) {
+    if (!cost) continue
+    if (cost.spice != null && cost.spice > 0 && player.spice < cost.spice) {
+      lacking.add('spice')
+    }
+    if (cost.water != null && cost.water > 0 && player.water < cost.water) {
+      lacking.add('water')
+    }
+    if (cost.solari != null && cost.solari > 0 && player.solari < cost.solari) {
+      lacking.add('solari')
+    }
+    if (cost.troops != null && cost.troops > 0 && player.troops < cost.troops) {
+      lacking.add('troops')
+    }
+    if (cost.influence?.chooseOne && !canPayInfluenceCost(state, playerId, cost.influence)) {
+      lacking.add('influence')
+    }
+  }
+  return [...lacking]
 }
 
 export function createGainInfluenceChoice(

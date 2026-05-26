@@ -5,6 +5,7 @@
   --ir-section-pad: 6px;
   --ir-image-max: min(92px, 14vw);
   --ir-card-pad: 3px;
+  --ir-card-aspect: 2.5 / 3.5;
 }
 
 .imperium-section {
@@ -231,123 +232,6 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
-.imperium-preview-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1250;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background:
-    radial-gradient(circle at center, rgba(212, 177, 106, 0.1), transparent 38%),
-    rgba(0, 0, 0, 0.78);
-  backdrop-filter: blur(2px);
-  box-sizing: border-box;
-}
-
-.imperium-preview-modal {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 9px;
-  max-width: min(92vw, 420px);
-  max-height: 92vh;
-  padding: 14px 14px 16px;
-  border: 1px solid rgba(212, 177, 106, 0.4);
-  border-radius: 14px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 22%),
-    color-mix(in srgb, var(--color-footer-bg, #1a1612) 88%, #000 12%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 18px 48px rgba(0, 0, 0, 0.56);
-  box-sizing: border-box;
-}
-
-.imperium-preview-close {
-  width: min(100%, 160px);
-  min-height: 44px;
-  padding: 8px 18px;
-  border: 1px solid rgba(212, 177, 106, 0.34);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--color-arrakis-parchment, #f4e4bc);
-  font-size: 1rem;
-  font-weight: 800;
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s, transform 0.2s;
-}
-
-.imperium-preview-close:hover {
-  border-color: rgba(212, 177, 106, 0.58);
-  background: rgba(255, 255, 255, 0.14);
-  transform: translateY(-1px);
-}
-
-.imperium-preview-image {
-  display: block;
-  width: auto;
-  max-width: min(78vw, 340px);
-  max-height: min(68vh, 520px);
-  object-fit: contain;
-  object-position: center;
-  background-color: var(--card-art-backing, #0f0d0a);
-  border-radius: 10px;
-  border: 1px solid rgba(212, 177, 106, 0.2);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
-}
-
-.imperium-preview-title {
-  margin: 2px 0 0;
-  color: var(--color-arrakis-parchment, #f4e4bc);
-  font-size: clamp(0.95rem, 2.6vw, 1.15rem);
-  line-height: 1.2;
-  text-align: center;
-}
-
-.imperium-preview-note {
-  color: rgba(244, 228, 188, 0.82);
-  font-weight: 800;
-  text-align: center;
-  font-size: 0.86rem;
-}
-
-.imperium-preview-actions {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
-
-.imperium-preview-acquire-button {
-  width: min(100%, 240px);
-  min-height: 44px;
-  padding: 8px 18px;
-  border: 1px solid rgba(255, 215, 0, 0.66);
-  border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(255, 238, 153, 0.92), rgba(196, 128, 32, 0.94));
-  color: #251307;
-  font-size: 1rem;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    0 4px 10px rgba(0, 0, 0, 0.3);
-  transition: filter 0.2s, opacity 0.2s, transform 0.2s;
-}
-
-.imperium-preview-acquire-button:hover:not(:disabled) {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-}
-
-.imperium-preview-acquire-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
 /* Tablet */
 @media (max-width: 900px) {
   :root {
@@ -397,89 +281,85 @@
   .imperium-card {
     max-height: clamp(70px, 28vw, 108px);
   }
-
-  .imperium-preview-modal {
-    padding: 10px;
-  }
-
-  .imperium-preview-image {
-    max-width: 84vw;
-    max-height: 66vh;
-  }
 }
 
+/* Desktop: portrait cards at readable size; do not stretch slots across full board width */
 @media (min-width: 901px) {
   :root {
-    --ir-gap: 3px;
-    --ir-section-pad: 2px;
-    --ir-image-max: min(38px, 4.2vw);
-    --ir-card-pad: 1px;
+    --ir-gap: 8px;
+    --ir-section-pad: 4px;
+    --ir-card-pad: 2px;
+    --ir-card-height: clamp(88px, 11vh, 118px);
+    --ir-image-max: none;
   }
 
   .imperium-section {
     margin-bottom: 0;
-    border-radius: 6px;
+    border-radius: 8px;
   }
 
   .imperium-row-strip {
-    padding: 0;
+    padding: 0 2px;
+    justify-content: center;
+  }
+
+  .imperium-row-strip .imperium-card {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+    height: var(--ir-card-height);
+    max-height: var(--ir-card-height);
+    aspect-ratio: var(--ir-card-aspect);
+    align-self: center;
   }
 
   .imperium-card {
-    max-height: 48px;
-    border-radius: 5px;
+    max-height: var(--ir-card-height);
+    border-radius: 7px;
   }
 
   .imperium-row-strip.no-buttons .imperium-card {
-    max-height: 46px;
+    max-height: var(--ir-card-height);
   }
 
   .imperium-card.no-button {
-    max-height: 44px;
-    padding: 0;
+    max-height: var(--ir-card-height);
+    padding: var(--ir-card-pad);
   }
 
-  .imperium-card.no-button .card-image-ir {
-    max-height: 42px;
+  .imperium-card.no-button .card-image-ir,
+  .helena-card-image-wrapper .card-image-ir {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .helena-card-image-wrapper {
+    width: 100%;
+    height: 100%;
   }
 
   .count-display {
-    font-size: 0.5rem;
-    line-height: 1;
+    font-size: 0.62rem;
+    line-height: 1.1;
   }
 
   .helena-head-corner-icon {
-    width: 14px;
-    height: 14px;
+    width: 20px;
+    height: 20px;
   }
 
   .helena-discount-badge {
-    font-size: 0.42rem;
-    padding: 1px 3px;
+    font-size: 0.5rem;
+    padding: 2px 4px;
   }
 
   .imperium-row-divider {
-    min-height: 0.65rem;
-    margin: 1px;
-    width: 2px;
-  }
-
-  .imperium-preview-overlay {
-    top: 0;
-    bottom: calc(var(--footer-height, var(--footer-height-static, 84px)) + var(--vv-layout-gap-bottom, 0px));
-    padding-bottom: 16px;
-    box-sizing: border-box;
-  }
-
-  .imperium-preview-modal {
-    max-height: min(92vh, 100%);
-    overflow-y: auto;
-  }
-
-  .imperium-preview-image {
-    max-height: min(
-      520px,
-      calc(100dvh - var(--footer-height, var(--footer-height-static, 84px)) - 180px)
-    );
+    min-height: calc(var(--ir-card-height) * 0.55);
+    margin: 2px 4px;
+    width: 3px;
+    align-self: center;
   }
 }

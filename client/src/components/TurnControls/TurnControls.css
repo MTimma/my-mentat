@@ -74,9 +74,9 @@
   align-items: center;
   gap: 8px;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
   max-width: 100%;
-  padding: 4px;
+  padding: 6px 4px;
   scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
 }
@@ -118,7 +118,18 @@
   max-width: 100%;
   justify-content: flex-start;
   align-items: center;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* Reserve play-area height when scrubbing history with no cards played yet. */
+.selected-card-play-area--empty {
+  flex: 1 1 auto;
+  min-width: 76px;
+  min-height: 92px;
+  border-color: transparent;
+  background: transparent;
+  pointer-events: none;
 }
 
 .utility-buttons--with-inline-card .selected-card-play-area .selected-cards-reveal-strip {
@@ -475,33 +486,34 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   max-width: none;
 }
 
-/* Glassy spice-gold ring — ::before so overflow:hidden on the frame does not clip it */
+/* Pending-effect ring: outer ::before + inner image ring so parent overflow cannot hide it */
 .turn-card-frame--has-effects {
   overflow: visible;
   cursor: pointer;
   z-index: 1;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.38);
+  box-shadow:
+    0 0 0 2px rgba(255, 214, 120, 0.88),
+    0 0 14px rgba(255, 185, 60, 0.42),
+    0 2px 10px rgba(0, 0, 0, 0.38);
 }
 
 .turn-card-frame--has-effects::before {
   content: '';
   position: absolute;
-  inset: -4px;
-  border-radius: 10px;
+  inset: -3px;
+  border-radius: 9px;
   pointer-events: none;
   z-index: 3;
-  border: 2px solid rgba(255, 214, 120, 0.95);
+  border: 2px solid rgba(255, 224, 150, 0.98);
   background: linear-gradient(
     145deg,
-    rgba(255, 248, 215, 0.42) 0%,
-    rgba(255, 220, 140, 0.16) 45%,
-    rgba(212, 177, 106, 0.1) 100%
+    rgba(255, 248, 215, 0.28) 0%,
+    rgba(255, 220, 140, 0.1) 45%,
+    rgba(212, 177, 106, 0.06) 100%
   );
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -1px 4px rgba(180, 120, 40, 0.25),
-    0 0 20px rgba(255, 185, 60, 0.55),
-    0 0 6px rgba(255, 240, 200, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 0 16px rgba(255, 185, 60, 0.5);
 }
 
 .turn-card-frame--has-effects .selected-card-inline-img,
@@ -509,10 +521,17 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   position: relative;
   z-index: 1;
   border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 214, 120, 0.95),
+    0 0 10px rgba(255, 185, 60, 0.35);
 }
 
 .turn-card-frame--has-effects:hover:not(:disabled) {
   transform: translateY(-1px);
+  box-shadow:
+    0 0 0 2px rgba(255, 236, 175, 1),
+    0 0 20px rgba(255, 195, 70, 0.55),
+    0 4px 14px rgba(0, 0, 0, 0.42);
 }
 
 .turn-card-frame--has-effects:hover:not(:disabled)::before {
@@ -635,6 +654,42 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     gap: 5px;
     flex: 0 0 auto;
     margin-left: auto;
+}
+
+.turn-round-gains--banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.turn-round-gains-heading {
+  flex: 0 0 auto;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(166, 206, 143, 0.88);
+  white-space: nowrap;
+}
+
+.turn-round-gains-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.turn-round-gains-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.turn-round-gains--banner .auto-applied-gains-summary {
+  max-width: none;
 }
 
 .auto-applied-gains-summary {
@@ -932,10 +987,6 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     gap: 4px;
   }
 
-  .active-player-info .color-indicator {
-    display: none;
-  }
-
   .active-player-actions {
     gap: 6px;
     min-width: 0;
@@ -943,6 +994,10 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 
   .active-player-main-actions {
     flex-wrap: nowrap;
+  }
+
+  .turn-round-gains--footer {
+    display: none !important;
   }
 
   .turn-controls-buttons-grid {
@@ -960,6 +1015,11 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     min-width: 52px;
     min-height: 68px;
     border-radius: 6px;
+  }
+
+  .selected-card-play-area--empty {
+    min-width: 52px;
+    min-height: 68px;
   }
 
   .selected-card-inline-img {
@@ -1002,9 +1062,14 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     align-items: center;
   }
 
-  .selected-cards-reveal-strip .turn-card-frame {
+  .selected-cards-reveal-strip .turn-card-frame:not(.turn-card-frame--has-effects) {
     max-height: 80px;
     overflow: hidden;
+  }
+
+  .selected-cards-reveal-strip .turn-card-frame--has-effects {
+    max-height: none;
+    overflow: visible;
   }
 
   .selected-cards-reveal-strip .selected-card-inline-img {
@@ -1074,12 +1139,12 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     gap: 6px;
   }
 
-  .card-effects-dialog-image {
-    height: min(
-      200px,
+  .imperium-preview-modal .card-effects-dialog-image {
+    max-height: min(
+      520px,
       calc(
         100dvh - var(--footer-height, var(--footer-height-static, 84px)) -
-          var(--play-top-chrome-height, 96px) - 140px
+          var(--play-top-chrome-height, 96px) - 180px
       )
     );
   }
@@ -1378,35 +1443,13 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     line-height: 1.25;
   }
 
-  /* Interaction pills (Voice, optional Kwisatz, choose-one rewards) wash out on small screens — bump contrast */
-  .effect-btn.optional.effect-btn--compact:not(:disabled):not(.trash-reward),
-  .effect-btn.effect-btn--interaction-choice.effect-btn--compact:not(:disabled):not(.trash-reward) {
+  /* Slightly stronger ring on small screens so parchment pills stay visible */
+  .turn-controls .effect-btn.effect-btn--needs-input:not(:disabled) {
     border-width: 2px;
-    border-color: rgba(255, 214, 120, 0.98);
-    background: linear-gradient(180deg, rgba(164, 112, 44, 0.98), rgba(102, 64, 26, 0.99));
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.16),
-      0 0 16px rgba(255, 175, 50, 0.32),
-      0 2px 10px rgba(0, 0, 0, 0.48);
-  }
-
-  .effect-btn.optional.effect-btn--compact:hover:not(:disabled),
-  .effect-btn.effect-btn--interaction-choice.effect-btn--compact:hover:not(:disabled) {
-    border-color: rgba(255, 235, 170, 1);
-    background: linear-gradient(180deg, rgba(178, 124, 52, 1), rgba(112, 72, 32, 1));
-  }
-
-  .card-effects-dialog-actions .effect-btn.optional:not(:disabled):not(.trash-reward),
-  .card-effects-dialog-actions .effect-btn.effect-btn--interaction-choice:not(:disabled):not(.trash-reward) {
-    border-width: 1px;
-    border-color: color-mix(in srgb, var(--color-arrakis-earth, #8b4513) 48%, transparent);
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-arrakis-parchment-muted, #e6d5a7) 92%, #fff 8%),
-      color-mix(in srgb, var(--color-arrakis-parchment-helena, #e8dcc8) 88%, #c9b896 12%)
-    );
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-    color: var(--color-text-on-parchment, #1c1410);
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      0 0 12px rgba(255, 200, 120, 0.22),
+      0 2px 8px rgba(0, 0, 0, 0.35);
   }
 
   .turn-controls-buttons-grid .control-buttons {
@@ -1770,18 +1813,61 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   background-color: rgba(126, 88, 31, 0.46);
 }
 
-/* Kwisatz optional costs, Voice, acquire/mentat, choose-one influence, etc. */
-.effect-btn.effect-btn--interaction-choice:not(.trash-reward) {
-  border-color: rgba(230, 188, 95, 0.9);
-  background: linear-gradient(180deg, rgba(138, 96, 38, 0.9), rgba(88, 58, 24, 0.95));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    0 0 0 1px rgba(255, 195, 80, 0.12);
+.turn-controls .effect-btn.optional.effect-btn--unaffordable,
+.turn-controls .effect-btn.optional.effect-btn--unaffordable:disabled {
+  border-color: rgba(45, 45, 45, 0.65);
+  background: rgba(12, 12, 12, 0.55);
+  color: rgba(140, 135, 128, 0.62);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
-.effect-btn.effect-btn--interaction-choice:not(.trash-reward):hover:not(:disabled) {
-  border-color: rgba(255, 214, 130, 0.98);
-  background: linear-gradient(180deg, rgba(152, 108, 44, 0.96), rgba(98, 64, 28, 0.99));
+.turn-controls .effect-btn.optional.effect-btn--unaffordable .effect-arrow {
+  color: rgba(110, 105, 98, 0.55);
+}
+
+/* Optional effects, trash, Voice, acquire/mentat, etc. — light parchment = needs player input */
+.turn-controls .effect-btn.effect-btn--needs-input:not(:disabled) {
+  border: 1px solid color-mix(in srgb, var(--color-arrakis-earth, #8b4513) 42%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-arrakis-parchment-muted, #e6d5a7) 92%, #fff 8%),
+    color-mix(in srgb, var(--color-arrakis-parchment-helena, #e8dcc8) 88%, #c9b896 12%)
+  );
+  color: var(--color-text-on-parchment, #1c1410);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.turn-controls .effect-btn.trash-reward.effect-btn--needs-input:not(:disabled) {
+  border-color: color-mix(in srgb, #b33 48%, var(--color-arrakis-earth, #8b4513) 52%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff8f6 28%, var(--color-arrakis-parchment-muted, #e6d5a7) 72%),
+    color-mix(in srgb, #ffece8 22%, var(--color-arrakis-parchment-helena, #e8dcc8) 78%)
+  );
+}
+
+.turn-controls .effect-btn.effect-btn--needs-input:not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--color-arrakis-earth, #8b4513) 58%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-arrakis-parchment, #f4e4bc) 90%, #fff 10%),
+    var(--color-arrakis-parchment-muted, #e6d5a7)
+  );
+}
+
+.turn-controls .effect-btn.trash-reward.effect-btn--needs-input:not(:disabled):hover {
+  border-color: color-mix(in srgb, #c44 55%, var(--color-arrakis-earth, #8b4513) 45%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff5f2 35%, var(--color-arrakis-parchment, #f4e4bc) 65%),
+    var(--color-arrakis-parchment-muted, #e6d5a7)
+  );
+}
+
+.turn-controls .effect-btn.effect-btn--needs-input .effect-arrow {
+  color: var(--color-text-on-parchment, #1c1410);
+  text-shadow: none;
 }
 
 .effect-btn.choice {
@@ -1864,28 +1950,464 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   min-width: min(360px, calc(100vw - 32px));
 }
 
-.card-effects-dialog {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  min-width: min(380px, calc(100vw - 32px));
-  max-height: 100%;
+.imperium-preview-modal.card-effects-dialog {
+  min-width: unset;
+  max-width: min(92vw, 440px);
+  width: 100%;
+  position: static;
+  top: auto;
+  left: auto;
+  transform: none;
   overflow-y: auto;
+}
+
+.card-effects-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px 12px;
+  width: 100%;
+  max-width: min(78vw, 340px);
   box-sizing: border-box;
 }
 
-.card-effects-dialog-image {
-  display: block;
+.card-effects-dialog-footer:has(.leader-resource-strip) {
+  justify-content: space-between;
+}
+
+.card-effects-dialog-footer .leader-resource-strip {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.card-effects-dialog-footer .imperium-preview-close {
+  flex: 0 0 auto;
   width: auto;
-  height: min(42vh, 260px);
-  max-width: min(220px, 78vw);
+  min-width: 88px;
+}
+
+.card-effects-dialog-title {
+  margin: 0;
+}
+
+.card-effects-dialog-card-stage {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  max-width: min(78vw, 340px);
+  border-radius: 10px;
+}
+
+.imperium-preview-modal .card-effects-dialog-image {
+  height: auto;
+  max-width: min(78vw, 340px);
+  max-height: min(68vh, 520px);
+}
+
+.card-effects-dialog-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: min(42vh, 260px);
+  min-width: min(160px, 60vw);
+  max-width: min(78vw, 340px);
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(212, 177, 106, 0.2);
+  background: var(--card-art-backing, #0f0d0a);
+  color: var(--color-arrakis-parchment, #f4e4bc);
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+}
+
+.card-effects-dialog-overlays {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.card-effect-overlay-zone {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+/* ?cardEffectDebug=1 — tune regions in DevTools, copy % into cardEffectRegions.ts */
+.card-effects-dialog-overlays--debug .card-effect-overlay-zone--debug {
+  outline: 2px solid rgba(255, 0, 220, 0.9);
+  background: rgba(255, 0, 220, 0.07);
+  pointer-events: none;
+}
+
+.card-effects-dialog-overlays--debug .card-effect-overlay-zone--debug.card-effect-overlay-zone--agent {
+  outline-color: rgba(120, 200, 255, 0.95);
+  background: rgba(120, 200, 255, 0.08);
+}
+
+.card-effects-dialog-overlays--debug .card-effect-overlay-zone--debug.card-effect-overlay-zone--reveal {
+  outline-color: rgba(255, 200, 80, 0.95);
+  background: rgba(255, 200, 80, 0.08);
+}
+
+.card-effects-dialog-overlays--debug .card-effect-overlay-zone--debug.card-effect-overlay-zone--play-effect {
+  outline-color: rgba(180, 255, 160, 0.95);
+  background: rgba(120, 255, 100, 0.08);
+}
+
+.card-effect-overlay-slot {
+  --overlay-slot-index: 0;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  transform: translateY(calc(var(--overlay-slot-index) * 6%));
+  pointer-events: none;
+}
+
+.card-effect-overlay-slot .effect-btn--overlay {
+  pointer-events: auto;
+}
+
+.card-effect-overlay-slot--frame {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  transform: none;
+  width: 100%;
+  height: 100%;
+}
+
+.card-effect-overlay-zone .card-effect-overlay-slot--frame {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.card-effect-overlay-zone .card-effect-overlay-slot--frame + .card-effect-overlay-slot--frame {
+  z-index: 2;
+}
+
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  border-radius: 5px;
+}
+
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame::before {
+  border-radius: 6px;
+  inset: 0;
+  padding: 2px;
+  animation-duration: 4.2s;
+}
+
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame::after {
+  border-radius: 5px;
+  box-shadow:
+    0 0 12px rgba(212, 175, 106, 0.5),
+    0 0 20px rgba(140, 200, 255, 0.28),
+    inset 0 0 14px rgba(255, 240, 200, 0.14);
+}
+
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame:hover:not(:disabled) {
+  transform: none;
+  filter: brightness(1.12);
+}
+
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame:hover:not(:disabled)::after {
+  box-shadow:
+    0 0 16px rgba(212, 175, 106, 0.65),
+    0 0 26px rgba(140, 200, 255, 0.38),
+    inset 0 0 16px rgba(255, 240, 200, 0.18);
+}
+
+/* Power Play — static blue frame + fill (no animated gradient) */
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.effect-btn--power-play::before {
+  inset: 0;
+  padding: 3px;
+  animation: none;
+  background: rgba(70, 155, 255, 1);
+  background-size: 100% 100%;
+}
+
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.effect-btn--power-play::after {
+  animation: none;
+  background: rgba(80, 165, 255, 0.38);
+  box-shadow: none;
+}
+
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.effect-btn--power-play:hover:not(:disabled)::after {
+  background: rgba(80, 165, 255, 0.44);
+  box-shadow: none;
+}
+
+/* Trash-this-card region — static red frame + fill */
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.trash-reward::before {
+  animation: none;
+  background: rgba(235, 85, 85, 1);
+  background-size: 100% 100%;
+}
+
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.trash-reward::after {
+  animation: none;
+  background: rgba(235, 85, 85, 0.38);
+  box-shadow: none;
+}
+
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.trash-reward:hover:not(:disabled)::after {
+  background: rgba(235, 85, 85, 0.44);
+  box-shadow: none;
+}
+
+/* Optional paid reveal/play line — frame on card art (affordable = gold, unaffordable = grey) */
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.optional.effect-btn--needs-input:not(:disabled)::before {
+  animation: none;
+  background: linear-gradient(
+    125deg,
+    rgba(255, 220, 130, 0.98) 0%,
+    rgba(255, 190, 90, 0.94) 40%,
+    rgba(255, 240, 170, 0.98) 100%
+  );
+  background-size: 100% 100%;
+}
+
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.optional.effect-btn--needs-input:not(:disabled)::after {
+  animation: none;
+  background: rgba(255, 200, 120, 0.22);
+  box-shadow: none;
+}
+
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.optional.effect-btn--unaffordable::before {
+  animation: none;
+  background: rgba(42, 42, 42, 0.92);
+  background-size: 100% 100%;
+}
+
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.optional.effect-btn--unaffordable::after {
+  animation: none;
+  background: rgba(10, 10, 10, 0.72);
+  box-shadow: none;
+}
+
+@keyframes card-effect-magic-border {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.card-effects-dialog .effect-btn--overlay {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  max-width: 94%;
+  min-height: 22px;
+  padding: 3px 9px;
+  border: none;
+  background: transparent;
+  backdrop-filter: none;
+  color: #fff8e8;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  text-shadow:
+    0 0 8px rgba(0, 0, 0, 0.95),
+    0 1px 3px rgba(0, 0, 0, 0.85);
+  box-shadow: none;
+  transition:
+    transform 0.18s ease,
+    filter 0.18s ease;
+}
+
+.card-effects-dialog .effect-btn--overlay::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 7px;
+  padding: 1.5px;
+  background: linear-gradient(
+    125deg,
+    rgba(255, 232, 160, 0.98) 0%,
+    rgba(210, 160, 255, 0.92) 34%,
+    rgba(130, 220, 255, 0.95) 68%,
+    rgba(255, 232, 160, 0.98) 100%
+  );
+  background-size: 280% 280%;
+  animation: card-effect-magic-border 3.8s ease-in-out infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: -2;
+}
+
+.card-effects-dialog .effect-btn--overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  box-shadow:
+    0 0 10px rgba(212, 175, 106, 0.42),
+    0 0 16px rgba(140, 200, 255, 0.22),
+    inset 0 0 10px rgba(255, 240, 200, 0.1);
+  pointer-events: none;
+  z-index: -1;
+  transition:
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.card-effects-dialog .effect-btn--overlay.optional::before {
+  background: linear-gradient(
+    125deg,
+    rgba(255, 220, 130, 0.98) 0%,
+    rgba(255, 190, 90, 0.94) 40%,
+    rgba(255, 240, 170, 0.98) 100%
+  );
+  background-size: 220% 220%;
+}
+
+.card-effects-dialog .effect-btn--overlay.optional.effect-btn--unaffordable::before {
+  animation: none;
+  background: rgba(42, 42, 42, 0.9);
+  background-size: 100% 100%;
+}
+
+.card-effects-dialog .effect-btn--overlay.optional.effect-btn--unaffordable::after {
+  animation: none;
+  background: rgba(10, 10, 10, 0.68);
+  box-shadow: none;
+}
+
+.card-effects-dialog .effect-btn--overlay.optional.effect-btn--unaffordable {
+  opacity: 0.88;
+  cursor: not-allowed;
+}
+
+.card-effects-dialog .effect-btn--overlay.optional.effect-btn--unaffordable .effect-label,
+.card-effects-dialog .effect-btn--overlay.optional.effect-btn--unaffordable .effect-arrow {
+  opacity: 0.52;
+}
+
+.card-effects-dialog .effect-btn--overlay.trash-reward::before {
+  background: linear-gradient(
+    125deg,
+    rgba(255, 170, 150, 0.98) 0%,
+    rgba(255, 90, 90, 0.95) 45%,
+    rgba(255, 200, 170, 0.98) 100%
+  );
+  background-size: 220% 220%;
+}
+
+.card-effects-dialog .effect-btn--overlay.trash-reward::after {
+  animation: none;
+  background: rgba(235, 85, 85, 0.28);
+  box-shadow: none;
+}
+
+.card-effects-dialog .effect-btn--overlay:hover:not(:disabled) {
+  transform: translateY(-1px) scale(1.02);
+  background: transparent;
+  border-color: transparent;
+  filter: brightness(1.08);
+}
+
+.card-effects-dialog .effect-btn--overlay:hover:not(:disabled)::after {
+  box-shadow:
+    0 0 14px rgba(212, 175, 106, 0.58),
+    0 0 22px rgba(140, 200, 255, 0.34),
+    inset 0 0 12px rgba(255, 240, 200, 0.16);
+}
+
+.card-effects-dialog .effect-btn--overlay.trash-reward:hover:not(:disabled)::after {
+  background: rgba(235, 85, 85, 0.34);
+  box-shadow: none;
+}
+
+.card-effects-dialog .effect-btn.effect-btn--needs-input:not(:disabled) {
+  background: transparent;
+  color: #fff8e8;
+  border: none;
+  box-shadow: none;
+}
+
+.card-effects-dialog .effect-btn.effect-btn--needs-input:not(:disabled) .effect-arrow {
+  color: #ffe9b8;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+}
+
+.card-effects-dialog .effect-btn--overlay .effect-token-icon {
+  width: 14px;
+  height: 14px;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.75));
+}
+
+.card-effects-dialog .effect-btn--overlay .effect-resource-cost {
+  position: relative;
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.card-effects-dialog .effect-btn--overlay .effect-resource-cost-icon {
+  width: 14px;
+  height: 14px;
   object-fit: contain;
-  object-position: center;
-  background-color: var(--card-art-backing, #0f0d0a);
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.28);
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.75));
+}
+
+.card-effects-dialog .effect-btn--overlay .effect-resource-cost-amt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -54%);
+  font-size: 0.48rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+.card-effects-dialog .effect-btn--overlay .resource-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.card-effects-dialog .effect-btn--overlay .res-amt,
+.card-effects-dialog .effect-btn--overlay .effect-token-amt {
+  font-size: 0.52rem;
+}
+
+.card-effects-dialog .effect-btn--overlay .effect-label {
+  justify-content: center;
+  gap: 3px;
+  font-size: 0.58rem;
 }
 
 .card-effects-dialog-actions {
@@ -1894,25 +2416,27 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   align-items: center;
   gap: 8px;
   width: 100%;
-  max-width: min(220px, 78vw);
+  max-width: min(78vw, 340px);
 }
 
-.card-effects-dialog-note {
+.imperium-preview-modal .card-effects-dialog-note {
   width: 100%;
-  padding: 8px 10px;
-  border: 1px solid rgba(47, 158, 234, 0.46);
-  border-radius: 8px;
-  background: rgba(13, 58, 98, 0.34);
-  color: var(--color-arrakis-parchment, #f4e4bc);
-  font-size: 0.9rem;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: rgba(244, 228, 188, 0.82);
+  font-size: 0.86rem;
   font-weight: 800;
   text-align: center;
   box-sizing: border-box;
 }
 
-.card-effects-dialog-note--signet {
-  border-color: rgba(212, 177, 106, 0.5);
-  background: rgba(48, 38, 18, 0.45);
+.imperium-preview-modal .card-effects-dialog-note--signet {
+  padding: 8px 10px;
+  border: 1px solid rgba(212, 177, 106, 0.35);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
   text-align: left;
 }
 
@@ -1995,29 +2519,6 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   white-space: nowrap;
 }
 
-.card-effects-dialog-actions .effect-btn--compact:hover:not(:disabled),
-.card-effects-dialog-actions .effect-btn.optional:not(:disabled):not(.trash-reward):hover,
-.card-effects-dialog-actions .effect-btn.effect-btn--interaction-choice:not(:disabled):not(.trash-reward):hover {
-  border-color: color-mix(in srgb, var(--color-arrakis-earth, #8b4513) 58%, transparent);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-arrakis-parchment, #f4e4bc) 90%, #fff 10%),
-    var(--color-arrakis-parchment-muted, #e6d5a7)
-  );
-}
-
-.card-effects-dialog-actions .effect-btn.optional:not(:disabled):not(.trash-reward),
-.card-effects-dialog-actions .effect-btn.effect-btn--interaction-choice:not(:disabled):not(.trash-reward) {
-  border: 1px solid color-mix(in srgb, var(--color-arrakis-earth, #8b4513) 42%, transparent);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-arrakis-parchment-muted, #e6d5a7) 92%, #fff 8%),
-    color-mix(in srgb, var(--color-arrakis-parchment-helena, #e8dcc8) 88%, #c9b896 12%)
-  );
-  color: var(--color-text-on-parchment, #1c1410);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-
 .card-effects-dialog-actions .effect-btn--compact .effect-label {
   justify-content: center;
   width: 100%;
@@ -2033,6 +2534,11 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   line-height: 1;
   color: #fff;
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.card-effects-dialog-actions .effect-btn--needs-input .effect-arrow {
+  color: var(--color-text-on-parchment, #1c1410);
+  text-shadow: none;
 }
 
 .card-effects-dialog-actions .effect-resource-cost {
@@ -2213,6 +2719,11 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     min-width: 45px;
     min-height: 55px;
     border-radius: 6px;
+  }
+
+  .selected-card-play-area--empty {
+    min-width: 45px;
+    min-height: 55px;
   }
 
   .selected-card-inline-slot.selected-card-action-placeholder--intrigue {

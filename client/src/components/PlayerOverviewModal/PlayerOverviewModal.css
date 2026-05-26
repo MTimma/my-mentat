@@ -1,6 +1,6 @@
-/* Above fixed footer (.turn-controls-container 1100) and history strip (1200) */
+/* Above fixed footer and history strip */
 .dialog-overlay.player-overview-overlay {
-  z-index: 1300;
+  z-index: var(--z-modal-overlay-raised);
 }
 
 .player-overview-modal {
@@ -308,20 +308,24 @@
   }
 }
 
-/* Desktop: bottom sheet over footer, compact table, single scroll region */
+/* Desktop: sheet above fixed footer stack, fully visible including close control */
 @media (min-width: 901px) {
   html:has(.game-container--play) .dialog-overlay.player-overview-overlay {
-    inset: 0;
-    padding: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--footer-height) + var(--vv-layout-gap-bottom, 0px));
+    padding: 12px 16px 8px;
     align-items: flex-end;
     justify-content: center;
     overflow: hidden;
+    box-sizing: border-box;
     background-color: rgba(0, 0, 0, 0.58);
   }
 
   html:has(.game-container--play) .player-overview-overlay .player-overview-modal {
     width: min(calc(100vw - 16px), var(--play-shell-max-width, 1000px));
-    max-height: min(88dvh, calc(100dvh - 12px));
+    max-height: 100%;
     margin: 0;
     border-radius: 12px 12px 0 0;
     border-bottom: none;

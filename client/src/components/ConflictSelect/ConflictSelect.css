@@ -11,7 +11,7 @@
     12px + var(--footer-height, var(--footer-height-static, 84px)) + env(safe-area-inset-bottom, 0px) +
       var(--vv-layout-gap-bottom, 0px)
   );
-  z-index: 1250;
+  z-index: var(--z-modal-overlay);
   box-sizing: border-box;
 }
 

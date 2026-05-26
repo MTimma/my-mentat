@@ -6,7 +6,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 1200;
+  z-index: var(--z-play-history-strip);
   /* Do not scroll the overlay — iOS: 100vh dialog + padding pushes the bottom bar below the first paint */
   overflow: hidden;
   box-sizing: border-box;

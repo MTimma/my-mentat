@@ -38,7 +38,6 @@ import { canPlaceDespiteOccupancy } from '../../data/leaderAbilities/helenaUnblo
 import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraadDiscount'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { highCouncilSlotAssignments } from '../../utils/highCouncilDisplay'
-import CombatTroopControls from '../CombatTroopControls/CombatTroopControls'
 import './ImageBoard.css'
 
 interface SellMelangeData {
@@ -74,12 +73,6 @@ interface ImageBoardProps {
   gameStateForMarkers: GameState
   combatStrength: Record<number, number>
   controlMarkers: Record<ControlMarkerType, number | null>
-  canDeployTroops?: boolean
-  deployableTroops?: number
-  retreatableTroops?: number
-  activePlayerTroops?: number
-  onDeployTroop?: () => void
-  onRetreatTroop?: () => void
 }
 
 const PLAYER_COLORS: Record<number, string> = {
@@ -141,12 +134,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   gameStateForMarkers,
   combatStrength,
   controlMarkers,
-  canDeployTroops = false,
-  deployableTroops = 0,
-  retreatableTroops = 0,
-  activePlayerTroops = 0,
-  onDeployTroop,
-  onRetreatTroop,
 }) => {
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
@@ -248,10 +235,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   )
 
   const conflictBox = stageRect(CONFLICT_CARD_RECT)
-  const combatTroopAnchor = stagePoint(
-    COMBAT_STRENGTH_ORIGIN.x,
-    COMBAT_STRENGTH_ORIGIN.y - 4
-  )
   const conflictImgSrc =
     currentConflict && currentConflict.id > 0 ? conflictCardImageSrc(currentConflict.id) : null
 
@@ -570,25 +553,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 )
               })}
 
-              {onDeployTroop && onRetreatTroop && (
-                <div
-                  className="image-board__combat-troop-slot"
-                  data-marker="combat-troop-controls"
-                  style={{
-                    left: `${combatTroopAnchor.x}%`,
-                    top: `${combatTroopAnchor.y}%`,
-                  }}
-                >
-                  <CombatTroopControls
-                    canDeploy={canDeployTroops}
-                    deployableTroops={deployableTroops}
-                    retreatableTroops={retreatableTroops}
-                    garrisonTroops={activePlayerTroops}
-                    onDeploy={onDeployTroop}
-                    onRetreat={onRetreatTroop}
-                  />
-                </div>
-              )}
             </>
           )}
 

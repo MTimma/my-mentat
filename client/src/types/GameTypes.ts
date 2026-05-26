@@ -430,6 +430,8 @@ export interface GameTurn {
   type: TurnType
   cardId?: number
   agentSpace?: AgentIcon
+  /** Board space id for this agent placement (Power Play bonus influence). */
+  agentSpaceId?: number
   canDeployTroops?: boolean
   troopLimit?: number
   removableTroops?: number

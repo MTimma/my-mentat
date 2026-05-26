@@ -4,6 +4,7 @@ import { IMPERIUM_ROW_DECK, SPICE_MUST_FLOW_DECK, STARTING_DECK } from '../../..
 import { intrigueCards } from '../../../services/IntrigueDeckService'
 import {
   AgentIcon,
+  CustomEffect,
   FactionType,
   GamePhase,
   GainSource,
@@ -605,6 +606,65 @@ describe('Imperium Row card effects — Power Play', () => {
     expect(influenceReward).toBeDefined()
     s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: influenceReward!.id })
 
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(2)
+  })
+
+  it('CLAIM_ALL leaves Power Play and board influence pending until Power Play is claimed', () => {
+    let s = basePlotState([makePlayer(0, { deck: [powerPlayCard()], handCount: 1 })])
+
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: 1040 })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 15 })
+
+    expect(s.pendingRewards.some(r => r.reward.custom === CustomEffect.POWER_PLAY)).toBe(true)
+    expect(s.pendingRewards.some(r => r.reward.influence)).toBe(true)
+
+    s = applyGameAction(s, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+
+    expect(s.factionInfluence[FactionType.EMPEROR]?.[0] ?? 0).toBe(0)
+    expect(s.pendingRewards.some(r => r.reward.custom === CustomEffect.POWER_PLAY)).toBe(true)
+    expect(s.pendingRewards.some(r => r.reward.influence)).toBe(true)
+
+    const powerPlayReward = s.pendingRewards.find(r => r.reward.custom === CustomEffect.POWER_PLAY)
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: powerPlayReward!.id })
+
+    const influenceReward = s.pendingRewards.find(r => r.reward.influence)
+    expect(influenceReward?.powerPlay).toBe(true)
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: influenceReward!.id })
+
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(2)
+  })
+
+  it('after Power Play is claimed, board influence is eligible for auto-apply at +2', () => {
+    let s = basePlotState([makePlayer(0, { deck: [powerPlayCard()], handCount: 1 })])
+
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: 1040 })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 15 })
+
+    const powerPlayReward = s.pendingRewards.find(r => r.reward.custom === CustomEffect.POWER_PLAY)
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: powerPlayReward!.id })
+
+    const influenceReward = s.pendingRewards.find(r => r.reward.influence)
+    expect(influenceReward?.powerPlay).toBe(true)
+
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: influenceReward!.id })
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(2)
+  })
+
+  it('grants +1 bonus influence when Power Play is claimed after board influence', () => {
+    let s = basePlotState([makePlayer(0, { deck: [powerPlayCard()], handCount: 1 })])
+
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: 1040 })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 15 })
+
+    const influenceReward = s.pendingRewards.find(r => r.reward.influence)
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: influenceReward!.id })
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(1)
+
+    const powerPlayReward = s.pendingRewards.find(r => r.reward.custom === CustomEffect.POWER_PLAY)
+    expect(powerPlayReward).toBeDefined()
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: powerPlayReward!.id })
+
+    expect(s.pendingRewards.some(r => r.reward.custom === CustomEffect.POWER_PLAY)).toBe(false)
     expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(2)
   })
 })

@@ -17,3 +17,10 @@ export function getArianaAdjustedReward(reward: PendingReward): Reward {
     drawCards: (reward.reward.drawCards ?? 0) + 1,
   }
 }
+
+/** Reward actually applied / shown for a pending reward (leader modifiers included). */
+export function getResolvedRewardForPlayer(player: Player, pendingReward: PendingReward): Reward {
+  return isArianaHarvestReward(player, pendingReward)
+    ? getArianaAdjustedReward(pendingReward)
+    : pendingReward.reward
+}

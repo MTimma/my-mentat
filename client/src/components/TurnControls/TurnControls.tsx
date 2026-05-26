@@ -4,7 +4,7 @@ import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, Pendi
 import { intrigueCardHasCustom } from '../../utils/intrigueCardCustom'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
-import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS } from '../../data/effectTexts'
+import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS, REVEAL_EFFECT_TEXTS } from '../../data/effectTexts'
 import { intrigueRequirementSatisfied } from '../GameContext/requirements'
 import { getPlayAreaCardsForTurnView } from '../../utils/playAreaDisplay'
 import {
@@ -12,10 +12,20 @@ import {
   getAnyFactionInfluenceLossIcon,
   isAnyFactionInfluenceChoice,
 } from '../../utils/influenceDisplay'
-import { canAffordInfluenceOptionalEffect } from '../../utils/influenceChoices'
-import { getLeaderIconPath, getLeaderImage } from '../../data/leaders'
-import LeaderImageModal from '../LeaderImageModal/LeaderImageModal'
+import {
+  canAffordInfluenceOptionalEffect,
+  getLackingOptionalCostResources,
+} from '../../utils/influenceChoices'
+import {
+  CardEffectRect,
+  getCardEffectDebugRects,
+  getOptionalEffectOverlayRect,
+  getRewardOverlayRect,
+  layoutCardRegionPercent,
+  rectPlacementKey,
+} from '../../data/cardEffectRegions'
 import PlayerTargetDialog from '../PlayerTargetDialog'
+import LeaderResourceStrip from '../LeaderResourceStrip/LeaderResourceStrip'
 import './TurnControls.css'
 
 interface TurnControlsProps {
@@ -70,40 +80,9 @@ interface TurnControlsProps {
   mentatOwner?: number | null
   gameState?: GameState
   isHistoryView?: boolean
-  onOpenPlayerOverview?: () => void
-  onTurnHistoryToggle?: () => void
+  /** Desktop: portal round gains into the footer strip above the play area. */
+  roundGainsBannerSlotRef?: React.RefObject<HTMLDivElement | null>
 }
-
-const TurnHistoryIcon = () => (
-  <svg className="utility-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path d="M5 6.5h8.5" />
-    <path d="M5 11.5h6.5" />
-    <path d="M5 16.5h5" />
-    <circle cx="16.5" cy="15.5" r="4.25" />
-    <path d="M16.5 13v2.7l2 1.1" />
-    <path d="M3.5 6.5h.01M3.5 11.5h.01M3.5 16.5h.01" />
-  </svg>
-)
-
-const PlayerOverviewIcon = () => (
-  <svg className="utility-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <circle cx="7.25" cy="7.25" r="2.25" />
-    <path d="M3.75 13.25c.6-1.85 1.85-2.75 3.5-2.75s2.9.9 3.5 2.75" />
-    <circle cx="15.75" cy="6.75" r="1.85" />
-    <path d="M12.85 11.75c.5-1.35 1.5-2 2.9-2s2.4.65 2.9 2" />
-    <path d="M5 20v-3.25" />
-    <path d="M11 20v-5.25" />
-    <path d="M17 20v-7.25" />
-    <path d="M3.5 20h16.75" />
-  </svg>
-)
-
-const MagnifyingGlassIcon = () => (
-  <svg className="see-leader-magnifier" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <circle cx="10.5" cy="10.5" r="5.5" />
-    <path d="M15 15l4.5 4.5" />
-  </svg>
-)
 
 /** Rewards that require a tap / modal / board step (not plain +resource claims), e.g. The Voice. */
 function rewardNeedsInteractionHighlight(reward: Reward): boolean {
@@ -158,14 +137,12 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   activeIntrigueThisRound = [],
   gameState,
   isHistoryView = false,
-  onOpenPlayerOverview,
-  onTurnHistoryToggle
+  roundGainsBannerSlotRef,
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
   const [isIntrigueSelectionOpen, setIsIntrigueSelectionOpen] = useState(false)
   const [showTrashPopup, setShowTrashPopup] = useState(false)
-  const [isLeaderImageOpen, setIsLeaderImageOpen] = useState(false)
   const [pendingIntrigueTarget, setPendingIntrigueTarget] = useState<IntrigueCard | null>(null)
   const [mobilizeCount, setMobilizeCount] = useState(0)
 
@@ -186,6 +163,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [activeCardEffectSource, setActiveCardEffectSource] = useState<{ type: GainSource; id: number } | null>(null)
   const [activeCardPreviewId, setActiveCardPreviewId] = useState<number | null>(null)
   const [activeIntriguePreviewCard, setActiveIntriguePreviewCard] = useState<IntrigueCard | null>(null)
+  const [isDesktopPlay, setIsDesktopPlay] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 901px)')
+    const syncDesktop = () => setIsDesktopPlay(mq.matches)
+    syncDesktop()
+    mq.addEventListener('change', syncDesktop)
+    return () => mq.removeEventListener('change', syncDesktop)
+  }, [])
 
   /** Clears played-card overlay; avoids stale preview ids matching deck/discard after trash. */
   const closeCardEffectsDialog = useCallback(() => {
@@ -282,7 +268,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }, [activeIntriguePreviewCard, isHistoryView, playedIntriguePreviewIdsKeyEarly])
 
   if (!activePlayer) return null
-  const activeLeaderIconPath = getLeaderIconPath(activePlayer.leader.name)
   const isKwisatzHaderach = (card: Card) =>
     card.playEffect?.some(effect =>
       effect.beforePlaceAgent?.recallAgent ||
@@ -326,7 +311,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 : undefined
   const remainingAgentsLabel = `${activePlayer.agents} agent${activePlayer.agents === 1 ? '' : 's'} left`
   const showRevealPersuasionRemaining =
-    activePlayer.revealed && Boolean(gameState?.canAcquireIR)
+    !isHistoryView && activePlayer.revealed && Boolean(gameState?.canAcquireIR)
   const revealPersuasionRemaining = activePlayer.persuasion
   const troopsInConflict = combatTroops[activePlayer.id] || 0
   const revealTroopStrength = troopsInConflict * 2
@@ -871,16 +856,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       // need popup
       setPendingEffect(effect)
       setShowTrashPopup(true)
-      closeCardEffectsDialog()
     } else {
       if(onPayCost){onPayCost(effect)}
-      if (
-        effect.cost?.trashThisCard ||
-        effect.reward?.custom ||
-        (effect.reward && (effect.reward.trash || effect.reward.trashThisCard))
-      ) {
-        closeCardEffectsDialog()
-      }
     }
   }
 
@@ -893,7 +870,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     setShowTrashPopup(false)
     setPendingEffect(null)
     setPendingTrashReward(null)
-    closeCardEffectsDialog()
   }
 
   const ChoiceDialog = () => {
@@ -1036,11 +1012,22 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     choices: PendingChoice[]
   }
 
+  const pendingRewardNeedsPlayerInput = (reward: PendingReward): boolean => {
+    if (reward.disabled) return false
+    if (reward.isTrash) return true
+    if (reward.source.type === GainSource.MASTERSTROKE) return true
+    if (reward.source.type === GainSource.MEMNON_HIGH_COUNCIL) return true
+    return rewardNeedsInteractionHighlight(reward.reward)
+  }
+
+  const optionalEffectNeedsPlayerInput = (effect: OptionalEffect): boolean =>
+    isAffordable(effect.cost, effect.reward)
+
   const effectCardHasPendingInput = (effectCard: EffectCard | undefined): boolean =>
     Boolean(
       effectCard &&
-        (effectCard.rewards.some(r => !r.disabled) ||
-          effectCard.optional.length > 0 ||
+        (effectCard.rewards.some(pendingRewardNeedsPlayerInput) ||
+          effectCard.optional.some(optionalEffectNeedsPlayerInput) ||
           effectCard.choices.some(c => !c.disabled))
     )
 
@@ -1129,18 +1116,74 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     return renderLabel({ reward: reward.reward })
   }
 
-  const closesPreviewAfterPendingReward = (reward: PendingReward) =>
-    reward.isTrash || Boolean(reward.reward.custom)
+  const cardEffectDebug =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has('cardEffectDebug')
 
-  const closesPreviewAfterCompactFixedOption = (option: { reward: Reward; cost?: Cost }) =>
-    Boolean(option.reward.custom) ||
-    Boolean(option.reward.trash) ||
-    Boolean(option.reward.trashThisCard) ||
-    Boolean(option.cost?.trash) ||
-    Boolean(option.cost?.trashThisCard)
+  const getOptionalEffectAriaLabel = (effect: OptionalEffect): string => {
+    if (effect.reward.custom) {
+      return PLAY_EFFECT_TEXTS[effect.reward.custom] || effect.reward.custom
+    }
+    const costParts: string[] = []
+    if (effect.cost?.solari) costParts.push(`${effect.cost.solari} solari`)
+    if (effect.cost?.spice) costParts.push(`${effect.cost.spice} spice`)
+    if (effect.cost?.water) costParts.push(`${effect.cost.water} water`)
+    const rewardParts: string[] = []
+    if (effect.reward.troops) rewardParts.push(`${effect.reward.troops} troops`)
+    if (effect.reward.deployTroops) {
+      rewardParts.push(`deploy up to ${effect.reward.deployTroops} to the Conflict`)
+    }
+    if (costParts.length === 0 && rewardParts.length === 0) return 'Optional effect'
+    if (costParts.length === 0) return `Optional: ${rewardParts.join(', ')}`
+    if (rewardParts.length === 0) return `Optional: pay ${costParts.join(', ')}`
+    return `Optional: pay ${costParts.join(', ')} for ${rewardParts.join(', ')}`
+  }
 
-  const onCompactFixedOptionResolved = (option: { reward: Reward; cost?: Cost }) => {
-    if (closesPreviewAfterCompactFixedOption(option)) closeCardEffectsDialog()
+  const shouldOverlayCardReward = (reward: PendingReward): boolean => {
+    if (reward.source.type !== GainSource.CARD) return false
+    return pendingRewardNeedsPlayerInput(reward)
+  }
+
+  const pendingRewardOverlayRect = (
+    previewCard: Card,
+    reward: PendingReward,
+    isRevealed: boolean
+  ): CardEffectRect =>
+    getRewardOverlayRect(previewCard, {
+      isTrash: reward.isTrash,
+      custom: reward.reward.custom,
+      isRevealed,
+    })
+
+  const useFrameOnlyCardOverlay = (
+    reward: PendingReward | undefined,
+    variant: 'overlay' | 'compact'
+  ): boolean => {
+    if (variant !== 'overlay' || !reward) return false
+    if (reward.isTrash) return true
+    return Boolean(reward.reward.custom)
+  }
+
+  const getCardOverlayAriaLabel = (
+    reward: PendingReward,
+    previewCard: Card,
+    cardName: string
+  ): string => {
+    if (reward.reward.custom) {
+      const onReveal = previewCard.revealEffect?.some(
+        e => e.reward?.custom === reward.reward.custom
+      )
+      const text = onReveal && !previewCard.playEffect?.some(e => e.reward?.custom === reward.reward.custom)
+          ? REVEAL_EFFECT_TEXTS[reward.reward.custom]
+          : PLAY_EFFECT_TEXTS[reward.reward.custom]
+      return text || reward.reward.custom
+    }
+    if (reward.isTrash) {
+      return reward.reward.trashThisCard
+        ? `Trash ${cardName}`
+        : `Choose a card to trash (${cardName})`
+    }
+    return `Resolve effect for ${cardName}`
   }
 
   const renderTrashRewardButtonContent = (reward: PendingReward, variant: 'overlay' | 'compact') => {
@@ -1159,19 +1202,34 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     )
   }
 
-  const renderEffectActions = (card: EffectCard, variant: 'overlay' | 'compact') => {
+  type EffectActionFilter = 'all' | 'overlay-only' | 'non-overlay'
+
+  const renderEffectActions = (
+    card: EffectCard,
+    variant: 'overlay' | 'compact',
+    filter: EffectActionFilter = 'all',
+    overlayContext?: { previewCard: Card; isRevealed: boolean }
+  ) => {
     const selectionActive = voiceSelectionActive || masterstrokeSelectionActive || memnonHighCouncilSelectionActive
+    const rewards =
+      filter === 'overlay-only'
+        ? card.rewards.filter(reward => reward.isTrash || shouldOverlayCardReward(reward))
+        : filter === 'non-overlay'
+          ? card.rewards.filter(
+              reward => !reward.isTrash && !shouldOverlayCardReward(reward)
+            )
+          : card.rewards
+    const optional =
+      filter === 'non-overlay' ? [] : card.optional
+    const choices = filter === 'overlay-only' ? [] : card.choices
     return (
       <>
-        {card.rewards.map(reward => {
+        {rewards.map(reward => {
           const isVoiceReward = reward.reward.custom === CustomEffect.THE_VOICE
           const isMasterstrokeReward = reward.source.type === GainSource.MASTERSTROKE
           const isMemnonReward = reward.source.type === GainSource.MEMNON_HIGH_COUNCIL
-          const interactionHighlight =
-            !reward.isTrash &&
-            (reward.source.type === GainSource.MASTERSTROKE ||
-              reward.source.type === GainSource.MEMNON_HIGH_COUNCIL ||
-              rewardNeedsInteractionHighlight(reward.reward))
+          const needsInputHighlight = pendingRewardNeedsPlayerInput(reward)
+          const frameOnly = useFrameOnlyCardOverlay(reward, variant)
           const disabled = selectionActive || reward.disabled
           const tooltip = voiceSelectionActive
             ? 'Finish The Voice selection before claiming other rewards.'
@@ -1182,10 +1240,30 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 : reward.isTrash
                   ? `Trashing this card will cancel effects that haven't been applied yet. Cancels: ${getCancelledRewards(card, reward)}`
                   : undefined
+          const ariaLabel =
+            variant === 'overlay' && overlayContext
+              ? getCardOverlayAriaLabel(
+                  reward,
+                  overlayContext.previewCard,
+                  card.source.name
+                )
+              : reward.isTrash
+                ? reward.reward.trashThisCard
+                  ? `Trash ${card.source.name}`
+                  : `Choose a card to trash (${card.source.name})`
+                : undefined
           return (
             <button
               key={reward.id}
-              className={`effect-btn effect-btn--${variant} ${reward.isTrash ? 'trash-reward' : ''} ${interactionHighlight ? 'effect-btn--interaction-choice' : ''}`.trim()}
+              className={[
+                `effect-btn effect-btn--${variant}`,
+                reward.isTrash ? 'trash-reward' : '',
+                reward.reward.custom === CustomEffect.POWER_PLAY ? 'effect-btn--power-play' : '',
+                needsInputHighlight ? 'effect-btn--needs-input' : '',
+                frameOnly ? 'effect-btn--overlay-frame' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               onClick={() => {
                 if (!onClaimReward) return
                 if (isVoiceReward && onVoiceSelectionStart) {
@@ -1198,53 +1276,59 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 } else if (reward.isTrash && reward.reward.trash && !reward.reward.trashThisCard) {
                   setPendingTrashReward(reward)
                   setShowTrashPopup(true)
-                  closeCardEffectsDialog()
                 } else {
                   onClaimReward(reward.id)
-                  if (closesPreviewAfterPendingReward(reward)) {
-                    closeCardEffectsDialog()
-                  }
                 }
               }}
               disabled={disabled}
-              title={tooltip}
-              aria-label={
-                reward.isTrash
-                  ? reward.reward.trashThisCard
-                    ? `Trash ${card.source.name}`
-                    : `Choose a card to trash (${card.source.name})`
-                  : undefined
-              }
+              title={frameOnly ? ariaLabel : tooltip}
+              aria-label={ariaLabel}
             >
-              {reward.isTrash
-                ? renderTrashRewardButtonContent(reward, variant)
-                : renderRewardContent(reward)}
+              {frameOnly
+                ? null
+                : reward.isTrash
+                  ? renderTrashRewardButtonContent(reward, variant)
+                  : renderRewardContent(reward)}
             </button>
           )
         })}
 
-        {card.optional.map((eff, idx) => {
-          const disabled = voiceSelectionActive || masterstrokeSelectionActive || !isAffordable(eff.cost, eff.reward)
+        {optional.map((eff, idx) => {
+          const cannotAfford =
+            !voiceSelectionActive &&
+            !masterstrokeSelectionActive &&
+            !isAffordable(eff.cost, eff.reward)
+          const disabled = voiceSelectionActive || masterstrokeSelectionActive || cannotAfford
+          const optionalFrameOnly = variant === 'overlay'
+          const optionalAriaLabel = getOptionalEffectAriaLabel(eff)
           return (
             <button
               key={`${eff.id}-${idx}`}
-              className={`effect-btn effect-btn--${variant} optional effect-btn--interaction-choice`}
+              className={[
+                `effect-btn effect-btn--${variant} optional`,
+                !disabled ? 'effect-btn--needs-input' : '',
+                cannotAfford ? 'effect-btn--unaffordable' : '',
+                optionalFrameOnly ? 'effect-btn--overlay-frame' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               disabled={disabled}
               onClick={() => handleEffectClick(eff)}
               title={
                 voiceSelectionActive || masterstrokeSelectionActive
                   ? 'Finish the current selection before resolving other effects.'
-                  : disabled
+                  : cannotAfford
                     ? 'Cannot afford this optional effect.'
-                    : undefined
+                    : optionalAriaLabel
               }
+              aria-label={optionalFrameOnly ? optionalAriaLabel : undefined}
             >
-              {renderLabel(eff)}
+              {optionalFrameOnly ? null : renderLabel(eff)}
             </button>
           )
         })}
 
-        {card.choices.map(choice => {
+        {choices.map(choice => {
           if (choice.type === ChoiceType.CARD_SELECT) {
             const cardSelectChoice = choice as CardSelectChoice
             return (
@@ -1278,7 +1362,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 {!isInlineOrChoice && !defaultOrPrompt && fixedChoice.prompt && (
                   <div className="card-effects-inline-choice-title">{fixedChoice.prompt}</div>
                 )}
-                {renderFixedChoiceOptions(fixedChoice, 'compact', onCompactFixedOptionResolved)}
+                {renderFixedChoiceOptions(fixedChoice, 'compact')}
               </div>
             )
           }
@@ -1303,9 +1387,179 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     )
   }
 
+  const renderCardEffectsDialogStage = (
+    previewCard: Card,
+    effectCard: EffectCard,
+    isRevealed: boolean
+  ) => {
+    const overlayContext = { previewCard, isRevealed }
+    const overlayZoneRewards = effectCard.rewards.filter(
+      reward => reward.isTrash || shouldOverlayCardReward(reward)
+    )
+    const optionalEffects = effectCard.optional
+
+    type OverlayPlacement = {
+      key: string
+      rect: CardEffectRect
+      optional: OptionalEffect[]
+      rewards: PendingReward[]
+    }
+
+    const placementMap = new Map<string, OverlayPlacement>()
+    const ensurePlacement = (rect: CardEffectRect): OverlayPlacement => {
+      const key = rectPlacementKey(rect)
+      let placement = placementMap.get(key)
+      if (!placement) {
+        placement = { key, rect, optional: [], rewards: [] }
+        placementMap.set(key, placement)
+      }
+      return placement
+    }
+
+    overlayZoneRewards.forEach(reward => {
+      ensurePlacement(pendingRewardOverlayRect(previewCard, reward, isRevealed)).rewards.push(reward)
+    })
+
+    optionalEffects.forEach(eff => {
+      const optionalRect = getOptionalEffectOverlayRect(previewCard, eff, isRevealed)
+      ensurePlacement(optionalRect).optional.push(eff)
+    })
+
+    const overlayPlacements = [...placementMap.values()]
+    const hasOverlays = overlayPlacements.length > 0 || cardEffectDebug
+    const nonOverlayCard: EffectCard = {
+      ...effectCard,
+      optional: [],
+      rewards: effectCard.rewards.filter(
+        reward => !reward.isTrash && !shouldOverlayCardReward(reward)
+      ),
+    }
+    const hasBelowActions =
+      nonOverlayCard.rewards.length > 0 || nonOverlayCard.choices.length > 0
+
+    const rectBoxStyle = (rect: CardEffectRect) => {
+      const box = layoutCardRegionPercent(rect)
+      return {
+        left: `${box.left}%`,
+        top: `${box.top}%`,
+        width: `${box.width}%`,
+        height: `${box.height}%`,
+      }
+    }
+
+    const renderOverlayPlacement = (placement: OverlayPlacement) => {
+      const { rect, optional: zoneOptional, rewards: zoneRewards } = placement
+      if (zoneOptional.length === 0 && zoneRewards.length === 0) return null
+      return (
+        <div
+          className="card-effect-overlay-zone"
+          style={rectBoxStyle(rect)}
+          data-card-region={placement.key}
+        >
+          {zoneOptional.map((eff, idx) => (
+            <div
+              key={`${eff.id}-${idx}`}
+              className="card-effect-overlay-slot card-effect-overlay-slot--frame"
+            >
+              {renderEffectActions(
+                { ...effectCard, rewards: [], choices: [], optional: [eff] },
+                'overlay',
+                'all',
+                overlayContext
+              )}
+            </div>
+          ))}
+          {zoneRewards.map(reward => {
+            const frameOnly = useFrameOnlyCardOverlay(reward, 'overlay')
+            return (
+              <div
+                key={reward.id}
+                className={[
+                  'card-effect-overlay-slot',
+                  frameOnly ? 'card-effect-overlay-slot--frame' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                {renderEffectActions(
+                  { ...effectCard, optional: [], choices: [], rewards: [reward] },
+                  'overlay',
+                  'all',
+                  overlayContext
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
+
+    return (
+      <>
+        <div className="card-effects-dialog-card-stage">
+          {previewCard.image ? (
+            <img
+              src={previewCard.image}
+              alt={previewCard.name}
+              className="imperium-preview-image card-effects-dialog-image"
+            />
+          ) : (
+            <div className="card-effects-dialog-fallback" aria-hidden="true">
+              <span>{previewCard.name}</span>
+            </div>
+          )}
+          {hasOverlays && (
+            <div
+              className={[
+                'card-effects-dialog-overlays',
+                cardEffectDebug ? 'card-effects-dialog-overlays--debug' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              aria-label="Card effects"
+            >
+              {cardEffectDebug &&
+                getCardEffectDebugRects(previewCard.name).map(({ key, rect }) => (
+                  <div
+                    key={`debug-${key}`}
+                    className={[
+                      'card-effect-overlay-zone',
+                      'card-effect-overlay-zone--debug',
+                      key.startsWith('play-') ? 'card-effect-overlay-zone--play-effect' : '',
+                      key === 'agent' || key === 'play-0' ? 'card-effect-overlay-zone--agent' : '',
+                      key === 'reveal' || key.startsWith('reveal-') ? 'card-effect-overlay-zone--reveal' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    style={rectBoxStyle(rect)}
+                    data-card-region={key}
+                    aria-hidden="true"
+                  />
+                ))}
+              {overlayPlacements.map(placement => renderOverlayPlacement(placement))}
+            </div>
+          )}
+        </div>
+        {hasBelowActions && (
+          <div className="card-effects-dialog-actions">
+            {renderEffectActions(nonOverlayCard, 'compact', 'non-overlay')}
+          </div>
+        )}
+      </>
+    )
+  }
+
   const renderTurnCard = (card: Card, mode: 'played' | 'revealed', effectCards: EffectCard[]) => {
     const effectCard = effectCards.find(entry => entry.source.type === GainSource.CARD && entry.source.id === card.id)
     const hasPendingInput = effectCardHasPendingInput(effectCard)
+    const hasAnyPendingTurnEffects = effectCards.some(effectCardHasPendingInput)
+    const highlightsLonePlayedCardWithExternalPending =
+      mode === 'played' &&
+      hasAnyPendingTurnEffects &&
+      !hasPendingInput &&
+      playedAreaCards.length === 1 &&
+      playedAreaCards[0]?.id === card.id
+    const shouldHighlightPending = hasPendingInput || highlightsLonePlayedCardWithExternalPending
     return (
       <button
         key={card.id}
@@ -1313,7 +1567,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         className={[
           'turn-card-frame',
           `turn-card-frame--${mode}`,
-          hasPendingInput ? 'turn-card-frame--has-effects' : '',
+          shouldHighlightPending ? 'turn-card-frame--has-effects' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -1326,8 +1580,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             setActiveCardEffectSource(null)
           }
         }}
-        aria-label={hasPendingInput ? `Resolve pending effects for ${card.name}` : card.name}
-        title={hasPendingInput ? `Resolve pending effects for ${card.name}` : card.name}
+        aria-label={shouldHighlightPending ? `Resolve pending effects for ${card.name}` : card.name}
+        title={shouldHighlightPending ? `Resolve pending effects for ${card.name}` : card.name}
       >
         {card.image ? (
           <img
@@ -1633,6 +1887,40 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         return {}
     }
   }
+  const mergeGainsToReward = (gains: (typeof turnGains)[number][]): Reward => {
+    const reward: Reward = {}
+    const influenceByFaction = new Map<FactionType, number>()
+
+    for (const gain of gains) {
+      const partial = gainToReward(gain)
+      if (partial.spice) reward.spice = (reward.spice ?? 0) + partial.spice
+      if (partial.water) reward.water = (reward.water ?? 0) + partial.water
+      if (partial.solari) reward.solari = (reward.solari ?? 0) + partial.solari
+      if (partial.troops) reward.troops = (reward.troops ?? 0) + partial.troops
+      if (partial.persuasion) reward.persuasion = (reward.persuasion ?? 0) + partial.persuasion
+      if (partial.combat) reward.combat = (reward.combat ?? 0) + partial.combat
+      if (partial.drawCards) reward.drawCards = (reward.drawCards ?? 0) + partial.drawCards
+      if (partial.intrigueCards) reward.intrigueCards = (reward.intrigueCards ?? 0) + partial.intrigueCards
+      if (partial.victoryPoints) reward.victoryPoints = (reward.victoryPoints ?? 0) + partial.victoryPoints
+      if (partial.deployTroops) reward.deployTroops = (reward.deployTroops ?? 0) + partial.deployTroops
+      if (partial.retreatTroops) reward.retreatTroops = (reward.retreatTroops ?? 0) + partial.retreatTroops
+      partial.influence?.amounts?.forEach(inf => {
+        influenceByFaction.set(inf.faction, (influenceByFaction.get(inf.faction) ?? 0) + inf.amount)
+      })
+    }
+
+    if (influenceByFaction.size > 0) {
+      reward.influence = {
+        amounts: Array.from(influenceByFaction.entries()).map(([faction, amount]) => ({
+          faction,
+          amount
+        }))
+      }
+    }
+    return reward
+  }
+  const isAcquireInfluenceGain = (gain: (typeof turnGains)[number]) =>
+    gain.type === RewardType.INFLUENCE && gain.name.endsWith(' Acquire')
   const imperiumAcquireGainsLive: Gain[] =
     !isHistoryView && gameState?.currTurn?.acquiredCards?.length && (gameState.gains?.length || 0) > 0
       ? (() => {
@@ -1655,33 +1943,120 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     rewardLabel?: string
   }
 
-  const imperiumAcquisitionChipItems: VisibleGainChip[] = imperiumAcquireGainsLive.map((gain, index) => {
-    const cardMeta = gameState?.currTurn?.acquiredCards?.find(c => c.id === gain.sourceId)
-    const cardTitle = cardMeta?.name ?? gain.name.replace(/ Acquire$/, '')
-    return {
-      id: `imperium-acquire-${gain.sourceId}-${gain.type}-${gain.name}-${index}`,
-      groupId: `Acquire · ${cardTitle}`,
-      title: `${cardTitle} (acquired)`,
-      reward: gainToReward(gain)
-    }
-  })
+  const imperiumAcquisitionChipItems: VisibleGainChip[] = (() => {
+    const gainsByAcquiredCard = new Map<number, (typeof turnGains)[number][]>()
+    imperiumAcquireGainsLive.forEach(gain => {
+      const list = gainsByAcquiredCard.get(gain.sourceId) ?? []
+      list.push(gain)
+      gainsByAcquiredCard.set(gain.sourceId, list)
+    })
+    return Array.from(gainsByAcquiredCard.entries()).map(([sourceId, gains]) => {
+      const cardMeta = gameState?.currTurn?.acquiredCards?.find(c => c.id === sourceId)
+      const cardTitle = cardMeta?.name ?? gains[0]?.name.replace(/ Acquire$/, '') ?? 'Card'
+      return {
+        id: `imperium-acquire-${sourceId}`,
+        groupId: `Acquire · ${cardTitle}`,
+        title: `${cardTitle} (acquired)`,
+        reward: mergeGainsToReward(gains)
+      }
+    })
+  })()
 
-  const visibleGainItems: VisibleGainChip[] = isHistoryView
-    ? turnGains.map((gain, index) => ({
-        id: `${gain.source}-${gain.sourceId}-${gain.type}-${index}`,
-        groupId: `${gain.source}-${gain.sourceId}-${gain.name}`,
-        title: gain.name,
-        reward: gainToReward(gain)
-      }))
-    : [
-        ...autoAppliedRewardSummary.map(item => ({
-          id: item.id,
-          groupId: item.sourceName,
-          title: item.sourceName,
-          reward: item.reward
-        })),
-        ...imperiumAcquisitionChipItems
-      ]
+  const consolidateCombatGainChips = (items: VisibleGainChip[]): VisibleGainChip[] => {
+    let combatTotal = 0
+    const rest: VisibleGainChip[] = []
+
+    for (const item of items) {
+      const combat = item.reward.combat ?? 0
+      if (!combat) {
+        rest.push(item)
+        continue
+      }
+      const remainingReward: Reward = { ...item.reward }
+      delete remainingReward.combat
+      const hasOtherReward = Object.values(remainingReward).some(value => {
+        if (value == null || value === false) return false
+        if (typeof value === 'number') return value !== 0
+        if (typeof value === 'object') return Object.keys(value).length > 0
+        return true
+      })
+      combatTotal += combat
+      if (hasOtherReward) {
+        rest.push({ ...item, reward: remainingReward })
+      }
+    }
+
+    if (combatTotal > 0) {
+      rest.unshift({
+        id: 'turn-combat-total',
+        groupId: 'turn-combat-total',
+        title: 'Combat (revealed swords)',
+        reward: { combat: combatTotal }
+      })
+    }
+    return rest
+  }
+
+  const visibleGainItems: VisibleGainChip[] = (() => {
+    const historyItems: VisibleGainChip[] = isHistoryView
+      ? (() => {
+          const persuasionTotal =
+            gameState?.currTurn?.persuasionCount ??
+            turnGains
+              .filter(gain => gain.type === RewardType.PERSUASION)
+              .reduce((sum, gain) => sum + gain.amount, 0)
+          const combatGains = turnGains.filter(gain => gain.type === RewardType.COMBAT)
+          const acquireInfluenceGains = turnGains.filter(isAcquireInfluenceGain)
+          const otherGains = turnGains.filter(
+            gain =>
+              gain.type !== RewardType.PERSUASION &&
+              gain.type !== RewardType.COMBAT &&
+              !isAcquireInfluenceGain(gain)
+          )
+          const items: VisibleGainChip[] = otherGains.map((gain, index) => ({
+            id: `${gain.source}-${gain.sourceId}-${gain.type}-${index}`,
+            groupId: `${gain.source}-${gain.sourceId}-${gain.name}`,
+            title: gain.name,
+            reward: gainToReward(gain)
+          }))
+          if (combatGains.length > 0) {
+            items.push({
+              id: 'turn-combat-total',
+              groupId: 'turn-combat-total',
+              title: 'Combat (revealed swords)',
+              reward: mergeGainsToReward(combatGains)
+            })
+          }
+          if (acquireInfluenceGains.length > 0) {
+            items.push({
+              id: 'turn-acquire-influence',
+              groupId: 'turn-acquire-influence',
+              title: 'Influence (acquired cards)',
+              reward: mergeGainsToReward(acquireInfluenceGains)
+            })
+          }
+          if (persuasionTotal > 0) {
+            items.unshift({
+              id: 'turn-persuasion-total',
+              groupId: 'turn-persuasion-total',
+              title: 'Persuasion (turn total)',
+              reward: { persuasion: persuasionTotal }
+            })
+          }
+          return items
+        })()
+      : [
+          ...autoAppliedRewardSummary.map(item => ({
+            id: item.id,
+            groupId: item.sourceName,
+            title: item.sourceName,
+            reward: item.reward
+          })),
+          ...imperiumAcquisitionChipItems
+        ]
+
+    return isHistoryView ? historyItems : consolidateCombatGainChips(historyItems)
+  })()
   const visibleGainGroups = Array.from(
     visibleGainItems.reduce((groups, item) => {
       const group = groups.get(item.groupId) || {
@@ -1723,6 +2098,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const activeCardPreviewCard = activeCardPreviewId !== null
     ? playAreaCards.find(card => card.id === activeCardPreviewId) ?? null
     : null
+  const activeCardPreviewIsRevealed = activeCardPreviewCard
+    ? revealedCardIds.has(activeCardPreviewCard.id)
+    : false
   const activeCardLietKynesPersuasion =
     activeCardPreviewCard?.revealEffect?.some(effect => effect.reward?.custom === CustomEffect.LIET_KYNES)
       ? gameState?.gains.find(gain =>
@@ -1748,9 +2126,59 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             gain.sourceId === activeCardPreviewCard.id
         )
       : []
+  const activeCardLackingResources =
+    activePlayer && gameState && activeCardEffect
+      ? getLackingOptionalCostResources(
+          gameState,
+          activePlayer.id,
+          activeCardEffect.optional
+            .filter(effect => !isAffordable(effect.cost, effect.reward))
+            .map(effect => effect.cost)
+        )
+      : []
+
+  const renderRoundGainGroups = (placement: 'footer' | 'banner') => {
+    if (visibleGainGroups.length === 0) return null
+    const gainsLabel = isHistoryView ? 'Turn gains' : 'Gains from this round'
+    return (
+      <div
+        className={[
+          'turn-round-gains',
+          placement === 'banner' ? 'turn-round-gains--banner' : 'turn-round-gains--footer',
+        ].join(' ')}
+        role="region"
+        aria-label={gainsLabel}
+      >
+        <div className="turn-round-gains-chips">
+          {visibleGainGroups.map(group => (
+            <div
+              key={group.id}
+              className="auto-applied-gains-summary"
+              aria-label={`${gainsLabel} from ${group.title}`}
+              title={group.title}
+            >
+              {group.items.map(item => (
+                <span key={item.id} className="auto-applied-gain-chip" title={item.title}>
+                  {renderLabel({ reward: item.reward, rewardLabel: item.rewardLabel })}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const roundGainsFooter = !isDesktopPlay ? renderRoundGainGroups('footer') : null
+  const roundGainsBannerContent = isDesktopPlay ? renderRoundGainGroups('banner') : null
+  const roundGainsBannerPortal =
+    roundGainsBannerContent && roundGainsBannerSlotRef?.current
+      ? createPortal(roundGainsBannerContent, roundGainsBannerSlotRef.current)
+      : null
 
   return (
     <>
+      {roundGainsBannerPortal}
       {isCombatPhase && (
         <div className="combat-container">
           <div className="combat-phase-indicator">
@@ -1783,17 +2211,33 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       <FixedChoiceDialog />
       {activeCardPreviewCard &&
         portalOverlay(
-          <div className="dialog-overlay">
-            <div className="target-dialog card-effects-dialog">
-              {activeCardPreviewCard.image ? (
-                <img
-                  src={activeCardPreviewCard.image}
-                  alt={activeCardPreviewCard.name}
-                  className="card-effects-dialog-image"
-                />
-              ) : (
-                <h3>{activeCardPreviewCard.name}</h3>
+          <div className="imperium-preview-overlay" onClick={closeCardEffectsDialog}>
+            <div
+              className="imperium-preview-modal card-effects-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-label={activeCardPreviewCard.name}
+              onClick={event => event.stopPropagation()}
+            >
+              {!activeCardPreviewCard.image && (
+                <h3 className="imperium-preview-title card-effects-dialog-title">
+                  {activeCardPreviewCard.name}
+                </h3>
               )}
+              {activeCardEffect
+                ? renderCardEffectsDialogStage(
+                    activeCardPreviewCard,
+                    activeCardEffect,
+                    activeCardPreviewIsRevealed
+                  )
+                : activeCardPreviewCard.image ? (
+                  <img
+                    src={activeCardPreviewCard.image}
+                    alt={activeCardPreviewCard.name}
+                    className="imperium-preview-image"
+                    draggable={false}
+                  />
+                ) : null}
               {activeCardLietKynesPersuasion !== null && (
                 <div className="card-effects-dialog-note">
                   Liet Kynes reveal: {activeCardLietKynesPersuasion} persuasion
@@ -1833,18 +2277,23 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   </div>
                 </div>
               )}
-              {activeCardEffect && (
-                <div className="card-effects-dialog-actions">
-                  {renderEffectActions(activeCardEffect, 'compact')}
-                </div>
-              )}
-              <button
-                type="button"
-                className="secondary-btn fixed-choice-cancel"
-                onClick={closeCardEffectsDialog}
-              >
-                Close
-              </button>
+              <div className="card-effects-dialog-footer">
+                {activeCardLackingResources.length > 0 && activePlayer && gameState && (
+                  <LeaderResourceStrip
+                    compact
+                    player={activePlayer}
+                    gameState={gameState}
+                    onlyResources={activeCardLackingResources}
+                  />
+                )}
+                <button
+                  type="button"
+                  className="imperium-preview-close"
+                  onClick={closeCardEffectsDialog}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1852,31 +2301,39 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       {activeIntriguePreviewCard &&
         portalOverlay(
           <div
-            className="dialog-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-label={activeIntriguePreviewCard.name}
+            className="imperium-preview-overlay"
+            onClick={() => {
+              setActiveIntriguePreviewCard(null)
+              setActiveCardEffectSource(null)
+            }}
           >
-            <div className="target-dialog card-effects-dialog intrigue-preview-dialog">
-              {activeIntriguePreviewCard.image ? (
-                <img
-                  src={activeIntriguePreviewCard.image}
-                  alt={activeIntriguePreviewCard.name}
-                  className="card-effects-dialog-image"
-                />
-              ) : (
-                <h3>{activeIntriguePreviewCard.name}</h3>
+            <div
+              className="imperium-preview-modal card-effects-dialog intrigue-preview-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-label={activeIntriguePreviewCard.name}
+              onClick={event => event.stopPropagation()}
+            >
+              {!activeIntriguePreviewCard.image && (
+                <h3 className="imperium-preview-title card-effects-dialog-title">
+                  {activeIntriguePreviewCard.name}
+                </h3>
               )}
               {activeCardEffect &&
-                activeCardEffect.source.type === GainSource.INTRIGUE &&
-                activeCardEffect.source.id === activeIntriguePreviewCard.id && (
-                  <div className="card-effects-dialog-actions">
-                    {renderEffectActions(activeCardEffect, 'compact')}
-                  </div>
-                )}
+              activeCardEffect.source.type === GainSource.INTRIGUE &&
+              activeCardEffect.source.id === activeIntriguePreviewCard.id
+                ? renderCardEffectsDialogStage(activeIntriguePreviewCard, activeCardEffect, false)
+                : activeIntriguePreviewCard.image ? (
+                  <img
+                    src={activeIntriguePreviewCard.image}
+                    alt={activeIntriguePreviewCard.name}
+                    className="imperium-preview-image"
+                    draggable={false}
+                  />
+                ) : null}
               <button
                 type="button"
-                className="secondary-btn fixed-choice-cancel"
+                className="imperium-preview-close"
                 onClick={() => {
                   setActiveIntriguePreviewCard(null)
                   setActiveCardEffectSource(null)
@@ -1906,50 +2363,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             </div>
           )}
           <div className="active-player-info">
-            <div className={`color-indicator ${activePlayer.color}`}></div>
-            <div className="active-player-actions" aria-label="Active player shortcuts">
+            <div className="active-player-actions" aria-label="Active player turn rewards">
               <div className="active-player-main-actions">
-                {getLeaderImage(activePlayer.leader.name) && (
-                  <button
-                    type="button"
-                    className="see-leader-button"
-                    onClick={() => setIsLeaderImageOpen(true)}
-                    title="See Leader"
-                    aria-label={`View ${activePlayer.leader.name}`}
-                  >
-                    {activeLeaderIconPath ? (
-                      <img
-                        src={activeLeaderIconPath}
-                        alt=""
-                        className="see-leader-icon"
-                        draggable={false}
-                      />
-                    ) : (
-                      <span className="see-leader-icon-fallback" aria-hidden="true">
-                        {activePlayer.leader.name.charAt(0)}
-                      </span>
-                    )}
-                    <MagnifyingGlassIcon />
-                  </button>
-                )}
-                {visibleGainGroups.length > 0 && (
-                  <>
-                    {visibleGainGroups.map(group => (
-                      <div
-                        key={group.id}
-                        className="auto-applied-gains-summary"
-                        aria-label={`${isHistoryView ? 'Turn gains' : 'Automatically gained rewards'} from ${group.title}`}
-                        title={group.title}
-                      >
-                        {group.items.map(item => (
-                          <span key={item.id} className="auto-applied-gain-chip" title={item.title}>
-                            {renderLabel({ reward: item.reward, rewardLabel: item.rewardLabel })}
-                          </span>
-                        ))}
-                      </div>
-                    ))}
-                  </>
-                )}
+                {roundGainsFooter}
                 {showRevealPersuasionRemaining && (
                   <div
                     className="reveal-total-chip reveal-persuasion-total reveal-persuasion-remaining"
@@ -1991,33 +2407,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   </button>
                 )}
               </div>
-              <div className="active-player-utility-actions">
-                <button
-                  type="button"
-                  className="view-influence-button utility-action-button active-player-action-button active-player-overview-button"
-                  onClick={onOpenPlayerOverview}
-                  title="View Player Overview"
-                  aria-label="View player overview and stats"
-                >
-                  <PlayerOverviewIcon />
-                </button>
-                <button
-                  type="button"
-                  className="view-influence-button utility-action-button active-player-action-button"
-                  onClick={onTurnHistoryToggle}
-                  title="View Turn History"
-                  aria-label="View turn history"
-                >
-                  <TurnHistoryIcon />
-                </button>
-              </div>
             </div>
           </div>
-          <LeaderImageModal
-            leader={activePlayer.leader}
-            isOpen={isLeaderImageOpen}
-            onClose={() => setIsLeaderImageOpen(false)}
-          />
           {!isHistoryView && activeIntrigueThisRound.length > 0 && (
             <div className="active-intrigue-peek" aria-label="Active intrigue this round">
               <div className="active-intrigue-preview" title="Hover to view active intrigue this round">
@@ -2042,18 +2433,29 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           )}
         <div className="turn-controls-buttons-grid">
           <div className="utility-buttons utility-buttons--with-inline-card">
-            {showPlayedCardStrip && (
             <div
-              className="selected-card-inline-slot selected-card-play-area"
-              aria-label={[
-                playAreaCards.length > 0 &&
-                  `Play area: ${playAreaCards.map(c => c.name).join(', ')}`,
-                playedIntrigueCards.length > 0 &&
-                  `Played intrigue: ${playedIntrigueCards.map(c => c.name).join(', ')}`
+              className={[
+                'selected-card-inline-slot',
+                'selected-card-play-area',
+                !showPlayedCardStrip && 'selected-card-play-area--empty',
               ]
                 .filter(Boolean)
-                .join('. ')}
+                .join(' ')}
+              aria-hidden={!showPlayedCardStrip ? true : undefined}
+              aria-label={
+                showPlayedCardStrip
+                  ? [
+                      playAreaCards.length > 0 &&
+                        `Play area: ${playAreaCards.map(c => c.name).join(', ')}`,
+                      playedIntrigueCards.length > 0 &&
+                        `Played intrigue: ${playedIntrigueCards.map(c => c.name).join(', ')}`,
+                    ]
+                      .filter(Boolean)
+                      .join('. ')
+                  : undefined
+              }
             >
+              {showPlayedCardStrip && (
                 <div className="selected-cards-reveal-strip">
                   {playedAreaCards.map(card => renderTurnCard(card, 'played', effectCards))}
                   {playedIntrigueCards.map(card => {
@@ -2100,8 +2502,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   )}
                   {revealedAreaCards.map(card => renderTurnCard(card, 'revealed', effectCards))}
                 </div>
+              )}
             </div>
-            )}
             {(!primaryTurnActionsHidden || (!isHistoryView && !isEndGame)) && (
               <div className="selected-card-turn-actions" aria-label="Turn actions">
                 {!primaryTurnActionsHidden && renderPlayCardPlaceholder()}

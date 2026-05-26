@@ -16,6 +16,8 @@ interface TurnHistoryProps {
   onReturnToCurrent: () => void
   onUndoToTurn: (turnIndex: number) => void
   onClose?: () => void
+  /** Desktop: fixed sidebar column; mobile/tablet: overlay sheet */
+  layout?: 'overlay' | 'docked'
 }
 
 interface AggregatedGain {
@@ -32,8 +34,10 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   onTurnChange, 
   onReturnToCurrent,
   onUndoToTurn,
-  onClose 
+  onClose,
+  layout = 'overlay',
 }) => {
+  const isDocked = layout === 'docked'
   const [selectedTurn, setSelectedTurn] = useState<number | null>(null)
   const [undoTargetIndex, setUndoTargetIndex] = useState<number | null>(null)
 
@@ -162,18 +166,34 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   return (
     <div
       id="turn-history-overlay"
-      className={`turn-history-overlay ${isViewingHistory ? 'viewing-history' : ''}`}
-      role="dialog"
-      aria-modal="true"
+      className={[
+        'turn-history-overlay',
+        isDocked ? 'turn-history-overlay--docked' : '',
+        isViewingHistory ? 'viewing-history' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      role={isDocked ? 'complementary' : 'dialog'}
+      aria-modal={isDocked ? undefined : true}
       aria-label="Turn history"
     >
       <div className="turn-history-header">
-        <span>
-          {isViewingHistory 
-            ? viewingTurnIndex === 0 ? 'Initial State' : `Turn ${viewingTurnIndex}`
-            : `Turn ${turns.length} (Current)`
-          }
+        <span className="turn-history-header-title">
+          {isViewingHistory
+            ? viewingTurnIndex === 0
+              ? 'Initial State'
+              : `Turn ${viewingTurnIndex}`
+            : `Turn ${turns.length} (Current)`}
         </span>
+        {isViewingHistory && (
+          <button
+            type="button"
+            className="turn-history-header-live-btn"
+            onClick={onReturnToCurrent}
+          >
+            Live
+          </button>
+        )}
       </div>
 
       <div className="turn-history-list">
@@ -269,15 +289,18 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         })()}
       </div>
 
-      <div className="turn-history-footer">
-        <button
-          className="turn-history-return-button"
-          onClick={() => onClose?.()}
-          aria-label="Return to game"
-        >
-          Return
-        </button>
-      </div>
+      {!isDocked && onClose && (
+        <div className="turn-history-footer">
+          <button
+            type="button"
+            className="turn-history-return-button"
+            onClick={() => onClose()}
+            aria-label="Return to game"
+          >
+            Return
+          </button>
+        </div>
+      )}
 
       {/* JSON Details Modal */}
       {selectedTurn !== null && (

@@ -1,6 +1,6 @@
-/* Above .turn-controls-container (1100) and .endgame-container (1101); aligned with modal chrome */
+/* Above raised modals (player overview, card picker) */
 .dialog-overlay.masterstroke-faction-overlay {
-  z-index: 1400;
+  z-index: calc(var(--z-modal-overlay-top) + 80);
 }
 
 .masterstroke-faction-modal {
