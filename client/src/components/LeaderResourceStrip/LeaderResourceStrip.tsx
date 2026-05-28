@@ -33,6 +33,8 @@ const LeaderResourceStrip = ({
     !onlyResources || onlyResources.includes(kind as OptionalCostResourceKind)
   const showVp = !onlyResources
 
+  const showCardPiles = !onlyResources
+
   const maxInfluence =
     gameState &&
     Math.max(
@@ -84,7 +86,31 @@ const LeaderResourceStrip = ({
           <span className="leader-resource-value">{player.troops}</span>
         </span>
       )}
-      {show('influence') && (
+      {showCardPiles && (
+        <>
+          <span className="leader-resource-item" title="Cards in hand">
+            <img src="/icon/draw.png" alt="" className="leader-resource-icon" />
+            <span className="leader-resource-value">{player.handCount}</span>
+          </span>
+          <span className="leader-resource-item" title="Deck">
+            <span className="leader-resource-abbr" aria-hidden="true">
+              D
+            </span>
+            <span className="leader-resource-value">{player.deck.length}</span>
+          </span>
+          <span className="leader-resource-item" title="Discard pile">
+            <span className="leader-resource-abbr" aria-hidden="true">
+              Dc
+            </span>
+            <span className="leader-resource-value">{player.discardPile.length}</span>
+          </span>
+          <span className="leader-resource-item" title="Trashed cards">
+            <img src="/icon/trash.png" alt="" className="leader-resource-icon" />
+            <span className="leader-resource-value">{player.trash.length}</span>
+          </span>
+        </>
+      )}
+      {onlyResources?.includes('influence') && (
         <span className="leader-resource-item" title="Highest faction influence">
           <img src="/icon/bump.png" alt="" className="leader-resource-icon" />
           <span className="leader-resource-value">{maxInfluence ?? 0}</span>

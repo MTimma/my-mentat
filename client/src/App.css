@@ -1,6 +1,7 @@
 :root {
   /* Fallback before JS measures the fixed footer stack (history banner + turn controls). */
   --footer-height-static: 84px;
+  --play-nav-height-static: 52px;
   /* Stable play strip reserved for board sizing (not dynamic gains/effects height). */
   --play-footer-reserved-height: clamp(132px, 34vh, 260px);
   --play-shell-max-width: 1000px;
@@ -111,8 +112,7 @@ body:has(.game-container--play) {
   min-height: 0;
   overflow: hidden;
   box-sizing: border-box;
-  /* Play area is a fixed viewport band below the navigator; no dynamic padding. */
-  padding-bottom: var(--vv-layout-gap-bottom, 0px);
+  padding-bottom: 0;
 }
 
 .game-container--play > .imperium-row-container {
@@ -133,17 +133,44 @@ body:has(.game-container--play) {
   flex-direction: row;
 }
 
-/* Navigator sits in document flow directly under the board (not viewport-top fixed). */
-.game-container--play > .history-viewing-banner,
-.game-container--play .play-shell-main > .history-viewing-banner {
-  position: relative;
+/* Play shell: board → nav (under board) → reactive play band (fills to viewport bottom). */
+.game-container--play .play-shell-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.game-container--play .play-shell-board-row {
   flex: 0 0 auto;
-  top: auto;
-  bottom: auto;
-  left: auto;
-  right: auto;
+}
+
+.game-container--play .play-shell-footer {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-container--play .play-shell-footer > .play-shell-nav,
+.game-container--play .play-shell-footer > .history-viewing-banner.play-shell-nav {
+  order: 1;
+  flex: 0 0 auto;
+  position: relative;
   width: 100%;
   box-sizing: border-box;
+  z-index: var(--z-play-history-strip);
+}
+
+.game-container--play .play-shell-footer > .combat-troop-dock {
+  order: 2;
+}
+
+.game-container--play .play-shell-footer > .turn-controls-container {
+  order: 3;
 }
 
 .game-container--play > .main-area,
@@ -158,14 +185,13 @@ body:has(.game-container--play) {
 }
 
 .game-container--play.game-container--history-docked .play-shell-board-row {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
+  flex: 0 0 auto;
+  overflow: visible;
 }
 
 .game-container--play.game-container--history-docked .play-shell-board-row .play-shell-board {
-  flex: 1 1 auto;
-  overflow: hidden;
+  flex: 0 0 auto;
+  overflow: visible;
 }
 
 .game-container--play > .main-area .image-board {
@@ -1367,41 +1393,44 @@ body:has(.game-container--play) {
   cursor: not-allowed;
 }
 
-.game-container--play .turn-controls-container {
-  position: fixed;
-  /* Play area: anchored to viewport bottom; grows upward, does not move the board. */
-  top: auto;
-  bottom: var(--vv-layout-gap-bottom, 0px);
-  left: 0;
-  right: 0;
+.game-container--play .play-shell-footer > .turn-controls-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   margin-inline: auto;
-  width: min(calc(100vw - 24px), var(--play-shell-max-width));
-  max-height: calc(
-    100dvh - var(--play-footer-top, 50vh) - var(--vv-layout-gap-bottom, 0px)
-  );
+  width: min(100%, var(--play-shell-max-width));
+  max-width: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   background-color: var(--color-footer-bg);
   padding: 1rem;
-  padding-bottom: max(1rem, constant(safe-area-inset-bottom));
-  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   z-index: var(--z-play-footer);
   border: 1px solid rgba(212, 177, 106, 0.22);
   border-bottom: 0;
-  border-radius: 10px 10px 0 0;
+  border-radius: 0;
   box-sizing: border-box;
 }
 
-.turn-controls-spacer {
-  height: var(--footer-height);
-  width: 100%;
+.game-container--play .play-shell-footer > .play-shell-nav {
+  padding-bottom: 6px;
+}
+
+.game-container--play .play-shell-footer > .turn-controls-spacer {
+  display: none;
 }
 
 .endgame-container {
   position: fixed;
   right: 16px;
-  bottom: calc(var(--footer-height) + 16px + var(--vv-layout-gap-bottom, 0px));
+  bottom: calc(
+    var(--footer-height) + var(--play-nav-measured-height, var(--play-nav-height-static, 52px)) +
+      16px + var(--vv-layout-gap-bottom, 0px)
+  );
   z-index: var(--z-play-footer-endgame);
   background: rgba(28, 30, 34, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1464,17 +1493,19 @@ body:has(.game-container--play) {
     border-radius: 4px;
   }
   
-  .game-container--play .turn-controls-container {
+  .game-container--play .play-shell-footer > .turn-controls-container {
     width: 100%;
-    left: 0;
-    right: 0;
-    transform: none;
     border-left: 0;
     border-right: 0;
     border-radius: 0;
     padding: 0.3rem;
-    padding-bottom: max(0.3rem, constant(safe-area-inset-bottom));
     padding-bottom: max(0.3rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .game-container--play .play-shell-footer > .play-shell-nav {
+    width: 100%;
+    margin-inline: 0;
+    padding-bottom: 6px;
   }
 
   /* Tight vertical rhythm between stacked panels inside the footer (TurnControls fragment children). */
@@ -1501,7 +1532,10 @@ body:has(.game-container--play) {
   .endgame-container {
     left: 8px;
     right: 8px;
-    bottom: calc(var(--footer-height) + 8px + var(--vv-layout-gap-bottom, 0px));
+    bottom: calc(
+      var(--footer-height) + var(--play-nav-measured-height, var(--play-nav-height-static, 52px)) +
+        8px + var(--vv-layout-gap-bottom, 0px)
+    );
     max-width: none;
     padding: 10px 12px;
   }
@@ -1574,22 +1608,11 @@ body:has(.game-container--play) {
   }
 }
 
-/* Mobile: hold navigator strip to temporarily hide footer chrome and reveal the board. */
+/* Mobile: hold eye button to temporarily hide footer chrome and reveal the board. */
 .game-container--play.play-chrome-held .history-viewing-banner,
 .game-container--play.play-chrome-held .turn-controls-container,
 .game-container--play.play-chrome-held .combat-troop-dock {
   display: none !important;
-}
-
-.history-viewing-banner--hold-peek {
-  touch-action: none;
-  -webkit-touch-callout: none;
-  user-select: none;
-}
-
-.history-viewing-banner--hold-peek button {
-  touch-action: manipulation;
-  user-select: none;
 }
 
 .game-container--play.play-chrome-held {
@@ -1631,26 +1654,38 @@ body:has(.game-container--play) {
   }
 
   .game-container--play .combat-troop-dock__anchor {
-    left: 50%;
+    /* Left of center — VP lanes sit ~96% inner X on the board art. */
+    left: 38%;
     transform: translate(-50%, -100%);
   }
 }
 
 @media (max-width: 600px) {
+  .game-container--play .combat-troop-dock__anchor {
+    left: 32%;
+  }
+
   .combat-troop-dock .combat-troop-controls {
-    max-width: min(240px, 88vw);
+    max-width: min(220px, 72vw);
   }
 }
 
-/* Desktop: align with combat strength markers on the board image. */
+/* Desktop: sit flush above the navigator strip (same as mobile). */
 @media (min-width: 901px) {
   .game-container--play .combat-troop-dock {
-    top: var(--combat-troop-dock-top, var(--play-board-bottom, 50vh));
+    top: var(--history-banner-top, var(--play-board-bottom, 50vh));
   }
 
   .game-container--play .combat-troop-dock__anchor {
-    left: 56%;
+    left: 50%;
     transform: translate(-50%, calc(-100% - 4px));
+  }
+
+  @media (max-width: 1180px) {
+    .game-container--play .combat-troop-dock__anchor,
+    .game-container--desktop-play .combat-troop-dock__anchor {
+      left: 40%;
+    }
   }
 }
 
@@ -1759,76 +1794,80 @@ body:has(.game-container--play) {
   }
 
   .game-container--history-docked .play-shell-board-row {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
     display: flex;
     flex-direction: row;
-    align-items: stretch;
+    align-items: flex-start;
+    justify-content: center;
     gap: 0;
-    overflow: hidden;
+    overflow: visible;
+    width: 100%;
   }
 
   .game-container--history-docked .play-shell-board-row .play-shell-board {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-width: 0;
     min-height: 0;
     width: auto;
-    align-items: center;
+    overflow: visible;
     justify-content: center;
-    overflow: hidden;
+    align-items: center;
   }
 
   .game-container--history-docked .play-shell-board-row .turn-history-overlay--docked {
     flex: 0 0 var(--play-history-sidebar-width, 300px);
-    align-self: stretch;
+    align-self: flex-start;
+    height: var(--play-board-max-edge, auto);
+    max-height: var(--play-board-max-edge, none);
     min-height: 0;
-    height: auto;
-    max-height: none;
+    margin-left: 0;
     border-left: 1px solid rgba(212, 177, 106, 0.28);
     border-top: 0;
     box-shadow: -4px 0 16px rgba(0, 0, 0, 0.35);
   }
 
-  .game-container--history-docked .play-shell-board-row .play-shell-board .image-board {
-    flex: 1 1 auto;
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    min-height: 0;
-    margin-inline: 0;
+  /* Board sized by --play-board-max-edge; centered beside turn history. */
+  .game-container--history-docked .play-shell-board--fill .image-board {
+    flex: 0 0 auto;
+    width: auto;
+    height: auto;
+    margin: 0;
     justify-content: center;
     align-items: center;
   }
 
-  .game-container--history-docked .play-shell-board-row .play-shell-board .image-board__stage {
-    flex: 1 1 auto;
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    min-height: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .game-container--history-docked .play-shell-board--fill .image-board__stage {
+    flex: 0 0 auto;
+    width: var(--play-board-max-edge, auto);
+    height: var(--play-board-max-edge, auto);
+    max-width: min(100%, var(--play-board-max-edge, 100%));
+    max-height: min(100%, var(--play-board-max-edge, 100%));
+    display: block;
   }
 
-  .game-container--history-docked .play-shell-board-row .play-shell-board .image-board__media {
-    width: min(100%, var(--play-board-max-edge, 100%));
-    height: min(100%, var(--play-board-max-edge, 100%));
+  .game-container--history-docked .play-shell-board--fill .image-board__media {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1;
+    margin: 0;
+  }
+
+  .game-container--history-docked .play-shell-board--fill .image-board__img {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    object-position: center;
+  }
+
+  .game-container--history-docked .play-shell-footer--docked > .play-shell-nav,
+  .game-container--history-docked .play-shell-footer--docked > .turn-controls-container {
+    width: 100%;
     max-width: 100%;
-    max-height: 100%;
   }
 
   .game-container--history-docked .play-shell-main > .imperium-row-container {
     align-self: stretch;
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .game-container--history-docked .play-shell-main > .play-shell-nav,
-  .game-container--history-docked .play-shell-main > .turn-controls-container {
-    flex-shrink: 0;
     width: 100%;
     max-width: 100%;
   }
@@ -1843,6 +1882,12 @@ body:has(.game-container--play) {
   .game-container--history-docked .combat-troop-dock__anchor {
     left: 50%;
     transform: translate(-50%, calc(-100% - 4px));
+  }
+
+  @media (max-width: 1180px) {
+    .game-container--history-docked .combat-troop-dock__anchor {
+      left: 40%;
+    }
   }
 }
 
@@ -1882,8 +1927,9 @@ body:has(.game-container--play) {
   }
 
   .game-container--desktop-play .play-shell-board-row {
-    flex: 1 1 auto;
-    min-height: 0;
+    flex: 0 0 auto;
+    justify-content: center;
+    align-items: flex-start;
   }
 
   .game-container--desktop-play .play-shell-board-row .play-shell-board {
@@ -1891,31 +1937,12 @@ body:has(.game-container--play) {
     align-items: center;
   }
 
-  .game-container--desktop-play .play-shell-board-row .play-shell-board .image-board,
-  .game-container--desktop-play .play-shell-board-row .play-shell-board .image-board__stage {
-    justify-content: center;
-    align-items: center;
-  }
-
-  /* In-flow footer stack (no gap between nav strip and play area) */
-  .game-container--desktop-play .play-shell-main > .turn-controls-container {
-    position: relative;
-    top: auto;
-    bottom: auto;
-    left: auto;
-    right: auto;
-    flex: 0 0 auto;
-    width: 100%;
-    max-width: 100%;
-    margin-inline: 0;
-    max-height: min(38vh, 240px);
+  .game-container--desktop-play .play-shell-footer--docked > .turn-controls-container {
     padding: 0.35rem 0.5rem;
-    padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
-    border-radius: 8px 8px 0 0;
+    padding-bottom: 0.35rem;
   }
 
-  .game-container--desktop-play .play-shell-main > .history-viewing-banner,
-  .game-container--desktop-play .play-shell-main > .play-shell-nav {
+  .game-container--desktop-play .play-shell-footer--docked > .play-shell-nav {
     width: 100%;
     max-width: 100%;
     margin-inline: 0;
@@ -1925,10 +1952,6 @@ body:has(.game-container--play) {
     border-right: 0;
     border-radius: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.12);
-  }
-
-  .game-container--desktop-play .play-shell-main > .turn-controls-container {
-    border-radius: 0;
   }
 
   .game-container--desktop-play .combat-troop-dock {
@@ -1941,6 +1964,12 @@ body:has(.game-container--play) {
   .game-container--desktop-play .combat-troop-dock__anchor {
     left: 50%;
     transform: translate(-50%, calc(-100% - 4px));
+  }
+
+  @media (max-width: 1180px) {
+    .game-container--desktop-play .combat-troop-dock__anchor {
+      left: 40%;
+    }
   }
 
   /* Non-desktop-play fallback (tablet landscape) */
@@ -1964,21 +1993,24 @@ body:has(.game-container--play) {
     justify-content: flex-end;
   }
 
-  .game-container--play:not(.game-container--desktop-play) .turn-controls-container {
+  .game-container--play:not(.game-container--desktop-play) .play-shell-footer > .turn-controls-container {
     width: var(--play-board-max-edge, min(calc(100vw - 24px), var(--play-shell-max-width)));
     padding: 0.35rem 0.5rem;
-    padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
+    padding-bottom: 0.35rem;
+  }
+
+  .game-container--play:not(.game-container--desktop-play) .play-shell-footer > .play-shell-nav {
+    width: var(--play-board-max-edge, min(calc(100vw - 24px), var(--play-shell-max-width)));
   }
 
   .game-container--play .history-viewing-banner {
     box-sizing: border-box;
   }
 
-  .game-container--play:not(.game-container--desktop-play) .history-viewing-banner {
+  .game-container--play:not(.game-container--desktop-play) .play-shell-footer > .play-shell-nav {
     left: 0;
     right: 0;
     margin-inline: auto;
-    width: var(--play-board-max-edge, min(calc(100vw - 24px), var(--play-shell-max-width)));
     border-left: 1px solid rgba(255, 255, 255, 0.15);
     border-right: 1px solid rgba(255, 255, 255, 0.15);
   }
@@ -1992,14 +2024,21 @@ body:has(.game-container--play) {
     top: 0;
     left: 0;
     right: 0;
-    bottom: calc(var(--footer-height) + var(--vv-layout-gap-bottom, 0px));
+    bottom: calc(
+      var(--footer-height) + var(--play-nav-measured-height, var(--play-nav-height-static, 52px)) +
+        var(--vv-layout-gap-bottom, 0px)
+    );
     padding: 12px;
     box-sizing: border-box;
   }
 
   html:has(.game-container--play) .imperium-preview-overlay {
     top: 0;
-    bottom: calc(var(--footer-height, var(--footer-height-static, 84px)) + var(--vv-layout-gap-bottom, 0px));
+    bottom: calc(
+      var(--footer-height, var(--footer-height-static, 84px)) +
+        var(--play-nav-measured-height, var(--play-nav-height-static, 52px)) +
+        var(--vv-layout-gap-bottom, 0px)
+    );
     padding-bottom: 16px;
     box-sizing: border-box;
   }

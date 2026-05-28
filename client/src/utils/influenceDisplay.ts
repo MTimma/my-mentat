@@ -1,4 +1,5 @@
-import { FactionType, InfluenceAmounts } from '../types/GameTypes'
+import { FactionType, InfluenceAmounts, RewardType } from '../types/GameTypes'
+import type { Gain } from '../types/GameTypes'
 
 const ALL_FACTIONS: FactionType[] = [
   FactionType.EMPEROR,
@@ -23,4 +24,40 @@ export function getAnyFactionInfluenceLossIcon(): string {
 export function getAnyFactionInfluenceGainIcon(amount: number): string {
   if (amount >= 2) return '/icon/double_bump.png'
   return '/icon/bump.png'
+}
+
+export function getFactionBumpIcon(faction: FactionType): string {
+  switch (faction) {
+    case FactionType.SPACING_GUILD:
+      return '/icon/guild_bump.png'
+    case FactionType.BENE_GESSERIT:
+      return '/icon/bene_bump.png'
+    case FactionType.EMPEROR:
+      return '/icon/emperor_bump.png'
+    case FactionType.FREMEN:
+      return '/icon/fremen_bump.png'
+    default:
+      return getAnyFactionInfluenceGainIcon(1)
+  }
+}
+
+const FACTION_VALUES = new Set<string>(Object.values(FactionType))
+
+/** Parses faction id from an influence gain name (`emperor`, `emperor Acquire`, etc.). */
+export function factionFromInfluenceGainName(name: string): FactionType | null {
+  const base = name.endsWith(' Acquire') ? name.slice(0, -' Acquire'.length) : name
+  return FACTION_VALUES.has(base) ? (base as FactionType) : null
+}
+
+/** Builds influence amounts for rendering faction / any-faction bump icons from a gain row. */
+export function influenceAmountsFromGain(gain: Gain): InfluenceAmounts | undefined {
+  if (gain.type !== RewardType.INFLUENCE) return undefined
+  const faction = factionFromInfluenceGainName(gain.name)
+  if (faction) {
+    return { amounts: [{ faction, amount: gain.amount }] }
+  }
+  return {
+    chooseOne: true,
+    amounts: ALL_FACTIONS.map(f => ({ faction: f, amount: gain.amount })),
+  }
 }

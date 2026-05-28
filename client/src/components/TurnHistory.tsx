@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { Player, GameState, Gain, RewardType, TurnType } from '../types/GameTypes'
+import { BOARD_SPACES } from '../data/boardSpaces'
+import { getLeaderIconPath } from '../data/leaders'
+import {
+  factionFromInfluenceGainName,
+  getAnyFactionInfluenceGainIcon,
+  getAnyFactionInfluenceLossIcon,
+  getFactionBumpIcon,
+} from '../utils/influenceDisplay'
 import { getRewardIcon, getRewardDisplayName } from '../utils/rewardIcons'
 import { getRevealTurnStats } from '../utils/revealTurnStats'
 import RevealTurnStatsPanel from './RevealTurnStatsPanel/RevealTurnStatsPanel'
@@ -8,7 +16,6 @@ import './TurnHistory.css'
 
 interface TurnHistoryProps {
   turns: GameState[]
-  currentTurn: number
   viewingTurnIndex: number | null
   players: Player[]
   currentGameState: GameState
@@ -20,14 +27,43 @@ interface TurnHistoryProps {
   layout?: 'overlay' | 'docked'
 }
 
-interface AggregatedGain {
-  type: string
+interface AggregatedResourceGain {
+  type: RewardType | string
   amount: number
+  name?: string
 }
+
+const DetailsIcon = () => (
+  <svg className="turn-history-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <ellipse cx="12" cy="13.5" rx="5.5" ry="6.5" fill="none" stroke="currentColor" strokeWidth="1.75" />
+    <path d="M7.5 10.5 5.5 6.5M16.5 10.5l2-2M9 8.5 8 4M15 8.5l1-4M6.5 14l-3 .5M17.5 14l3 .5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <circle cx="9.75" cy="13" r="1" fill="currentColor" />
+    <circle cx="14.25" cy="13" r="1" fill="currentColor" />
+  </svg>
+)
+
+const UndoIcon = () => (
+  <svg className="turn-history-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M12 5a7 7 0 1 1 0 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <path
+      d="M8 5H5v3"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
 
 const TurnHistory: React.FC<TurnHistoryProps> = ({ 
   turns, 
-  currentTurn, 
   viewingTurnIndex,
   players, 
   currentGameState,
@@ -38,68 +74,126 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   layout = 'overlay',
 }) => {
   const isDocked = layout === 'docked'
-  const [selectedTurn, setSelectedTurn] = useState<number | null>(null)
+  const [showDebugModal, setShowDebugModal] = useState(false)
   const [undoTargetIndex, setUndoTargetIndex] = useState<number | null>(null)
 
   // Determine which turn is being viewed (null means current/live)
   const isViewingHistory = viewingTurnIndex !== null
 
-  // Get the turn info from GameState
-  const getTurnInfo = (turn: GameState) => {
-    const currTurn = turn.currTurn
-    if (!currTurn) return { player: '-', type: '-', turn: null }
-    const player = players.find(p => p.id === currTurn.playerId)
-    return {
-      player: player ? player.leader.name : `Player ${currTurn.playerId + 1}`,
-      color: player ? player.color : 'gray',
-      type: currTurn.type,
-      turn: currTurn
-    }
+  const getTurnPlayer = (turn: GameState): Player | undefined => {
+    const playerId = turn.currTurn?.playerId
+    if (playerId == null) return undefined
+    return players.find(p => p.id === playerId)
   }
 
-  // Get gains for a specific turn and player
+  const getTurnLabel = (turn: GameState, index: number): string => {
+    if (index === 0) return 'Setup'
+    const curr = turn.currTurn
+    if (!curr) return '—'
+    if (curr.type === TurnType.ACTION) {
+      const spaceId = curr.agentSpaceId
+      if (spaceId != null) {
+        const space = BOARD_SPACES.find(s => s.id === spaceId)
+        if (space) return space.name
+      }
+      return 'Agent'
+    }
+    if (curr.type === TurnType.REVEAL) return 'Reveal'
+    if (curr.type === TurnType.PASS) return 'Pass'
+    return curr.type
+  }
+
+  // Gains for a turn snapshot or the live in-progress turn (gameState.gains until END_TURN).
   const getGainsForTurn = (turn: GameState): Gain[] => {
-    if (!turn.currTurn) return []
-    const playerId = turn.currTurn.playerId
+    const playerId = turn.currTurn?.playerId ?? turn.activePlayerId
+    if (playerId == null) return []
     return turn.gains?.filter(gain => gain.playerId === playerId) || []
   }
 
-    // Aggregate gains by type (sum amounts of same type)
-    const aggregateGains = (gains: Gain[]): AggregatedGain[] => {
-      const aggregated = new Map<string, number>()
-      
-      gains.forEach(gain => {
-        if (gain.type === RewardType.INFLUENCE ||
-           gain.type === RewardType.CARD) {
-          const current = aggregated.get(gain.name) || 0
-          aggregated.set(gain.name, current + gain.amount)
-        } else {
-          const current = aggregated.get(gain.type) || 0
-          aggregated.set(gain.type, current + gain.amount)
-        }
-      })
-  
-      return Array.from(aggregated.entries())
-        .map(([type, amount]) => ({ type, amount }))
-        .filter(g => g.amount !== 0)
-    }
+  const aggregateResourceGains = (gains: Gain[]): AggregatedResourceGain[] => {
+    const aggregated = new Map<string, AggregatedResourceGain>()
 
-  // Render a single gain icon with amount
-  const renderGain = (gain: AggregatedGain, index: number) => {
-    const iconPath = getRewardIcon(gain.type as RewardType)
-    const displayName = getRewardDisplayName(gain.type as RewardType, gain.type)
-    const isNegative = gain.amount < 0
-    const displayAmount = gain.amount > 0 ? `+${gain.amount}` : `${gain.amount}`
+    gains.forEach(gain => {
+      if (gain.type === RewardType.INFLUENCE || gain.amount === 0) return
+      const key = gain.type === RewardType.CARD ? `card:${gain.name}` : gain.type
+      const existing = aggregated.get(key)
+      if (existing) {
+        existing.amount += gain.amount
+      } else {
+        aggregated.set(key, {
+          type: gain.type,
+          amount: gain.amount,
+          name: gain.type === RewardType.CARD ? gain.name : undefined,
+        })
+      }
+    })
+
+    return Array.from(aggregated.values()).filter(g => g.amount !== 0)
+  }
+
+  const aggregateInfluenceGains = (gains: Gain[]): Array<{ name: string; amount: number }> => {
+    const aggregated = new Map<string, number>()
+    gains.forEach(gain => {
+      if (gain.type !== RewardType.INFLUENCE || gain.amount === 0) return
+      aggregated.set(gain.name, (aggregated.get(gain.name) ?? 0) + gain.amount)
+    })
+    return Array.from(aggregated.entries())
+      .map(([name, amount]) => ({ name, amount }))
+      .filter(g => g.amount !== 0)
+  }
+
+  const renderPlayerBadge = (player: Player | undefined) => {
+    const color = player?.color ?? 'gray'
+    const leaderName = player?.leader.name ?? 'Player'
+    const iconPath = player ? getLeaderIconPath(player.leader.name) : undefined
 
     return (
-      <div key={index} className={`gain-item ${isNegative ? 'negative' : 'positive'}`}>
-        <span className="gain-amount">{displayAmount}</span>
+      <span
+        className={`turn-history-player-badge leader-avatar-btn ${color}`}
+        title={leaderName}
+        aria-hidden="true"
+      >
         {iconPath ? (
-          <img 
-            src={iconPath} 
-            alt={displayName} 
+          <img src={iconPath} alt="" className="turn-history-player-icon" draggable={false} />
+        ) : (
+          <span className="turn-history-player-icon-fallback">{leaderName.charAt(0)}</span>
+        )}
+      </span>
+    )
+  }
+
+  const renderGainMultiplier = (amount: number) => {
+    const absAmount = Math.abs(amount)
+    if (absAmount < 2) return null
+    return <span className="gain-multiplier">×{absAmount}</span>
+  }
+
+  const renderResourceGain = (gain: AggregatedResourceGain, index: number) => {
+    const rewardType = gain.type as RewardType
+    const iconPath = getRewardIcon(rewardType)
+    const displayName = getRewardDisplayName(rewardType, gain.name)
+    const isNegative = gain.amount < 0
+    const absAmount = Math.abs(gain.amount)
+    const ariaLabel =
+      absAmount === 1
+        ? `${isNegative ? 'Lost' : 'Gained'} 1 ${displayName}`
+        : `${isNegative ? 'Lost' : 'Gained'} ${absAmount} ${displayName}`
+
+    return (
+      <div
+        key={`res-${index}`}
+        className={`gain-item ${isNegative ? 'negative' : 'positive'}`}
+        aria-label={ariaLabel}
+      >
+        {rewardType === RewardType.PERSUASION ? (
+          <span className="gain-persuasion-diamond" title={displayName} aria-hidden="true" />
+        ) : iconPath ? (
+          <img
+            src={iconPath}
+            alt=""
             className="gain-icon"
-            onError={(e) => {
+            aria-hidden="true"
+            onError={e => {
               e.currentTarget.style.display = 'none'
               const textSpan = document.createElement('span')
               textSpan.className = 'gain-text-fallback'
@@ -110,7 +204,47 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         ) : (
           <span className="gain-text-fallback">{displayName}</span>
         )}
+        {renderGainMultiplier(gain.amount)}
       </div>
+    )
+  }
+
+  const renderInfluenceGain = (name: string, amount: number, index: number) => {
+    const isNegative = amount < 0
+    const absAmount = Math.abs(amount)
+    const faction = factionFromInfluenceGainName(name)
+    const iconPath = isNegative
+      ? faction
+        ? `/icon/${faction}.png`
+        : getAnyFactionInfluenceLossIcon()
+      : faction
+        ? getFactionBumpIcon(faction)
+        : getAnyFactionInfluenceGainIcon(absAmount)
+
+    return (
+      <div
+        key={`inf-${index}`}
+        className={`gain-item ${isNegative ? 'negative' : 'positive'}`}
+        aria-label={
+          absAmount === 1
+            ? `${isNegative ? 'Lost' : 'Gained'} 1 influence`
+            : `${isNegative ? 'Lost' : 'Gained'} ${absAmount} influence`
+        }
+      >
+        <img src={iconPath} alt="" className="gain-icon gain-icon--influence" aria-hidden="true" />
+        {renderGainMultiplier(amount)}
+      </div>
+    )
+  }
+
+  const renderTurnGains = (gains: Gain[]) => {
+    const resourceGains = aggregateResourceGains(gains)
+    const influenceGains = aggregateInfluenceGains(gains)
+    return (
+      <>
+        {resourceGains.map((gain, idx) => renderResourceGain(gain, idx))}
+        {influenceGains.map((gain, idx) => renderInfluenceGain(gain.name, gain.amount, idx))}
+      </>
     )
   }
 
@@ -185,24 +319,33 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               : `Turn ${viewingTurnIndex}`
             : `Turn ${turns.length} (Current)`}
         </span>
-        {isViewingHistory && (
+        <div className="turn-history-header-actions">
           <button
             type="button"
-            className="turn-history-header-live-btn"
-            onClick={onReturnToCurrent}
+            className="turn-history-icon-btn turn-history-icon-btn--details"
+            onClick={() => setShowDebugModal(true)}
+            title="View full game state (includes turn history)"
+            aria-label="View full game state debug"
           >
-            Live
+            <DetailsIcon />
           </button>
-        )}
+          {isViewingHistory && (
+            <button
+              type="button"
+              className="turn-history-header-live-btn"
+              onClick={onReturnToCurrent}
+            >
+              Live
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="turn-history-list">
         {turns.map((turn, index) => {
-          const info = getTurnInfo(turn)
+          const turnPlayer = getTurnPlayer(turn)
           const gains = getGainsForTurn(turn)
-          const aggregatedGains = aggregateGains(gains)
           const isViewing = viewingTurnIndex === index
-          const isCurrent = index === currentTurn && !isViewingHistory
           const revealStats =
             turn.currTurn?.type === TurnType.REVEAL && turn.currTurn.playerId != null
               ? getRevealTurnStats(turn, turn.currTurn.playerId)
@@ -211,42 +354,37 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           return (
             <div 
               key={index} 
-              className={`turn-history-row ${isCurrent ? 'current' : ''} ${isViewing ? 'viewing' : ''}`}
+              className={`turn-history-row ${isViewing ? 'viewing' : ''}`}
               onClick={() => handleTurnClick(index)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleTurnClick(index)}
             >
-              <div className="turn-history-row-main">
-              <div className="turn-number">
-                {index === 0 ? 'Initial' : index}
-              </div>
-              <div className={`turn-player-indicator ${info.color}`}></div>
-              <div className="turn-type">
-                {index === 0 ? 'Setup' : info.type}
+              <div className="turn-history-row-top">
+                <div className="turn-number">
+                  {index === 0 ? 'Initial' : index}
+                </div>
+                {renderPlayerBadge(turnPlayer)}
+                <div className="turn-summary">
+                  <span className="turn-label">{getTurnLabel(turn, index)}</span>
+                </div>
+                <div className="turn-actions">
+                  <button
+                    type="button"
+                    className="turn-history-icon-btn turn-history-icon-btn--undo"
+                    onClick={(e) => handleUndoClick(index, e)}
+                    title={index === 0 ? 'Reset to initial state' : `Undo to turn ${index}`}
+                    aria-label={index === 0 ? 'Reset to initial state' : `Undo to turn ${index}`}
+                  >
+                    <UndoIcon />
+                  </button>
+                </div>
               </div>
               {gains.length > 0 && (
-                <div className="turn-gains">
-                  {aggregatedGains.map((gain, idx) => renderGain(gain, idx))}
+                <div className="turn-history-gains" onClick={e => e.stopPropagation()}>
+                  {renderTurnGains(gains)}
                 </div>
               )}
-              <div className="turn-actions">
-                <button 
-                  className="details-button" 
-                  onClick={(e) => { e.stopPropagation(); setSelectedTurn(index) }}
-                  title="View JSON details"
-                >
-                  Details
-                </button>
-                <button 
-                  className="undo-button"
-                  onClick={(e) => handleUndoClick(index, e)}
-                  title={index === 0 ? 'Reset to initial state' : `Undo to turn ${index}`}
-                >
-                  Undo
-                </button>
-              </div>
-              </div>
               {revealStats && (
                 <div className="turn-history-reveal-stats" onClick={e => e.stopPropagation()}>
                   <RevealTurnStatsPanel stats={revealStats} compact />
@@ -258,27 +396,34 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         
         {/* Current turn pseudo-entry */}
         {(() => {
+          const liveGains = getGainsForTurn(currentGameState)
           const liveRevealStats = currentGameState.currTurn?.type === TurnType.REVEAL
             ? getRevealTurnStats(currentGameState, currentGameState.currTurn.playerId)
             : null
           return (
         <div 
-          className={`turn-history-row current-turn-entry ${!isViewingHistory ? 'current viewing' : ''}`}
+          className={`turn-history-row current-turn-entry ${!isViewingHistory ? 'viewing' : ''}`}
           onClick={() => onReturnToCurrent()}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && onReturnToCurrent()}
         >
-          <div className="turn-history-row-main">
-          <div className="turn-number">{turns.length}</div>
-          <div className={`turn-player-indicator ${players.find(p => p.id === currentGameState.activePlayerId)?.color || 'gray'}`}></div>
-          <div className="turn-player-name">
-            {players.find(p => p.id === currentGameState.activePlayerId)?.leader?.name || 'Current Player'}
+          <div className="turn-history-row-top">
+            <div className="turn-number">{turns.length}</div>
+            {renderPlayerBadge(players.find(p => p.id === currentGameState.activePlayerId))}
+            <div className="turn-summary">
+              {currentGameState.currTurn && (
+                <span className="turn-label">
+                  {getTurnLabel(currentGameState, turns.length)}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="turn-type">
-            {currentGameState.currTurn?.type || 'In Progress'}
-          </div>
-          </div>
+          {liveGains.length > 0 && (
+            <div className="turn-history-gains" onClick={e => e.stopPropagation()}>
+              {renderTurnGains(liveGains)}
+            </div>
+          )}
           {liveRevealStats && (
             <div className="turn-history-reveal-stats" onClick={e => e.stopPropagation()}>
               <RevealTurnStatsPanel stats={liveRevealStats} compact />
@@ -302,13 +447,15 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         </div>
       )}
 
-      {/* JSON Details Modal */}
-      {selectedTurn !== null && (
+      {/* Full game state debug (live snapshot includes history[]) */}
+      {showDebugModal && (
         <div className="turn-details-modal">
           <div className="turn-details-content">
-            <h3>{selectedTurn === 0 ? 'Initial State' : `Turn ${selectedTurn}`} Details</h3>
-            <pre>{JSON.stringify(turns[selectedTurn], null, 2)}</pre>
-            <button className="close-button" onClick={() => setSelectedTurn(null)}>Close</button>
+            <h3>Game state</h3>
+            <pre>{JSON.stringify(currentGameState, null, 2)}</pre>
+            <button type="button" className="close-button" onClick={() => setShowDebugModal(false)}>
+              Close
+            </button>
           </div>
         </div>
       )}

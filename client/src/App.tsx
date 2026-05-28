@@ -55,6 +55,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   const [autoAppliedRewardSummary, setAutoAppliedRewardSummary] = useState<Array<{
     id: string
     sourceName: string
+    sourceType: GainSource
     reward: Reward
   }>>([])
   const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(
@@ -134,16 +135,6 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     playChromeHeldRef.current = held
     setIsPlayChromeHeld(held)
   }, [])
-
-  const endPlayChromeHold = useCallback(
-    (target: HTMLElement, pointerId: number) => {
-      setPlayChromeHeld(false)
-      if (target.hasPointerCapture(pointerId)) {
-        target.releasePointerCapture(pointerId)
-      }
-    },
-    [setPlayChromeHeld]
-  )
 
   // Clear voice and masterstroke selection when returning from history
   useEffect(() => {
@@ -427,6 +418,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     setAutoAppliedRewardSummary(rewards.map(reward => ({
       id: reward.id,
       sourceName: reward.source.name,
+      sourceType: reward.source.type,
       reward: rewardForGainSummary(reward, player)
     })))
   }
@@ -466,6 +458,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   const imperiumSelectionCount = Math.min(Math.max(0, 5 - gameState.imperiumRow.length), gameState.imperiumRowDeck.length)
   const needsImperiumSelection = gameState.phase === GamePhase.ROUND_START && imperiumSelectionCount > 0
   const needsReplacementSelection = gameState.pendingImperiumRowReplacement !== null && gameState.imperiumRowDeck.length > 0
+  const hidePlayShellFooter = needsImperiumSelection || needsReplacementSelection
 
   const gameContainerRef = useRef<HTMLDivElement>(null)
   const playShellMainRef = useRef<HTMLDivElement>(null)
@@ -479,6 +472,8 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   const lockedBoardLayoutRef = useRef<{ viewportKey: string; boardEdgePx: number } | null>(null)
   const lockedBannerHeightForBoardRef = useRef(0)
   const remeasureBoardLayoutRef = useRef<((force?: boolean) => void) | null>(null)
+
+  const MIN_PLAY_BAND_PX = 88
 
   const showTurnControlsFooter =
     !isViewingHistory &&
@@ -535,32 +530,33 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     }
 
     const readBoardLayoutChrome = () => {
-      const docked = window.matchMedia(DOCKED_HISTORY_LAYOUT_MQ).matches
       const banner = historyBannerRef.current
-      const measuredBanner =
+      const measuredNav =
         banner && !banner.hidden ? Math.max(0, Math.ceil(banner.getBoundingClientRect().height)) : 0
-      if (!docked && measuredBanner > lockedBannerHeightForBoardRef.current) {
-        lockedBannerHeightForBoardRef.current = measuredBanner
+      if (measuredNav > lockedBannerHeightForBoardRef.current) {
+        lockedBannerHeightForBoardRef.current = measuredNav
       }
-      const bannerHeight = docked ? measuredBanner : lockedBannerHeightForBoardRef.current || measuredBanner
+      const navHeight = lockedBannerHeightForBoardRef.current || measuredNav
       const imperium = imperiumRowRef.current
       const topChrome = imperium
         ? Math.max(0, Math.ceil(imperium.getBoundingClientRect().height))
         : 0
       const playFooterReserved = getPlayFooterReservedPx()
-      const tc = turnControlsFooterRef.current
-      const turnControlsHeight =
-        tc && !tc.hidden ? Math.max(0, Math.ceil(tc.getBoundingClientRect().height)) : 0
-      const bottomChrome = turnControlsHeight + bannerHeight
-      return { bannerHeight, topChrome, playFooterReserved, bottomChrome }
+      const bottomChrome = navHeight + MIN_PLAY_BAND_PX
+      return { navHeight, topChrome, playFooterReserved, bottomChrome }
     }
 
     const measureBoardMaxEdgeFromArea = () => {
       const area = mainAreaRef.current
       if (!area) return null
-      const rect = area.getBoundingClientRect()
-      if (rect.width < 80 || rect.height < 80) return null
-      return Math.max(160, Math.min(Math.floor(rect.width), Math.floor(rect.height)))
+      const col = area.getBoundingClientRect()
+      if (col.width < 80) return null
+      const docked = window.matchMedia(DOCKED_HISTORY_LAYOUT_MQ).matches
+      if (!docked) {
+        if (col.height < 80) return null
+        return Math.max(160, Math.min(Math.floor(col.width), Math.floor(col.height)))
+      }
+      return null
     }
 
     const measurePlayFooterTop = () => {
@@ -586,26 +582,39 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         document.documentElement.style.setProperty('--combat-troop-dock-top', combatDockTopStr)
       }
 
-      const tc = turnControlsFooterRef.current
       const banner = historyBannerRef.current
-      const footerAnchor =
-        (tc && !tc.hidden && tc) || (banner && !banner.hidden && banner) || null
-      if (!footerAnchor) return
+      if (banner && !banner.hidden) {
+        const bannerRect = banner.getBoundingClientRect()
+        const bannerTop = Math.max(0, Math.ceil(bannerRect.top))
+        const playBandTop = Math.max(0, Math.ceil(bannerRect.bottom))
+        const bannerTopStr = `${bannerTop}px`
+        const playBandTopStr = `${playBandTop}px`
+        root.style.setProperty('--history-banner-top', bannerTopStr)
+        document.documentElement.style.setProperty('--history-banner-top', bannerTopStr)
+        root.style.setProperty('--play-footer-top', playBandTopStr)
+        document.documentElement.style.setProperty('--play-footer-top', playBandTopStr)
+        return
+      }
 
-      const playFooterTop = Math.max(0, Math.ceil(footerAnchor.getBoundingClientRect().top))
-      const playFooterTopStr = `${playFooterTop}px`
-      root.style.setProperty('--play-footer-top', playFooterTopStr)
-      document.documentElement.style.setProperty('--play-footer-top', playFooterTopStr)
-
-      const bannerTopEl =
-        banner && !banner.hidden ? banner : footerAnchor
-      const bannerTop = Math.max(0, Math.ceil(bannerTopEl.getBoundingClientRect().top))
-      const bannerTopStr = `${bannerTop}px`
-      root.style.setProperty('--history-banner-top', bannerTopStr)
-      document.documentElement.style.setProperty('--history-banner-top', bannerTopStr)
+      const tc = turnControlsFooterRef.current
+      if (tc && !tc.hidden) {
+        const playBandTop = Math.max(0, Math.ceil(tc.getBoundingClientRect().top))
+        const playBandTopStr = `${playBandTop}px`
+        root.style.setProperty('--play-footer-top', playBandTopStr)
+        document.documentElement.style.setProperty('--play-footer-top', playBandTopStr)
+      }
     }
 
     const measurePlayChromeInsets = () => {
+      const banner = historyBannerRef.current
+      let navHeight = 0
+      if (banner && !banner.hidden) {
+        navHeight = Math.max(0, Math.ceil(banner.getBoundingClientRect().height))
+      }
+      const navHeightPx = `${navHeight}px`
+      root.style.setProperty('--play-nav-measured-height', navHeightPx)
+      document.documentElement.style.setProperty('--play-nav-measured-height', navHeightPx)
+
       const tc = turnControlsFooterRef.current
       let turnControlsHeight = 0
       if (tc && !tc.hidden) {
@@ -625,10 +634,14 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         ) || 0
       const playFooterTopRaw = getComputedStyle(root).getPropertyValue('--play-footer-top').trim()
       const playFooterTop = Number.parseFloat(playFooterTopRaw)
-      const footerMeasured = Number.isFinite(playFooterTop)
+      let footerStackHeight = Number.isFinite(playFooterTop)
         ? Math.max(0, Math.ceil(viewportH - playFooterTop - gapBottom))
-        : 0
-      const heightPx = `${footerMeasured}px`
+        : navHeight + turnControlsHeight
+      if (footerStackHeight <= 0) {
+        footerStackHeight = getPlayFooterReservedPx()
+      }
+
+      const heightPx = `${footerStackHeight}px`
       root.style.setProperty('--footer-measured-height', heightPx)
       document.documentElement.style.setProperty('--footer-measured-height', heightPx)
     }
@@ -648,7 +661,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       const docked = window.matchMedia(DOCKED_HISTORY_LAYOUT_MQ).matches
       const desktop = window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
 
-      if (!docked && !force && locked?.viewportKey === viewportKey) {
+      if (!force && locked?.viewportKey === viewportKey) {
         applyBoardMaxEdge(locked.boardEdgePx)
         requestAnimationFrame(() => {
           measurePlayFooterTop()
@@ -658,7 +671,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       }
 
       measureFooterStack()
-      const { topChrome, playFooterReserved, bottomChrome } = readBoardLayoutChrome()
+      const { topChrome, bottomChrome } = readBoardLayoutChrome()
       const shellEl = docked && playShellMainRef.current ? playShellMainRef.current : root
       let shellWidth = Math.max(0, Math.floor(shellEl.getBoundingClientRect().width))
       if (docked) {
@@ -670,19 +683,14 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           shellWidth = Math.max(0, shellWidth - Math.ceil(sidebarW))
         }
       }
-      const shellHeight = Math.max(0, Math.floor(shellEl.getBoundingClientRect().height))
       const viewportH = window.visualViewport?.height ?? window.innerHeight
       const gapBottom = Number.parseFloat(
         getComputedStyle(document.documentElement).getPropertyValue('--vv-layout-gap-bottom')
       ) || 0
       const layoutGap = docked ? 4 : desktop ? 6 : 10
-      const boardStackFoot = docked || desktop
-        ? Math.max(bottomChrome, playFooterReserved * 0.5)
-        : bottomChrome + playFooterReserved
+      const boardStackFoot = bottomChrome + layoutGap
       const availableH =
-        docked && shellHeight > 0
-          ? shellHeight - topChrome - boardStackFoot - layoutGap
-          : viewportH - boardStackFoot - topChrome - layoutGap - gapBottom
+        viewportH - boardStackFoot - topChrome - layoutGap - gapBottom
       let boardEdge = Math.max(160, Math.min(shellWidth, Math.floor(availableH)))
 
       const fromArea = measureBoardMaxEdgeFromArea()
@@ -690,11 +698,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         boardEdge = Math.max(boardEdge, fromArea)
       }
 
-      if (!docked) {
-        lockedBoardLayoutRef.current = { viewportKey, boardEdgePx: boardEdge }
-      } else {
-        lockedBoardLayoutRef.current = null
-      }
+      lockedBoardLayoutRef.current = { viewportKey, boardEdgePx: boardEdge }
       applyBoardMaxEdge(boardEdge)
       requestAnimationFrame(() => {
         const refined = measureBoardMaxEdgeFromArea()
@@ -738,12 +742,10 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           onFooterResize()
         } else if (target === historyBannerRef.current) {
           scheduleFooterMeasure()
-          scheduleBoardMeasure(true)
         } else if (
           target === imperiumRowRef.current ||
           target === mainAreaRef.current ||
-          target === playShellBoardRowRef.current ||
-          target === playShellMainRef.current
+          target === playShellBoardRowRef.current
         ) {
           scheduleFooterMeasure()
           scheduleBoardMeasure(true)
@@ -757,7 +759,6 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     if (historyBannerRef.current) ro.observe(historyBannerRef.current)
     if (imperiumRowRef.current) ro.observe(imperiumRowRef.current)
     if (mainAreaRef.current) ro.observe(mainAreaRef.current)
-    if (playShellMainRef.current) ro.observe(playShellMainRef.current)
     if (playShellBoardRowRef.current) ro.observe(playShellBoardRowRef.current)
     ro.observe(root)
 
@@ -796,6 +797,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       lockedBoardLayoutRef.current = null
       lockedBannerHeightForBoardRef.current = 0
       root.style.removeProperty('--footer-measured-height')
+      root.style.removeProperty('--play-nav-measured-height')
       root.style.removeProperty('--turn-controls-measured-height')
       root.style.removeProperty('--play-top-chrome-height')
       root.style.removeProperty('--play-board-max-edge')
@@ -803,6 +805,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       root.style.removeProperty('--play-board-bottom')
       root.style.removeProperty('--combat-troop-dock-top')
       document.documentElement.style.removeProperty('--footer-measured-height')
+      document.documentElement.style.removeProperty('--play-nav-measured-height')
       document.documentElement.style.removeProperty('--turn-controls-measured-height')
       document.documentElement.style.removeProperty('--play-top-chrome-height')
       document.documentElement.style.removeProperty('--play-board-max-edge')
@@ -821,6 +824,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   }, [
     isViewingHistory,
     showTurnControlsFooter,
+    hidePlayShellFooter,
     isPlayChromeHeld,
     isMobilePlayView,
     isDesktopPlayView,
@@ -921,7 +925,16 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           .filter(Boolean)
           .join(' ')}
       >
-        <div ref={mainAreaRef} className="main-area play-shell-board">
+        <div
+          ref={mainAreaRef}
+          className={[
+            'main-area',
+            'play-shell-board',
+            isDockedHistoryLayout ? 'play-shell-board--fill' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
           {useImageBoard ? (
             renderImageBoard()
           ) : (
@@ -962,7 +975,6 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           <TurnHistory
             layout="docked"
             turns={gameState.history}
-            currentTurn={Math.max(0, gameState.history.length - 1)}
             viewingTurnIndex={viewingTurnIndex}
             players={gameState.players}
             currentGameState={gameState}
@@ -998,7 +1010,15 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           handleConflictSelect={handleConflictSelect}
         />
       </div>
-      <div className="turn-controls-spacer" />
+      <div
+        className={[
+          'play-shell-footer',
+          isDockedHistoryLayout ? 'play-shell-footer--docked' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        hidden={hidePlayShellFooter}
+      >
       {useImageBoard && !isViewingHistory && activePlayer && (
         <div className="combat-troop-dock" data-marker="combat-troop-controls">
           <div className="combat-troop-dock__anchor">
@@ -1079,7 +1099,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             roundGainsBannerSlotRef={roundGainsBannerSlotRef}
           />
         </div>
-      {/* Navigator / status strip — below play area so the board can use full height. */}
+      {/* Navigator / status strip — directly under the board; play band fills below. */}
       <div
         ref={historyBannerRef}
         className={[
@@ -1087,24 +1107,9 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           'play-shell-nav',
           isTurnHistoryOpen && !isDockedHistoryLayout ? 'history-viewing-banner--panel-open' : '',
           isViewingHistory ? 'history-viewing-banner--scrubbing' : '',
-          holdToHidePlayChrome ? 'history-viewing-banner--hold-peek' : '',
         ]
           .filter(Boolean)
           .join(' ')}
-        title={holdToHidePlayChrome ? 'Hold empty area to view board' : undefined}
-        onContextMenu={e => {
-          if (holdToHidePlayChrome) e.preventDefault()
-        }}
-        onPointerDown={e => {
-          if (!holdToHidePlayChrome || e.button !== 0) return
-          if ((e.target as HTMLElement).closest('button')) return
-          e.preventDefault()
-          e.currentTarget.setPointerCapture(e.pointerId)
-          setPlayChromeHeld(true)
-        }}
-        onPointerUp={e => endPlayChromeHold(e.currentTarget, e.pointerId)}
-        onPointerCancel={e => endPlayChromeHold(e.currentTarget, e.pointerId)}
-        onLostPointerCapture={() => setPlayChromeHeld(false)}
       >
         <div className="history-banner-leading">
           {showPlayFooterToolbar && turnControlsActivePlayer && (
@@ -1221,11 +1226,11 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         </div>
       </div>
       </div>
+      </div>
       {showTurnHistoryPanel && !isDockedHistoryLayout && (
         <TurnHistory
           layout="overlay"
           turns={gameState.history}
-          currentTurn={Math.max(0, gameState.history.length - 1)}
           viewingTurnIndex={viewingTurnIndex}
           players={gameState.players}
           currentGameState={gameState}

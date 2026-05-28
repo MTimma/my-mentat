@@ -670,7 +670,7 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(166, 206, 143, 0.88);
+  color: color-mix(in srgb, var(--color-arrakis-parchment-muted, #e6d5a7) 78%, transparent);
   white-space: nowrap;
 }
 
@@ -698,9 +698,9 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
     gap: 4px;
     max-width: min(360px, 56vw);
     padding: 3px 6px;
-    border: 1px solid rgba(166, 206, 143, 0.34);
+    border: 1px solid color-mix(in srgb, var(--color-arrakis-sand, #d4b16a) 28%, transparent);
     border-radius: 999px;
-    background: rgba(26, 48, 28, 0.48);
+    background: color-mix(in srgb, var(--color-arrakis-earth, #8b4513) 10%, rgba(0, 0, 0, 0.34));
     color: var(--color-arrakis-parchment, #f4e4bc);
     overflow-x: auto;
     scrollbar-width: none;
@@ -708,6 +708,53 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 
 .auto-applied-gains-summary::-webkit-scrollbar {
     display: none;
+}
+
+.auto-applied-gains-summary--leader {
+  gap: 5px;
+  padding-left: 4px;
+}
+
+.turn-gain-leader-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 1px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-sizing: border-box;
+  cursor: default;
+  pointer-events: none;
+}
+
+.turn-gain-leader-badge.leader-avatar-btn {
+  border-width: 2px;
+}
+
+.turn-gain-leader-icon,
+.turn-gain-leader-icon-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.turn-gain-leader-icon {
+  display: block;
+  object-fit: cover;
+}
+
+.turn-gain-leader-icon-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--color-arrakis-parchment, #f4e4bc);
+  line-height: 1;
 }
 
 .auto-applied-gain-chip {
@@ -2448,7 +2495,7 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 
 .signet-ring-effect-applied {
   font-weight: 600;
-  color: rgba(166, 206, 143, 0.95);
+  color: color-mix(in srgb, var(--color-arrakis-sand, #d4b16a) 62%, var(--color-arrakis-parchment, #f4e4bc) 38%);
   text-transform: uppercase;
   font-size: 0.72rem;
   letter-spacing: 0.06em;
@@ -2476,8 +2523,8 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   align-items: center;
   padding: 3px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(166, 206, 143, 0.38);
-  background: rgba(26, 48, 28, 0.55);
+  border: 1px solid color-mix(in srgb, var(--color-arrakis-sand, #d4b16a) 30%, transparent);
+  background: color-mix(in srgb, var(--color-arrakis-earth, #8b4513) 12%, rgba(0, 0, 0, 0.32));
   font-size: 0.82rem;
   font-weight: 700;
 }

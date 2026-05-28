@@ -8,10 +8,14 @@ import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS, REVEAL_EFFECT_TEXTS } fr
 import { intrigueRequirementSatisfied } from '../GameContext/requirements'
 import { getPlayAreaCardsForTurnView } from '../../utils/playAreaDisplay'
 import {
+  factionFromInfluenceGainName,
   getAnyFactionInfluenceGainIcon,
   getAnyFactionInfluenceLossIcon,
+  influenceAmountsFromGain,
   isAnyFactionInfluenceChoice,
 } from '../../utils/influenceDisplay'
+import { BOARD_SPACES } from '../../data/boardSpaces'
+import { getLeaderIconPath } from '../../data/leaders'
 import {
   canAffordInfluenceOptionalEffect,
   getLackingOptionalCostResources,
@@ -56,7 +60,7 @@ interface TurnControlsProps {
   onClaimAllRewards?: () => void
   onAutoApplyRewards?: () => void
   autoApplyMandatoryRewards?: boolean
-  autoAppliedRewardSummary?: Array<{ id: string; sourceName: string; reward: Reward }>
+  autoAppliedRewardSummary?: Array<{ id: string; sourceName: string; sourceType: GainSource; reward: Reward }>
   agentPlaced?: boolean
   opponentDiscardState?: GameTurn['opponentDiscardState']
   onOpponentDiscardChoice?: (opponentId: number, choice: 'discard' | 'loseTroop') => void
@@ -82,6 +86,16 @@ interface TurnControlsProps {
   isHistoryView?: boolean
   /** Desktop: portal round gains into the footer strip above the play area. */
   roundGainsBannerSlotRef?: React.RefObject<HTMLDivElement | null>
+}
+
+const LEADER_GAIN_SOURCES = new Set<GainSource>([
+  GainSource.LEADER_ABILITY,
+  GainSource.MASTERSTROKE,
+  GainSource.MEMNON_HIGH_COUNCIL,
+])
+
+function isLeaderGainSource(source?: GainSource): boolean {
+  return source != null && LEADER_GAIN_SOURCES.has(source)
 }
 
 /** Rewards that require a tap / modal / board step (not plain +resource claims), e.g. The Voice. */
@@ -708,6 +722,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         return '/icon/emperor_bump.png'
       case FactionType.FREMEN:
         return '/icon/fremen_bump.png'
+      default:
+        return getAnyFactionInfluenceGainIcon(1)
     }
   }
 
@@ -1030,6 +1046,18 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           effectCard.optional.some(optionalEffectNeedsPlayerInput) ||
           effectCard.choices.some(c => !c.disabled))
     )
+
+  /** Leader/ability effects use the inline panel or a modal, not the played-card frame. */
+  const effectCardCountsForLonePlayedCardHighlight = (effectCard: EffectCard): boolean => {
+    switch (effectCard.source.type) {
+      case GainSource.MASTERSTROKE:
+      case GainSource.MEMNON_HIGH_COUNCIL:
+      case GainSource.LEADER_ABILITY:
+        return false
+      default:
+        return effectCardHasPendingInput(effectCard)
+    }
+  }
 
   const buildEffectCards = () => {
     const sourceMap = new Map<string, EffectCard>()
@@ -1552,10 +1580,12 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const renderTurnCard = (card: Card, mode: 'played' | 'revealed', effectCards: EffectCard[]) => {
     const effectCard = effectCards.find(entry => entry.source.type === GainSource.CARD && entry.source.id === card.id)
     const hasPendingInput = effectCardHasPendingInput(effectCard)
-    const hasAnyPendingTurnEffects = effectCards.some(effectCardHasPendingInput)
+    const hasExternalPendingForPlayedCards = effectCards.some(
+      effectCardCountsForLonePlayedCardHighlight
+    )
     const highlightsLonePlayedCardWithExternalPending =
       mode === 'played' &&
-      hasAnyPendingTurnEffects &&
+      hasExternalPendingForPlayedCards &&
       !hasPendingInput &&
       playedAreaCards.length === 1 &&
       playedAreaCards[0]?.id === card.id
@@ -1869,10 +1899,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       case RewardType.INTRIGUE:
         return { intrigueCards: gain.amount }
       case RewardType.INFLUENCE: {
-        const rawName = gain.name.endsWith(' Acquire')
-          ? gain.name.slice(0, -' Acquire'.length)
-          : gain.name
-        return { influence: { amounts: [{ faction: rawName as FactionType, amount: gain.amount }] } }
+        const influence = influenceAmountsFromGain(gain)
+        return influence ? { influence } : {}
       }
       case RewardType.VICTORY_POINTS:
         return { victoryPoints: gain.amount }
@@ -1941,7 +1969,20 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     title: string
     reward: Reward
     rewardLabel?: string
+    gainSource?: GainSource
   }
+
+  type VisibleGainGroup = {
+    id: string
+    title: string
+    gainSource?: GainSource
+    items: VisibleGainChip[]
+  }
+
+  const gainsDisplayPlayer =
+    gameState?.currTurn != null
+      ? players.find(p => p.id === gameState.currTurn!.playerId) ?? activePlayer
+      : activePlayer
 
   const imperiumAcquisitionChipItems: VisibleGainChip[] = (() => {
     const gainsByAcquiredCard = new Map<number, (typeof turnGains)[number][]>()
@@ -1997,6 +2038,112 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     return rest
   }
 
+  const getGainSourceGroupTitle = (gain: Gain): string => {
+    switch (gain.source) {
+      case GainSource.BOARD_SPACE: {
+        const space = BOARD_SPACES.find(s => s.id === gain.sourceId)
+        return space?.name ?? 'Board space'
+      }
+      case GainSource.CARD: {
+        const played = activePlayer?.playArea.find(c => c.id === gain.sourceId)
+        if (played) return played.name
+        const acquired = gameState?.currTurn?.acquiredCards?.find(c => c.id === gain.sourceId)
+        if (acquired) return acquired.name
+        return factionFromInfluenceGainName(gain.name) ?? gain.name
+      }
+      default:
+        return gain.name
+    }
+  }
+
+  const mergeRewardInfluenceInto = (target: Reward, source: Reward): Reward => {
+    if (!source.influence?.amounts?.length) return target
+    const byFaction = new Map<FactionType, number>()
+    target.influence?.amounts?.forEach(inf => {
+      byFaction.set(inf.faction, (byFaction.get(inf.faction) ?? 0) + inf.amount)
+    })
+    source.influence.amounts.forEach(inf => {
+      byFaction.set(inf.faction, (byFaction.get(inf.faction) ?? 0) + inf.amount)
+    })
+    return {
+      ...target,
+      influence: {
+        amounts: Array.from(byFaction.entries()).map(([faction, amount]) => ({ faction, amount })),
+      },
+    }
+  }
+
+  const groupCoversInfluenceGains = (items: VisibleGainChip[], gains: Gain[]): boolean => {
+    const needed = new Map<FactionType, number>()
+    for (const gain of gains) {
+      const faction = factionFromInfluenceGainName(gain.name)
+      if (!faction) {
+        return items.some(item => (item.reward.influence?.amounts?.length ?? 0) > 0)
+      }
+      needed.set(faction, (needed.get(faction) ?? 0) + gain.amount)
+    }
+    const have = new Map<FactionType, number>()
+    for (const item of items) {
+      item.reward.influence?.amounts?.forEach(inf => {
+        have.set(inf.faction, (have.get(inf.faction) ?? 0) + inf.amount)
+      })
+    }
+    for (const [faction, amount] of needed) {
+      if ((have.get(faction) ?? 0) < amount) return false
+    }
+    return true
+  }
+
+  const mergeLiveInfluenceGainsFromState = (items: VisibleGainChip[]): VisibleGainChip[] => {
+    const influenceGains = turnGains.filter(
+      gain => gain.type === RewardType.INFLUENCE && !isAcquireInfluenceGain(gain)
+    )
+    if (influenceGains.length === 0) return items
+
+    const byGroup = new Map<string, Gain[]>()
+    influenceGains.forEach(gain => {
+      const groupId = getGainSourceGroupTitle(gain)
+      const list = byGroup.get(groupId) ?? []
+      list.push(gain)
+      byGroup.set(groupId, list)
+    })
+
+    const itemsByGroup = new Map<string, VisibleGainChip[]>()
+    items.forEach(item => {
+      const list = itemsByGroup.get(item.groupId) ?? []
+      list.push(item)
+      itemsByGroup.set(item.groupId, list)
+    })
+
+    for (const [groupId, groupGains] of byGroup) {
+      const existing = itemsByGroup.get(groupId) ?? []
+      if (groupCoversInfluenceGains(existing, groupGains)) continue
+
+      const influenceReward = mergeGainsToReward(groupGains)
+      if (existing.length > 0) {
+        itemsByGroup.set(
+          groupId,
+          existing.map((item, index) =>
+            index === 0
+              ? { ...item, reward: mergeRewardInfluenceInto(item.reward, influenceReward) }
+              : item
+          )
+        )
+      } else {
+        itemsByGroup.set(groupId, [
+          {
+            id: `live-influence-${groupId}`,
+            groupId,
+            title: groupId,
+            reward: influenceReward,
+          },
+        ])
+      }
+    }
+
+    return Array.from(itemsByGroup.values()).flat()
+  }
+
   const visibleGainItems: VisibleGainChip[] = (() => {
     const historyItems: VisibleGainChip[] = isHistoryView
       ? (() => {
@@ -2017,7 +2164,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             id: `${gain.source}-${gain.sourceId}-${gain.type}-${index}`,
             groupId: `${gain.source}-${gain.sourceId}-${gain.name}`,
             title: gain.name,
-            reward: gainToReward(gain)
+            reward: gainToReward(gain),
+            gainSource: gain.source,
           }))
           if (combatGains.length > 0) {
             items.push({
@@ -2050,25 +2198,31 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             id: item.id,
             groupId: item.sourceName,
             title: item.sourceName,
-            reward: item.reward
+            reward: item.reward,
+            gainSource: item.sourceType,
           })),
           ...imperiumAcquisitionChipItems
         ]
 
-    return isHistoryView ? historyItems : consolidateCombatGainChips(historyItems)
+    return isHistoryView
+      ? historyItems
+      : consolidateCombatGainChips(mergeLiveInfluenceGainsFromState(historyItems))
   })()
-  const visibleGainGroups = Array.from(
+  const visibleGainGroups: VisibleGainGroup[] = Array.from(
     visibleGainItems.reduce((groups, item) => {
       const group = groups.get(item.groupId) || {
         id: item.groupId,
         title: item.title,
-        items: [] as typeof visibleGainItems
+        gainSource: item.gainSource,
+        items: [] as VisibleGainChip[],
+      }
+      if (!group.gainSource && item.gainSource) {
+        group.gainSource = item.gainSource
       }
       group.items.push(item)
       groups.set(item.groupId, group)
       return groups
-    }, new Map<string, { id: string; title: string; items: typeof visibleGainItems }>())
-      .values()
+    }, new Map<string, VisibleGainGroup>()).values()
   )
   const autoApplySkipsCustom = [
     CustomEffect.THE_VOICE,
@@ -2137,6 +2291,26 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         )
       : []
 
+  const renderLeaderGainBadge = (group: VisibleGainGroup) => {
+    if (!isLeaderGainSource(group.gainSource) || !gainsDisplayPlayer) return null
+    const leaderIconPath = getLeaderIconPath(gainsDisplayPlayer.leader.name)
+    return (
+      <span
+        className={`turn-gain-leader-badge leader-avatar-btn ${gainsDisplayPlayer.color}`}
+        title={gainsDisplayPlayer.leader.name}
+        aria-hidden="true"
+      >
+        {leaderIconPath ? (
+          <img src={leaderIconPath} alt="" className="turn-gain-leader-icon" draggable={false} />
+        ) : (
+          <span className="turn-gain-leader-icon-fallback">
+            {gainsDisplayPlayer.leader.name.charAt(0)}
+          </span>
+        )}
+      </span>
+    )
+  }
+
   const renderRoundGainGroups = (placement: 'footer' | 'banner') => {
     if (visibleGainGroups.length === 0) return null
     const gainsLabel = isHistoryView ? 'Turn gains' : 'Gains from this round'
@@ -2150,20 +2324,29 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         aria-label={gainsLabel}
       >
         <div className="turn-round-gains-chips">
-          {visibleGainGroups.map(group => (
-            <div
-              key={group.id}
-              className="auto-applied-gains-summary"
-              aria-label={`${gainsLabel} from ${group.title}`}
-              title={group.title}
-            >
-              {group.items.map(item => (
-                <span key={item.id} className="auto-applied-gain-chip" title={item.title}>
-                  {renderLabel({ reward: item.reward, rewardLabel: item.rewardLabel })}
-                </span>
-              ))}
-            </div>
-          ))}
+          {visibleGainGroups.map(group => {
+            const showLeaderBadge = isLeaderGainSource(group.gainSource)
+            return (
+              <div
+                key={group.id}
+                className={[
+                  'auto-applied-gains-summary',
+                  showLeaderBadge ? 'auto-applied-gains-summary--leader' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                aria-label={`${gainsLabel} from ${group.title}`}
+                title={group.title}
+              >
+                {renderLeaderGainBadge(group)}
+                {group.items.map(item => (
+                  <span key={item.id} className="auto-applied-gain-chip" title={item.title}>
+                    {renderLabel({ reward: item.reward, rewardLabel: item.rewardLabel })}
+                  </span>
+                ))}
+              </div>
+            )
+          })}
         </div>
       </div>
     )
