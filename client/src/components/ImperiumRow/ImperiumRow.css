@@ -1,10 +1,10 @@
 /* Imperium row: one horizontal strip (optional Helena + 5 + divider + AL + SMF), scales to viewport */
 
 :root {
-  --ir-gap: 6px;
-  --ir-section-pad: 6px;
-  --ir-image-max: min(92px, 14vw);
-  --ir-card-pad: 3px;
+  --ir-gap: 5px;
+  --ir-section-pad: 4px;
+  --ir-image-max: min(76px, 12vw);
+  --ir-card-pad: 2px;
   --ir-card-aspect: 2.5 / 3.5;
 }
 
@@ -106,7 +106,7 @@
   align-self: stretch;
   min-height: 0;
   height: auto;
-  max-height: clamp(100px, 22vw, 168px);
+  max-height: clamp(84px, 18vw, 140px);
   cursor: pointer;
   overflow: hidden;
   box-shadow:
@@ -143,14 +143,14 @@
 }
 
 .imperium-row-strip.no-buttons .imperium-card {
-  max-height: clamp(88px, 18vw, 140px);
+  max-height: clamp(72px, 15vw, 118px);
 }
 
 .imperium-card.no-button {
   padding: 1px;
   justify-content: center;
   border-radius: 8px;
-  max-height: clamp(80px, 16vw, 120px);
+  max-height: clamp(68px, 14vw, 100px);
   background-color: var(--card-art-backing, #0f0d0a);
 }
 
@@ -241,7 +241,7 @@
   }
 
   .imperium-card {
-    max-height: clamp(92px, 24vw, 150px);
+    max-height: clamp(78px, 20vw, 128px);
   }
 }
 
@@ -254,12 +254,12 @@
   }
 
   .imperium-card {
-    max-height: clamp(82px, 26vw, 120px);
+    max-height: clamp(70px, 22vw, 104px);
     border-radius: 7px;
   }
 
   .imperium-card.no-button {
-    max-height: clamp(72px, 22vw, 100px);
+    max-height: clamp(62px, 19vw, 88px);
   }
 
   .count-display {
@@ -279,7 +279,7 @@
   }
 
   .imperium-card {
-    max-height: clamp(70px, 28vw, 108px);
+    max-height: clamp(60px, 24vw, 92px);
   }
 }
 
@@ -289,7 +289,7 @@
     --ir-gap: 8px;
     --ir-section-pad: 4px;
     --ir-card-pad: 2px;
-    --ir-card-height: clamp(88px, 11vh, 118px);
+    --ir-card-height: clamp(68px, 8.5vh, 92px);
     --ir-image-max: none;
   }
 

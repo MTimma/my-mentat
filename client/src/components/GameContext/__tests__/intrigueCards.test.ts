@@ -551,6 +551,16 @@ describe('Acquire — The Spice Must Flow', () => {
       activePlayerId: 0,
     }
 
+    s = {
+      ...s,
+      currTurn: {
+        playerId: 0,
+        type: TurnType.REVEAL,
+        persuasionCount: 9,
+        acquiredCards: [],
+      },
+    }
+
     s = applyGameAction(s, { type: 'ACQUIRE_SMF', playerId: 0 })
 
     expect(s.players[0].victoryPoints).toBe(1)
@@ -566,6 +576,16 @@ describe('Acquire — The Spice Must Flow', () => {
           g.name.includes('Acquire Effect')
       )
     ).toBe(true)
+    expect(
+      s.gains.some(
+        g =>
+          g.type === RewardType.CARD &&
+          g.playerId === 0 &&
+          g.sourceId === smfTop.id &&
+          g.name === smfTop.name
+      )
+    ).toBe(true)
+    expect(s.currTurn?.acquiredCards).toEqual([smfTop])
   })
 })
 

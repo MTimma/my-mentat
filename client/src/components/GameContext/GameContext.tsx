@@ -1101,7 +1101,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 : p
             ),
             activePlayerId: 0,
-            history: [...state.history, state],
+            history: [...state.history, deepCopyGameState(state)],
             currTurn: null,
             canEndTurn: false,
             canAcquireIR: false,
@@ -1125,7 +1125,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               : p
           ),
           activePlayerId: playersWithIntrigueAndTroops[0].id,
-          history: [...state.history, state],
+          history: [...state.history, deepCopyGameState(state)],
           currTurn: null,
           canEndTurn: false,
           canAcquireIR: false,
@@ -1167,7 +1167,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             : p
         ),
         activePlayerId: nextPlayer.id,
-        history: [...newState.history, newState],
+        history: [...newState.history, deepCopyGameState(newState)],
         currTurn: null,
         canEndTurn: false,
         selectedCard: null,
@@ -2850,14 +2850,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.arrakisLiaisonDeck.length === 0) return state
       if (player.persuasion < 2) return state
       const alDeck = [...state.arrakisLiaisonDeck]
-      const discardPile = [...player.discardPile]
-      discardPile.push(alDeck.pop() as Card)
+      const card = alDeck.pop() as Card
+      const discardPile = [...player.discardPile, card]
       player.persuasion -= 2
+      const { gains, currTurn } = appendCardAcquisitionTracking(state, playerId, card, state.gains)
       return {
         ...state,
         arrakisLiaisonDeck: alDeck,
-        players: state.players.map(p => p.id === playerId ? { ...p, discardPile: 
-        discardPile, persuasion: player.persuasion } : p)
+        gains,
+        currTurn: currTurn ?? null,
+        players: state.players.map(p =>
+          p.id === playerId ? { ...p, discardPile, persuasion: player.persuasion } : p
+        ),
       }
     }
     case 'ACQUIRE_SMF': {
@@ -2874,20 +2878,30 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const smfDeck = [...state.spiceMustFlowDeck]
       const card = smfDeck.pop() as Card
       const updatedGains: Gain[] = [...state.gains]
-      if(card.acquireEffect?.victoryPoints) {
-        updatedGains.push({ round: state.currentRound, playerId: playerId, sourceId: card.id, name: card.name + " Acquire Effect", amount: card.acquireEffect.victoryPoints, type: RewardType.VICTORY_POINTS, source: GainSource.CARD } )
-        player.victoryPoints += card.acquireEffect?.victoryPoints || 0
+      if (card.acquireEffect?.victoryPoints) {
+        updatedGains.push({
+          round: state.currentRound,
+          playerId,
+          sourceId: card.id,
+          name: `${card.name} Acquire Effect`,
+          amount: card.acquireEffect.victoryPoints,
+          type: RewardType.VICTORY_POINTS,
+          source: GainSource.CARD,
+        })
+        player.victoryPoints += card.acquireEffect.victoryPoints
       }
       player.discardPile.push(card)
       player.persuasion -= cost
-      
-      // Clear discount flag after use
-      const newCurrTurn = state.currTurn ? { ...state.currTurn, smfDiscount: false } : null
-      
+
+      const tracked = appendCardAcquisitionTracking(state, playerId, card, updatedGains)
+      const newCurrTurn = tracked.currTurn
+        ? { ...tracked.currTurn, smfDiscount: false }
+        : null
+
       return {
         ...state,
         spiceMustFlowDeck: smfDeck,
-        gains: updatedGains,
+        gains: tracked.gains,
         currTurn: newCurrTurn,
         players: state.players.map(p =>
           p.id === playerId
@@ -4177,6 +4191,35 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     default:
       return state
   }
+}
+
+/** Record imperium / reserve acquisitions for turn history and reveal stats (matches ACQUIRE_CARD). */
+function appendCardAcquisitionTracking(
+  state: GameState,
+  playerId: number,
+  card: Card,
+  gains: Gain[]
+): { gains: Gain[]; currTurn: GameTurn | null | undefined } {
+  const nextGains: Gain[] = [
+    ...gains,
+    {
+      round: state.currentRound,
+      playerId,
+      sourceId: card.id,
+      name: card.name,
+      amount: 1,
+      type: RewardType.CARD,
+      source: GainSource.CARD,
+    },
+  ]
+  const currTurn =
+    state.currTurn?.playerId === playerId
+      ? {
+          ...state.currTurn,
+          acquiredCards: [...(state.currTurn.acquiredCards ?? []), card],
+        }
+      : state.currTurn
+  return { gains: nextGains, currTurn }
 }
 
 // Helper function to create a deep copy of GameState for history

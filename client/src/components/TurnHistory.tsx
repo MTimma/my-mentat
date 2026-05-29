@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Player, GameState, Gain, RewardType, TurnType } from '../types/GameTypes'
 import { BOARD_SPACES } from '../data/boardSpaces'
 import { getLeaderIconPath } from '../data/leaders'
@@ -76,9 +76,91 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   const isDocked = layout === 'docked'
   const [showDebugModal, setShowDebugModal] = useState(false)
   const [undoTargetIndex, setUndoTargetIndex] = useState<number | null>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+  const liveEntryRef = useRef<HTMLDivElement>(null)
+  const stickToBottomRef = useRef(true)
+  const prevTurnsLengthRef = useRef(turns.length)
 
   // Determine which turn is being viewed (null means current/live)
   const isViewingHistory = viewingTurnIndex !== null
+
+  const scrollListToBottom = useCallback(() => {
+    const list = listRef.current
+    if (!list) return
+    const apply = () => {
+      list.scrollTop = list.scrollHeight
+    }
+    apply()
+    requestAnimationFrame(apply)
+  }, [])
+
+  const scrollTurnIntoView = useCallback(
+    (turnIndex: number | 'live') => {
+      const scrollEl =
+        turnIndex === 'live'
+          ? liveEntryRef.current
+          : listRef.current?.querySelector<HTMLElement>(`[data-turn-index="${turnIndex}"]`)
+      if (scrollEl) {
+        scrollEl.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+        requestAnimationFrame(() => {
+          scrollEl.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+        })
+        return
+      }
+      scrollListToBottom()
+    },
+    [scrollListToBottom]
+  )
+
+  useEffect(() => {
+    const list = listRef.current
+    if (!list) return
+    const onScroll = () => {
+      const distFromBottom = list.scrollHeight - list.scrollTop - list.clientHeight
+      stickToBottomRef.current = distFromBottom < 40
+    }
+    list.addEventListener('scroll', onScroll, { passive: true })
+    return () => list.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    if (!isViewingHistory) {
+      stickToBottomRef.current = true
+    }
+  }, [isViewingHistory])
+
+  const liveTurnSignature = [
+    currentGameState.currTurn?.type,
+    currentGameState.currTurn?.playerId,
+    currentGameState.currTurn?.agentSpaceId,
+    currentGameState.gains?.length,
+  ].join(':')
+
+  useLayoutEffect(() => {
+    if (turns.length > prevTurnsLengthRef.current) {
+      stickToBottomRef.current = true
+      scrollListToBottom()
+    }
+    prevTurnsLengthRef.current = turns.length
+  }, [turns.length, scrollListToBottom])
+
+  useLayoutEffect(() => {
+    if (isViewingHistory) {
+      if (viewingTurnIndex !== null) {
+        scrollTurnIntoView(viewingTurnIndex)
+      }
+      return
+    }
+    if (stickToBottomRef.current) {
+      scrollTurnIntoView('live')
+    }
+  }, [
+    isViewingHistory,
+    viewingTurnIndex,
+    liveTurnSignature,
+    scrollTurnIntoView,
+    scrollListToBottom,
+  ])
 
   const getTurnPlayer = (turn: GameState): Player | undefined => {
     const playerId = turn.currTurn?.playerId
@@ -297,6 +379,24 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     return null
   }
 
+  const getDockedHeaderTitle = (): string => {
+    if (viewingTurnIndex === 0) return 'Initial state'
+    if (viewingTurnIndex === null) {
+      return `Turn ${turns.length}, round ${currentGameState.currentRound}`
+    }
+    const snapshot = turns[viewingTurnIndex]
+    const round = snapshot?.currentRound ?? currentGameState.currentRound
+    return `Turn ${viewingTurnIndex}, round ${round}`
+  }
+
+  const headerTitle = isDocked
+    ? getDockedHeaderTitle()
+    : isViewingHistory
+      ? viewingTurnIndex === 0
+        ? 'Initial State'
+        : `Turn ${viewingTurnIndex}`
+      : `Turn ${turns.length} (Current)`
+
   return (
     <div
       id="turn-history-overlay"
@@ -312,12 +412,15 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       aria-label="Turn history"
     >
       <div className="turn-history-header">
-        <span className="turn-history-header-title">
-          {isViewingHistory
-            ? viewingTurnIndex === 0
-              ? 'Initial State'
-              : `Turn ${viewingTurnIndex}`
-            : `Turn ${turns.length} (Current)`}
+        <span
+          className={[
+            'turn-history-header-title',
+            isDocked ? 'turn-history-header-title--turn-round' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {headerTitle}
         </span>
         <div className="turn-history-header-actions">
           <button
@@ -329,7 +432,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           >
             <DetailsIcon />
           </button>
-          {isViewingHistory && (
+          {isViewingHistory && !isDocked && (
             <button
               type="button"
               className="turn-history-header-live-btn"
@@ -341,7 +444,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         </div>
       </div>
 
-      <div className="turn-history-list">
+      <div className="turn-history-list" ref={listRef}>
         {turns.map((turn, index) => {
           const turnPlayer = getTurnPlayer(turn)
           const gains = getGainsForTurn(turn)
@@ -352,8 +455,9 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               : null
           
           return (
-            <div 
-              key={index} 
+            <div
+              key={index}
+              data-turn-index={index}
               className={`turn-history-row ${isViewing ? 'viewing' : ''}`}
               onClick={() => handleTurnClick(index)}
               role="button"
@@ -385,7 +489,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                   {renderTurnGains(gains)}
                 </div>
               )}
-              {revealStats && (
+              {revealStats && revealStats.acquiredCards.length > 0 && (
                 <div className="turn-history-reveal-stats" onClick={e => e.stopPropagation()}>
                   <RevealTurnStatsPanel stats={revealStats} compact />
                 </div>
@@ -401,7 +505,9 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             ? getRevealTurnStats(currentGameState, currentGameState.currTurn.playerId)
             : null
           return (
-        <div 
+        <div
+          ref={liveEntryRef}
+          data-turn-index="live"
           className={`turn-history-row current-turn-entry ${!isViewingHistory ? 'viewing' : ''}`}
           onClick={() => onReturnToCurrent()}
           role="button"
@@ -424,7 +530,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               {renderTurnGains(liveGains)}
             </div>
           )}
-          {liveRevealStats && (
+          {liveRevealStats && liveRevealStats.acquiredCards.length > 0 && (
             <div className="turn-history-reveal-stats" onClick={e => e.stopPropagation()}>
               <RevealTurnStatsPanel stats={liveRevealStats} compact />
             </div>

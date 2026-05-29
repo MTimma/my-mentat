@@ -541,8 +541,16 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       const topChrome = imperium
         ? Math.max(0, Math.ceil(imperium.getBoundingClientRect().height))
         : 0
+      const viewportH = window.visualViewport?.height ?? window.innerHeight
       const playFooterReserved = getPlayFooterReservedPx()
-      const bottomChrome = navHeight + MIN_PLAY_BAND_PX
+      // Stable reserve for board math only — never use the flex-expanded turn-controls container
+      // (its box grows with leftover viewport and would shrink the board in a feedback loop).
+      const playBandCap = Math.floor(viewportH * 0.34)
+      const playBandMin = Math.max(
+        MIN_PLAY_BAND_PX,
+        Math.min(playFooterReserved, playBandCap)
+      )
+      const bottomChrome = navHeight + playBandMin
       return { navHeight, topChrome, playFooterReserved, bottomChrome }
     }
 
@@ -691,7 +699,8 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       const boardStackFoot = bottomChrome + layoutGap
       const availableH =
         viewportH - boardStackFoot - topChrome - layoutGap - gapBottom
-      let boardEdge = Math.max(160, Math.min(shellWidth, Math.floor(availableH)))
+      const minBoardEdge = docked ? 200 : 160
+      let boardEdge = Math.max(minBoardEdge, Math.min(shellWidth, Math.floor(availableH)))
 
       const fromArea = measureBoardMaxEdgeFromArea()
       if (fromArea) {
@@ -1096,6 +1105,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             activeIntrigueThisRound={turnControlsActivePlayer ? (turnControlsState.activeIntrigueThisRound?.[turnControlsActivePlayer.id] || []) : []}
             gameState={turnControlsState}
             isHistoryView={isViewingHistory}
+            showRoundGainsInPlayArea={!isDockedHistoryLayout}
             roundGainsBannerSlotRef={roundGainsBannerSlotRef}
           />
         </div>
@@ -1147,62 +1157,70 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
               />
             )
           )}
-          <span className="history-banner-turn-label">
-            { viewingTurnIndex === null ? `Turn ${gameState.history.length}, round ${gameState.currentRound}` : (viewingTurnIndex === 0 ? `Initial state` : `Turn ${viewingTurnIndex} of ${gameState.history.length}`) }
-          </span>
+          {!isDockedHistoryLayout && (
+            <span className="history-banner-turn-label">
+              {viewingTurnIndex === null
+                ? `Turn ${gameState.history.length}, round ${gameState.currentRound}`
+                : viewingTurnIndex === 0
+                  ? 'Initial state'
+                  : `Turn ${viewingTurnIndex} of ${gameState.history.length}`}
+            </span>
+          )}
         </div>
         <div className="history-banner-actions">
-          <div className="history-banner-turn-nav" aria-label="Turn navigation">
-            <button
-              type="button"
-              className="history-nav-btn"
-              onClick={() => goToTurn(Math.max(0, (viewingTurnIndex ?? gameState.history.length) - 1))}
-              disabled={viewingTurnIndex === 0}
-              title="Previous turn"
-              aria-label="Previous turn"
-            >
-              &lt;
-            </button>
-            {isViewingHistory && liveTurnPlayer && (
+          {!isDockedHistoryLayout && (
+            <div className="history-banner-turn-nav" aria-label="Turn navigation">
               <button
                 type="button"
-                className={`history-return-leader-btn leader-avatar-btn ${liveTurnPlayer.color}`}
-                onClick={returnToCurrent}
-                title={`Return to current turn (${liveTurnPlayer.leader.name})`}
-                aria-label={`Return to current turn, ${liveTurnPlayer.leader.name}`}
+                className="history-nav-btn"
+                onClick={() => goToTurn(Math.max(0, (viewingTurnIndex ?? gameState.history.length) - 1))}
+                disabled={viewingTurnIndex === 0}
+                title="Previous turn"
+                aria-label="Previous turn"
               >
-                {liveLeaderIconPath ? (
-                  <img
-                    className="history-return-leader-icon"
-                    src={liveLeaderIconPath}
-                    alt=""
-                    draggable={false}
-                  />
-                ) : (
-                  <span className="history-return-leader-fallback" aria-hidden="true">
-                    {liveTurnPlayer.leader.name.charAt(0)}
-                  </span>
-                )}
+                &lt;
               </button>
-            )}
-            <button
-              type="button"
-              className="history-nav-btn"
-              onClick={() => {
-                const effectiveViewIndex = viewingTurnIndex ?? gameState.history.length
-                if (effectiveViewIndex < gameState.history.length) {
-                  goToTurn(effectiveViewIndex + 1)
-                } else {
-                  returnToCurrent()
-                }
-              }}
-              hidden={viewingTurnIndex === null}
-              title="Next turn"
-              aria-label="Next turn"
-            >
-              &gt;
-            </button>
-          </div>
+              {isViewingHistory && liveTurnPlayer && (
+                <button
+                  type="button"
+                  className={`history-return-leader-btn leader-avatar-btn ${liveTurnPlayer.color}`}
+                  onClick={returnToCurrent}
+                  title={`Return to current turn (${liveTurnPlayer.leader.name})`}
+                  aria-label={`Return to current turn, ${liveTurnPlayer.leader.name}`}
+                >
+                  {liveLeaderIconPath ? (
+                    <img
+                      className="history-return-leader-icon"
+                      src={liveLeaderIconPath}
+                      alt=""
+                      draggable={false}
+                    />
+                  ) : (
+                    <span className="history-return-leader-fallback" aria-hidden="true">
+                      {liveTurnPlayer.leader.name.charAt(0)}
+                    </span>
+                  )}
+                </button>
+              )}
+              <button
+                type="button"
+                className="history-nav-btn"
+                onClick={() => {
+                  const effectiveViewIndex = viewingTurnIndex ?? gameState.history.length
+                  if (effectiveViewIndex < gameState.history.length) {
+                    goToTurn(effectiveViewIndex + 1)
+                  } else {
+                    returnToCurrent()
+                  }
+                }}
+                hidden={viewingTurnIndex === null}
+                title="Next turn"
+                aria-label="Next turn"
+              >
+                &gt;
+              </button>
+            </div>
+          )}
           {showFooterEndTurn && (
             <button
               type="button"

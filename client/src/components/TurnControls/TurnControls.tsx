@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, Fragment } from 'react'
 import { createPortal } from 'react-dom'
 import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, InfluenceAmounts, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS } from '../../types/GameTypes'
 import { intrigueCardHasCustom } from '../../utils/intrigueCardCustom'
@@ -84,7 +84,9 @@ interface TurnControlsProps {
   mentatOwner?: number | null
   gameState?: GameState
   isHistoryView?: boolean
-  /** Desktop: portal round gains into the footer strip above the play area. */
+  /** When false, round gain chips are omitted from the play area (e.g. docked turn history shows them). */
+  showRoundGainsInPlayArea?: boolean
+  /** Wide layout: portal round gains into the nav strip above the play area. */
   roundGainsBannerSlotRef?: React.RefObject<HTMLDivElement | null>
 }
 
@@ -151,6 +153,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   activeIntrigueThisRound = [],
   gameState,
   isHistoryView = false,
+  showRoundGainsInPlayArea = true,
   roundGainsBannerSlotRef,
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
@@ -211,6 +214,25 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       setActiveFixedChoice(null)
     }
   }, [activeFixedChoice, pendingChoices])
+
+  const pendingPlayInputKey = useMemo(
+    () =>
+      [
+        ...pendingRewards.filter(reward => !reward.disabled).map(reward => reward.id),
+        ...optionalEffects.map(effect => effect.id),
+        ...pendingChoices.filter(choice => !choice.disabled).map(choice => choice.id),
+      ].join(','),
+    [pendingRewards, optionalEffects, pendingChoices]
+  )
+
+  useLayoutEffect(() => {
+    if (isHistoryView || !pendingPlayInputKey) return
+    const host = document.querySelector<HTMLElement>(
+      '.game-container--play .turn-controls-container'
+    )
+    if (!host || host.hidden) return
+    host.scrollTop = 0
+  }, [pendingPlayInputKey, isHistoryView])
 
   useEffect(() => {
     if (!isHistoryView) return
@@ -2352,8 +2374,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     )
   }
 
-  const roundGainsFooter = !isDesktopPlay ? renderRoundGainGroups('footer') : null
-  const roundGainsBannerContent = isDesktopPlay ? renderRoundGainGroups('banner') : null
+  const showPlayAreaRoundGains = showRoundGainsInPlayArea
+  const roundGainsFooter =
+    showPlayAreaRoundGains && !isDesktopPlay ? renderRoundGainGroups('footer') : null
+  const roundGainsBannerContent =
+    showPlayAreaRoundGains && isDesktopPlay ? renderRoundGainGroups('banner') : null
   const roundGainsBannerPortal =
     roundGainsBannerContent && roundGainsBannerSlotRef?.current
       ? createPortal(roundGainsBannerContent, roundGainsBannerSlotRef.current)

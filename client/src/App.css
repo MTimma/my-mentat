@@ -3,7 +3,7 @@
   --footer-height-static: 84px;
   --play-nav-height-static: 52px;
   /* Stable play strip reserved for board sizing (not dynamic gains/effects height). */
-  --play-footer-reserved-height: clamp(132px, 34vh, 260px);
+  --play-footer-reserved-height: clamp(132px, 28vh, 220px);
   --play-shell-max-width: 1000px;
   --play-history-sidebar-width: 300px;
   /* Play footer stack vs modal overlays (modals must sit above turn controls). */
@@ -148,11 +148,12 @@ body:has(.game-container--play) {
 }
 
 .game-container--play .play-shell-footer {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
 }
 
 .game-container--play .play-shell-footer > .play-shell-nav,
@@ -1394,15 +1395,19 @@ body:has(.game-container--play) {
 }
 
 .game-container--play .play-shell-footer > .turn-controls-container {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   margin-inline: auto;
   width: min(100%, var(--play-shell-max-width));
   max-width: 100%;
+  max-height: calc(
+    100dvh - var(--play-footer-top, var(--play-board-bottom, 55vh)) -
+      var(--vv-layout-gap-bottom, 0px)
+  );
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -1776,6 +1781,12 @@ body:has(.game-container--play) {
 
 /* Wide play: board + turn history side-by-side; footer stack full width below */
 @media (min-width: 768px) {
+  /* Turn/round + prev/next/live: docked turn-history header (768px+). */
+  .game-container--history-docked .history-banner-turn-label,
+  .game-container--history-docked .history-banner-turn-nav {
+    display: none;
+  }
+
   .game-container--play.game-container--history-docked {
     width: 100%;
     max-width: 100%;
@@ -1894,7 +1905,7 @@ body:has(.game-container--play) {
 /* Desktop play layout: in-flow footer, larger board column */
 @media (min-width: 901px) {
   :root {
-    --play-footer-reserved-height: clamp(96px, 20vh, 176px);
+    --play-footer-reserved-height: clamp(116px, 22vh, 196px);
   }
 
   .game-container--play:not(.game-container--history-docked) {
