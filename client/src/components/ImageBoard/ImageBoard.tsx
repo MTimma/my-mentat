@@ -351,7 +351,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   style={{
                     left: `${anchor.x + offsetX}%`,
                     top: `${anchor.y}%`,
-                    transform: 'translate(-50%, -50%)',
                   }}
                 >
                   <BoardAgentFigure playerId={playerId} className="image-board__agent-figure" />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, Fragment } from 'react'
 import { createPortal } from 'react-dom'
-import { Player, Card, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, InfluenceAmounts, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS } from '../../types/GameTypes'
+import { Player, Card, Leader, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, InfluenceAmounts, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS } from '../../types/GameTypes'
 import { intrigueCardHasCustom } from '../../utils/intrigueCardCustom'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
@@ -22,9 +22,11 @@ import {
 } from '../../utils/influenceChoices'
 import {
   CardEffectRect,
+  CARD_EFFECT_REGIONS,
   getCardEffectDebugRects,
   getOptionalEffectOverlayRect,
   getRewardOverlayRect,
+  isSignetRingCard,
   layoutCardRegionPercent,
   rectPlacementKey,
 } from '../../data/cardEffectRegions'
@@ -1437,10 +1439,41 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     )
   }
 
+  type SignetRingOverlayInfo = {
+    leader: Leader
+    appliedGains: Gain[]
+  }
+
+  const renderSignetRingAgentBackdrop = (info: SignetRingOverlayInfo) => {
+    const { leader, appliedGains } = info
+    const hasApplied = appliedGains.length > 0
+    return (
+      <div className="card-effect-signet-backdrop" aria-label="Signet ring ability">
+        <div className="signet-ring-effect-heading">
+          {leader.signetRingTitle ?? 'Signet ring'}
+          {hasApplied && <span className="signet-ring-effect-applied"> · applied</span>}
+        </div>
+        {leader.signetRingText && (
+          <div className="signet-ring-effect-text">{leader.signetRingText}</div>
+        )}
+        {hasApplied && (
+          <div className="signet-ring-applied-chips" aria-label="Signet ring effects applied">
+            {appliedGains.map((gain, index) => (
+              <span key={`${gain.type}-${gain.amount}-${index}`} className="signet-ring-applied-chip">
+                {renderLabel({ reward: gainToReward(gain) })}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const renderCardEffectsDialogStage = (
     previewCard: Card,
     effectCard: EffectCard,
-    isRevealed: boolean
+    isRevealed: boolean,
+    signetOverlay?: SignetRingOverlayInfo
   ) => {
     const overlayContext = { previewCard, isRevealed }
     const overlayZoneRewards = effectCard.rewards.filter(
@@ -1453,6 +1486,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       rect: CardEffectRect
       optional: OptionalEffect[]
       rewards: PendingReward[]
+      signetOverlay?: SignetRingOverlayInfo
     }
 
     const placementMap = new Map<string, OverlayPlacement>()
@@ -1474,6 +1508,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       const optionalRect = getOptionalEffectOverlayRect(previewCard, eff, isRevealed)
       ensurePlacement(optionalRect).optional.push(eff)
     })
+
+    if (signetOverlay && isSignetRingCard(previewCard) && !isRevealed) {
+      ensurePlacement(CARD_EFFECT_REGIONS.agent).signetOverlay = signetOverlay
+    }
 
     const overlayPlacements = [...placementMap.values()]
     const hasOverlays = overlayPlacements.length > 0 || cardEffectDebug
@@ -1498,14 +1536,20 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
 
     const renderOverlayPlacement = (placement: OverlayPlacement) => {
-      const { rect, optional: zoneOptional, rewards: zoneRewards } = placement
-      if (zoneOptional.length === 0 && zoneRewards.length === 0) return null
+      const { rect, optional: zoneOptional, rewards: zoneRewards, signetOverlay: zoneSignet } = placement
+      if (zoneOptional.length === 0 && zoneRewards.length === 0 && !zoneSignet) return null
       return (
         <div
-          className="card-effect-overlay-zone"
+          className={[
+            'card-effect-overlay-zone',
+            zoneSignet ? 'card-effect-signet-zone' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
           style={rectBoxStyle(rect)}
           data-card-region={placement.key}
         >
+          {zoneSignet && renderSignetRingAgentBackdrop(zoneSignet)}
           {zoneOptional.map((eff, idx) => (
             <div
               key={`${eff.id}-${idx}`}
@@ -2293,7 +2337,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const activeCardIsSignetRing =
     activeCardPreviewCard?.playEffect?.some(effect => effect.reward?.custom === CustomEffect.SIGNET_RING) ?? false
   const activeCardSignetGains =
-    activeCardIsSignetRing && activeCardPreviewCard
+    activeCardIsSignetRing && activeCardPreviewCard && activePlayer
       ? (gameState?.gains ?? []).filter(
           gain =>
             gain.playerId === activePlayer.id &&
@@ -2302,6 +2346,24 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             gain.sourceId === activeCardPreviewCard.id
         )
       : []
+  const activeCardSignetOverlay =
+    activeCardPreviewCard && activePlayer && isSignetRingCard(activeCardPreviewCard) && !activeCardPreviewIsRevealed
+      ? { leader: activePlayer.leader, appliedGains: activeCardSignetGains }
+      : undefined
+  const activeCardEffectsStageCard =
+    activeCardEffect ??
+    (activeCardSignetOverlay && activeCardPreviewCard
+      ? {
+          source: {
+            type: GainSource.CARD,
+            id: activeCardPreviewCard.id,
+            name: activeCardPreviewCard.name,
+          },
+          rewards: [],
+          optional: [],
+          choices: [],
+        }
+      : null)
   const activeCardLackingResources =
     activePlayer && gameState && activeCardEffect
       ? getLackingOptionalCostResources(
@@ -2432,11 +2494,12 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   {activeCardPreviewCard.name}
                 </h3>
               )}
-              {activeCardEffect
+              {activeCardEffectsStageCard
                 ? renderCardEffectsDialogStage(
                     activeCardPreviewCard,
-                    activeCardEffect,
-                    activeCardPreviewIsRevealed
+                    activeCardEffectsStageCard,
+                    activeCardPreviewIsRevealed,
+                    activeCardSignetOverlay
                   )
                 : activeCardPreviewCard.image ? (
                   <img
@@ -2463,26 +2526,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                       ))}
                     </div>
                   )}
-                </div>
-              )}
-              {activeCardSignetGains.length > 0 && (
-                <div className="card-effects-dialog-note card-effects-dialog-note--signet">
-                  <div className="signet-ring-effect-heading">
-                    {activePlayer.leader.signetRingTitle
-                      ? `${activePlayer.leader.signetRingTitle}`
-                      : 'Signet ring'}
-                    <span className="signet-ring-effect-applied"> · applied</span>
-                  </div>
-                  {activePlayer.leader.signetRingText && (
-                    <div className="signet-ring-effect-text">{activePlayer.leader.signetRingText}</div>
-                  )}
-                  <div className="signet-ring-applied-chips" aria-label="Signet ring effects applied">
-                    {activeCardSignetGains.map((gain, index) => (
-                      <span key={`${gain.type}-${gain.amount}-${index}`} className="signet-ring-applied-chip">
-                        {renderLabel({ reward: gainToReward(gain) })}
-                      </span>
-                    ))}
-                  </div>
                 </div>
               )}
               <div className="card-effects-dialog-footer">

@@ -161,13 +161,24 @@
   width: 100%;
 }
 
-.turn-summary {
+.turn-history-main {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.turn-history-summary-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
 }
 
 .turn-label {
-  display: block;
+  flex: 1;
+  min-width: 0;
   font-size: 0.82rem;
   font-weight: 600;
   color: rgba(244, 228, 188, 0.95);
@@ -176,9 +187,24 @@
   text-overflow: ellipsis;
 }
 
+.turn-history-card-thumb {
+  flex: 0 0 auto;
+  display: inline-flex;
+  line-height: 0;
+}
+
+.turn-history-card-thumb-img {
+  width: 18px;
+  height: 26px;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
 .turn-history-reveal-stats {
   width: 100%;
-  padding-left: 34px;
   box-sizing: border-box;
 }
 
@@ -219,7 +245,6 @@
   justify-content: center;
   width: 22px;
   height: 22px;
-  margin-right: 4px;
   border-radius: 50%;
   overflow: hidden;
   box-sizing: border-box;
@@ -266,7 +291,13 @@
   border-radius: 6px;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s,
+    box-shadow 0.2s,
+    transform 0.15s,
+    opacity 0.2s;
 }
 
 .turn-history-action-icon {
@@ -285,16 +316,52 @@
   border-color: rgba(212, 177, 106, 0.5);
 }
 
+.turn-history-action-icon--undo {
+  width: 15px;
+  height: 15px;
+}
+
+.turn-history-row .turn-history-icon-btn--undo {
+  opacity: 0.78;
+}
+
+.turn-history-row:hover .turn-history-icon-btn--undo,
+.turn-history-icon-btn--undo:hover,
+.turn-history-icon-btn--undo:focus-visible {
+  opacity: 1;
+}
+
 .turn-history-icon-btn--undo {
-  background: rgba(192, 57, 43, 0.1);
+  background:
+    linear-gradient(180deg, rgba(229, 115, 115, 0.16) 0%, rgba(183, 28, 28, 0.22) 100%);
   color: #ef9a9a;
-  border: 1px solid rgba(192, 57, 43, 0.38);
+  border: 1px solid rgba(229, 115, 115, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.28);
 }
 
 .turn-history-icon-btn--undo:hover {
-  background: rgba(192, 57, 43, 0.26);
-  color: #fff;
-  border-color: rgba(192, 57, 43, 0.62);
+  background:
+    linear-gradient(180deg, rgba(239, 154, 154, 0.28) 0%, rgba(198, 40, 40, 0.38) 100%);
+  color: #ffebee;
+  border-color: rgba(239, 154, 154, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 2px 8px rgba(183, 28, 28, 0.35);
+  transform: translateY(-1px);
+}
+
+.turn-history-icon-btn--undo:active {
+  transform: translateY(0);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.32),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.turn-history-icon-btn--undo:focus-visible {
+  outline: 2px solid rgba(239, 154, 154, 0.75);
+  outline-offset: 2px;
 }
 
 .current-turn-entry {
@@ -308,8 +375,7 @@
   flex-wrap: wrap;
   gap: 6px;
   width: 100%;
-  margin-top: 2px;
-  padding: 6px 8px 6px 34px;
+  padding: 6px 8px;
   box-sizing: border-box;
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.22);
@@ -351,6 +417,44 @@
   opacity: 0.92;
 }
 
+.gain-icon-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.gain-icon--badge {
+  width: 16px;
+  height: 16px;
+  opacity: 1;
+}
+
+.gain-icon-count {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.5rem;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.gain-icon-count--light {
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.65);
+}
+
+.gain-icon-count--dark {
+  color: rgba(24, 14, 6, 0.94);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
 .gain-icon--influence {
   width: 16px;
   height: 16px;
@@ -363,15 +467,37 @@
   padding: 0 2px;
 }
 
+.gain-persuasion-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
 .gain-persuasion-diamond {
+  position: absolute;
+  inset: 0;
+  margin: auto;
   width: 12px;
   height: 12px;
-  flex: 0 0 auto;
   border: 1px solid rgba(206, 239, 255, 0.85);
   border-radius: 2px;
   background: #2f9eea;
   transform: rotate(45deg);
   box-shadow: 0 0 5px rgba(75, 174, 238, 0.5);
+}
+
+.gain-persuasion-count {
+  position: relative;
+  z-index: 1;
+  font-size: 0.55rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.45);
 }
 
 /* Modal for turn details */
@@ -500,8 +626,12 @@
   }
 
   .turn-history-overlay--docked .turn-history-gains {
-    padding-left: 36px;
     background: rgba(0, 0, 0, 0.28);
+  }
+
+  .turn-history-overlay--docked .turn-history-card-thumb-img {
+    width: 20px;
+    height: 29px;
   }
 
   .turn-history-overlay:not(.turn-history-overlay--docked) {
@@ -539,11 +669,15 @@
   .turn-history-player-badge {
     width: 18px;
     height: 18px;
-    margin-right: 4px;
   }
   
   .turn-label {
     font-size: 0.8rem;
+  }
+
+  .turn-history-card-thumb-img {
+    width: 16px;
+    height: 23px;
   }
 
   .turn-actions {
@@ -558,6 +692,11 @@
   .turn-history-action-icon {
     width: 14px;
     height: 14px;
+  }
+
+  .turn-history-action-icon--undo {
+    width: 13px;
+    height: 13px;
   }
   
   .gain-item {
@@ -596,11 +735,15 @@
   .turn-history-player-badge {
     width: 16px;
     height: 16px;
-    margin-right: 2px;
   }
   
   .turn-label {
     font-size: 0.76rem;
+  }
+
+  .turn-history-card-thumb-img {
+    width: 14px;
+    height: 20px;
   }
 
   .turn-history-icon-btn {

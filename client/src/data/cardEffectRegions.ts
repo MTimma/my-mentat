@@ -33,6 +33,12 @@ export const CARD_EFFECT_REGIONS: Record<CardEffectRegionId, CardEffectRegion> =
   reveal: { id: 'reveal', left: 7, top: 58, width: 86, height: 12 },
 }
 
+export const SIGNET_RING_CARD_NAME = 'Signet Ring'
+
+export function isSignetRingCard(card: Pick<Card, 'name'>): boolean {
+  return card.name === SIGNET_RING_CARD_NAME
+}
+
 /** Per-card layout: index aligns with `playEffect` / `revealEffect` array on the card. */
 export interface CardEffectLayoutOverride {
   playEffects?: CardEffectRect[]

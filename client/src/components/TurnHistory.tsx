@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Player, GameState, Gain, RewardType, TurnType } from '../types/GameTypes'
+import { Card, Player, GameState, Gain, RewardType, TurnType } from '../types/GameTypes'
+import { findPlayerCardsByIds } from '../utils/playAreaDisplay'
 import { BOARD_SPACES } from '../data/boardSpaces'
 import { getLeaderIconPath } from '../data/leaders'
 import {
@@ -43,16 +44,22 @@ const DetailsIcon = () => (
 )
 
 const UndoIcon = () => (
-  <svg className="turn-history-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <svg
+    className="turn-history-action-icon turn-history-action-icon--undo"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    focusable="false"
+  >
     <path
-      d="M12 5a7 7 0 1 1 0 14"
+      d="M9 14 5 10l4-4"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
+      strokeLinejoin="round"
     />
     <path
-      d="M8 5H5v3"
+      d="M5 10h9.5a5.5 5.5 0 1 1 0 11H12"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
@@ -168,6 +175,29 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     return players.find(p => p.id === playerId)
   }
 
+  const getPlayedCardForTurn = (turn: GameState): Card | null => {
+    const curr = turn.currTurn
+    if (!curr?.cardId || curr.type !== TurnType.ACTION) return null
+    const player = turn.players.find(p => p.id === curr.playerId)
+    if (!player) return null
+    const [card] = findPlayerCardsByIds(player, [curr.cardId])
+    return card ?? null
+  }
+
+  const renderTurnCardThumb = (card: Card | null) => {
+    if (!card?.image) return null
+    return (
+      <span className="turn-history-card-thumb" title={card.name}>
+        <img
+          src={card.image}
+          alt=""
+          className="turn-history-card-thumb-img"
+          draggable={false}
+        />
+      </span>
+    )
+  }
+
   const getTurnLabel = (turn: GameState, index: number): string => {
     if (index === 0) return 'Setup'
     const curr = turn.currTurn
@@ -244,10 +274,65 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     )
   }
 
+  const getResourceIconCountVariant = (type: RewardType): 'light' | 'dark' | null => {
+    switch (type) {
+      case RewardType.SPICE:
+        return 'light'
+      case RewardType.SOLARI:
+        return 'dark'
+      default:
+        return null
+    }
+  }
+
+  /** Troops, draws, and water show one icon per unit (not ×N or a count badge). */
+  const shouldShowRepeatedIcons = (type: RewardType, amount: number): boolean => {
+    if (Math.abs(amount) < 2) return false
+    return (
+      type === RewardType.TROOPS ||
+      type === RewardType.CARD ||
+      type === RewardType.DRAW ||
+      type === RewardType.WATER
+    )
+  }
+
   const renderGainMultiplier = (amount: number) => {
     const absAmount = Math.abs(amount)
     if (absAmount < 2) return null
     return <span className="gain-multiplier">×{absAmount}</span>
+  }
+
+  const renderGainIcon = (iconPath: string, displayName: string, className = 'gain-icon') => (
+    <img
+      src={iconPath}
+      alt=""
+      className={className}
+      aria-hidden="true"
+      onError={e => {
+        e.currentTarget.style.display = 'none'
+        const parent = e.currentTarget.parentElement
+        if (!parent || parent.querySelector('.gain-text-fallback')) return
+        const textSpan = document.createElement('span')
+        textSpan.className = 'gain-text-fallback'
+        textSpan.textContent = displayName
+        parent.appendChild(textSpan)
+      }}
+    />
+  )
+
+  const renderResourceIconWithCount = (
+    iconPath: string,
+    amount: number,
+    variant: 'light' | 'dark',
+    displayName: string
+  ) => {
+    const absAmount = Math.abs(amount)
+    return (
+      <span className="gain-icon-badge" title={displayName} aria-hidden="true">
+        {renderGainIcon(iconPath, displayName, 'gain-icon gain-icon--badge')}
+        <span className={`gain-icon-count gain-icon-count--${variant}`}>{absAmount}</span>
+      </span>
+    )
   }
 
   const renderResourceGain = (gain: AggregatedResourceGain, index: number) => {
@@ -256,6 +341,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     const displayName = getRewardDisplayName(rewardType, gain.name)
     const isNegative = gain.amount < 0
     const absAmount = Math.abs(gain.amount)
+    const iconCountVariant = getResourceIconCountVariant(rewardType)
     const ariaLabel =
       absAmount === 1
         ? `${isNegative ? 'Lost' : 'Gained'} 1 ${displayName}`
@@ -268,25 +354,24 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         aria-label={ariaLabel}
       >
         {rewardType === RewardType.PERSUASION ? (
-          <span className="gain-persuasion-diamond" title={displayName} aria-hidden="true" />
+          <span className="gain-persuasion-badge" title={displayName} aria-hidden="true">
+            <span className="gain-persuasion-diamond" />
+            <span className="gain-persuasion-count">{absAmount}</span>
+          </span>
+        ) : iconPath && shouldShowRepeatedIcons(rewardType, gain.amount) ? (
+          Array.from({ length: absAmount }, (_, i) => (
+            <React.Fragment key={i}>{renderGainIcon(iconPath, displayName)}</React.Fragment>
+          ))
+        ) : iconPath && iconCountVariant ? (
+          renderResourceIconWithCount(iconPath, gain.amount, iconCountVariant, displayName)
         ) : iconPath ? (
-          <img
-            src={iconPath}
-            alt=""
-            className="gain-icon"
-            aria-hidden="true"
-            onError={e => {
-              e.currentTarget.style.display = 'none'
-              const textSpan = document.createElement('span')
-              textSpan.className = 'gain-text-fallback'
-              textSpan.textContent = displayName
-              e.currentTarget.parentElement?.appendChild(textSpan)
-            }}
-          />
+          <>
+            {renderGainIcon(iconPath, displayName)}
+            {renderGainMultiplier(gain.amount)}
+          </>
         ) : (
           <span className="gain-text-fallback">{displayName}</span>
         )}
-        {renderGainMultiplier(gain.amount)}
       </div>
     )
   }
@@ -468,9 +553,22 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                 <div className="turn-number">
                   {index === 0 ? 'Initial' : index}
                 </div>
-                {renderPlayerBadge(turnPlayer)}
-                <div className="turn-summary">
-                  <span className="turn-label">{getTurnLabel(turn, index)}</span>
+                <div className="turn-history-main">
+                  <div className="turn-history-summary-line">
+                    {renderPlayerBadge(turnPlayer)}
+                    {renderTurnCardThumb(getPlayedCardForTurn(turn))}
+                    <span className="turn-label">{getTurnLabel(turn, index)}</span>
+                  </div>
+                  {gains.length > 0 && (
+                    <div className="turn-history-gains" onClick={e => e.stopPropagation()}>
+                      {renderTurnGains(gains)}
+                    </div>
+                  )}
+                  {revealStats && revealStats.acquiredCards.length > 0 && (
+                    <div className="turn-history-reveal-stats" onClick={e => e.stopPropagation()}>
+                      <RevealTurnStatsPanel stats={revealStats} compact />
+                    </div>
+                  )}
                 </div>
                 <div className="turn-actions">
                   <button
@@ -484,16 +582,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                   </button>
                 </div>
               </div>
-              {gains.length > 0 && (
-                <div className="turn-history-gains" onClick={e => e.stopPropagation()}>
-                  {renderTurnGains(gains)}
-                </div>
-              )}
-              {revealStats && revealStats.acquiredCards.length > 0 && (
-                <div className="turn-history-reveal-stats" onClick={e => e.stopPropagation()}>
-                  <RevealTurnStatsPanel stats={revealStats} compact />
-                </div>
-              )}
             </div>
           )
         })}
@@ -516,25 +604,30 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         >
           <div className="turn-history-row-top">
             <div className="turn-number">{turns.length}</div>
-            {renderPlayerBadge(players.find(p => p.id === currentGameState.activePlayerId))}
-            <div className="turn-summary">
-              {currentGameState.currTurn && (
-                <span className="turn-label">
-                  {getTurnLabel(currentGameState, turns.length)}
-                </span>
+            <div className="turn-history-main">
+              <div className="turn-history-summary-line">
+                {renderPlayerBadge(
+                  players.find(p => p.id === currentGameState.activePlayerId)
+                )}
+                {renderTurnCardThumb(getPlayedCardForTurn(currentGameState))}
+                {currentGameState.currTurn && (
+                  <span className="turn-label">
+                    {getTurnLabel(currentGameState, turns.length)}
+                  </span>
+                )}
+              </div>
+              {liveGains.length > 0 && (
+                <div className="turn-history-gains" onClick={e => e.stopPropagation()}>
+                  {renderTurnGains(liveGains)}
+                </div>
+              )}
+              {liveRevealStats && liveRevealStats.acquiredCards.length > 0 && (
+                <div className="turn-history-reveal-stats" onClick={e => e.stopPropagation()}>
+                  <RevealTurnStatsPanel stats={liveRevealStats} compact />
+                </div>
               )}
             </div>
           </div>
-          {liveGains.length > 0 && (
-            <div className="turn-history-gains" onClick={e => e.stopPropagation()}>
-              {renderTurnGains(liveGains)}
-            </div>
-          )}
-          {liveRevealStats && liveRevealStats.acquiredCards.length > 0 && (
-            <div className="turn-history-reveal-stats" onClick={e => e.stopPropagation()}>
-              <RevealTurnStatsPanel stats={liveRevealStats} compact />
-            </div>
-          )}
         </div>
           )
         })()}

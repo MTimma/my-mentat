@@ -22,6 +22,8 @@
   max-width: 100%;
   aspect-ratio: 1;
   box-sizing: border-box;
+  container-type: inline-size;
+  container-name: image-board;
 }
 
 .image-board__img {
@@ -119,16 +121,23 @@
   background: rgba(255, 140, 0, 0.06);
 }
 
+/* Zero-size anchor so translate(-50%, -50%) is a point, not half a stretched box */
 .image-board__marker {
   position: absolute;
+  width: 0;
+  height: 0;
   pointer-events: none;
   z-index: 2;
 }
 
-/* Same agent sculpt as BoardSpace; sized for %-positioned overlay */
+/* Same agent sculpt as BoardSpace; cqw scales with board, not the marker wrapper */
 .image-board__marker .image-board__agent-figure.agent {
-  width: 20px;
-  height: 30px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: clamp(14px, 2.8cqw, 18px);
+  height: clamp(21px, 4.2cqw, 27px);
   display: block;
 }
 
@@ -170,10 +179,12 @@
   object-fit: cover;
 }
 
+/* Scale with board width (overlay %), not viewport — keeps VP/influence cubes proportional on desktop */
 .image-board__tracker-circle {
   position: absolute;
-  width: clamp(7px, 1.55vmin, 15px);
-  height: clamp(7px, 1.55vmin, 15px);
+  width: clamp(5px, 1.05%, 10px);
+  aspect-ratio: 1;
+  height: auto;
   border-radius: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none;
@@ -182,8 +193,7 @@
 }
 
 .image-board__tracker-circle--control {
-  width: clamp(8px, 1.75vmin, 16px);
-  height: clamp(8px, 1.75vmin, 16px);
+  width: clamp(5px, 1.15%, 11px);
 }
 
 .image-board__conflict-panel {
@@ -215,7 +225,7 @@
   padding: 4px;
   text-align: center;
   color: #f0e6d4;
-  font-size: clamp(8px, 1.9vmin, 11px);
+  font-size: clamp(7px, 1.35%, 10px);
   line-height: 1.15;
 }
 
@@ -236,7 +246,7 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  font-size: clamp(7px, 1.65vmin, 11px);
+  font-size: clamp(6px, 1.25%, 9px);
   line-height: 1.15;
   color: #fff8e8;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 2px #000;

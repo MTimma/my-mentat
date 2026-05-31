@@ -10,6 +10,8 @@
   --z-play-footer: 1100;
   --z-play-footer-endgame: 1101;
   --z-play-history-strip: 1200;
+  /* Below history strip so footer-hosted modals (leader image, piles) stack above deploy/retreat. */
+  --z-combat-troop-dock: 1190;
   --z-modal-overlay: 1250;
   --z-modal-overlay-raised: 1300;
   --z-modal-overlay-top: 1320;
@@ -1635,7 +1637,7 @@ body:has(.game-container--play) {
   height: 0;
   pointer-events: none;
   box-sizing: border-box;
-  z-index: calc(var(--z-play-history-strip) + 1);
+  z-index: var(--z-combat-troop-dock);
 }
 
 .combat-troop-dock__anchor {

@@ -1,8 +1,19 @@
+import { useState, type ReactNode } from 'react'
 import { FactionType, Player } from '../../types/GameTypes'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { GameState } from '../../types/GameTypes'
 import { OptionalCostResourceKind } from '../../utils/influenceChoices'
+import { getAnyFactionInfluenceLossIcon } from '../../utils/influenceDisplay'
+import PlayerPlayAreaModal from '../PlayerPlayAreaModal/PlayerPlayAreaModal'
 import './LeaderResourceStrip.css'
+
+type CardPileKind = 'deck' | 'discard' | 'trash'
+
+const PILE_LABELS: Record<CardPileKind, string> = {
+  deck: 'Deck',
+  discard: 'Discard',
+  trash: 'Trash',
+}
 
 interface LeaderResourceStripProps {
   player: Player
@@ -28,6 +39,8 @@ const LeaderResourceStrip = ({
   compact,
   onlyResources,
 }: LeaderResourceStripProps) => {
+  const [openPile, setOpenPile] = useState<CardPileKind | null>(null)
+
   const vp = gameState ? getTotalVictoryPoints(player, gameState) : player.victoryPoints
   const show = (kind: OptionalCostResourceKind | 'vp') =>
     !onlyResources || onlyResources.includes(kind as OptionalCostResourceKind)
@@ -35,18 +48,46 @@ const LeaderResourceStrip = ({
 
   const showCardPiles = !onlyResources
 
-  const maxInfluence =
-    gameState &&
-    Math.max(
-      0,
-      ...ALL_FACTIONS.map(f => gameState.factionInfluence[f]?.[player.id] ?? 0)
-    )
+  const totalInfluence = gameState
+    ? ALL_FACTIONS.reduce(
+        (sum, f) => sum + (gameState.factionInfluence[f]?.[player.id] ?? 0),
+        0
+      )
+    : 0
 
   if (onlyResources && onlyResources.length === 0) {
     return null
   }
 
+  const pileCards =
+    openPile === 'deck'
+      ? player.deck
+      : openPile === 'discard'
+        ? player.discardPile
+        : openPile === 'trash'
+          ? player.trash
+          : []
+
+  const renderPileCounter = (
+    kind: CardPileKind,
+    title: string,
+    count: number,
+    content: ReactNode
+  ) => (
+    <button
+      type="button"
+      className="leader-resource-item leader-resource-item--clickable"
+      title={`${title} – click to view cards`}
+      aria-label={`${title}: ${count} cards. View all cards.`}
+      onClick={() => setOpenPile(kind)}
+    >
+      {content}
+      <span className="leader-resource-value">{count}</span>
+    </button>
+  )
+
   return (
+    <>
     <div
       className={`leader-resource-strip${compact ? ' leader-resource-strip--compact' : ''}`}
       aria-label={
@@ -92,31 +133,51 @@ const LeaderResourceStrip = ({
             <img src="/icon/draw.png" alt="" className="leader-resource-icon" />
             <span className="leader-resource-value">{player.handCount}</span>
           </span>
-          <span className="leader-resource-item" title="Deck">
+          {renderPileCounter(
+            'deck',
+            'Deck',
+            player.deck.length,
             <span className="leader-resource-abbr" aria-hidden="true">
               D
             </span>
-            <span className="leader-resource-value">{player.deck.length}</span>
-          </span>
-          <span className="leader-resource-item" title="Discard pile">
+          )}
+          {renderPileCounter(
+            'discard',
+            'Discard pile',
+            player.discardPile.length,
             <span className="leader-resource-abbr" aria-hidden="true">
               Dc
             </span>
-            <span className="leader-resource-value">{player.discardPile.length}</span>
-          </span>
-          <span className="leader-resource-item" title="Trashed cards">
+          )}
+          {renderPileCounter(
+            'trash',
+            'Trashed cards',
+            player.trash.length,
             <img src="/icon/trash.png" alt="" className="leader-resource-icon" />
-            <span className="leader-resource-value">{player.trash.length}</span>
-          </span>
+          )}
         </>
       )}
       {onlyResources?.includes('influence') && (
-        <span className="leader-resource-item" title="Highest faction influence">
-          <img src="/icon/bump.png" alt="" className="leader-resource-icon" />
-          <span className="leader-resource-value">{maxInfluence ?? 0}</span>
+        <span className="leader-resource-item" title="Total faction influence">
+          <img
+            src={getAnyFactionInfluenceLossIcon()}
+            alt=""
+            className="leader-resource-icon"
+          />
+          <span className="leader-resource-value">{totalInfluence}</span>
         </span>
       )}
     </div>
+    {openPile && (
+      <PlayerPlayAreaModal
+        player={player}
+        isOpen={true}
+        pileLabel={PILE_LABELS[openPile]}
+        cards={pileCards}
+        onClose={() => setOpenPile(null)}
+      />
+    )}
+    </>
   )
 }
 
