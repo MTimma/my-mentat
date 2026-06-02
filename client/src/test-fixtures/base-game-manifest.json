@@ -1,0 +1,958 @@
+{
+  "source": "Dune_Imperium_IR_and-Intrige_Cards.xlsx (Dropbox)",
+  "filter": "expansion column = base / 1. base",
+  "rules": {
+    "pdf": "https://d19y2ttatozxjp.cloudfront.net/pdfs/DUNE_IMPERIUM_Rules_2020_10_26.pdf",
+    "doc": "https://docs.google.com/document/d/15FrreNVs2eAnEWlNCmChQuBr5LLg0HHgC7BqWGk7KYw/edit"
+  },
+  "imperiumRow": [
+    {
+      "excelName": "Arrakis Recruiter",
+      "codeName": "Arrakis Recruiter",
+      "qty": 2,
+      "cost": 2,
+      "agentIcons": "Bl",
+      "agentBox": "+1 troop",
+      "revealPersuasion": "1",
+      "revealSwords": "1",
+      "testId": "imperium/arrakis-recruiter"
+    },
+    {
+      "excelName": "Assassination Mission",
+      "codeName": "Assassination Mission",
+      "qty": 2,
+      "cost": 1,
+      "agentIcons": "",
+      "agentBox": "When this card is trashed: +4 Sol",
+      "revealPersuasion": "0",
+      "revealSwords": "1",
+      "testId": "imperium/assassination-mission"
+    },
+    {
+      "excelName": "Bene Gesserit Initiate",
+      "codeName": "Bene Gesserit Initiate",
+      "qty": 2,
+      "cost": 3,
+      "agentIcons": "Gr, Bl, Yw",
+      "agentBox": "1x draw",
+      "revealPersuasion": "1",
+      "revealSwords": "0",
+      "testId": "imperium/bene-gesserit-initiate"
+    },
+    {
+      "excelName": "Bene Gesserit Sister",
+      "codeName": "Bene Gesserit Sister",
+      "qty": 3,
+      "cost": 3,
+      "agentIcons": "BG, Gr",
+      "agentBox": "",
+      "revealPersuasion": "2 or 2 sword",
+      "revealSwords": "2 or 2 persuasion",
+      "testId": "imperium/bene-gesserit-sister"
+    },
+    {
+      "excelName": "Carryall",
+      "codeName": "Carryall",
+      "qty": 1,
+      "cost": 5,
+      "agentIcons": "Yw",
+      "agentBox": "Double base spice you harvest with agent this turn",
+      "revealPersuasion": "1",
+      "revealSwords": "0",
+      "testId": "imperium/carryall"
+    },
+    {
+      "excelName": "Chani",
+      "codeName": "Chani",
+      "qty": 1,
+      "cost": 5,
+      "agentIcons": "FR, Bl, Yw",
+      "agentBox": "",
+      "revealPersuasion": "2",
+      "revealSwords": "0",
+      "testId": "imperium/chani"
+    },
+    {
+      "excelName": "CHOAM Directorship",
+      "codeName": "CHOAM Directorship",
+      "qty": 1,
+      "cost": 8,
+      "agentIcons": "",
+      "agentBox": "",
+      "revealPersuasion": "0",
+      "revealSwords": "0",
+      "testId": "imperium/choam-directorship"
+    },
+    {
+      "excelName": "Chrysknife",
+      "codeName": "Crysknife",
+      "qty": 1,
+      "cost": 3,
+      "agentIcons": "FR, Yw",
+      "agentBox": "+1 Sol",
+      "revealPersuasion": "0",
+      "revealSwords": "1",
+      "testId": "imperium/crysknife"
+    },
+    {
+      "excelName": "Dr. Yueh",
+      "codeName": "Dr. Yueh",
+      "qty": 1,
+      "cost": 1,
+      "agentIcons": "Bl",
+      "agentBox": "1x draw",
+      "revealPersuasion": "1",
+      "revealSwords": "0",
+      "testId": "imperium/dr.-yueh"
+    },
+    {
+      "excelName": "Duncan Idaho",
+      "codeName": "Duncan Idaho",
+      "qty": 1,
+      "cost": 4,
+      "agentIcons": "Bl",
+      "agentBox": "-1 Wa -> +1 troop and 1x draw",
+      "revealPersuasion": "0",
+      "revealSwords": "2",
+      "testId": "imperium/duncan-idaho"
+    },
+    {
+      "excelName": "Fedaykin Death Commando",
+      "codeName": "Fedaykin Death Commando",
+      "qty": 2,
+      "cost": 3,
+      "agentIcons": "Bl, Yw",
+      "agentBox": "1x trash",
+      "revealPersuasion": "1",
+      "revealSwords": "3 if FR Bond",
+      "testId": "imperium/fedaykin-death-commando"
+    },
+    {
+      "excelName": "Firm Grip",
+      "codeName": "Firm Grip",
+      "qty": 1,
+      "cost": 4,
+      "agentIcons": "EM, Gr",
+      "agentBox": "-2 Sol -> +1 inf SG or BG or FR",
+      "revealPersuasion": "4 if EM alliance",
+      "revealSwords": "0",
+      "testId": "imperium/firm-grip"
+    },
+    {
+      "excelName": "Fremen Camp",
+      "codeName": "Fremen Camp",
+      "qty": 2,
+      "cost": 4,
+      "agentIcons": "Yw",
+      "agentBox": "-2 Sp -> +3 troops",
+      "revealPersuasion": "2",
+      "revealSwords": "1",
+      "testId": "imperium/fremen-camp"
+    },
+    {
+      "excelName": "Gene Manipulation",
+      "codeName": "Gene Manipulation",
+      "qty": 2,
+      "cost": 3,
+      "agentIcons": "Gr, Bl",
+      "agentBox": "1x trash and +2 Sp if you have a BG card in play",
+      "revealPersuasion": "2",
+      "revealSwords": "0",
+      "testId": "imperium/gene-manipulation"
+    },
+    {
+      "excelName": "Guild Administrator",
+      "codeName": "Guild Administrator",
+      "qty": 2,
+      "cost": 2,
+      "agentIcons": "SG, Yw",
+      "agentBox": "1x trash",
+      "revealPersuasion": "1",
+      "revealSwords": "0",
+      "testId": "imperium/guild-administrator"
+    },
+    {
+      "excelName": "Guild Ambassador",
+      "codeName": "Guild Ambassador",
+      "qty": 1,
+      "cost": 4,
+      "agentIcons": "Gr",
+      "agentBox": "+1 inf SG or +2 Sp",
+      "revealPersuasion": "0",
+      "revealSwords": "0",
+      "testId": "imperium/guild-ambassador"
+    },
+    {
+      "excelName": "Guild Bankers",
+      "codeName": "Guild Bankers",
+      "qty": 1,
+      "cost": 3,
+      "agentIcons": "EM, SG, Gr",
+      "agentBox": "",
+      "revealPersuasion": "0",
+      "revealSwords": "0",
+      "testId": "imperium/guild-bankers"
+    },
+    {
+      "excelName": "Gun Thopter",
+      "codeName": "Gun Thopter",
+      "qty": 2,
+      "cost": 4,
+      "agentIcons": "Bl, Yw",
+      "agentBox": "Opponents lose 1x garrisoned troop",
+      "revealPersuasion": "0",
+      "revealSwords": "3",
+      "testId": "imperium/gun-thopter"
+    },
+    {
+      "excelName": "Gurney Halleck",
+      "codeName": "Gurney Halleck",
+      "qty": 1,
+      "cost": 6,
+      "agentIcons": "Bl",
+      "agentBox": "+2 troops and 1x draw",
+      "revealPersuasion": "2",
+      "revealSwords": "0",
+      "testId": "imperium/gurney-halleck"
+    },
+    {
+      "excelName": "Imperial Spy",
+      "codeName": "Imperial Spy",
+      "qty": 2,
+      "cost": 2,
+      "agentIcons": "EM",
+      "agentBox": "trash this card -> +1 intrigue",
+      "revealPersuasion": "1",
+      "revealSwords": "1",
+      "testId": "imperium/imperial-spy"
+    },
+    {
+      "excelName": "Kwisatz Haderach",
+      "codeName": "Kwisatz Haderach",
+      "qty": 1,
+      "cost": 8,
+      "agentIcons": "Any",
+      "agentBox": "one of your agents from anywhere can go anwhere",
+      "revealPersuasion": "0",
+      "revealSwords": "0",
+      "testId": "imperium/kwisatz-haderach"
+    },
+    {
+      "excelName": "Lady Jessica",
+      "codeName": "Lady Jessica",
+      "qty": 1,
+      "cost": 7,
+      "agentIcons": "BG, Gr, Bl, Yw",
+      "agentBox": "2x draw",
+      "revealPersuasion": "3",
+      "revealSwords": "1",
+      "testId": "imperium/lady-jessica"
+    },
+    {
+      "excelName": "Liet Kynes",
+      "codeName": "Liet Kynes",
+      "qty": 1,
+      "cost": 5,
+      "agentIcons": "FR, Bl",
+      "agentBox": "",
+      "revealPersuasion": "2 per FR card",
+      "revealSwords": "0",
+      "testId": "imperium/liet-kynes"
+    },
+    {
+      "excelName": "Missionaria Protectiva",
+      "codeName": "Missionaria Protectiva",
+      "qty": 2,
+      "cost": 1,
+      "agentIcons": "Bl",
+      "agentBox": "+1 inf ? If you have another BG in play",
+      "revealPersuasion": "1",
+      "revealSwords": "0",
+      "testId": "imperium/missionaria-protectiva"
+    },
+    {
+      "excelName": "Other Memory",
+      "codeName": "Other Memory",
+      "qty": 1,
+      "cost": 4,
+      "agentIcons": "Bl, Yw",
+      "agentBox": "1x draw or draw 1x BG card from discard",
+      "revealPersuasion": "2",
+      "revealSwords": "0",
+      "testId": "imperium/other-memory"
+    },
+    {
+      "excelName": "Opulence",
+      "codeName": "Opulence",
+      "qty": 1,
+      "cost": 6,
+      "agentIcons": "EM",
+      "agentBox": "+3 Solari",
+      "revealPersuasion": "1",
+      "revealSwords": "0",
+      "testId": "imperium/opulence"
+    },
+    {
+      "excelName": "Peter De Vries",
+      "codeName": "Piter De Vries",
+      "qty": 1,
+      "cost": 5,
+      "agentIcons": "Gr, Bl",
+      "agentBox": "+1 intrigue",
+      "revealPersuasion": "3",
+      "revealSwords": "1",
+      "testId": "imperium/piter-de-vries"
+    },
+    {
+      "excelName": "Power Play",
+      "codeName": "Power Play",
+      "qty": 3,
+      "cost": 5,
+      "agentIcons": "EM, SG, BG, FR",
+      "agentBox": "Gain +2 Inf instead of +1 and trash this card",
+      "revealPersuasion": "0",
+      "revealSwords": "0",
+      "testId": "imperium/power-play"
+    },
+    {
+      "excelName": "Reverend Mother Mohaim",
+      "codeName": "Reverend Mother Mohiam",
+      "qty": 1,
+      "cost": 6,
+      "agentIcons": "EM, BG",
+      "agentBox": "opponents 2x discard if you have a BG card in play",
+      "revealPersuasion": "2",
+      "revealSwords": "0",
+      "testId": "imperium/reverend-mother-mohiam"
+    },
+    {
+      "excelName": "Sardukar Infantry",
+      "codeName": "Sardaukar Infantry",
+      "qty": 2,
+      "cost": 1,
+      "agentIcons": "",
+      "agentBox": "",
+      "revealPersuasion": "1",
+      "revealSwords": "2",
+      "testId": "imperium/sardaukar-infantry"
+    },
+    {
+      "excelName": "Sardukar Legion",
+      "codeName": "Sardaukar Legion",
+      "qty": 2,
+      "cost": 5,
+      "agentIcons": "EM, Gr",
+      "agentBox": "+2 troops",
+      "revealPersuasion": "1",
+      "revealSwords": "0",
+      "testId": "imperium/sardaukar-legion"
+    },
+    {
+      "excelName": "Scout",
+      "codeName": "Scout",
+      "qty": 2,
+      "cost": 1,
+      "agentIcons": "Bl, Yw",
+      "agentBox": "",
+      "revealPersuasion": "1",
+      "revealSwords": "1",
+      "testId": "imperium/scout"
+    },
+    {
+      "excelName": "Shifting Allegiancs",
+      "codeName": "Shifting Allegiances",
+      "qty": 2,
+      "cost": 3,
+      "agentIcons": "Gr, Yw",
+      "agentBox": "-1 inf ? and -2 Sp -> +2 inf ?",
+      "revealPersuasion": "2",
+      "revealSwords": "0",
+      "testId": "imperium/shifting-allegiances"
+    },
+    {
+      "excelName": "Sietch Reverend Mother",
+      "codeName": "Sietch Reverend Mother",
+      "qty": 1,
+      "cost": 4,
+      "agentIcons": "BG, FR",
+      "agentBox": "1x trash",
+      "revealPersuasion": "3 if FR Bond",
+      "revealSwords": "0",
+      "testId": "imperium/sietch-reverend-mother"
+    },
+    {
+      "excelName": "Smuggler's Thopter",
+      "codeName": "Smuggler's Thopter",
+      "qty": 2,
+      "cost": 4,
+      "agentIcons": "Yw",
+      "agentBox": "If 2x inf SG: 2x draw",
+      "revealPersuasion": "1",
+      "revealSwords": "0",
+      "testId": "imperium/smugglers-thopter"
+    },
+    {
+      "excelName": "Space Travel",
+      "codeName": "Space Travel",
+      "qty": 2,
+      "cost": 3,
+      "agentIcons": "SG",
+      "agentBox": "1x draw",
+      "revealPersuasion": "2",
+      "revealSwords": "0",
+      "testId": "imperium/space-travel"
+    },
+    {
+      "excelName": "Spice Hunter",
+      "codeName": "Spice Hunter",
+      "qty": 2,
+      "cost": 2,
+      "agentIcons": "FR, Yw",
+      "agentBox": "",
+      "revealPersuasion": "1",
+      "revealSwords": "1",
+      "testId": "imperium/spice-hunter"
+    },
+    {
+      "excelName": "Spice Smugglers",
+      "codeName": "Spice Smugglers",
+      "qty": 2,
+      "cost": 2,
+      "agentIcons": "Bl",
+      "agentBox": "-2 Sp -> +1 inf SG and +3 Sol",
+      "revealPersuasion": "1",
+      "revealSwords": "1",
+      "testId": "imperium/spice-smugglers"
+    },
+    {
+      "excelName": "Stilgar",
+      "codeName": "Stilgar",
+      "qty": 1,
+      "cost": 5,
+      "agentIcons": "FR, Bl, Yw",
+      "agentBox": "+1 Wa",
+      "revealPersuasion": "2",
+      "revealSwords": "3",
+      "testId": "imperium/stilgar"
+    },
+    {
+      "excelName": "Test of Humanity",
+      "codeName": "Test of Humanity",
+      "qty": 1,
+      "cost": 3,
+      "agentIcons": "BG, Gr, Bl",
+      "agentBox": "opponents choose 1x discard or lose 1x deployed troop",
+      "revealPersuasion": "2",
+      "revealSwords": "0",
+      "testId": "imperium/test-of-humanity"
+    },
+    {
+      "excelName": "The Voice",
+      "codeName": "The Voice",
+      "qty": 2,
+      "cost": 2,
+      "agentIcons": "Bl, Yw",
+      "agentBox": "Opponents cant go to 1 space of your choice for 1 turn",
+      "revealPersuasion": "2",
+      "revealSwords": "0",
+      "testId": "imperium/the-voice"
+    },
+    {
+      "excelName": "Thufir Hawat",
+      "codeName": "Thufir Hawat",
+      "qty": 1,
+      "cost": 5,
+      "agentIcons": "EM, SG, BG, FR, Bl, Yw",
+      "agentBox": "1x draw",
+      "revealPersuasion": "1",
+      "revealSwords": "0",
+      "testId": "imperium/thufir-hawat"
+    },
+    {
+      "excelName": "Worm Riders",
+      "codeName": "Worm Riders",
+      "qty": 2,
+      "cost": 6,
+      "agentIcons": "Bl, Yw",
+      "agentBox": "+2 Sp",
+      "revealPersuasion": "0",
+      "revealSwords": "4 if 2x inf FR and +2 if FR aliance",
+      "testId": "imperium/worm-riders"
+    }
+  ],
+  "startingDeck": [],
+  "reserve": [
+    "Arrakis Liaison",
+    "The Spice Must Flow",
+    "Foldspace"
+  ],
+  "intrigue": [
+    {
+      "excelName": "Master Tactician",
+      "codeName": "Master Tactician",
+      "qty": 3,
+      "type": "Combat",
+      "benefit": "+3 swords or retreat up to 3 troops",
+      "testId": "intrigue/master-tactician"
+    },
+    {
+      "excelName": "Ambush",
+      "codeName": "Ambush",
+      "qty": 2,
+      "type": "Combat",
+      "benefit": "",
+      "testId": "intrigue/ambush"
+    },
+    {
+      "excelName": "Private Army",
+      "codeName": "Private Army",
+      "qty": 2,
+      "type": "Combat",
+      "benefit": "",
+      "testId": "intrigue/private-army"
+    },
+    {
+      "excelName": "Staged Incident",
+      "codeName": "Staged Incident",
+      "qty": 1,
+      "type": "Combat",
+      "benefit": "Lose 3 troops in conflict -> +1 VP",
+      "testId": "intrigue/staged-incident"
+    },
+    {
+      "excelName": "Allied Armada",
+      "codeName": "Allied Armada",
+      "qty": 1,
+      "type": "Combat",
+      "benefit": "",
+      "testId": "intrigue/allied-armada"
+    },
+    {
+      "excelName": "Tiebreaker",
+      "codeName": "Tiebreaker",
+      "qty": 1,
+      "type": "Combat or Endgame",
+      "benefit": "(combat) 2 sword. Or (endgame) +10 Spice",
+      "testId": "intrigue/tiebreaker"
+    },
+    {
+      "excelName": "To the Victor\u2026",
+      "codeName": "To the Victor\u2026",
+      "qty": 1,
+      "type": "Combat Victory",
+      "benefit": "+3 Sp when you win",
+      "testId": "intrigue/to-the-victor\u2026"
+    },
+    {
+      "excelName": "Demand Respect",
+      "codeName": "Demand Respect",
+      "qty": 1,
+      "type": "Combat Victory",
+      "benefit": "+1 inf ? Or -2 Sp -> +2 inf ?",
+      "testId": "intrigue/demand-respect"
+    },
+    {
+      "excelName": "Corner the Market",
+      "codeName": "Corner the Market",
+      "qty": 1,
+      "type": "Endgame",
+      "benefit": "If you have 2 SMF: +1 VP, if you have more SMF than all opps: +2 VP",
+      "testId": "intrigue/corner-the-market"
+    },
+    {
+      "excelName": "Plans within Plans",
+      "codeName": "Plans Within Plans",
+      "qty": 1,
+      "type": "Endgame",
+      "benefit": "3 inf on 3 tracks: +1 VP or 3 inf on all 4 tracks: +2 VP",
+      "testId": "intrigue/plans-within-plans"
+    },
+    {
+      "excelName": "Poison Snooper",
+      "codeName": "Poison Snooper",
+      "qty": 2,
+      "type": "Plot",
+      "benefit": "Look at the top card of your deck, draw or trash it",
+      "testId": "intrigue/poison-snooper"
+    },
+    {
+      "excelName": "Urgent Mission",
+      "codeName": "Urgent Mission",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "Recall one of your agents",
+      "testId": "intrigue/urgent-mission"
+    },
+    {
+      "excelName": "Dispatch an Envoy",
+      "codeName": "Dispatch an Envoy",
+      "qty": 2,
+      "type": "Plot",
+      "benefit": "Add faction agent icons to the card you play this turn",
+      "testId": "intrigue/dispatch-an-envoy"
+    },
+    {
+      "excelName": "Rapid Mobilization",
+      "codeName": "Rapid Mobilization",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "Deploy any # of garrisoned troops to conflict",
+      "testId": "intrigue/rapid-mobilization"
+    },
+    {
+      "excelName": "Recruitment Mission",
+      "codeName": "Recruitment Mission",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "+1 persuasion during reveal this round, you may hadd acquired card to top of deck",
+      "testId": "intrigue/recruitment-mission"
+    },
+    {
+      "excelName": "Calculated Hire",
+      "codeName": "Calculated Hire",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "-1 Spice -> Take the mentat from Mentat space on board",
+      "testId": "intrigue/calculated-hire"
+    },
+    {
+      "excelName": "Favored Subject",
+      "codeName": "Favored Subject",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "+1 Emperor influence",
+      "testId": "intrigue/favored-subject"
+    },
+    {
+      "excelName": "The Sleeper Must Awaken",
+      "codeName": "The Sleeper Must Awaken",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "-4 Sp -> +1 VP",
+      "testId": "intrigue/the-sleeper-must-awaken"
+    },
+    {
+      "excelName": "Councilor's Dispensation",
+      "codeName": "Councilor\u2019s Dispensation",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "+2 Spice if you have a seat on the high council",
+      "testId": "intrigue/councilor\u2019s-dispensation"
+    },
+    {
+      "excelName": "Water of Life",
+      "codeName": "Water of Life",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "-1 Water and -1 Spice -> 3x draw",
+      "testId": "intrigue/water-of-life"
+    },
+    {
+      "excelName": "Charisma",
+      "codeName": "Charisma",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "+2 persuasion during reveal this round",
+      "testId": "intrigue/charisma"
+    },
+    {
+      "excelName": "Water Peddlers Union",
+      "codeName": "Water Peddlers Union",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "+1 water",
+      "testId": "intrigue/water-peddlers-union"
+    },
+    {
+      "excelName": "Refocus",
+      "codeName": "Refocus",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "Shuffle your discard into deck, then 1x draw",
+      "testId": "intrigue/refocus"
+    },
+    {
+      "excelName": "Know Their Ways",
+      "codeName": "Know Their Ways",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "+1 inf Fremen",
+      "testId": "intrigue/know-their-ways"
+    },
+    {
+      "excelName": "Secret of the Sisterhood",
+      "codeName": "Secret of the Sisterhood",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "+1 inf Bene Gesserit",
+      "testId": "intrigue/secret-of-the-sisterhood"
+    },
+    {
+      "excelName": "Guild Authorization",
+      "codeName": "Guild Authorization",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "+1 inf Spacing Guild",
+      "testId": "intrigue/guild-authorization"
+    },
+    {
+      "excelName": "Bribery",
+      "codeName": "Bribery",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "-2 Solari -> +1 Influence ?",
+      "testId": "intrigue/bribery"
+    },
+    {
+      "excelName": "Bindu Suspension",
+      "codeName": "Bindu Suspension",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "At start of turn: draw 1 card and you may pass your turn",
+      "testId": "intrigue/bindu-suspension"
+    },
+    {
+      "excelName": "Double Cross",
+      "codeName": "Double Cross",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "-1 Solari - > An opp of your choice loses one deployed troop, you add one troop from supply to conflict",
+      "testId": "intrigue/double-cross"
+    },
+    {
+      "excelName": "Reinforcements",
+      "codeName": "Reinforcements",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "-3 Solari -> +3 troops. If its your reveal you may deploy to conflict",
+      "testId": "intrigue/reinforcements"
+    },
+    {
+      "excelName": "Infiltrate",
+      "codeName": "Infiltrate",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "Enemy agents don\u2019t block your next agent on board spaces this turn",
+      "testId": "intrigue/infiltrate"
+    },
+    {
+      "excelName": "Windfall",
+      "codeName": "Windfall",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "+2 Solari",
+      "testId": "intrigue/windfall"
+    },
+    {
+      "excelName": "CHOAM shares",
+      "codeName": "CHOAM Shares",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "-7 -> +1 VP",
+      "testId": "intrigue/choam-shares"
+    },
+    {
+      "excelName": "Bypass Protocol",
+      "codeName": "Bypass Protocol",
+      "qty": 1,
+      "type": "Plot",
+      "benefit": "Acquire 1 card worth 3 or less or -2 Spice -> card worth 5 or less and place on top of deck",
+      "testId": "intrigue/bypass-protocol"
+    }
+  ],
+  "conflicts": [
+    {
+      "excelName": "Skirmish",
+      "codeName": "Skirmish",
+      "stage": 1,
+      "firstPrize": "+1 inf ?, 1 spice",
+      "testId": "conflict/Skirmish"
+    },
+    {
+      "excelName": "Skirmish",
+      "codeName": "Skirmish",
+      "stage": 1,
+      "firstPrize": "+1 inf ?, 2 solari",
+      "testId": "conflict/Skirmish"
+    },
+    {
+      "excelName": "Skirmish",
+      "codeName": "Skirmish",
+      "stage": 1,
+      "firstPrize": "1 VP",
+      "testId": "conflict/Skirmish"
+    },
+    {
+      "excelName": "Skirmish",
+      "codeName": "Skirmish",
+      "stage": 1,
+      "firstPrize": "1 VP",
+      "testId": "conflict/Skirmish"
+    },
+    {
+      "excelName": "Cloak and Dagger",
+      "codeName": "Cloak and Dagger",
+      "stage": 2,
+      "firstPrize": "+1 inf ?, 2 intrigue",
+      "testId": "conflict/Cloak and Dagger"
+    },
+    {
+      "excelName": "Desert Power",
+      "codeName": "Desert Raid",
+      "stage": 2,
+      "firstPrize": "1 VP, 1 water",
+      "testId": "conflict/Desert Raid"
+    },
+    {
+      "excelName": "Guild Bank Raid",
+      "codeName": null,
+      "stage": 2,
+      "firstPrize": "6 solari",
+      "testId": "conflict/Guild Bank Raid"
+    },
+    {
+      "excelName": "Machinaitions",
+      "codeName": "Machinations",
+      "stage": 2,
+      "firstPrize": "+1 inf on 2 out of 4 tracks",
+      "testId": "conflict/Machinations"
+    },
+    {
+      "excelName": "Raid Stockpiles",
+      "codeName": null,
+      "stage": 2,
+      "firstPrize": "1 intrigue, 3 spice",
+      "testId": "conflict/Raid Stockpiles"
+    },
+    {
+      "excelName": "Secure Imperial Basin",
+      "codeName": "Siege of Imperial Basin",
+      "stage": 2,
+      "firstPrize": "1 VP, Control Imperial Basin",
+      "testId": "conflict/Siege of Imperial Basin"
+    },
+    {
+      "excelName": "Siege of Arakeen",
+      "codeName": "Siege of Arrakeen",
+      "stage": 2,
+      "firstPrize": "1 VP, Control Arakeen",
+      "testId": "conflict/Siege of Arrakeen"
+    },
+    {
+      "excelName": "Siege of Carthag",
+      "codeName": "Siege of Carthag",
+      "stage": 2,
+      "firstPrize": "1 VP, Control Carthag",
+      "testId": "conflict/Siege of Carthag"
+    },
+    {
+      "excelName": "Sort Through The Chaos",
+      "codeName": "Cloak and Dagger",
+      "stage": 2,
+      "firstPrize": "mentat, intrigue, 2 solari",
+      "testId": "conflict/Cloak and Dagger"
+    },
+    {
+      "excelName": "Terrible Purpose",
+      "codeName": null,
+      "stage": 2,
+      "firstPrize": "1 VP, 1 trash",
+      "testId": "conflict/Terrible Purpose"
+    },
+    {
+      "excelName": "Battle for Arakeen",
+      "codeName": "Siege of Arrakeen",
+      "stage": 3,
+      "firstPrize": "2 VP, Control of Arakeen",
+      "testId": "conflict/Siege of Arrakeen"
+    },
+    {
+      "excelName": "Battle for Carthag",
+      "codeName": "Siege of Carthag",
+      "stage": 3,
+      "firstPrize": "2 VP, Control of Carthag",
+      "testId": "conflict/Siege of Carthag"
+    },
+    {
+      "excelName": "Battle for Imperial Basin",
+      "codeName": "Siege of Imperial Basin",
+      "stage": 3,
+      "firstPrize": "2 VP, Control of Imperial Basin",
+      "testId": "conflict/Siege of Imperial Basin"
+    },
+    {
+      "excelName": "Grand Vision",
+      "codeName": null,
+      "stage": 3,
+      "firstPrize": "+2 inf ?, 1 intrigue",
+      "testId": "conflict/Grand Vision"
+    }
+  ],
+  "leaders": [
+    {
+      "excelName": "Count Ilban Richese",
+      "codeName": "Count Ilban Richese",
+      "testId": "leader/count-ilban-richese"
+    },
+    {
+      "excelName": "Glossu \"The Beast\" Rabban",
+      "codeName": "Glossu \"The Beast\" Rabban",
+      "testId": "leader/glossu-\"the-beast\"-rabban"
+    },
+    {
+      "excelName": "Paul Atreides",
+      "codeName": "Paul Atreides",
+      "testId": "leader/paul-atreides"
+    },
+    {
+      "excelName": "Earl Memnon Thorvald",
+      "codeName": "Earl Memnon Thorvald",
+      "testId": "leader/earl-memnon-thorvald"
+    },
+    {
+      "excelName": "Duke Leto Atreides",
+      "codeName": "Duke Leto Atreides",
+      "testId": "leader/duke-leto-atreides"
+    },
+    {
+      "excelName": "Helena Richese",
+      "codeName": "Helena Richese",
+      "testId": "leader/helena-richese"
+    },
+    {
+      "excelName": "Baron Vladimir Harkonnen",
+      "codeName": "Baron Vladimir Harkonnen",
+      "testId": "leader/baron-vladimir-harkonnen"
+    },
+    {
+      "excelName": "Countess Ariana Thorvald",
+      "codeName": "Countess Ariana Thorvald",
+      "testId": "leader/countess-ariana-thorvald"
+    }
+  ],
+  "nameAliases": {
+    "Chrysknife": "Crysknife",
+    "Peter De Vries": "Piter De Vries",
+    "Reverend Mother Mohaim": "Reverend Mother Mohiam",
+    "Sardukar Infantry": "Sardaukar Infantry",
+    "Sardukar Legion": "Sardaukar Legion",
+    "Shifting Allegiancs": "Shifting Allegiances",
+    "CHOAM shares": "CHOAM Shares",
+    "Councilor's Dispensation": "Councilor\u2019s Dispensation",
+    "Demand Respect": "Demand Respect",
+    "Plans within Plans": "Plans Within Plans",
+    "Poison Snooper": "Poison Snooper",
+    "Battle for Arakeen": "Siege of Arrakeen",
+    "Battle for Carthag": "Siege of Carthag",
+    "Battle for Imperial Basin": "Siege of Imperial Basin",
+    "Desert Power": "Desert Raid",
+    "Grand Vision": null,
+    "Guild Bank Raid": null,
+    "Machinaitions": "Machinations",
+    "Raid Stockpiles": null,
+    "Secure Imperial Basin": "Siege of Imperial Basin",
+    "Siege of Arakeen": "Siege of Arrakeen",
+    "Sort Through The Chaos": "Cloak and Dagger",
+    "Terrible Purpose": null
+  }
+}

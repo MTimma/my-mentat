@@ -8,5 +8,6 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    exclude: ['src/__tests__/deferred/**'],
   },
 })

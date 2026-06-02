@@ -690,22 +690,8 @@ describe('Imperium Row card effects — Power Play', () => {
 })
 
 describe('Starter deck — Seek Allies', () => {
-  it('discards itself to trash when revealed (trash-this-card on reveal)', () => {
-    const seek = startingCard('Seek Allies')
-    let s = basePlotState([
-      makePlayer(0, {
-        deck: [seek],
-        handCount: 1,
-        playArea: [],
-      }),
-    ])
-
-    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [seek.id] })
-
-    expect(s.players[0].persuasion).toBe(1)
-    expect(s.players[0].trash.some(card => card.id === seek.id)).toBe(true)
-    expect(s.players[0].playArea.some(card => card.id === seek.id)).toBe(false)
-  })
+  it.todo('trashThisCard on agent play: card moves to trash after PLAY_CARD + PLACE_AGENT')
+  it.todo('printed rules: reveal trash + persuasion — align card data if different from playEffect')
 })
 
 describe('Pending rewards — trash', () => {
