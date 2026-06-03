@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { BOARD_SPACES } from '../../../data/boardSpaces'
 import { BOARD_HOTSPOTS } from '../../../data/boardHotspots'
 import { AgentIcon, FactionType } from '../../../types/GameTypes'
+import { applyGameAction } from '../GameContext'
+import { getBaseTestState } from './_helpers'
 
 describe('Board spaces — base game', () => {
   const hotspotBySpace = new Map(BOARD_HOTSPOTS.map(h => [h.spaceId, h]))
