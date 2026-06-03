@@ -203,17 +203,32 @@ function determinePlacements(
     .map(([id, str]) => ({ id: Number(id), strength: str }))
     .filter(entry => entry.strength > 0)
     .sort((a, b) => b.strength - a.strength)
-  if(playerCount === 4) {
+  if (playerCount === 4) {
     return getPlacements4p(entries)
-  } else {
-    // return getPlacements3p(entries) TODO
-    return {
-      first: [],
-      second: [],
-      third: []
-    }
   }
+  return getPlacements3p(entries)
+}
 
+function getPlacements3p(entries: { id: number; strength: number }[]): Placements {
+  const placements: Placements = { first: [], second: [], third: [] }
+  if (entries.length === 0) return placements
+  const [top, second, third] = entries
+  if (entries.length >= 2 && top.strength === second.strength) {
+    placements.second = entries
+      .filter(e => e.strength === top.strength)
+      .map(e => e.id)
+    return placements
+  }
+  placements.first = [top.id]
+  if (!second) return placements
+  if (third && second.strength === third.strength) {
+    placements.second = entries
+      .filter(e => e.strength === second.strength && e.id !== top.id)
+      .map(e => e.id)
+  } else {
+    placements.second = [second.id]
+  }
+  return placements
 }
 
 function getPlacements4p(entries: {id: number, strength: number}[]): Placements {

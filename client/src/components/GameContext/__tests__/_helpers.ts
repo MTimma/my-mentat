@@ -8,6 +8,8 @@ import {
   type GameState,
   type Player,
 } from '../../../types/GameTypes'
+import { BOARD_SPACES } from '../../../data/boardSpaces'
+import { CONFLICTS } from '../../../data/conflicts'
 import { intrigueCards } from '../../../services/IntrigueDeckService'
 import { applyGameAction, getFreshDefaultGameState } from '../GameContext'
 
@@ -97,20 +99,82 @@ export function withCardOnTop(state: GameState, playerId: number, card: Card): G
   return { ...state, players }
 }
 
+export function findSpaceForAgentIcon(
+  icon: AgentIcon,
+  player: Player,
+  factionInfluence: GameState['factionInfluence'] = {
+    emperor: {},
+    spacingGuild: {},
+    beneGesserit: {},
+    fremen: {},
+  }
+): number | null {
+  const candidates = BOARD_SPACES.filter(s => s.agentIcon === icon)
+  const sorted = [...candidates].sort((a, b) => {
+    const costA = (a.cost?.solari ?? 0) + (a.cost?.spice ?? 0) + (a.cost?.water ?? 0)
+    const costB = (b.cost?.solari ?? 0) + (b.cost?.spice ?? 0) + (b.cost?.water ?? 0)
+    return costA - costB
+  })
+  for (const space of sorted) {
+    if (space.requiresInfluence) {
+      const inf =
+        factionInfluence[space.requiresInfluence.faction as keyof typeof factionInfluence]?.[
+          player.id
+        ] ?? 0
+      if (inf < space.requiresInfluence.amount) continue
+    }
+    if (space.cost?.solari && player.solari < space.cost.solari) continue
+    if (space.cost?.spice && player.spice < space.cost.spice) continue
+    if (space.cost?.water && player.water < space.cost.water) continue
+    return space.id
+  }
+  return candidates[0]?.id ?? null
+}
+
+export function claimAllPendingRewards(state: GameState, playerId: number): GameState {
+  let s = state
+  for (let guard = 0; guard < 50; guard++) {
+    const next = s.pendingRewards.find(r => !r.disabled)
+    if (!next) break
+    s = applyGameAction(s, {
+      type: 'CLAIM_REWARD',
+      playerId,
+      rewardId: next.id,
+    })
+  }
+  return s
+}
+
+export function playAgentTurn(
+  state: GameState,
+  playerId: number,
+  cardId: number,
+  spaceId: number
+): GameState {
+  let s = { ...state, activePlayerId: playerId }
+  s = applyGameAction(s, { type: 'PLAY_CARD', playerId, cardId })
+  s = applyGameAction(s, { type: 'PLACE_AGENT', playerId, spaceId })
+  return claimAllPendingRewards(s, playerId)
+}
+
+export function beginPlayerTurns(
+  state: GameState,
+  conflictId: number = CONFLICTS[0].id
+): GameState {
+  return applyGameAction(state, { type: 'SELECT_CONFLICT', conflictId })
+}
+
+export function finishAgentTurn(state: GameState, playerId: number): GameState {
+  let s = claimAllPendingRewards(state, playerId)
+  return applyGameAction(s, { type: 'END_TURN', playerId })
+}
+
 export function snapshotAfterAgentTurn(
   state: GameState,
   playerId: number,
   cardId: number,
   spaceId: number
 ): GameState {
-  let s = state
-  s = {
-    ...s,
-    activePlayerId: playerId,
-    currTurn: { playerId, type: TurnType.ACTION },
-  }
-  s = applyGameAction(s, { type: 'PLAY_CARD', playerId, cardId })
-  s = applyGameAction(s, { type: 'PLACE_AGENT', playerId, spaceId })
-  s = applyGameAction(s, { type: 'END_TURN', playerId })
-  return s
+  let s = playAgentTurn(state, playerId, cardId, spaceId)
+  return applyGameAction(s, { type: 'END_TURN', playerId })
 }
