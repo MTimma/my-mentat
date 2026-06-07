@@ -1154,7 +1154,17 @@ function handleIntrigueEffect(
       return
     }
 
-    // Paid intrigue lines that do not need extra UI (CHOAM, Water of Life, Private Army, Allied Armada, …)
+    // Combat paid effects: confirm via pending choice in PLAY_COMBAT_INTRIGUE
+    if (
+      state.phase === GamePhase.COMBAT &&
+      effect.cost &&
+      !effect.choiceOpt &&
+      !effect.reward.custom
+    ) {
+      return
+    }
+
+    // Paid intrigue lines that do not need extra UI (CHOAM, Water of Life, …)
     if (effect.cost) {
       const c = effect.cost
       if (
@@ -1984,6 +1994,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           source: { type: GainSource.INTRIGUE, id: card.id, name: card.name }
         })
       }
+
+      card.playEffect?.forEach(effect => {
+        if (!effect.cost || effect.choiceOpt || effect.reward?.custom) return
+        if (effect.phase) {
+          const phases = Array.isArray(effect.phase) ? effect.phase : [effect.phase]
+          if (!phases.includes(GamePhase.COMBAT)) return
+        }
+        if (!intrigueRequirementSatisfied(effect, card, state, playerId)) return
+
+        const c = effect.cost
+        const disabled = Boolean(
+          (c.spice && player.spice < c.spice) ||
+          (c.water && player.water < c.water) ||
+          (c.solari && player.solari < c.solari) ||
+          (c.troops && player.troops < c.troops)
+        )
+
+        pendingCombatChoices.push({
+          id: `combat-paid-${card.id}-${crypto.randomUUID()}`,
+          type: ChoiceType.FIXED_OPTIONS,
+          prompt: `${card.name}: confirm effect`,
+          options: [{ cost: effect.cost, reward: effect.reward, disabled }],
+          source: { type: GainSource.INTRIGUE, id: card.id, name: card.name }
+        })
+      })
       const newState = {
         ...updatedState,
         // Playing intrigue breaks the pass chain — eligible players may act again (rules).
@@ -3485,19 +3520,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       applyResource('victoryPoints', card.acquireEffect?.victoryPoints, RewardType.VICTORY_POINTS)
 
       let workingState: GameState = { ...state, gains: updatedGains }
+      const pendingAcquireChoices: PendingChoice[] = []
       if (card.acquireEffect?.influence) {
-        card.acquireEffect.influence.amounts.forEach(({ faction, amount }) => {
-          workingState = updateFactionInfluence(workingState, faction, playerId, amount, { appendGainsTo: updatedGains })
-          updatedGains.push({
-            round: state.currentRound,
-            playerId,
-            sourceId: card.id,
-            name: `${faction} Acquire`,
-            amount,
-            type: RewardType.INFLUENCE,
-            source: GainSource.CARD
+        const influence = card.acquireEffect.influence
+        if (influence.chooseOne) {
+          pendingAcquireChoices.push(
+            createGainInfluenceChoice(
+              influence,
+              { type: GainSource.CARD, id: card.id, name: card.name },
+              'Choose a faction to gain 1 influence'
+            )
+          )
+        } else {
+          influence.amounts.forEach(({ faction, amount }) => {
+            workingState = updateFactionInfluence(workingState, faction, playerId, amount, { appendGainsTo: updatedGains })
+            updatedGains.push({
+              round: state.currentRound,
+              playerId,
+              sourceId: card.id,
+              name: `${faction} Acquire`,
+              amount,
+              type: RewardType.INFLUENCE,
+              source: GainSource.CARD
+            })
           })
-        })
+        }
       }
 
       let updatedImperiumRow = state.imperiumRow
@@ -3516,7 +3563,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedCurrTurn = state.currTurn?.playerId === playerId
         ? {
             ...state.currTurn,
-            acquiredCards: [...(state.currTurn?.acquiredCards || []), card]
+            acquiredCards: [...(state.currTurn?.acquiredCards || []), card],
+            pendingChoices: [
+              ...(state.currTurn?.pendingChoices || []),
+              ...pendingAcquireChoices
+            ]
           }
         : state.currTurn
 
@@ -3528,7 +3579,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         currTurn: updatedCurrTurn,
         gains: updatedGains,
         pendingImperiumRowReplacement: isHelenaRemovedCard ? state.pendingImperiumRowReplacement : pendingReplacement,
-        helenaRemovedCard: isHelenaRemovedCard ? null : state.helenaRemovedCard
+        helenaRemovedCard: isHelenaRemovedCard ? null : state.helenaRemovedCard,
+        canEndTurn: pendingAcquireChoices.length > 0 ? false : state.canEndTurn
       }
     }
     case 'SELECT_IMPERIUM_REPLACEMENT': {

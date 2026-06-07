@@ -141,8 +141,7 @@ Tasks have inter-dependencies. Suggested order (top to bottom):
 - **Epic Game mode** (Control the Spice, 12 VP win, etc.). The toggle is
   designed to accept a future `epic` sub-flag but no Epic logic is planned
   here — keep the room and stop.
-- **Solo / Two-Player Rival automation** (House Hagal). Not relevant for a
-  logging tool with human players.
+- **Solo / Two-Player Rival automation** (House Hagal). 
 - **Immortality / Uprising** (per user instruction).
 - **Hot-seat playability beyond what already exists.** Logging-only.
 

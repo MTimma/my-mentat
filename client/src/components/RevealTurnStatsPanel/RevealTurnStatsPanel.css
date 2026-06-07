@@ -195,6 +195,29 @@
   color: #7ec8f0;
 }
 
+.reveal-turn-acquired-effects {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 2px;
+}
+
+.reveal-turn-acquired-effects .turn-gains-display-root--totals-only {
+  padding: 0;
+}
+
+.reveal-turn-acquired-effects .turn-gain-totals-row {
+  gap: 4px;
+}
+
+.reveal-turn-acquired-effects .turn-gain-total-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.reveal-turn-acquired-effects .turn-gain-total-amt {
+  font-size: 0.7rem;
+}
+
 .reveal-turn-stat-empty {
   color: rgba(255, 255, 255, 0.35);
   font-size: 0.85rem;

@@ -1,6 +1,6 @@
 # Task 05 — Freighter & Shipping track
 
-> Depends on Tasks 01, 02, 03 (the Ix board panel renders the track).
+> Depends on Tasks 01, 02, 03 (`riseofix4` overlay + optional freighter modal).
 > This is a reducer + small UI task.
 
 ---
@@ -16,7 +16,7 @@ Implement the CHOAM Shipping track from the Rise of Ix rulebook (p. 5):
   their freighter back to step 0).
 - The **Freighter icon** on a card or board space lets the player
   choose between two moves:
-  - **Advance** one step (no-op if already at 3).
+  - **Advance** one step (no-op if already at 3). Cannot be chosen
   - **Recall** to step 0 and collect **all** rewards from current step
     and every step below.
 - The **Smuggling** board space gives `solari: 1` + `freighter: 1`.
@@ -28,7 +28,8 @@ Recall rewards by step (rulebook p. 5):
 
 | Step | Reward |
 |---|---|
-| 1 | **Dividends** — +5 Solari to active player, +1 Solari to each opponent. |
+| 1 | **Dividends** — +5 Solari to active player, +1 Solari to each opponent. | Re-reading: yes, step 1
+  *does* offer a choice: Dividends OR +2 spice.
 | 2 | **Troops & Influence** — +2 troops AND +1 influence (player chooses faction). |
 | 3 | **Acquire Tech (-2)** — Acquire one tech tile with a 2-spice discount. |
 
@@ -58,10 +59,12 @@ Recall rewards by step (rulebook p. 5):
 4. **R4 — Persistence in history.** `freighterStep` is part of the
    snapshot. Undoing a recall must restore the previous step.
 5. **R5 — UI.**
+   - 'UI of freighter status should be a modal, opened by the button next tot he fields in image board ( placed in empty space in top left space of board)
    - `TurnControls`: when a freighter OR-choice is pending, render
      two buttons "Advance" / "Recall" with current step (`0–3`) shown.
-   - `IxBoardPanel` (Task 03 §R5): renders per-player discs on the
-     correct row using `SHIPPING_TRACK_ANCHORS`.
+   - `ImageBoard` on `riseofix4` (Task 03 §R9): per-player discs on the
+     shipping track via `SHIPPING_TRACK_ANCHORS`; optional freighter
+     status modal (Task 05 §R5 first bullet).
 6. **R6 — Recall when at step 0.** A recall at step 0 yields **no
    rewards** but still consumes the freighter action (per rulebook this
    is a wasted choice — game allows it but no benefit). We do not
@@ -81,11 +84,10 @@ Recall rewards by step (rulebook p. 5):
 | File | Change |
 |---|---|
 | `client/src/types/GameTypes.ts` | Add `freighterStep` to `Player`; `RewardType.FREIGHTER`. (Already covered by Task 02; verify.) |
-| `client/src/components/GameContext/GameContext.tsx` | Reward expansion for `freighter` and `dividends`; new `pendingChoices` for advance/recall; recall reward bundle. |
+| `client/src/components/GameContext/GameContext.tsx` | Reward expansion for `freighter` and `dividends`; new `pendingChoices` for advance/recall; recall reward bundle. place rise of ix logic in separate module/file from base reducer logic.|
 | `client/src/data/boardMarkerAnchors.ts` | `SHIPPING_TRACK_ANCHORS`. |
-| `client/src/components/IxBoardPanel/IxBoardPanel.tsx` | Render the freighter strip. |
 | `client/src/components/TurnControls/TurnControls.tsx` | Render the Advance / Recall choice. |
-| `client/src/components/ImageBoard/ImageBoard.tsx` | Optionally also render the freighter strip on the CHOAM overlay (mirror of IxBoardPanel). |
+| `client/src/components/ImageBoard/ImageBoard.tsx` | Freighter discs on `riseofix4`; optional freighter modal trigger. |
 
 ---
 
@@ -158,14 +160,10 @@ case 'reward.dividends': {
 
 ### 4.3 UI strip
 
-The `IxBoardPanel` track renders rows 3..0 top-to-bottom with row
-labels (`Tech (-2)`, `Troops + Influence`, `Dividends`, `Start`) and
-per-player discs.
-
-The `ImageBoard` may also mirror just the discs on top of the
-`riseofix1.png` overlay, anchored via `SHIPPING_TRACK_ANCHORS`. This
-is for at-a-glance use during play, while the panel is for clicks /
-detail.
+Freighter discs on `ImageBoard` sit on the `riseofix4.png` overlay,
+anchored via `SHIPPING_TRACK_ANCHORS` (rows 3..0). An optional modal
+(next to CHOAM fields) can show row labels (`Tech (-2)`, `Troops +
+Influence`, `Dividends`, `Start`) for detail during Advance/Recall.
 
 ---
 

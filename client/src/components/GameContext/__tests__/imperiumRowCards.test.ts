@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { IMPERIUM_ROW_DECK } from '../../../data/cards'
 import { baseGameManifest } from '../../../test-fixtures/baseGameManifest'
-import { ChoiceType, TurnType, type FixedOptionsChoice } from '../../../types/GameTypes'
+import {
+  ChoiceType,
+  FactionType,
+  GainSource,
+  TurnType,
+  type FixedOptionsChoice,
+} from '../../../types/GameTypes'
 import { applyGameAction } from '../GameContext'
 import { getBaseTestState } from './_helpers'
 
@@ -40,6 +46,32 @@ describe('Imperium row cards — OR choices', () => {
 })
 
 describe('Imperium row cards — acquire effects', () => {
+  it('Lady Jessica: acquire offers choose-one influence bump', () => {
+    const ladyJessica = structuredClone(IMPERIUM_ROW_DECK.find(c => c.name === 'Lady Jessica')!)
+    let s = getBaseTestState({ persuasion: 10 })
+    s = {
+      ...s,
+      imperiumRow: [ladyJessica],
+      currTurn: { playerId: 0, type: TurnType.REVEAL, persuasionCount: 0 },
+    }
+    s = applyGameAction(s, { type: 'ACQUIRE_CARD', playerId: 0, cardId: ladyJessica.id })
+    expect(s.currTurn?.pendingChoices).toHaveLength(1)
+    expect(s.factionInfluence[FactionType.EMPEROR][0] ?? 0).toBe(0)
+    expect(s.factionInfluence[FactionType.BENE_GESSERIT][0] ?? 0).toBe(0)
+    const ch = s.currTurn?.pendingChoices?.[0] as FixedOptionsChoice
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: ch.id,
+      reward: { influence: { amounts: [{ faction: FactionType.BENE_GESSERIT, amount: 1 }] } },
+      source: { type: GainSource.CARD, id: ladyJessica.id, name: ladyJessica.name },
+    })
+    expect(s.factionInfluence[FactionType.BENE_GESSERIT][0]).toBe(1)
+    expect(s.factionInfluence[FactionType.EMPEROR][0] ?? 0).toBe(0)
+    expect(s.factionInfluence[FactionType.SPACING_GUILD][0] ?? 0).toBe(0)
+    expect(s.factionInfluence[FactionType.FREMEN][0] ?? 0).toBe(0)
+  })
+
   it.todo('Chani: acquire gives +1 water')
   it.todo('Crysknife: trash trigger +4 Solari')
   it.todo('Shifting Allegiances: infiltrate / graft behavior')

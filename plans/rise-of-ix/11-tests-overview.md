@@ -40,12 +40,30 @@ agents don't drift apart. All tests use the existing **Vitest** setup
 - [ ] `units.test.ts` — `unitsInConflictForPlayer`.
 - [ ] `techTiles.test.ts` (data) — 18 entries, image paths.
 
-### 3.3 Board overlay & Ix panel (Task 03)
+### 3.3 Board overlays, tech-stacks modal & dreadnought icon (Task 03)
 
-- [ ] `ImageBoard/__tests__/overlay.test.tsx` — overlay visibility,
-  hotspot filtering.
-- [ ] `IxBoardPanel/__tests__/IxBoardPanel.test.tsx` — render & actions.
-- [ ] `AgentIcon/__tests__/variant.test.tsx` — variant rendering.
+**`ImageBoard/__tests__/overlay.test.tsx`**
+
+- [ ] No RoI overlays when `expansions.riseOfIx` is false
+- [ ] Renders `riseofix4.png` (CHOAM) and `riseofix3.png` (Landsraad
+  strip) when true — not `riseofix1` / `riseofix2`
+- [ ] Hotspots 7–8 (Sell Melange, Secure Contract) omitted when true;
+  hotspots 23–26 present
+- [ ] Tech Stacks button rendered beside `riseofix3` overlay when true
+- [ ] Negotiator counter UI reflects sum of `players[*].negotiatorsOnIx`
+  (smoke)
+
+**`TechStacksModal/__tests__/TechStacksModal.test.tsx`**
+
+- [ ] Renders 3 stacks from `state.ixBoard.stacks`
+- [ ] Face-up tile name/image + Acquire per non-empty stack
+- [ ] Acquire dispatches `{ type: 'ACQUIRE_TECH', ... }`
+- [ ] Does **not** render freighter track (Task 05 / `riseofix4` board)
+
+**`AgentIcon/__tests__/variant.test.tsx`**
+
+- [ ] `variant="dreadnought"` uses dreadnought asset path
+- [ ] Default variant is `troop`
 
 ### 3.4 Dreadnoughts (Task 04)
 
@@ -126,8 +144,8 @@ test body can just assert.
 - **Reducer** (`GameContext.tsx`) RoI lines: ≥ 90% line coverage.
 - **Pure helpers** (`utils/units.ts`, `utils/combatStrength.ts`,
   `data/leaderAbilities/*.ts`): 100% line coverage.
-- **UI components** (board, ix panel, turn controls additions):
-  smoke tests only (render + click).
+- **UI components** (board overlays, `TechStacksModal`, turn controls
+  additions): smoke tests only (render + click).
 
 Run with:
 

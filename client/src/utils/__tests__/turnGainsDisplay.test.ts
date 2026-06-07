@@ -13,6 +13,8 @@ import {
   getTroopsRetreatedFromConflict,
   getEffectRetreatRemaining,
   getRepeatedIconDisplay,
+  getAcquireEffectGainsForCard,
+  excludeAcquireEffectGains,
 } from '../turnGainsDisplay'
 
 describe('turnGainsDisplay', () => {
@@ -391,5 +393,40 @@ describe('turnGainsDisplay', () => {
       cardId: 42,
       name: 'Spy',
     })
+  })
+
+  it('extracts acquire-effect gains per card and excludes them from totals list', () => {
+    const cardId = 1033
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: cardId,
+        round: 1,
+        name: 'Lady Jessica',
+        amount: 1,
+        type: RewardType.CARD,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: cardId,
+        round: 1,
+        name: 'Bene Gesserit Acquire',
+        amount: 1,
+        type: RewardType.INFLUENCE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 99,
+        round: 1,
+        name: 'Stilgar',
+        amount: 3,
+        type: RewardType.PERSUASION,
+      },
+    ]
+    expect(getAcquireEffectGainsForCard(gains, cardId)).toHaveLength(1)
+    expect(excludeAcquireEffectGains(gains, [cardId])).toHaveLength(1)
   })
 })

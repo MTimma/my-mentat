@@ -522,14 +522,25 @@ describe('Intrigue cards — combat phase', () => {
     expect(s.activePlayerId).toBe(0)
   })
 
-  it('Private Army (19): pay 2 spice for +5 strength', () => {
+  it('Private Army (19): pay 2 spice for +5 strength after confirming', () => {
     let s = combatFourPlayerState()
     s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 19 })
+    expect(s.players[0].spice).toBe(10)
+    expect(s.combatStrength[0]).toBe(4)
+    const ch = s.currTurn?.pendingChoices?.[0]
+    expect(ch).toBeDefined()
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: ch!.id,
+      reward: { combat: 5 },
+      source: { type: GainSource.INTRIGUE, id: 19, name: 'Private Army' },
+    })
     expect(s.players[0].spice).toBe(8)
     expect(s.combatStrength[0]).toBe(9)
   })
 
-  it('Allied Armada (2): with alliance, pay 2 spice for +7', () => {
+  it('Allied Armada (2): with alliance, pay 2 spice for +7 after confirming', () => {
     let s = combatFourPlayerState()
     s = {
       ...s,
@@ -539,6 +550,17 @@ describe('Intrigue cards — combat phase', () => {
       },
     }
     s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 2 })
+    expect(s.players[0].spice).toBe(10)
+    expect(s.combatStrength[0]).toBe(4)
+    const ch = s.currTurn?.pendingChoices?.[0]
+    expect(ch).toBeDefined()
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: ch!.id,
+      reward: { combat: 7 },
+      source: { type: GainSource.INTRIGUE, id: 2, name: 'Allied Armada' },
+    })
     expect(s.players[0].spice).toBe(8)
     expect(s.combatStrength[0]).toBe(11)
   })

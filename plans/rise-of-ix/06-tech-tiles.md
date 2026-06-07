@@ -81,8 +81,8 @@ face-up at Round Start.
      can be activated now, show a button to activate it (e.g. "Flagship
      — pay 4 solari, recruit 3 troops"). The reducer rejects activation
      if requirements unmet.
-   - `IxBoardPanel`: tile detail tooltip; "Acquire" button when player
-     has enough spice; negotiator-return checkbox flow.
+   - `TechStacksModal` (Task 03 §R5): tile detail tooltip; "Acquire"
+     per stack; negotiator-return flow.
 8. **R8 — Logging.** Every activation logs a `Gain` row sourced from
    `GainSource.TECH` with the tile name.
 
@@ -123,7 +123,7 @@ Verify against the printed tiles before final implementation.
 | `client/src/data/techTiles.ts` | Final declarative data per §3. |
 | `client/src/types/GameTypes.ts` | `GameAction` adds `'ACQUIRE_TECH'`, `'TECH_NEGOTIATOR'`, `'ACTIVATE_TECH'`, `'FLIP_TECH'` (utility). |
 | `client/src/components/GameContext/GameContext.tsx` | All reducer logic per R3–R6 + per-tile effect handlers. | If possible keep rise of ix logic reducer in a separate file that will be called here
-| `client/src/components/IxBoardPanel/IxBoardPanel.tsx` | Acquire flow incl. negotiator return; per-tile hover tooltip. |
+| `client/src/components/TechStacksModal/TechStacksModal.tsx` | Acquire flow incl. negotiator return; per-tile hover tooltip. |
 | `client/src/components/PlayerOverviewModal/PlayerOverviewModal.tsx` | Show owned tiles. |
 | `client/src/components/TurnControls/TurnControls.tsx` | Per-player tech-activation buttons. |
 | `client/src/utils/techTiles.ts` (new) | Pure helpers: `tileById(id)`, `playerOwnsTile(player, id)`, `firstStackTops(state)`. |
@@ -134,7 +134,7 @@ Verify against the printed tiles before final implementation.
 
 ### 5.1 Acquire flow UX
 
-1. User clicks "Acquire" on a face-up tile in `IxBoardPanel`.
+1. User clicks "Acquire" on a face-up tile in `TechStacksModal`.
 2. UI computes max returnable negotiators
    (`min(player.negotiatorsOnIx, tile.cost - tile.discount?)`).
 3. If `player.negotiatorsOnIx > 0` and a discount could help, show a
@@ -225,8 +225,6 @@ For each owned tile that has an active-window timing, render in
 
 ## 6. Acceptance criteria
 
-1. **AC1** — On RoI game start, `state.ixBoard.stacks` has 3 arrays
-   of length 6 totalling all 18 ids, each stack's top exposed. user choooses the tile manually  on setup and when bought, like with imperium rows
 2. **AC2** — Dispatching `ACQUIRE_TECH` decrements spice by
    `max(0, baseCost - discount - negotiatorsReturned)` and
    `player.tech` gains the tile.

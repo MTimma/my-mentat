@@ -50,7 +50,7 @@ export function resolveCardInSnapshotByName(
   )
 }
 
-function deriveAcquiredCardsFromGains(state: GameState, playerId: number): Card[] {
+export function deriveAcquiredCardsFromGains(state: GameState, playerId: number): Card[] {
   const round = state.currentRound
   const seen = new Set<number>()
   const cards: Card[] = []
@@ -103,11 +103,10 @@ function deriveRevealedCardsFromTurn(state: GameState, playerId: number): Card[]
   return cards
 }
 
-export function getRevealTurnStats(state: GameState, playerId: number): RevealTurnStats | null {
+/** Acquired imperium / reserve cards this turn (reveal or agent-turn intrigue acquire). */
+export function getAcquiredCardsForTurn(state: GameState, playerId: number): Card[] {
   const currTurn = state.currTurn
-  if (!currTurn || currTurn.playerId !== playerId || currTurn.type !== TurnType.REVEAL) {
-    return null
-  }
+  if (!currTurn || currTurn.playerId !== playerId) return []
 
   const fromTurn = currTurn.acquiredCards ?? []
   const fromGains = deriveAcquiredCardsFromGains(state, playerId)
@@ -115,12 +114,20 @@ export function getRevealTurnStats(state: GameState, playerId: number): RevealTu
   for (const card of [...fromTurn, ...fromGains]) {
     acquired.set(card.id, card)
   }
+  return [...acquired.values()]
+}
+
+export function getRevealTurnStats(state: GameState, playerId: number): RevealTurnStats | null {
+  const currTurn = state.currTurn
+  if (!currTurn || currTurn.playerId !== playerId || currTurn.type !== TurnType.REVEAL) {
+    return null
+  }
 
   const turnGains = getGainsForTurnState(state)
 
   return {
     revealedCards: deriveRevealedCardsFromTurn(state, playerId),
-    acquiredCards: [...acquired.values()],
+    acquiredCards: getAcquiredCardsForTurn(state, playerId),
     totals: computeTurnGainTotals(turnGains),
   }
 }

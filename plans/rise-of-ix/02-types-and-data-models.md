@@ -56,8 +56,8 @@ No reducer code.
    - `acquireTech?: { discount?: 0 | 1 | 2 }` — **NEW**, allow acquire of
      one tech tile, optionally with a built-in spice discount.
    - `techNegotiator?: number` — **NEW**, place N negotiators on Ix.
-   - `dividends?: boolean` — **NEW**, +5 solari to active player and
-     +1 solari to each opponent.
+   - `dividens` — **NEW**, +5 solari to active player and
+     +1 solari to each opponent. dividends should be implemented as rewards 5 solari and nested 'forOpponents' : 1 solari reward
    - `revealUnload?: boolean` — **NEW**, marker that this card's Reveal
      box triggers on discard / trash also (Unload). Conceptually a card
      **property** rather than a per-effect reward — see §4.4 below; we
@@ -78,7 +78,7 @@ No reducer code.
    - `tech?: PlayerTechTile[]` — owned tech tiles, each carrying
      `{ id: TechTileId; faceUp: boolean }`. Default `[]`.
    - `negotiatorsOnIx?: number` — troops placed on Ix as negotiators.
-     Default `0`.
+     Default `0`. Commeent: this should be tracked similar to conflict deployed troops
    - `snoopers?: Partial<Record<FactionType, boolean>>` — Tessia
      Vernius only. Default `{}`.
 7. **R7 — `GameState` extensions.**

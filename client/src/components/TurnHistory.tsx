@@ -4,6 +4,8 @@ import { findPlayerCardsByIds } from '../utils/playAreaDisplay'
 import { BOARD_SPACES } from '../data/boardSpaces'
 import { getLeaderIconPath } from '../data/leaders'
 import {
+  computeTurnGainTotals,
+  excludeAcquireEffectGains,
   getGainsForHistoryRow,
   getGainsForTurnState,
   isCombatHistoryEntry,
@@ -18,8 +20,13 @@ import {
   getPlayerTurnNumber,
   isMetaHistoryEntry,
 } from '../utils/turnHistoryDisplay'
-import { resolveCardInSnapshot, resolveCardInSnapshotByName } from '../utils/revealTurnStats'
-import { getRevealTurnStats, revealTurnStatsHasContent } from '../utils/revealTurnStats'
+import {
+  getAcquiredCardsForTurn,
+  getRevealTurnStats,
+  resolveCardInSnapshot,
+  resolveCardInSnapshotByName,
+  revealTurnStatsHasContent,
+} from '../utils/revealTurnStats'
 import RevealTurnStatsPanel from './RevealTurnStatsPanel/RevealTurnStatsPanel'
 import TurnGainsDisplay from './TurnGainsDisplay/TurnGainsDisplay'
 import './TurnHistory.css'
@@ -536,12 +543,21 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               ? getRevealTurnStats(turn, turn.currTurn.playerId)
               : null
           const isRevealTurn = turn.currTurn?.type === TurnType.REVEAL
+          const isAgentTurn = turn.currTurn?.type === TurnType.ACTION
+          const acquiredCards =
+            isAgentTurn && turn.currTurn?.playerId != null
+              ? getAcquiredCardsForTurn(turn, turn.currTurn.playerId)
+              : []
+          const gainsForDisplay =
+            acquiredCards.length > 0
+              ? excludeAcquireEffectGains(gains, acquiredCards.map(c => c.id))
+              : gains
           const showRevealSummary = revealStats != null && revealTurnStatsHasContent(revealStats)
           const troopsDeployed = getTroopsDeployedToConflict(turn)
           const troopsRetreated = getTroopsRetreatedFromConflict(turn)
           const showStandardGains =
             !isRevealTurn &&
-            (gains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0)
+            (gainsForDisplay.length > 0 || troopsDeployed > 0 || troopsRetreated > 0 || acquiredCards.length > 0)
           const showRevealGains =
             isRevealTurn &&
             (showRevealSummary || gains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0)
@@ -579,12 +595,27 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                     {isCombatEntry ? (
                       renderCombatGainsByPlayer(turn, gains)
                     ) : (
-                      <TurnGainsDisplay
-                        gains={gains}
-                        resolveCard={makeResolveCard(turn)}
-                        troopsDeployedToConflict={troopsDeployed}
-                        troopsRetreatedFromConflict={troopsRetreated}
-                      />
+                      <>
+                        <TurnGainsDisplay
+                          gains={gainsForDisplay}
+                          resolveCard={makeResolveCard(turn)}
+                          troopsDeployedToConflict={troopsDeployed}
+                          troopsRetreatedFromConflict={troopsRetreated}
+                        />
+                        {acquiredCards.length > 0 && (
+                          <RevealTurnStatsPanel
+                            stats={{
+                              revealedCards: [],
+                              acquiredCards,
+                              totals: computeTurnGainTotals(gains),
+                            }}
+                            gains={gains}
+                            compact
+                            acquiredOnly
+                            resolveCard={makeResolveCard(turn)}
+                          />
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -615,13 +646,25 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             ? getRevealTurnStats(currentGameState, currentGameState.currTurn.playerId)
             : null
           const liveIsRevealTurn = currentGameState.currTurn?.type === TurnType.REVEAL
+          const liveIsAgentTurn = currentGameState.currTurn?.type === TurnType.ACTION
+          const liveAcquiredCards =
+            liveIsAgentTurn && currentGameState.currTurn?.playerId != null
+              ? getAcquiredCardsForTurn(currentGameState, currentGameState.currTurn.playerId)
+              : []
+          const liveGainsForDisplay =
+            liveAcquiredCards.length > 0
+              ? excludeAcquireEffectGains(liveGains, liveAcquiredCards.map(c => c.id))
+              : liveGains
           const liveShowRevealSummary =
             liveRevealStats != null && revealTurnStatsHasContent(liveRevealStats)
           const liveTroopsDeployed = getTroopsDeployedToConflict(currentGameState)
           const liveTroopsRetreated = getTroopsRetreatedFromConflict(currentGameState)
           const liveShowStandardGains =
             !liveIsRevealTurn &&
-            (liveGains.length > 0 || liveTroopsDeployed > 0 || liveTroopsRetreated > 0)
+            (liveGainsForDisplay.length > 0 ||
+              liveTroopsDeployed > 0 ||
+              liveTroopsRetreated > 0 ||
+              liveAcquiredCards.length > 0)
           const liveShowRevealGains =
             liveIsRevealTurn &&
             (liveShowRevealSummary ||
@@ -656,11 +699,24 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             {liveShowStandardGains && (
               <div className="turn-history-gains">
                 <TurnGainsDisplay
-                  gains={liveGains}
+                  gains={liveGainsForDisplay}
                   resolveCard={makeResolveCard(currentGameState)}
                   troopsDeployedToConflict={liveTroopsDeployed}
                   troopsRetreatedFromConflict={liveTroopsRetreated}
                 />
+                {liveAcquiredCards.length > 0 && (
+                  <RevealTurnStatsPanel
+                    stats={{
+                      revealedCards: [],
+                      acquiredCards: liveAcquiredCards,
+                      totals: computeTurnGainTotals(liveGains),
+                    }}
+                    gains={liveGains}
+                    compact
+                    acquiredOnly
+                    resolveCard={makeResolveCard(currentGameState)}
+                  />
+                )}
               </div>
             )}
             {liveOtherPlayerGains.length > 0 && renderOtherPlayerGains(currentGameState)}

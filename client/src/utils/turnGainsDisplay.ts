@@ -347,6 +347,25 @@ export function computeTurnGainTotals(gains: Gain[]): TurnGainTotals {
   return { resources, influence, cards }
 }
 
+/** Gains from a card's acquire effect (VP, influence, resources), excluding the CARD acquisition row. */
+export function getAcquireEffectGainsForCard(gains: Gain[], cardId: number): Gain[] {
+  return gains.filter(
+    gain =>
+      gain.sourceId === cardId &&
+      gain.source === GainSource.CARD &&
+      gain.type !== RewardType.CARD &&
+      gain.amount !== 0
+  )
+}
+
+/** Remove all acquired-card gains from totals (card row + acquire effects — shown in Acquired box). */
+export function excludeAcquireEffectGains(gains: Gain[], acquiredCardIds: number[]): Gain[] {
+  const acquired = new Set(acquiredCardIds)
+  return gains.filter(
+    gain => !(gain.source === GainSource.CARD && acquired.has(gain.sourceId))
+  )
+}
+
 export function aggregateInfluenceGains(gains: Gain[]): Array<{ name: string; amount: number }> {
   const aggregated = new Map<string, number>()
   gains.forEach(gain => {

@@ -65,7 +65,7 @@ strength calculation:
    ```
    - **"Strength becomes 0 if no troops"** rule is **relaxed** when
      dreadnoughts are present: the zeroing is gated by
-     `combatTroops + dreadnoughts.conflict === 0`.
+     `combatTroops + dreadnoughts.conflict === 0`. but only for rise of ix expansion enabled.
 4. **R4 — Combat resolution.** On `RESOLVE_COMBAT`:
    - For each player, dreadnoughts in conflict:
      - If they won (placement first), they remain in `conflict` until
