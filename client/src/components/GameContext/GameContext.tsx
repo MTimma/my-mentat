@@ -65,6 +65,7 @@ import { shouldGrantIlbanSolariDraw } from '../../data/leaderAbilities/ilbanSola
 import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraadDiscount'
 import { shouldGrantMemnonInfluence, buildMemnonInfluenceReward } from '../../data/leaderAbilities/memnonHighCouncilInfluence'
 import { countSpiceMustFlowCards } from '../../utils/spiceMustFlow'
+import { getOpponentDiscardableCards } from '../../utils/playAreaDisplay'
 
 interface GameContextType {
   gameState: GameState
@@ -74,13 +75,27 @@ interface GameContextType {
   dispatch: React.Dispatch<GameAction>
 }
 
-type CustomEffectData = { cardId?: number; [key: string]: unknown }
+type GainAttribution = { type: GainSource; id: number; name: string }
+
+type CustomEffectData = {
+  cardId?: number
+  gainSource?: GainAttribution
+  [key: string]: unknown
+}
 
 export type GameAction = 
   | { type: 'END_TURN'; playerId: number }
-  | { type: 'PLAY_CARD'; playerId: number; cardId: number }
+  | { type: 'PLAY_CARD'; playerId: number; cardId: number; deckIndex?: number }
   | { type: 'DEPLOY_TROOP'; playerId: number }
-  | { type: 'RETREAT_TROOP'; playerId: number }
+  | { type: 'UNDEPLOY_TROOP'; playerId: number }
+  | {
+      type: 'RETREAT_TROOP'
+      playerId: number
+      /** Card/ability retreat (not deploy UI undo). */
+      fromEffect?: boolean
+      /** Immediate retreat from a choice (e.g. Master Tactician); does not consume effect allowance. */
+      bypassAllowance?: boolean
+    }
   | { type: 'PLAY_INTRIGUE'; cardId: number; playerId: number; targetPlayerId?: number }
   | { type: 'MOBILIZE_GARRISON'; playerId: number; count: number }
   | { type: 'ACQUIRE_CARD'; playerId: number; cardId: number; freeAcquire?: boolean; acquireToTop?: boolean }
@@ -98,7 +113,7 @@ export type GameAction =
   | { type: 'RESOLVE_CHOICE'; playerId: number; choiceId: string; reward: Reward; source?: { type: string; id: number; name: string } }
   | { type: 'RESOLVE_CARD_SELECT'; playerId: number; choiceId: string; cardIds: number[] }
   | { type: 'CUSTOM_EFFECT'; playerId: number; customEffect: CustomEffect; data: CustomEffectData }
-  | { type: 'TRASH_CARD'; playerId: number; cardId: number; gainReward?: Reward }
+  | { type: 'TRASH_CARD'; playerId: number; cardId: number; gainReward?: Reward; source?: GainAttribution }
   | { type: 'SELECT_CONFLICT'; conflictId: number }
   | { type: 'CLAIM_REWARD'; playerId: number; rewardId: string; customData?: CustomEffectData }
   | { type: 'CLAIM_ALL_REWARDS'; playerId: number }
@@ -106,8 +121,10 @@ export type GameAction =
   | { type: 'SELECT_IMPERIUM_REPLACEMENT'; cardId: number }
   | { type: 'OPPONENT_DISCARD_CHOICE'; playerId: number; opponentId: number; choice: 'discard' | 'loseTroop' }
   | { type: 'OPPONENT_DISCARD_CARD'; playerId: number; opponentId: number; cardId: number }
+  | { type: 'OPPONENT_DISCARD_CARDS'; playerId: number; opponentId: number; cardIds: number[] }
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
     | { type: 'UNDO_TO_TURN'; turnIndex: number }
+    | { type: 'UNDO_TO_SETUP' }
     | { type: 'RESOLVE_ENDGAME' }
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
@@ -123,6 +140,7 @@ export const useGame = () => {
 const initialGameState: GameState = {
   firstPlayerMarker: 0,
   selectedCard: null,
+  selectedCardDeckIndex: null,
   currentRound: 1,
   activePlayerId: 0,
   phase: GamePhase.ROUND_START,
@@ -188,20 +206,30 @@ const initialGameState: GameState = {
   endgameWinners: null,
   blockedSpaces: [],
   pendingImperiumRowReplacement: null,
-  helenaRemovedCard: null,
-  dispatchEnvoyActive: {},
-  infiltrateIgnoreOccupancyOnce: {},
-  pendingRapidMobilization: null,
-  pendingVictorSpiceThisCombat: {}
+    helenaRemovedCard: null,
+    dispatchEnvoyActive: {},
+    infiltrateIgnoreOccupancyOnce: {},
+    pendingRapidMobilization: null,
+    pendingVictorSpiceThisCombat: {},
+    combatRewardsResolvedConflictId: null,
 }
 
 function determinePlacements(
   strength: Record<number, number>,
   playerCount: number
 ): Placements {
-  const entries = Object.entries(strength)
-    .map(([id, str]) => ({ id: Number(id), strength: str }))
-    .filter(entry => entry.strength > 0)
+  const byPlayer = new Map<number, number>()
+  for (const [id, str] of Object.entries(strength)) {
+    const playerId = Number(id)
+    const value = Number(str)
+    if (!Number.isFinite(playerId) || value <= 0) continue
+    const existing = byPlayer.get(playerId)
+    if (existing === undefined || value > existing) {
+      byPlayer.set(playerId, value)
+    }
+  }
+  const entries = Array.from(byPlayer.entries())
+    .map(([id, s]) => ({ id, strength: s }))
     .sort((a, b) => b.strength - a.strength)
   if(playerCount === 4) {
     return getPlacements4p(entries)
@@ -216,39 +244,134 @@ function determinePlacements(
 
 }
 
-function getPlacements4p(entries: {id: number, strength: number}[]): Placements {
-  const placements: Placements = {
-    first: [],
-    second: [],
-    third: []
-  }
-  if(entries[0]?.strength === entries[1]?.strength) {
-    placements.second = [entries[0]?.id, entries[1]?.id]
-    if(entries[1]?.strength === entries[2]?.strength) {
-      placements.second.push(entries[2]?.id)
-    } else if (entries[2]?.strength !== entries[3]?.strength) {
-      //3rd and 4th players not tied - third place is rewarded
-      placements.third = [entries[2]?.id]
-    }
-    if(entries[1]?.strength === entries[3]?.strength) {
-      placements.second.push(entries[3]?.id)
-    }
-  } else {
-    placements.first = [entries[0]?.id]
-    if(entries[1]?.strength === entries[2]?.strength) {
-      placements.third = [entries[1]?.id, entries[2]?.id]
-      if(entries[2]?.strength === entries[3]?.strength) {
-        placements.third.push(entries[3]?.id)
-      }
+function getPlacements4p(entries: { id: number; strength: number }[]): Placements {
+  const placements: Placements = { first: [], second: [], third: [] }
+  if (entries.length === 0) return placements
+
+  const tiers: { strength: number; ids: number[] }[] = []
+  for (const entry of entries) {
+    const last = tiers[tiers.length - 1]
+    if (last && last.strength === entry.strength) {
+      last.ids.push(entry.id)
     } else {
-      placements.second = [entries[1]?.id]
-      if(entries[2]?.strength !== entries[3]?.strength) {
-        //3rd and 4th players not tied - third place is rewarded
-        placements.third = [entries[2]?.id]
-      }
+      tiers.push({ strength: entry.strength, ids: [entry.id] })
     }
   }
+
+  // 1 = competing for 1st, 2 = for 2nd, 3 = for 3rd; 4+ = no reward
+  let placementRank = 1
+  for (const tier of tiers) {
+    if (placementRank === 1) {
+      if (tier.ids.length === 1) {
+        placements.first = [...tier.ids]
+        placementRank = 2
+      } else {
+        // Tie for first — no winner; tied players share second reward
+        placements.second.push(...tier.ids)
+        placementRank = 3
+      }
+    } else if (placementRank === 2) {
+      if (tier.ids.length === 1) {
+        placements.second = [...tier.ids]
+        placementRank = 3
+      } else {
+        // Tie for second — share third reward (4p)
+        placements.third.push(...tier.ids)
+        placementRank = 4
+      }
+    } else if (placementRank === 3) {
+      placements.third.push(...tier.ids)
+      placementRank = 4
+    }
+  }
+
   return placements
+}
+
+function combatGainDedupeKey(gain: Gain): string {
+  return [
+    gain.playerId,
+    gain.source,
+    gain.sourceId,
+    gain.name,
+    gain.type,
+    gain.amount,
+  ].join(':')
+}
+
+function dedupeGains(gains: Gain[]): Gain[] {
+  const seen = new Set<string>()
+  const result: Gain[] = []
+  for (const gain of gains) {
+    const key = combatGainDedupeKey(gain)
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push(gain)
+  }
+  return result
+}
+
+function snapshotCombatResolutionForHistory(
+  stateAfterRewards: GameState,
+  transitionedState: GameState,
+  combatRound: number
+): GameState {
+  const conflictId = stateAfterRewards.currentConflict?.id
+  const combatGains = dedupeGains(
+    (stateAfterRewards.gains ?? []).filter(gain => {
+      if (gain.round !== combatRound || gain.amount === 0) return false
+      if (gain.source === GainSource.CONFLICT) {
+        return conflictId != null && gain.sourceId === conflictId
+      }
+      return gain.source === GainSource.INTRIGUE
+    })
+  )
+  const ct = stateAfterRewards.currTurn
+  const copy = deepCopyGameState({
+    ...transitionedState,
+    currentRound: combatRound,
+    currentConflict: stateAfterRewards.currentConflict,
+    historyEntryKind: 'combat',
+    gains: combatGains,
+    currTurn:
+      ct && (ct.troopsRetreatedFromConflict ?? 0) > 0
+        ? {
+            playerId: ct.playerId,
+            type: TurnType.PASS,
+            troopsRetreatedFromConflict: ct.troopsRetreatedFromConflict,
+            removableTroops: 0,
+            troopsDeployedToConflict: 0,
+          }
+        : null,
+    selectedCard: null,
+    selectedCardDeckIndex: null,
+    pendingRewards: [],
+    pendingConflictRewardChoices: undefined,
+    combatResolutionDeferred: undefined,
+    combatRewardsResolvedConflictId: undefined,
+    history: [],
+  })
+  return copy
+}
+
+function appendCombatSnapshotAndTransition(
+  stateAfterRewards: GameState,
+  stateBeforeResolve: GameState,
+  mentatOwnerNextRound: number | null
+): GameState {
+  const combatRound = stateBeforeResolve.currentRound
+  const transitioned = completeCombatTransition(stateAfterRewards, stateBeforeResolve, mentatOwnerNextRound)
+  const combatSnapshot = snapshotCombatResolutionForHistory(
+    stateAfterRewards,
+    transitioned,
+    combatRound
+  )
+  return {
+    ...transitioned,
+    history: [...stateBeforeResolve.history, combatSnapshot],
+    gains: [],
+    currTurn: null,
+  }
 }
 
 /** Complete combat resolution: makers, recall, draw, phase transition */
@@ -307,7 +430,10 @@ function completeCombatTransition(
     conflictsDiscard: updatedConflictsDiscard,
     helenaRemovedCard: null,
     pendingVictorSpiceThisCombat: {},
-    pendingRapidMobilization: null
+    pendingRapidMobilization: null,
+    combatRewardsResolvedConflictId: null,
+    pendingConflictRewardChoices: undefined,
+    combatResolutionDeferred: undefined,
   }
 }
 
@@ -332,10 +458,11 @@ function advanceActivePlayerAfterBindu(state: GameState, playerId: number): Game
     infiltrateIgnoreOccupancyOnce: nextInfiltrate,
     players: newState.players.map(p => (p.id === playerId ? { ...p, selectedCard: null } : p)),
     activePlayerId: nextPlayer.id,
-    history: [...newState.history, newState],
+    history: [...newState.history, snapshotStateForHistory(newState)],
     currTurn: null,
     canEndTurn: false,
     selectedCard: null,
+    selectedCardDeckIndex: null,
     canAcquireIR: false,
     gains: [],
     pendingRewards: []
@@ -377,19 +504,23 @@ function buildConflictChoiceOptions(reward: ConflictReward): ChoiceOption[] {
 function applyReward(state: GameState, reward: ConflictReward, placement: string, playerIds: number[]): GameState {
   let newState = { ...state }
   newState.gains = newState.gains || []
-  newState.gains.push({
-    playerId: playerIds[0],
-    source: GainSource.CONFLICT,
-    sourceId: state.currentConflict.id,
-    type: reward.type,
-    round: state.currentRound,
-    name: state.currentConflict.name + ' - ' + placement,
-    amount: reward.amount
-  })
+  const gainName = state.currentConflict.name + ' - ' + placement
+  const recipientIds = [...new Set(playerIds)]
+  for (const playerId of recipientIds) {
+    newState.gains.push({
+      playerId,
+      source: GainSource.CONFLICT,
+      sourceId: state.currentConflict.id,
+      type: reward.type,
+      round: state.currentRound,
+      name: gainName,
+      amount: reward.amount,
+    })
+  }
   switch (reward.type) {
     case RewardType.VICTORY_POINTS:
       newState.players = newState.players.map(player => 
-        playerIds.includes(player.id)
+        recipientIds.includes(player.id)
           ? { ...player, victoryPoints: player.victoryPoints + reward.amount }
           : player
       )
@@ -398,12 +529,12 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
     case RewardType.INFLUENCE: {
       // chooseFaction rewards are handled via pendingConflictRewardChoices
       const faction = FactionType.EMPEROR
-      newState = updateFactionInfluence(newState, faction, playerIds[0], reward.amount)
+      newState = updateFactionInfluence(newState, faction, recipientIds[0], reward.amount)
       break
     }
     case RewardType.CONTROL:
       if (state.currentConflict?.controlSpace) {
-        newState.controlMarkers[state.currentConflict.controlSpace] = playerIds[0]
+        newState.controlMarkers[state.currentConflict.controlSpace] = recipientIds[0]
       }
       // newState.gains.controlGains = newState.gains.controlGains || []
       // newState.gains.controlGains.push({
@@ -416,7 +547,7 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
 
     case RewardType.SPICE:
       newState.players = newState.players.map(player =>
-        playerIds.includes(player.id)
+        recipientIds.includes(player.id)
           ? { ...player, spice: player.spice + reward.amount }
           : player
       )
@@ -424,7 +555,7 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
 
     case RewardType.WATER:
       newState.players = newState.players.map(player =>
-        playerIds.includes(player.id)
+        recipientIds.includes(player.id)
           ? { ...player, water: player.water + reward.amount }
           : player
       )
@@ -432,7 +563,7 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
 
     case RewardType.SOLARI:
       newState.players = newState.players.map(player =>
-        playerIds.includes(player.id)
+        recipientIds.includes(player.id)
           ? { ...player, solari: player.solari + reward.amount }
           : player
       )
@@ -440,14 +571,14 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
 
     case RewardType.TROOPS:
       newState.players = newState.players.map(player =>
-        playerIds.includes(player.id)
+        recipientIds.includes(player.id)
           ? { ...player, troops: player.troops + reward.amount }
           : player
       )
       break
     case RewardType.INTRIGUE:
       newState.players = newState.players.map(player =>
-        playerIds.includes(player.id)
+        recipientIds.includes(player.id)
           ? { ...player, intrigueCount: player.intrigueCount + reward.amount }
           : player
       )
@@ -458,6 +589,48 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
     }
 
   return newState
+}
+
+/**
+ * Combat-space rule: deploy up to 2 from garrison plus any troops recruited this turn.
+ * Increases the turn deploy cap when troops are gained while deployment is active.
+ */
+function withRecruitedTroopsDeployLimit(state: GameState, troopsRecruited: number): GameState {
+  if (troopsRecruited <= 0 || !state.currTurn?.canDeployTroops) return state
+  return {
+    ...state,
+    currTurn: {
+      ...state.currTurn,
+      troopLimit: (state.currTurn.troopLimit || 0) + troopsRecruited,
+    },
+  }
+}
+
+function withEffectRetreatAllowance(state: GameState, amount: number): GameState {
+  if (!state.currTurn || amount <= 0) return state
+  return {
+    ...state,
+    currTurn: {
+      ...state.currTurn,
+      effectRetreatAllowance: (state.currTurn.effectRetreatAllowance ?? 0) + amount,
+    },
+  }
+}
+
+/** Deploy/retreat UI tracks removable (in conflict) and retreated separately for turn history. */
+function syncDeployTurnStats(
+  currTurn: GameTurn,
+  removableTroops: number,
+  troopsRetreatedFromConflict: number
+): GameTurn {
+  const removable = Math.max(0, removableTroops)
+  const retreated = Math.max(0, troopsRetreatedFromConflict)
+  return {
+    ...currTurn,
+    removableTroops: removable,
+    troopsRetreatedFromConflict: retreated,
+    troopsDeployedToConflict: removable,
+  }
 }
 
 // Helper function to apply a reward to a player (shared by CLAIM_REWARD and CLAIM_ALL_REWARDS)
@@ -523,13 +696,9 @@ function applyRewardToPlayer(
   }
   
   if (reward.drawCards) {
-    for (let i = 0; i < reward.drawCards; i++) {
-      const newCard = updatedPlayer.deck[0]
-      if (newCard) {
-        updatedPlayer.deck = updatedPlayer.deck.slice(1)
-        updatedPlayer.handCount += 1
-      }
-    }
+    const cardsInDrawPile = Math.max(0, updatedPlayer.deck.length - updatedPlayer.handCount)
+    const drawn = Math.min(reward.drawCards, cardsInDrawPile)
+    updatedPlayer.handCount += drawn
     gains.push({
       round: state.currentRound,
       playerId: player.id,
@@ -555,16 +724,29 @@ function applyRewardToPlayer(
   }
   
   if (reward.trash || reward.trashThisCard) {
-    const trashedCardId = reward.trashThisCard ? source.id : reward.trash
+    const trashedCardId = reward.trashThisCard ? source.id : (reward.trash as number)
     const trashedCard =
       updatedPlayer.deck.find(c => c.id === trashedCardId) ??
       updatedPlayer.discardPile.find(c => c.id === trashedCardId) ??
       updatedPlayer.playArea.find(c => c.id === trashedCardId)
     if (trashedCard) {
+      const deckIndex = player.deck.findIndex(c => c.id === trashedCardId)
       updatedPlayer.deck = updatedPlayer.deck.filter(c => c.id !== trashedCardId)
       updatedPlayer.discardPile = updatedPlayer.discardPile.filter(c => c.id !== trashedCardId)
       updatedPlayer.playArea = updatedPlayer.playArea.filter(c => c.id !== trashedCardId)
+      if (deckIndex >= 0 && deckIndex < player.handCount) {
+        updatedPlayer.handCount = Math.max(0, updatedPlayer.handCount - 1)
+      }
       updatedPlayer.trash = [...updatedPlayer.trash, trashedCard]
+      gains.push({
+        round: state.currentRound,
+        playerId: player.id,
+        sourceId: trashedCard.id,
+        name: trashedCard.name,
+        amount: -1,
+        type: RewardType.TRASH,
+        source: source.type,
+      })
     }
   }
   
@@ -621,7 +803,12 @@ function applyConflictChoiceReward(
   return newState
 }
 
-function applyChoiceReward(state: GameState, reward: Reward, playerId: number): GameState {
+function applyChoiceReward(
+  state: GameState,
+  reward: Reward,
+  playerId: number,
+  source?: GainAttribution
+): GameState {
   let newState = { 
     ...state,
     gains: [...state.gains], 
@@ -634,14 +821,20 @@ function applyChoiceReward(state: GameState, reward: Reward, playerId: number): 
   // Create a proper copy of the player object to avoid mutations
   const player = { ...originalPlayer }
 
-  const pushGain = (amount: number | undefined, type: RewardType) => {
+  const gainSource: GainAttribution = source ?? {
+    type: GainSource.CARD,
+    id: 0,
+    name: 'Unknown',
+  }
+
+  const pushGain = (amount: number | undefined, type: RewardType, gainName?: string) => {
     if (!amount) return
     newState.gains.push({
       playerId,
       round: newState.currentRound,
-      source: GainSource.CARD,
-      sourceId: 0,
-      name: 'Choice Reward',
+      source: gainSource.type,
+      sourceId: gainSource.id,
+      name: gainName ?? gainSource.name,
       amount,
       type
     })
@@ -650,7 +843,11 @@ function applyChoiceReward(state: GameState, reward: Reward, playerId: number): 
   if (reward.spice) { player.spice += reward.spice; pushGain(reward.spice, RewardType.SPICE) }
   if (reward.water) { player.water += reward.water; pushGain(reward.water, RewardType.WATER) }
   if (reward.solari) { player.solari += reward.solari; pushGain(reward.solari, RewardType.SOLARI) }
-  if (reward.troops) { player.troops += reward.troops; pushGain(reward.troops, RewardType.TROOPS) }
+  if (reward.troops) {
+    player.troops += reward.troops
+    pushGain(reward.troops, RewardType.TROOPS)
+    newState = withRecruitedTroopsDeployLimit(newState, reward.troops)
+  }
   if (reward.persuasion) { player.persuasion += reward.persuasion; pushGain(reward.persuasion, RewardType.PERSUASION) }
   if (reward.combat) {
     const current = newState.combatStrength[playerId] || 0
@@ -659,12 +856,21 @@ function applyChoiceReward(state: GameState, reward: Reward, playerId: number): 
   }
   if (reward.drawCards) { player.handCount += reward.drawCards; pushGain(reward.drawCards, RewardType.DRAW) }
   if (reward.deployTroops) {
-    const ct = newState.currTurn
-    if (ct) {
-      ct.troopLimit = (ct.troopLimit || 0) + reward.deployTroops
-      ct.canDeployTroops = true
+    newState = {
+      ...newState,
+      currTurn: newState.currTurn
+        ? {
+            ...newState.currTurn,
+            troopLimit: (newState.currTurn.troopLimit || 0) + reward.deployTroops,
+            canDeployTroops: true,
+          }
+        : newState.currTurn,
     }
     pushGain(reward.deployTroops, RewardType.DEPLOY)
+  }
+  if (reward.retreatTroops) {
+    newState = withEffectRetreatAllowance(newState, reward.retreatTroops)
+    pushGain(reward.retreatTroops, RewardType.RETREAT)
   }
   if (reward.victoryPoints) { player.victoryPoints += reward.victoryPoints; pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS)}
   
@@ -672,7 +878,7 @@ function applyChoiceReward(state: GameState, reward: Reward, playerId: number): 
   if (reward.influence) {
     reward.influence.amounts.forEach(({ faction, amount }) => {
       newState = updateFactionInfluence(newState, faction, playerId, amount)
-      pushGain(amount, RewardType.INFLUENCE)
+      pushGain(amount, RewardType.INFLUENCE, faction)
     })
   }
 
@@ -745,12 +951,12 @@ function handleIntrigueEffect(
   const updatedPlayers = state.players.map(p => ({ ...p }))
   const playerIndex = updatedPlayers.findIndex(p => p.id === playerId)
   const updatedPlayer = { ...updatedPlayers[playerIndex] }
-  const pushGain = (amount: number, type: RewardType) => {
+  const pushGain = (amount: number, type: RewardType, gainName?: string) => {
     newState.gains.push({
       round: state.currentRound,
       playerId,
       sourceId: card.id,
-      name: card.name,
+      name: gainName ?? card.name,
       amount,
       type,
       source: GainSource.INTRIGUE
@@ -773,6 +979,7 @@ function handleIntrigueEffect(
     if (reward.troops) {
       updatedPlayer.troops += reward.troops
       pushGain(reward.troops, RewardType.TROOPS)
+      newState = withRecruitedTroopsDeployLimit(newState, reward.troops)
     }
     if (reward.persuasion) {
       updatedPlayer.persuasion += reward.persuasion
@@ -797,7 +1004,7 @@ function handleIntrigueEffect(
     if (reward.influence) {
       reward.influence.amounts.forEach(({ faction, amount }) => {
         newState = updateFactionInfluence(newState, faction, playerId, amount) as typeof newState
-        pushGain(amount, RewardType.INFLUENCE)
+        pushGain(amount, RewardType.INFLUENCE, faction)
       })
     }
     if (reward.mentat && !newState.mentatOwner) {
@@ -989,6 +1196,284 @@ function handleIntrigueEffect(
 }
 
 
+type OpponentDiscardState = NonNullable<GameTurn['opponentDiscardState']>
+
+function isReverendMotherOpponentDiscard(discardState: OpponentDiscardState): boolean {
+  return discardState.effect === CustomEffect.REVEREND_MOTHER_MOHIAM
+}
+
+function requiredOpponentDiscards(discardState: OpponentDiscardState): number {
+  return isReverendMotherOpponentDiscard(discardState) ? 2 : 1
+}
+
+function opponentHasDiscardableCards(player: Player): boolean {
+  return getOpponentDiscardableCards(player).length > 0
+}
+
+function advanceOpponentDiscardState(
+  state: GameState,
+  discardState: OpponentDiscardState,
+  completedOpponentId: number,
+  discardCounts: Record<number, number>
+): OpponentDiscardState | undefined {
+  let remainingOpponents = discardState.remainingOpponents.filter(id => id !== completedOpponentId)
+
+  if (isReverendMotherOpponentDiscard(discardState)) {
+    remainingOpponents = remainingOpponents.filter(id => {
+      const player = state.players.find(p => p.id === id)
+      return player != null && opponentHasDiscardableCards(player)
+    })
+  }
+
+  if (remainingOpponents.length === 0) return undefined
+
+  const currentOpponent = isReverendMotherOpponentDiscard(discardState)
+    ? remainingOpponents.length === 1
+      ? remainingOpponents[0]
+      : undefined
+    : remainingOpponents[0]
+
+  return {
+    ...discardState,
+    remainingOpponents,
+    currentOpponent,
+    discardCounts,
+  }
+}
+
+function opponentDiscardsComplete(
+  discardState: OpponentDiscardState,
+  opponentId: number,
+  discardCounts: Record<number, number>,
+  deckAfter: Card[]
+): boolean {
+  const required = requiredOpponentDiscards(discardState)
+  const discarded = discardCounts[opponentId] ?? 0
+  if (discarded >= required) return true
+  if (isReverendMotherOpponentDiscard(discardState) && deckAfter.length === 0) return true
+  return false
+}
+
+function applyOpponentDiscards(
+  state: GameState,
+  actingPlayerId: number,
+  opponentId: number,
+  cardIds: number[]
+): GameState {
+  if (!state.currTurn?.opponentDiscardState) return state
+  if (actingPlayerId !== state.activePlayerId) return state
+  if (cardIds.length === 0) return state
+
+  const discardState = state.currTurn.opponentDiscardState
+  if (discardState.currentOpponent !== opponentId) return state
+
+  const opponent = state.players.find(p => p.id === opponentId)
+  if (!opponent) return state
+
+  const uniqueIds = [...new Set(cardIds)]
+  if (uniqueIds.length !== cardIds.length) return state
+
+  let deck = [...opponent.deck]
+  let discardPile = [...opponent.discardPile]
+  let handCount = opponent.handCount
+  const newGains = [...state.gains]
+
+  for (const cardId of uniqueIds) {
+    if (deck.length === 0) return state
+    const cardIndex = deck.findIndex(c => c.id === cardId)
+    if (cardIndex === -1) return state
+    if (opponent.playArea.some(c => c.id === cardId)) return state
+    const card = deck[cardIndex]
+    deck = deck.filter(c => c.id !== cardId)
+    if (cardIndex < handCount) {
+      handCount = Math.max(0, handCount - 1)
+    }
+    discardPile = [...discardPile, card]
+    newGains.push({
+      round: state.currentRound,
+      playerId: opponentId,
+      sourceId: card.id,
+      name: card.name,
+      amount: -1,
+      type: RewardType.DISCARD,
+      source: GainSource.CARD,
+    })
+  }
+
+  const discardCounts = { ...(discardState.discardCounts || {}) }
+  discardCounts[opponentId] = (discardCounts[opponentId] || 0) + uniqueIds.length
+
+  const hasDiscardedEnough = opponentDiscardsComplete(
+    discardState,
+    opponentId,
+    discardCounts,
+    deck
+  )
+
+  const players = state.players.map(p =>
+    p.id === opponentId ? { ...p, deck, discardPile, handCount } : p
+  )
+
+  if (!hasDiscardedEnough) {
+    return {
+      ...state,
+      players,
+      gains: newGains,
+      currTurn: {
+        ...state.currTurn,
+        opponentDiscardState: {
+          ...discardState,
+          discardCounts,
+        },
+      },
+    }
+  }
+
+  const newOpponentDiscardState = advanceOpponentDiscardState(
+    { ...state, players },
+    discardState,
+    opponentId,
+    discardCounts
+  )
+
+  return {
+    ...state,
+    players,
+    gains: newGains,
+    currTurn: {
+      ...state.currTurn,
+      opponentDiscardState: newOpponentDiscardState,
+    },
+    canEndTurn:
+      newOpponentDiscardState === undefined &&
+      state.pendingRewards.filter(r => !r.disabled).length === 0,
+  }
+}
+
+function getCombatIntrigueEligiblePlayerIds(state: GameState): number[] {
+  return state.players
+    .filter(p => p.intrigueCount >= 1 && (state.combatTroops[p.id] || 0) >= 1)
+    .map(p => p.id)
+}
+
+/** Players who cannot participate in combat intrigue (auto-pass). */
+function getAutoCombatPassPlayerIds(state: GameState): Set<number> {
+  return new Set(
+    state.players
+      .filter(p => p.intrigueCount < 1 || (state.combatTroops[p.id] || 0) < 1)
+      .map(p => p.id)
+  )
+}
+
+function isCombatIntrigueEligible(state: GameState, playerId: number): boolean {
+  const player = state.players.find(p => p.id === playerId)
+  if (!player) return false
+  return player.intrigueCount >= 1 && (state.combatTroops[playerId] || 0) >= 1
+}
+
+function combatIntrigueShouldEnd(state: GameState): boolean {
+  const eligiblePlayerIds = getCombatIntrigueEligiblePlayerIds(state)
+  return (
+    state.combatPasses.size === state.players.length ||
+    state.players.every(p => p.intrigueCount < 1 || (state.combatTroops[p.id] || 0) < 1) ||
+    (eligiblePlayerIds.length > 0 &&
+      eligiblePlayerIds.every(id => state.combatPasses.has(id)))
+  )
+}
+
+function findNextCombatIntriguePlayer(state: GameState, afterPlayerId: number): number | null {
+  let nextIndex = (afterPlayerId + 1) % state.players.length
+  let attempts = 0
+  while (attempts < state.players.length) {
+    if (
+      !state.combatPasses.has(nextIndex) &&
+      isCombatIntrigueEligible(state, nextIndex)
+    ) {
+      return nextIndex
+    }
+    nextIndex = (nextIndex + 1) % state.players.length
+    attempts++
+  }
+  return null
+}
+
+/** While resolving a combat intrigue choice, merge auto-passes but keep the acting player. */
+function mergeCombatIntriguePasses(state: GameState): GameState {
+  if (state.phase !== GamePhase.COMBAT) return state
+  const autoPasses = getAutoCombatPassPlayerIds(state)
+  autoPasses.delete(state.activePlayerId)
+  return {
+    ...state,
+    combatPasses: new Set([...state.combatPasses, ...autoPasses]),
+  }
+}
+
+/**
+ * After a combat intrigue is fully resolved: merge auto-passes, then advance clockwise
+ * from the player who acted so everyone (including earlier passers) may play or pass again.
+ */
+function finishCombatIntrigueAction(state: GameState, actedPlayerId: number): GameState {
+  if (state.phase !== GamePhase.COMBAT) return state
+
+  if ((state.currTurn?.pendingChoices?.length ?? 0) > 0) {
+    return mergeCombatIntriguePasses(state)
+  }
+
+  const combatPasses = new Set([
+    ...state.combatPasses,
+    ...getAutoCombatPassPlayerIds(state),
+  ])
+  const playedIntrigue = state.currTurn?.playedIntrigueCard
+  const preserveCombatTurn =
+    playedIntrigue && playedIntrigue.length > 0
+      ? {
+          playerId: actedPlayerId,
+          type: TurnType.ACTION,
+          playedIntrigueCard: playedIntrigue,
+        }
+      : null
+  const withPasses = { ...state, combatPasses, currTurn: preserveCombatTurn }
+
+  // Actor may play another combat intrigue while they still have cards and troops in the Conflict.
+  if (isCombatIntrigueEligible(withPasses, actedPlayerId)) {
+    combatPasses.delete(actedPlayerId)
+    return {
+      ...withPasses,
+      combatPasses,
+      activePlayerId: actedPlayerId,
+    }
+  }
+
+  // No troops in combat (or no intrigue left) — auto-pass this seat.
+  combatPasses.add(actedPlayerId)
+
+  if (combatIntrigueShouldEnd({ ...withPasses, combatPasses })) {
+    return {
+      ...withPasses,
+      combatPasses: new Set(),
+      phase: GamePhase.COMBAT_REWARDS,
+      currTurn: null,
+    }
+  }
+
+  const nextIndex = findNextCombatIntriguePlayer({ ...withPasses, combatPasses }, actedPlayerId)
+  if (nextIndex === null) {
+    return {
+      ...withPasses,
+      combatPasses: new Set(),
+      phase: GamePhase.COMBAT_REWARDS,
+      currTurn: null,
+    }
+  }
+
+  return {
+    ...withPasses,
+    combatPasses,
+    activePlayerId: nextIndex,
+    currTurn: null,
+  }
+}
+
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'RESET_IMPERIUM_ROW': {
@@ -1018,11 +1503,38 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       case 'SELECT_CONFLICT': {
       const conflict = CONFLICTS.find(c => c.id === action.conflictId)
       if (!conflict) return state
-      return {
+
+      const nextState = {
         ...state,
         currentConflict: conflict,
         phase: GamePhase.PLAYER_TURNS,
-        activePlayerId: state.firstPlayerMarker
+        activePlayerId: state.firstPlayerMarker,
+      }
+
+      // Replace pre-setup history with a round-start baseline so undoing the first
+      // turn rewinds to configured imperium row + conflict, not initial setup.
+      const roundStartBaseline = deepCopyGameState({
+        ...nextState,
+        historyEntryKind: 'round-start',
+        currTurn: null,
+        selectedCard: null,
+        selectedCardDeckIndex: null,
+        canEndTurn: false,
+        canAcquireIR: false,
+        gains: [],
+        pendingRewards: [],
+        history: [],
+      })
+
+      const isOpeningRoundStart = state.history.length <= 1 && state.currentRound === 1
+      const history = isOpeningRoundStart
+        ? [{ ...roundStartBaseline, historyEntryKind: 'setup' as const }]
+        : [...state.history, roundStartBaseline]
+
+      return {
+        ...nextState,
+        setupBaseline: state.setupBaseline,
+        history,
       }
     }
     case 'END_TURN': {
@@ -1061,6 +1573,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           currTurn: null,
           canEndTurn: true,
           selectedCard: null,
+          selectedCardDeckIndex: null,
           canAcquireIR: false,
           gains: [],
           pendingRewards: []
@@ -1101,21 +1614,36 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 : p
             ),
             activePlayerId: 0,
-            history: [...state.history, deepCopyGameState(state)],
+            history: [...state.history, snapshotStateForHistory(state)],
             currTurn: null,
             canEndTurn: false,
             canAcquireIR: false,
             selectedCard: null,
+            selectedCardDeckIndex: null,
             gains: [],
             pendingRewards: []
           }
         }
         
         // Continue to combat phase with first eligible player
+        const endTurnCombatPasses = getAutoCombatPassPlayerIds(newState)
+        let endTurnCombatActiveId = newState.firstPlayerMarker
+        let endTurnCombatActivePlayer = newState.players[endTurnCombatActiveId]
+        let endTurnCombatFindAttempts = 0
+        while (
+          endTurnCombatFindAttempts < newState.players.length &&
+          (endTurnCombatPasses.has(endTurnCombatActiveId) ||
+            endTurnCombatActivePlayer.intrigueCount < 1 ||
+            (newState.combatTroops[endTurnCombatActiveId] || 0) < 1)
+        ) {
+          endTurnCombatActiveId = (endTurnCombatActiveId + 1) % newState.players.length
+          endTurnCombatActivePlayer = newState.players[endTurnCombatActiveId]
+          endTurnCombatFindAttempts++
+        }
         return {
           ...newState,
           phase: GamePhase.COMBAT,
-          combatPasses: new Set(),
+          combatPasses: endTurnCombatPasses,
           players: newState.players.map(p =>
             p.id === playerId
               ? {
@@ -1124,12 +1652,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 }
               : p
           ),
-          activePlayerId: playersWithIntrigueAndTroops[0].id,
-          history: [...state.history, deepCopyGameState(state)],
+          activePlayerId: endTurnCombatActiveId,
+          history: [...state.history, snapshotStateForHistory(state)],
           currTurn: null,
           canEndTurn: false,
           canAcquireIR: false,
           selectedCard: null,
+          selectedCardDeckIndex: null,
           gains: [],
           pendingRewards: []
         }
@@ -1167,10 +1696,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             : p
         ),
         activePlayerId: nextPlayer.id,
-        history: [...newState.history, deepCopyGameState(newState)],
+        history: [...newState.history, snapshotStateForHistory(newState)],
         currTurn: null,
         canEndTurn: false,
         selectedCard: null,
+        selectedCardDeckIndex: null,
         canAcquireIR: false,
         gains: [],
         pendingRewards: []
@@ -1179,16 +1709,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'DEPLOY_TROOP': {
       const player = state.players.find(p => p.id === action.playerId)
       if (!player || player.troops <= 0) return state
-      
+      if (!state.currTurn?.canDeployTroops) return state
+      const deployLimit = state.currTurn.troopLimit ?? 0
+      const deployedThisTurn = state.currTurn.removableTroops ?? 0
+      if (deployedThisTurn >= deployLimit) return state
+
       const currentTroops = state.combatTroops[action.playerId] || 0
       const updatedCombat = player.combatValue ? player.combatValue + 2 : 2;
-      const currentTurn = state.activePlayerId === action.playerId ? 
-        {
+      let currentTurn = state.currTurn
+      if (state.activePlayerId === action.playerId && state.currTurn) {
+        const removable = (state.currTurn.removableTroops ?? 0) + 1
+        const retreated = state.currTurn.troopsRetreatedFromConflict ?? 0
+        currentTurn = syncDeployTurnStats(
+          {
             ...state.currTurn,
             playerId: state.activePlayerId,
-            type: state.currTurn?.type || TurnType.ACTION,
-            removableTroops: state.currTurn?.removableTroops ? state.currTurn.removableTroops + 1 : 1,
-        } : state.currTurn;
+            type: state.currTurn.type || TurnType.ACTION,
+          },
+          removable,
+          retreated
+        )
+      }
       if (!currentTurn) return state
       
       const newState = {
@@ -1213,26 +1754,33 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       return checkAndApplyMasterstroke(newState, action.playerId)
     }
-    case 'RETREAT_TROOP': {
+    case 'UNDEPLOY_TROOP': {
       const currentTroops = state.combatTroops[action.playerId] || 0
       if (currentTroops <= 0) return state
-      const currentTurn= state.activePlayerId === action.playerId ? 
-      {
-          ...state.currTurn,
-          playerId: state.activePlayerId,
-          type: state.currTurn?.type || TurnType.ACTION,
-          removableTroops: state.currTurn?.removableTroops ? state.currTurn.removableTroops -1 : 0,
-      } : state.currTurn;
-      const newCombatStrength = {...state.combatStrength}
-      if(newCombatStrength[action.playerId]) {
-        const newPlayerCombatStrength = newCombatStrength[action.playerId] - 2
-        if(newPlayerCombatStrength <= 0) {
-          delete newCombatStrength[action.playerId]
-        } else {
-          newCombatStrength[action.playerId] = newPlayerCombatStrength
-        }
+      if ((state.currTurn?.removableTroops ?? 0) <= 0) return state
+
+      let currentTurn = state.currTurn
+      if (state.activePlayerId === action.playerId && state.currTurn) {
+        const removable = (state.currTurn.removableTroops ?? 0) - 1
+        const retreated = state.currTurn.troopsRetreatedFromConflict ?? 0
+        currentTurn = syncDeployTurnStats(
+          {
+            ...state.currTurn,
+            playerId: state.activePlayerId,
+            type: state.currTurn.type || TurnType.ACTION,
+          },
+          removable,
+          retreated
+        )
+      }
+
+      const newCombatStrength = { ...state.combatStrength }
+      if (!newCombatStrength[action.playerId]) return state
+      const newPlayerCombatStrength = newCombatStrength[action.playerId] - 2
+      if (newPlayerCombatStrength <= 0) {
+        delete newCombatStrength[action.playerId]
       } else {
-        return state;
+        newCombatStrength[action.playerId] = newPlayerCombatStrength
       }
 
       const newState = {
@@ -1241,23 +1789,87 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         combatStrength: newCombatStrength,
         combatTroops: {
           ...state.combatTroops,
-          [action.playerId]: currentTroops - 1
+          [action.playerId]: currentTroops - 1,
         },
         players: state.players.map(p =>
           p.id === action.playerId
-            ? { ...p, 
-              combatValue: p.combatValue ? p.combatValue - 2 : 0, 
-              troops: p.troops + 1 }
+            ? {
+                ...p,
+                combatValue: p.combatValue ? p.combatValue - 2 : 0,
+                troops: p.troops + 1,
+              }
             : p
+        ),
+      }
+
+      return revertMasterstrokeIfNeeded(newState, action.playerId)
+    }
+    case 'RETREAT_TROOP': {
+      const fromEffect = action.fromEffect ?? false
+      if (!fromEffect) return state
+
+      const currentTroops = state.combatTroops[action.playerId] || 0
+      if (currentTroops <= 0) return state
+
+      const bypassAllowance = action.bypassAllowance ?? false
+      if (!bypassAllowance && state.currTurn) {
+        const allowance = state.currTurn.effectRetreatAllowance ?? 0
+        const used = state.currTurn.effectRetreatsUsed ?? 0
+        if (used >= allowance) return state
+      }
+
+      let currentTurn = state.currTurn
+      if (state.activePlayerId === action.playerId && state.currTurn) {
+        const removableNow = state.currTurn.removableTroops ?? 0
+        const removable = removableNow > 0 ? removableNow - 1 : 0
+        const retreated = (state.currTurn.troopsRetreatedFromConflict ?? 0) + 1
+        currentTurn = syncDeployTurnStats(
+          {
+            ...state.currTurn,
+            playerId: state.activePlayerId,
+            type: state.currTurn.type || TurnType.ACTION,
+            effectRetreatsUsed: bypassAllowance
+              ? state.currTurn.effectRetreatsUsed
+              : (state.currTurn.effectRetreatsUsed ?? 0) + 1,
+          },
+          removable,
+          retreated
         )
+      }
+
+      const newCombatStrength = { ...state.combatStrength }
+      if (!newCombatStrength[action.playerId]) return state
+      const newPlayerCombatStrength = newCombatStrength[action.playerId] - 2
+      if (newPlayerCombatStrength <= 0) {
+        delete newCombatStrength[action.playerId]
+      } else {
+        newCombatStrength[action.playerId] = newPlayerCombatStrength
+      }
+
+      const newState = {
+        ...state,
+        currTurn: currentTurn,
+        combatStrength: newCombatStrength,
+        combatTroops: {
+          ...state.combatTroops,
+          [action.playerId]: currentTroops - 1,
+        },
+        players: state.players.map(p =>
+          p.id === action.playerId
+            ? {
+                ...p,
+                combatValue: p.combatValue ? p.combatValue - 2 : 0,
+                troops: p.troops + 1,
+              }
+            : p
+        ),
       }
 
       return revertMasterstrokeIfNeeded(newState, action.playerId)
     }
     case 'START_COMBAT_PHASE': {
       const newState = {...state}
-      newState.combatPasses = new Set()
-      newState.players.forEach(p => {if(p.intrigueCount<1||newState.combatTroops[p.id] < 1){newState.combatPasses.add(p.id)}})
+      newState.combatPasses = getAutoCombatPassPlayerIds(newState)
 
       if(newState.combatPasses.size === newState.players.length) {
         return {
@@ -1273,32 +1885,25 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         nextPlayer = newState.players[nextIndex]
       }
       return {
-        ...state,
+        ...newState,
         phase: GamePhase.COMBAT,
         activePlayerId: nextIndex,
-        pendingVictorSpiceThisCombat: {}
+        pendingVictorSpiceThisCombat: {},
       }
     }
     case 'PASS_COMBAT': {
       const { playerId } = action
       const newState = {...state}
       newState.combatPasses.add(playerId)
-      const lastPlayerId = (newState.firstPlayerMarker - 1 + newState.players.length) % newState.players.length
-      
+      const eligiblePlayerIds = getCombatIntrigueEligiblePlayerIds(newState)
+
       // Check if combat should end
-      if(newState.combatPasses.size === newState.players.length || 
-        newState.players.every(p => (p.intrigueCount < 1 || newState.combatTroops[p.id] < 1))) {
-        // everyone passed or noone has intrigue left
-        return {
-          ...newState,
-          combatPasses: new Set(),
-          phase: GamePhase.COMBAT_REWARDS,
-        }
-      } 
-      
-      // Check if we completed a full round (everyone passed once)
-      if(lastPlayerId === playerId) {
-        // All players have passed consecutively - end combat
+      if (
+        newState.combatPasses.size === newState.players.length ||
+        newState.players.every(p => p.intrigueCount < 1 || newState.combatTroops[p.id] < 1) ||
+        (eligiblePlayerIds.length > 0 &&
+          eligiblePlayerIds.every(id => newState.combatPasses.has(id)))
+      ) {
         return {
           ...newState,
           combatPasses: new Set(),
@@ -1315,6 +1920,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             (newState.combatPasses.has(nextIndex) || 
              newState.players[nextIndex].intrigueCount < 1 || 
              newState.combatTroops[nextIndex] < 1)) {
+        if (
+          newState.players[nextIndex].intrigueCount < 1 ||
+          newState.combatTroops[nextIndex] < 1
+        ) {
+          newState.combatPasses.add(nextIndex)
+        }
         nextIndex = (nextIndex + 1) % newState.players.length
         attempts++
       }
@@ -1330,7 +1941,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     
       return {
         ...newState,
-        activePlayerId: nextIndex
+        activePlayerId: nextIndex,
+        currTurn: null,
       }
     }
     case 'PLAY_COMBAT_INTRIGUE': {
@@ -1365,16 +1977,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           prompt: 'Master Tactician: choose one',
           options: [
             { reward: { combat: 3 }, rewardLabel: '+3 strength' },
-            { reward: { retreatFromConflict: 0 }, rewardLabel: 'Retreat 0 troops' },
             { reward: { retreatFromConflict: 1 }, rewardLabel: 'Retreat 1 troop', disabled: ct < 1 },
             { reward: { retreatFromConflict: 2 }, rewardLabel: 'Retreat 2 troops', disabled: ct < 2 },
-            { reward: { retreatFromConflict: 3 }, rewardLabel: 'Retreat 3 troops', disabled: ct < 3 }
+            { reward: { retreatFromConflict: 3 }, rewardLabel: 'Retreat 3 troops', disabled: ct < 3 },
           ],
           source: { type: GainSource.INTRIGUE, id: card.id, name: card.name }
         })
       }
       const newState = {
         ...updatedState,
+        // Playing intrigue breaks the pass chain — eligible players may act again (rules).
+        combatPasses: getAutoCombatPassPlayerIds(updatedState),
         players: updatedState.players.map(p =>
           p.id === playerId
             ? { ...p, intrigueCount: p.intrigueCount - 1 }
@@ -1403,7 +2016,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         canEndTurn: pendingCombatChoices.length > 0 ? false : updatedState.canEndTurn
       }
 
-      return newState
+      return finishCombatIntrigueAction(newState, playerId)
     }
     case 'MOBILIZE_GARRISON': {
       const { playerId, count } = action
@@ -1412,7 +2025,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (count < 0) return state
       const p = state.players.find(pl => pl.id === playerId)
       if (!p || count > p.troops) return state
-      let s = state
+      const mobilizeTurn: GameTurn = {
+        ...(state.currTurn ?? { playerId, type: TurnType.ACTION }),
+        playerId,
+        canDeployTroops: true,
+        troopLimit: count + (state.currTurn?.removableTroops ?? 0),
+      }
+      let s = { ...state, currTurn: mobilizeTurn }
       for (let i = 0; i < count; i++) {
         s = gameReducer(s, { type: 'DEPLOY_TROOP', playerId })
       }
@@ -1420,7 +2039,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'RESOLVE_COMBAT': {
       if (!state.currentConflict) return state
-      
+      if (state.phase !== GamePhase.COMBAT_REWARDS) return state
+      const conflictId = state.currentConflict.id
+      // Immediate rewards are applied on the first resolve; further confirms must go
+      // through RESOLVE_CONFLICT_REWARD_CHOICE, not a second RESOLVE_COMBAT.
+      if (
+        state.combatRewardsResolvedConflictId === conflictId ||
+        (state.pendingConflictRewardChoices?.length ?? 0) > 0 ||
+        state.combatResolutionDeferred
+      ) {
+        return state
+      }
+
       const strength = {...state.combatStrength}
       const placements = determinePlacements(strength, state.players.length) as Placements
       let newState = { ...state }
@@ -1496,18 +2126,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (pendingChoices.length > 0) {
         return {
           ...newState,
+          combatRewardsResolvedConflictId: conflictId,
           pendingConflictRewardChoices: pendingChoices,
           combatResolutionDeferred: { mentatOwnerNextRound }
         }
       }
 
-      // Apply Makers (no pending choices - proceed with full transition)
-      return completeCombatTransition(newState, state, mentatOwnerNextRound)
+      return appendCombatSnapshotAndTransition(
+        { ...newState, combatRewardsResolvedConflictId: conflictId },
+        state,
+        mentatOwnerNextRound
+      )
     }
     case 'RESOLVE_CONFLICT_REWARD_CHOICE': {
       const { choiceId, reward } = action
       const pending = state.pendingConflictRewardChoices
-      if (!pending || state.phase !== GamePhase.COMBAT) return state
+      if (
+        !pending ||
+        (state.phase !== GamePhase.COMBAT && state.phase !== GamePhase.COMBAT_REWARDS)
+      ) {
+        return state
+      }
       const choice = pending.find(c => c.id === choiceId)
       if (!choice) return state
 
@@ -1523,11 +2162,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return newState
       }
 
-      // Last choice resolved - complete the transition
       const deferred = state.combatResolutionDeferred
       const mentatOwnerNextRound = deferred?.mentatOwnerNextRound ?? null
       newState = { ...newState, combatResolutionDeferred: undefined }
-      return completeCombatTransition(newState, state, mentatOwnerNextRound)
+      return appendCombatSnapshotAndTransition(newState, state, mentatOwnerNextRound)
     }
     case 'PLAY_INTRIGUE': {
       const { cardId, playerId, targetPlayerId } = action
@@ -1614,6 +2252,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         pushG(-1, RewardType.SOLARI, playerId)
         pushG(1, RewardType.TROOPS, playerId)
         pushG(2, RewardType.COMBAT, playerId)
+        pushG(-1, RewardType.DEPLOY, tid)
         pushG(-2, RewardType.COMBAT, tid)
         updatedState = {
           ...updatedState,
@@ -1777,12 +2416,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
       
-      // Get or create current turn
-      const currentTurn = state.currTurn?.playerId === playerId 
+      // Get or create current turn (use updatedState so deploy limits from handleIntrigueEffect are kept)
+      const currentTurn = updatedState.currTurn?.playerId === playerId 
         ? {
-            ...state.currTurn,
-            pendingChoices: [...(state.currTurn.pendingChoices || []), ...pendingChoices],
-            playedIntrigueCard: [...(state.currTurn.playedIntrigueCard || []), { cardId }]
+            ...updatedState.currTurn,
+            pendingChoices: [...(updatedState.currTurn.pendingChoices || []), ...pendingChoices],
+            playedIntrigueCard: [...(updatedState.currTurn.playedIntrigueCard || []), { cardId }]
           }
         : {
             playerId,
@@ -1835,19 +2474,47 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, endgameWinners: contenders.map(p => p.id) }
     }
     case 'PLAY_CARD': {
-      const { playerId, cardId } = action
+      const { playerId, cardId, deckIndex } = action
       const player = state.players.find(p => p.id === playerId)
-      const card = player?.deck.find(c => c.id === cardId)
-      
+
       if (state.currTurn?.opponentDiscardState) {
         return state
       }
 
+      if (!player || playerId !== state.activePlayerId) return state
 
-      if (!card || playerId !== state.activePlayerId || !player) return state
+      let resolvedDeckIndex =
+        typeof deckIndex === 'number' && player.deck[deckIndex]?.id === cardId
+          ? deckIndex
+          : player.deck.findIndex(c => c.id === cardId)
+      const card = resolvedDeckIndex >= 0 ? player.deck[resolvedDeckIndex] : undefined
+
+      if (!card) return state
       // Create or update the current turn
-      const currentTurn = state.currTurn?.playerId === playerId 
-        ? { ...state.currTurn, type: TurnType.ACTION, cardId }
+      const isContinuingTurn = state.currTurn?.playerId === playerId
+      const cardChanged = isContinuingTurn && state.currTurn?.cardId !== cardId
+      const currentTurn: GameTurn = isContinuingTurn
+        ? {
+            ...state.currTurn!,
+            playerId,
+            type: TurnType.ACTION,
+            cardId,
+            playedIntrigueCard: undefined,
+            gainsStartIndex: state.gains.length,
+            ...(cardChanged
+              ? {
+                  agentSpace: undefined,
+                  agentSpaceId: undefined,
+                  canDeployTroops: false,
+                  troopLimit: 0,
+                  removableTroops: 0,
+                  troopsDeployedToConflict: 0,
+                  troopsRetreatedFromConflict: 0,
+                  effectRetreatAllowance: 0,
+                  effectRetreatsUsed: 0,
+                }
+              : {}),
+          }
         : {
             playerId,
             type: TurnType.ACTION,
@@ -1856,9 +2523,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             canDeployTroops: false,
             troopLimit: 0,
             removableTroops: 0,
+            troopsDeployedToConflict: 0,
+            troopsRetreatedFromConflict: 0,
+            gainsStartIndex: state.gains.length,
             persuasionCount: 0,
             gainedEffects: [],
-            acquiredCards: []
+            acquiredCards: [],
+            pendingChoices: [],
           }
 
       // Check for before-place-agent requirement on play effects
@@ -1878,6 +2549,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return {
           ...state,
           selectedCard: cardId,
+          selectedCardDeckIndex: resolvedDeckIndex,
           currTurn: updatedTurn
         }
       }
@@ -1885,16 +2557,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         selectedCard: cardId,
+        selectedCardDeckIndex: resolvedDeckIndex,
         currTurn: currentTurn
       }
     }
     case 'PLACE_AGENT': {
       const { playerId, spaceId, sellMelangeData, selectiveBreedingData } = action
       const newState = {...state}
-      const updatedGains: Gain[] = [...newState.gains]
+      const priorSpaceId = newState.currTurn?.agentSpaceId
+      const isReplacingPlacement =
+        priorSpaceId != null && priorSpaceId !== spaceId
+      const turnGainsStart = newState.currTurn?.gainsStartIndex ?? newState.gains.length
+      const updatedGains: Gain[] = isReplacingPlacement
+        ? newState.gains.slice(0, turnGainsStart)
+        : [...newState.gains]
       const updatedPlayers: Player[] = [...newState.players]
       const currPlayer: Player = {...updatedPlayers.find(p => p.id === playerId)} as Player
-      const card = currPlayer.deck.find(c => c.id === newState.selectedCard)
+      const selectedDeckIndex =
+        typeof newState.selectedCardDeckIndex === 'number' &&
+        currPlayer.deck[newState.selectedCardDeckIndex]?.id === newState.selectedCard
+          ? newState.selectedCardDeckIndex
+          : currPlayer.deck.findIndex(c => c.id === newState.selectedCard)
+      const card = selectedDeckIndex >= 0 ? currPlayer.deck[selectedDeckIndex] : undefined
       const space = BOARD_SPACES.find((s: SpaceProps) => s.id === spaceId)
       const pendingRewards: PendingReward[] = [...newState.pendingRewards]
       const tempCurrTurn: GameTurn = {
@@ -1905,10 +2589,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         canDeployTroops: space?.conflictMarker || false,
         troopLimit: space?.conflictMarker ? 2 + (newState.currTurn?.troopLimit|| 0): 0,
         removableTroops: 0,
+        troopsDeployedToConflict: 0,
+        troopsRetreatedFromConflict: 0,
+        effectRetreatAllowance: 0,
+        effectRetreatsUsed: 0,
+        gainsStartIndex: updatedGains.length,
         persuasionCount: 0,
         gainedEffects: [],
-        acquiredCards: [],
-        pendingChoices: []
+        acquiredCards: newState.currTurn?.acquiredCards ?? [],
+        pendingChoices: [],
       }
       
       // Helper to add pending reward
@@ -2284,7 +2973,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         [spaceId]: [...(newState.occupiedSpaces[spaceId] || []), playerId]
       }
 
-      const updatedDeck = currPlayer.deck.filter(c => c.id !== card.id)
+      const updatedDeck = [...currPlayer.deck]
+      if (selectedDeckIndex >= 0) {
+        updatedDeck.splice(selectedDeckIndex, 1)
+      }
 
       const canDeployTroops = tempCurrTurn?.canDeployTroops || false
       const troopLimit = canDeployTroops ? (tempCurrTurn?.troopLimit|| 2): 2
@@ -2299,7 +2991,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             agentSpaceId: spaceId,
             canDeployTroops: canDeployTroops,
             troopLimit: troopLimit,
-            removableTroops: newState.currTurn?.removableTroops || 0,
+            removableTroops: 0,
+            troopsDeployedToConflict: 0,
+            troopsRetreatedFromConflict: 0,
+            acquiredCards: tempCurrTurn.acquiredCards,
+            gainsStartIndex: tempCurrTurn.gainsStartIndex,
             persuasionCount: (newState.currTurn?.persuasionCount || 0) + persuasionCount,
             optionalEffects: [...(newState.currTurn?.optionalEffects||[]), ...optionalEffects],
             pendingChoices: [...(newState.currTurn?.pendingChoices||[]), ...(tempCurrTurn.pendingChoices||[])]
@@ -2313,6 +3009,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             canDeployTroops: canDeployTroops,
             troopLimit: troopLimit,
             removableTroops: 0,
+            troopsDeployedToConflict: 0,
+            troopsRetreatedFromConflict: 0,
+            gainsStartIndex: state.gains.length,
             persuasionCount: persuasionCount,
             gainedEffects: [],//TODO is this used?
             acquiredCards: [],
@@ -2342,8 +3041,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             const card = newState.foldspaceDeck.pop()
             if (card) {
               currPlayer.discardPile = [...currPlayer.discardPile, card]
+              updatedGains.push({
+                round: newState.currentRound,
+                playerId,
+                sourceId: space.id,
+                name: card.name,
+                amount: 1,
+                type: RewardType.CARD,
+                source: GainSource.BOARD_SPACE,
+              })
+              tempCurrTurn.acquiredCards = [...(tempCurrTurn.acquiredCards ?? []), card]
             }
-            updatedGains.push({ round: newState.currentRound, playerId: playerId, sourceId: space.id, name: 'Foldspace' , amount: 1, type: RewardType.CARD, source: GainSource.BOARD_SPACE })
             break
           }
 
@@ -2372,6 +3080,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...newState,
+        selectedCardDeckIndex: null,
         gains: updatedGains,
         players: updatedPlayers.map(p =>
           p.id === playerId
@@ -2384,7 +3093,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             : p
         ),
         occupiedSpaces: updatedOccupiedSpaces,
-        currTurn: currentTurn,
+        currTurn: {
+          ...currentTurn,
+          acquiredCards: tempCurrTurn.acquiredCards,
+        },
         pendingRewards,
         dispatchEnvoyActive: nextDispatch,
         infiltrateIgnoreOccupancyOnce: nextInfiltrate,
@@ -2395,16 +3107,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const { playerId, cardIds } = action
       const player: Player = {...state.players.find(p => p.id === playerId)} as Player
       const tempCurrTurn: GameTurn = {
-        ...state.currTurn,
         playerId,
-        canDeployTroops: state.currTurn?.canDeployTroops || false,
-        troopLimit: state.currTurn?.troopLimit || 0,
-        removableTroops: state.currTurn?.removableTroops || 0,
-        persuasionCount: state.currTurn?.persuasionCount || 0,
+        canDeployTroops: false,
+        troopLimit: 0,
+        removableTroops: 0,
+        troopsDeployedToConflict: 0,
+        troopsRetreatedFromConflict: 0,
+        gainsStartIndex: state.gains.length,
+        persuasionCount: 0,
         type: TurnType.REVEAL,
         gainedEffects: [],
         acquiredCards: [],
-        pendingChoices: []
+        pendingChoices: [],
       }
 
       if (!player || playerId !== state.activePlayerId) return state
@@ -2641,13 +3355,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             type: TurnType.REVEAL,
             canDeployTroops: tempCurrTurn.canDeployTroops,
             troopLimit: tempCurrTurn.troopLimit,
-            removableTroops: tempCurrTurn.removableTroops,
+            removableTroops: 0,
+            troopsDeployedToConflict: 0,
+            troopsRetreatedFromConflict: 0,
+            gainsStartIndex: state.gains.length,
             persuasionCount: persuasionCount,
             gainedEffects: [],
             acquiredCards: [],
             revealedCardIds: revealedCards.map(card => card.id),
             optionalEffects,
-            pendingChoices
+            pendingChoices,
           }
 
       // Update combat strength even if not in combat (so can be used later)
@@ -2971,11 +3688,25 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       if(!canPayCost(player)) return state; // cannot afford
 
+      const newGains: Gain[] = [...state.gains];
+      function pushCostGain(amount: number | undefined, type: RewardType) {
+        if (!amount) return;
+        newGains.push({
+          round: state.currentRound,
+          playerId,
+          sourceId: source.id,
+          name: source.name,
+          amount: -amount,
+          type,
+          source: source.type,
+        });
+      }
+
       // Deduct numeric resources
-      if(cost.spice) player.spice -= cost.spice;
-      if(cost.water) player.water -= cost.water;
-      if(cost.solari) player.solari -= cost.solari;
-      if(cost.troops) player.troops -= cost.troops;
+      if(cost.spice) { player.spice -= cost.spice; pushCostGain(cost.spice, RewardType.SPICE); }
+      if(cost.water) { player.water -= cost.water; pushCostGain(cost.water, RewardType.WATER); }
+      if(cost.solari) { player.solari -= cost.solari; pushCostGain(cost.solari, RewardType.SOLARI); }
+      if(cost.troops) { player.troops -= cost.troops; pushCostGain(cost.troops, RewardType.TROOPS); }
 
       // Handle trashing this card (card assumed to be in playArea)
       if(cost.trashThisCard && source.type === GainSource.CARD) {
@@ -3009,7 +3740,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
 
-      const newGains: Gain[] = [...state.gains];
       function pushGain(amount:number, type: RewardType) {
         if(!amount) return;
         newGains.push({
@@ -3030,7 +3760,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if(reward.spice) { player.spice += reward.spice; pushGain(reward.spice, RewardType.SPICE);}
       if(reward.water) { player.water += reward.water; pushGain(reward.water, RewardType.WATER);} 
       if(reward.solari) { player.solari += reward.solari; pushGain(reward.solari, RewardType.SOLARI);} 
-      if(reward.troops) { player.troops += reward.troops; pushGain(reward.troops, RewardType.TROOPS);} 
+      if(reward.troops) {
+        player.troops += reward.troops;
+        pushGain(reward.troops, RewardType.TROOPS);
+        if (tempCurrTurn.canDeployTroops) {
+          tempCurrTurn.troopLimit = (tempCurrTurn.troopLimit || 0) + reward.troops;
+        }
+      }
       if(reward.intrigueCards) {
         player.intrigueCount += reward.intrigueCards;
         pushGain(reward.intrigueCards, RewardType.INTRIGUE);
@@ -3039,6 +3775,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         pushGain(reward.deployTroops, RewardType.DEPLOY);
         tempCurrTurn.troopLimit = tempCurrTurn.troopLimit ? tempCurrTurn.troopLimit + reward.deployTroops : reward.deployTroops;
         tempCurrTurn.canDeployTroops = true;
+      }
+      if (reward.retreatTroops) {
+        pushGain(reward.retreatTroops, RewardType.RETREAT)
+        tempCurrTurn.effectRetreatAllowance =
+          (tempCurrTurn.effectRetreatAllowance ?? 0) + reward.retreatTroops
       }
       if(reward.victoryPoints) { player.victoryPoints += reward.victoryPoints; pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS);} 
       let nextCombatStrength = { ...state.combatStrength }
@@ -3074,6 +3815,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const player = state.players.find(p => p.id === playerId)
       if(!player) return state
 
+      const pendingChoiceForSource = state.currTurn.pendingChoices?.find(c => c.id === action.choiceId)
+      const gainAttribution: GainAttribution | undefined = source
+        ? { type: source.type as GainSource, id: source.id, name: source.name }
+        : pendingChoiceForSource?.type === ChoiceType.FIXED_OPTIONS
+          ? (pendingChoiceForSource as FixedOptionsChoice).source
+          : pendingChoiceForSource?.type === ChoiceType.CARD_SELECT
+            ? (pendingChoiceForSource as CardSelectChoice).source
+            : undefined
+
       if (reward.recallSpaceId !== undefined) {
         const spaceId = reward.recallSpaceId
         const occ = state.occupiedSpaces[spaceId] || []
@@ -3101,15 +3851,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if ((state.combatTroops[playerId] || 0) < n) return state
         let s = state
         for (let i = 0; i < n; i++) {
-          s = gameReducer(s, { type: 'RETREAT_TROOP', playerId })
+          s = gameReducer(s, {
+            type: 'RETREAT_TROOP',
+            playerId,
+            fromEffect: true,
+            bypassAllowance: true,
+          })
         }
         const newPending = (s.currTurn?.pendingChoices || []).filter(c => c.id !== action.choiceId)
         const newTurn = s.currTurn ? { ...s.currTurn, pendingChoices: newPending } : null
-        return {
-          ...s,
-          currTurn: newTurn,
-          canEndTurn: (newPending.length || 0) === 0
-        }
+        return finishCombatIntrigueAction(
+          {
+            ...s,
+            currTurn: newTurn,
+            canEndTurn: (newPending.length || 0) === 0,
+          },
+          playerId
+        )
       }
       
       // Check if this reward has an acquire effect
@@ -3198,6 +3956,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Check if this reward has a custom effect that needs card selection
       if(reward.custom === CustomEffect.OTHER_MEMORY) {
+        const otherMemorySource: GainAttribution = gainAttribution ?? {
+          type: GainSource.CARD,
+          id: 0,
+          name: 'Unknown',
+        }
         // Create a CardSelectChoice for the custom effect
         const choiceId = 'OTHER_MEMORY-' + crypto.randomUUID()
         const cardSelectChoice: CardSelectChoice = {
@@ -3212,9 +3975,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             type: 'CUSTOM_EFFECT',
             playerId: player.id,
             customEffect: CustomEffect.OTHER_MEMORY,
-            data: { cardId: cardIds[0] }
+            data: { cardId: cardIds[0], gainSource: otherMemorySource }
           }),
-          source: { type: GainSource.CARD, id: source?.id || 0, name: source?.name || 'Unknown' }
+          source: otherMemorySource
         }
         
         const newTurn = { ...state.currTurn }
@@ -3266,15 +4029,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           return JSON.stringify(opt.reward) === JSON.stringify(reward)
         })
         
-        const pushGain = (amount: number, type: RewardType) => {
+        const pushGain = (amount: number, type: RewardType, gainName?: string) => {
           updatedGains.push({
             round: state.currentRound,
             playerId,
-            sourceId: source?.id || 0,
-            name: source?.name || 'Unknown',
+            sourceId: gainAttribution?.id ?? 0,
+            name: gainName ?? gainAttribution?.name ?? 'Unknown',
             amount,
             type,
-            source: (source?.type as GainSource) || GainSource.INTRIGUE
+            source: gainAttribution?.type ?? GainSource.INTRIGUE
           })
         }
 
@@ -3326,11 +4089,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const newState = applyChoiceReward(
         { ...state, players: state.players.map(p => p.id === playerId ? updatedPlayer : p), gains: updatedGains },
         reward,
-        playerId
+        playerId,
+        gainAttribution
       )
       newState.currTurn = newTurn
       newState.canEndTurn = newTurn.pendingChoices.length === 0
-      return newState
+      return state.phase === GamePhase.COMBAT
+        ? finishCombatIntrigueAction(newState, playerId)
+        : newState
     }
     case 'RESOLVE_CARD_SELECT': {
       const { choiceId, cardIds } = action
@@ -3363,7 +4129,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       switch(customEffect) {
         case CustomEffect.OTHER_MEMORY: {
-          const { cardId } = data 
+          const { cardId, gainSource } = data 
           const player = state.players.find(p => p.id === playerId)
           if (!player) return state
           
@@ -3374,16 +4140,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           const card = player.discardPile[cardIndex]
           const newDiscardPile = player.discardPile.filter(c => c.id !== cardId)
           const newDeck = [card, ...player.deck]
-          const newState = { ...state }
-          // newState.gains.push({
-          //   playerId,
-          //   round: newState.currentRound,
-          //   source: GainSource.CARD,
-          //   sourceId: 0,
-          //   name: 'Choice Reward',
-          //   amount,
-          //   type
-          // })
+          const newState = { ...state, gains: [...state.gains] }
+          if (gainSource) {
+            newState.gains.push({
+              playerId,
+              round: newState.currentRound,
+              source: gainSource.type,
+              sourceId: gainSource.id,
+              name: gainSource.name,
+              amount: 1,
+              type: RewardType.DRAW,
+            })
+          }
           return {
             ...newState,
             players: newState.players.map(p =>
@@ -3396,30 +4164,59 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         case CustomEffect.SECRETS_STEAL: {
           const player = state.players.find(p => p.id === playerId)
           if (!player) return state
-          
+
+          const agentSpaceId = state.currTurn?.agentSpaceId
+          const space = agentSpaceId != null ? BOARD_SPACES.find(s => s.id === agentSpaceId) : undefined
+          const gainName = space?.name ?? 'Secrets stolen'
+          const gainSource = GainSource.BOARD_SPACE
+          const gainSourceId = space?.id ?? 0
+          const newGains = [...state.gains]
+
           // Steal 1 intrigue from each opponent with 4+ intrigue
           const newPlayers = state.players.map(p => {
             if (p.id !== playerId && p.intrigueCount >= 4) {
+              newGains.push({
+                round: state.currentRound,
+                playerId: p.id,
+                sourceId: gainSourceId,
+                name: gainName,
+                amount: -1,
+                type: RewardType.INTRIGUE,
+                source: gainSource,
+              })
               return { ...p, intrigueCount: p.intrigueCount - 1 }
             }
             return p
           })
-          
+
           // Count how many intrigue cards were stolen
           const stolenCount = newPlayers.filter(p => {
             if (p.id === playerId) return false
             const originalPlayer = state.players.find(op => op.id === p.id)
             return originalPlayer && originalPlayer.intrigueCount > p.intrigueCount
           }).length
-          
+
+          if (stolenCount > 0) {
+            newGains.push({
+              round: state.currentRound,
+              playerId,
+              sourceId: gainSourceId,
+              name: gainName,
+              amount: stolenCount,
+              type: RewardType.INTRIGUE,
+              source: gainSource,
+            })
+          }
+
           // Update the player with stolen intrigue
           return {
             ...state,
-            players: newPlayers.map(p => 
-              p.id === playerId 
+            gains: newGains,
+            players: newPlayers.map(p =>
+              p.id === playerId
                 ? { ...p, intrigueCount: p.intrigueCount + stolenCount }
                 : p
-            )
+            ),
           }
         }
         case CustomEffect.POWER_PLAY: {
@@ -3445,14 +4242,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             return state
           }
           
-          // Initialize opponent discard state
-          // For REVEREND_MOTHER_MOHIAM, only include opponents with cards in hand
+          // Initialize opponent discard state — any opponent with cards left in their deck
           const opponents = state.players
-            .filter(p => p.id !== playerId && p.handCount > 0)
+            .filter(p => p.id !== playerId && opponentHasDiscardableCards(p))
             .map(p => p.id)
           if (opponents.length === 0) return state
           const discardCounts: Record<number, number> = {}
           opponents.forEach(id => { discardCounts[id] = 0 })
+          const mohiamCard = typeof data?.cardId === 'number'
+            ? player.playArea.find(c => c.id === data.cardId) ??
+              state.players.find(p => p.id === playerId)?.playArea.find(c => c.id === data.cardId)
+            : undefined
           return {
             ...state,
             currTurn: state.currTurn ? {
@@ -3461,7 +4261,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 effect: CustomEffect.REVEREND_MOTHER_MOHIAM,
                 remainingOpponents: opponents,
                 currentOpponent: undefined, // No auto-select, let player choose
-                discardCounts
+                discardCounts,
+                sourceCardId: mohiamCard?.id ?? (typeof data?.cardId === 'number' ? data.cardId : undefined),
+                sourceCardName: mohiamCard?.name,
               }
             } : null
           }
@@ -3537,7 +4339,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
     case 'TRASH_CARD': {
-      const { playerId, cardId, gainReward } = action
+      const { playerId, cardId, gainReward, source: trashSource } = action
       const player = state.players.find(p => p.id === playerId)
       if (!player) return state
       
@@ -3552,7 +4354,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (handIndex !== -1) {
         card = player.deck[handIndex]
         newPlayer.deck = player.deck.filter(c => c.id !== cardId)
-        newPlayer.handCount = Math.max(0, player.handCount - 1)
+        if (handIndex < player.handCount) {
+          newPlayer.handCount = Math.max(0, player.handCount - 1)
+        }
       } else if (discardIndex !== -1) {
         card = player.discardPile[discardIndex]
         newPlayer.discardPile = player.discardPile.filter(c => c.id !== cardId)
@@ -3566,14 +4370,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Add to trash
       newPlayer.trash = [...(player.trash || []), card]
       
+      const trashGainSource = trashSource ?? { type: GainSource.CARD, id: card.id, name: card.name }
+      const newGains = [...state.gains, {
+        round: state.currentRound,
+        playerId,
+        sourceId: card.id,
+        name: card.name,
+        amount: -1,
+        type: RewardType.TRASH,
+        source: trashGainSource.type,
+      }]
+      
       let newState = {
         ...state,
-        players: state.players.map(p => p.id === playerId ? newPlayer : p)
+        players: state.players.map(p => p.id === playerId ? newPlayer : p),
+        gains: newGains,
       }
       
       // Apply any reward for trashing
       if (gainReward) {
-        newState = applyChoiceReward(newState, gainReward, playerId)
+        newState = applyChoiceReward(newState, gainReward, playerId, trashSource)
       }
       
       return newState
@@ -3686,7 +4502,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           type: 'CUSTOM_EFFECT',
           playerId,
           customEffect: reward.reward.custom,
-          data: customData || {}
+          data: { cardId: reward.source.id, ...(customData || {}) },
         })
       }
       
@@ -3710,12 +4526,20 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         })
       }
       
-      // If troops were recruited during this turn on a combat space, increase troopLimit
-      if (reward.reward.troops && newState.currTurn?.canDeployTroops) {
-        newState.currTurn = {
-          ...newState.currTurn,
-          troopLimit: (newState.currTurn.troopLimit || 0) + reward.reward.troops
-        }
+      if (reward.reward.troops) {
+        newState = withRecruitedTroopsDeployLimit(newState, reward.reward.troops)
+      }
+      if (reward.reward.retreatTroops) {
+        newState = withEffectRetreatAllowance(newState, reward.reward.retreatTroops)
+        newGains.push({
+          round: state.currentRound,
+          playerId,
+          sourceId: reward.source.id,
+          name: reward.source.name,
+          amount: reward.reward.retreatTroops,
+          type: RewardType.RETREAT,
+          source: reward.source.type,
+        })
       }
       
       // Update player
@@ -3785,12 +4609,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       })
       
-      // If troops were recruited during this turn on a combat space, increase troopLimit
-      if (totalTroopsRecruited > 0 && newState.currTurn?.canDeployTroops) {
-        newState.currTurn = {
-          ...newState.currTurn,
-          troopLimit: (newState.currTurn.troopLimit || 0) + totalTroopsRecruited
-        }
+      if (totalTroopsRecruited > 0) {
+        newState = withRecruitedTroopsDeployLimit(newState, totalTroopsRecruited)
       }
       
       // Remove all applied rewards from pendingRewards (keep only trash sources and disabled rewards)
@@ -3821,7 +4641,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         // Set the selected opponent as current
         if (!discardState.remainingOpponents.includes(opponentId)) return state
         const opponent = state.players.find(p => p.id === opponentId)
-        if (!opponent || opponent.handCount === 0) return state
+        if (!opponent || getOpponentDiscardableCards(opponent).length === 0) return state
         
         return {
           ...state,
@@ -3857,15 +4677,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           delete newCombatStrength[opponentId]
         }
         
-        // Move to next opponent
-        const remainingOpponents = discardState.remainingOpponents.filter(id => id !== opponentId)
-        const newOpponentDiscardState = remainingOpponents.length > 0 ? {
-          ...discardState,
-          remainingOpponents,
-          currentOpponent: remainingOpponents[0],
-          discardCounts: discardState.discardCounts
-        } : undefined
-        
+        const discardCounts = { ...(discardState.discardCounts || {}) }
+        const newOpponentDiscardState = advanceOpponentDiscardState(
+          state,
+          discardState,
+          opponentId,
+          discardCounts
+        )
+
         return {
           ...state,
           combatTroops: newCombatTroops,
@@ -3888,77 +4707,40 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'OPPONENT_DISCARD_CARD': {
       const { playerId: actingPlayerId, opponentId, cardId } = action
+      return applyOpponentDiscards(state, actingPlayerId, opponentId, [cardId])
+    }
+    case 'OPPONENT_DISCARD_CARDS': {
+      const { playerId: actingPlayerId, opponentId, cardIds } = action
+      return applyOpponentDiscards(state, actingPlayerId, opponentId, cardIds)
+    }
+    case 'OPPONENT_NO_CARD_ACK': {
+      const { playerId: actingPlayerId, opponentId } = action
       if (!state.currTurn?.opponentDiscardState) return state
       if (actingPlayerId !== state.activePlayerId) return state
-      
       const discardState = state.currTurn.opponentDiscardState
-      if (discardState.currentOpponent !== opponentId) return state
-      
+      if (discardState.effect !== CustomEffect.REVEREND_MOTHER_MOHIAM) return state
+      if (!discardState.remainingOpponents.includes(opponentId)) return state
       const opponent = state.players.find(p => p.id === opponentId)
-      if (!opponent) return state
-      
-      // Find and move card from deck to discard pile
-      const cardIndex = opponent.deck.findIndex(c => c.id === cardId)
-      if (cardIndex === -1) return state
-      
-      // Ensure card is not in playArea (already revealed)
-      if (opponent.playArea.some(c => c.id === cardId)) return state
-      
-      const card = opponent.deck[cardIndex]
-      const newDeck = opponent.deck.filter(c => c.id !== cardId)
-      const newDiscardPile = [...opponent.discardPile, card]
-      
-      // Update discard count for this opponent
+      if (!opponent || opponent.handCount > 0) return state
+      if (
+        discardState.currentOpponent != null &&
+        discardState.currentOpponent !== opponentId
+      ) {
+        return state
+      }
+
       const discardCounts = { ...(discardState.discardCounts || {}) }
-      discardCounts[opponentId] = (discardCounts[opponentId] || 0) + 1
-      
-      // For Reverend Mother Mohiam, each opponent discards 2 cards
-      const requiredDiscards = discardState.effect === CustomEffect.REVEREND_MOTHER_MOHIAM ? 2 : 1
-      let hasDiscardedEnough = discardCounts[opponentId] >= requiredDiscards
+      discardCounts[opponentId] = 2
 
-      if (!hasDiscardedEnough && discardState.effect === CustomEffect.REVEREND_MOTHER_MOHIAM) {
-        const cardsRemaining = newDeck.length
-        if (cardsRemaining === 0) {
-          discardCounts[opponentId] = requiredDiscards
-          hasDiscardedEnough = true
-        }
-      }
-
-      const remainingOpponents = discardState.remainingOpponents.filter(id => id !== opponentId)
-      const newOpponentDiscardState = remainingOpponents.length > 0 ? {
-        ...discardState,
-        remainingOpponents,
-        currentOpponent: remainingOpponents[0],
+      const newOpponentDiscardState = advanceOpponentDiscardState(
+        state,
+        discardState,
+        opponentId,
         discardCounts
-      } : undefined
-      
-      if (!hasDiscardedEnough) {
-        // Opponent needs to discard more cards
-        return {
-          ...state,
-          players: state.players.map(p =>
-            p.id === opponentId
-              ? { ...p, deck: newDeck, discardPile: newDiscardPile, handCount: Math.max(0, p.handCount - 1) }
-              : p
-          ),
-          currTurn: state.currTurn ? {
-            ...state.currTurn,
-            opponentDiscardState: {
-              ...discardState,
-              discardCounts
-            }
-          } : null
-        }
-      }
-      
-      // Opponent has discarded enough, move to next
+      )
+
       return {
         ...state,
-        players: state.players.map(p =>
-          p.id === opponentId
-            ? { ...p, deck: newDeck, discardPile: newDiscardPile, handCount: Math.max(0, p.handCount - 1) }
-            : p
-        ),
         currTurn: state.currTurn ? {
           ...state.currTurn,
           opponentDiscardState: newOpponentDiscardState
@@ -3966,34 +4748,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         canEndTurn: newOpponentDiscardState === undefined && state.pendingRewards.filter(r => !r.disabled).length === 0
       }
     }
-    case 'OPPONENT_NO_CARD_ACK': {
-      const { playerId: actingPlayerId, opponentId } = action
-      if (!state.currTurn?.opponentDiscardState) return state
-      if (actingPlayerId !== state.activePlayerId) return state
-      const discardState = state.currTurn.opponentDiscardState
-      if (discardState.currentOpponent !== opponentId) return state
-      if (discardState.effect !== CustomEffect.REVEREND_MOTHER_MOHIAM) return state
-      const opponent = state.players.find(p => p.id === opponentId)
-      if (!opponent || opponent.handCount > 0) return state
+    case 'UNDO_TO_SETUP': {
+      if (!state.setupBaseline) {
+        console.warn('No setup baseline to restore')
+        return state
+      }
 
-      const discardCounts = { ...(discardState.discardCounts || {}) }
-      discardCounts[opponentId] = 2
-
-      const remainingOpponents = discardState.remainingOpponents.filter(id => id !== opponentId)
-      const newOpponentDiscardState = remainingOpponents.length > 0 ? {
-        ...discardState,
-        remainingOpponents,
-        currentOpponent: remainingOpponents[0],
-        discardCounts
-      } : undefined
-
+      const baseline = deepCopyGameState(state.setupBaseline)
       return {
-        ...state,
-        currTurn: state.currTurn ? {
-          ...state.currTurn,
-          opponentDiscardState: newOpponentDiscardState
-        } : null,
-        canEndTurn: newOpponentDiscardState === undefined && state.pendingRewards.filter(r => !r.disabled).length === 0
+        ...baseline,
+        setupBaseline: deepCopyGameState(state.setupBaseline),
+        history: [baseline],
+        currTurn: null,
+        selectedCard: null,
+        selectedCardDeckIndex: null,
+        canEndTurn: false,
+        canAcquireIR: false,
+        gains: [],
+        pendingRewards: [],
       }
     }
     case 'UNDO_TO_TURN': {
@@ -4005,8 +4777,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return state
       }
       
-      // Get the historical state at the target index
-      const targetState = state.history[turnIndex]
+      // Get the historical state at the target index (deep copy — history entries are shared references)
+      const targetState = deepCopyGameState(state.history[turnIndex])
       if (!targetState) {
         console.warn('No historical state found at index:', turnIndex)
         return state
@@ -4014,7 +4786,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Truncate history to only include turns up to and including the target
       // The target state becomes the new current state, but we preserve it in history
-      const historyBeforeTarget = state.history.slice(0, turnIndex)
+      const historyBeforeTarget = state.history.slice(0, turnIndex).map(deepCopyGameState)
       // Include targetState in history to preserve turn information
       const truncatedHistory = [...historyBeforeTarget, targetState]
       
@@ -4027,6 +4799,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...targetState,
         history: restoredHistory
       }
+
+      // Round-start / pre-setup baseline at index 0: use snapshot as-is (no player advance).
+      // End-of-turn snapshots at index 0 still carry currTurn and fall through to advance logic.
+      if (turnIndex === 0 && !targetState.currTurn) {
+        return {
+          ...targetState,
+          history: [targetState],
+          currTurn: null,
+          selectedCard: null,
+          selectedCardDeckIndex: null,
+          canEndTurn: false,
+          canAcquireIR: false,
+          gains: [],
+          pendingRewards: [],
+        }
+      }
       
       // Extract activePlayerId from restored state and get current player
       const currentPlayerId = restoredState.activePlayerId
@@ -4037,6 +4825,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ...restoredState,
           currTurn: null,
           selectedCard: null,
+          selectedCardDeckIndex: null,
           canEndTurn: false,
           canAcquireIR: false,
           gains: [],
@@ -4068,6 +4857,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           currTurn: null,
           canEndTurn: true,
           selectedCard: null,
+          selectedCardDeckIndex: null,
           canAcquireIR: false,
           gains: [],
           pendingRewards: []
@@ -4106,6 +4896,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             canEndTurn: false,
             canAcquireIR: false,
             selectedCard: null,
+            selectedCardDeckIndex: null,
             gains: [],
             pendingRewards: []
           }
@@ -4119,10 +4910,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
         
         // Continue to combat phase with first eligible player
+        const combatAutoPasses = getAutoCombatPassPlayerIds(newState)
+        let combatActiveId = newState.firstPlayerMarker
+        let combatActivePlayer = newState.players[combatActiveId]
+        let combatFindAttempts = 0
+        while (
+          combatFindAttempts < newState.players.length &&
+          (combatAutoPasses.has(combatActiveId) ||
+            combatActivePlayer.intrigueCount < 1 ||
+            (newState.combatTroops[combatActiveId] || 0) < 1)
+        ) {
+          combatActiveId = (combatActiveId + 1) % newState.players.length
+          combatActivePlayer = newState.players[combatActiveId]
+          combatFindAttempts++
+        }
         const combatState = {
           ...newState,
           phase: GamePhase.COMBAT,
-          combatPasses: new Set<number>(),
+          combatPasses: combatAutoPasses,
           players: newState.players.map(p =>
             p.id === currentPlayerId
               ? {
@@ -4131,11 +4936,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 }
               : p
           ),
-          activePlayerId: playersWithIntrigueAndTroops[0].id,
+          activePlayerId: combatActiveId,
           currTurn: null,
           canEndTurn: false,
           canAcquireIR: false,
           selectedCard: null,
+          selectedCardDeckIndex: null,
           gains: [],
           pendingRewards: []
         }
@@ -4176,6 +4982,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         currTurn: null,
         canEndTurn: false,
         selectedCard: null,
+        selectedCardDeckIndex: null,
         canAcquireIR: false,
         gains: [],
         pendingRewards: []
@@ -4222,10 +5029,51 @@ function appendCardAcquisitionTracking(
   return { gains: nextGains, currTurn }
 }
 
+function copyCurrTurnForHistory(currTurn: GameTurn | null | undefined): GameTurn | null {
+  if (!currTurn) return null
+  return {
+    ...currTurn,
+    gainedEffects: currTurn.gainedEffects ? [...currTurn.gainedEffects] : undefined,
+    acquiredCards: currTurn.acquiredCards ? currTurn.acquiredCards.map(c => ({ ...c })) : undefined,
+    revealedCardIds: currTurn.revealedCardIds ? [...currTurn.revealedCardIds] : undefined,
+    playedIntrigueCard: currTurn.playedIntrigueCard
+      ? currTurn.playedIntrigueCard.map(p => ({ ...p }))
+      : undefined,
+    optionalEffects: currTurn.optionalEffects ? [...currTurn.optionalEffects] : undefined,
+    pendingChoices: currTurn.pendingChoices ? [...currTurn.pendingChoices] : undefined,
+    opponentDiscardState: currTurn.opponentDiscardState
+      ? {
+          ...currTurn.opponentDiscardState,
+          remainingOpponents: [...currTurn.opponentDiscardState.remainingOpponents],
+          discardCounts: currTurn.opponentDiscardState.discardCounts
+            ? { ...currTurn.opponentDiscardState.discardCounts }
+            : undefined,
+        }
+      : undefined,
+  }
+}
+
+/** History snapshots store only this turn's gains with gainsStartIndex 0. */
+function snapshotStateForHistory(state: GameState): GameState {
+  const copy = deepCopyGameState(state)
+  if (!copy.currTurn) return copy
+  const start = copy.currTurn.gainsStartIndex ?? 0
+  const turnGains = (copy.gains ?? []).slice(start)
+  return {
+    ...copy,
+    gains: turnGains,
+    currTurn: {
+      ...copy.currTurn,
+      gainsStartIndex: 0,
+    },
+  }
+}
+
 // Helper function to create a deep copy of GameState for history
 function deepCopyGameState(state: GameState): GameState {
   return {
     ...state,
+    currTurn: copyCurrTurnForHistory(state.currTurn),
     highCouncilSeatOrder: [...(state.highCouncilSeatOrder ?? [])],
     // Deep copy arrays
     players: state.players.map(p => ({
@@ -4276,6 +5124,9 @@ function deepCopyGameState(state: GameState): GameState {
     blockedSpaces: state.blockedSpaces ? [...state.blockedSpaces] : [],
     pendingImperiumRowReplacement: state.pendingImperiumRowReplacement ? { ...state.pendingImperiumRowReplacement } : null,
     helenaRemovedCard: state.helenaRemovedCard ? { ...state.helenaRemovedCard, card: state.helenaRemovedCard.card } : null,
+    setupBaseline: state.setupBaseline
+      ? deepCopyGameState({ ...state.setupBaseline, history: [], setupBaseline: undefined })
+      : undefined,
     // History should be empty for the initial state snapshot
     history: []
   }
@@ -4291,11 +5142,21 @@ export const GameProvider: React.FC<GameProviderProps> = ({ initialState = {}, c
     ...initialGameState,
     ...initialState
   }
+
+  const setupBaseline = deepCopyGameState({ ...initialMergedState, history: [], setupBaseline: undefined })
   
   // Create initial state with the initial state saved as turn 0 in history
   const initialStateWithHistory: GameState = {
     ...initialMergedState,
-    history: [deepCopyGameState(initialMergedState)]
+    setupBaseline,
+    history: [
+      deepCopyGameState({
+        ...initialMergedState,
+        historyEntryKind: 'setup',
+        history: [],
+        setupBaseline: undefined,
+      }),
+    ],
   }
   
   const [gameState, dispatch] = useReducer(gameReducer, initialStateWithHistory)
@@ -4334,14 +5195,18 @@ function getEffectChoice(currPlayer: Player, card: Card, effect: PlayEffect): Ca
       id: choiceId,
       type: ChoiceType.CARD_SELECT,
       prompt: 'Choose a card to trash',
-      piles: [CardPile.DECK, CardPile.DISCARD],
+      piles: [CardPile.HAND, CardPile.DISCARD],
       selectionCount: 1,
-      onResolve: (cardIds: number[]) => ({ 
-        type: 'TRASH_CARD',
-        playerId: currPlayer.id,
-        cardId: cardIds[0],
-        gainReward: effect.reward
-      }),
+      onResolve: (cardIds: number[]) => {
+        const cardSource: GainAttribution = { type: GainSource.CARD, id: card.id, name: card.name }
+        return {
+          type: 'TRASH_CARD',
+          playerId: currPlayer.id,
+          cardId: cardIds[0],
+          gainReward: effect.reward,
+          source: cardSource,
+        }
+      },
       source: { type: GainSource.CARD, id: card.id, name: card.name }
     }
   }
@@ -4352,7 +5217,7 @@ function getEffectChoice(currPlayer: Player, card: Card, effect: PlayEffect): Ca
       id: choiceId,
       type: ChoiceType.CARD_SELECT,
       prompt: 'Choose a card to trash',
-      piles: [CardPile.DECK, CardPile.DISCARD],
+      piles: [CardPile.HAND, CardPile.DISCARD],
       selectionCount: 1,
       onResolve: (cardIds: number[]) => ({ 
         type: 'TRASH_CARD',
@@ -4374,12 +5239,15 @@ function getEffectChoice(currPlayer: Player, card: Card, effect: PlayEffect): Ca
       filter: (c: Card) => c.faction?.includes(FactionType.BENE_GESSERIT) || false,
       selectionCount: 1,
       disabled: !hasValidCard,
-      onResolve: (cardIds: number[]) => ({
-        type: 'CUSTOM_EFFECT',
-        playerId: currPlayer.id,
-        customEffect: CustomEffect.OTHER_MEMORY,
-        data: { cardId: cardIds[0] }
-      }),
+      onResolve: (cardIds: number[]) => {
+        const cardSource: GainAttribution = { type: GainSource.CARD, id: card.id, name: card.name }
+        return {
+          type: 'CUSTOM_EFFECT',
+          playerId: currPlayer.id,
+          customEffect: CustomEffect.OTHER_MEMORY,
+          data: { cardId: cardIds[0], gainSource: cardSource },
+        }
+      },
       source: { type: GainSource.CARD, id: card.id, name: card.name }
     }
   }

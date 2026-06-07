@@ -4,10 +4,10 @@ import './CombatTroopControls.css'
 export interface CombatTroopControlsProps {
   canDeploy: boolean
   deployableTroops: number
-  retreatableTroops: number
+  deployedThisTurn: number
   garrisonTroops: number
   onDeploy: () => void
-  onRetreat: () => void
+  onUndeploy: () => void
   className?: string
   style?: React.CSSProperties
 }
@@ -15,16 +15,16 @@ export interface CombatTroopControlsProps {
 const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
   canDeploy,
   deployableTroops,
-  retreatableTroops,
+  deployedThisTurn,
   garrisonTroops,
   onDeploy,
-  onRetreat,
+  onUndeploy,
   className,
   style,
 }) => {
   const visible =
     canDeploy &&
-    ((deployableTroops > 0 && garrisonTroops > 0) || retreatableTroops > 0)
+    ((deployableTroops > 0 && garrisonTroops > 0) || deployedThisTurn > 0)
 
   if (!visible) return null
 
@@ -33,7 +33,7 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
       className={['combat-troop-controls', className].filter(Boolean).join(' ')}
       style={style}
       role="group"
-      aria-label="Deploy or retreat troops in the Conflict"
+      aria-label="Deploy or undo deployment of troops to the Conflict"
     >
       <button
         type="button"
@@ -49,16 +49,19 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
           ➤
         </span>
       </button>
-      <div className="troop-action-status" aria-label={`${retreatableTroops} troops deployed this turn`}>
-        <span className="troop-deployed-count">{retreatableTroops}</span>
+      <div
+        className="troop-action-status"
+        aria-label={`${deployedThisTurn} troops deployed this turn`}
+      >
+        <span className="troop-deployed-count">{deployedThisTurn}</span>
       </div>
       <button
         type="button"
-        className="troop-action-button troop-retreat-button"
-        onClick={onRetreat}
-        disabled={!canDeploy || retreatableTroops <= 0}
-        aria-label={`Retreat one troop. ${retreatableTroops} can retreat.`}
-        title={`Retreat troop (${retreatableTroops} available)`}
+        className="troop-action-button troop-undeploy-button"
+        onClick={onUndeploy}
+        disabled={!canDeploy || deployedThisTurn <= 0}
+        aria-label={`Undo one deployment. ${deployedThisTurn} can be taken back.`}
+        title={`Undo deploy (${deployedThisTurn} deployed this turn)`}
       >
         <span className="troop-action-arrow" aria-hidden="true">
           ◄

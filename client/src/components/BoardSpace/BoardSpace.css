@@ -100,16 +100,20 @@
   color: #45f948;
 }
 
-.bonus-spice {
+.board-space__bonus-spice {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  font-size: 0.8em;
-  color: #d32f2f;
-  background: rgba(255, 251, 230, 0.9);
-  border-radius: 4px;
-  padding: 2px 6px;
+  top: 6%;
+  right: 6%;
   z-index: 2;
+  font-size: clamp(8px, 2.2vw, 11px);
+}
+
+.board-space__harvest-spice {
+  position: absolute;
+  right: 24%;
+  bottom: 14%;
+  z-index: 2;
+  font-size: clamp(9px, 2.4vw, 12px);
 }
 
 .space-requirement {
@@ -170,11 +174,14 @@
     gap: 2px;
   }
   
-  .bonus-spice {
-    font-size: 0.65em;
-    padding: 1px 3px;
-    top: 2px;
-    right: 2px;
+  .board-space__bonus-spice {
+    font-size: clamp(7px, 1.8vw, 9px);
+  }
+
+  .board-space__harvest-spice {
+    right: 22%;
+    bottom: 12%;
+    font-size: clamp(7px, 2vw, 10px);
   }
 }
 
@@ -202,12 +209,14 @@
     gap: 1px;
   }
   
-  .bonus-spice {
-    font-size: 0.55em;
-    padding: 1px 2px;
-    top: 1px;
-    right: 1px;
-    border-radius: 2px;
+  .board-space__bonus-spice {
+    font-size: clamp(6px, 1.6vw, 8px);
+  }
+
+  .board-space__harvest-spice {
+    right: 20%;
+    bottom: 10%;
+    font-size: clamp(6px, 1.8vw, 9px);
   }
   
   .voice-block-indicator {
@@ -246,8 +255,11 @@
     gap: 1px;
   }
   
-  .bonus-spice {
-    font-size: 0.5em;
-    padding: 0px 2px;
+  .board-space__bonus-spice {
+    font-size: 6px;
+  }
+
+  .board-space__harvest-spice {
+    font-size: 7px;
   }
 } 

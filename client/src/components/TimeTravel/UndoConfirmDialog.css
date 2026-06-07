@@ -3,60 +3,52 @@
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 2000;
+  height: var(--play-footer-top, 100dvh);
+  max-height: var(--play-footer-top, 100dvh);
+  background: rgba(0, 0, 0, 0.65);
+  z-index: var(--z-modal-overlay-top, 1320);
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .undo-confirm-dialog {
-  background: #1a1a1a;
-  border: 2px solid #c0392b;
+  background: #1e1e1e;
+  border: 1px solid rgba(212, 177, 106, 0.45);
   border-radius: 12px;
-  max-width: 500px;
-  width: 90vw;
-  box-shadow: 0 0 40px rgba(192, 57, 43, 0.3);
+  max-width: 460px;
+  width: min(460px, 92vw);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
 .undo-confirm-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 20px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(192, 57, 43, 0.15);
-  border-radius: 10px 10px 0 0;
-}
-
-.undo-confirm-header .warning-icon {
-  font-size: 1.8em;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .undo-confirm-header h2 {
   margin: 0;
-  color: #e74c3c;
-  font-size: 1.4em;
+  color: var(--color-arrakis-parchment, #f4e4bc);
+  font-size: 1.15em;
+  font-weight: 600;
 }
 
 .undo-confirm-body {
-  padding: 24px;
+  padding: 20px 22px;
 }
 
 .undo-main-warning {
-  font-size: 1.1em;
-  color: #fff;
-  margin: 0 0 20px 0;
+  font-size: 1.05em;
+  color: rgba(244, 228, 188, 0.95);
+  margin: 0 0 18px 0;
   text-align: center;
-}
-
-.undo-main-warning strong {
-  color: #e74c3c;
+  line-height: 1.45;
 }
 
 .undo-details {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 16px;
@@ -77,36 +69,17 @@
   font-weight: 500;
 }
 
-.undo-warning-box {
-  background: rgba(231, 76, 60, 0.15);
-  border: 1px solid rgba(231, 76, 60, 0.4);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-}
-
-.undo-warning-box strong {
-  color: #e74c3c;
-  display: block;
-  margin-bottom: 8px;
-}
-
-.undo-warning-box p {
-  margin: 0;
-  color: #ccc;
-  font-size: 0.95em;
-}
-
 .undo-losses-section {
-  margin-bottom: 16px;
+  margin-bottom: 4px;
 }
 
 .undo-losses-section h3 {
-  font-size: 0.95em;
-  color: #d4af37;
-  margin: 0 0 12px 0;
+  font-size: 0.85em;
+  color: rgba(212, 177, 106, 0.85);
+  margin: 0 0 10px 0;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
+  font-weight: 600;
 }
 
 .losses-list {
@@ -117,66 +90,47 @@
 
 .losses-list li {
   padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 4px;
   margin-bottom: 4px;
-  color: #e74c3c;
-  font-size: 0.95em;
-}
-
-.undo-warning-final {
-  background: rgba(192, 57, 43, 0.1);
-  border-radius: 8px;
-  padding: 12px 16px;
-  text-align: center;
-}
-
-.undo-warning-final p {
-  margin: 0;
-  color: #ccc;
-  font-size: 0.9em;
-}
-
-.undo-warning-final strong {
-  color: #e74c3c;
+  color: rgba(220, 200, 170, 0.9);
+  font-size: 0.92em;
 }
 
 .undo-confirm-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  padding: 16px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0 0 10px 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .undo-confirm-actions button {
   padding: 10px 20px;
   border-radius: 6px;
-  font-size: 1em;
+  font-size: 0.95em;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 .cancel-button {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   color: #ccc;
 }
 
 .cancel-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
-.confirm-button.danger {
-  background: #c0392b;
-  border: none;
+.confirm-button {
+  background: rgba(180, 130, 60, 0.85);
+  border: 1px solid rgba(212, 177, 106, 0.55);
   color: #fff;
 }
 
-.confirm-button.danger:hover {
-  background: #e74c3c;
+.confirm-button:hover {
+  background: rgba(200, 150, 70, 0.95);
 }

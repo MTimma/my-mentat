@@ -31,5 +31,9 @@ describe('Turn controls — layout CSS contract', () => {
   })
 
   it.todo('e2e: resize window — footer height stable across agent → reveal → end turn')
-  it.todo('e2e: docked turn history does not shift play-shell-footer width')
+  it('docked play stage width spans board + turn history (chess-style chrome)', () => {
+    expect(appCss).toContain('--play-stage-width')
+    expect(appCss).toContain('.game-container--history-docked .play-shell-footer--docked')
+    expect(appCss).toContain('var(--play-history-sidebar-width')
+  })
 })

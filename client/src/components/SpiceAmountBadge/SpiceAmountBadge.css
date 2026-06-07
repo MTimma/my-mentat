@@ -1,0 +1,29 @@
+.spice-amount-badge {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  pointer-events: none;
+}
+
+.spice-amount-badge__icon {
+  width: 1.75em;
+  height: 1.75em;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.spice-amount-badge__amt {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.7em;
+  line-height: 1;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.9),
+    0 0 4px rgba(0, 0, 0, 0.65);
+}

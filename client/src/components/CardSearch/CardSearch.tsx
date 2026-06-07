@@ -159,8 +159,7 @@ interface CardSearchProps {
   showSelectionPreview?: boolean
   initialSelectedCards?: Card[]
   cancelButtonText?: string
-  confirmButtonText?: string
-  /** Placed after the cancel control and before Confirm (e.g. quantity stepper). */
+  /** Placed after the cancel control and before Select (e.g. quantity stepper). */
   confirmAdornment?: React.ReactNode
   /** Bust playability caches when rules inputs change without a new `cards` array identity. */
   playabilityInvalidateKey?: unknown
@@ -186,13 +185,12 @@ const CardSearch: React.FC<CardSearchProps> = ({
   showSelectionPreview,
   initialSelectedCards = EMPTY_SELECTED_CARDS,
   cancelButtonText = 'Clear all',
-  confirmButtonText = 'Confirm',
   confirmAdornment,
   playabilityInvalidateKey,
   embedded = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCards, setSelectedCards] = useState<Card[]>([])
+  const [selectionSlots, setSelectionSlots] = useState<(Card | null)[]>([])
   const overlayRef = useRef<HTMLDivElement>(null)
   const cardsGridRef = useRef<HTMLDivElement>(null)
   const onSelectionChangeRef = useRef(onSelectionChange)
@@ -213,14 +211,32 @@ const CardSearch: React.FC<CardSearchProps> = ({
     onSelectionChangeRef.current = onSelectionChange
   }, [onSelectionChange])
 
+  const buildSlots = useCallback(
+    (initial: Card[]) =>
+      Array.from({ length: selectionCount }, (_, index) => initial[index] ?? null),
+    [selectionCount]
+  )
+
+  const filledCards = useCallback(
+    (slots: (Card | null)[]) => slots.filter((card): card is Card => card !== null),
+    []
+  )
+
+  const normalizeSlots = useCallback(
+    (slots: (Card | null)[]) =>
+      slots.length === selectionCount
+        ? [...slots]
+        : Array.from({ length: selectionCount }, (_, index) => slots[index] ?? null),
+    [selectionCount]
+  )
+
   useEffect(() => {
     if (!isOpen) return
 
-    setSelectedCards(initialSelectedCards)
-    if (onSelectionChangeRef.current) {
-      onSelectionChangeRef.current(initialSelectedCards)
-    }
-  }, [initialSelectedCards, isOpen])
+    const slots = buildSlots(initialSelectedCards)
+    setSelectionSlots(slots)
+    onSelectionChangeRef.current?.(filledCards(slots))
+  }, [buildSlots, filledCards, initialSelectedCards, isOpen, selectionCount])
 
   // Derive available cards from piles or use provided cards
   const availableCards = useMemo(() => {
@@ -229,11 +245,11 @@ const CardSearch: React.FC<CardSearchProps> = ({
       if (!player) return []
       switch (pile) {
         case 'HAND':
-          return player.deck // In this game, deck represents hand
+          return player.deck.slice(0, Math.max(0, player.handCount))
         case 'DISCARD':
           return player.discardPile
         case 'DECK':
-          return [] // Deck cards are not visible for selection
+          return [] // Draw pile is not selectable (use HAND for cards in hand)
         case 'PLAY_AREA':
           return player.playArea
         default:
@@ -301,7 +317,10 @@ const CardSearch: React.FC<CardSearchProps> = ({
     return m
   }, [availableCards, playabilityInvalidateKey])
 
-  const selectedIds = useMemo(() => new Set(selectedCards.map(c => c.id)), [selectedCards])
+  const selectedIds = useMemo(
+    () => new Set(selectionSlots.filter((card): card is Card => card !== null).map(card => card.id)),
+    [selectionSlots]
+  )
 
   const handleCardPick = useCallback((card: Card) => {
     const fn = getCardPlayabilityRef.current
@@ -310,41 +329,49 @@ const CardSearch: React.FC<CardSearchProps> = ({
       if (!p.playable) return
     }
 
-    setSelectedCards(prev => {
-      let next: Card[]
+    setSelectionSlots(prev => {
+      const slots = normalizeSlots(prev)
       if (!isRevealTurn) {
-        next = [card]
-      } else if (prev.find(c => c.id === card.id)) {
-        next = prev.filter(c => c.id !== card.id)
-      } else if (prev.length < selectionCount) {
-        next = [...prev, card]
+        slots.fill(null)
+        slots[0] = card
       } else {
-        next = prev
+        const existingIndex = slots.findIndex(slot => slot?.id === card.id)
+        if (existingIndex !== -1) {
+          slots[existingIndex] = null
+        } else {
+          const emptyIndex = slots.findIndex(slot => slot === null)
+          if (emptyIndex !== -1) {
+            slots[emptyIndex] = card
+          }
+        }
       }
-      onSelectionChangeRef.current?.(next)
-      return next
+      onSelectionChangeRef.current?.(filledCards(slots))
+      return slots
     })
-  }, [isRevealTurn, selectionCount])
+  }, [filledCards, isRevealTurn, normalizeSlots])
 
-  const handleRemoveFromPreview = useCallback((card: Card) => {
-    setSelectedCards(prev => {
-      if (!prev.some(c => c.id === card.id)) return prev
-      const next = isRevealTurn ? prev.filter(c => c.id !== card.id) : []
-      onSelectionChangeRef.current?.(next)
-      return next
+  const handleRemoveFromPreview = useCallback((slotIndex: number) => {
+    setSelectionSlots(prev => {
+      const slots = normalizeSlots(prev)
+      if (!slots[slotIndex]) return prev
+      slots[slotIndex] = null
+      onSelectionChangeRef.current?.(filledCards(slots))
+      return slots
     })
-  }, [isRevealTurn])
+  }, [filledCards, normalizeSlots])
 
   const handleConfirm = () => {
-    if (selectedCards.length === selectionCount) {
-      onSelect(selectedCards)
-      setSelectedCards([])
+    const selected = filledCards(selectionSlots)
+    if (selected.length === selectionCount) {
+      onSelect(selected)
+      setSelectionSlots(buildSlots([]))
       setSearchTerm('')
     }
   }
 
   const handleCancel = () => {
-    setSelectedCards([])
+    const emptySlots = buildSlots([])
+    setSelectionSlots(emptySlots)
     if (onSelectionChange) {
       onSelectionChange([])
     }
@@ -361,7 +388,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
   const selectionPreview = showPreview ? (
     <div className="card-search-selection-preview" aria-label="Selected cards">
       {Array.from({ length: selectionCount }, (_, index) => {
-        const card = selectedCards[index] ?? null
+        const card = selectionSlots[index] ?? null
         return (
           <button
             key={index}
@@ -370,7 +397,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
               card ? ' card-search-selection-preview-slot--filled' : ''
             }`}
             disabled={!card}
-            onClick={() => card && handleRemoveFromPreview(card)}
+            onClick={() => handleRemoveFromPreview(index)}
             title={card ? `Remove ${card.name}` : undefined}
             aria-label={
               card
@@ -393,9 +420,9 @@ const CardSearch: React.FC<CardSearchProps> = ({
         {!hideTitle && <h2>{text}</h2>}
       </div>
       <div className="cards-grid" ref={cardsGridRef}>
-        {filteredCards.map(card => (
+        {filteredCards.map((card, index) => (
           <CardGridItem
-            key={card.id}
+            key={`${card.id}-${index}`}
             card={card}
             isSelected={selectedIds.has(card.id)}
             playability={
@@ -432,11 +459,12 @@ const CardSearch: React.FC<CardSearchProps> = ({
         </button>
         {confirmAdornment}
         <button
+          type="button"
           className="header-confirm-button"
           onClick={handleConfirm}
-          disabled={selectedCards.length !== selectionCount}
+          disabled={filledCards(selectionSlots).length !== selectionCount}
         >
-          {confirmButtonText}
+          Select
         </button>
       </div>
     </div>

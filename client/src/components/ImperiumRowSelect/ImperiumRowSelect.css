@@ -60,12 +60,12 @@
   overflow: hidden;
 }
 
-/* More space between cards in Select 5 Imperium Row Cards */
 .imperium-select-dialog .cards-grid {
-  gap: 16px;
+  gap: 8px;
+  padding: 8px 12px;
 }
 
-/* Desktop: ensure cards grid scrolls and fits more cards per row */
+/* Desktop: compact grid matching mobile density */
 @media (min-width: 601px) {
   .imperium-select-dialog .card-selection-dialog .cards-grid {
     flex: 1;
@@ -74,18 +74,27 @@
     overflow-x: hidden;
   }
 
-  /* Smaller cards on desktop so more fit in viewport */
+  .imperium-select-dialog .card-cell {
+    flex: 0 0 64px;
+    width: 64px;
+    flex-shrink: 0;
+  }
+
   .imperium-select-dialog .cards-grid .card {
-    width: 110px;
-    transform: scale(0.75);
+    width: 64px;
+    min-width: 64px;
+    max-width: 64px;
+    transform: none;
+    padding: 3px;
+    box-sizing: border-box;
   }
 
   .imperium-select-dialog .cards-grid .card:hover {
-    transform: scale(0.85);
+    transform: scale(1.05);
   }
 
   .imperium-select-dialog .cards-grid .card.selected {
-    transform: scale(0.85);
+    transform: none;
   }
 }
 
@@ -214,7 +223,7 @@
     min-height: 0;
     max-height: none;
     padding: 4px 6px;
-    gap: 16px;
+    gap: 8px;
   }
 
   /* Fixed-size cells so cards wrap without empty gaps when filtering */

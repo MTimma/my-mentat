@@ -1,6 +1,7 @@
 import React from 'react'
 import { SpaceProps } from '../../types/GameTypes'
 import AgentIcon from '../AgentIcon/AgentIcon'
+import { SpiceAmountBadge } from '../SpiceAmountBadge/SpiceAmountBadge'
 import './BoardSpace.css'
 
 interface BoardSpaceProps extends SpaceProps {
@@ -64,6 +65,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
   conflictMarker,
   isEnabled,
   makerSpace,
+  effects,
   image,
   wide = false,
   isVoiceSelectable = false,
@@ -104,13 +106,31 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
     )
   }
 
+  const harvestSpice =
+    effects?.reduce((total, effect) => total + (effect.reward.spice ?? 0), 0) ??
+    reward?.spice ??
+    0
+
   const renderBonusSpice = () => {
-    if (typeof bonusSpice !== 'number') return null
-    return makerSpace ? (
-      <div className="bonus-spice">
-        + Bonus Spice: {bonusSpice}
-      </div>
-    ) : null
+    if (!makerSpace || typeof bonusSpice !== 'number' || bonusSpice <= 0) return null
+    return (
+      <SpiceAmountBadge
+        amount={bonusSpice}
+        className="board-space__bonus-spice"
+        title={`Bonus spice: ${bonusSpice}`}
+      />
+    )
+  }
+
+  const renderHarvestSpice = () => {
+    if (!makerSpace || !image || harvestSpice <= 0) return null
+    return (
+      <SpiceAmountBadge
+        amount={harvestSpice}
+        className="board-space__harvest-spice"
+        title={`Harvest ${harvestSpice} spice`}
+      />
+    )
   }
 
   const renderRequirement = () => {
@@ -136,6 +156,7 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
         ${wide ? 'wide' : ''}
         ${isVoiceSelectable ? 'voice-selectable' : ''}
         ${voiceBlockedBy !== null ? 'voice-blocked' : ''}
+        ${makerSpace ? 'board-space--maker' : ''}
       `}
       onClick={isEnabled ? onSpaceClick : undefined}
       style={{
@@ -151,6 +172,8 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
           className="board-space-image"
         />
       )}
+      {renderHarvestSpice()}
+      {renderBonusSpice()}
       {voiceBlockedBy !== null && (
         <div className="voice-block-indicator" title="Blocked by The Voice" />
       )}

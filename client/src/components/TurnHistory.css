@@ -24,13 +24,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px 10px;
+  padding: 10px 14px 12px;
   background: rgba(28, 30, 34, 0.92);
-  border-bottom: 1px solid rgba(212, 177, 106, 0.28);
+  border-top: 1px solid rgba(212, 177, 106, 0.28);
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--color-arrakis-parchment, #f4e4bc);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   flex-shrink: 0;
 }
@@ -78,31 +78,49 @@
 }
 
 .turn-history-overlay.viewing-history .turn-history-header {
-  border-bottom-color: #d4af37; /* Keep gold border always */
+  border-top-color: #d4af37;
 }
 
 .turn-history-nav {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-.turn-history-header button {
-  background: #d4af37;
-  color: #222;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 12px;
-  font-size: 1.1em;
-  font-weight: bold;
+.turn-history-nav-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.2s;
+  flex-shrink: 0;
+  background: rgba(212, 177, 106, 0.1);
+  color: rgba(244, 228, 188, 0.92);
+  border: 1px solid rgba(212, 177, 106, 0.32);
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s,
+    opacity 0.2s;
 }
 
-.turn-history-header button:disabled {
-  background: #888;
-  color: #333;
+.turn-history-nav-btn:hover:not(:disabled) {
+  background: rgba(212, 177, 106, 0.22);
+  border-color: rgba(212, 177, 106, 0.5);
+}
+
+.turn-history-nav-btn:disabled {
+  opacity: 0.35;
   cursor: not-allowed;
+}
+
+.turn-history-nav-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .turn-history-list {
@@ -154,26 +172,32 @@
   cursor: pointer;
 }
 
-.turn-history-row-top {
+.turn-history-row-top,
+.turn-history-row-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
+.turn-history-row-header .turn-label {
+  flex: 1;
+}
+
+.turn-history-row-header .turn-actions {
+  margin-left: auto;
+}
+
+.turn-history-row-body,
 .turn-history-main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.turn-history-summary-line {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
+  width: 100%;
 }
 
 .turn-label {
@@ -203,6 +227,10 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
+.turn-history-card-thumb--intrigue .turn-history-card-thumb-img {
+  border-color: rgba(129, 199, 132, 0.35);
+}
+
 .turn-history-reveal-stats {
   width: 100%;
   box-sizing: border-box;
@@ -220,9 +248,10 @@
 }
 
 .turn-number {
-  width: 24px;
+  min-width: 24px;
   height: 24px;
-  border-radius: 50%;
+  padding: 0 4px;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
@@ -231,6 +260,7 @@
   font-weight: 700;
   color: rgba(244, 228, 188, 0.9);
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .turn-history-row.viewing .turn-number {
@@ -364,22 +394,100 @@
   outline-offset: 2px;
 }
 
+.turn-history-icon-btn--undo:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .current-turn-entry {
   margin-bottom: 8px;
 }
 
-/* Gains display — separate band below turn summary */
+/* Gains display — separate band below turn summary (layout from TurnGainsDisplay) */
 .turn-history-gains {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  align-items: stretch;
   width: 100%;
   padding: 6px 8px;
   box-sizing: border-box;
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.turn-history-gains::-webkit-scrollbar {
+  display: none;
+}
+
+.turn-history-other-gains {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.turn-history-combat-gains {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.turn-history-combat-player-gains {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 8px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.turn-history-combat-player-gains .turn-history-player-badge {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.turn-history-combat-player-gains .turn-gains-display-root {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.turn-history-other-player-gains {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 8px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.turn-history-other-player-gains .turn-gain-source-group--inline-discards {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.turn-history-other-player-gains .turn-history-player-badge {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.turn-history-other-player-gains .turn-gains-display-root {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .gain-item {
@@ -651,7 +759,17 @@
   }
 
   .turn-history-header {
-    padding: 10px 12px 8px;
+    padding: 8px 12px 10px;
+  }
+
+  .turn-history-nav-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .turn-history-nav-icon {
+    width: 14px;
+    height: 14px;
   }
 
   .turn-history-row {
@@ -717,8 +835,13 @@
 
 @media (max-width: 400px) {
   .turn-history-header {
-    padding: 8px 10px 5px 10px;
+    padding: 6px 10px 8px;
     font-size: 0.85em;
+  }
+
+  .turn-history-nav-btn {
+    width: 24px;
+    height: 24px;
   }
   
   .turn-history-row {

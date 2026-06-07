@@ -9,6 +9,18 @@ import './LeaderResourceStrip.css'
 
 type CardPileKind = 'deck' | 'discard' | 'trash'
 
+export type LeaderResourceStripInclude =
+  | 'vp'
+  | 'spice'
+  | 'water'
+  | 'solari'
+  | 'troops'
+  | 'hand'
+  | 'deck'
+  | 'discard'
+  | 'trash'
+  | 'influence'
+
 const PILE_LABELS: Record<CardPileKind, string> = {
   deck: 'Deck',
   discard: 'Discard',
@@ -21,6 +33,10 @@ interface LeaderResourceStripProps {
   leaderName?: string
   /** Omit leader name and tighten spacing (e.g. history banner). */
   compact?: boolean
+  /** Smallest layout for board overlays (e.g. combat ring). */
+  overlay?: boolean
+  /** When set, only these items are shown (overrides the default full strip). */
+  include?: LeaderResourceStripInclude[]
   /** When set, only these resources are shown (e.g. costs the player cannot pay). */
   onlyResources?: OptionalCostResourceKind[]
 }
@@ -37,16 +53,24 @@ const LeaderResourceStrip = ({
   gameState,
   leaderName,
   compact,
+  overlay,
+  include,
   onlyResources,
 }: LeaderResourceStripProps) => {
   const [openPile, setOpenPile] = useState<CardPileKind | null>(null)
 
   const vp = gameState ? getTotalVictoryPoints(player, gameState) : player.victoryPoints
-  const show = (kind: OptionalCostResourceKind | 'vp') =>
-    !onlyResources || onlyResources.includes(kind as OptionalCostResourceKind)
-  const showVp = !onlyResources
-
-  const showCardPiles = !onlyResources
+  const showItem = (kind: LeaderResourceStripInclude): boolean => {
+    if (include) return include.includes(kind)
+    if (onlyResources) {
+      if (kind === 'vp' || kind === 'hand' || kind === 'deck' || kind === 'discard' || kind === 'trash') {
+        return false
+      }
+      return onlyResources.includes(kind as OptionalCostResourceKind)
+    }
+    if (kind === 'influence') return false
+    return true
+  }
 
   const totalInfluence = gameState
     ? ALL_FACTIONS.reduce(
@@ -89,7 +113,13 @@ const LeaderResourceStrip = ({
   return (
     <>
     <div
-      className={`leader-resource-strip${compact ? ' leader-resource-strip--compact' : ''}`}
+      className={[
+        'leader-resource-strip',
+        compact ? 'leader-resource-strip--compact' : '',
+        overlay ? 'leader-resource-strip--overlay' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       aria-label={
         onlyResources
           ? `Insufficient resources: ${onlyResources.join(', ')}`
@@ -97,67 +127,68 @@ const LeaderResourceStrip = ({
       }
     >
       {leaderName && !compact && <span className="leader-resource-strip-name">{leaderName}</span>}
-      {showVp && (
+      {showItem('vp') && (
         <span className="leader-resource-item" title="Victory points">
           <img src="/icon/vp.png" alt="" className="leader-resource-icon" />
           <span className="leader-resource-value">{vp}</span>
         </span>
       )}
-      {show('spice') && (
+      {showItem('spice') && (
         <span className="leader-resource-item" title="Spice">
           <img src="/icon/spice.png" alt="" className="leader-resource-icon" />
           <span className="leader-resource-value">{player.spice}</span>
         </span>
       )}
-      {show('water') && (
+      {showItem('water') && (
         <span className="leader-resource-item" title="Water">
           <img src="/icon/water.png" alt="" className="leader-resource-icon" />
           <span className="leader-resource-value">{player.water}</span>
         </span>
       )}
-      {show('solari') && (
+      {showItem('solari') && (
         <span className="leader-resource-item" title="Solari">
           <img src="/icon/solari.png" alt="" className="leader-resource-icon" />
           <span className="leader-resource-value">{player.solari}</span>
         </span>
       )}
-      {show('troops') && (
+      {showItem('troops') && (
         <span className="leader-resource-item" title="Garrison troops">
           <img src="/icon/troop.png" alt="" className="leader-resource-icon" />
           <span className="leader-resource-value">{player.troops}</span>
         </span>
       )}
-      {showCardPiles && (
-        <>
-          <span className="leader-resource-item" title="Cards in hand">
-            <img src="/icon/draw.png" alt="" className="leader-resource-icon" />
-            <span className="leader-resource-value">{player.handCount}</span>
-          </span>
-          {renderPileCounter(
-            'deck',
-            'Deck',
-            player.deck.length,
-            <span className="leader-resource-abbr" aria-hidden="true">
-              D
-            </span>
-          )}
-          {renderPileCounter(
-            'discard',
-            'Discard pile',
-            player.discardPile.length,
-            <span className="leader-resource-abbr" aria-hidden="true">
-              Dc
-            </span>
-          )}
-          {renderPileCounter(
-            'trash',
-            'Trashed cards',
-            player.trash.length,
-            <img src="/icon/trash.png" alt="" className="leader-resource-icon" />
-          )}
-        </>
+      {showItem('hand') && (
+        <span className="leader-resource-item" title="Cards in hand">
+          <img src="/icon/draw.png" alt="" className="leader-resource-icon" />
+          <span className="leader-resource-value">{player.handCount}</span>
+        </span>
       )}
-      {onlyResources?.includes('influence') && (
+      {showItem('deck') &&
+        renderPileCounter(
+          'deck',
+          'Deck',
+          player.deck.length,
+          <span className="leader-resource-abbr" aria-hidden="true">
+            D
+          </span>
+        )}
+      {showItem('discard') &&
+        renderPileCounter(
+          'discard',
+          'Discard pile',
+          player.discardPile.length,
+          <span className="leader-resource-abbr" aria-hidden="true">
+            Dc
+          </span>
+        )}
+      {showItem('trash') &&
+        renderPileCounter(
+          'trash',
+          'Trashed cards',
+          player.trash.length,
+          <img src="/icon/trash.png" alt="" className="leader-resource-icon" />
+        )}
+      {(onlyResources?.includes('influence') || showItem('influence')) && (
         <span className="leader-resource-item" title="Total faction influence">
           <img
             src={getAnyFactionInfluenceLossIcon()}

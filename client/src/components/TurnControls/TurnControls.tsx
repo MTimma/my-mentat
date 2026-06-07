@@ -4,18 +4,16 @@ import { Player, Card, Leader, IntrigueCard, IntrigueCardType, Cost, Reward, Gai
 import { intrigueCardHasCustom } from '../../utils/intrigueCardCustom'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
+import { getLeaderIconPath } from '../../data/leaders'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS, REVEAL_EFFECT_TEXTS } from '../../data/effectTexts'
 import { intrigueRequirementSatisfied } from '../GameContext/requirements'
-import { getPlayAreaCardsForTurnView } from '../../utils/playAreaDisplay'
+import { getPlayAreaCardsForTurnView, getOpponentDiscardableCards } from '../../utils/playAreaDisplay'
 import {
-  factionFromInfluenceGainName,
   getAnyFactionInfluenceGainIcon,
   getAnyFactionInfluenceLossIcon,
   influenceAmountsFromGain,
   isAnyFactionInfluenceChoice,
 } from '../../utils/influenceDisplay'
-import { BOARD_SPACES } from '../../data/boardSpaces'
-import { getLeaderIconPath } from '../../data/leaders'
 import {
   canAffordInfluenceOptionalEffect,
   getLackingOptionalCostResources,
@@ -36,15 +34,13 @@ import './TurnControls.css'
 
 interface TurnControlsProps {
   activePlayer: Player | null
-  onPlayCard: (playerId: number, cardId: number) => void
+  onPlayCard: (playerId: number, cardId: number, deckIndex?: number) => void
   onPlayIntrigue: (playerId: number, cardId: number, targetPlayerId?: number) => void
   onMobilizeGarrison?: (playerId: number, count: number) => void
   onPlayCombatIntrigue: (playerId: number, cardId: number) => void
   onReveal: (playerId: number, cardIds: number[]) => void
   canEndTurn: boolean
   isCombatPhase: boolean
-  combatStrength: Record<number, number>
-  combatPasses?: Set<number>
   players?: Player[]
   optionalEffects?: OptionalEffect[]
   onPayCost?: (effect: OptionalEffect) => void
@@ -62,11 +58,11 @@ interface TurnControlsProps {
   onClaimAllRewards?: () => void
   onAutoApplyRewards?: () => void
   autoApplyMandatoryRewards?: boolean
-  autoAppliedRewardSummary?: Array<{ id: string; sourceName: string; sourceType: GainSource; reward: Reward }>
   agentPlaced?: boolean
   opponentDiscardState?: GameTurn['opponentDiscardState']
   onOpponentDiscardChoice?: (opponentId: number, choice: 'discard' | 'loseTroop') => void
   onOpponentDiscardCard?: (opponentId: number, cardId: number) => void
+  onOpponentDiscardCards?: (opponentId: number, cardIds: number[]) => void
   combatTroops?: Record<number, number>
   onVoiceSelectionStart?: (rewardId: string) => void
   voiceSelectionActive?: boolean
@@ -86,20 +82,6 @@ interface TurnControlsProps {
   mentatOwner?: number | null
   gameState?: GameState
   isHistoryView?: boolean
-  /** When false, round gain chips are omitted from the play area (e.g. docked turn history shows them). */
-  showRoundGainsInPlayArea?: boolean
-  /** Wide layout: portal round gains into the nav strip above the play area. */
-  roundGainsBannerSlotRef?: React.RefObject<HTMLDivElement | null>
-}
-
-const LEADER_GAIN_SOURCES = new Set<GainSource>([
-  GainSource.LEADER_ABILITY,
-  GainSource.MASTERSTROKE,
-  GainSource.MEMNON_HIGH_COUNCIL,
-])
-
-function isLeaderGainSource(source?: GainSource): boolean {
-  return source != null && LEADER_GAIN_SOURCES.has(source)
 }
 
 /** Rewards that require a tap / modal / board step (not plain +resource claims), e.g. The Voice. */
@@ -121,8 +103,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onPlayCombatIntrigue,
   onReveal,
   isCombatPhase,
-  combatStrength,
-  combatPasses = new Set(),
   players = [],
   optionalEffects = [],
   onPayCost,
@@ -137,11 +117,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onClaimReward,
   onAutoApplyRewards,
   autoApplyMandatoryRewards = true,
-  autoAppliedRewardSummary = [],
   agentPlaced = false,
   opponentDiscardState,
   onOpponentDiscardChoice,
   onOpponentDiscardCard,
+  onOpponentDiscardCards,
   combatTroops = {},
   onVoiceSelectionStart,
   voiceSelectionActive = false,
@@ -155,8 +135,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   activeIntrigueThisRound = [],
   gameState,
   isHistoryView = false,
-  showRoundGainsInPlayArea = true,
-  roundGainsBannerSlotRef,
 }) => {
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -177,20 +155,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
   const [pendingTrashReward, setPendingTrashReward] = useState<PendingReward | null>(null)
   const [activeCardSelect, setActiveCardSelect] = useState<CardSelectChoice | null>(null)
-  const [opponentCardSelect, setOpponentCardSelect] = useState<Player | null>(null)
+  const [opponentCardSelect, setOpponentCardSelect] = useState<{
+    player: Player
+    selectionCount: number
+  } | null>(null)
   const [activeFixedChoice, setActiveFixedChoice] = useState<FixedOptionsChoice | null>(null)
   const [activeCardEffectSource, setActiveCardEffectSource] = useState<{ type: GainSource; id: number } | null>(null)
   const [activeCardPreviewId, setActiveCardPreviewId] = useState<number | null>(null)
   const [activeIntriguePreviewCard, setActiveIntriguePreviewCard] = useState<IntrigueCard | null>(null)
-  const [isDesktopPlay, setIsDesktopPlay] = useState(false)
-
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 901px)')
-    const syncDesktop = () => setIsDesktopPlay(mq.matches)
-    syncDesktop()
-    mq.addEventListener('change', syncDesktop)
-    return () => mq.removeEventListener('change', syncDesktop)
-  }, [])
 
   /** Clears played-card overlay; avoids stale preview ids matching deck/discard after trash. */
   const closeCardEffectsDialog = useCallback(() => {
@@ -199,6 +171,43 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }, [])
 
   const hasOpponentDiscard = Boolean(opponentDiscardState)
+  const getReverendMotherDiscardCount = useCallback(
+    (player: Player, discardCounts?: Record<number, number>) => {
+      const discarded = discardCounts?.[player.id] ?? 0
+      return Math.max(0, Math.min(2 - discarded, player.handCount))
+    },
+    []
+  )
+
+  const openReverendMotherDiscardModal = useCallback(
+    (player: Player) => {
+      const selectionCount = getReverendMotherDiscardCount(
+        player,
+        opponentDiscardState?.discardCounts
+      )
+      if (selectionCount <= 0) return
+      setOpponentCardSelect({ player, selectionCount })
+    },
+    [getReverendMotherDiscardCount, opponentDiscardState?.discardCounts]
+  )
+
+  useEffect(() => {
+    if (isHistoryView || !onOpponentNoCardAck) return
+    if (opponentDiscardState?.effect !== CustomEffect.REVEREND_MOTHER_MOHIAM) return
+    if (opponentDiscardState.currentOpponent != null) return
+    const remaining = opponentDiscardState.remainingOpponents ?? []
+    const emptyHandIds = remaining.filter(
+      id => (players.find(p => p.id === id)?.handCount ?? 0) === 0
+    )
+    if (emptyHandIds.length === 0) return
+    emptyHandIds.forEach(id => onOpponentNoCardAck(id))
+  }, [
+    isHistoryView,
+    onOpponentNoCardAck,
+    opponentDiscardState,
+    players,
+  ])
+
   const hasMandatoryRewards = pendingRewards.some(r => !r.disabled && !r.isTrash)
   // Automatically open CardSelectChoice if it's the only pending choice and not already open
   useEffect(() => {
@@ -404,17 +413,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     [activePlayer.agents, gameState?.occupiedSpaces],
   )
 
-  const getRankings = () => {
-    const entries = Object.entries(combatStrength)
-      .map(([playerId, strength]) => ({ playerId: parseInt(playerId), strength }))
-      .sort((a, b) => b.strength - a.strength)
-
-    return entries.map((entry, index) => ({
-      ...entry,
-      rank: index + 1
-    }))
-  }
-
   const handlePlayCard = () => {
     setIsRevealTurn(false)
     setIsCardSelectionOpen(true)
@@ -440,7 +438,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       onReveal(activePlayer.id, picked.map(card => card.id))
       setIsRevealTurn(false)
     } else if (picked.length === 1) {
-      onPlayCard(activePlayer.id, picked[0].id)
+      const deckIndex = activePlayer.deck.indexOf(picked[0])
+      onPlayCard(activePlayer.id, picked[0].id, deckIndex >= 0 ? deckIndex : undefined)
     }
   }
 
@@ -938,18 +937,31 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
 
     if (opponentCardSelect) {
+      const { player, selectionCount } = opponentCardSelect
+      const isReverendMother =
+        opponentDiscardState?.effect === CustomEffect.REVEREND_MOTHER_MOHIAM
+      const discardableCards = getOpponentDiscardableCards(player)
       return (
         <CardSearch
           isOpen={true}
-          player={opponentCardSelect}
-          piles={[CardPile.DECK]}
-          customFilter={card => !opponentCardSelect.playArea.some(pc => pc.id === card.id)}
-          selectionCount={1}
-          text={`Choose a card from ${opponentCardSelect.leader?.name || opponentCardSelect.color} to discard`}
-          isRevealTurn={false}
+          player={player}
+          cards={discardableCards}
+          selectionCount={selectionCount}
+          text={
+            isReverendMother && selectionCount > 1
+              ? `Choose ${selectionCount} cards from ${player.leader?.name || player.color}'s deck to discard`
+              : `Choose a card from ${player.leader?.name || player.color}'s deck to discard`
+          }
+          isRevealTurn={selectionCount > 1}
           onSelect={selectedCards => {
-            if (onOpponentDiscardCard) {
-              onOpponentDiscardCard(opponentCardSelect.id, selectedCards[0].id)
+            if (selectedCards.length === 0) return
+            if (selectedCards.length > 1 && onOpponentDiscardCards) {
+              onOpponentDiscardCards(
+                player.id,
+                selectedCards.map(card => card.id)
+              )
+            } else if (onOpponentDiscardCard) {
+              onOpponentDiscardCard(player.id, selectedCards[0].id)
             }
             setOpponentCardSelect(null)
           }}
@@ -961,11 +973,107 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     return null;
   }
 
+  const resolveFixedChoiceOption = (
+    fixedChoice: FixedOptionsChoice,
+    option: { reward: Reward; cost?: Cost },
+    variant: 'dialog' | 'compact',
+    onResolvedCompactOption?: (option: { reward: Reward; cost?: Cost }) => void
+  ) => {
+    if (onResolveChoice) {
+      onResolveChoice(fixedChoice.id, option.reward, fixedChoice.source)
+    }
+    setActiveFixedChoice(null)
+    if (variant === 'compact') {
+      onResolvedCompactOption?.(option)
+    }
+  }
+
+  const renderMasterTacticianOptions = (
+    fixedChoice: FixedOptionsChoice,
+    variant: 'dialog' | 'compact',
+    onResolvedCompactOption?: (option: { reward: Reward; cost?: Cost }) => void
+  ) => {
+    const combatOption = fixedChoice.options.find(option => option.reward.combat !== undefined)
+    const retreatOptions = fixedChoice.options
+      .filter(
+        option =>
+          option.reward.retreatFromConflict !== undefined &&
+          (option.reward.retreatFromConflict ?? 0) > 0
+      )
+      .sort(
+        (a, b) => (a.reward.retreatFromConflict ?? 0) - (b.reward.retreatFromConflict ?? 0)
+      )
+
+    return (
+      <div
+        className={[
+          'master-tactician-choice',
+          `master-tactician-choice--${variant}`,
+        ].join(' ')}
+        role="group"
+        aria-label={fixedChoice.prompt || 'Master Tactician'}
+      >
+        {combatOption && (
+          <button
+            type="button"
+            className={`effect-btn choice fixed-choice-option master-tactician-strength fixed-choice-option--${variant}`}
+            disabled={combatOption.disabled || voiceSelectionActive || masterstrokeSelectionActive}
+            onClick={() => resolveFixedChoiceOption(fixedChoice, combatOption, variant, onResolvedCompactOption)}
+          >
+            {renderLabel(combatOption)}
+          </button>
+        )}
+        {combatOption && retreatOptions.length > 0 && (
+          <span className="or-separator master-tactician-or" aria-hidden="true">
+            OR
+          </span>
+        )}
+        {retreatOptions.length > 0 && (
+          <div className="master-tactician-retreat" role="group" aria-label="Retreat troops from Conflict">
+            <span className="master-tactician-retreat-label">Retreat</span>
+            <div className="master-tactician-retreat-counts">
+              {retreatOptions.map(option => {
+                const count = option.reward.retreatFromConflict ?? 0
+                return (
+                  <button
+                    key={count}
+                    type="button"
+                    className="master-tactician-retreat-count"
+                    disabled={
+                      option.disabled ||
+                      voiceSelectionActive ||
+                      masterstrokeSelectionActive ||
+                      !isAffordable(option.cost)
+                    }
+                    onClick={() =>
+                      resolveFixedChoiceOption(fixedChoice, option, variant, onResolvedCompactOption)
+                    }
+                    title={count === 0 ? 'Retreat no troops' : `Retreat ${count} troop${count === 1 ? '' : 's'}`}
+                    aria-label={`Retreat ${count} troop${count === 1 ? '' : 's'}`}
+                  >
+                    {count}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const renderFixedChoiceOptions = (
     fixedChoice: FixedOptionsChoice,
     variant: 'dialog' | 'compact',
     onResolvedCompactOption?: (option: { reward: Reward; cost?: Cost }) => void
   ) => {
+    const retreatOptions = fixedChoice.options.filter(
+      option => option.reward.retreatFromConflict !== undefined
+    )
+    if (retreatOptions.length > 1) {
+      return renderMasterTacticianOptions(fixedChoice, variant, onResolvedCompactOption)
+    }
+
     const showOrBetween = fixedChoice.options.length > 1
     return (
       <div
@@ -996,15 +1104,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 type="button"
                 className={`effect-btn choice fixed-choice-option fixed-choice-option--${variant}${showOrBetween ? ' or-option' : ''}`}
                 disabled={option.disabled || cannotAfford || voiceSelectionActive || masterstrokeSelectionActive}
-                onClick={() => {
-                  if (onResolveChoice) {
-                    onResolveChoice(fixedChoice.id, option.reward, fixedChoice.source)
-                  }
-                  setActiveFixedChoice(null)
-                  if (variant === 'compact') {
-                    onResolvedCompactOption?.(option)
-                  }
-                }}
+                onClick={() =>
+                  resolveFixedChoiceOption(fixedChoice, option, variant, onResolvedCompactOption)
+                }
                 title={cannotAfford ? 'Cannot afford this option.' : disabledTooltip}
               >
                 {renderLabel(option)}
@@ -1788,6 +1890,22 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     )
   }
 
+  const renderOpponentDiscardLeaderAvatar = (opponent: Player) => {
+    const iconPath = getLeaderIconPath(opponent.leader.name)
+    return (
+      <span
+        className={`opponent-discard-leader-avatar leader-avatar-btn ${opponent.color}`}
+        aria-hidden="true"
+      >
+        {iconPath ? (
+          <img src={iconPath} alt="" draggable={false} />
+        ) : (
+          <span className="opponent-discard-leader-fallback">{opponent.leader.name.charAt(0)}</span>
+        )}
+      </span>
+    )
+  }
+
   const renderOpponentDiscardPanel = () => {
     const effect = opponentDiscardState?.effect
     if (!effect) return null
@@ -1795,13 +1913,20 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     // For REVEREND_MOTHER_MOHIAM, show player selection if no current opponent selected
     if (effect === CustomEffect.REVEREND_MOTHER_MOHIAM && !opponentDiscardState?.currentOpponent) {
       const remainingOpponents = opponentDiscardState?.remainingOpponents || []
-      const eligibleOpponents = players.filter(p => 
-        remainingOpponents.includes(p.id) && p.handCount > 0
+      const opponentsToShow = players.filter(p => remainingOpponents.includes(p.id))
+      const eligibleOpponents = opponentsToShow.filter(
+        p => getOpponentDiscardableCards(p).length > 0
       )
       
       if (eligibleOpponents.length === 0) {
-        // All opponents processed or have no cards
-        return null
+        return (
+          <div className="opponent-discard-panel">
+            <div className="panel-title">Reverend Mother Mohiam</div>
+            <div className="panel-body">
+              <p>No opponents have cards left to discard.</p>
+            </div>
+          </div>
+        )
       }
       
       return (
@@ -1811,23 +1936,37 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           </div>
           <div className="panel-body">
             <p>Choose which opponent to discard 2 cards from:</p>
-            <div className="panel-actions">
-              {eligibleOpponents.map(opponent => (
-                <button
-                  key={opponent.id}
-                  className="primary-btn"
-                  onClick={() => {
-                    if (onOpponentDiscardChoice) {
-                      // Set this opponent as current
-                      onOpponentDiscardChoice(opponent.id, 'discard')
-                    }
-                  }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                >
-                  <AgentIcon playerId={opponent.id} />
-                  <span>{opponent.leader?.name || opponent.color} ({opponent.handCount} cards)</span>
-                </button>
-              ))}
+            <div className="opponent-discard-opponent-list">
+              {opponentsToShow.map(opponent => {
+                const discardableCount = getOpponentDiscardableCards(opponent).length
+                const isEmpty = discardableCount === 0
+                return (
+                  <button
+                    key={opponent.id}
+                    type="button"
+                    className={[
+                      'opponent-discard-opponent-btn',
+                      isEmpty ? 'opponent-discard-opponent-btn--empty' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    disabled={isEmpty}
+                    onClick={() => {
+                      if (isEmpty) return
+                      if (onOpponentDiscardChoice) {
+                        onOpponentDiscardChoice(opponent.id, 'discard')
+                      }
+                      openReverendMotherDiscardModal(opponent)
+                    }}
+                  >
+                    {renderOpponentDiscardLeaderAvatar(opponent)}
+                    <span className="opponent-discard-opponent-label">
+                      {opponent.leader?.name || opponent.color}
+                      {isEmpty ? ' (0 cards)' : ''}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>
@@ -1842,7 +1981,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     const discarded = discardCounts[currentOpponentId] || 0
     const required = effect === CustomEffect.REVEREND_MOTHER_MOHIAM ? 2 : 1
     const remaining = Math.max(0, required - discarded)
-    const availableCards = opponent.handCount
+    const availableCards = getOpponentDiscardableCards(opponent).length
     const discardableNow = Math.min(remaining, availableCards)
     const canLoseTroop = (combatTroops[currentOpponentId] || 0) > 0
     const canDiscardCard = Boolean(onOpponentDiscardCard) && discardableNow > 0
@@ -1853,21 +1992,21 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           {effect === CustomEffect.REVEREND_MOTHER_MOHIAM ? 'Reverend Mother Mohiam' : 'Test of Humanity'}
         </div>
         <div className="panel-body">
-          <div className="opponent-row">
-            <AgentIcon playerId={opponent.id} />
+          <div className="opponent-discard-current-opponent">
+            {renderOpponentDiscardLeaderAvatar(opponent)}
             <span>{opponent.leader?.name || opponent.color}</span>
           </div>
           {effect === CustomEffect.REVEREND_MOTHER_MOHIAM ? (
             <>
               {discardableNow > 0 ? (
                 <>
-                  <p>{`Discard ${discardableNow} more card${discardableNow !== 1 ? 's' : ''} from this player's hand.`}</p>
+                  <p>{`Discard ${discardableNow} card${discardableNow !== 1 ? 's' : ''} from this player's hand.`}</p>
                   <button
                     className="primary-btn"
-                    onClick={() => canDiscardCard && setOpponentCardSelect(opponent)}
+                    onClick={() => canDiscardCard && openReverendMotherDiscardModal(opponent)}
                     disabled={!canDiscardCard}
                   >
-                    Choose card to discard
+                    {discardableNow > 1 ? 'Choose cards to discard' : 'Choose card to discard'}
                   </button>
                 </>
               ) : (
@@ -1889,7 +2028,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               <div className="panel-actions">
                 <button
                   className="secondary-btn"
-                  onClick={() => canDiscardCard && setOpponentCardSelect(opponent)}
+                  onClick={() => canDiscardCard && setOpponentCardSelect({ player: opponent, selectionCount: 1 })}
                   disabled={!canDiscardCard}
                 >
                   Discard a card
@@ -1915,9 +2054,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }
 
   const effectCards = buildEffectCards()
-  const basePlayAreaCards = isHistoryView && gameState
+  const trashedCardIds = new Set((activePlayer.trash ?? []).map(c => c.id))
+  const basePlayAreaCards = (isHistoryView && gameState
     ? getPlayAreaCardsForTurnView(gameState, activePlayer)
     : activePlayer.playArea
+  ).filter(card => !trashedCardIds.has(card.id))
   const playAreaCards = [
     ...basePlayAreaCards,
     ...(selectedCard && !activePlayer.revealed && !isRevealTurn ? [selectedCard] : [])
@@ -1945,10 +2086,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const showPlayedCardStrip =
     playAreaCards.length > 0 || playedIntrigueCards.length > 0
   const visibleCardIds = new Set(playAreaCards.map(card => card.id))
-  const turnGains = gameState?.currTurn
-    ? (gameState.gains || []).filter(gain => gain.playerId === gameState.currTurn?.playerId)
-    : []
-  const gainToReward = (gain: (typeof turnGains)[number]): Reward => {
+  const gainToReward = (gain: Gain): Reward => {
     switch (gain.type) {
       case RewardType.PERSUASION:
         return { persuasion: gain.amount }
@@ -1981,315 +2119,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         return {}
     }
   }
-  const mergeGainsToReward = (gains: (typeof turnGains)[number][]): Reward => {
-    const reward: Reward = {}
-    const influenceByFaction = new Map<FactionType, number>()
-
-    for (const gain of gains) {
-      const partial = gainToReward(gain)
-      if (partial.spice) reward.spice = (reward.spice ?? 0) + partial.spice
-      if (partial.water) reward.water = (reward.water ?? 0) + partial.water
-      if (partial.solari) reward.solari = (reward.solari ?? 0) + partial.solari
-      if (partial.troops) reward.troops = (reward.troops ?? 0) + partial.troops
-      if (partial.persuasion) reward.persuasion = (reward.persuasion ?? 0) + partial.persuasion
-      if (partial.combat) reward.combat = (reward.combat ?? 0) + partial.combat
-      if (partial.drawCards) reward.drawCards = (reward.drawCards ?? 0) + partial.drawCards
-      if (partial.intrigueCards) reward.intrigueCards = (reward.intrigueCards ?? 0) + partial.intrigueCards
-      if (partial.victoryPoints) reward.victoryPoints = (reward.victoryPoints ?? 0) + partial.victoryPoints
-      if (partial.deployTroops) reward.deployTroops = (reward.deployTroops ?? 0) + partial.deployTroops
-      if (partial.retreatTroops) reward.retreatTroops = (reward.retreatTroops ?? 0) + partial.retreatTroops
-      partial.influence?.amounts?.forEach(inf => {
-        influenceByFaction.set(inf.faction, (influenceByFaction.get(inf.faction) ?? 0) + inf.amount)
-      })
-    }
-
-    if (influenceByFaction.size > 0) {
-      reward.influence = {
-        amounts: Array.from(influenceByFaction.entries()).map(([faction, amount]) => ({
-          faction,
-          amount
-        }))
-      }
-    }
-    return reward
-  }
-  const isAcquireInfluenceGain = (gain: (typeof turnGains)[number]) =>
-    gain.type === RewardType.INFLUENCE && gain.name.endsWith(' Acquire')
-  const imperiumAcquireGainsLive: Gain[] =
-    !isHistoryView && gameState?.currTurn?.acquiredCards?.length && (gameState.gains?.length || 0) > 0
-      ? (() => {
-          const ct = gameState.currTurn!
-          const acquiredIds = new Set(ct.acquiredCards!.map(c => c.id))
-          return gameState.gains!.filter(g => {
-            if (g.playerId !== ct.playerId || g.round !== gameState!.currentRound) return false
-            if (g.source !== GainSource.CARD || !acquiredIds.has(g.sourceId)) return false
-            if (g.name.endsWith(' Acquire')) return true
-            return false
-          })
-        })()
-      : []
-
-  type VisibleGainChip = {
-    id: string
-    groupId: string
-    title: string
-    reward: Reward
-    rewardLabel?: string
-    gainSource?: GainSource
-  }
-
-  type VisibleGainGroup = {
-    id: string
-    title: string
-    gainSource?: GainSource
-    items: VisibleGainChip[]
-  }
-
-  const gainsDisplayPlayer =
-    gameState?.currTurn != null
-      ? players.find(p => p.id === gameState.currTurn!.playerId) ?? activePlayer
-      : activePlayer
-
-  const imperiumAcquisitionChipItems: VisibleGainChip[] = (() => {
-    const gainsByAcquiredCard = new Map<number, (typeof turnGains)[number][]>()
-    imperiumAcquireGainsLive.forEach(gain => {
-      const list = gainsByAcquiredCard.get(gain.sourceId) ?? []
-      list.push(gain)
-      gainsByAcquiredCard.set(gain.sourceId, list)
-    })
-    return Array.from(gainsByAcquiredCard.entries()).map(([sourceId, gains]) => {
-      const cardMeta = gameState?.currTurn?.acquiredCards?.find(c => c.id === sourceId)
-      const cardTitle = cardMeta?.name ?? gains[0]?.name.replace(/ Acquire$/, '') ?? 'Card'
-      return {
-        id: `imperium-acquire-${sourceId}`,
-        groupId: `Acquire · ${cardTitle}`,
-        title: `${cardTitle} (acquired)`,
-        reward: mergeGainsToReward(gains)
-      }
-    })
-  })()
-
-  const consolidateCombatGainChips = (items: VisibleGainChip[]): VisibleGainChip[] => {
-    let combatTotal = 0
-    const rest: VisibleGainChip[] = []
-
-    for (const item of items) {
-      const combat = item.reward.combat ?? 0
-      if (!combat) {
-        rest.push(item)
-        continue
-      }
-      const remainingReward: Reward = { ...item.reward }
-      delete remainingReward.combat
-      const hasOtherReward = Object.values(remainingReward).some(value => {
-        if (value == null || value === false) return false
-        if (typeof value === 'number') return value !== 0
-        if (typeof value === 'object') return Object.keys(value).length > 0
-        return true
-      })
-      combatTotal += combat
-      if (hasOtherReward) {
-        rest.push({ ...item, reward: remainingReward })
-      }
-    }
-
-    if (combatTotal > 0) {
-      rest.unshift({
-        id: 'turn-combat-total',
-        groupId: 'turn-combat-total',
-        title: 'Combat (revealed swords)',
-        reward: { combat: combatTotal }
-      })
-    }
-    return rest
-  }
-
-  const getGainSourceGroupTitle = (gain: Gain): string => {
-    switch (gain.source) {
-      case GainSource.BOARD_SPACE: {
-        const space = BOARD_SPACES.find(s => s.id === gain.sourceId)
-        return space?.name ?? 'Board space'
-      }
-      case GainSource.CARD: {
-        const played = activePlayer?.playArea.find(c => c.id === gain.sourceId)
-        if (played) return played.name
-        const acquired = gameState?.currTurn?.acquiredCards?.find(c => c.id === gain.sourceId)
-        if (acquired) return acquired.name
-        return factionFromInfluenceGainName(gain.name) ?? gain.name
-      }
-      default:
-        return gain.name
-    }
-  }
-
-  const mergeRewardInfluenceInto = (target: Reward, source: Reward): Reward => {
-    if (!source.influence?.amounts?.length) return target
-    const byFaction = new Map<FactionType, number>()
-    target.influence?.amounts?.forEach(inf => {
-      byFaction.set(inf.faction, (byFaction.get(inf.faction) ?? 0) + inf.amount)
-    })
-    source.influence.amounts.forEach(inf => {
-      byFaction.set(inf.faction, (byFaction.get(inf.faction) ?? 0) + inf.amount)
-    })
-    return {
-      ...target,
-      influence: {
-        amounts: Array.from(byFaction.entries()).map(([faction, amount]) => ({ faction, amount })),
-      },
-    }
-  }
-
-  const groupCoversInfluenceGains = (items: VisibleGainChip[], gains: Gain[]): boolean => {
-    const needed = new Map<FactionType, number>()
-    for (const gain of gains) {
-      const faction = factionFromInfluenceGainName(gain.name)
-      if (!faction) {
-        return items.some(item => (item.reward.influence?.amounts?.length ?? 0) > 0)
-      }
-      needed.set(faction, (needed.get(faction) ?? 0) + gain.amount)
-    }
-    const have = new Map<FactionType, number>()
-    for (const item of items) {
-      item.reward.influence?.amounts?.forEach(inf => {
-        have.set(inf.faction, (have.get(inf.faction) ?? 0) + inf.amount)
-      })
-    }
-    for (const [faction, amount] of needed) {
-      if ((have.get(faction) ?? 0) < amount) return false
-    }
-    return true
-  }
-
-  const mergeLiveInfluenceGainsFromState = (items: VisibleGainChip[]): VisibleGainChip[] => {
-    const influenceGains = turnGains.filter(
-      gain => gain.type === RewardType.INFLUENCE && !isAcquireInfluenceGain(gain)
-    )
-    if (influenceGains.length === 0) return items
-
-    const byGroup = new Map<string, Gain[]>()
-    influenceGains.forEach(gain => {
-      const groupId = getGainSourceGroupTitle(gain)
-      const list = byGroup.get(groupId) ?? []
-      list.push(gain)
-      byGroup.set(groupId, list)
-    })
-
-    const itemsByGroup = new Map<string, VisibleGainChip[]>()
-    items.forEach(item => {
-      const list = itemsByGroup.get(item.groupId) ?? []
-      list.push(item)
-      itemsByGroup.set(item.groupId, list)
-    })
-
-    for (const [groupId, groupGains] of byGroup) {
-      const existing = itemsByGroup.get(groupId) ?? []
-      if (groupCoversInfluenceGains(existing, groupGains)) continue
-
-      const influenceReward = mergeGainsToReward(groupGains)
-      if (existing.length > 0) {
-        itemsByGroup.set(
-          groupId,
-          existing.map((item, index) =>
-            index === 0
-              ? { ...item, reward: mergeRewardInfluenceInto(item.reward, influenceReward) }
-              : item
-          )
-        )
-      } else {
-        itemsByGroup.set(groupId, [
-          {
-            id: `live-influence-${groupId}`,
-            groupId,
-            title: groupId,
-            reward: influenceReward,
-          },
-        ])
-      }
-    }
-
-    return Array.from(itemsByGroup.values()).flat()
-  }
-
-  const visibleGainItems: VisibleGainChip[] = (() => {
-    const historyItems: VisibleGainChip[] = isHistoryView
-      ? (() => {
-          const persuasionTotal =
-            gameState?.currTurn?.persuasionCount ??
-            turnGains
-              .filter(gain => gain.type === RewardType.PERSUASION)
-              .reduce((sum, gain) => sum + gain.amount, 0)
-          const combatGains = turnGains.filter(gain => gain.type === RewardType.COMBAT)
-          const acquireInfluenceGains = turnGains.filter(isAcquireInfluenceGain)
-          const otherGains = turnGains.filter(
-            gain =>
-              gain.type !== RewardType.PERSUASION &&
-              gain.type !== RewardType.COMBAT &&
-              !isAcquireInfluenceGain(gain)
-          )
-          const items: VisibleGainChip[] = otherGains.map((gain, index) => ({
-            id: `${gain.source}-${gain.sourceId}-${gain.type}-${index}`,
-            groupId: `${gain.source}-${gain.sourceId}-${gain.name}`,
-            title: gain.name,
-            reward: gainToReward(gain),
-            gainSource: gain.source,
-          }))
-          if (combatGains.length > 0) {
-            items.push({
-              id: 'turn-combat-total',
-              groupId: 'turn-combat-total',
-              title: 'Combat (revealed swords)',
-              reward: mergeGainsToReward(combatGains)
-            })
-          }
-          if (acquireInfluenceGains.length > 0) {
-            items.push({
-              id: 'turn-acquire-influence',
-              groupId: 'turn-acquire-influence',
-              title: 'Influence (acquired cards)',
-              reward: mergeGainsToReward(acquireInfluenceGains)
-            })
-          }
-          if (persuasionTotal > 0) {
-            items.unshift({
-              id: 'turn-persuasion-total',
-              groupId: 'turn-persuasion-total',
-              title: 'Persuasion (turn total)',
-              reward: { persuasion: persuasionTotal }
-            })
-          }
-          return items
-        })()
-      : [
-          ...autoAppliedRewardSummary.map(item => ({
-            id: item.id,
-            groupId: item.sourceName,
-            title: item.sourceName,
-            reward: item.reward,
-            gainSource: item.sourceType,
-          })),
-          ...imperiumAcquisitionChipItems
-        ]
-
-    return isHistoryView
-      ? historyItems
-      : consolidateCombatGainChips(mergeLiveInfluenceGainsFromState(historyItems))
-  })()
-  const visibleGainGroups: VisibleGainGroup[] = Array.from(
-    visibleGainItems.reduce((groups, item) => {
-      const group = groups.get(item.groupId) || {
-        id: item.groupId,
-        title: item.title,
-        gainSource: item.gainSource,
-        items: [] as VisibleGainChip[],
-      }
-      if (!group.gainSource && item.gainSource) {
-        group.gainSource = item.gainSource
-      }
-      group.items.push(item)
-      groups.set(item.groupId, group)
-      return groups
-    }, new Map<string, VisibleGainGroup>()).values()
-  )
   const autoApplySkipsCustom = [
     CustomEffect.THE_VOICE,
     CustomEffect.REVEREND_MOTHER_MOHIAM,
@@ -2375,104 +2204,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         )
       : []
 
-  const renderLeaderGainBadge = (group: VisibleGainGroup) => {
-    if (!isLeaderGainSource(group.gainSource) || !gainsDisplayPlayer) return null
-    const leaderIconPath = getLeaderIconPath(gainsDisplayPlayer.leader.name)
-    return (
-      <span
-        className={`turn-gain-leader-badge leader-avatar-btn ${gainsDisplayPlayer.color}`}
-        title={gainsDisplayPlayer.leader.name}
-        aria-hidden="true"
-      >
-        {leaderIconPath ? (
-          <img src={leaderIconPath} alt="" className="turn-gain-leader-icon" draggable={false} />
-        ) : (
-          <span className="turn-gain-leader-icon-fallback">
-            {gainsDisplayPlayer.leader.name.charAt(0)}
-          </span>
-        )}
-      </span>
-    )
-  }
-
-  const renderRoundGainGroups = (placement: 'footer' | 'banner') => {
-    if (visibleGainGroups.length === 0) return null
-    const gainsLabel = isHistoryView ? 'Turn gains' : 'Gains from this round'
-    return (
-      <div
-        className={[
-          'turn-round-gains',
-          placement === 'banner' ? 'turn-round-gains--banner' : 'turn-round-gains--footer',
-        ].join(' ')}
-        role="region"
-        aria-label={gainsLabel}
-      >
-        <div className="turn-round-gains-chips">
-          {visibleGainGroups.map(group => {
-            const showLeaderBadge = isLeaderGainSource(group.gainSource)
-            return (
-              <div
-                key={group.id}
-                className={[
-                  'auto-applied-gains-summary',
-                  showLeaderBadge ? 'auto-applied-gains-summary--leader' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                aria-label={`${gainsLabel} from ${group.title}`}
-                title={group.title}
-              >
-                {renderLeaderGainBadge(group)}
-                {group.items.map(item => (
-                  <span key={item.id} className="auto-applied-gain-chip" title={item.title}>
-                    {renderLabel({ reward: item.reward, rewardLabel: item.rewardLabel })}
-                  </span>
-                ))}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
-
-  const showPlayAreaRoundGains = showRoundGainsInPlayArea
-  const roundGainsFooter =
-    showPlayAreaRoundGains && !isDesktopPlay ? renderRoundGainGroups('footer') : null
-  const roundGainsBannerContent =
-    showPlayAreaRoundGains && isDesktopPlay ? renderRoundGainGroups('banner') : null
-  const roundGainsBannerPortal =
-    roundGainsBannerContent && roundGainsBannerSlotRef?.current
-      ? createPortal(roundGainsBannerContent, roundGainsBannerSlotRef.current)
-      : null
-
   return (
     <>
-      {roundGainsBannerPortal}
-      {isCombatPhase && (
-        <div className="combat-container">
-          <div className="combat-phase-indicator">
-            Combat Phase
-          </div>
-          <div className="combat-rankings">
-            {getRankings().map(({ playerId, strength, rank }) => {
-              const player = players.find(p => p.id === playerId)
-              const hasPassed = combatPasses.has(playerId)
-              return (
-                <div key={playerId} className={`combat-rank rank-${rank} ${hasPassed ? 'passed' : ''}`}>
-                  {rank}. <AgentIcon playerId={playerId} />:
-                  <span className="combat-strength-token" title={`${strength} strength`}>
-                    <Icon type="dagger" className="combat-strength-icon" alt="" />
-                    {strength}
-                  </span>
-                  {player && ` (${player.leader.name})`}
-                  {hasPassed && <span className="pass-indicator"> ✓ Passed</span>}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
       {renderOpponentDiscardPanel()}
       {
         <ChoiceDialog />
@@ -2616,7 +2349,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           <div className="active-player-info">
             <div className="active-player-actions" aria-label="Active player turn rewards">
               <div className="active-player-main-actions">
-                {roundGainsFooter}
                 {showRevealPersuasionRemaining && (
                   <div
                     className="reveal-total-chip reveal-persuasion-total reveal-persuasion-remaining"
@@ -2791,7 +2523,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         }}
         isRevealTurn={isRevealTurn}
         text={isRevealTurn ? 'Select Cards to Reveal' : 'Select a Card to Play'}
-        confirmButtonText={isRevealTurn ? 'Reveal' : 'Play'}
         getCardPlayability={isRevealTurn ? undefined : checkPlayCardPlayability}
         playabilityInvalidateKey={isRevealTurn ? undefined : playCardPickerPlayabilityKey}
       />

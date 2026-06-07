@@ -9,12 +9,15 @@ import { useGame } from './components/GameContext/GameContext'
 import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
 import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
 import TurnControls from './components/TurnControls/TurnControls'
 import PlayFooterToolbar from './components/PlayFooterToolbar/PlayFooterToolbar'
 import CombatTroopControls from './components/CombatTroopControls/CombatTroopControls'
+import RetreatTroopControls from './components/RetreatTroopControls/RetreatTroopControls'
+import { getEffectRetreatRemaining } from './utils/turnGainsDisplay'
 import CombatResults from './components/CombatResults/CombatResults'
+import CombatPhaseOverlay from './components/CombatPhaseOverlay/CombatPhaseOverlay'
 import { COMBAT_STRENGTH_ORIGIN } from './data/boardMarkerAnchors'
 import { CONFLICTS } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
@@ -25,6 +28,7 @@ import { buildImperiumDeck } from './data/cards'
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 import LeaderResourceStrip from './components/LeaderResourceStrip/LeaderResourceStrip'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
+import UndoConfirmDialog from './components/TimeTravel/UndoConfirmDialog'
 import { getLeaderIconPath, LEADER_NAMES } from './data/leaders'
 import { getEndTurnButtonState } from './utils/endTurnState'
 import { getResolvedRewardForPlayer } from './data/leaderAbilities/arianaHarvest'
@@ -32,6 +36,11 @@ import {
   DESKTOP_PLAY_LAYOUT_MQ,
   DOCKED_HISTORY_LAYOUT_MQ,
 } from './constants/playLayout'
+import {
+  countPlayerTurns,
+  getLivePlayerTurnNumber,
+  getPlayerTurnNumber,
+} from './utils/turnHistoryDisplay'
 
 interface GameContentProps {
   autoApplyMandatoryRewards: boolean
@@ -51,13 +60,11 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     returnToCurrent,
   } = useTimeTravel()
 
+  const [undoTargetIndex, setUndoTargetIndex] = useState<number | null>(null)
+  const [undoSourceRowIndex, setUndoSourceRowIndex] = useState<number | null>(null)
+  const [undoToSetup, setUndoToSetup] = useState(false)
+
   const [useImageBoard] = useState(true)
-  const [autoAppliedRewardSummary, setAutoAppliedRewardSummary] = useState<Array<{
-    id: string
-    sourceName: string
-    sourceType: GainSource
-    reward: Reward
-  }>>([])
   const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(
     () =>
       typeof window !== 'undefined' &&
@@ -84,10 +91,6 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   const [voiceSelectionRewardId, setVoiceSelectionRewardId] = useState<string | null>(null)
   const [masterstrokeSelectionRewardId, setMasterstrokeSelectionRewardId] = useState<string | null>(null)
   const [memnonHighCouncilRewardId, setMemnonHighCouncilRewardId] = useState<string | null>(null)
-
-  useEffect(() => {
-    setAutoAppliedRewardSummary([])
-  }, [gameState.activePlayerId, gameState.currentRound])
 
   useEffect(() => {
     setVoiceSelectionRewardId(null)
@@ -161,12 +164,19 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       const turnPlayerId = turnControlsState.currTurn?.playerId
       return p.id === (turnPlayerId ?? turnControlsState.activePlayerId)
     }) || null
-  const historyBannerPlayer =
+  const navResourcePlayer =
     (isViewingHistory ? displayState : gameState).players.find(p => {
       const state = isViewingHistory ? displayState : gameState
       const turnPlayerId = state.currTurn?.playerId
       return p.id === (turnPlayerId ?? state.activePlayerId)
-    }) ?? activePlayer
+    }) ?? turnControlsActivePlayer
+
+  const historyHighlightSpaceId =
+    isViewingHistory &&
+    displayState.currTurn?.type === TurnType.ACTION &&
+    displayState.currTurn.agentSpaceId != null
+      ? displayState.currTurn.agentSpaceId
+      : null
 
   const liveTurnPlayer =
     gameState.players.find(p => {
@@ -175,8 +185,66 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     }) ?? activePlayer
   const liveLeaderIconPath = liveTurnPlayer ? getLeaderIconPath(liveTurnPlayer.leader.name) : undefined
 
-  const handleCardSelect = (playerId: number, cardId: number) => {
-    dispatch({ type: 'PLAY_CARD', playerId, cardId })
+  const undoSourceRow = viewingTurnIndex ?? gameState.history.length
+  const canUndo =
+    undoSourceRow === 0
+      ? Boolean(gameState.setupBaseline)
+      : undoSourceRow > 0
+
+  const handleNavUndoClick = () => {
+    setUndoSourceRowIndex(undoSourceRow)
+    if (undoSourceRow === 0) {
+      setUndoToSetup(true)
+      setUndoTargetIndex(null)
+      return
+    }
+    setUndoToSetup(false)
+    setUndoTargetIndex(undoSourceRow - 1)
+  }
+
+  const clearUndoState = () => {
+    setUndoTargetIndex(null)
+    setUndoSourceRowIndex(null)
+    setUndoToSetup(false)
+  }
+
+  const handleUndoConfirm = () => {
+    if (undoToSetup) {
+      dispatch({ type: 'UNDO_TO_SETUP' })
+    } else if (undoTargetIndex !== null) {
+      dispatch({ type: 'UNDO_TO_TURN', turnIndex: undoTargetIndex })
+    }
+    clearUndoState()
+    returnToCurrent()
+  }
+
+  const getUndoTargetState = (): GameState | null => {
+    if (undoToSetup) {
+      return gameState.setupBaseline ?? null
+    }
+    if (undoTargetIndex === null) return null
+    if (undoTargetIndex >= 0 && undoTargetIndex < gameState.history.length) {
+      return gameState.history[undoTargetIndex]
+    }
+    return null
+  }
+
+  const undoTitle =
+    undoSourceRow === 0
+      ? 'Undo setup (re-select imperium row and conflict)'
+      : `Undo turn ${undoSourceRow} and all later turns`
+  const undoAriaLabel =
+    undoSourceRow === 0 ? 'Undo setup' : `Undo turn ${undoSourceRow} and all later turns`
+
+  const turnHistoryUndoProps = {
+    onUndo: handleNavUndoClick,
+    canUndo,
+    undoTitle,
+    undoAriaLabel,
+  }
+
+  const handleCardSelect = (playerId: number, cardId: number, deckIndex?: number) => {
+    dispatch({ type: 'PLAY_CARD', playerId, cardId, deckIndex })
   }
 
   const handlePlayIntrigue = (playerId: number, cardId: number, targetPlayerId?: number) => {
@@ -247,8 +315,12 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     dispatch({ type: 'PAY_COST', playerId: activePlayer.id, effect })
   }
 
-  const handleRemoveTroop = (playerId: number) => {
-    dispatch({ type: 'RETREAT_TROOP', playerId })
+  const handleUndeployTroop = (playerId: number) => {
+    dispatch({ type: 'UNDEPLOY_TROOP', playerId })
+  }
+
+  const handleEffectRetreatTroop = (playerId: number) => {
+    dispatch({ type: 'RETREAT_TROOP', playerId, fromEffect: true })
   }
 
   const handleAcquireCard = (cardId: number) => {
@@ -345,6 +417,11 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     dispatch({ type: 'OPPONENT_DISCARD_CARD', playerId: activePlayer.id, opponentId, cardId })
   }
 
+  const handleOpponentDiscardCards = (opponentId: number, cardIds: number[]) => {
+    if (!activePlayer || cardIds.length === 0) return
+    dispatch({ type: 'OPPONENT_DISCARD_CARDS', playerId: activePlayer.id, opponentId, cardIds })
+  }
+
   const handleOpponentNoCardAck = (opponentId: number) => {
     if (!activePlayer) return
     dispatch({ type: 'OPPONENT_NO_CARD_ACK', playerId: activePlayer.id, opponentId })
@@ -398,35 +475,9 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     })
   }
 
-  const rewardForGainSummary = (pending: PendingReward, player: Player): Reward => {
-    const base = getResolvedRewardForPlayer(player, pending)
-    if (pending.powerPlay && pending.reward.influence?.amounts?.length) {
-      return {
-        ...base,
-        influence: {
-          amounts: pending.reward.influence.amounts.map(inf => ({
-            ...inf,
-            amount: inf.amount + 1
-          }))
-        }
-      }
-    }
-    return base
-  }
-
-  const summarizeAutoAppliedRewards = (rewards: PendingReward[], player: Player) => {
-    setAutoAppliedRewardSummary(rewards.map(reward => ({
-      id: reward.id,
-      sourceName: reward.source.name,
-      sourceType: reward.source.type,
-      reward: rewardForGainSummary(reward, player)
-    })))
-  }
-
   const handleAutoApplyRewards = () => {
     if (!activePlayer) return
     const autoApplicableRewards = getAutoApplicableRewards(gameState)
-    summarizeAutoAppliedRewards(autoApplicableRewards, activePlayer)
 
     autoApplicableRewards.forEach(reward => {
       dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId: reward.id })
@@ -440,7 +491,6 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     const autoApplicableRewards = getAutoApplicableRewards(gameState)
     if (autoApplicableRewards.length === 0) return
 
-    summarizeAutoAppliedRewards(autoApplicableRewards, activePlayer)
     autoApplicableRewards.forEach(reward => {
       dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId: reward.id })
     })
@@ -467,7 +517,6 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   const mainAreaRef = useRef<HTMLDivElement>(null)
   const turnControlsFooterRef = useRef<HTMLDivElement>(null)
   const historyBannerRef = useRef<HTMLDivElement>(null)
-  const roundGainsBannerSlotRef = useRef<HTMLDivElement>(null)
   /** Lock board size per viewport until window resize (play-area content must not rescale the board). */
   const lockedBoardLayoutRef = useRef<{ viewportKey: string; boardEdgePx: number } | null>(null)
   const lockedBannerHeightForBoardRef = useRef(0)
@@ -497,6 +546,12 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
 
   const showFooterPassCombat =
     !isViewingHistory && gameState.phase === GamePhase.COMBAT && activePlayer
+
+  const hasPlayedCombatIntrigueThisVisit =
+    activePlayer != null &&
+    gameState.currTurn?.playerId === activePlayer.id &&
+    (gameState.currTurn?.playedIntrigueCard?.length ?? 0) > 0
+  const combatFooterActionLabel = hasPlayedCombatIntrigueThisVisit ? 'Continue' : 'Pass Combat'
 
   const showPlayFooterToolbar = Boolean(
     turnControlsActivePlayer &&
@@ -879,6 +934,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           gameStateForMarkers={displayState}
           combatStrength={displayState.combatStrength ?? gameState.combatStrength}
           controlMarkers={displayState.controlMarkers}
+          historyHighlightSpaceId={historyHighlightSpaceId}
         />
       ) : null,
     [
@@ -891,6 +947,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       handlePlaceAgent,
       handleSelectiveBreedingRequested,
       handleVoiceSpaceSelect,
+      historyHighlightSpaceId,
     ]
   )
 
@@ -944,6 +1001,15 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             .filter(Boolean)
             .join(' ')}
         >
+          <CombatPhaseOverlay
+            players={gameState.players}
+            combatStrength={gameState.combatStrength}
+            combatPasses={gameState.combatPasses}
+            activePlayerId={gameState.activePlayerId}
+            activePlayerPlayedCombatIntrigue={hasPlayedCombatIntrigueThisVisit}
+            isVisible={!isViewingHistory && gameState.phase === GamePhase.COMBAT}
+            containerRef={mainAreaRef}
+          />
           {useImageBoard ? (
             renderImageBoard()
           ) : (
@@ -989,7 +1055,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             currentGameState={gameState}
             onTurnChange={goToTurn}
             onReturnToCurrent={returnToCurrent}
-            onUndoToTurn={turnIndex => dispatch({ type: 'UNDO_TO_TURN', turnIndex })}
+            {...turnHistoryUndoProps}
           />
         )}
       </div>
@@ -1029,22 +1095,33 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         hidden={hidePlayShellFooter}
       >
       {useImageBoard && !isViewingHistory && activePlayer && (
-        <div className="combat-troop-dock" data-marker="combat-troop-controls">
-          <div className="combat-troop-dock__anchor">
-            <CombatTroopControls
-              canDeploy={Boolean(gameState.currTurn?.canDeployTroops)}
-              deployableTroops={Math.min(
-                (gameState.currTurn?.troopLimit || 0) -
-                  (gameState.currTurn?.removableTroops || 0),
-                activePlayer.troops || 0
-              )}
-              retreatableTroops={gameState.currTurn?.removableTroops || 0}
-              garrisonTroops={activePlayer.troops || 0}
-              onDeploy={() => handleAddTroop(activePlayer.id)}
-              onRetreat={() => handleRemoveTroop(activePlayer.id)}
-            />
+        <>
+          <div className="effect-retreat-troop-dock" data-marker="effect-retreat-troop-controls">
+            <div className="effect-retreat-troop-dock__anchor">
+              <RetreatTroopControls
+                effectRetreatRemaining={getEffectRetreatRemaining(gameState.currTurn)}
+                troopsInConflict={gameState.combatTroops[activePlayer.id] || 0}
+                onRetreat={() => handleEffectRetreatTroop(activePlayer.id)}
+              />
+            </div>
           </div>
-        </div>
+          <div className="combat-troop-dock" data-marker="combat-troop-controls">
+            <div className="combat-troop-dock__anchor">
+              <CombatTroopControls
+                canDeploy={Boolean(gameState.currTurn?.canDeployTroops)}
+                deployableTroops={Math.min(
+                  (gameState.currTurn?.troopLimit || 0) -
+                    (gameState.currTurn?.removableTroops || 0),
+                  activePlayer.troops || 0
+                )}
+                deployedThisTurn={gameState.currTurn?.removableTroops || 0}
+                garrisonTroops={activePlayer.troops || 0}
+                onDeploy={() => handleAddTroop(activePlayer.id)}
+                onUndeploy={() => handleUndeployTroop(activePlayer.id)}
+              />
+            </div>
+          </div>
+        </>
       )}
         <div
           ref={turnControlsFooterRef}
@@ -1060,8 +1137,6 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             onPlayCombatIntrigue={handlePlayCombatIntrigue}
             onReveal={handleRevealCards}
             isCombatPhase={turnControlsState.phase === GamePhase.COMBAT}
-            combatStrength={turnControlsState.combatStrength}
-            combatPasses={turnControlsState.combatPasses}
             players={turnControlsState.players}
             factionInfluence={turnControlsState.factionInfluence}
             factionAlliances={turnControlsState.factionAlliances}
@@ -1086,11 +1161,11 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             onClaimAllRewards={handleClaimAllRewards}
             onAutoApplyRewards={handleAutoApplyRewards}
             autoApplyMandatoryRewards={autoApplyMandatoryRewards}
-            autoAppliedRewardSummary={autoAppliedRewardSummary}
             agentPlaced={Boolean(turnControlsState.currTurn?.agentSpace)}
             opponentDiscardState={isViewingHistory ? undefined : gameState.currTurn?.opponentDiscardState}
             onOpponentDiscardChoice={handleOpponentDiscardChoice}
             onOpponentDiscardCard={handleOpponentDiscardCard}
+            onOpponentDiscardCards={handleOpponentDiscardCards}
             combatTroops={turnControlsState.combatTroops}
             onVoiceSelectionStart={handleVoiceSelectionStart}
             voiceSelectionActive={!isViewingHistory && Boolean(voiceSelectionRewardId)}
@@ -1105,8 +1180,6 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             activeIntrigueThisRound={turnControlsActivePlayer ? (turnControlsState.activeIntrigueThisRound?.[turnControlsActivePlayer.id] || []) : []}
             gameState={turnControlsState}
             isHistoryView={isViewingHistory}
-            showRoundGainsInPlayArea={!isDockedHistoryLayout}
-            roundGainsBannerSlotRef={roundGainsBannerSlotRef}
           />
         </div>
       {/* Navigator / status strip — directly under the board; play band fills below. */}
@@ -1134,36 +1207,33 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
               onBoardPeekHoldChange={setPlayChromeHeld}
             />
           )}
-          <div
-            ref={roundGainsBannerSlotRef}
-            className="history-banner-round-gains"
-            aria-live="polite"
-          />
         </div>
         <div className="history-banner-center">
-          {isViewingHistory && historyBannerPlayer ? (
+          {navResourcePlayer && (
             <LeaderResourceStrip
               compact
-              player={historyBannerPlayer}
-              gameState={displayState}
+              player={navResourcePlayer}
+              gameState={isViewingHistory ? displayState : gameState}
+              include={['deck', 'discard', 'trash']}
             />
-          ) : (
-            !isViewingHistory &&
-            turnControlsActivePlayer && (
-              <LeaderResourceStrip
-                compact
-                player={turnControlsActivePlayer}
-                gameState={gameState}
-              />
-            )
           )}
           {!isDockedHistoryLayout && (
             <span className="history-banner-turn-label">
               {viewingTurnIndex === null
-                ? `Turn ${gameState.history.length}, round ${gameState.currentRound}`
-                : viewingTurnIndex === 0
-                  ? 'Initial state'
-                  : `Turn ${viewingTurnIndex} of ${gameState.history.length}`}
+                ? `Turn ${getLivePlayerTurnNumber(gameState.history)}, round ${gameState.currentRound}`
+                : (() => {
+                    const snapshot = gameState.history[viewingTurnIndex]
+                    if (viewingTurnIndex === 0 || snapshot?.historyEntryKind === 'setup') return 'Setup'
+                    if (snapshot?.historyEntryKind === 'round-start') {
+                      return `Round ${snapshot.currentRound} start`
+                    }
+                    if (snapshot?.historyEntryKind === 'combat') return 'Combat'
+                    const turnNum = getPlayerTurnNumber(gameState.history, viewingTurnIndex)
+                    const totalPlayerTurns = countPlayerTurns(gameState.history)
+                    return turnNum != null
+                      ? `Turn ${turnNum} of ${totalPlayerTurns}`
+                      : `Turn ${viewingTurnIndex} of ${gameState.history.length}`
+                  })()}
             </span>
           )}
         </div>
@@ -1237,8 +1307,9 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
               type="button"
               className="footer-pass-combat-button"
               onClick={() => handlePassCombat(activePlayer!.id)}
+              aria-label={combatFooterActionLabel}
             >
-              Pass Combat
+              {combatFooterActionLabel}
             </button>
           )}
         </div>
@@ -1254,11 +1325,11 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           currentGameState={gameState}
           onTurnChange={goToTurn}
           onReturnToCurrent={returnToCurrent}
-          onUndoToTurn={turnIndex => dispatch({ type: 'UNDO_TO_TURN', turnIndex })}
           onClose={() => {
             setIsTurnHistoryOpen(false)
             returnToCurrent()
           }}
+          {...turnHistoryUndoProps}
         />
       )}
         <div className="endgame-container" hidden={isViewingHistory || gameState.phase !== GamePhase.END_GAME}>
@@ -1294,6 +1365,18 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           }
         />
       </div>
+      <UndoConfirmDialog
+        isOpen={undoToSetup || undoTargetIndex !== null}
+        targetTurnIndex={undoToSetup ? 0 : (undoTargetIndex ?? 0)}
+        undoSourceRowIndex={undoSourceRowIndex ?? 0}
+        undoToSetup={undoToSetup}
+        currentHistoryLength={gameState.history.length}
+        targetState={getUndoTargetState()}
+        currentState={gameState}
+        players={gameState.players}
+        onConfirm={handleUndoConfirm}
+        onCancel={clearUndoState}
+      />
       {masterstrokeSelectionRewardId && (
         <MasterstrokeFactionModal
           open={true}
@@ -1340,6 +1423,11 @@ function getSelectedCard(gameState: GameState): Card | null {
   if (id === null || id === undefined) return null
   const player = gameState.players[gameState.activePlayerId]
   if (!player) return null
+  const deckIndex = gameState.selectedCardDeckIndex
+  if (typeof deckIndex === 'number') {
+    const atIndex = player.deck[deckIndex]
+    if (atIndex?.id === id) return atIndex
+  }
   return player.deck.find(c => c.id === id) ?? player.playArea.find(c => c.id === id) ?? null
 }
 

@@ -17,14 +17,14 @@ import {
   MARKER_ANCHORS,
   layoutHotspotPercent,
 } from '../../data/boardHotspots'
+import { SpiceAmountBadge } from '../SpiceAmountBadge/SpiceAmountBadge'
 import {
   INFLUENCE_TRACKS,
   VP_LANES,
   BOARD_MARKER_VP_MAX_STEPS,
   HIGH_COUNCIL_SLOTS,
   CONFLICT_CARD_RECT,
-  COMBAT_STRENGTH_ORIGIN,
-  COMBAT_STRENGTH_ROW_STEP_Y,
+  COMBAT_RING_ANCHORS,
   CONTROL_MARKER_POINTS,
   conflictCardImageSrc,
   clampInfluenceStep,
@@ -38,6 +38,7 @@ import { canPlaceDespiteOccupancy } from '../../data/leaderAbilities/helenaUnblo
 import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraadDiscount'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { highCouncilSlotAssignments } from '../../utils/highCouncilDisplay'
+import CombatPlayerStat from './CombatPlayerStat'
 import './ImageBoard.css'
 
 interface SellMelangeData {
@@ -73,6 +74,8 @@ interface ImageBoardProps {
   gameStateForMarkers: GameState
   combatStrength: Record<number, number>
   controlMarkers: Record<ControlMarkerType, number | null>
+  /** When viewing turn history, outline the board space where this turn's agent was placed. */
+  historyHighlightSpaceId?: number | null
 }
 
 const PLAYER_COLORS: Record<number, string> = {
@@ -134,6 +137,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   gameStateForMarkers,
   combatStrength,
   controlMarkers,
+  historyHighlightSpaceId = null,
 }) => {
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
@@ -238,6 +242,14 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const conflictImgSrc =
     currentConflict && currentConflict.id > 0 ? conflictCardImageSrc(currentConflict.id) : null
 
+  const historyHighlightHotspot =
+    historyHighlightSpaceId != null
+      ? BOARD_HOTSPOTS.find(h => h.spaceId === historyHighlightSpaceId)
+      : undefined
+  const historyHighlightBox = historyHighlightHotspot
+    ? layoutHotspotPercent(historyHighlightHotspot)
+    : null
+
   const trackerInspectMode = hotspotDebug || markerDebug
 
   const rootClass = [
@@ -316,6 +328,19 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             )
           })}
 
+          {historyHighlightBox && (
+            <div
+              className="image-board__history-space-highlight"
+              style={{
+                left: `${historyHighlightBox.left}%`,
+                top: `${historyHighlightBox.top}%`,
+                width: `${historyHighlightBox.width}%`,
+                height: `${historyHighlightBox.height}%`,
+              }}
+              aria-hidden
+            />
+          )}
+
           {/* The Voice — same anchor as agent figures; drawn under agents so figures stay visible when occupied */}
           {[...blockedSpaceMap.entries()].map(([spaceId, blockerPlayerId]) => {
             const anchor = MARKER_ANCHORS.find(a => a.spaceId === spaceId)
@@ -369,16 +394,16 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             const b = layoutHotspotPercent(hotspot)
 
             return (
-              <span
+              <SpiceAmountBadge
                 key={makerKey}
+                amount={count}
                 className="image-board__bonus-spice"
+                title={`Bonus spice: ${count}`}
                 style={{
                   left: `${b.left + b.width - 1}%`,
                   top: `${b.top}%`,
                 }}
-              >
-                +{count}
-              </span>
+              />
             )
           })}
 
@@ -511,44 +536,24 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 )}
               </div>
 
-              {playersSorted.map((p, row) => {
+              {players.map(p => {
+                const anchor = COMBAT_RING_ANCHORS[p.color]
+                if (!anchor) return null
                 const str = combatStrength[p.id] ?? 0
                 const troops = combatTroops[p.id] ?? 0
-                const o = COMBAT_STRENGTH_ORIGIN
-                const st = stagePoint(o.x, o.y + row * COMBAT_STRENGTH_ROW_STEP_Y)
+                const st = stagePoint(anchor.x, anchor.y)
                 return (
-                  <div
+                  <CombatPlayerStat
                     key={`cmb-${p.id}`}
+                    player={p}
+                    troops={troops}
+                    strength={str}
+                    layout="ring"
                     className="image-board__combat-stat"
                     data-marker="combat-strength"
                     data-player-id={p.id}
                     style={{ left: `${st.x}%`, top: `${st.y}%` }}
-                    title={`${p.leader.name}: strength ${str}, troops in conflict ${troops}`}
-                  >
-                    <span className="image-board__combat-stat-p">{p.leader.name}</span>
-                    <span className="image-board__combat-stat-n">
-                      <img
-                        src="/icon/dagger.png"
-                        alt=""
-                        className="image-board__combat-stat-icon"
-                        aria-hidden="true"
-                      />
-                      {str}
-                      {troops > 0 ? (
-                        <>
-                          {' '}
-                          <span className="image-board__combat-stat-sep">·</span>
-                          <img
-                            src="/icon/troop.png"
-                            alt=""
-                            className="image-board__combat-stat-icon"
-                            aria-hidden="true"
-                          />
-                          {troops}
-                        </>
-                      ) : null}
-                    </span>
-                  </div>
+                  />
                 )
               })}
 
@@ -626,6 +631,18 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   <div
                     key={`db-ctl-${key}`}
                     className="image-board__marker-debug-dot image-board__marker-debug-dot--lg"
+                    style={{ left: `${st.x}%`, top: `${st.y}%` }}
+                  />
+                )
+              })}
+              {(Object.values(PlayerColor) as PlayerColor[]).map(color => {
+                const pt = COMBAT_RING_ANCHORS[color]
+                const st = stagePoint(pt.x, pt.y)
+                return (
+                  <div
+                    key={`db-cmb-ring-${color}`}
+                    className="image-board__marker-debug-dot image-board__marker-debug-dot--ring"
+                    data-combat-ring={color}
                     style={{ left: `${st.x}%`, top: `${st.y}%` }}
                   />
                 )

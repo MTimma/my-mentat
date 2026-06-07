@@ -5,6 +5,7 @@
 import {
   ControlMarkerType,
   FactionType,
+  PlayerColor,
 } from '../types/GameTypes'
 import { layoutInnerPointPercent, layoutInnerRectPercent } from './boardHotspots'
 import { MAX_INFLUENCE } from '../utils/influenceVictoryPoints'
@@ -77,9 +78,19 @@ export const CONFLICT_CARD_RECT = {
   height: 13,
 } as const
 
-/** First combat strength row (inner %); align with conflict panel column */
-export const COMBAT_STRENGTH_ORIGIN = { x: 56, y: 65 }
-export const COMBAT_STRENGTH_ROW_STEP_Y = 6
+/**
+ * Combat conflict rings (inner %, ring center). 2×2 on crossed swords:
+ * red TL, green TR, yellow BL, blue BR. Tune with ?markerDebug=1.
+ */
+export const COMBAT_RING_ANCHORS: Record<PlayerColor, { x: number; y: number }> = {
+  [PlayerColor.RED]: { x: 55, y: 65 },
+  [PlayerColor.GREEN]: { x: 80, y: 65 },
+  [PlayerColor.YELLOW]: { x: 55, y: 75 },
+  [PlayerColor.BLUE]: { x: 80, y: 75 },
+}
+
+/** Troop deploy dock vertical anchor (inner % Y); X is in App.css `.combat-troop-dock__anchor`. */
+export const COMBAT_STRENGTH_ORIGIN = { x: 58, y: 72 }
 
 export const CONTROL_MARKER_POINTS: Record<ControlMarkerType, { x: number; y: number }> = {
   [ControlMarkerType.ARRAKIN]: { x: 78, y: 34 },

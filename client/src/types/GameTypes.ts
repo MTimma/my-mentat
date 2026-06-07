@@ -54,6 +54,12 @@ export interface Player {
   discardPile: Card[]
   playArea: Card[]
   trash: Card[]
+  /** Rise of Ix — optional until expansion is enabled. */
+  dreadnoughts?: {
+    supply: number
+    garrison: number
+    conflict: number
+  }
 }
 
 export enum AgentIcon {
@@ -434,7 +440,18 @@ export interface GameTurn {
   agentSpaceId?: number
   canDeployTroops?: boolean
   troopLimit?: number
+  /** Troops still in Conflict that may be retreated this turn. */
   removableTroops?: number
+  /** Total troops sent to Conflict this turn (does not decrease on retreat). */
+  troopsDeployedToConflict?: number
+  /** Total troops retreated from Conflict this turn. */
+  troopsRetreatedFromConflict?: number
+  /** Max troops that may be retreated via card/leader effects (separate from deploy undo). */
+  effectRetreatAllowance?: number
+  /** Troops already retreated via effect allowance this turn. */
+  effectRetreatsUsed?: number
+  /** Index into `GameState.gains` where this turn's gains begin (history scoping). */
+  gainsStartIndex?: number
   persuasionCount?: number
   gainedEffects?: string[]
   acquiredCards?: Card[]
@@ -448,6 +465,9 @@ export interface GameTurn {
     remainingOpponents: number[]
     currentOpponent?: number
     discardCounts?: Record<number, number> // Track how many cards each opponent has discarded
+    /** Card that triggered the discard effect (e.g. Reverend Mother Mohiam). */
+    sourceCardId?: number
+    sourceCardName?: string
   }
 }
 
@@ -518,6 +538,8 @@ export interface GameState {
   controlMarkers: Record<ControlMarkerType, number | null>
   bonusSpice: Record<MakerSpace, number>
   history: GameState[]
+  /** Pre–imperium/conflict configuration snapshot; restored by setup undo. */
+  setupBaseline?: GameState | null
   players: Player[]
   firstPlayerMarker: number
   currentRound: number
@@ -527,6 +549,8 @@ export interface GameState {
   activePlayerId: number
   gains: Gain[]
   selectedCard: number | null
+  /** Index in `players[activePlayerId].deck` for the card chosen in PLAY_CARD (disambiguates duplicate template ids). */
+  selectedCardDeckIndex: number | null
   currTurn: GameTurn | null
   combatStrength: Record<number, number>
   combatTroops: Record<number, number>
@@ -565,6 +589,8 @@ export interface GameState {
   combatResolutionDeferred?: {
     mentatOwnerNextRound: number | null
   }
+  /** Conflict id whose immediate (non-choice) rewards were already applied this combat. */
+  combatRewardsResolvedConflictId?: number | null
   // Helena signet ring: card removed from Imperium Row this round; that player may acquire it for 1 less during Reveal
   helenaRemovedCard?: { cardId: number; playerId: number; card: Card } | null
   /** Dispatch an Envoy: next Agent placement only — unions four faction icons with that card for board matching. Cleared after Agent placement or when Reveal resolves (no effect on revealed cards). */
@@ -575,6 +601,8 @@ export interface GameState {
   pendingRapidMobilization?: number | null
   /** To the Victor…: if true, grant 3 spice when this player wins the current Conflict */
   pendingVictorSpiceThisCombat?: Record<number, boolean>
+  /** Labels a row in `history` (setup baseline, round start, combat resolution). */
+  historyEntryKind?: 'setup' | 'round-start' | 'combat'
 }
 
 /** Faction agent icons added by Dispatch an Envoy (union with card icons). */

@@ -1,10 +1,14 @@
 import React, { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { GameState, Player, Gain } from '../../types/GameTypes'
+import { getPlayerTurnNumber } from '../../utils/turnHistoryDisplay'
 import './UndoConfirmDialog.css'
 
 interface UndoConfirmDialogProps {
   isOpen: boolean
   targetTurnIndex: number
+  undoSourceRowIndex: number
+  undoToSetup: boolean
   currentHistoryLength: number
   targetState: GameState | null
   currentState: GameState
@@ -16,6 +20,8 @@ interface UndoConfirmDialogProps {
 const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
   isOpen,
   targetTurnIndex,
+  undoSourceRowIndex,
+  undoToSetup,
   currentHistoryLength,
   targetState,
   currentState,
@@ -23,7 +29,6 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
   onConfirm,
   onCancel
 }) => {
-  // Handle escape key
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -35,27 +40,40 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
   
   if (!isOpen || !targetState) return null
   
-  const turnsToUndo = currentHistoryLength - targetTurnIndex
-  
-  // Calculate what will be lost
+  const turnsToUndo = undoToSetup
+    ? currentHistoryLength + 1
+    : Math.max(1, currentHistoryLength - undoSourceRowIndex + 1)
+
+  const revertLabel = undoToSetup
+    ? 'Setup'
+    : targetTurnIndex === 0 || targetState.historyEntryKind === 'setup'
+      ? 'Setup'
+      : targetState.historyEntryKind === 'round-start'
+        ? `Round ${targetState.currentRound} start`
+        : targetState.historyEntryKind === 'combat'
+          ? 'Combat'
+          : (() => {
+              const turnNum = getPlayerTurnNumber(currentState.history, targetTurnIndex)
+              return turnNum != null ? `Turn ${turnNum}` : `Turn ${targetTurnIndex}`
+            })()
+
   const calculateLosses = (): { gains: Gain[], description: string[] } => {
     const lostGains: Gain[] = []
     const descriptions: string[] = []
     
-    // Get all gains from turns after the target
-    for (let i = targetTurnIndex; i < currentHistoryLength; i++) {
+    const lossStartIndex = undoToSetup ? 0 : undoSourceRowIndex
+    
+    for (let i = lossStartIndex; i < currentHistoryLength; i++) {
       const historicalState = currentState.history[i]
       if (historicalState?.gains) {
         lostGains.push(...historicalState.gains)
       }
     }
     
-    // Also add current state's gains if any
     if (currentState.gains) {
       lostGains.push(...currentState.gains)
     }
     
-    // Summarize gains by player and type
     const gainsByPlayer: Record<number, Record<string, number>> = {}
     lostGains.forEach(gain => {
       if (!gainsByPlayer[gain.playerId]) {
@@ -67,7 +85,6 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
       gainsByPlayer[gain.playerId][gain.type] += gain.amount
     })
     
-    // Generate descriptions
     Object.entries(gainsByPlayer).forEach(([playerId, gains]) => {
       const player = players.find(p => p.id === Number(playerId))
       const playerName = player?.leader?.name || `Player ${Number(playerId) + 1}`
@@ -88,29 +105,25 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
   }
   
   const losses = calculateLosses()
-  
-  // Calculate in-progress turn status
-  const hasInProgressTurn = currentState.currTurn !== null || currentState.selectedCard !== null
-  
-  return (
+
+  const dialog = (
     <div className="undo-confirm-overlay" onClick={onCancel}>
       <div className="undo-confirm-dialog" onClick={e => e.stopPropagation()}>
         <div className="undo-confirm-header">
-          <span className="warning-icon">⚠️</span>
           <h2>Confirm Undo</h2>
         </div>
         
         <div className="undo-confirm-body">
           <p className="undo-main-warning">
-            This will <strong>permanently undo {turnsToUndo} turn{turnsToUndo !== 1 ? 's' : ''}</strong> and cannot be reversed.
+            This will reset{' '}
+            {undoSourceRowIndex === 0 ? 'the initial setup' : `turn ${undoSourceRowIndex}`} and all
+            future turns.
           </p>
           
           <div className="undo-details">
             <div className="undo-detail-row">
               <span className="detail-label">Reverting to:</span>
-              <span className="detail-value">
-                {targetTurnIndex === 0 ? 'Initial State' : `Turn ${targetTurnIndex}`}
-              </span>
+              <span className="detail-value">{revertLabel}</span>
             </div>
             <div className="undo-detail-row">
               <span className="detail-label">Current turn:</span>
@@ -118,16 +131,9 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
             </div>
           </div>
           
-          {hasInProgressTurn && (
-            <div className="undo-warning-box">
-              <strong>⚠️ In-Progress Turn Will Be Lost</strong>
-              <p>The current turn has unsaved progress that will be discarded.</p>
-            </div>
-          )}
-          
           {losses.description.length > 0 && (
             <div className="undo-losses-section">
-              <h3>Resources & Progress That Will Be Lost:</h3>
+              <h3>Resources & progress that will be lost</h3>
               <ul className="losses-list">
                 {losses.description.map((desc, idx) => (
                   <li key={idx}>{desc}</li>
@@ -135,25 +141,21 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
               </ul>
             </div>
           )}
-          
-          <div className="undo-warning-final">
-            <p>
-              <strong>This action cannot be undone.</strong> All future turns will be permanently deleted.
-            </p>
-          </div>
         </div>
         
         <div className="undo-confirm-actions">
-          <button className="cancel-button" onClick={onCancel}>
+          <button className="cancel-button" type="button" onClick={onCancel}>
             Cancel
           </button>
-          <button className="confirm-button danger" onClick={onConfirm}>
+          <button className="confirm-button" type="button" onClick={onConfirm}>
             Undo {turnsToUndo} Turn{turnsToUndo !== 1 ? 's' : ''}
           </button>
         </div>
       </div>
     </div>
   )
+
+  return typeof document !== 'undefined' ? createPortal(dialog, document.body) : dialog
 }
 
 export default UndoConfirmDialog

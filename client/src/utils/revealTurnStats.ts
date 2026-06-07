@@ -1,11 +1,14 @@
-import { ALL_IMPERIUM_ROW_CARDS } from '../data/cards'
+import { ALL_IMPERIUM_ROW_CARDS, FOLDSPACE_DECK } from '../data/cards'
 import { Card, GameState, GainSource, RewardType, TurnType } from '../types/GameTypes'
+import { computeTurnGainTotals, getGainsForTurnState, type TurnGainTotals } from './turnGainsDisplay'
 
 export interface RevealTurnStats {
+  revealedCards: Card[]
   acquiredCards: Card[]
+  totals: TurnGainTotals
 }
 
-function resolveCardInSnapshot(
+export function resolveCardInSnapshot(
   state: GameState,
   playerId: number,
   cardId: number
@@ -23,7 +26,28 @@ function resolveCardInSnapshot(
   const fromRow = state.imperiumRow.find(c => c.id === cardId)
   if (fromRow) return fromRow
 
-  return ALL_IMPERIUM_ROW_CARDS.find(c => c.id === cardId)
+  return (
+    ALL_IMPERIUM_ROW_CARDS.find(c => c.id === cardId) ??
+    FOLDSPACE_DECK.find(c => c.id === cardId)
+  )
+}
+
+export function resolveCardInSnapshotByName(
+  state: GameState,
+  playerId: number,
+  cardName: string
+): Card | undefined {
+  const byId = state.gains
+    ?.filter(g => g.playerId === playerId && g.name === cardName)
+    .map(g => resolveCardInSnapshot(state, playerId, g.sourceId))
+    .find(Boolean)
+  if (byId) return byId
+
+  return (
+    FOLDSPACE_DECK.find(c => c.name === cardName) ??
+    ALL_IMPERIUM_ROW_CARDS.find(c => c.name === cardName) ??
+    state.imperiumRow.find(c => c.name === cardName)
+  )
 }
 
 function deriveAcquiredCardsFromGains(state: GameState, playerId: number): Card[] {
@@ -64,6 +88,21 @@ function deriveAcquiredCardsFromGains(state: GameState, playerId: number): Card[
   return cards
 }
 
+function deriveRevealedCardsFromTurn(state: GameState, playerId: number): Card[] {
+  const ids = state.currTurn?.revealedCardIds ?? []
+  const seen = new Set<number>()
+  const cards: Card[] = []
+
+  for (const id of ids) {
+    if (seen.has(id)) continue
+    seen.add(id)
+    const card = resolveCardInSnapshot(state, playerId, id)
+    if (card) cards.push(card)
+  }
+
+  return cards
+}
+
 export function getRevealTurnStats(state: GameState, playerId: number): RevealTurnStats | null {
   const currTurn = state.currTurn
   if (!currTurn || currTurn.playerId !== playerId || currTurn.type !== TurnType.REVEAL) {
@@ -72,12 +111,26 @@ export function getRevealTurnStats(state: GameState, playerId: number): RevealTu
 
   const fromTurn = currTurn.acquiredCards ?? []
   const fromGains = deriveAcquiredCardsFromGains(state, playerId)
-  const merged = new Map<number, Card>()
+  const acquired = new Map<number, Card>()
   for (const card of [...fromTurn, ...fromGains]) {
-    merged.set(card.id, card)
+    acquired.set(card.id, card)
   }
 
+  const turnGains = getGainsForTurnState(state)
+
   return {
-    acquiredCards: [...merged.values()],
+    revealedCards: deriveRevealedCardsFromTurn(state, playerId),
+    acquiredCards: [...acquired.values()],
+    totals: computeTurnGainTotals(turnGains),
   }
+}
+
+export function revealTurnStatsHasContent(stats: RevealTurnStats): boolean {
+  return (
+    stats.revealedCards.length > 0 ||
+    stats.acquiredCards.length > 0 ||
+    stats.totals.resources.some(r => r.net !== 0 || r.gained > 0 || r.spent > 0) ||
+    stats.totals.influence.some(i => i.net !== 0 || i.gained > 0 || i.lost > 0) ||
+    stats.totals.cards.length > 0
+  )
 }

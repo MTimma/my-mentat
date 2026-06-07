@@ -92,7 +92,6 @@ describe('TurnHistory — agent turn display', () => {
         currentGameState={history[history.length - 1]}
         onTurnChange={vi.fn()}
         onReturnToCurrent={vi.fn()}
-        onUndoToTurn={vi.fn()}
       />
     )
     const viewingRow = document.querySelector('[data-turn-index="1"]')
@@ -110,7 +109,6 @@ describe('TurnHistory — agent turn display', () => {
         currentGameState={history[1]}
         onTurnChange={vi.fn()}
         onReturnToCurrent={vi.fn()}
-        onUndoToTurn={vi.fn()}
       />
     )
     const gains = container.querySelectorAll('.gain-item')

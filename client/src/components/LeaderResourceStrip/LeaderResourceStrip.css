@@ -37,6 +37,31 @@
   font-size: 0.58rem;
 }
 
+.leader-resource-strip--overlay {
+  justify-content: center;
+  gap: 2px 3px;
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
+
+.leader-resource-strip--overlay .leader-resource-item {
+  padding: 0 3px;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.leader-resource-strip--overlay .leader-resource-icon {
+  width: 10px;
+  height: 10px;
+}
+
+.leader-resource-strip--overlay .leader-resource-value {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #fff8e8;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+}
+
 .leader-resource-strip-name {
   font-size: 0.78rem;
   font-weight: 700;

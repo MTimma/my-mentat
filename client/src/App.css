@@ -6,6 +6,8 @@
   --play-footer-reserved-height: clamp(132px, 28vh, 220px);
   --play-shell-max-width: 1000px;
   --play-history-sidebar-width: 300px;
+  /* Board column only; docked history widens via calc in .game-container--history-docked */
+  --play-stage-width: var(--play-board-max-edge, min(100%, 72vh));
   /* Play footer stack vs modal overlays (modals must sit above turn controls). */
   --z-play-footer: 1100;
   --z-play-footer-endgame: 1101;
@@ -168,6 +170,10 @@ body:has(.game-container--play) {
   z-index: var(--z-play-history-strip);
 }
 
+.game-container--play .play-shell-footer > .effect-retreat-troop-dock {
+  order: 1;
+}
+
 .game-container--play .play-shell-footer > .combat-troop-dock {
   order: 2;
 }
@@ -178,6 +184,7 @@ body:has(.game-container--play) {
 
 .game-container--play > .main-area,
 .game-container--play .play-shell-board {
+  position: relative;
   flex: 0 0 auto;
   min-height: 0;
   overflow: visible;
@@ -950,12 +957,45 @@ body:has(.game-container--play) {
 .imperium-preview-actions {
   width: 100%;
   display: flex;
-  justify-content: center;
-  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.imperium-preview-persuasion {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-right: auto;
+  min-height: 44px;
+  padding: 0 4px;
+  color: var(--color-arrakis-parchment, #f4e4bc);
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.imperium-preview-persuasion-diamond {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(206, 239, 255, 0.9);
+  border-radius: 3px;
+  background: #2f9eea;
+  transform: rotate(45deg);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.55),
+    0 0 6px rgba(75, 174, 238, 0.56);
+}
+
+.imperium-preview-persuasion-value {
+  min-width: 1.25ch;
+  text-align: center;
 }
 
 .imperium-preview-acquire-button {
-  width: min(100%, 240px);
+  flex: 0 1 auto;
+  width: min(100%, 200px);
   min-height: 44px;
   padding: 8px 18px;
   border: 1px solid rgba(255, 215, 0, 0.66);
@@ -1627,7 +1667,33 @@ body:has(.game-container--play) {
   --turn-controls-measured-height: 0px;
 }
 
-/* Deploy/retreat troops — docked at COMBAT_STRENGTH_ORIGIN on the board image. */
+/* Effect retreat (card/leader allowance) — stacked above deploy dock. */
+.effect-retreat-troop-dock {
+  position: fixed;
+  top: var(--combat-troop-dock-top, var(--play-board-bottom, 50vh));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100vw - 24px), var(--play-board-max-edge, 100%), var(--play-shell-max-width));
+  height: 0;
+  pointer-events: none;
+  box-sizing: border-box;
+  z-index: calc(var(--z-combat-troop-dock) + 1);
+}
+
+.effect-retreat-troop-dock__anchor {
+  position: absolute;
+  left: 58%;
+  top: 0;
+  transform: translate(-50%, calc(-100% - 52px));
+  pointer-events: none;
+}
+
+.effect-retreat-troop-dock .effect-retreat-troop-controls {
+  pointer-events: auto;
+  max-width: min(200px, 40vw);
+}
+
+/* Deploy / undo deploy — docked at COMBAT_STRENGTH_ORIGIN on the board image. */
 .combat-troop-dock {
   position: fixed;
   top: var(--combat-troop-dock-top, var(--play-board-bottom, 50vh));
@@ -1642,7 +1708,7 @@ body:has(.game-container--play) {
 
 .combat-troop-dock__anchor {
   position: absolute;
-  left: 56%;
+  left: 58%;
   top: 0;
   transform: translate(-50%, calc(-100% - 4px));
   pointer-events: none;
@@ -1655,25 +1721,36 @@ body:has(.game-container--play) {
 
 /* Mobile: sit flush above the navigator strip (not mid-board at combat-track %). */
 @media (max-width: 900px) {
-  .game-container--play .combat-troop-dock {
+  .game-container--play .combat-troop-dock,
+  .game-container--play .effect-retreat-troop-dock {
     top: var(--history-banner-top, var(--play-board-bottom, 50vh));
     width: 100%;
   }
 
   .game-container--play .combat-troop-dock__anchor {
     /* Left of center — VP lanes sit ~96% inner X on the board art. */
-    left: 38%;
+    left: 40%;
     transform: translate(-50%, -100%);
+  }
+
+  .game-container--play .effect-retreat-troop-dock__anchor {
+    left: 40%;
+    transform: translate(-50%, calc(-100% - 48px));
   }
 }
 
 @media (max-width: 600px) {
-  .game-container--play .combat-troop-dock__anchor {
-    left: 32%;
+  .game-container--play .combat-troop-dock__anchor,
+  .game-container--play .effect-retreat-troop-dock__anchor {
+    left: 34%;
   }
 
   .combat-troop-dock .combat-troop-controls {
     max-width: min(220px, 72vw);
+  }
+
+  .effect-retreat-troop-dock .effect-retreat-troop-controls {
+    max-width: min(200px, 68vw);
   }
 }
 
@@ -1684,14 +1761,14 @@ body:has(.game-container--play) {
   }
 
   .game-container--play .combat-troop-dock__anchor {
-    left: 50%;
+    left: 52%;
     transform: translate(-50%, calc(-100% - 4px));
   }
 
   @media (max-width: 1180px) {
     .game-container--play .combat-troop-dock__anchor,
     .game-container--desktop-play .combat-troop-dock__anchor {
-      left: 40%;
+      left: 42%;
     }
   }
 }
@@ -1794,6 +1871,9 @@ body:has(.game-container--play) {
     max-width: 100%;
     margin-inline: 0;
     flex-direction: column;
+    --play-stage-width: calc(
+      var(--play-board-max-edge, min(100%, 72vh)) + var(--play-history-sidebar-width, 300px)
+    );
   }
 
   .game-container--history-docked .play-shell-main {
@@ -1803,6 +1883,7 @@ body:has(.game-container--play) {
     height: 100%;
     display: flex;
     flex-direction: column;
+    align-items: center;
     overflow: hidden;
   }
 
@@ -1815,7 +1896,8 @@ body:has(.game-container--play) {
     justify-content: center;
     gap: 0;
     overflow: visible;
-    width: 100%;
+    width: var(--play-stage-width);
+    max-width: 100%;
   }
 
   .game-container--history-docked .play-shell-board-row .play-shell-board {
@@ -1873,15 +1955,22 @@ body:has(.game-container--play) {
     object-position: center;
   }
 
+  .game-container--history-docked .play-shell-footer--docked {
+    align-self: center;
+    width: var(--play-stage-width);
+    max-width: 100%;
+  }
+
   .game-container--history-docked .play-shell-footer--docked > .play-shell-nav,
   .game-container--history-docked .play-shell-footer--docked > .turn-controls-container {
     width: 100%;
     max-width: 100%;
+    margin-inline: 0;
   }
 
   .game-container--history-docked .play-shell-main > .imperium-row-container {
-    align-self: stretch;
-    width: 100%;
+    align-self: center;
+    width: var(--play-stage-width);
     max-width: 100%;
   }
 
@@ -1893,13 +1982,13 @@ body:has(.game-container--play) {
   }
 
   .game-container--history-docked .combat-troop-dock__anchor {
-    left: 50%;
+    left: 52%;
     transform: translate(-50%, calc(-100% - 4px));
   }
 
   @media (max-width: 1180px) {
     .game-container--history-docked .combat-troop-dock__anchor {
-      left: 40%;
+      left: 42%;
     }
   }
 }
@@ -1931,8 +2020,9 @@ body:has(.game-container--play) {
   .game-container--desktop-play.game-container--history-docked
     .play-shell-main
     > .imperium-row-container {
-    align-self: stretch;
-    width: 100%;
+    align-self: center;
+    width: var(--play-stage-width);
+    max-width: 100%;
   }
 
   .game-container--desktop-play .play-shell-main > .imperium-row-container .imperium-section {
@@ -1975,13 +2065,13 @@ body:has(.game-container--play) {
   }
 
   .game-container--desktop-play .combat-troop-dock__anchor {
-    left: 50%;
+    left: 52%;
     transform: translate(-50%, calc(-100% - 4px));
   }
 
   @media (max-width: 1180px) {
     .game-container--desktop-play .combat-troop-dock__anchor {
-      left: 40%;
+      left: 42%;
     }
   }
 

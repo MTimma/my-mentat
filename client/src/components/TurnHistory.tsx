@@ -1,18 +1,27 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Card, Player, GameState, Gain, RewardType, TurnType } from '../types/GameTypes'
+import { Card, Gain, IntrigueCard, Player, GameState, GamePhase, TurnType } from '../types/GameTypes'
 import { findPlayerCardsByIds } from '../utils/playAreaDisplay'
 import { BOARD_SPACES } from '../data/boardSpaces'
 import { getLeaderIconPath } from '../data/leaders'
 import {
-  factionFromInfluenceGainName,
-  getAnyFactionInfluenceGainIcon,
-  getAnyFactionInfluenceLossIcon,
-  getFactionBumpIcon,
-} from '../utils/influenceDisplay'
-import { getRewardIcon, getRewardDisplayName } from '../utils/rewardIcons'
-import { getRevealTurnStats } from '../utils/revealTurnStats'
+  getGainsForHistoryRow,
+  getGainsForTurnState,
+  isCombatHistoryEntry,
+  groupCombatHistoryGainsByPlayer,
+  getOtherPlayersGainsForTurnState,
+  getTroopsDeployedToConflict,
+  getTroopsRetreatedFromConflict,
+} from '../utils/turnGainsDisplay'
+import {
+  getHistoryRowBadge,
+  getLivePlayerTurnNumber,
+  getPlayerTurnNumber,
+  isMetaHistoryEntry,
+} from '../utils/turnHistoryDisplay'
+import { resolveCardInSnapshot, resolveCardInSnapshotByName } from '../utils/revealTurnStats'
+import { getRevealTurnStats, revealTurnStatsHasContent } from '../utils/revealTurnStats'
 import RevealTurnStatsPanel from './RevealTurnStatsPanel/RevealTurnStatsPanel'
-import UndoConfirmDialog from './TimeTravel/UndoConfirmDialog'
+import TurnGainsDisplay from './TurnGainsDisplay/TurnGainsDisplay'
 import './TurnHistory.css'
 
 interface TurnHistoryProps {
@@ -22,16 +31,13 @@ interface TurnHistoryProps {
   currentGameState: GameState
   onTurnChange: (turnIndex: number) => void
   onReturnToCurrent: () => void
-  onUndoToTurn: (turnIndex: number) => void
   onClose?: () => void
   /** Desktop: fixed sidebar column; mobile/tablet: overlay sheet */
   layout?: 'overlay' | 'docked'
-}
-
-interface AggregatedResourceGain {
-  type: RewardType | string
-  amount: number
-  name?: string
+  onUndo?: () => void
+  canUndo?: boolean
+  undoTitle?: string
+  undoAriaLabel?: string
 }
 
 const DetailsIcon = () => (
@@ -43,13 +49,34 @@ const DetailsIcon = () => (
   </svg>
 )
 
+const ChevronLeftIcon = () => (
+  <svg className="turn-history-nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M14 6l-6 6 6 6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
+const ChevronRightIcon = () => (
+  <svg className="turn-history-nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M10 6l6 6-6 6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
 const UndoIcon = () => (
-  <svg
-    className="turn-history-action-icon turn-history-action-icon--undo"
-    viewBox="0 0 24 24"
-    aria-hidden="true"
-    focusable="false"
-  >
+  <svg className="turn-history-action-icon turn-history-action-icon--undo" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
       d="M9 14 5 10l4-4"
       fill="none"
@@ -76,13 +103,15 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   currentGameState,
   onTurnChange, 
   onReturnToCurrent,
-  onUndoToTurn,
   onClose,
   layout = 'overlay',
+  onUndo,
+  canUndo = false,
+  undoTitle,
+  undoAriaLabel,
 }) => {
   const isDocked = layout === 'docked'
   const [showDebugModal, setShowDebugModal] = useState(false)
-  const [undoTargetIndex, setUndoTargetIndex] = useState<number | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const liveEntryRef = useRef<HTMLDivElement>(null)
   const stickToBottomRef = useRef(true)
@@ -184,6 +213,83 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     return card ?? null
   }
 
+  const makeResolveCard =
+    (turn: GameState) =>
+    (cardId: number, name: string): Card | undefined => {
+      const playerId = turn.currTurn?.playerId ?? turn.activePlayerId
+      if (playerId == null) return undefined
+      return makeResolveCardForPlayer(turn, playerId)(cardId, name)
+    }
+
+  const makeResolveCardForPlayer =
+    (turn: GameState, playerId: number) =>
+    (cardId: number, name: string): Card | undefined =>
+      resolveCardInSnapshot(turn, playerId, cardId) ??
+      resolveCardInSnapshotByName(turn, playerId, name)
+
+  const renderCombatGainsByPlayer = (turn: GameState, gains: Gain[]) => {
+    const groups = groupCombatHistoryGainsByPlayer(gains)
+    if (groups.length === 0) return null
+
+    return (
+      <div className="turn-history-combat-gains">
+        {groups.map(({ playerId, gains: playerGains }) => {
+          const player = turn.players.find(p => p.id === playerId) ?? players.find(p => p.id === playerId)
+          return (
+            <div key={`combat-gains-${playerId}`} className="turn-history-combat-player-gains">
+              {renderPlayerBadge(player)}
+              <TurnGainsDisplay
+                gains={playerGains}
+                showSourceTitles
+                resolveCard={makeResolveCardForPlayer(turn, playerId)}
+              />
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  const renderOtherPlayerGains = (turn: GameState) => {
+    const groups = getOtherPlayersGainsForTurnState(turn)
+    if (groups.length === 0) return null
+
+    return (
+      <div className="turn-history-other-gains">
+        {groups.map(({ playerId, gains: otherGains }) => {
+          const otherPlayer = turn.players.find(p => p.id === playerId) ?? players.find(p => p.id === playerId)
+          return (
+            <div key={`other-gains-${playerId}`} className="turn-history-other-player-gains">
+              {renderPlayerBadge(otherPlayer)}
+              <TurnGainsDisplay
+                gains={otherGains}
+                showSourceTitles
+                inlineDiscards
+                resolveCard={makeResolveCardForPlayer(turn, playerId)}
+              />
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  const getHistoryRowTitle = (turn: GameState, index: number): string => {
+    if (turn.historyEntryKind === 'combat') return 'Combat'
+    if (turn.historyEntryKind === 'round-start') return `Round ${turn.currentRound} start`
+    if (index === 0 || turn.historyEntryKind === 'setup') return 'Setup'
+    return getTurnLabel(turn)
+  }
+
+  const getPlayedIntrigueForTurn = (turn: GameState): IntrigueCard[] => {
+    if (isCombatHistoryEntry(turn)) return []
+    const cardIds = turn.currTurn?.playedIntrigueCard?.map(entry => entry.cardId) ?? []
+    if (cardIds.length === 0) return []
+    const piles = [...(turn.intrigueDeck ?? []), ...(turn.intrigueDiscard ?? [])]
+    const byId = new Map(piles.map(card => [card.id, card]))
+    return cardIds.map(id => byId.get(id)).filter((card): card is IntrigueCard => card != null)
+  }
+
   const renderTurnCardThumb = (card: Card | null) => {
     if (!card?.image) return null
     return (
@@ -198,8 +304,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     )
   }
 
-  const getTurnLabel = (turn: GameState, index: number): string => {
-    if (index === 0) return 'Setup'
+  const getTurnLabel = (turn: GameState): string => {
+    if (turn.phase === GamePhase.COMBAT) return 'Combat'
     const curr = turn.currTurn
     if (!curr) return '—'
     if (curr.type === TurnType.ACTION) {
@@ -213,45 +319,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     if (curr.type === TurnType.REVEAL) return 'Reveal'
     if (curr.type === TurnType.PASS) return 'Pass'
     return curr.type
-  }
-
-  // Gains for a turn snapshot or the live in-progress turn (gameState.gains until END_TURN).
-  const getGainsForTurn = (turn: GameState): Gain[] => {
-    const playerId = turn.currTurn?.playerId ?? turn.activePlayerId
-    if (playerId == null) return []
-    return turn.gains?.filter(gain => gain.playerId === playerId) || []
-  }
-
-  const aggregateResourceGains = (gains: Gain[]): AggregatedResourceGain[] => {
-    const aggregated = new Map<string, AggregatedResourceGain>()
-
-    gains.forEach(gain => {
-      if (gain.type === RewardType.INFLUENCE || gain.amount === 0) return
-      const key = gain.type === RewardType.CARD ? `card:${gain.name}` : gain.type
-      const existing = aggregated.get(key)
-      if (existing) {
-        existing.amount += gain.amount
-      } else {
-        aggregated.set(key, {
-          type: gain.type,
-          amount: gain.amount,
-          name: gain.type === RewardType.CARD ? gain.name : undefined,
-        })
-      }
-    })
-
-    return Array.from(aggregated.values()).filter(g => g.amount !== 0)
-  }
-
-  const aggregateInfluenceGains = (gains: Gain[]): Array<{ name: string; amount: number }> => {
-    const aggregated = new Map<string, number>()
-    gains.forEach(gain => {
-      if (gain.type !== RewardType.INFLUENCE || gain.amount === 0) return
-      aggregated.set(gain.name, (aggregated.get(gain.name) ?? 0) + gain.amount)
-    })
-    return Array.from(aggregated.entries())
-      .map(([name, amount]) => ({ name, amount }))
-      .filter(g => g.amount !== 0)
   }
 
   const renderPlayerBadge = (player: Player | undefined) => {
@@ -274,162 +341,62 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     )
   }
 
-  const getResourceIconCountVariant = (type: RewardType): 'light' | 'dark' | null => {
-    switch (type) {
-      case RewardType.SPICE:
-        return 'light'
-      case RewardType.SOLARI:
-        return 'dark'
-      default:
-        return null
-    }
-  }
-
-  /** Troops, draws, and water show one icon per unit (not ×N or a count badge). */
-  const shouldShowRepeatedIcons = (type: RewardType, amount: number): boolean => {
-    if (Math.abs(amount) < 2) return false
-    return (
-      type === RewardType.TROOPS ||
-      type === RewardType.CARD ||
-      type === RewardType.DRAW ||
-      type === RewardType.WATER
-    )
-  }
-
-  const renderGainMultiplier = (amount: number) => {
-    const absAmount = Math.abs(amount)
-    if (absAmount < 2) return null
-    return <span className="gain-multiplier">×{absAmount}</span>
-  }
-
-  const renderGainIcon = (iconPath: string, displayName: string, className = 'gain-icon') => (
-    <img
-      src={iconPath}
-      alt=""
-      className={className}
-      aria-hidden="true"
-      onError={e => {
-        e.currentTarget.style.display = 'none'
-        const parent = e.currentTarget.parentElement
-        if (!parent || parent.querySelector('.gain-text-fallback')) return
-        const textSpan = document.createElement('span')
-        textSpan.className = 'gain-text-fallback'
-        textSpan.textContent = displayName
-        parent.appendChild(textSpan)
-      }}
-    />
-  )
-
-  const renderResourceIconWithCount = (
-    iconPath: string,
-    amount: number,
-    variant: 'light' | 'dark',
-    displayName: string
-  ) => {
-    const absAmount = Math.abs(amount)
-    return (
-      <span className="gain-icon-badge" title={displayName} aria-hidden="true">
-        {renderGainIcon(iconPath, displayName, 'gain-icon gain-icon--badge')}
-        <span className={`gain-icon-count gain-icon-count--${variant}`}>{absAmount}</span>
+  const renderIntrigueThumbs = (intrigueCards: IntrigueCard[]) => {
+    if (intrigueCards.length === 0) return null
+    return intrigueCards.map(card => (
+      <span key={`intrigue-${card.id}`} className="turn-history-card-thumb turn-history-card-thumb--intrigue" title={card.name}>
+        <img
+          src={card.image}
+          alt=""
+          className="turn-history-card-thumb-img"
+          draggable={false}
+        />
       </span>
-    )
+    ))
   }
 
-  const renderResourceGain = (gain: AggregatedResourceGain, index: number) => {
-    const rewardType = gain.type as RewardType
-    const iconPath = getRewardIcon(rewardType)
-    const displayName = getRewardDisplayName(rewardType, gain.name)
-    const isNegative = gain.amount < 0
-    const absAmount = Math.abs(gain.amount)
-    const iconCountVariant = getResourceIconCountVariant(rewardType)
-    const ariaLabel =
-      absAmount === 1
-        ? `${isNegative ? 'Lost' : 'Gained'} 1 ${displayName}`
-        : `${isNegative ? 'Lost' : 'Gained'} ${absAmount} ${displayName}`
+  const effectiveViewIndex = viewingTurnIndex ?? turns.length
+  const canGoToPreviousTurn = effectiveViewIndex > 0
+  const canGoToNextTurn = viewingTurnIndex !== null && effectiveViewIndex < turns.length
 
-    return (
-      <div
-        key={`res-${index}`}
-        className={`gain-item ${isNegative ? 'negative' : 'positive'}`}
-        aria-label={ariaLabel}
-      >
-        {rewardType === RewardType.PERSUASION ? (
-          <span className="gain-persuasion-badge" title={displayName} aria-hidden="true">
-            <span className="gain-persuasion-diamond" />
-            <span className="gain-persuasion-count">{absAmount}</span>
-          </span>
-        ) : iconPath && shouldShowRepeatedIcons(rewardType, gain.amount) ? (
-          Array.from({ length: absAmount }, (_, i) => (
-            <React.Fragment key={i}>{renderGainIcon(iconPath, displayName)}</React.Fragment>
-          ))
-        ) : iconPath && iconCountVariant ? (
-          renderResourceIconWithCount(iconPath, gain.amount, iconCountVariant, displayName)
-        ) : iconPath ? (
-          <>
-            {renderGainIcon(iconPath, displayName)}
-            {renderGainMultiplier(gain.amount)}
-          </>
-        ) : (
-          <span className="gain-text-fallback">{displayName}</span>
-        )}
-      </div>
-    )
-  }
+  const goToPreviousTurn = useCallback(() => {
+    if (!canGoToPreviousTurn) return
+    onTurnChange(Math.max(0, effectiveViewIndex - 1))
+  }, [canGoToPreviousTurn, effectiveViewIndex, onTurnChange])
 
-  const renderInfluenceGain = (name: string, amount: number, index: number) => {
-    const isNegative = amount < 0
-    const absAmount = Math.abs(amount)
-    const faction = factionFromInfluenceGainName(name)
-    const iconPath = isNegative
-      ? faction
-        ? `/icon/${faction}.png`
-        : getAnyFactionInfluenceLossIcon()
-      : faction
-        ? getFactionBumpIcon(faction)
-        : getAnyFactionInfluenceGainIcon(absAmount)
+  const goToNextTurn = useCallback(() => {
+    if (!canGoToNextTurn) return
+    if (effectiveViewIndex < turns.length) {
+      onTurnChange(effectiveViewIndex + 1)
+    } else {
+      onReturnToCurrent()
+    }
+  }, [canGoToNextTurn, effectiveViewIndex, turns.length, onTurnChange, onReturnToCurrent])
 
-    return (
-      <div
-        key={`inf-${index}`}
-        className={`gain-item ${isNegative ? 'negative' : 'positive'}`}
-        aria-label={
-          absAmount === 1
-            ? `${isNegative ? 'Lost' : 'Gained'} 1 influence`
-            : `${isNegative ? 'Lost' : 'Gained'} ${absAmount} influence`
-        }
-      >
-        <img src={iconPath} alt="" className="gain-icon gain-icon--influence" aria-hidden="true" />
-        {renderGainMultiplier(amount)}
-      </div>
-    )
-  }
-
-  const renderTurnGains = (gains: Gain[]) => {
-    const resourceGains = aggregateResourceGains(gains)
-    const influenceGains = aggregateInfluenceGains(gains)
-    return (
-      <>
-        {resourceGains.map((gain, idx) => renderResourceGain(gain, idx))}
-        {influenceGains.map((gain, idx) => renderInfluenceGain(gain.name, gain.amount, idx))}
-      </>
-    )
-  }
-
-  // Handle keyboard navigation
+  // Handle keyboard navigation (up/down and left/right)
   useEffect(() => {
-    if (!onClose) return
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault()
+        goToPreviousTurn()
+        return
+      }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault()
+        goToNextTurn()
+        return
+      }
       if (e.key === 'Escape') {
         if (isViewingHistory) {
           onReturnToCurrent()
-        } else {
+        } else if (onClose) {
           onClose()
         }
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose, isViewingHistory, onReturnToCurrent])
+  }, [onClose, isViewingHistory, onReturnToCurrent, goToPreviousTurn, goToNextTurn])
 
   // Handle clicking on a turn row
   const handleTurnClick = (index: number) => {
@@ -441,46 +408,105 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     }
   }
 
-  // Handle undo button click
-  const handleUndoClick = (index: number, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setUndoTargetIndex(index)
-  }
-
-  // Confirm undo
-  const handleUndoConfirm = () => {
-    if (undoTargetIndex !== null) {
-      onUndoToTurn(undoTargetIndex)
-      setUndoTargetIndex(null)
-    }
-  }
-
-  // Get target state for undo dialog
-  const getUndoTargetState = (): GameState | null => {
-    if (undoTargetIndex === null) return null
-    if (undoTargetIndex >= 0 && undoTargetIndex < turns.length) {
-      return turns[undoTargetIndex]
-    }
-    return null
-  }
-
   const getDockedHeaderTitle = (): string => {
-    if (viewingTurnIndex === 0) return 'Initial state'
     if (viewingTurnIndex === null) {
-      return `Turn ${turns.length}, round ${currentGameState.currentRound}`
+      return `Turn ${getLivePlayerTurnNumber(turns)}, round ${currentGameState.currentRound}`
     }
     const snapshot = turns[viewingTurnIndex]
+    if (snapshot?.historyEntryKind === 'combat') return 'Combat'
+    if (snapshot?.historyEntryKind === 'round-start') {
+      return `Round ${snapshot.currentRound} start`
+    }
+    if (viewingTurnIndex === 0 || snapshot?.historyEntryKind === 'setup') return 'Setup'
     const round = snapshot?.currentRound ?? currentGameState.currentRound
-    return `Turn ${viewingTurnIndex}, round ${round}`
+    const turnNum = getPlayerTurnNumber(turns, viewingTurnIndex)
+    return turnNum != null ? `Turn ${turnNum}, round ${round}` : `Turn ${viewingTurnIndex}, round ${round}`
   }
 
   const headerTitle = isDocked
     ? getDockedHeaderTitle()
     : isViewingHistory
-      ? viewingTurnIndex === 0
-        ? 'Initial State'
-        : `Turn ${viewingTurnIndex}`
-      : `Turn ${turns.length} (Current)`
+      ? (() => {
+          if (viewingTurnIndex === null) return `Turn ${getLivePlayerTurnNumber(turns)} (Current)`
+          const snapshot = turns[viewingTurnIndex]
+          if (snapshot?.historyEntryKind === 'combat') return 'Combat'
+          if (snapshot?.historyEntryKind === 'round-start') {
+            return `Round ${snapshot.currentRound} start`
+          }
+          if (viewingTurnIndex === 0 || snapshot?.historyEntryKind === 'setup') return 'Setup'
+          const turnNum = getPlayerTurnNumber(turns, viewingTurnIndex)
+          return turnNum != null ? `Turn ${turnNum}` : `Turn ${viewingTurnIndex}`
+        })()
+      : `Turn ${getLivePlayerTurnNumber(turns)} (Current)`
+
+  const renderHeader = () => (
+    <div className="turn-history-header">
+      <div className="turn-history-nav" aria-label="Turn navigation">
+        <button
+          type="button"
+          className="turn-history-nav-btn"
+          onClick={goToPreviousTurn}
+          disabled={!canGoToPreviousTurn}
+          title="Previous turn"
+          aria-label="Previous turn"
+        >
+          <ChevronLeftIcon />
+        </button>
+        <button
+          type="button"
+          className="turn-history-nav-btn"
+          onClick={goToNextTurn}
+          disabled={!canGoToNextTurn}
+          title="Next turn"
+          aria-label="Next turn"
+        >
+          <ChevronRightIcon />
+        </button>
+      </div>
+      <span
+        className={[
+          'turn-history-header-title',
+          isDocked ? 'turn-history-header-title--turn-round' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        {headerTitle}
+      </span>
+      <div className="turn-history-header-actions">
+        {onUndo && (
+          <button
+            type="button"
+            className="turn-history-icon-btn turn-history-icon-btn--undo"
+            onClick={onUndo}
+            disabled={!canUndo}
+            title={undoTitle}
+            aria-label={undoAriaLabel ?? undoTitle ?? 'Undo turn'}
+          >
+            <UndoIcon />
+          </button>
+        )}
+        <button
+          type="button"
+          className="turn-history-icon-btn turn-history-icon-btn--details"
+          onClick={() => setShowDebugModal(true)}
+          title="View full game state (includes turn history)"
+          aria-label="View full game state debug"
+        >
+          <DetailsIcon />
+        </button>
+        {isViewingHistory && !isDocked && (
+          <button
+            type="button"
+            className="turn-history-header-live-btn"
+            onClick={onReturnToCurrent}
+          >
+            Live
+          </button>
+        )}
+      </div>
+    </div>
+  )
 
   return (
     <div
@@ -496,91 +522,85 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       aria-modal={isDocked ? undefined : true}
       aria-label="Turn history"
     >
-      <div className="turn-history-header">
-        <span
-          className={[
-            'turn-history-header-title',
-            isDocked ? 'turn-history-header-title--turn-round' : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-        >
-          {headerTitle}
-        </span>
-        <div className="turn-history-header-actions">
-          <button
-            type="button"
-            className="turn-history-icon-btn turn-history-icon-btn--details"
-            onClick={() => setShowDebugModal(true)}
-            title="View full game state (includes turn history)"
-            aria-label="View full game state debug"
-          >
-            <DetailsIcon />
-          </button>
-          {isViewingHistory && !isDocked && (
-            <button
-              type="button"
-              className="turn-history-header-live-btn"
-              onClick={onReturnToCurrent}
-            >
-              Live
-            </button>
-          )}
-        </div>
-      </div>
-
       <div className="turn-history-list" ref={listRef}>
         {turns.map((turn, index) => {
           const turnPlayer = getTurnPlayer(turn)
-          const gains = getGainsForTurn(turn)
+          const isCombatEntry = isCombatHistoryEntry(turn)
+          const isMetaEntry = isMetaHistoryEntry(turn)
+          const gains = getGainsForHistoryRow(turn)
+          const otherPlayerGains = isCombatEntry ? [] : getOtherPlayersGainsForTurnState(turn)
+          const playedIntrigue = getPlayedIntrigueForTurn(turn)
           const isViewing = viewingTurnIndex === index
           const revealStats =
             turn.currTurn?.type === TurnType.REVEAL && turn.currTurn.playerId != null
               ? getRevealTurnStats(turn, turn.currTurn.playerId)
               : null
+          const isRevealTurn = turn.currTurn?.type === TurnType.REVEAL
+          const showRevealSummary = revealStats != null && revealTurnStatsHasContent(revealStats)
+          const troopsDeployed = getTroopsDeployedToConflict(turn)
+          const troopsRetreated = getTroopsRetreatedFromConflict(turn)
+          const showStandardGains =
+            !isRevealTurn &&
+            (gains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0)
+          const showRevealGains =
+            isRevealTurn &&
+            (showRevealSummary || gains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0)
           
           return (
             <div
               key={index}
               data-turn-index={index}
-              className={`turn-history-row ${isViewing ? 'viewing' : ''}`}
+              className={`turn-history-row ${isViewing ? 'viewing' : ''} ${isCombatEntry ? 'turn-history-row--combat' : ''}`}
               onClick={() => handleTurnClick(index)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleTurnClick(index)}
             >
-              <div className="turn-history-row-top">
+              <div className="turn-history-row-header">
                 <div className="turn-number">
-                  {index === 0 ? 'Initial' : index}
+                  {getHistoryRowBadge(turn, index, turns)}
                 </div>
-                <div className="turn-history-main">
-                  <div className="turn-history-summary-line">
-                    {renderPlayerBadge(turnPlayer)}
-                    {renderTurnCardThumb(getPlayedCardForTurn(turn))}
-                    <span className="turn-label">{getTurnLabel(turn, index)}</span>
+                {!isMetaEntry && renderPlayerBadge(turnPlayer)}
+                {!isMetaEntry && renderTurnCardThumb(getPlayedCardForTurn(turn))}
+                {renderIntrigueThumbs(playedIntrigue)}
+                {!isMetaEntry && (
+                  <span className="turn-label">{getHistoryRowTitle(turn, index)}</span>
+                )}
+                {isCombatEntry && (
+                  <span className="turn-label turn-label--combat">Combat resolution</span>
+                )}
+                {turn.historyEntryKind === 'round-start' && (
+                  <span className="turn-label">Round {turn.currentRound} start</span>
+                )}
+              </div>
+              <div className="turn-history-row-body">
+                {showStandardGains && (
+                  <div className="turn-history-gains">
+                    {isCombatEntry ? (
+                      renderCombatGainsByPlayer(turn, gains)
+                    ) : (
+                      <TurnGainsDisplay
+                        gains={gains}
+                        resolveCard={makeResolveCard(turn)}
+                        troopsDeployedToConflict={troopsDeployed}
+                        troopsRetreatedFromConflict={troopsRetreated}
+                      />
+                    )}
                   </div>
-                  {gains.length > 0 && (
-                    <div className="turn-history-gains" onClick={e => e.stopPropagation()}>
-                      {renderTurnGains(gains)}
-                    </div>
-                  )}
-                  {revealStats && revealStats.acquiredCards.length > 0 && (
-                    <div className="turn-history-reveal-stats" onClick={e => e.stopPropagation()}>
-                      <RevealTurnStatsPanel stats={revealStats} compact />
-                    </div>
-                  )}
-                </div>
-                <div className="turn-actions">
-                  <button
-                    type="button"
-                    className="turn-history-icon-btn turn-history-icon-btn--undo"
-                    onClick={(e) => handleUndoClick(index, e)}
-                    title={index === 0 ? 'Reset to initial state' : `Undo to turn ${index}`}
-                    aria-label={index === 0 ? 'Reset to initial state' : `Undo to turn ${index}`}
-                  >
-                    <UndoIcon />
-                  </button>
-                </div>
+                )}
+                {otherPlayerGains.length > 0 && renderOtherPlayerGains(turn)}
+                {showRevealGains && revealStats && (
+                  <div className="turn-history-reveal-stats">
+                    <RevealTurnStatsPanel
+                      stats={revealStats}
+                      gains={gains}
+                      compact
+                      resolveCard={makeResolveCard(turn)}
+                      troopsDeployedToConflict={troopsDeployed}
+                      troopsRetreatedFromConflict={troopsRetreated}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )
@@ -588,10 +608,26 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         
         {/* Current turn pseudo-entry */}
         {(() => {
-          const liveGains = getGainsForTurn(currentGameState)
+          const liveGains = getGainsForTurnState(currentGameState)
+          const liveOtherPlayerGains = getOtherPlayersGainsForTurnState(currentGameState)
+          const livePlayedIntrigue = getPlayedIntrigueForTurn(currentGameState)
           const liveRevealStats = currentGameState.currTurn?.type === TurnType.REVEAL
             ? getRevealTurnStats(currentGameState, currentGameState.currTurn.playerId)
             : null
+          const liveIsRevealTurn = currentGameState.currTurn?.type === TurnType.REVEAL
+          const liveShowRevealSummary =
+            liveRevealStats != null && revealTurnStatsHasContent(liveRevealStats)
+          const liveTroopsDeployed = getTroopsDeployedToConflict(currentGameState)
+          const liveTroopsRetreated = getTroopsRetreatedFromConflict(currentGameState)
+          const liveShowStandardGains =
+            !liveIsRevealTurn &&
+            (liveGains.length > 0 || liveTroopsDeployed > 0 || liveTroopsRetreated > 0)
+          const liveShowRevealGains =
+            liveIsRevealTurn &&
+            (liveShowRevealSummary ||
+              liveGains.length > 0 ||
+              liveTroopsDeployed > 0 ||
+              liveTroopsRetreated > 0)
           return (
         <div
           ref={liveEntryRef}
@@ -602,36 +638,51 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && onReturnToCurrent()}
         >
-          <div className="turn-history-row-top">
-            <div className="turn-number">{turns.length}</div>
-            <div className="turn-history-main">
-              <div className="turn-history-summary-line">
-                {renderPlayerBadge(
-                  players.find(p => p.id === currentGameState.activePlayerId)
-                )}
-                {renderTurnCardThumb(getPlayedCardForTurn(currentGameState))}
-                {currentGameState.currTurn && (
-                  <span className="turn-label">
-                    {getTurnLabel(currentGameState, turns.length)}
-                  </span>
-                )}
+          <div className="turn-history-row-header">
+            <div className="turn-number">{getLivePlayerTurnNumber(turns)}</div>
+            {renderPlayerBadge(
+              players.find(p => p.id === currentGameState.activePlayerId)
+            )}
+            {currentGameState.phase !== GamePhase.COMBAT &&
+              renderTurnCardThumb(getPlayedCardForTurn(currentGameState))}
+            {currentGameState.phase !== GamePhase.COMBAT && renderIntrigueThumbs(livePlayedIntrigue)}
+            {(currentGameState.phase === GamePhase.COMBAT || currentGameState.currTurn) && (
+              <span className="turn-label">
+                {getTurnLabel(currentGameState)}
+              </span>
+            )}
+          </div>
+          <div className="turn-history-row-body">
+            {liveShowStandardGains && (
+              <div className="turn-history-gains">
+                <TurnGainsDisplay
+                  gains={liveGains}
+                  resolveCard={makeResolveCard(currentGameState)}
+                  troopsDeployedToConflict={liveTroopsDeployed}
+                  troopsRetreatedFromConflict={liveTroopsRetreated}
+                />
               </div>
-              {liveGains.length > 0 && (
-                <div className="turn-history-gains" onClick={e => e.stopPropagation()}>
-                  {renderTurnGains(liveGains)}
-                </div>
-              )}
-              {liveRevealStats && liveRevealStats.acquiredCards.length > 0 && (
-                <div className="turn-history-reveal-stats" onClick={e => e.stopPropagation()}>
-                  <RevealTurnStatsPanel stats={liveRevealStats} compact />
-                </div>
-              )}
-            </div>
+            )}
+            {liveOtherPlayerGains.length > 0 && renderOtherPlayerGains(currentGameState)}
+            {liveShowRevealGains && liveRevealStats && (
+              <div className="turn-history-reveal-stats">
+                <RevealTurnStatsPanel
+                  stats={liveRevealStats}
+                  gains={liveGains}
+                  compact
+                  resolveCard={makeResolveCard(currentGameState)}
+                  troopsDeployedToConflict={liveTroopsDeployed}
+                  troopsRetreatedFromConflict={liveTroopsRetreated}
+                />
+              </div>
+            )}
           </div>
         </div>
           )
         })()}
       </div>
+
+      {renderHeader()}
 
       {!isDocked && onClose && (
         <div className="turn-history-footer">
@@ -659,17 +710,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         </div>
       )}
 
-      {/* Undo Confirmation Dialog */}
-      <UndoConfirmDialog
-        isOpen={undoTargetIndex !== null}
-        targetTurnIndex={undoTargetIndex ?? 0}
-        currentHistoryLength={turns.length}
-        targetState={getUndoTargetState()}
-        currentState={currentGameState}
-        players={players}
-        onConfirm={handleUndoConfirm}
-        onCancel={() => setUndoTargetIndex(null)}
-      />
     </div>
   )
 }

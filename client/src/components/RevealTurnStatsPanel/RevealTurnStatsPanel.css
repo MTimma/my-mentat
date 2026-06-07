@@ -17,6 +17,87 @@
   padding: 6px 8px;
 }
 
+.reveal-turn-stats-panel--history {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 5px 8px;
+}
+
+.reveal-turn-revealed-cards {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.reveal-turn-revealed-card {
+  display: inline-flex;
+  line-height: 0;
+  flex: 0 0 auto;
+}
+
+.reveal-turn-revealed-thumb {
+  width: 20px;
+  height: 28px;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.reveal-turn-revealed-fallback {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(244, 228, 188, 0.85);
+  padding: 2px 4px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reveal-turn-acquired-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.reveal-turn-stat-totals-wrap .turn-gains-display-root--totals-only {
+  padding: 0;
+  gap: 0;
+}
+
+.reveal-turn-stat-totals-wrap .turn-gain-totals-group {
+  margin: 0;
+}
+
+.reveal-turn-stats-panel--history .turn-gains-display-root--totals-only .turn-gain-totals-group {
+  padding: 0;
+}
+
+.reveal-turn-stats-panel--history .turn-gain-source-title--totals {
+  display: none;
+}
+
+.reveal-turn-stats-panel--history .turn-gain-totals-row {
+  gap: 6px 8px;
+}
+
+.reveal-turn-stats-panel--history .turn-gain-total-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.reveal-turn-stats-panel--history .turn-gain-total-amt {
+  font-size: 0.82rem;
+}
+
 .reveal-turn-stats-panel--acquired-only {
   flex-direction: column;
   align-items: stretch;

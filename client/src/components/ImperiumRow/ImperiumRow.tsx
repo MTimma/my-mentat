@@ -192,13 +192,16 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
             />
             {preview.note && <div className="imperium-preview-note">{preview.note}</div>}
             <div className="imperium-preview-actions">
-              <button
-                type="button"
-                className="imperium-preview-close"
-                onClick={() => setPreviewSelection(null)}
-              >
-                Close
-              </button>
+              {canAcquire && (
+                <div
+                  className="imperium-preview-persuasion"
+                  title={`${persuasion} persuasion available`}
+                  aria-label={`${persuasion} persuasion available`}
+                >
+                  <span className="imperium-preview-persuasion-diamond" aria-hidden="true" />
+                  <span className="imperium-preview-persuasion-value">{persuasion}</span>
+                </div>
+              )}
               <button
                 type="button"
                 className="imperium-preview-acquire-button"

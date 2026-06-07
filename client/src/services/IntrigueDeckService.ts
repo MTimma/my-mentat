@@ -205,7 +205,6 @@ export const intrigueCards: IntrigueCard[] = [
     playEffect: [
       { reward: { custom: CustomEffect.MASTER_TACTICIAN } },
       { choiceOpt: true, phase: GamePhase.COMBAT, reward: { combat: 3 } },
-      { choiceOpt: true, phase: GamePhase.COMBAT, reward: { retreatFromConflict: 0 } }
     ]
   },
   {

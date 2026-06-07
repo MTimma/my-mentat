@@ -84,6 +84,7 @@ export function getBaseTestState(
     endgameDonePlayers: new Set(),
     currTurn: null,
     selectedCard: null,
+    selectedCardDeckIndex: null,
     combatTroops: {},
     combatStrength: {},
     mentatOwner: null,

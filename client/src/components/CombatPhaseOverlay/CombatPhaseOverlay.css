@@ -1,0 +1,182 @@
+.combat-phase-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.combat-phase-overlay--board-scoped {
+  position: absolute;
+  inset: 0;
+  padding: 12px;
+  padding-bottom: 12px;
+  border-radius: inherit;
+}
+
+.combat-phase-modal {
+  pointer-events: auto;
+  width: min(640px, 100%);
+  max-height: min(80dvh, 100%);
+  overflow-y: auto;
+  background: rgba(12, 14, 20, 0.96);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 10px;
+  padding: 18px 20px 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  color: #f2f2f2;
+}
+
+.combat-phase-modal-title {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #f44336;
+}
+
+.combat-phase-active-player {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffe9a8;
+}
+
+.combat-phase-active-label {
+  font-weight: 500;
+  color: rgba(255, 233, 168, 0.85);
+}
+
+.combat-phase-rankings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.combat-phase-rank {
+  display: grid;
+  grid-template-columns: auto auto auto 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.combat-phase-rank--active {
+  border-color: rgba(255, 215, 0, 0.55);
+  box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.2);
+  background: rgba(255, 215, 0, 0.08);
+}
+
+.combat-phase-rank--passed {
+  opacity: 0.65;
+}
+
+.combat-phase-rank-place {
+  font-weight: 800;
+  min-width: 1.25rem;
+}
+
+.combat-phase-rank--place-1 .combat-phase-rank-place {
+  color: #ffd700;
+}
+
+.combat-phase-rank--place-2 .combat-phase-rank-place {
+  color: #c0c0c0;
+}
+
+.combat-phase-rank--place-3 .combat-phase-rank-place {
+  color: #cd7f32;
+}
+
+.combat-phase-rank-strength {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+}
+
+.combat-phase-strength-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.combat-phase-rank-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combat-phase-intrigue-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.combat-phase-intrigue-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.combat-phase-passed {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #7dcea0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.combat-phase-hint {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.35;
+}
+
+@media (max-width: 600px) {
+  .combat-phase-overlay {
+    align-items: flex-end;
+    padding: 10px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .combat-phase-modal {
+    padding: 14px 14px 12px;
+  }
+
+  .combat-phase-active-player {
+    flex-wrap: wrap;
+    font-size: 0.88rem;
+  }
+
+  .combat-phase-rank {
+    grid-template-columns: auto auto auto 1fr;
+    gap: 6px;
+  }
+
+  .combat-phase-passed {
+    grid-column: 2 / -1;
+    justify-self: start;
+    margin-left: 2.5rem;
+  }
+}

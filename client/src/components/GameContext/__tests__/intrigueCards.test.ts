@@ -126,6 +126,10 @@ describe('Intrigue cards — player turns (plot)', () => {
     let s = basePlotState([makePlayer(0)])
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId })
     expect(s.factionInfluence[faction][0]).toBe(1)
+    const influenceGain = s.gains.find(
+      g => g.playerId === 0 && g.type === RewardType.INFLUENCE && g.source === GainSource.INTRIGUE
+    )
+    expect(influenceGain?.name).toBe(faction)
   })
 
   it('CHOAM Shares (8): pay 7 Solari for 1 VP', () => {
@@ -184,6 +188,97 @@ describe('Intrigue cards — player turns (plot)', () => {
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 23 })
     expect(s.players[0].solari).toBe(17)
     expect(s.players[0].troops).toBe(11)
+  })
+
+  it('DEPLOY_TROOP tracks removable troops; deploy UI undeploy does not count as effect retreat', () => {
+    const cityCard = structuredClone(STARTING_DECK.find(c => c.name === 'Reconnaissance')!)
+    let s = basePlotState([makePlayer(0, { deck: [cityCard], handCount: 1, troops: 10 })])
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: cityCard.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 2 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'UNDEPLOY_TROOP', playerId: 0 })
+    expect(s.currTurn?.removableTroops).toBe(1)
+    expect(s.currTurn?.troopsRetreatedFromConflict).toBe(0)
+    expect(s.currTurn?.troopsDeployedToConflict).toBe(1)
+  })
+
+  it('RETREAT_TROOP fromEffect respects allowance and increments retreated count', () => {
+    const cityCard = structuredClone(STARTING_DECK.find(c => c.name === 'Reconnaissance')!)
+    let s = basePlotState([makePlayer(0, { deck: [cityCard], handCount: 1, troops: 10 })])
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: cityCard.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 2 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = {
+      ...s,
+      currTurn: s.currTurn
+        ? { ...s.currTurn, effectRetreatAllowance: 10, effectRetreatsUsed: 0 }
+        : s.currTurn,
+    }
+    for (let i = 0; i < 10; i++) {
+      s = applyGameAction(s, { type: 'RETREAT_TROOP', playerId: 0, fromEffect: true })
+    }
+    expect(s.currTurn?.removableTroops).toBe(0)
+    expect(s.currTurn?.troopsRetreatedFromConflict).toBe(2)
+    expect(s.currTurn?.effectRetreatsUsed).toBe(2)
+  })
+
+  it('RETREAT_TROOP fromEffect without allowance does nothing', () => {
+    const cityCard = structuredClone(STARTING_DECK.find(c => c.name === 'Reconnaissance')!)
+    let s = basePlotState([makePlayer(0, { deck: [cityCard], handCount: 1, troops: 10 })])
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: cityCard.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 2 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'RETREAT_TROOP', playerId: 0, fromEffect: true })
+    expect(s.currTurn?.removableTroops).toBe(1)
+    expect(s.combatTroops[0]).toBe(1)
+    expect(s.currTurn?.troopsRetreatedFromConflict).toBe(0)
+  })
+
+  it('DEPLOY_TROOP respects troop deploy limit', () => {
+    const cityCard = structuredClone(STARTING_DECK.find(c => c.name === 'Reconnaissance')!)
+    let s = basePlotState([makePlayer(0, { deck: [cityCard], handCount: 1, troops: 10 })])
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: cityCard.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 2 })
+    expect(s.currTurn?.troopLimit).toBe(2)
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(s.currTurn?.removableTroops).toBe(2)
+    expect(s.combatTroops[0]).toBe(2)
+  })
+
+  it('deploy UI add/remove recalculates deployed total (no append drift)', () => {
+    const cityCard = structuredClone(STARTING_DECK.find(c => c.name === 'Reconnaissance')!)
+    let s = basePlotState([makePlayer(0, { deck: [cityCard], handCount: 1, troops: 10 })])
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: cityCard.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 2 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'UNDEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'UNDEPLOY_TROOP', playerId: 0 })
+    expect(s.currTurn?.removableTroops).toBe(0)
+    expect(s.currTurn?.troopsRetreatedFromConflict).toBe(0)
+    expect(s.currTurn?.troopsDeployedToConflict).toBe(0)
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(s.currTurn?.removableTroops).toBe(2)
+    expect(s.currTurn?.troopsRetreatedFromConflict).toBe(0)
+    expect(s.currTurn?.troopsDeployedToConflict).toBe(2)
+  })
+
+  it('Reinforcements (23): +3 troops add to deploy limit on combat agent turn', () => {
+    const cityCard = structuredClone(STARTING_DECK.find(c => c.name === 'Reconnaissance')!)
+    let s = basePlotState([makePlayer(0, { deck: [cityCard], handCount: 1, solari: 20 })])
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: cityCard.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 2 })
+    expect(s.currTurn?.canDeployTroops).toBe(true)
+    expect(s.currTurn?.troopLimit).toBe(2)
+
+    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 23 })
+    expect(s.players[0].troops).toBe(11)
+    expect(s.currTurn?.troopLimit).toBe(5)
   })
 
   it('Reinforcements (23): cannot play without 3 Solari', () => {
@@ -363,6 +458,70 @@ describe('Intrigue cards — combat phase', () => {
     expect(s.players[0].intrigueCount).toBe(0)
   })
 
+  it('playing combat intrigue clears combat passes so earlier passes can act again', () => {
+    let s = combatFourPlayerState()
+    s = {
+      ...s,
+      activePlayerId: 3,
+      combatPasses: new Set([0, 1, 2]),
+    }
+    s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 3, cardId: 1 })
+    expect(s.combatPasses.has(0)).toBe(false)
+    expect(s.combatPasses.has(1)).toBe(false)
+    expect(s.combatPasses.has(2)).toBe(false)
+    expect(s.activePlayerId).toBe(0)
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 0 })
+    expect(s.phase).toBe(GamePhase.COMBAT)
+    expect(s.activePlayerId).toBe(1)
+  })
+
+  it('playing combat intrigue advances to next seat so earlier passers can act again', () => {
+    let s = combatFourPlayerState()
+    s = {
+      ...s,
+      activePlayerId: 2,
+      combatPasses: new Set([0, 1]),
+    }
+    s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 2, cardId: 1 })
+    expect(s.combatPasses.has(0)).toBe(false)
+    expect(s.combatPasses.has(1)).toBe(false)
+    expect(s.activePlayerId).toBe(3)
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 3 })
+    expect(s.activePlayerId).toBe(0)
+  })
+
+  it('player with multiple combat intrigue cards may play again before passing', () => {
+    let s = combatFourPlayerState()
+    s = {
+      ...s,
+      players: s.players.map((p, i) => (i === 0 ? { ...p, intrigueCount: 2 } : p)),
+    }
+    s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 1 })
+    expect(s.combatStrength[0]).toBe(8)
+    expect(s.players[0].intrigueCount).toBe(1)
+    expect(s.activePlayerId).toBe(0)
+    expect(s.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toEqual([1])
+    s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 27 })
+    expect(s.players[0].intrigueCount).toBe(0)
+    expect(s.combatStrength[0]).toBe(10)
+    expect(s.activePlayerId).toBe(1)
+  })
+
+  it('START_COMBAT_PHASE auto-passes players without intrigue', () => {
+    let s = combatFourPlayerState()
+    s = {
+      ...s,
+      players: s.players.map((p, i) => (i === 0 ? { ...p, intrigueCount: 1 } : { ...p, intrigueCount: 0 })),
+      firstPlayerMarker: 0,
+    }
+    s = applyGameAction(s, { type: 'START_COMBAT_PHASE' })
+    expect(s.phase).toBe(GamePhase.COMBAT)
+    expect(s.combatPasses.has(1)).toBe(true)
+    expect(s.combatPasses.has(2)).toBe(true)
+    expect(s.combatPasses.has(3)).toBe(true)
+    expect(s.activePlayerId).toBe(0)
+  })
+
   it('Private Army (19): pay 2 spice for +5 strength', () => {
     let s = combatFourPlayerState()
     s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 19 })
@@ -403,6 +562,34 @@ describe('Intrigue cards — combat phase', () => {
       source: { type: GainSource.INTRIGUE, id: 17, name: 'Master Tactician' },
     })
     expect(s.combatStrength[0]).toBe(7)
+    expect(s.activePlayerId).toBe(1)
+  })
+
+  it('Master Tactician (17): retreating all troops auto-passes and advances combat turn', () => {
+    let s = combatFourPlayerState()
+    s = {
+      ...s,
+      activePlayerId: 1,
+      combatTroops: { 0: 3, 1: 3, 2: 1, 3: 1 },
+      combatStrength: { 0: 12, 1: 6, 2: 2, 3: 2 },
+      players: s.players.map((p, i) =>
+        i === 2 || i === 3 ? { ...p, intrigueCount: 0 } : p
+      ),
+    }
+    s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 1, cardId: 17 })
+    const ch = s.currTurn?.pendingChoices?.[0]
+    expect(ch).toBeDefined()
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 1,
+      choiceId: ch!.id,
+      reward: { retreatFromConflict: 3 },
+      source: { type: GainSource.INTRIGUE, id: 17, name: 'Master Tactician' },
+    })
+    expect(s.combatTroops[1]).toBe(0)
+    expect(s.combatPasses.has(1)).toBe(true)
+    expect(s.activePlayerId).toBe(0)
+    expect(s.phase).toBe(GamePhase.COMBAT)
   })
 
   it('Staged Incident (25): lose 3 troops in conflict for 1 VP', () => {
@@ -429,6 +616,7 @@ describe('Intrigue cards — combat phase', () => {
     }
     s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 28 })
     expect(s.pendingVictorSpiceThisCombat?.[0]).toBe(true)
+    s = { ...s, phase: GamePhase.COMBAT_REWARDS }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
     expect(s.players[0].spice).toBe(3)
   })
@@ -442,6 +630,7 @@ describe('Intrigue cards — combat phase', () => {
       imperiumRowDeck: deckCards,
     }
 
+    s = { ...s, phase: GamePhase.COMBAT_REWARDS }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
 
     expect(s.phase).toBe(GamePhase.ROUND_START)
@@ -602,6 +791,7 @@ describe('Imperium Row card effects — Power Play', () => {
 
     expect(s.players[0].playArea.some(card => card.name === 'Power Play')).toBe(false)
     expect(s.players[0].trash.some(card => card.name === 'Power Play')).toBe(true)
+    expect(s.gains.some(g => g.type === RewardType.TRASH && g.name === 'Power Play' && g.amount === -1)).toBe(true)
 
     const influenceReward = s.pendingRewards.find(r => r.reward.influence)
     expect(influenceReward?.powerPlay).toBeUndefined()

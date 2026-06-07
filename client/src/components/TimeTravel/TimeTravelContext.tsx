@@ -1,5 +1,10 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
 import { GameState } from '../../types/GameTypes'
+import {
+  countPlayerTurns,
+  getLivePlayerTurnNumber,
+  getPlayerTurnNumber,
+} from '../../utils/turnHistoryDisplay'
 
 interface TimeTravelContextType {
   // Current viewing index (null = viewing live state)
@@ -91,11 +96,23 @@ export const TimeTravelProvider: React.FC<TimeTravelProviderProps> = ({
     if (viewingTurnIndex === gameState.history.length) {
       return 'Current Turn (in progress)'
     }
-    if (viewingTurnIndex === 0) {
-      return `Initial State of ${gameState.history.length} turns`
+    const snapshot = gameState.history[viewingTurnIndex]
+    if (viewingTurnIndex === 0 || snapshot?.historyEntryKind === 'setup') {
+      return 'Setup'
     }
-    return `Turn ${viewingTurnIndex} of ${gameState.history.length} turns`
-  }, [viewingTurnIndex, gameState.history.length])
+    if (snapshot?.historyEntryKind === 'round-start') {
+      return `Round ${snapshot.currentRound} start`
+    }
+    if (snapshot?.historyEntryKind === 'combat') {
+      return 'Combat'
+    }
+    const turnNum = getPlayerTurnNumber(gameState.history, viewingTurnIndex)
+    const totalPlayerTurns = countPlayerTurns(gameState.history)
+    if (turnNum != null) {
+      return `Turn ${turnNum} of ${totalPlayerTurns}`
+    }
+    return `Turn ${viewingTurnIndex} of ${gameState.history.length}`
+  }, [viewingTurnIndex, gameState.history])
   
   // Navigate to a specific turn
   const goToTurn = useCallback((turnIndex: number) => {
