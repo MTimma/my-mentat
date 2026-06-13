@@ -20,6 +20,30 @@ card to:
    `CustomEffect` handler / manual logging fallback).
 3. **Paraphrase risk** if the printed text differs.
 
+> ✦ 2026-06-10 — adjustments since this plan was written:
+>
+> 1. **Base deck is 67 cards** (manifest-driven,
+>    `baseGameManifest.test.ts`), not 64 — AC2 corrected below.
+> 2. **`currTurn.troopsDeployedThisTurn` does not exist**; the field is
+>    `troopsDeployedToConflict`. Check its semantics for Desert Ambush
+>    (it counts deploys to the conflict; extend it if garrison deploys
+>    must count too).
+> 3. **No `DISCARD_FROM_HAND` action exists.** Discard-as-cost flows in
+>    the base game use `CardSelectChoice` with `CardPile.HAND` /
+>    `CardPile.DISCARD` — reuse that pattern (§5.3 updated).
+> 4. **`currTurn.extraTurnAllowed` is a new field** (Weirding Way) —
+>    coordinate with `canEndTurn`, turn-count bookkeeping and
+>    `currTurn.gainsStartIndex` in the refactored reducer.
+> 5. **Tests:** `client/src/data/__tests__/` does not exist. Put data
+>    assertions in `client/src/components/GameContext/__tests__/`
+>    (next to `imperiumRowCards.test.ts`, which already has the
+>    manifest-driven `it.todo` scaffold pattern to copy), or create
+>    `data/__tests__/` once, deliberately, and note it in plan 11.
+> 6. **Useful precedents now in code:** Power Play influence handling
+>    (Treachery), `infiltrateIgnoreOccupancyOnce` on `GameState`
+>    (Bounty Hunter / infiltration), `pendingVictorSpiceThisCombat`
+>    (deferred combat rewards).
+
 ---
 
 ## 1. Goal
@@ -86,7 +110,7 @@ below; keep the `("Color")` note in this plan only (not in code).
 | `bounty_hunter.png` | 1 | 1 | – | CITY ("Blue") | Infiltrate: true | `+2 solari` **if used to send agent to occupied space by oppponente** (i.e., used Infiltration but on opponent agent space) | persuasion:1, combat:1 | – | **B** | New `CustomEffect.BOUNTY_INFILTRATION_BONUS`: checks `state.currTurn?.agentSpace` was placed despite occupied → award `+2 solari`. |
 | `choam_delegate.png` | 1 | 1 | – | SPICE_TRADE ("Yellow") | Infiltrate: true | – | `+3 solari` | yes | **A** | Pure declarative: `revealEffect: [{ reward: { solari: 3 } }]`, `unload: true`. |
 | `court_intrigue.png` | 1 | 2 | EM | EMPEROR | Infiltrate: true | Cost: `intrigueBottom:1` → `intrigueCards:1` | persuasion:1, combat:1 | – | **B** | this does not do anything in the db app because we do not keep track which intrigue a user has, only which played. so nothing happens, -1 for user and + 1 intrigue card. it could be useful to keep it for in case multiplayer game is created, but till then keep as just -1, +1 |
-| `desert_ambush.png` | 1 | 3 | FR | SPICE_TRADE ("Yellow") | – | – | persuasion:1, combat:1, **1 enemy unit retreats per troop you deployed this turn** | – | **B** | New `CustomEffect.DESERT_AMBUSH`: count `state.currTurn?.troopsDeployedThisTurn` and present a `pendingChoice` that lets user to choose which opponent retreats a unit per deployed troop |
+| `desert_ambush.png` | 1 | 3 | FR | SPICE_TRADE ("Yellow") | – | – | persuasion:1, combat:1, **1 enemy unit retreats per troop you deployed this turn** | – | **B** | New `CustomEffect.DESERT_AMBUSH`: count `state.currTurn?.troopsDeployedToConflict` (✦ actual field name; verify garrison-deploy semantics) and present a `pendingChoice` that lets user to choose which opponent retreats a unit per deployed troop |
 | `embedded_agent.png` | 1 | 5 | BG | LANDSRAAD ("Green") | Infiltrate: true | `freighter:2` if **another BG card in play** | persuasion:1, intrigueCards:1 | – | **B** | Requirement reuse (`requirement.inPlay: BG`). Apply +2 freighter icons (so two pending Advance/Recall choices). |
 | `esmar_tuek.png` | 1 | 5 | SG | CITY ("Blue"), SPICE_TRADE ("Yellow") | – | Cost: `spice:1` → `influence:{SG,1}, drawCards:1` | `spice:2, solari:2` | yes | **A** | Declarative; `unload: true`. |
 | `freighter_fleet.png` | 2 | 2 | – | SPICE_TRADE ("Yellow") | – | – | `freighter:1` | yes | **A** | Declarative; `freighter:1`. |
@@ -106,7 +130,7 @@ below; keep the `("Color")` note in this plan only (not in code).
 | `sayyadina.png` | 1 | 3 | BG, FR | BENE_GESSERIT, FREMEN | – | Cost: `water:3` → `victoryPoints:1` | `persuasion:3` if **FR bond** | – | **B** | Standard. |
 | `shai_hulud.png` | 1 | 7 | FR | SPICE_TRADE ("Yellow") | Acquire: `trash:1` | Cost: `trash:1` → `troops:2` | `combat:5` if **FR bond** | – | **B** | Two trash flows (one acquire-time, one play-time). |
 | `spice_trader.png` | 1 | 4 | FR | CITY ("Blue"), SPICE_TRADE ("Yellow") | – | If **2× Inf FR**: `discard:1` → `spice:2` | `persuasion:2, combat:1` | – | **A** | Declarative. |
-| `treachery.png` | 2 | 6 | – | EMPEROR, SPACING_GUILD, BENE_GESSERIT, FREMEN | – | **Gain 2 influence instead of 1** AND `trashThisCard` | `persuasion:0`, `troops:2, deployTroops:2 (mandatory)` | yes | **B** | New `CustomEffect.TREACHERY_DOUBLE_INFLUENCE`: when a `Reward.influence` is being applied this turn from any source, +1 extra. Re-uses Power Play model. deploy troops is mandatory. usually deployTroops in our app is optional, but for this card has to be mandatory|
+| `treachery.png` | 2 | 6 | – | EMPEROR, SPACING_GUILD, BENE_GESSERIT, FREMEN | – | **Gain 2 influence instead of 1** AND `trashThisCard` | `persuasion:0`, `troops:2, deployTroops:2 (mandatory)` | yes | **B** | New `CustomEffect.TREACHERY_DOUBLE_INFLUENCE`: ✦ scope resolved per §8 — applies **only to Treachery's own influence** (each Faction icon on this card grants 2 instead of 1), *not* to all influence this turn. Re-uses Power Play model. deploy troops is mandatory. usually deployTroops in our app is optional, but for this card has to be mandatory|
 | `truthsayer.png` | 2 | 3 | EM, BG | EMPEROR, BENE_GESSERIT, LANDSRAAD ("Green") | – | Cost: `discard:1` → `drawCards:1` | `persuasion:1, combat:1` | – | **A** | Declarative. |
 | `water_peddler.png` | 1 | 1 | – | – | Acquire: `water:1` | – | `water:1` | yes | **A** | Declarative. |
 | `web_of_power.png` | 1 | 4 | BG | BENE_GESSERIT | Infiltrate: true | If **2× Inf each**: EM → `solari:2`, SG → `drawCards:1`, FR → `water:1` | `persuasion:1`, `influence:{any,1}` *[paraphrase risk: faction unclear]* | – | **B** | New `CustomEffect.WEB_OF_POWER`: evaluate the four "2× Inf each" conditions and grant the appropriate rewards. Reveal's `+1 inf` player choose. the rewards from influence during play are mandatory and pending, but need to consider how to show effects that are unapplicable, mayhbe in grayed out way |
@@ -192,8 +216,12 @@ source name `"<card name> (Unload)"`. We add a single helper
 `fireUnloadIfApplicable(state, playerId, card)` and call it from
 every place where a card is moved:
 
-- `DISCARD_FROM_HAND` (new action used by Guild Chief Administrator).
-- `TRASH_CARD`.
+- ✦ Discard-as-cost resolutions — there is **no** `DISCARD_FROM_HAND`
+  action; the base game resolves discards through `CardSelectChoice`
+  (`CardPile.HAND` / `CardPile.DISCARD`). Hook the helper into the
+  `RESOLVE_CHOICE`/card-select resolution path where the chosen card
+  lands in `discardPile`.
+- `TRASH_CARD` (and any trash-as-cost card-select resolution).
 - `REVEAL_CARDS` already handles the standard path; **do not double-fire**.
 
 ### 5.4 Extra-turn (Weirding Way)
@@ -223,7 +251,8 @@ if (state.currTurn?.extraTurnAllowed) {
 1. **AC1** — All 35 cards appear in `RISE_OF_IX_IMPERIUM_DECK` with
    unique ids and matching image paths.
 2. **AC2** — When `expansions.riseOfIx === true`, the Imperium deck
-   contains both base 64 and the 35 RoI cards before shuffling.
+   contains both the base **67** (✦ corrected from 64) and the 35 RoI
+   cards before shuffling (102 total).
 3. **AC3** — Each card with `unload: true` triggers its Reveal effects
    on discard and on trash, with a `(Unload)` suffixed gain row.
 4. **AC4** — Category-A cards apply via the standard reward pipeline
@@ -243,7 +272,7 @@ if (state.currTurn?.extraTurnAllowed) {
 
 **Path:** `client/src/components/GameContext/__tests__/riseOfIxCards.test.ts` (new)
 
-**Path:** `client/src/data/__tests__/cardsRiseOfIx.test.ts` (new)
+**Path:** `client/src/components/GameContext/__tests__/cardsRiseOfIxData.test.ts` (new — ✦ moved from `data/__tests__/`, which doesn't exist; keep all reducer/data tests under `GameContext/__tests__/` per plan 11)
 
 - [ ] `agent icon color mapping (§3.0)` — for each card with a colored
   icon in §3, `agentIcons` uses the correct enum (Green→LANDSRAAD,
@@ -279,7 +308,7 @@ Group tests per card. Each card gets at least 1 expectation:
 - [ ] `Sayyadina: water:3 cost → VP, persuasion:3 with FR bond`
 - [ ] `Shai-Hulud: trash cost → +2 troops; combat:5 with FR bond`
 - [ ] `Spice Trader: declarative discard for spice with FR inf 2`
-- [ ] `Treachery: doubles all influence rewards this turn; trashes self`
+- [ ] `Treachery: grants 2 influence per own faction icon (✦ own influence only, per §8); trashes self`
 - [ ] `Truthsayer: discard:1 → draw:1`
 - [ ] `Water Peddler: acquire +water; unload +water`
 - [ ] `Web of Power: applies per-faction conditional rewards`

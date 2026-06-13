@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { applyGameAction, getFreshDefaultGameState } from '../GameContext'
-import { IMPERIUM_ROW_DECK, SPICE_MUST_FLOW_DECK, STARTING_DECK } from '../../../data/cards'
+import { IMPERIUM_ROW_DECK, SPICE_MUST_FLOW_DECK, STARTING_DECK } from '../../../catalog/runtime'
 import { intrigueCards } from '../../../services/IntrigueDeckService'
 import {
   AgentIcon,
@@ -311,6 +311,31 @@ describe('Intrigue cards — player turns (plot)', () => {
     let s = basePlotState([makePlayer(0)])
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 15 })
     expect(s.infiltrateIgnoreOccupancyOnce?.[0]).toBe(true)
+  })
+
+  it('PLAY_CARD keeps plot intrigue visible after selecting an agent card', () => {
+    const card = stubDeckCard(5001)
+    let s = basePlotState([makePlayer(0, { deck: [card] })])
+    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 15 })
+    expect(s.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toEqual([15])
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+    expect(s.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toEqual([15])
+    expect(s.currTurn?.cardId).toBe(card.id)
+  })
+
+  it('Infiltrate (15): next agent may occupy an enemy-occupied space', () => {
+    const card = stubDeckCard(5001)
+    let s = basePlotState([makePlayer(0, { deck: [card] }), makePlayer(1)])
+    s = {
+      ...s,
+      occupiedSpaces: { 2: [1] },
+      currTurn: { playerId: 0, type: TurnType.ACTION },
+    }
+    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 15 })
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 2 })
+    expect(s.occupiedSpaces[2]).toContain(0)
+    expect(s.infiltrateIgnoreOccupancyOnce?.[0]).toBeUndefined()
   })
 
   it('Bribery (4): pending choice then pay 2 Solari for 1 influence', () => {
@@ -797,6 +822,33 @@ describe('Acquire — The Spice Must Flow', () => {
       )
     ).toBe(true)
     expect(s.currTurn?.acquiredCards).toEqual([smfTop])
+  })
+
+  it('adds only one copy when reducer runs twice on the same state (React Strict Mode)', () => {
+    const smfTop = SPICE_MUST_FLOW_DECK[0]
+    const s = {
+      ...getFreshDefaultGameState(),
+      players: [makePlayer(0, { persuasion: 9, victoryPoints: 0, discardPile: [] })],
+      spiceMustFlowDeck: [smfTop],
+      activePlayerId: 0,
+      canAcquireIR: true,
+      currTurn: {
+        playerId: 0,
+        type: TurnType.REVEAL,
+        persuasionCount: 9,
+        acquiredCards: [],
+      },
+    }
+
+    const action = { type: 'ACQUIRE_SMF' as const, playerId: 0 }
+    // Strict Mode: first result discarded, second invocation uses the same state reference.
+    applyGameAction(s, action)
+    const after = applyGameAction(s, action)
+
+    expect(after.players[0].discardPile).toHaveLength(1)
+    expect(after.players[0].discardPile[0].id).toBe(smfTop.id)
+    expect(after.spiceMustFlowDeck).toHaveLength(0)
+    expect(after.players[0].persuasion).toBe(0)
   })
 })
 

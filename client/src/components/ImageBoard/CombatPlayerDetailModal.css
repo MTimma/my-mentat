@@ -1,0 +1,285 @@
+.combat-player-detail-overlay {
+  z-index: var(--z-modal-overlay, 1200);
+}
+
+.dialog-overlay.combat-player-detail-overlay--board-scoped,
+html:has(.game-container--play) .dialog-overlay.combat-player-detail-overlay--board-scoped {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  box-sizing: border-box;
+  background-color: rgba(0, 0, 0, 0.62);
+}
+
+.combat-player-detail-modal {
+  width: min(380px, 100%);
+  max-height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 12, 18, 0.97);
+  border: 1px solid rgba(255, 248, 232, 0.2);
+  border-radius: 10px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+  color: #fff8e8;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-modal {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
+.combat-player-detail-modal--red {
+  border-color: rgba(211, 47, 47, 0.55);
+}
+
+.combat-player-detail-modal--green {
+  border-color: rgba(56, 142, 60, 0.55);
+}
+
+.combat-player-detail-modal--yellow {
+  border-color: rgba(251, 192, 45, 0.55);
+}
+
+.combat-player-detail-modal--blue {
+  border-color: rgba(25, 118, 210, 0.55);
+}
+
+.combat-player-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid rgba(255, 248, 232, 0.1);
+  flex-shrink: 0;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-header {
+  padding: 12px 16px 10px;
+}
+
+.combat-player-detail-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-header h3 {
+  font-size: 1.1rem;
+}
+
+.combat-player-detail-close {
+  border: none;
+  background: transparent;
+  color: #fff8e8;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.combat-player-detail-close:hover {
+  color: #ffe9a8;
+}
+
+.combat-player-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px 14px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-body {
+  flex: 1 1 auto;
+  gap: 14px;
+  padding: 12px 16px 16px;
+  overflow: hidden;
+}
+
+.combat-player-detail-leader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-leader {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.combat-player-detail-leader-img {
+  width: min(280px, 100%);
+  max-height: min(240px, 42vh);
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-leader-img {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 10px;
+}
+
+.combat-player-detail-footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-footer {
+  gap: 12px;
+}
+
+.combat-player-detail-influence {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.combat-player-detail-influence-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: rgba(255, 248, 232, 0.72);
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-influence-heading {
+  font-size: 0.78rem;
+}
+
+.combat-player-detail-influence-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.combat-player-detail-influence-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.9em;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-influence-item {
+  padding: 8px 6px;
+  font-size: 1rem;
+  gap: 6px;
+}
+
+.combat-player-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-stats {
+  gap: 8px;
+}
+
+.combat-player-detail-stat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.9em;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-stat {
+  padding: 8px 6px;
+  font-size: 1rem;
+  gap: 6px;
+}
+
+.combat-player-detail-stat-icon {
+  width: 1rem;
+  height: 1rem;
+  object-fit: contain;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-stat-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.combat-player-detail-piles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-piles {
+  gap: 10px;
+}
+
+.combat-player-detail-pile-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 248, 232, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff8e8;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-pile-btn {
+  padding: 12px 8px;
+  gap: 4px;
+}
+
+.combat-player-detail-pile-btn:hover {
+  background: rgba(255, 248, 232, 0.1);
+  border-color: rgba(255, 248, 232, 0.35);
+}
+
+.combat-player-detail-pile-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-pile-label {
+  font-size: 0.82rem;
+}
+
+.combat-player-detail-pile-count {
+  font-size: 1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-pile-count {
+  font-size: 1.2rem;
+}

@@ -1,6 +1,6 @@
 import React from 'react'
-import { createPortal } from 'react-dom'
 import { Player, IntrigueCard } from '../types/GameTypes'
+import { usePlayBoardModalPortal } from '../hooks/usePlayBoardModalPortal'
 
 interface PlayerTargetDialogProps {
   card: IntrigueCard
@@ -18,9 +18,15 @@ const PlayerTargetDialog: React.FC<PlayerTargetDialogProps> = ({
   onCancel
 }) => {
   const eligibleTargets = players.filter(p => p.id !== currentPlayerId)
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true)
+
+  if (waitForBoardTarget) return null
 
   const dialog = (
-    <div className="dialog-overlay" onClick={onCancel}>
+    <div
+      className={['dialog-overlay', scopedClass].filter(Boolean).join(' ')}
+      onClick={onCancel}
+    >
       <div
         className="target-dialog"
         onClick={e => e.stopPropagation()}
@@ -48,7 +54,7 @@ const PlayerTargetDialog: React.FC<PlayerTargetDialogProps> = ({
     </div>
   )
 
-  return typeof document !== 'undefined' ? createPortal(dialog, document.body) : dialog
+  return portalNode(dialog)
 }
 
 export default PlayerTargetDialog 

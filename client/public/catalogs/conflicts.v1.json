@@ -1,0 +1,501 @@
+{
+  "schemaVersion": 1,
+  "conflicts": [
+    {
+      "id": 901,
+      "tier": 1,
+      "name": "Skirmish",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Water",
+            "amount": 1
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 902,
+      "tier": 1,
+      "name": "Skirmish",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 2
+          },
+          {
+            "type": "Intrigue",
+            "amount": 1
+          }
+        ],
+        "third": [
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 903,
+      "tier": 1,
+      "name": "Skirmish",
+      "rewards": {
+        "first": [
+          {
+            "type": "Influence",
+            "amount": 1
+          },
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 904,
+      "tier": 1,
+      "name": "Skirmish",
+      "rewards": {
+        "first": [
+          {
+            "type": "Influence",
+            "amount": 1
+          },
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 905,
+      "tier": 2,
+      "name": "Siege of Arrakeen",
+      "controlSpace": "arrakin",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 1
+          },
+          {
+            "type": "Control",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 4
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 906,
+      "tier": 2,
+      "name": "Siege of Carthag",
+      "controlSpace": "carthag",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 1
+          },
+          {
+            "type": "Control",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 4
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 907,
+      "tier": 2,
+      "name": "Siege of Imperial Basin",
+      "controlSpace": "imperial-basin",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 1
+          },
+          {
+            "type": "Control",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Spice",
+            "amount": 4
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 908,
+      "tier": 2,
+      "name": "Cloak and Dagger",
+      "rewards": {
+        "first": [
+          {
+            "type": "Intrigue",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Intrigue",
+            "amount": 0,
+            "choiceOptions": [
+              {
+                "type": "Intrigue",
+                "amount": 1
+              },
+              {
+                "type": "Spice",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 909,
+      "tier": 2,
+      "name": "Machinations",
+      "rewards": {
+        "first": [
+          {
+            "type": "Influence",
+            "amount": 2,
+            "chooseFaction": true
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 910,
+      "tier": 2,
+      "name": "Desert Raid",
+      "rewards": {
+        "first": [
+          {
+            "type": "Spice",
+            "amount": 4
+          }
+        ],
+        "second": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 911,
+      "tier": 2,
+      "name": "Spice Harvest",
+      "rewards": {
+        "first": [
+          {
+            "type": "Spice",
+            "amount": 3
+          },
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 912,
+      "tier": 2,
+      "name": "Supply Lines",
+      "rewards": {
+        "first": [
+          {
+            "type": "Solari",
+            "amount": 6
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 913,
+      "tier": 2,
+      "name": "Rally the Troops",
+      "rewards": {
+        "first": [
+          {
+            "type": "Troops",
+            "amount": 3
+          }
+        ],
+        "second": [
+          {
+            "type": "Troops",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 914,
+      "tier": 2,
+      "name": "Political Maneuvering",
+      "rewards": {
+        "first": [
+          {
+            "type": "Influence",
+            "amount": 2
+          },
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Intrigue",
+            "amount": 1
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 915,
+      "tier": 3,
+      "name": "Heighliner Assault",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 6
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 916,
+      "tier": 3,
+      "name": "Battle for Arrakis",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Intrigue",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 917,
+      "tier": 3,
+      "name": "Final Offensive",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Troops",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Solari",
+            "amount": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": 918,
+      "tier": 3,
+      "name": "Conquest of Dune",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Influence",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import {
   FactionType,
 } from '../types/GameTypes'
 import { LEADER_NAMES } from './leaders'
+import { mintId } from '../utils/semanticIds'
 
 export interface SignetRingContext {
   state: GameState
@@ -47,7 +48,7 @@ export const SIGNET_RING_EFFECTS: Record<string, (ctx: SignetRingContext) => Sig
   [LEADER_NAMES.BARON_VLADIMIR]: (ctx) => ({
     optionalEffects: [
       {
-        id: `signet-ring-${ctx.card.id}-${crypto.randomUUID()}`,
+        id: mintId(ctx.state, { type: GainSource.CARD, id: ctx.card.id }, 'SIGNET'),
         cost: { solari: 1 },
         reward: { intrigueCards: 1 },
         source: SIGNET_RING_SOURCE,
@@ -86,7 +87,7 @@ export const SIGNET_RING_EFFECTS: Record<string, (ctx: SignetRingContext) => Sig
     return {
       optionalEffects: [
         {
-          id: `signet-ring-${ctx.card.id}-${crypto.randomUUID()}`,
+          id: mintId(ctx.state, { type: GainSource.CARD, id: ctx.card.id }, 'SIGNET'),
           cost: { spice: 1 },
           reward: {
             influence: { amounts: influenceAmounts, chooseOne: true },

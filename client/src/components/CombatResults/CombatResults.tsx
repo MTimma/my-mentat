@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Player, GameState, GainSource } from '../../types/GameTypes';
+import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal';
 import './CombatResults.css';
 
 interface PlayerResult {
@@ -14,7 +15,7 @@ interface CombatResultsProps {
   history: GameState[];
   onConfirm: () => void;
   pendingConflictRewardChoices?: GameState['pendingConflictRewardChoices'];
-  onResolveConflictChoice?: (choiceId: string, reward: import('../../types/GameTypes').Reward) => void;
+  onResolveConflictChoice?: (choiceId: string, optionIndex: number) => void;
 }
 
 function formatRewardLabel(reward: import('../../types/GameTypes').Reward): string {
@@ -37,6 +38,7 @@ const CombatResults: React.FC<CombatResultsProps> = ({
   onResolveConflictChoice
 }) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true);
 
   const calculateResults = (): PlayerResult[] => {
     const results: PlayerResult[] = [];
@@ -94,51 +96,59 @@ const CombatResults: React.FC<CombatResultsProps> = ({
   };
 
   const results = calculateResults();
+  const hasParticipants = results.length > 0;
+
+  if (waitForBoardTarget) return null;
 
   const getPlayerCombatGains = (playerId: number) => {
     return history.map(state => state.gains).flatMap(gain => gain?.filter(g => g.playerId === playerId && g.source === GainSource.CONFLICT) || []) || [];
   };
 
-  return (
+  return portalNode(
+    <div className={['combat-results-overlay', scopedClass].filter(Boolean).join(' ')}>
     <div className="combat-results">
       <h2>Combat Results</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Player</th>
-            <th>
-              <span className="combat-results-strength-heading">
-                <img src="/icon/dagger.png" alt="" className="combat-results-strength-icon" aria-hidden="true" />
-                Strength
-              </span>
-            </th>
-            <th>Place</th>
-            <th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          {results.map((result) => (
-            <tr key={result.playerId}>
-              <td>{players[result.playerId]?.leader.name || `Player ${result.playerId + 1}`}</td>
-              <td>
-                <span className="combat-results-strength-value">
+      {!hasParticipants ? (
+        <p className="combat-results-empty">No participants in the conflict</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>
+                <span className="combat-results-strength-heading">
                   <img src="/icon/dagger.png" alt="" className="combat-results-strength-icon" aria-hidden="true" />
-                  {result.strength}
+                  Strength
                 </span>
-              </td>
-              <td>{result.place}</td>
-              <td>
-                <button 
-                  className="details-button"
-                  onClick={() => setSelectedPlayerId(result.playerId)}
-                >
-                  View Details
-                </button>
-              </td>
+              </th>
+              <th>Place</th>
+              <th>Details</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {results.map((result) => (
+              <tr key={result.playerId}>
+                <td>{players[result.playerId]?.leader.name || `Player ${result.playerId + 1}`}</td>
+                <td>
+                  <span className="combat-results-strength-value">
+                    <img src="/icon/dagger.png" alt="" className="combat-results-strength-icon" aria-hidden="true" />
+                    {result.strength}
+                  </span>
+                </td>
+                <td>{result.place}</td>
+                <td>
+                  <button
+                    className="details-button"
+                    onClick={() => setSelectedPlayerId(result.playerId)}
+                  >
+                    View Details
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       {pendingConflictRewardChoices && pendingConflictRewardChoices.length > 0 ? (
         <div className="conflict-reward-choices">
           <h3>Choose your conflict rewards</h3>
@@ -152,7 +162,7 @@ const CombatResults: React.FC<CombatResultsProps> = ({
                   <button
                     key={oidx}
                     className="effect-btn choice"
-                    onClick={() => onResolveConflictChoice?.(choice.id, opt.reward)}
+                    onClick={() => onResolveConflictChoice?.(choice.id, oidx)}
                   >
                     {opt.rewardLabel ?? formatRewardLabel(opt.reward)}
                   </button>
@@ -195,6 +205,7 @@ const CombatResults: React.FC<CombatResultsProps> = ({
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };

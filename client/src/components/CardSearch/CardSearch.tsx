@@ -1,7 +1,7 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { Card, CustomEffect, Player, CardPile } from '../../types/GameTypes'
 import { PLAY_EFFECT_TEXTS, REVEAL_EFFECT_TEXTS } from '../../data/effectTexts'
+import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import './CardSearch.css'
 
@@ -201,9 +201,14 @@ const CardSearch: React.FC<CardSearchProps> = ({
     showSelectionPreview ?? (selectionCount > 1 || Boolean(onSelectionChange))
   const searchAtBottom = showPreview || Boolean(slotBetweenCardsAndSearch)
   const isStandaloneModal = !embedded
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(
+    isOpen && isStandaloneModal
+  )
+  const boardScoped = Boolean(scopedClass)
+  const useCompactBoardLayout = searchAtBottom && boardScoped
 
   useVisualViewportOverlay(overlayRef, {
-    enabled: isOpen && isStandaloneModal,
+    enabled: isOpen && isStandaloneModal && !scopedClass,
     lockDocumentScroll: true,
   })
 
@@ -414,11 +419,63 @@ const CardSearch: React.FC<CardSearchProps> = ({
     </div>
   ) : null
 
+  const searchInput = (
+    <div className="search-input-wrapper">
+      <input
+        type="text"
+        placeholder="Search cards..."
+        value={searchTerm}
+        onChange={e => setSearchTerm(e.target.value)}
+        onFocus={handleSearchFocus}
+        className="search-input"
+      />
+      {searchTerm && (
+        <button
+          className="search-clear-button"
+          onClick={() => setSearchTerm('')}
+          aria-label="Clear search"
+        >
+          ×
+        </button>
+      )}
+    </div>
+  )
+
+  const actionButtons = (
+    <>
+      <button className="header-cancel-button" onClick={handleCancel}>
+        {cancelButtonText}
+      </button>
+      {confirmAdornment}
+      <button
+        type="button"
+        className="header-confirm-button"
+        onClick={handleConfirm}
+        disabled={filledCards(selectionSlots).length !== selectionCount}
+      >
+        Select
+      </button>
+    </>
+  )
+
+  const dialogClassName = [
+    'card-selection-dialog',
+    searchAtBottom ? 'card-selection-dialog-search-at-bottom' : '',
+    useCompactBoardLayout ? 'card-selection-dialog--board-compact' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   const dialog = (
-    <div className={`card-selection-dialog ${searchAtBottom ? 'card-selection-dialog-search-at-bottom' : ''}`}>
+    <div className={dialogClassName}>
       <div className="dialog-title">
         {!hideTitle && <h2>{text}</h2>}
       </div>
+      {useCompactBoardLayout ? (
+        <div className="dialog-search" role="search">
+          {searchInput}
+        </div>
+      ) : null}
       <div className="cards-grid" ref={cardsGridRef}>
         {filteredCards.map((card, index) => (
           <CardGridItem
@@ -434,53 +491,35 @@ const CardSearch: React.FC<CardSearchProps> = ({
       </div>
       {selectionPreview}
       {slotBetweenCardsAndSearch}
-      <div className="dialog-actions">
-        <div className="search-input-wrapper">
-          <input
-            type="text"
-            placeholder="Search cards..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            onFocus={handleSearchFocus}
-            className="search-input"
-          />
-          {searchTerm && (
-            <button
-              className="search-clear-button"
-              onClick={() => setSearchTerm('')}
-              aria-label="Clear search"
-            >
-              ×
-            </button>
-          )}
-        </div>
-        <button className="header-cancel-button" onClick={handleCancel}>
-          {cancelButtonText}
-        </button>
-        {confirmAdornment}
-        <button
-          type="button"
-          className="header-confirm-button"
-          onClick={handleConfirm}
-          disabled={filledCards(selectionSlots).length !== selectionCount}
-        >
-          Select
-        </button>
+      <div
+        className={`dialog-actions${
+          useCompactBoardLayout ? ' dialog-actions--buttons-only' : ''
+        }`}
+      >
+        {!useCompactBoardLayout ? searchInput : null}
+        {actionButtons}
       </div>
     </div>
   )
 
   if (isStandaloneModal) {
+    if (waitForBoardTarget) return null
     const overlay = (
       <div
         ref={overlayRef}
-        className="card-selection-dialog-overlay card-selection-dialog-overlay-standalone"
+        className={[
+          'card-selection-dialog-overlay',
+          'card-selection-dialog-overlay-standalone',
+          scopedClass,
+        ]
+          .filter(Boolean)
+          .join(' ')}
       >
         {dialog}
       </div>
     )
 
-    return typeof document === 'undefined' ? overlay : createPortal(overlay, document.body)
+    return portalNode(overlay)
   }
   return dialog
 }

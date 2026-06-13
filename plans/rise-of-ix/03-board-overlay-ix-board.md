@@ -4,6 +4,30 @@
 > Presentation / asset task plus a small `BOARD_SPACES` data addition.
 > No new reducer behaviour beyond what Tasks 04 / 05 / 06 consume.
 
+> ✦ 2026-06-10 — codebase drift since this plan was written:
+>
+> 1. **R7 is mostly done** — `client/public/icon/dreadnought.svg`
+>    exists and is already used by `CombatAreaCluster`. No `.png`
+>    export exists; standardize on the `.svg` (drop `.png` references).
+> 2. **R8 is partially done** — `CombatAreaCluster.tsx`
+>    (`ExpansionStrip`) already shows the per-player
+>    dreadnought-in-conflict count. The old per-player "combat stat
+>    rows" are gone: `CombatPlayerStat.tsx` is **orphaned** (unused)
+>    and `COMBAT_RING_ANCHORS` is debug-only; production combat UI is
+>    the `CombatAreaCluster` 2×2 grid anchored by `COMBAT_AREA_BOUNDS`.
+> 3. **Modals** — `TechStacksModal` must use the new portal pattern:
+>    `usePlayBoardModalPortal` + `PlayBoardModalContext`, with overlay
+>    classes from `client/src/styles/playBoardModal.css` (see
+>    `CombatResults` / `PlayerOverviewModal` for reference).
+> 4. **Hotspots** — `boardHotspots.ts` now builds entries with a
+>    `hotspot(spaceId, rect, agent)` factory that includes
+>    `agentX`/`agentY` meeple anchors. New hotspots 23–26 must provide
+>    agent anchors too (default `{ x: 50, y: 40 }` is applied if omitted).
+> 5. **Sell Melange special flow** — `ImageBoard.tsx` has dedicated
+>    `SellMelangePopup` wiring for space id 8
+>    (`handleSellMelangeOptionSelect`). Disabling hotspot 8 under RoI
+>    must also gate this popup path.
+
 ---
 
 ## 1. Goal
@@ -93,15 +117,20 @@ Render the Rise of Ix board changes on top of the existing `Board.jpg`:
    `players[i].negotiatorsOnIx`. Anchor via
    `NEGOTIATOR_COUNTERS_ANCHOR` in `boardMarkerAnchors.ts`.
 
-7. **R7 — Dreadnought icon asset.** `client/public/icon/dreadnought.svg`
-   (+ `.png` export): flat top-down spaceship silhouette, same line-art
-   feel as `/icon/troop.png`. Optional SVG for future `mask-image` tint.
+7. **R7 — Dreadnought icon asset.** ✦ **DONE** —
+   `client/public/icon/dreadnought.svg` exists and is referenced by
+   `CombatAreaCluster`. No `.png` export needed; the `.svg` is the
+   canonical asset.
 
 8. **R8 — Dreadnought rendering on the board.**
-   - Combat stat rows: dreadnought count when `player.dreadnoughts.conflict > 0`.
-   - Arrakeen / Carthag / Imperial Basin: dreadnought control icon (see
-     [`04`](./04-dreadnoughts-and-units.md)).
-   - Player overview garrison: troops and dreadnoughts side by side.
+   - ✦ **DONE**: conflict count — `CombatAreaCluster` `ExpansionStrip`
+     already renders `player.dreadnoughts.conflict` with the svg icon.
+   - Remaining: Arrakeen / Carthag / Imperial Basin dreadnought control
+     icon (see [`04`](./04-dreadnoughts-and-units.md)) — render in the
+     `ImageBoard` control-marker section (anchored by
+     `CONTROL_MARKER_POINTS`), not in the combat cluster.
+   - Remaining: Player overview garrison — troops and dreadnoughts side
+     by side (`PlayerOverviewModal` and/or `CombatPlayerDetailModal`).
 
 9. **R9 — Freighter discs on CHOAM overlay.** Vertical 0–3 track with
    per-player discs on `riseofix4`, anchored via
@@ -118,10 +147,10 @@ Render the Rise of Ix board changes on top of the existing `Board.jpg`:
 | `client/src/data/boardSpaces.ts` | ids 23–26 |
 | `client/src/components/ImageBoard/ImageBoard.tsx` | Overlays, dreadnought icons, freighter discs, negotiator counters, Tech Stacks button |
 | `client/src/components/ImageBoard/ImageBoard.css` | Overlay + marker styles |
-| `client/src/components/TechStacksModal/` (new) | 3-stack select + acquire UI |
-| `client/public/icon/dreadnought.svg` (new) | Icon asset |
-| `client/public/icon/dreadnought.png` (new) | Raster export |
+| `client/src/components/TechStacksModal/` (new) | 3-stack select + acquire UI — **must use `usePlayBoardModalPortal` + `playBoardModal.css` classes** (✦ new modal system) |
+| `client/public/icon/dreadnought.svg` | ✦ already exists — reuse |
 | `client/src/components/AgentIcon/AgentIcon.tsx` | `variant?: 'troop' \| 'dreadnought'` |
+| `client/src/styles/playBoardModal.css` | ✦ add the TechStacksModal overlay class to the scoped-modal selector list |
 
 > All visual changes default off when `expansions.riseOfIx === false`.
 
@@ -166,14 +195,18 @@ export const LANDSRAAD_IX_OVERLAY_RECT = { left: 21, top: 0, width: 17, height: 
 
 ### 4.2 Hotspot deltas
 
+> ✦ 2026-06-10: use the existing `hotspot(spaceId, rect, agent?)`
+> factory from `boardHotspots.ts` (it carries `agentX`/`agentY` meeple
+> anchors; default `{ x: 50, y: 40 }`).
+
 ```ts
 // riseofix3 — Landsraad strip
-{ spaceId: 23, left: 56, top: 3.5,  width: 11, height: 6 }, // Dreadnought
-{ spaceId: 24, left: 56, top: 12,   width: 11, height: 6 }, // Tech Negotiation
+hotspot(23, { left: 56, top: 3.5, width: 11, height: 6 }),  // Dreadnought
+hotspot(24, { left: 56, top: 12,  width: 11, height: 6 }),  // Tech Negotiation
 
 // riseofix4 — CHOAM / spice-trade corner (replaces ids 7–8)
-{ spaceId: 25, left: 78, top: 11,  width: 11, height: 8 }, // Smuggling
-{ spaceId: 26, left: 78, top: 2,   width: 11, height: 8 }, // Interstellar Shipping
+hotspot(25, { left: 78, top: 11, width: 11, height: 8 }),   // Smuggling
+hotspot(26, { left: 78, top: 2,  width: 11, height: 8 }),   // Interstellar Shipping
 ```
 
 Percentages are first-pass — align to art in `riseofix3.png` /
@@ -183,10 +216,16 @@ Percentages are first-pass — align to art in `riseofix3.png` /
 const VISIBLE_HOTSPOTS = (exp: Expansions) => {
   if (!exp.riseOfIx) return BOARD_HOTSPOTS.filter(h => h.spaceId < 23)
   return BOARD_HOTSPOTS
-    .filter(h => h.spaceId !== 7 && h.spaceId !== 8) // Sell Melange, Secure Contract
+    .filter(h => h.spaceId !== 7 && h.spaceId !== 8) // Secure Contract, Sell Melange
     .concat(ROI_HOTSPOTS) // ids 23–26
 }
 ```
+
+> ✦ 2026-06-10: id mapping confirmed against current `boardHotspots.ts`:
+> **7 = Secure Contract, 8 = Sell Melange**. When disabling id 8, also
+> gate the `SellMelangePopup` flow in `ImageBoard.tsx`
+> (`handleSellMelangeOptionSelect` / `showSellMelangePopup`) — it is a
+> dedicated code path keyed to that space, not just a hotspot.
 
 ### 4.3 Technology Stacks modal
 
@@ -205,6 +244,11 @@ const VISIBLE_HOTSPOTS = (exp: Expansions) => {
   ([`06-tech-tiles.md`](./06-tech-tiles.md)).
 - Negotiator-return controls live in the modal acquire flow; **board-side
   counter display** (R6) is read-only totals beside `riseofix3`.
+- ✦ 2026-06-10: implement with `usePlayBoardModalPortal` (board-scoped
+  overlay; works with the play-chrome `scopeModalsToBoard` mode). Add
+  the modal's overlay class to `playBoardModal.css`. Reference
+  implementations: `CombatResults`, `PlayerOverviewModal`,
+  `ConflictSelect`.
 
 ### 4.4 Board chrome next to `riseofix3`
 
@@ -241,14 +285,22 @@ visual tuning).
    stacks; Acquire dispatches `ACQUIRE_TECH`.
 5. **AC5** — Negotiator counters visible beside overlay when
    `negotiatorsOnIx > 0` (or always show zeros — product choice).
-6. **AC6** — `/icon/dreadnought.svg` loads; combat row shows dreadnought
-   count when `dreadnoughts.conflict > 0`.
+6. **AC6** — ✦ already satisfied: `/icon/dreadnought.svg` loads and
+   `CombatAreaCluster` shows the dreadnought count when
+   `dreadnoughts.conflict > 0` (verify it still holds after changes).
 7. **AC7** — Freighter discs on `riseofix4` track (coordination with Task 05).
 8. **AC8** — Pre-existing tests pass.
 
 ---
 
 ## 6. Unit tests
+
+> ✦ 2026-06-10: component (`.tsx`) tests need jsdom +
+> `@testing-library/react`, which are **not installed** (vitest env is
+> `node`). Either add them per [`11-tests-overview.md`](./11-tests-overview.md)
+> §4-notes, or park these specs in `client/src/__tests__/deferred/`
+> (excluded from the normal run) until the deps land. Modal tests must
+> wrap `PlayBoardModalProvider`.
 
 **Path:** `client/src/components/ImageBoard/__tests__/overlay.test.tsx`
 

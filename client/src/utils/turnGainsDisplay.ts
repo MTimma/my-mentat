@@ -36,13 +36,13 @@ export interface TurnGainTotals {
 
 /** Display order for net resource totals in turn history. */
 export const TURN_TOTAL_RESOURCE_ORDER: RewardType[] = [
+  RewardType.PERSUASION,
   RewardType.SPICE,
   RewardType.WATER,
   RewardType.SOLARI,
   RewardType.TROOPS,
   RewardType.DRAW,
   RewardType.INTRIGUE,
-  RewardType.PERSUASION,
   RewardType.COMBAT,
   RewardType.DEPLOY,
   RewardType.VICTORY_POINTS,
@@ -95,6 +95,10 @@ export function isCombatHistoryEntry(turn: GameState): boolean {
   return turn.historyEntryKind === 'combat'
 }
 
+export function isEndgameHistoryEntry(turn: GameState): boolean {
+  return turn.historyEntryKind === 'endgame'
+}
+
 /** Combat history row: group conflict/intrigue gains by recipient player. */
 export function groupCombatHistoryGainsByPlayer(gains: Gain[]): OtherPlayerTurnGains[] {
   const byPlayer = new Map<number, Gain[]>()
@@ -111,10 +115,17 @@ export function groupCombatHistoryGainsByPlayer(gains: Gain[]): OtherPlayerTurnG
 
 /** Gains shown on a turn-history row (combat rows include all players' conflict/intrigue gains). */
 export function getGainsForHistoryRow(turn: GameState): Gain[] {
-  if (isCombatHistoryEntry(turn)) {
+  if (isCombatHistoryEntry(turn) || isEndgameHistoryEntry(turn)) {
     return turn.gains ?? []
   }
   return getGainsForTurnState(turn)
+}
+
+/** True when the player has at least one troop in the Conflict (swords only count then). */
+export function playerHasTroopsInConflict(turn: GameState, playerId?: number): boolean {
+  const pid = playerId ?? turn.currTurn?.playerId ?? turn.activePlayerId
+  if (pid == null) return false
+  return (turn.combatTroops?.[pid] ?? 0) > 0
 }
 
 /** Gains for the active turn's player (live or snapshot), scoped to this turn only. */
@@ -122,7 +133,11 @@ export function getGainsForTurnState(turn: GameState): Gain[] {
   const ct = turn.currTurn
   const playerId = ct?.playerId ?? turn.activePlayerId
   if (playerId == null) return []
-  return getTurnGainSlice(turn).filter(gain => gain.playerId === playerId)
+  const gains = getTurnGainSlice(turn).filter(gain => gain.playerId === playerId)
+  if (!playerHasTroopsInConflict(turn, playerId)) {
+    return gains.filter(gain => gain.type !== RewardType.COMBAT)
+  }
+  return gains
 }
 
 /** Gains for other players during this turn (control bonus, stolen intrigue, etc.). */

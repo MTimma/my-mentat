@@ -24,12 +24,12 @@
   width: min(640px, 100%);
   max-height: min(80dvh, 100%);
   overflow-y: auto;
-  background: rgba(12, 14, 20, 0.96);
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  border-radius: 10px;
+  background: var(--chrome-surface-raised);
+  border: 1px solid var(--chrome-border-accent-strong);
+  border-radius: 12px;
   padding: 18px 20px 16px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
-  color: #f2f2f2;
+  box-shadow: var(--chrome-shadow-panel);
+  color: var(--chrome-text);
 }
 
 .combat-phase-modal-title {
@@ -39,7 +39,7 @@
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #f44336;
+  color: var(--chrome-highlight-name);
 }
 
 .combat-phase-active-player {
@@ -50,12 +50,12 @@
   margin: 0 0 14px;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #ffe9a8;
+  color: var(--chrome-text-strong);
 }
 
 .combat-phase-active-label {
   font-weight: 500;
-  color: rgba(255, 233, 168, 0.85);
+  color: var(--chrome-text-muted);
 }
 
 .combat-phase-rankings {
@@ -71,14 +71,14 @@
   gap: 8px;
   padding: 8px 10px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--chrome-inset-soft);
+  border: 1px solid var(--chrome-border);
 }
 
 .combat-phase-rank--active {
-  border-color: rgba(255, 215, 0, 0.55);
-  box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.2);
-  background: rgba(255, 215, 0, 0.08);
+  border-color: var(--chrome-border-accent-strong);
+  box-shadow: inset 0 0 0 1px var(--chrome-accent-ring);
+  background: var(--chrome-accent-muted);
 }
 
 .combat-phase-rank--passed {
@@ -88,18 +88,19 @@
 .combat-phase-rank-place {
   font-weight: 800;
   min-width: 1.25rem;
+  color: var(--chrome-text-muted);
 }
 
 .combat-phase-rank--place-1 .combat-phase-rank-place {
-  color: #ffd700;
+  color: var(--chrome-highlight-name);
 }
 
 .combat-phase-rank--place-2 .combat-phase-rank-place {
-  color: #c0c0c0;
+  color: var(--chrome-text-strong);
 }
 
 .combat-phase-rank--place-3 .combat-phase-rank-place {
-  color: #cd7f32;
+  color: var(--chrome-accent-bright);
 }
 
 .combat-phase-rank-strength {
@@ -107,6 +108,7 @@
   align-items: center;
   gap: 4px;
   font-weight: 800;
+  color: var(--chrome-text-strong);
 }
 
 .combat-phase-strength-icon {
@@ -120,6 +122,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--chrome-text-strong);
 }
 
 .combat-phase-intrigue-count {
@@ -128,7 +131,7 @@
   gap: 4px;
   font-size: 0.85rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--chrome-text);
 }
 
 .combat-phase-intrigue-icon {
@@ -140,16 +143,28 @@
 .combat-phase-passed {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #7dcea0;
+  color: var(--chrome-success);
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+.combat-phase-empty {
+  margin: 0;
+  padding: 16px 12px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--chrome-text-muted);
+  font-style: italic;
+  border-radius: 8px;
+  background: var(--chrome-inset-soft);
+  border: 1px solid var(--chrome-border-subtle);
 }
 
 .combat-phase-hint {
   margin: 14px 0 0;
   text-align: center;
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--chrome-text-muted);
   line-height: 1.35;
 }
 

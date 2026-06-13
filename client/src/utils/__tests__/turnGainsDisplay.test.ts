@@ -305,6 +305,40 @@ describe('turnGainsDisplay', () => {
     expect(getGainsForTurnState(state).map(g => g.name)).toEqual(['New'])
   })
 
+  it('getGainsForTurnState omits combat gains when player has no troops in conflict', () => {
+    const combatGain = {
+      playerId: 0,
+      round: 1,
+      sourceId: 10,
+      name: 'Stilgar',
+      amount: 3,
+      type: RewardType.COMBAT,
+      source: GainSource.CARD,
+    }
+    const persuasionGain = {
+      playerId: 0,
+      round: 1,
+      sourceId: 11,
+      name: 'Convincing Argument',
+      amount: 2,
+      type: RewardType.PERSUASION,
+      source: GainSource.CARD,
+    }
+    const base = {
+      currTurn: { playerId: 0, type: TurnType.REVEAL, gainsStartIndex: 0 },
+      gains: [persuasionGain, combatGain],
+      combatTroops: {},
+    } as Parameters<typeof getGainsForTurnState>[0]
+
+    expect(getGainsForTurnState(base).map(g => g.type)).toEqual([RewardType.PERSUASION])
+
+    const withTroops = { ...base, combatTroops: { 0: 2 } }
+    expect(getGainsForTurnState(withTroops).map(g => g.type)).toEqual([
+      RewardType.PERSUASION,
+      RewardType.COMBAT,
+    ])
+  })
+
   it('getOtherPlayersGainsForTurnState groups gains for non-turn players', () => {
     const state = {
       currTurn: { playerId: 0, type: TurnType.ACTION, gainsStartIndex: 1 },

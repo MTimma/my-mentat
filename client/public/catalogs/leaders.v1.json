@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "leaders": [
+    {
+      "id": "ariana",
+      "name": "Countess Ariana Thorvald",
+      "ability": {
+        "name": "Spice Addict",
+        "description": "Whenever you harvest spice, gain 1 less and draw a card."
+      },
+      "signetRingText": "Gain 1 water.",
+      "signetRingTitle": "Hidden Reservoir",
+      "complexity": 1,
+      "sogChoice": false
+    },
+    {
+      "id": "baron",
+      "name": "BARON VLADIMIR HARKONNEN",
+      "ability": {
+        "name": "Masterstroke",
+        "description": "When you deploy 4+ troops to the Conflict in a turn, choose 2 Factions and gain 1 Influence with each."
+      },
+      "signetRingText": "Pay 1 Solari to gain 1 Intrigue card.",
+      "signetRingTitle": "Scheme",
+      "complexity": 2,
+      "sogChoice": false
+    },
+    {
+      "id": "beast",
+      "name": "Glossu \"The Beast\" Rabban",
+      "ability": {
+        "name": "Arrakis Fiefdom",
+        "description": "Start the game with additional resources: 1 Spice, 1 Solari."
+      },
+      "signetRingText": "Gain 1 Troop OR 2 Troops if you have at least one Faction Alliance.",
+      "signetRingTitle": "Brutality",
+      "complexity": 1,
+      "sogChoice": false
+    },
+    {
+      "id": "ilban",
+      "name": "Count Ilban Richese",
+      "ability": {
+        "name": "Ruthless Negotiator",
+        "description": "Whenever you pay Solari for the cost of a board space: Draw 1 card."
+      },
+      "signetRingText": "Gain 1 Solari.",
+      "signetRingTitle": "Manufacturing",
+      "complexity": 1,
+      "sogChoice": false
+    },
+    {
+      "id": "leto",
+      "name": "Duke Leto Atreides",
+      "ability": {
+        "name": "Landsraad popularity",
+        "description": "Sending an Agent to a Landsraad board space costs you 1 Solari less."
+      },
+      "signetRingText": "Spend 1 Spice: Gain 1 Influence with a Faction where an opponent has more Influence than you.",
+      "signetRingTitle": "Prudent diplomacy",
+      "complexity": 1,
+      "sogChoice": false
+    },
+    {
+      "id": "helena",
+      "name": "Helena Richese",
+      "ability": {
+        "name": "Eyes Everywhere",
+        "description": "Enemy Agents don't block your Agents at Landsraad or City board spaces."
+      },
+      "signetRingText": "Remove and replace a card in the Imperium Row. During your Reveal turn this round, you may acquire the removed card for 1 Persuasion less.",
+      "signetRingTitle": "Manipulate",
+      "complexity": 2,
+      "sogChoice": false
+    },
+    {
+      "id": "memnon",
+      "name": "Earl Memnon Thorvald",
+      "ability": {
+        "name": "Connections",
+        "description": "When you take a High Council seat: Gain 1 Influence."
+      },
+      "signetRingText": "Gain 1 Spice.",
+      "signetRingTitle": "Spice hoard",
+      "complexity": 1,
+      "sogChoice": false
+    },
+    {
+      "id": "paul",
+      "name": "Paul Atreides",
+      "ability": {
+        "name": "Prescience",
+        "description": "You may look at the top card of your deck at any time."
+      },
+      "signetRingText": "Draw 1 card.",
+      "signetRingTitle": "Discipline",
+      "complexity": 1,
+      "sogChoice": false
+    }
+  ]
+}

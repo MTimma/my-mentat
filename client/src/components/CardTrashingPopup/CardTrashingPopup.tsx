@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '../../types/GameTypes';
 import CardSearch from '../CardSearch/CardSearch';
+import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal';
 import './CardTrashingPopup.css';
 
 interface CardTrashingPopupProps {
@@ -18,8 +19,13 @@ const CardTrashingPopup: React.FC<CardTrashingPopupProps> = ({
   onCancel,
   promptText = 'Select a card to trash',
 }) => {
-  return (
-    <div className="card-trashing-dialog-overlay">
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(isOpen)
+
+  if (!isOpen) return null
+  if (waitForBoardTarget) return null
+
+  return portalNode(
+    <div className={['card-trashing-dialog-overlay', scopedClass].filter(Boolean).join(' ')}>
       <div className="card-trashing-dialog">
         <CardSearch
           isOpen={isOpen}

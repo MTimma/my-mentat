@@ -1,5 +1,5 @@
 import { Card } from '../types/GameTypes'
-import { STARTING_DECK, buildImperiumDeck } from '../data/cards'
+import { STARTING_DECK, buildImperiumDeck } from '../catalog/runtime'
 
 const cloneCards = (cards: Card[]): Card[] => cards.map(card => JSON.parse(JSON.stringify(card)))
 

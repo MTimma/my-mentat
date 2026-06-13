@@ -1,4 +1,5 @@
 import React from 'react'
+import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import './SellMelangePopup.css'
 
 interface SellMelangePopupProps {
@@ -8,6 +9,7 @@ interface SellMelangePopupProps {
 }
 
 const SellMelangePopup: React.FC<SellMelangePopupProps> = ({ onClose, onOptionSelect, playerSpice }) => {
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true)
   const options = [
     { spiceCost: 2, solariReward: 6 },
     { spiceCost: 3, solariReward: 8 },
@@ -15,8 +17,10 @@ const SellMelangePopup: React.FC<SellMelangePopupProps> = ({ onClose, onOptionSe
     { spiceCost: 5, solariReward: 12 }
   ];
 
-  return (
-    <div className="sell-melange-popup">
+  if (waitForBoardTarget) return null
+
+  return portalNode(
+    <div className={['sell-melange-popup', scopedClass].filter(Boolean).join(' ')}>
       <div className="sell-melange-content">
         <h2>Sell Melange</h2>
         <div className="options">
@@ -36,4 +40,4 @@ const SellMelangePopup: React.FC<SellMelangePopupProps> = ({ onClose, onOptionSe
   );
 };
 
-export default SellMelangePopup 
+export default SellMelangePopup

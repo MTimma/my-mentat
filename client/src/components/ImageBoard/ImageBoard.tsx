@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   SpaceProps,
   AgentIcon,
@@ -15,6 +15,7 @@ import { BOARD_SPACES } from '../../data/boardSpaces'
 import {
   BOARD_HOTSPOTS,
   MARKER_ANCHORS,
+  layoutAgentAnchorPercent,
   layoutHotspotPercent,
 } from '../../data/boardHotspots'
 import { SpiceAmountBadge } from '../SpiceAmountBadge/SpiceAmountBadge'
@@ -25,20 +26,26 @@ import {
   HIGH_COUNCIL_SLOTS,
   CONFLICT_CARD_RECT,
   COMBAT_RING_ANCHORS,
+  COMBAT_AREA_BOUNDS,
   CONTROL_MARKER_POINTS,
+  BONUS_SPICE_ANCHORS,
   conflictCardImageSrc,
   clampInfluenceStep,
   clampVpStep,
+  INFLUENCE_TRACK_AREAS,
+  influenceTrackAreaRect,
   stagePoint,
   stageRect,
 } from '../../data/boardMarkerAnchors'
+import type { InfluenceBoardMode } from '../../utils/influenceBoardChoice'
 import SellMelangePopup from '../SellMelangePopup/SellMelangePopup'
 import BoardAgentFigure from '../AgentIcon/AgentIcon'
 import { canPlaceDespiteOccupancy } from '../../data/leaderAbilities/helenaUnblockedAgents'
 import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraadDiscount'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { highCouncilSlotAssignments } from '../../utils/highCouncilDisplay'
-import CombatPlayerStat from './CombatPlayerStat'
+import CombatAreaCluster, { type CombatTroopDeployProps } from './CombatAreaCluster'
+import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
 import './ImageBoard.css'
 
 interface SellMelangeData {
@@ -76,6 +83,21 @@ interface ImageBoardProps {
   controlMarkers: Record<ControlMarkerType, number | null>
   /** When viewing turn history, outline the board space where this turn's agent was placed. */
   historyHighlightSpaceId?: number | null
+  /** Active-player troop deploy controls; rendered below the combat area cluster. */
+  troopDeploy?: CombatTroopDeployProps
+  /** Sandbox setup turn: conflict slot and player quadrants become configuration targets. */
+  sandboxSetup?: {
+    onConflictClick: () => void
+    onPlayerClick: (playerId: number) => void
+  }
+  /** Tap faction influence tracks (e.g. Shifting Allegiances). */
+  influenceSelection?: {
+    mode: InfluenceBoardMode
+    amount: number
+    selectableFactions: FactionType[]
+    disabledFactions: FactionType[]
+    onFactionSelect: (faction: FactionType) => void
+  }
 }
 
 const PLAYER_COLORS: Record<number, string> = {
@@ -91,12 +113,6 @@ const FACTIONS: FactionType[] = [
   FactionType.BENE_GESSERIT,
   FactionType.FREMEN,
 ]
-
-const MAKER_SPACE_IDS: Record<string, number> = {
-  [MakerSpace.IMPERIAL_BASIN]: 4,
-  [MakerSpace.GREAT_FLAT]: 5,
-  [MakerSpace.HAGGA_BASIN]: 6,
-}
 
 /** Same path as The Voice cards in `cards.ts` — small board marker for blocked spaces */
 const VOICE_CARD_IMAGE_SRC = 'imperium_row/the_voice.avif'
@@ -138,7 +154,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   combatStrength,
   controlMarkers,
   historyHighlightSpaceId = null,
+  troopDeploy,
+  sandboxSetup,
+  influenceSelection,
 }) => {
+  const boardMediaRef = useRef<HTMLDivElement>(null)
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
   const [imgError, setImgError] = useState(false)
@@ -176,13 +196,14 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   }
 
   const handleSpaceClick = (spaceId: number) => {
+    if (influenceSelection) return
     if (voiceSelectionActive && onVoiceSpaceSelect) {
       onVoiceSpaceSelect(spaceId)
       return
     }
 
     const space = BOARD_SPACES.find(s => s.id === spaceId)
-    if (space?.name === 'Sell Melange') {
+    if (space?.specialEffect === 'sellMelange') {
       setSelectedSpaceId(spaceId)
       setShowSellMelangePopup(true)
       return
@@ -208,6 +229,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   }
 
   const isSpaceEnabled = (space: SpaceProps): boolean => {
+    if (influenceSelection) return false
     if (voiceSelectionActive) return true
     const blockedBy = blockedSpaceMap.get(space.id)
     const isBlockedForCurrent = typeof blockedBy === 'number' && blockedBy !== currentPlayer
@@ -232,6 +254,10 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
   const playersSorted = [...players].sort((a, b) => a.id - b.id)
   const playerById = new Map(players.map(p => [p.id, p]))
+  const handleInfluenceFactionPick = (faction: FactionType) => {
+    if (!influenceSelection) return
+    influenceSelection.onFactionSelect(faction)
+  }
 
   const seatSlots = highCouncilSlotAssignments(
     players,
@@ -264,7 +290,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   return (
     <div className={rootClass}>
       <div className="image-board__stage">
-        <div className="image-board__media">
+        <div className="image-board__media" ref={boardMediaRef}>
           {imgError ? (
             <div
               className="image-board__fallback"
@@ -341,6 +367,23 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             />
           )}
 
+          {hotspotDebug &&
+            BOARD_HOTSPOTS.map(h => {
+              const anchor = layoutAgentAnchorPercent(h)
+              return (
+                <div
+                  key={`agent-anchor-${h.spaceId}`}
+                  className="image-board__agent-anchor-debug"
+                  data-space-id={h.spaceId}
+                  style={{
+                    left: `${anchor.x}%`,
+                    top: `${anchor.y}%`,
+                  }}
+                  title={`Agent anchor ${h.spaceId}: ${h.agentX}%, ${h.agentY}%`}
+                />
+              )
+            })}
+
           {/* The Voice — same anchor as agent figures; drawn under agents so figures stay visible when occupied */}
           {[...blockedSpaceMap.entries()].map(([spaceId, blockerPlayerId]) => {
             const anchor = MARKER_ANCHORS.find(a => a.spaceId === spaceId)
@@ -384,26 +427,29 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             })
           })}
 
-          {Object.entries(bonusSpice).map(([makerKey, count]) => {
+          {(Object.keys(BONUS_SPICE_ANCHORS) as MakerSpace[]).map(makerKey => {
+            const count = bonusSpice[makerKey] ?? 0
             if (count <= 0) return null
-            const spaceId = MAKER_SPACE_IDS[makerKey]
-            if (spaceId === undefined) return null
-            const hotspot = BOARD_HOTSPOTS.find(h => h.spaceId === spaceId)
-            if (!hotspot) return null
-
-            const b = layoutHotspotPercent(hotspot)
+            const anchor = BONUS_SPICE_ANCHORS[makerKey]
+            const st = stagePoint(anchor.x, anchor.y)
 
             return (
-              <SpiceAmountBadge
+              <div
                 key={makerKey}
-                amount={count}
-                className="image-board__bonus-spice"
-                title={`Bonus spice: ${count}`}
+                className="image-board__bonus-spice-anchor"
+                data-marker="bonus-spice"
+                data-maker={makerKey}
                 style={{
-                  left: `${b.left + b.width - 1}%`,
-                  top: `${b.top}%`,
+                  left: `${st.x}%`,
+                  top: `${st.y}%`,
                 }}
-              />
+              >
+                <SpiceAmountBadge
+                  amount={count}
+                  className="image-board__bonus-spice"
+                  title={`Bonus spice: ${count}`}
+                />
+              </div>
             )
           })}
 
@@ -507,58 +553,179 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             )
           })}
 
-          {/* Conflict card + combat numbers (hidden until a real conflict is selected) */}
-          {currentConflict && currentConflict.id > 0 && (
+          {/* Conflict card + combat numbers (hidden until a real conflict is selected;
+              in sandbox setup both render as configuration targets) */}
+          {(Boolean(currentConflict && currentConflict.id > 0) || sandboxSetup) && (
             <>
-              <div
-                className="image-board__conflict-panel"
-                data-marker="conflict-card"
-                style={{
+              {(() => {
+                const hasConflict = Boolean(currentConflict && currentConflict.id > 0)
+                const conflictContent =
+                  hasConflict && conflictImgSrc && !conflictImgFailed ? (
+                    <img
+                      className="image-board__conflict-card-img"
+                      src={conflictImgSrc}
+                      alt={currentConflict?.name}
+                      draggable={false}
+                      onError={() => setConflictImgFailed(true)}
+                    />
+                  ) : hasConflict && currentConflict ? (
+                    <div className="image-board__conflict-fallback">
+                      <span className="image-board__conflict-tier">T{currentConflict.tier}</span>
+                      <span className="image-board__conflict-name">{currentConflict.name}</span>
+                    </div>
+                  ) : (
+                    <div className="image-board__conflict-placeholder">
+                      <span>Select Conflict</span>
+                    </div>
+                  )
+
+                const panelStyle = {
                   left: `${conflictBox.left}%`,
                   top: `${conflictBox.top}%`,
                   width: `${conflictBox.width}%`,
                   height: `${conflictBox.height}%`,
-                }}
-              >
-                {conflictImgSrc && !conflictImgFailed ? (
-                  <img
-                    className="image-board__conflict-card-img"
-                    src={conflictImgSrc}
-                    alt={currentConflict.name}
-                    draggable={false}
-                    onError={() => setConflictImgFailed(true)}
-                  />
-                ) : (
-                  <div className="image-board__conflict-fallback">
-                    <span className="image-board__conflict-tier">T{currentConflict.tier}</span>
-                    <span className="image-board__conflict-name">{currentConflict.name}</span>
-                  </div>
-                )}
-              </div>
+                }
 
-              {players.map(p => {
-                const anchor = COMBAT_RING_ANCHORS[p.color]
-                if (!anchor) return null
-                const str = combatStrength[p.id] ?? 0
-                const troops = combatTroops[p.id] ?? 0
-                const st = stagePoint(anchor.x, anchor.y)
-                return (
-                  <CombatPlayerStat
-                    key={`cmb-${p.id}`}
-                    player={p}
-                    troops={troops}
-                    strength={str}
-                    layout="ring"
-                    className="image-board__combat-stat"
-                    data-marker="combat-strength"
-                    data-player-id={p.id}
-                    style={{ left: `${st.x}%`, top: `${st.y}%` }}
-                  />
+                return sandboxSetup ? (
+                  <>
+                    <button
+                      type="button"
+                      className="image-board__conflict-panel image-board__conflict-panel--sandbox"
+                      data-marker="conflict-card"
+                      style={panelStyle}
+                      title={hasConflict ? 'Change conflict card' : 'Select conflict card'}
+                      onClick={sandboxSetup.onConflictClick}
+                    >
+                      {conflictContent}
+                    </button>
+                    {/* <SandboxSetupHint
+                      anchor="center"
+                      placement="above"
+                      label="Pick this round's conflict card"
+                      style={{
+                        left: `${conflictBox.left + conflictBox.width / 2}%`,
+                        top: `${conflictBox.top}%`,
+                      }}
+                    /> */}
+                  </>
+                ) : (
+                  <div
+                    className="image-board__conflict-panel"
+                    data-marker="conflict-card"
+                    style={panelStyle}
+                  >
+                    {conflictContent}
+                  </div>
                 )
-              })}
+              })()}
+
+              {(() => {
+                const area = stageRect(COMBAT_AREA_BOUNDS)
+                return (
+                  <>
+                    <CombatAreaCluster
+                      players={players}
+                      troops={combatTroops}
+                      strength={combatStrength}
+                      activePlayerId={currentPlayer}
+                      gameState={gameStateForMarkers}
+                      modalContainerRef={boardMediaRef}
+                      troopDeploy={troopDeploy}
+                      gridHeightPercent={COMBAT_AREA_BOUNDS.height}
+                      onPlayerSelect={
+                        sandboxSetup ? player => sandboxSetup.onPlayerClick(player.id) : undefined
+                      }
+                      className="image-board__combat-area-cluster"
+                      data-marker="combat-area"
+                      style={{
+                        left: `${area.left}%`,
+                        top: `${area.top}%`,
+                        width: `${area.width}%`,
+                        height: `${area.height}%`,
+                      }}
+                    />
+                    {/* {sandboxSetup ? (
+                      <SandboxSetupHint
+                        anchor="center"
+                        placement="above"
+                        label="Open leader to customize, deck, and resources"
+                        style={{
+                          left: `${area.left + area.width / 2}%`,
+                          top: `${area.top}%`,
+                        }}
+                      />
+                    ) : null} */}
+                  </>
+                )
+              })()}
 
             </>
           )}
+
+          {influenceSelection ? (
+            <div className="image-board__influence-selection-layer" aria-hidden={false}>
+              {FACTIONS.map(faction => {
+                const isSelectable = influenceSelection.selectableFactions.includes(faction)
+                const isDisabled = influenceSelection.disabledFactions.includes(faction)
+                if (!isSelectable && !isDisabled) return null
+
+                const box = stageRect(influenceTrackAreaRect(faction))
+                const factionLabel = faction
+                  .split('-')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ')
+
+                return (
+                  <React.Fragment key={`inf-select-${faction}`}>
+                    <div
+                      className={[
+                        'image-board__influence-track-highlight',
+                        isSelectable ? 'image-board__influence-track-highlight--active' : '',
+                        isDisabled ? 'image-board__influence-track-highlight--disabled' : '',
+                        `image-board__influence-track-highlight--${influenceSelection.mode}`,
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      style={{
+                        left: `${box.left}%`,
+                        top: `${box.top}%`,
+                        width: `${box.width}%`,
+                        height: `${box.height}%`,
+                      }}
+                      aria-hidden="true"
+                    />
+                    {isSelectable ? (
+                      <button
+                        type="button"
+                        className={[
+                          'image-board__influence-track-target',
+                          `image-board__influence-track-target--${influenceSelection.mode}`,
+                        ].join(' ')}
+                        style={{
+                          left: `${box.left}%`,
+                          top: `${box.top}%`,
+                          width: `${box.width}%`,
+                          height: `${box.height}%`,
+                        }}
+                        title={
+                          influenceSelection.mode === 'lose'
+                            ? `Lose ${influenceSelection.amount} ${factionLabel} influence`
+                            : `Gain ${influenceSelection.amount} ${factionLabel} influence`
+                        }
+                        aria-label={
+                          influenceSelection.mode === 'lose'
+                            ? `Lose ${influenceSelection.amount} influence with ${factionLabel}`
+                            : `Gain ${influenceSelection.amount} influence with ${factionLabel}`
+                        }
+                        onPointerDown={event => event.stopPropagation()}
+                        onClick={() => handleInfluenceFactionPick(faction)}
+                      />
+                    ) : null}
+                  </React.Fragment>
+                )
+              })}
+            </div>
+          ) : null}
 
           {markerDebug && (
             <div className="image-board__marker-debug-layer" aria-hidden>
@@ -578,6 +745,22 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                     key={`db-hc-${i}`}
                     className="image-board__marker-debug-dot"
                     style={{ left: `${st.x}%`, top: `${st.y}%` }}
+                  />
+                )
+              })}
+              {(Object.keys(INFLUENCE_TRACK_AREAS) as FactionType[]).map(faction => {
+                const areaBox = stageRect(INFLUENCE_TRACK_AREAS[faction])
+                return (
+                  <div
+                    key={`db-inf-area-${faction}`}
+                    className="image-board__marker-debug-rect image-board__marker-debug-rect--influence-area"
+                    data-faction={faction}
+                    style={{
+                      left: `${areaBox.left}%`,
+                      top: `${areaBox.top}%`,
+                      width: `${areaBox.width}%`,
+                      height: `${areaBox.height}%`,
+                    }}
                   />
                 )
               })}
@@ -635,6 +818,22 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   />
                 )
               })}
+              {(() => {
+                const area = stageRect(COMBAT_AREA_BOUNDS)
+                return (
+                  <div
+                    key="db-cmb-area"
+                    className="image-board__marker-debug-rect image-board__marker-debug-rect--combat-area"
+                    data-combat-area
+                    style={{
+                      left: `${area.left}%`,
+                      top: `${area.top}%`,
+                      width: `${area.width}%`,
+                      height: `${area.height}%`,
+                    }}
+                  />
+                )
+              })()}
               {(Object.values(PlayerColor) as PlayerColor[]).map(color => {
                 const pt = COMBAT_RING_ANCHORS[color]
                 const st = stagePoint(pt.x, pt.y)
@@ -643,6 +842,19 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                     key={`db-cmb-ring-${color}`}
                     className="image-board__marker-debug-dot image-board__marker-debug-dot--ring"
                     data-combat-ring={color}
+                    style={{ left: `${st.x}%`, top: `${st.y}%` }}
+                  />
+                )
+              })}
+              {(Object.keys(BONUS_SPICE_ANCHORS) as MakerSpace[]).map(key => {
+                const pt = BONUS_SPICE_ANCHORS[key]
+                const st = stagePoint(pt.x, pt.y)
+                return (
+                  <div
+                    key={`db-spice-${key}`}
+                    className="image-board__marker-debug-dot"
+                    data-marker="bonus-spice"
+                    data-maker={key}
                     style={{ left: `${st.x}%`, top: `${st.y}%` }}
                   />
                 )

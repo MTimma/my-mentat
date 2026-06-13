@@ -19,15 +19,22 @@ Assets present in `client/public/conflicts/cards/rise_of_ix/`:
 - `trade_monopoly.png`
 
 Per rulebook: "**2 Conflict I + 1 Conflict II + 1 Conflict III**" of
-new cards. Together with base (4 × I + 8 × II + 4 × III = 16) the
-total becomes **6 × I + 9 × II + 5 × III = 20**.
+new cards.
 
-> Reference: base game uses **18 unique** conflicts in our code (see
-> `client/src/data/conflicts.ts`); rulebook says base has 16. Our 2
-> extra base cards (variants) appear to be added by previous work
-> (see [`conflicts.ts`](../../client/src/data/conflicts.ts)). Treat
-> them as base and keep them in the RoI pool — they don't break
-> anything.
+> ✦ 2026-06-10 — corrected math: the **actual** base pool in
+> `client/src/data/conflicts.ts` (ids 901–918) is
+> **4 × I + 10 × II + 4 × III = 18** (not the rulebook's 4/8/4 = 16 —
+> two extra tier-II variants were added by previous work; treat them
+> as base). With the RoI 2/1/1 split the combined pool becomes
+> **6 × I + 11 × II + 5 × III = 22**.
+>
+> ⚠ **Internal tier inconsistency to resolve before data entry:** the
+> rulebook quote above implies 2 × I + 1 × II + 1 × III, but §3.3 and
+> §3.4 both mark their cards Tier 2. Most likely **Economy Supremacy
+> is Tier III** (its first-place reward includes VP purchases) and
+> Trade Monopoly is Tier II — verify against the printed cards and fix
+> §3.3/§3.4 before assigning ids 919–922.
+VERIFIED - TRADE MONOPOLY IS TIER 2 and ECONOMIC SUPREMECY IS TIER 3
 
 ---
 
@@ -42,8 +49,16 @@ total becomes **6 × I + 9 × II + 5 × III = 20**.
    - Round 1: **1 Conflict I** (chosen from the pool, then discarded).
    - Rounds 2–6: **5 Conflict II** total.
    - Rounds 7–10: **4 Conflict III** total.
-   This matches the existing `ConflictSelect` tier filter — just the
-   pool size grows.
+   > ✦ 2026-06-10: the tier sequence lives in **`App.tsx`** (~line
+   > 1129: round 1 → I, rounds 2–6 → II, 7+ → III), not in
+   > `ConflictSelect` — that component just renders the `conflicts`
+   > prop (and is portal-aware via `usePlayBoardModalPortal`). The
+   > existing sequence already matches; only the **pool source** must
+   > switch to `getConflictPool(expansions)`. Note `App.tsx` also
+   > filters with `!conflictsDiscard.includes(c)` — an **object
+   > identity** check, so `getConflictPool` must return the same
+   > object references as the arrays it concatenates (no mapping /
+   > cloning).
 4. **R4 — Rewards typing.** The new cards use existing
    `RewardType.*` values; if a conflict awards a **dreadnought** or a
    **tech tile**, use the new types (`DREADNOUGHT`, `TECH`).
@@ -72,7 +87,8 @@ total becomes **6 × I + 9 × II + 5 × III = 20**.
 
 ### 3.3 `economy_supremacy.png` — "Economy Supremacy"
 
-- **Tier 2**.
+- **Tier 2**. ✦ likely **Tier 3** — see the inconsistency note in §1;
+  verify against the printed card.
 - Typical rewards format (placeholder until printed values are
   confirmed):
   - 1st: `victoryPoints: 1, victorypoints: 1 (price: 6 solari), victorypoints 1 (price 4 spice)` *or* `acquireTech: { discount: 1 }`.
@@ -96,7 +112,8 @@ total becomes **6 × I + 9 × II + 5 × III = 20**.
 |---|---|
 | `client/src/data/conflictsRiseOfIx.ts` (new) | The 4 new conflicts. |
 | `client/src/data/conflicts.ts` | Add `getConflictPool(expansions)` + `RISE_OF_IX_CONFLICTS` re-export. |
-| `client/src/components/ConflictSelect/ConflictSelect.tsx` | No code change expected; it already filters by tier. Visual: surface the conflict image from the rise_of_ix folder. |
+| `client/src/components/ConflictSelect/ConflictSelect.tsx` | ✦ No tier logic here (it lives in `App.tsx` — see R3 note); component is already portal-aware. Only visual concern: it renders images via `conflictCardImageSrc`, so the §5.2 patch covers it. |
+| `client/src/App.tsx` | ✦ Swap `CONFLICTS` import/filter for `getConflictPool(state.expansions)` (also check `GameContext.tsx` `SELECT_CONFLICT`, which looks up `CONFLICTS.find(c => c.id === conflictId)`). |
 | `client/src/data/boardMarkerAnchors.ts` | Existing `conflictCardImageSrc(id)` should map RoI conflict ids to `/conflicts/cards/rise_of_ix/<slug>.webp` (we have `.png` here — adjust the file extension check). |
 
 ---
@@ -161,7 +178,7 @@ Replace direct imports of `CONFLICTS` in `App.tsx` and elsewhere with
 
 ## 7. Unit tests
 
-**Path:** `client/src/data/__tests__/conflictsRiseOfIx.test.ts` (new)
+**Path:** `client/src/components/GameContext/__tests__/conflictsRiseOfIx.test.ts` (new — ✦ next to the existing `conflictsBase.test.ts`; `data/__tests__/` does not exist)
 
 - [ ] `4 entries`
 - [ ] `each entry has a tier in {1, 2, 3}`

@@ -12,6 +12,8 @@ export interface CombatPhaseOverlayProps {
   isVisible: boolean
   /** Active player has played at least one combat intrigue this visit (footer shows Continue). */
   activePlayerPlayedCombatIntrigue?: boolean
+  /** History replay: show resolved combat summary without live-turn prompts. */
+  readOnly?: boolean
   /** When set, overlay is scoped to this board container instead of the full viewport. */
   containerRef?: RefObject<HTMLElement | null>
 }
@@ -23,6 +25,7 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
   activePlayerId,
   isVisible,
   activePlayerPlayedCombatIntrigue = false,
+  readOnly = false,
   containerRef,
 }) => {
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
@@ -38,9 +41,12 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
   const rankings = useMemo(() => {
     return Object.entries(combatStrength)
       .map(([playerId, strength]) => ({ playerId: Number(playerId), strength }))
+      .filter(entry => entry.strength > 0)
       .sort((a, b) => b.strength - a.strength)
       .map((entry, index) => ({ ...entry, rank: index + 1 }))
   }, [combatStrength])
+
+  const hasParticipants = rankings.length > 0
 
   const activePlayer = players.find(player => player.id === activePlayerId)
 
@@ -59,8 +65,10 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
       aria-label="Combat phase"
     >
       <div className="combat-phase-modal">
-        <h2 className="combat-phase-modal-title">Combat Phase</h2>
-        {activePlayer && (
+        <h2 className="combat-phase-modal-title">
+          {readOnly ? 'Combat Resolution' : 'Combat Phase'}
+        </h2>
+        {!readOnly && activePlayer && (
           <p className="combat-phase-active-player">
             <AgentIcon playerId={activePlayer.id} />
             <span>
@@ -74,6 +82,9 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
           </p>
         )}
         <div className="combat-phase-rankings" aria-label="Combat strength rankings">
+          {!hasParticipants ? (
+            <p className="combat-phase-empty">No participants in the conflict</p>
+          ) : null}
           {rankings.map(({ playerId, strength, rank }) => {
             const player = players.find(p => p.id === playerId)
             const hasPassed = combatPasses.has(playerId)
@@ -116,9 +127,13 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
             )
           })}
         </div>
-        <p className="combat-phase-hint">
-          Play any number of combat intrigue cards, then pass. Playing a card lets everyone act again.
-        </p>
+        {(!readOnly || hasParticipants) && (
+          <p className="combat-phase-hint">
+            {readOnly
+              ? 'Final combat strengths for this round.'
+              : 'Play any number of combat intrigue cards, then pass. Playing a card lets everyone act again.'}
+          </p>
+        )}
       </div>
     </div>
   )

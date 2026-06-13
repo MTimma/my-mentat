@@ -1,15 +1,24 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { PlayerSetup, Player, Card } from '../../types/GameTypes'
 import { motion } from 'framer-motion'
 import { getStartingSpice, getStartingSolari } from '../../data/leaderAbilities/beastSetup'
 import StarterDeckEditor from '../StarterDeckEditor/StarterDeckEditor'
 import ImperiumRowDeckCreator from '../ImperiumRowDeckCreator/ImperiumRowDeckCreator'
 import { applyStarterDeckReservationToImperium } from '../../services/starterDeckSetup'
-import { buildImperiumDeck } from '../../data/cards'
+import { buildImperiumDeck } from '../../catalog/runtime'
+import { buildSetupBlockFromConfiguration } from '../../save/buildSetupBlock'
+import { createGameInputDoc } from '../../save/createGameInput'
+import {
+  cyclePlayChromeTheme,
+  getPlayChromeTheme,
+  PLAY_CHROME_THEME_LABELS,
+  type PlayChromeTheme,
+} from '../../utils/playChromeTheme'
 import './GameStateSetup.css'
 
 interface GameStateSetupProps {
   playerSetups: PlayerSetup[]
+  firstPlayer: number
   onComplete: (initialState: {
     players: Player[]
     currentRound: number
@@ -22,11 +31,13 @@ interface GameStateSetupProps {
 
 const GameStateSetup: React.FC<GameStateSetupProps> = ({
   playerSetups,
+  firstPlayer,
   onComplete,
   onOpenCardCreator,
   autoApplyMandatoryRewards,
   onAutoApplyMandatoryRewardsChange,
 }) => {
+  const [playChromeTheme, setPlayChromeTheme] = useState<PlayChromeTheme>(() => getPlayChromeTheme())
   const [currentRound, setCurrentRound] = useState(1)
   const [showResourceEditor, setShowResourceEditor] = useState(false)
   const [showStarterDeckEditor, setShowStarterDeckEditor] = useState(false)
@@ -90,6 +101,42 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
     )
   }
 
+  const [showGameInputJson, setShowGameInputJson] = useState(false)
+
+  const previewGameInputJson = useMemo(() => {
+    const imperiumRowDeck = applyStarterDeckReservationToImperium(
+      imperiumRowDeckDraft,
+      editablePlayerSetups.map(setup => setup.deck)
+    )
+    const { setup, unmapped } = buildSetupBlockFromConfiguration({
+      players: playerStates,
+      firstPlayer,
+      imperiumRowDeck,
+      currentRound,
+    })
+    const doc = createGameInputDoc(setup, {
+      title: 'New game (preview)',
+      notes: unmapped.length
+        ? `Unmapped catalog entries: ${unmapped.join(', ')}`
+        : undefined,
+    })
+    return JSON.stringify(doc, null, 2)
+  }, [
+    currentRound,
+    editablePlayerSetups,
+    firstPlayer,
+    imperiumRowDeckDraft,
+    playerStates,
+  ])
+
+  const handleCopyGameInput = async () => {
+    try {
+      await navigator.clipboard.writeText(previewGameInputJson)
+    } catch {
+      // Clipboard may be unavailable
+    }
+  }
+
   const handleSubmit = () => {
     onComplete({
       players: playerStates.map(player => ({
@@ -147,6 +194,44 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
               {autoApplyMandatoryRewards ? 'On' : 'Off'}
             </button>
           </div>
+
+          <div className="setup-section setup-option-row">
+            <div>
+              <strong>Play UI theme</strong>
+              <p>Warm void charcoal or cool blueish chrome around the board.</p>
+            </div>
+            <button
+              type="button"
+              className="setup-toggle-button setup-toggle-button-on"
+              onClick={() => setPlayChromeTheme(cyclePlayChromeTheme())}
+              aria-label={`Switch play UI theme (current: ${PLAY_CHROME_THEME_LABELS[playChromeTheme]})`}
+            >
+              {PLAY_CHROME_THEME_LABELS[playChromeTheme]}
+            </button>
+          </div>
+
+          <div className="setup-section setup-option-row">
+            <div>
+              <strong>Game input (JSON)</strong>
+              <p>Event-sourced setup document used when the game starts (catalog ids, no play events yet).</p>
+            </div>
+            <button
+              type="button"
+              className="toggle-editor-button"
+              onClick={() => setShowGameInputJson(prev => !prev)}
+            >
+              {showGameInputJson ? 'Hide JSON' : 'Preview JSON'}
+            </button>
+          </div>
+
+          {showGameInputJson && (
+            <div className="setup-editor-panel setup-game-input-json">
+              <button type="button" className="toggle-editor-button" onClick={handleCopyGameInput}>
+                Copy to clipboard
+              </button>
+              <pre className="setup-game-input-pre">{previewGameInputJson}</pre>
+            </div>
+          )}
 
           <div className="setup-actions">
             <button

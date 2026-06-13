@@ -1,0 +1,113 @@
+.reveal-persuasion-remaining-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 3px 10px 3px 6px;
+  border: 1px solid var(--chrome-border-accent-strong);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, var(--chrome-accent-muted), var(--chrome-inset)),
+    var(--chrome-surface);
+  color: var(--chrome-text);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 2px 7px rgba(0, 0, 0, 0.28);
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+.reveal-persuasion-remaining-chip__icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.reveal-persuasion-remaining-chip__diamond {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 15px;
+  height: 15px;
+  border: 1px solid var(--chrome-persuasion-border);
+  border-radius: 3px;
+  background: var(--chrome-persuasion-fill);
+  transform: rotate(45deg);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.35),
+    0 0 6px var(--chrome-persuasion-glow);
+}
+
+.reveal-persuasion-remaining-chip__count {
+  position: relative;
+  z-index: 1;
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.45);
+}
+
+.reveal-persuasion-remaining-chip__label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--chrome-text-muted);
+  line-height: 1;
+}
+
+.reveal-persuasion-remaining-chip--play-bar {
+  min-height: 28px;
+  padding: 2px 8px 2px 5px;
+  gap: 3px;
+}
+
+.reveal-persuasion-remaining-chip--play-bar .reveal-persuasion-remaining-chip__icon {
+  width: 16px;
+  height: 16px;
+}
+
+.reveal-persuasion-remaining-chip--play-bar .reveal-persuasion-remaining-chip__diamond {
+  width: 13px;
+  height: 13px;
+}
+
+.reveal-persuasion-remaining-chip--play-bar .reveal-persuasion-remaining-chip__count {
+  font-size: 0.52rem;
+}
+
+.reveal-persuasion-remaining-chip--play-area {
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+.reveal-persuasion-remaining-chip--nav-bar {
+  min-height: 26px;
+  padding: 2px 7px 2px 5px;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.reveal-persuasion-remaining-chip--nav-bar .reveal-persuasion-remaining-chip__icon {
+  width: 15px;
+  height: 15px;
+}
+
+.reveal-persuasion-remaining-chip--nav-bar .reveal-persuasion-remaining-chip__diamond {
+  width: 12px;
+  height: 12px;
+}
+
+.reveal-persuasion-remaining-chip--nav-bar .reveal-persuasion-remaining-chip__count {
+  font-size: 0.5rem;
+}
+
+.reveal-persuasion-remaining-chip--nav-bar .reveal-persuasion-remaining-chip__label {
+  font-size: 0.58rem;
+}

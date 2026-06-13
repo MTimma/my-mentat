@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { GamePhase, type GameState } from '../../types/GameTypes'
 import {
   countPlayerTurns,
+  formatTurnRoundHeader,
+  getDisplayRound,
   getHistoryRowBadge,
+  getHistoryRowLabel,
   getLivePlayerTurnNumber,
   getPlayerTurnNumber,
   isMetaHistoryEntry,
@@ -13,10 +16,11 @@ function row(partial: Partial<GameState>): GameState {
 }
 
 describe('turnHistoryDisplay', () => {
-  it('treats setup, round-start, and combat as meta entries', () => {
+  it('treats setup, round-start, combat, and endgame as meta entries', () => {
     expect(isMetaHistoryEntry(row({ historyEntryKind: 'setup' }))).toBe(true)
     expect(isMetaHistoryEntry(row({ historyEntryKind: 'round-start' }))).toBe(true)
     expect(isMetaHistoryEntry(row({ historyEntryKind: 'combat' }))).toBe(true)
+    expect(isMetaHistoryEntry(row({ historyEntryKind: 'endgame' }))).toBe(true)
     expect(isMetaHistoryEntry(row({ phase: GamePhase.PLAYER_TURNS }))).toBe(false)
   })
 
@@ -38,6 +42,36 @@ describe('turnHistoryDisplay', () => {
     expect(getPlayerTurnNumber(turns, 5)).toBe(3)
     expect(countPlayerTurns(turns)).toBe(3)
     expect(getLivePlayerTurnNumber(turns)).toBe(4)
+  })
+
+  it('applies player turn offset for sandbox mid-round starts', () => {
+    const turns: GameState[] = [
+      row({ historyEntryKind: 'setup', currentRound: 1 }),
+      row({ phase: GamePhase.PLAYER_TURNS, currTurn: { playerId: 0, type: 'action' } }),
+    ]
+    expect(getLivePlayerTurnNumber(turns, 4)).toBe(6)
+  })
+
+  it('hides round label for imaginary sandbox positions', () => {
+    expect(getDisplayRound(row({ currentRound: 3, hideRoundLabel: true }))).toBeNull()
+    expect(getDisplayRound(row({ currentRound: 3 }))).toBe(3)
+    expect(formatTurnRoundHeader(5, null)).toBe('Turn 5')
+    expect(formatTurnRoundHeader(5, 2)).toBe('Turn 5, round 2')
+  })
+
+  it('labels history rows with player turn numbers, not raw indices', () => {
+    const turns: GameState[] = [
+      row({ historyEntryKind: 'setup', currentRound: 1 }),
+      row({ phase: GamePhase.PLAYER_TURNS, currTurn: { playerId: 0, type: 'action' } }),
+      row({ phase: GamePhase.PLAYER_TURNS, currTurn: { playerId: 1, type: 'action' } }),
+      row({ historyEntryKind: 'combat', currentRound: 1 }),
+    ]
+
+    expect(getHistoryRowLabel(turns, 0)).toBe('Setup')
+    expect(getHistoryRowLabel(turns, 1)).toBe('Turn 1')
+    expect(getHistoryRowLabel(turns, 2)).toBe('Turn 2')
+    expect(getHistoryRowLabel(turns, 3)).toBe('Combat')
+    expect(getHistoryRowLabel(turns, 4)).toBe('Turn 3')
   })
 
   it('shows setup badge for merged opening round row', () => {

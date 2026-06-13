@@ -9,6 +9,7 @@ export interface EndTurnButtonStateInput {
   voiceSelectionActive: boolean
   masterstrokeSelectionActive: boolean
   memnonHighCouncilSelectionActive: boolean
+  influenceBoardSelectionActive?: boolean
 }
 
 export function getEndTurnButtonState({
@@ -20,12 +21,16 @@ export function getEndTurnButtonState({
   voiceSelectionActive,
   masterstrokeSelectionActive,
   memnonHighCouncilSelectionActive,
+  influenceBoardSelectionActive = false,
 }: EndTurnButtonStateInput): { disabled: boolean; title?: string } {
   const hasOpponentDiscard = Boolean(opponentDiscardState)
   const hasUnresolvedPendingRewards = pendingRewards.some(r => !r.disabled)
   const hasPendingChoicesToResolve = pendingChoices.length > 0
   const selectionBlocksEndTurn =
-    voiceSelectionActive || masterstrokeSelectionActive || memnonHighCouncilSelectionActive
+    voiceSelectionActive ||
+    masterstrokeSelectionActive ||
+    memnonHighCouncilSelectionActive ||
+    influenceBoardSelectionActive
   const disabled =
     isHistoryView ||
     !canEndTurn ||

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "counts": {
+    "effects": 163,
+    "cards": 63,
+    "boardSpaces": 22,
+    "conflicts": 18,
+    "intrigue": 32,
+    "leaders": 8
+  },
+  "files": [
+    "catalog.v1.json",
+    "cards.v1.json",
+    "effects.v1.json",
+    "board-spaces.v1.json",
+    "conflicts.v1.json",
+    "intrigue.v1.json",
+    "leaders.v1.json",
+    "choice-ids.v1.json"
+  ]
+}

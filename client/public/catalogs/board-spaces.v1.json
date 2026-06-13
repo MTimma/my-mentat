@@ -1,0 +1,318 @@
+{
+  "schemaVersion": 1,
+  "boardSpaces": [
+    {
+      "id": 9,
+      "name": "High Council",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "cost": {
+        "solari": 5
+      },
+      "specialEffect": "highCouncil",
+      "image": "board/high_council.png",
+      "effects": [
+        "effect:board-space:9:space:0"
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Hall of Oratory",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "image": "board/hall_of_oratory.png",
+      "effects": [
+        "effect:board-space:12:space:0"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Sell Melange",
+      "agentIcon": "spice-trade",
+      "conflictMarker": false,
+      "cost": {
+        "spice": 2
+      },
+      "specialEffect": "sellMelange",
+      "image": "board/sell_melange.png",
+      "effects": []
+    },
+    {
+      "id": 15,
+      "name": "Wealth",
+      "agentIcon": "emperor",
+      "conflictMarker": false,
+      "influence": {
+        "faction": "emperor",
+        "amount": 1
+      },
+      "image": "board/wealth.png",
+      "effects": [
+        "effect:board-space:15:space:0"
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Conspire",
+      "agentIcon": "emperor",
+      "conflictMarker": false,
+      "cost": {
+        "spice": 4
+      },
+      "influence": {
+        "faction": "emperor",
+        "amount": 1
+      },
+      "image": "board/conspire.png",
+      "effects": [
+        "effect:board-space:14:space:0"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Mentat",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "cost": {
+        "solari": 2
+      },
+      "specialEffect": "mentat",
+      "image": "board/mentat.png",
+      "effects": [
+        "effect:board-space:10:space:0"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Rally Troops",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "cost": {
+        "solari": 4
+      },
+      "image": "board/rally_troops.png",
+      "effects": [
+        "effect:board-space:11:space:0"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Swordmaster",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "cost": {
+        "solari": 8
+      },
+      "specialEffect": "swordmaster",
+      "image": "board/swordmaster.png",
+      "effects": []
+    },
+    {
+      "id": 16,
+      "name": "Foldspace",
+      "agentIcon": "spacing-guild",
+      "conflictMarker": false,
+      "influence": {
+        "faction": "spacing-guild",
+        "amount": 1
+      },
+      "specialEffect": "foldspace",
+      "image": "board/foldspace.png",
+      "effects": []
+    },
+    {
+      "id": 17,
+      "name": "Heighliner",
+      "agentIcon": "spacing-guild",
+      "conflictMarker": true,
+      "cost": {
+        "spice": 6
+      },
+      "influence": {
+        "faction": "spacing-guild",
+        "amount": 1
+      },
+      "image": "board/heighliner.png",
+      "effects": [
+        "effect:board-space:17:space:0"
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Sietch Tabr",
+      "agentIcon": "fremen",
+      "conflictMarker": true,
+      "influence": {
+        "faction": "fremen",
+        "amount": 1
+      },
+      "requiresInfluence": {
+        "faction": "fremen",
+        "amount": 2
+      },
+      "image": "board/sietch_tabr.png",
+      "effects": [
+        "effect:board-space:21:space:0"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Research Station",
+      "agentIcon": "city",
+      "conflictMarker": true,
+      "cost": {
+        "water": 2
+      },
+      "image": "board/research_station.png",
+      "effects": [
+        "effect:board-space:3:space:0"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Secure Contract",
+      "agentIcon": "spice-trade",
+      "conflictMarker": false,
+      "image": "board/secure_contract.png",
+      "effects": [
+        "effect:board-space:7:space:0"
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Secrets",
+      "agentIcon": "bene-gesserit",
+      "conflictMarker": false,
+      "influence": {
+        "faction": "bene-gesserit",
+        "amount": 1
+      },
+      "specialEffect": "secrets",
+      "image": "board/secrets.png",
+      "effects": [
+        "effect:board-space:18:space:0",
+        "effect:board-space:18:space:1"
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Selective Breeding",
+      "agentIcon": "bene-gesserit",
+      "conflictMarker": false,
+      "cost": {
+        "spice": 2
+      },
+      "influence": {
+        "faction": "bene-gesserit",
+        "amount": 1
+      },
+      "specialEffect": "selectiveBreeding",
+      "image": "board/selective_breeding.png",
+      "effects": [
+        "effect:board-space:19:space:0"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Arrakeen",
+      "agentIcon": "city",
+      "conflictMarker": true,
+      "controlMarker": "arrakin",
+      "controlBonus": {
+        "solari": 1
+      },
+      "image": "board/arrakeen.png",
+      "effects": [
+        "effect:board-space:1:space:0"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Carthag",
+      "agentIcon": "city",
+      "conflictMarker": true,
+      "controlMarker": "carthag",
+      "controlBonus": {
+        "solari": 1
+      },
+      "image": "board/carthag.png",
+      "effects": [
+        "effect:board-space:2:space:0"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Imperial Basin",
+      "agentIcon": "spice-trade",
+      "conflictMarker": true,
+      "makerSpace": "imperial-basin",
+      "controlMarker": "imperial-basin",
+      "controlBonus": {
+        "spice": 1
+      },
+      "image": "board/imperial_basin.png",
+      "effects": [
+        "effect:board-space:4:space:0"
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Stillsuits",
+      "agentIcon": "fremen",
+      "conflictMarker": true,
+      "influence": {
+        "faction": "fremen",
+        "amount": 1
+      },
+      "image": "board/stillsuits.png",
+      "effects": [
+        "effect:board-space:22:space:0"
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Hardy Warriors",
+      "agentIcon": "fremen",
+      "conflictMarker": true,
+      "cost": {
+        "water": 1
+      },
+      "influence": {
+        "faction": "fremen",
+        "amount": 1
+      },
+      "image": "board/hardy_warriors.png",
+      "effects": [
+        "effect:board-space:20:space:0"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "The Great Flat",
+      "agentIcon": "spice-trade",
+      "conflictMarker": true,
+      "cost": {
+        "water": 2
+      },
+      "makerSpace": "great-flat",
+      "image": "board/the_great_flat.png",
+      "effects": [
+        "effect:board-space:5:space:0"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Hagga Basin",
+      "agentIcon": "spice-trade",
+      "conflictMarker": true,
+      "cost": {
+        "water": 1
+      },
+      "makerSpace": "hagga-basin",
+      "image": "board/hagga_basin.png",
+      "effects": [
+        "effect:board-space:6:space:0"
+      ]
+    }
+  ]
+}

@@ -5,7 +5,7 @@
   right: 0;
   height: var(--play-footer-top, 100dvh);
   max-height: var(--play-footer-top, 100dvh);
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.55);
   z-index: var(--z-modal-overlay-top, 1320);
   display: flex;
   justify-content: center;
@@ -15,24 +15,26 @@
 }
 
 .undo-confirm-dialog {
-  background: #1e1e1e;
-  border: 1px solid rgba(212, 177, 106, 0.45);
+  background: var(--chrome-surface-raised);
+  border: 1px solid var(--chrome-border-accent-strong);
   border-radius: 12px;
   max-width: 460px;
   width: min(460px, 92vw);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--chrome-shadow-panel);
+  color: var(--chrome-text);
 }
 
 .undo-confirm-header {
   padding: 18px 22px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--chrome-border);
 }
 
 .undo-confirm-header h2 {
   margin: 0;
-  color: var(--color-arrakis-parchment, #f4e4bc);
+  color: var(--chrome-highlight-name);
   font-size: 1.15em;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.03em;
 }
 
 .undo-confirm-body {
@@ -41,14 +43,15 @@
 
 .undo-main-warning {
   font-size: 1.05em;
-  color: rgba(244, 228, 188, 0.95);
-  margin: 0 0 18px 0;
+  color: var(--chrome-text-strong);
+  margin: 0 0 18px;
   text-align: center;
   line-height: 1.45;
 }
 
 .undo-details {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--chrome-inset-soft);
+  border: 1px solid var(--chrome-border-subtle);
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 16px;
@@ -57,56 +60,33 @@
 .undo-detail-row {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
   padding: 4px 0;
 }
 
 .detail-label {
-  color: #888;
+  color: var(--chrome-text-muted);
 }
 
 .detail-value {
-  color: #d4af37;
-  font-weight: 500;
-}
-
-.undo-losses-section {
-  margin-bottom: 4px;
-}
-
-.undo-losses-section h3 {
-  font-size: 0.85em;
-  color: rgba(212, 177, 106, 0.85);
-  margin: 0 0 10px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--chrome-highlight-name);
   font-weight: 600;
-}
-
-.losses-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.losses-list li {
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 4px;
-  margin-bottom: 4px;
-  color: rgba(220, 200, 170, 0.9);
-  font-size: 0.92em;
 }
 
 .undo-confirm-actions {
   display: flex;
-  justify-content: flex-end;
   gap: 12px;
   padding: 14px 22px 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--chrome-border);
 }
 
-.undo-confirm-actions button {
-  padding: 10px 20px;
+.undo-confirm-cancel,
+.undo-confirm-submit {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  width: auto;
+  padding: 10px 16px;
   border-radius: 6px;
   font-size: 0.95em;
   font-weight: 600;
@@ -114,23 +94,24 @@
   transition: background 0.2s, border-color 0.2s;
 }
 
-.cancel-button {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #ccc;
+.undo-confirm-cancel {
+  background: var(--chrome-inset-soft);
+  border: 1px solid var(--chrome-border-strong);
+  color: var(--chrome-text-strong);
 }
 
-.cancel-button:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.45);
+.undo-confirm-cancel:hover {
+  background: var(--chrome-accent-muted);
+  border-color: var(--chrome-border-accent);
 }
 
-.confirm-button {
-  background: rgba(180, 130, 60, 0.85);
-  border: 1px solid rgba(212, 177, 106, 0.55);
-  color: #fff;
+.undo-confirm-submit {
+  background: var(--chrome-accent);
+  border: 1px solid var(--chrome-accent-bright);
+  color: var(--chrome-shell);
 }
 
-.confirm-button:hover {
-  background: rgba(200, 150, 70, 0.95);
+.undo-confirm-submit:hover {
+  background: var(--chrome-accent-bright);
+  border-color: var(--chrome-accent-ring);
 }

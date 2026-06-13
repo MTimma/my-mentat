@@ -10,10 +10,14 @@ import './RevealTurnStatsPanel.css'
 interface RevealTurnStatsPanelProps {
   stats: RevealTurnStats
   compact?: boolean
+  /** Hide acquired card names; thumbnails and tooltips remain. */
+  hideAcquiredNames?: boolean
   /** Only render the Acquired section (e.g. agent-turn intrigue acquire). */
   acquiredOnly?: boolean
   /** Turn-scoped gains for persuasion / resource totals. */
   gains?: Gain[]
+  /** Omit revealed card row (e.g. turn history header already shows them). */
+  hideRevealedCards?: boolean
   troopsDeployedToConflict?: number
   troopsRetreatedFromConflict?: number
   resolveCard?: (cardId: number, name: string) => import('../../types/GameTypes').Card | undefined
@@ -22,11 +26,13 @@ interface RevealTurnStatsPanelProps {
 const RevealTurnStatsPanel = ({
   stats,
   compact = false,
+  hideAcquiredNames = false,
   acquiredOnly = false,
   gains = [],
   troopsDeployedToConflict = 0,
   troopsRetreatedFromConflict = 0,
   resolveCard,
+  hideRevealedCards = false,
 }: RevealTurnStatsPanelProps) => {
   const acquiredLabel =
     stats.acquiredCards.length === 0
@@ -58,17 +64,25 @@ const RevealTurnStatsPanel = ({
         stats.acquiredCards.map(card => {
           const acquireGains = getAcquireEffectGainsForCard(gains, card.id)
           return (
-            <span key={card.id} className="reveal-turn-acquired-card">
+            <span key={card.id} className="reveal-turn-acquired-card" title={card.name}>
               {card.image ? (
                 <img src={card.image} alt="" className="reveal-turn-acquired-thumb" />
               ) : null}
-              <span className="reveal-turn-acquired-name">{card.name}</span>
+              {!hideAcquiredNames ? (
+                <span className="reveal-turn-acquired-name">{card.name}</span>
+              ) : null}
               {card.cost != null && card.cost > 0 && (
                 <span className="reveal-turn-acquired-cost">{card.cost}</span>
               )}
               {acquireGains.length > 0 ? (
                 <span className="reveal-turn-acquired-effects">
-                  <TurnGainsDisplay gains={acquireGains} totalsOnly showTotals resolveCard={resolveCard} />
+                  <TurnGainsDisplay
+                    gains={acquireGains}
+                    totalsOnly
+                    showTotals
+                    omitPositiveSign
+                    resolveCard={resolveCard}
+                  />
                 </span>
               ) : null}
             </span>
@@ -84,6 +98,7 @@ const RevealTurnStatsPanel = ({
         gains={totalsGains}
         totalsOnly
         showTotals
+        omitPositiveSign
         resolveCard={resolveCard}
         troopsDeployedToConflict={troopsDeployedToConflict}
         troopsRetreatedFromConflict={troopsRetreatedFromConflict}
@@ -108,12 +123,8 @@ const RevealTurnStatsPanel = ({
   }
 
   if (compact) {
-    return (
-      <div
-        className="reveal-turn-stats-panel reveal-turn-stats-panel--compact reveal-turn-stats-panel--history"
-        aria-label="Reveal turn summary"
-      >
-        {stats.revealedCards.length > 0 ? revealedCards : null}
+    const extras = (
+      <div className="reveal-turn-stats-panel__extras">
         {totalsRow}
         {stats.acquiredCards.length > 0 ? (
           <div className="reveal-turn-acquired-section">
@@ -123,6 +134,16 @@ const RevealTurnStatsPanel = ({
             </div>
           </div>
         ) : null}
+      </div>
+    )
+
+    return (
+      <div
+        className="reveal-turn-stats-panel reveal-turn-stats-panel--compact reveal-turn-stats-panel--history"
+        aria-label="Reveal turn summary"
+      >
+        {!hideRevealedCards && stats.revealedCards.length > 0 ? revealedCards : null}
+        {extras}
       </div>
     )
   }

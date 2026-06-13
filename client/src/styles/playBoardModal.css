@@ -1,0 +1,139 @@
+/**
+ * Desktop play: modals portaled into .play-shell-board cover the board stage only
+ * (not imperium row, footer, or docked turn history).
+ */
+.game-container--desktop-play .play-shell-board {
+  isolation: isolate;
+}
+
+.play-board-modal-overlay--scoped,
+.combat-phase-overlay--board-scoped,
+.dialog-overlay.play-board-modal-overlay--scoped,
+.conflict-select-overlay.play-board-modal-overlay--scoped,
+.imperium-select-overlay.play-board-modal-overlay--scoped,
+.card-selection-dialog-overlay.play-board-modal-overlay--scoped,
+.imperium-preview-overlay.play-board-modal-overlay--scoped,
+.combat-results-overlay.play-board-modal-overlay--scoped,
+.card-trashing-dialog-overlay.play-board-modal-overlay--scoped,
+.selective-breeding-dialog-overlay.play-board-modal-overlay--scoped,
+.sell-melange-popup.play-board-modal-overlay--scoped,
+.undo-confirm-overlay.play-board-modal-overlay--scoped,
+.dialog-overlay.player-overview-overlay.play-board-modal-overlay--scoped,
+.dialog-overlay.player-play-area-overlay--board-scoped,
+.dialog-overlay.combat-player-detail-overlay--board-scoped {
+  position: absolute !important;
+  inset: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: none;
+  max-height: none;
+  transform: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+  border-radius: inherit;
+}
+
+.play-board-modal-overlay--scoped .combat-results,
+.combat-results-overlay.play-board-modal-overlay--scoped .combat-results {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.combat-results-overlay.play-board-modal-overlay--scoped .combat-results::before {
+  display: none;
+}
+
+.play-board-modal-overlay--scoped .imperium-select-dialog,
+.imperium-select-overlay.play-board-modal-overlay--scoped .imperium-select-dialog {
+  max-height: 100%;
+}
+
+.conflict-select-overlay.play-board-modal-overlay--scoped {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.conflict-select-overlay.play-board-modal-overlay--scoped .conflict-select-dialog {
+  width: min(100%, 720px);
+  max-height: 100%;
+  min-height: 0;
+}
+
+.play-board-modal-overlay--scoped .card-selection-dialog-overlay-standalone > .card-selection-dialog,
+.card-selection-dialog-overlay.play-board-modal-overlay--scoped > .card-selection-dialog {
+  max-height: 100%;
+}
+
+.card-selection-dialog-overlay.play-board-modal-overlay--scoped {
+  padding: 4px !important;
+}
+
+.card-selection-dialog-overlay.play-board-modal-overlay--scoped > .card-selection-dialog--board-compact {
+  height: 100%;
+}
+
+.player-play-area-overlay--board-scoped .player-play-area-modal,
+.combat-player-detail-overlay--board-scoped .combat-player-detail-modal {
+  max-height: 100%;
+}
+
+.player-overview-overlay.play-board-modal-overlay--scoped .player-overview-modal {
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  border-radius: 10px;
+}
+
+.imperium-preview-overlay.play-board-modal-overlay--scoped {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.imperium-preview-overlay.play-board-modal-overlay--scoped .imperium-preview-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-height: 100%;
+  max-width: min(100%, 380px);
+  width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.imperium-preview-overlay.play-board-modal-overlay--scoped .imperium-preview-modal.card-effects-dialog {
+  overflow: hidden;
+}
+
+.imperium-preview-overlay.play-board-modal-overlay--scoped
+  .card-effects-dialog-body--has-actions
+  .card-effects-dialog-card-stage {
+  max-height: min(58%, 320px);
+}
+
+.imperium-preview-overlay.play-board-modal-overlay--scoped
+  .card-effects-dialog-body--has-actions
+  .card-effects-dialog-image {
+  max-height: 100%;
+  max-width: 100%;
+}
+
+.imperium-preview-overlay.play-board-modal-overlay--scoped .imperium-preview-image {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+}

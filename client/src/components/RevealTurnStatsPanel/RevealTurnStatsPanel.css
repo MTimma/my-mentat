@@ -21,14 +21,28 @@
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
-  padding: 5px 8px;
+  padding: 6px 8px;
+}
+
+.reveal-turn-stats-panel--history .reveal-turn-stats-panel__extras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.reveal-turn-stats-panel--history .reveal-turn-stats-panel__extras .reveal-turn-acquired-section {
+  flex: 1 1 auto;
+  min-width: min(100%, 140px);
 }
 
 .reveal-turn-revealed-cards {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 3px;
+  gap: 4px;
 }
 
 .reveal-turn-revealed-card {
@@ -98,6 +112,16 @@
   font-size: 0.82rem;
 }
 
+.reveal-turn-stats-panel--history .reveal-turn-revealed-thumb {
+  width: 34px;
+  height: 48px;
+}
+
+.reveal-turn-stats-panel--history .reveal-turn-acquired-thumb {
+  width: 30px;
+  height: 44px;
+}
+
 .reveal-turn-stats-panel--acquired-only {
   flex-direction: column;
   align-items: stretch;
@@ -164,7 +188,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 6px 2px 2px;
+  padding: 2px 4px 2px 2px;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(0, 0, 0, 0.25);

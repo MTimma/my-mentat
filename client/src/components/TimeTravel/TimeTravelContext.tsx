@@ -106,6 +106,9 @@ export const TimeTravelProvider: React.FC<TimeTravelProviderProps> = ({
     if (snapshot?.historyEntryKind === 'combat') {
       return 'Combat'
     }
+    if (snapshot?.historyEntryKind === 'endgame') {
+      return 'Endgame'
+    }
     const turnNum = getPlayerTurnNumber(gameState.history, viewingTurnIndex)
     const totalPlayerTurns = countPlayerTurns(gameState.history)
     if (turnNum != null) {

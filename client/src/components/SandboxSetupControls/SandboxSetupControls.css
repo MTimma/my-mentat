@@ -1,0 +1,115 @@
+.sandbox-setup-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.28);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 215, 0, 0.1) 0%,
+    rgba(10, 12, 18, 0.35) 100%
+  );
+  color: #f0e6d4;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  flex-shrink: 0;
+}
+
+.sandbox-setup-controls__hint {
+  margin: 0;
+  color: #fff8e8;
+  font-weight: 600;
+}
+
+.sandbox-setup-controls__position {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sandbox-setup-controls__field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sandbox-setup-controls__field input {
+  width: 3.2rem;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 248, 232, 0.25);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff8e8;
+  font-size: 0.78rem;
+}
+
+.sandbox-setup-controls__field input::placeholder {
+  color: rgba(255, 248, 232, 0.35);
+}
+
+.sandbox-setup-controls__clear {
+  border: none;
+  background: transparent;
+  color: rgba(255, 248, 232, 0.55);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.sandbox-setup-controls__clear:hover {
+  color: #ffd700;
+}
+
+.sandbox-setup-controls__commit {
+  align-self: flex-start;
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: none;
+  background: #ffd700;
+  color: #000;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sandbox-setup-controls__commit:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.sandbox-setup-controls__commit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sandbox-setup-controls--compact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: none;
+}
+
+.sandbox-setup-controls--compact .sandbox-setup-controls__position {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sandbox-setup-controls--compact .sandbox-setup-controls__commit {
+  align-self: center;
+  flex: 0 0 auto;
+}
+
+.sandbox-setup-mobile-bar {
+  width: 100%;
+  box-sizing: border-box;
+  border-top: 1px solid rgba(255, 215, 0, 0.28);
+  background: var(--chrome-surface);
+}

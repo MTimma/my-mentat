@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react'
 import { Card } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
+import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import './ImperiumRowSelect.css'
 
@@ -8,13 +9,17 @@ interface ImperiumRowSelectProps {
   cards: Card[]
   requiredCount: number
   onConfirm: (cardIds: number[]) => void
+  /** When provided, the cancel control closes the dialog instead of clearing the selection. */
+  onCancel?: () => void
+  initialSelectedCards?: Card[]
 }
 
-const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCount, onConfirm }) => {
+const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCount, onConfirm, onCancel, initialSelectedCards }) => {
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const overlayRef = useRef<HTMLDivElement>(null)
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true)
 
-  useVisualViewportOverlay(overlayRef, { enabled: true, lockDocumentScroll: true })
+  useVisualViewportOverlay(overlayRef, { enabled: !scopedClass, lockDocumentScroll: true })
 
   const sortedCards = useMemo(
     () => [...cards].sort((a, b) => a.name.localeCompare(b.name)),
@@ -27,14 +32,20 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCo
 
   const handleCancel = () => {
     setSelectedCards([])
+    onCancel?.()
   }
 
   const handleSelectionChange = (cards: Card[]) => {
     setSelectedCards(cards)
   }
 
-  return (
-    <div ref={overlayRef} className="imperium-select-overlay">
+  if (waitForBoardTarget) return null
+
+  const overlay = (
+    <div
+      ref={overlayRef}
+      className={['imperium-select-overlay', scopedClass].filter(Boolean).join(' ')}
+    >
       <div className="imperium-select-dialog">
         <header className="imperium-select-header">
           <h2>Select {requiredCount} Imperium Row Cards</h2>
@@ -55,12 +66,16 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCo
             text={`Select ${requiredCount} Imperium Row Cards`}
             onSelectionChange={handleSelectionChange}
             hideTitle={true}
+            initialSelectedCards={initialSelectedCards}
+            cancelButtonText={onCancel ? 'Cancel' : undefined}
             embedded
           />
         </div>
       </div>
     </div>
   )
+
+  return portalNode(overlay)
 }
 
 export default ImperiumRowSelect

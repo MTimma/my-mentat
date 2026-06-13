@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
 import { ConflictCard } from '../../types/GameTypes';
 import { conflictCardImageSrc } from '../../data/boardMarkerAnchors';
+import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal';
 import './ConflictSelect.css';
 
 interface ConflictSelectProps {
   conflicts: ConflictCard[];
   currentRound: number;
   handleConflictSelect: (conflictId: number) => void;
+  /** Optional close without selecting (sandbox setup). */
+  onCancel?: () => void;
+  title?: string;
 }
 
-const ConflictSelect: React.FC<ConflictSelectProps> = ({ conflicts, currentRound, handleConflictSelect }) => {
+const ConflictSelect: React.FC<ConflictSelectProps> = ({ conflicts, currentRound, handleConflictSelect, onCancel, title }) => {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [failedCardImages, setFailedCardImages] = useState<Set<number>>(new Set());
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true);
 
-  return (
-    <div className="conflict-select-overlay">
+  if (waitForBoardTarget) return null;
+
+  const overlay = (
+    <div className={['conflict-select-overlay', scopedClass].filter(Boolean).join(' ')}>
       <div className="conflict-select-dialog">
-        <div className="conflict-select-header">
-          <h2>Select Conflict Card - Round {currentRound}</h2>
-        </div>
         <div className="conflict-cards-grid">
           {conflicts.map(card => {
             const cardImageSrc = conflictCardImageSrc(card.id);
@@ -49,6 +53,12 @@ const ConflictSelect: React.FC<ConflictSelectProps> = ({ conflicts, currentRound
           })}
         </div>
         <div className="conflict-select-actions">
+          <h2 className="conflict-select-title">{title ?? `Select Conflict Card - Round ${currentRound}`}</h2>
+          {onCancel && (
+            <button type="button" className="conflict-select-cancel" onClick={onCancel}>
+              Cancel
+            </button>
+          )}
           <button
             onClick={() => selectedId !== null && handleConflictSelect(selectedId)}
             disabled={selectedId === null}
@@ -59,6 +69,8 @@ const ConflictSelect: React.FC<ConflictSelectProps> = ({ conflicts, currentRound
       </div>
     </div>
   );
+
+  return portalNode(overlay);
 };
 
 export default ConflictSelect; 

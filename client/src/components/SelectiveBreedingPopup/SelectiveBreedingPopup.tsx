@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '../../types/GameTypes';
 import CardSearch from '../CardSearch/CardSearch';
+import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal';
 import './SelectiveBreedingPopup.css';
 
 interface SelectiveBreedingPopupProps {
@@ -16,8 +17,13 @@ const SelectiveBreedingPopup: React.FC<SelectiveBreedingPopupProps> = ({
   onSelect,
   onCancel,
 }) => {
-  return (
-    <div className="selective-breeding-dialog-overlay">
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(isOpen)
+
+  if (!isOpen) return null
+  if (waitForBoardTarget) return null
+
+  return portalNode(
+    <div className={['selective-breeding-dialog-overlay', scopedClass].filter(Boolean).join(' ')}>
       <div className="selective-breeding-dialog">
         <CardSearch
           isOpen={isOpen}
@@ -33,4 +39,4 @@ const SelectiveBreedingPopup: React.FC<SelectiveBreedingPopupProps> = ({
   );
 };
 
-export default SelectiveBreedingPopup; 
+export default SelectiveBreedingPopup;

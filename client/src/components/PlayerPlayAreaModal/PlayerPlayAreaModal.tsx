@@ -1,5 +1,7 @@
-import React from 'react'
+import React, { useLayoutEffect, useState, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { Card, Player } from '../../types/GameTypes'
+import { usePlayBoardModalContext } from '../../context/PlayBoardModalContext'
 import './PlayerPlayAreaModal.css'
 
 interface PlayerPlayAreaModalProps {
@@ -10,6 +12,8 @@ interface PlayerPlayAreaModalProps {
   pileLabel?: string
   /** Override cards shown (defaults to player play area). */
   cards?: Card[]
+  /** When set, overlay is scoped to this board container instead of the viewport. */
+  containerRef?: RefObject<HTMLElement | null>
 }
 
 const PlayerPlayAreaModal: React.FC<PlayerPlayAreaModalProps> = ({
@@ -18,14 +22,36 @@ const PlayerPlayAreaModal: React.FC<PlayerPlayAreaModalProps> = ({
   onClose,
   pileLabel = 'Play Area',
   cards: cardsOverride,
+  containerRef,
 }) => {
+  const { boardContainerRef, scopeModalsToBoard } = usePlayBoardModalContext()
+  const effectiveContainerRef =
+    containerRef ?? (scopeModalsToBoard ? boardContainerRef : undefined)
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
+
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setPortalTarget(null)
+      return
+    }
+    setPortalTarget(effectiveContainerRef?.current ?? null)
+  }, [effectiveContainerRef, isOpen])
+
   if (!isOpen || !player) return null
+  if (effectiveContainerRef && !portalTarget) return null
 
   const cards: Card[] = cardsOverride ?? player.playArea ?? []
+  const boardScoped = Boolean(portalTarget)
 
-  return (
+  const overlay = (
     <div
-      className="dialog-overlay player-play-area-overlay"
+      className={[
+        'dialog-overlay',
+        'player-play-area-overlay',
+        boardScoped ? 'player-play-area-overlay--board-scoped' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       onClick={(e) => { e.stopPropagation(); onClose() }}
       role="button"
       tabIndex={0}
@@ -69,6 +95,10 @@ const PlayerPlayAreaModal: React.FC<PlayerPlayAreaModalProps> = ({
       </div>
     </div>
   )
+
+  if (typeof document === 'undefined') return overlay
+  if (boardScoped && portalTarget) return createPortal(overlay, portalTarget)
+  return overlay
 }
 
 export default PlayerPlayAreaModal

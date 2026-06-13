@@ -1,18 +1,28 @@
 .conflict-select-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 12px;
-  /* Above turn-controls (1100) and history banner (1200); keep clear of fixed footer */
-  padding-bottom: calc(
-    12px + var(--footer-height, var(--footer-height-static, 84px)) + env(safe-area-inset-bottom, 0px) +
-      var(--vv-layout-gap-bottom, 0px)
-  );
   z-index: var(--z-modal-overlay);
   box-sizing: border-box;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Mobile: inset above the fixed play footer so the dialog centers in the visible band. */
+@media (max-width: 900px) {
+  .conflict-select-overlay {
+    bottom: calc(
+      var(--footer-height, var(--footer-height-static, 84px)) + var(--vv-layout-gap-bottom, 0px) +
+        env(safe-area-inset-bottom, 0px)
+    );
+  }
 }
 
 .conflict-select-dialog {
@@ -21,27 +31,14 @@
   padding: 16px;
   width: min(96vw, 720px);
   max-width: 720px;
-  max-height: 92dvh;
+  max-height: min(92dvh, 100%);
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
   overflow: hidden;
-}
-
-.conflict-select-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #333;
-}
-
-.conflict-select-header h2 {
-  margin: 0;
-  color: #fff;
-  font-size: 1.4rem;
 }
 
 .conflict-cards-grid {
@@ -110,12 +107,12 @@
 
   .conflict-select-dialog {
     width: 100%;
-    max-height: calc(100dvh - 16px);
+    max-height: min(calc(100dvh - 16px), 100%);
     padding: 14px;
   }
 
-  .conflict-select-header h2 {
-    font-size: 1.2rem;
+  .conflict-select-title {
+    font-size: 1rem;
   }
 
   .conflict-cards-grid {
@@ -130,27 +127,31 @@
 
 .conflict-select-actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid #333;
+  flex: 0 0 auto;
+}
+
+.conflict-select-title {
+  margin: 0;
+  min-width: 0;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .conflict-select-actions button {
+  flex: 0 0 auto;
   padding: 8px 16px;
   border-radius: 4px;
   border: none;
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
-}
-
-.conflict-select-actions button:first-child {
-  background-color: #3a3a3a;
-  color: #ccc;
-}
-
-.conflict-select-actions button:last-child {
   background-color: #ffd700;
   color: #000;
 }
@@ -162,4 +163,11 @@
 .conflict-select-actions button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-} 
+}
+
+.conflict-select-actions button.conflict-select-cancel {
+  margin-left: auto;
+  background-color: transparent;
+  color: #f0e6d4;
+  border: 1px solid #555;
+}

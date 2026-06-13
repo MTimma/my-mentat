@@ -181,4 +181,40 @@ describe('Shifting Allegiances optional effect', () => {
     expect(state.gains.some(g => g.type === RewardType.INFLUENCE && g.amount === -1)).toBe(true)
     expect(state.gains.some(g => g.type === RewardType.INFLUENCE && g.amount === 2)).toBe(true)
   })
+
+  it('grants fourth-influence milestone when gain crosses Emperor to 4', () => {
+    let state = stateWithOptionalEffect({
+      players: [makePlayer(0, { troops: 5 })],
+      factionInfluence: {
+        [FactionType.EMPEROR]: { 0: 2 },
+        [FactionType.SPACING_GUILD]: { 0: 0 },
+        [FactionType.BENE_GESSERIT]: { 0: 0 },
+        [FactionType.FREMEN]: { 0: 0 },
+      },
+    })
+    const effect = state.currTurn!.optionalEffects![0]
+    state = applyGameAction(state, { type: 'PAY_COST', playerId: 0, effect })
+
+    const loseChoice = state.currTurn!.pendingChoices![0] as FixedOptionsChoice
+    state = applyGameAction(state, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: loseChoice.id,
+      reward: { influence: { amounts: [{ faction: FactionType.SPACING_GUILD, amount: 1 }] } },
+      source: loseChoice.source,
+    })
+
+    const gainChoice = state.currTurn!.pendingChoices![0] as FixedOptionsChoice
+    state = applyGameAction(state, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: gainChoice.id,
+      reward: { influence: { amounts: [{ faction: FactionType.EMPEROR, amount: 2 }] } },
+      source: gainChoice.source,
+    })
+
+    expect(state.factionInfluence[FactionType.EMPEROR]?.[0]).toBe(4)
+    expect(state.players[0].troops).toBe(7)
+    expect(state.gains.some(g => g.type === RewardType.TROOPS && g.amount === 2)).toBe(true)
+  })
 })

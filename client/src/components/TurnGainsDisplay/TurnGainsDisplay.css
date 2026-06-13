@@ -3,26 +3,10 @@
   width: 100%;
 }
 
-.turn-gains-display-root--with-totals,
-.turn-gains-display-root--with-combat {
+.turn-gains-display-root--with-totals {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.turn-gains-combat-section {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 12px;
-  width: 100%;
-  padding: 5px 0 2px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.turn-gains-combat-section .turn-gain-combat-group {
-  flex: 0 1 auto;
 }
 
 .turn-gain-totals-group {
@@ -33,7 +17,7 @@
 }
 
 .turn-gain-source-title--totals {
-  color: rgba(244, 228, 188, 0.72);
+  color: var(--chrome-text-muted);
 }
 
 .turn-gain-totals-row {
@@ -77,11 +61,25 @@
 }
 
 .turn-gain-total-amt--gain {
-  color: rgba(200, 230, 201, 0.95);
+  color: var(--chrome-success);
 }
 
 .turn-gain-total-amt--cost {
-  color: rgba(239, 154, 154, 0.95);
+  color: var(--chrome-danger-text);
+}
+
+.turn-gain-total-persuasion {
+  width: 16px;
+  height: 16px;
+}
+
+.turn-gain-total-persuasion .gain-persuasion-diamond {
+  width: 13px;
+  height: 13px;
+}
+
+.turn-gain-total-persuasion .gain-persuasion-count {
+  font-size: 0.58rem;
 }
 
 .turn-gain-total-cards {
@@ -118,7 +116,7 @@
 .turn-gain-card-thumb-fallback-text {
   font-size: 0.62rem;
   font-weight: 600;
-  color: rgba(244, 228, 188, 0.75);
+  color: var(--chrome-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -322,11 +320,11 @@
 }
 
 .turn-gain-resource-token--cost .turn-gain-resource-amt {
-  color: rgba(239, 154, 154, 0.95);
+  color: var(--chrome-danger-text);
 }
 
 .turn-gain-resource-token--reward .turn-gain-resource-amt {
-  color: rgba(200, 230, 201, 0.95);
+  color: var(--chrome-success);
 }
 
 .turn-gains-display .gain-multiplier {
@@ -355,9 +353,11 @@
 .turn-gains-display .gain-persuasion-diamond {
   width: 10px;
   height: 10px;
-  background: #64b5f6;
+  border: 1px solid var(--chrome-persuasion-border);
+  background: var(--chrome-persuasion-fill);
   transform: rotate(45deg);
   border-radius: 1px;
+  box-shadow: 0 0 4px var(--chrome-persuasion-glow);
 }
 
 .turn-gains-display .gain-persuasion-count {

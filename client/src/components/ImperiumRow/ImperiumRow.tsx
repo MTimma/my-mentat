@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Card } from '../../types/GameTypes'
 import { getLeaderIconPath, LEADER_NAMES } from '../../data/leaders'
+import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import './ImperiumRow.css'
 
 interface HelenaRemovedCard {
@@ -20,6 +21,11 @@ interface ImperiumRowProps {
   onAcquireCard: (cardId: number) => void
   helenaRemovedCard?: HelenaRemovedCard | null
   activePlayerId?: number
+  /** Sandbox setup: row slots become click targets to pick all five cards. */
+  sandboxSetup?: {
+    onConfigure: () => void
+    requiredCount: number
+  }
 }
 
 type PreviewSelection =
@@ -28,7 +34,19 @@ type PreviewSelection =
   | { kind: 'arrakis-liaison' }
   | { kind: 'spice-must-flow' }
 
-const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion, alCount, smfCount, onAcquireArrakisLiaison, onAcquireSpiceMustFlow, onAcquireCard, helenaRemovedCard, activePlayerId }) => {
+const ImperiumRow: React.FC<ImperiumRowProps> = ({
+  cards,
+  canAcquire,
+  persuasion,
+  alCount,
+  smfCount,
+  onAcquireArrakisLiaison,
+  onAcquireSpiceMustFlow,
+  onAcquireCard,
+  helenaRemovedCard,
+  activePlayerId,
+  sandboxSetup,
+}) => {
   const [previewSelection, setPreviewSelection] = useState<PreviewSelection | null>(null)
   const helenaSlotData = helenaRemovedCard?.card ? helenaRemovedCard : null
   const helenaCanAcquire = Boolean(
@@ -79,6 +97,8 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
               }
             : null
 
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(Boolean(preview))
+
   const handlePreviewKeyDown = (event: React.KeyboardEvent, selection: PreviewSelection) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
@@ -92,11 +112,51 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
     setPreviewSelection(null)
   }
 
+  const sandboxRequiredCount = sandboxSetup?.requiredCount ?? 5
+  const sandboxEmptySlots = sandboxSetup
+    ? Math.max(0, sandboxRequiredCount - cards.length)
+    : 0
+  const sandboxRowLabel =
+    cards.length === sandboxRequiredCount
+      ? 'Change imperium row'
+      : `Set imperium row (${cards.length}/${sandboxRequiredCount})`
+
   return (
-    <div className={`imperium-section ${canAcquire ? 'imperium-section--acquire-mode' : ''}`}>
+    <div
+      className={[
+        'imperium-section',
+        canAcquire ? 'imperium-section--acquire-mode' : '',
+        sandboxSetup ? 'imperium-section--sandbox-setup' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className="imperium-row-layout imperium-row-layout--single">
         <div className="imperium-row-strip no-buttons" aria-label="Imperium row">
-          {helenaSlotData && (
+          {sandboxSetup ? (
+            <button
+              type="button"
+              className="imperium-row-sandbox-area"
+              onClick={sandboxSetup.onConfigure}
+              title={sandboxRowLabel}
+              aria-label={sandboxRowLabel}
+            >
+              <div className="imperium-row-sandbox-slots" aria-hidden="true">
+                {cards.map(card => (
+                  <div key={card.id} className="imperium-card imperium-card--sandbox-slot imperium-card--sandbox-display">
+                    <img src={card.image} alt="" className="card-image-ir" />
+                  </div>
+                ))}
+                {Array.from({ length: sandboxEmptySlots }, (_, index) => (
+                  <div
+                    key={`sandbox-empty-${index}`}
+                    className="imperium-card imperium-card--sandbox-slot imperium-card--sandbox-empty imperium-card--sandbox-display"
+                  />
+                ))}
+              </div>
+            </button>
+          ) : null}
+          {helenaSlotData && !sandboxSetup && (
             <div
               className={`imperium-card helena-card no-button ${canAcquireHelenaCard ? 'can-acquire' : ''}`}
               onClick={() => setPreviewSelection({ kind: 'helena' })}
@@ -126,57 +186,61 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
               </div>
             </div>
           )}
-          {cards.map((card) => (
-            <div
-              key={card.id}
-              className={`imperium-card no-button ${canAcquireRowCard(card) ? 'can-acquire' : ''}`}
-              onClick={() => setPreviewSelection({ kind: 'row', cardId: card.id })}
-              onKeyDown={(event) => handlePreviewKeyDown(event, { kind: 'row', cardId: card.id })}
-              role="button"
-              tabIndex={0}
-              title="View card"
-            >
-              <img
-                src={card.image}
-                alt={card.name}
-                className="card-image-ir"
-              />
-            </div>
-          ))}
-          <div className="imperium-row-divider" role="separator" aria-orientation="vertical" />
-          <div
-            className={`imperium-card fixed-card no-button ${canAcquireArrakisLiaison ? 'can-acquire' : ''}`}
-            onClick={() => setPreviewSelection({ kind: 'arrakis-liaison' })}
-            onKeyDown={(event) => handlePreviewKeyDown(event, { kind: 'arrakis-liaison' })}
-            role="button"
-            tabIndex={0}
-            title="View Arrakis Liaison"
-          >
-            <img
-              src={'imperium_row/arrakis_liaison.avif'}
-              alt={'Arrakis Liaison'}
-              className="card-image-ir"
-            />
-          </div>
-          <div
-            className={`imperium-card fixed-card no-button ${canAcquireSpiceMustFlow ? 'can-acquire' : ''}`}
-            onClick={() => setPreviewSelection({ kind: 'spice-must-flow' })}
-            onKeyDown={(event) => handlePreviewKeyDown(event, { kind: 'spice-must-flow' })}
-            role="button"
-            tabIndex={0}
-            title="View The Spice Must Flow"
-          >
-            <img
-              src={'imperium_row/spice_must_flow.avif'}
-              alt={'The Spice Must Flow'}
-              className="card-image-ir"
-            />
-          </div>
+          {!sandboxSetup &&
+            cards.map(card => (
+              <div
+                key={card.id}
+                className={`imperium-card no-button ${canAcquireRowCard(card) ? 'can-acquire' : ''}`}
+                onClick={() => setPreviewSelection({ kind: 'row', cardId: card.id })}
+                onKeyDown={(event) => handlePreviewKeyDown(event, { kind: 'row', cardId: card.id })}
+                role="button"
+                tabIndex={0}
+                title="View card"
+              >
+                <img src={card.image} alt={card.name} className="card-image-ir" />
+              </div>
+            ))}
+          {!sandboxSetup && (
+            <>
+              <div className="imperium-row-divider" role="separator" aria-orientation="vertical" />
+              <div
+                className={`imperium-card fixed-card no-button ${canAcquireArrakisLiaison ? 'can-acquire' : ''}`}
+                onClick={() => setPreviewSelection({ kind: 'arrakis-liaison' })}
+                onKeyDown={(event) => handlePreviewKeyDown(event, { kind: 'arrakis-liaison' })}
+                role="button"
+                tabIndex={0}
+                title="View Arrakis Liaison"
+              >
+                <img
+                  src={'imperium_row/arrakis_liaison.avif'}
+                  alt={'Arrakis Liaison'}
+                  className="card-image-ir"
+                />
+              </div>
+              <div
+                className={`imperium-card fixed-card no-button ${canAcquireSpiceMustFlow ? 'can-acquire' : ''}`}
+                onClick={() => setPreviewSelection({ kind: 'spice-must-flow' })}
+                onKeyDown={(event) => handlePreviewKeyDown(event, { kind: 'spice-must-flow' })}
+                role="button"
+                tabIndex={0}
+                title="View The Spice Must Flow"
+              >
+                <img
+                  src={'imperium_row/spice_must_flow.avif'}
+                  alt={'The Spice Must Flow'}
+                  className="card-image-ir"
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {preview && (
-        <div className="imperium-preview-overlay" onClick={() => setPreviewSelection(null)}>
+      {preview && !waitForBoardTarget && portalNode(
+        <div
+          className={['imperium-preview-overlay', scopedClass].filter(Boolean).join(' ')}
+          onClick={() => setPreviewSelection(null)}
+        >
           <div
             className="imperium-preview-modal"
             role="dialog"
@@ -192,16 +256,6 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({ cards, canAcquire, persuasion
             />
             {preview.note && <div className="imperium-preview-note">{preview.note}</div>}
             <div className="imperium-preview-actions">
-              {canAcquire && (
-                <div
-                  className="imperium-preview-persuasion"
-                  title={`${persuasion} persuasion available`}
-                  aria-label={`${persuasion} persuasion available`}
-                >
-                  <span className="imperium-preview-persuasion-diamond" aria-hidden="true" />
-                  <span className="imperium-preview-persuasion-value">{persuasion}</span>
-                </div>
-              )}
               <button
                 type="button"
                 className="imperium-preview-acquire-button"

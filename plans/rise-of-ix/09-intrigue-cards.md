@@ -4,6 +4,36 @@
 > Mirrors the structure of [`08-imperium-row-cards.md`](./08-imperium-row-cards.md)
 > for the 17 new RoI intrigue cards.
 
+> ✦ 2026-06-10 — adjustments since this plan was written:
+>
+> 1. **Base intrigue count confirmed at 32** (`intrigueCards` in
+>    `IntrigueDeckService.ts`) — AC1/AC2 math (32 + 17 = 49) holds.
+>    `ALL_INTRIGUE_CARDS(expansions)` does not exist yet (Task 01 R6);
+>    when adding it, also update `getFreshDefaultGameState`'s
+>    `intrigueDeck`, the `IntrigueDeckService` constructor, and
+>    `__tests__/_helpers.ts` (`getBaseTestState`).
+> 2. **Reference implementations now in code** (copy these patterns):
+>    - phase-gated hybrid intrigues: Tiebreaker / Master Tactician
+>      (`phase: GamePhase.COMBAT` + `END_GAME`);
+>    - win-conditional combat reward (Strategic Push):
+>      `CustomEffect.TO_THE_VICTOR` + `pendingVictorSpiceThisCombat`
+>      on `GameState`;
+>    - garrison deploy intrigue (Second Wave): `MOBILIZE_GARRISON` /
+>      `CustomEffect.RAPID_MOBILIZATION` (implemented and tested);
+>    - endgame VP evaluators: `CORNER_THE_MARKET`, `PLANS_WITHIN_PLANS`.
+> 3. **Action names**: deploy undo is `UNDEPLOY_TROOP`; new dreadnought
+>    actions are `DEPLOY_DREADNOUGHT` / `UNDEPLOY_DREADNOUGHT` (Task 04).
+>    Cannon Turrets auto-retreat should follow the existing
+>    `RETREAT_TROOP` effect-retreat pattern.
+> 4. **Grand Conspiracy** condition 1 depends on the
+>    `Player.dreadnoughts.control` shape from Task 02
+>    (`Array<{ space; placedRound }>`) — `control.length` still works.
+> 5. **§5.1 field name**: use `troopsDeployedToConflict` (+ a new
+>    dreadnought counter), not `troopsDeployedThisTurn`.
+> 6. **Handlers "outside the base reducer"** (§4 table) — new pattern;
+>    align with Task 06's `riseOfIxReducer.ts` module so there is one
+>    RoI reducer file, not several.
+
 ---
 
 ## 1. Goal
@@ -80,9 +110,11 @@ For each card we determine:
 
 Diversion sets a per-turn flag `state.currTurn.diversionActive = true`.
 Inside `DEPLOY_TROOP` / `DEPLOY_DREADNOUGHT`, if the cumulative
-`troopsDeployedThisTurn + dreadnoughtsDeployedThisTurn >= 4` and
-`diversionActive`, the reducer fires `+1 freighter` once and clears
-the flag.
+`troopsDeployedToConflict + dreadnoughtsDeployedToConflict >= 4`
+(✦ actual/new field names) and `diversionActive`, the reducer fires
+`+1 freighter` once and clears the flag. The revert path
+(`UNDEPLOY_TROOP` / `UNDEPLOY_DREADNOUGHT` dropping below 4) must
+unwind the freighter gain — see inline note below.
 /* defers to onDeploy hook */ } /* handle case where intrigue is played, but troops are reduced with ui (intrigue goes back into deck and freighter is reverted, as welll as rewards gained from that freighter are reverted, if chose to go down, need to somehow link , because we can play this one, then expedite, then reduce troop count)*/
 
 ### 5.2 `Strongarm`

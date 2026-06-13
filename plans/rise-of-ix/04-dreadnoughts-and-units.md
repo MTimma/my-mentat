@@ -2,8 +2,35 @@
 
 > Depends on Tasks 01, 02 and 03 (board overlay icon).
 > This is a **reducer task**: it adds the dreadnought lifecycle into
-> `GameContext.tsx` plus a handful of UI controls in `TurnControls` and
-> `ImageBoard`.
+> `GameContext.tsx` plus a handful of UI controls in the combat-area
+> deploy strip and `ImageBoard`.
+
+> ✦ 2026-06-10 — codebase drift since this plan was written:
+>
+> 1. **Deploy UI moved.** Troop deploy controls no longer live in
+>    `TurnControls`; they are wired `App.tsx` → `ImageBoard` →
+>    `CombatAreaCluster` (deploy strip) → `CombatTroopControls`.
+>    Dreadnought deploy must extend that chain (`troopDeploy` prop
+>    pattern), not `TurnControls`.
+> 2. **Action naming.** The troop deploy-undo action is
+>    `UNDEPLOY_TROOP`. `RETREAT_TROOP` exists but is the *effect*
+>    retreat (card-driven), not the deploy undo. Name the new actions
+>    `DEPLOY_DREADNOUGHT` / `UNDEPLOY_DREADNOUGHT`.
+> 3. **Combat-space detection.** `currTurn.agentSpace` is an
+>    `AgentIcon`, not a space. Use `currTurn.agentSpaceId` +
+>    `BOARD_SPACES.find(s => s.id === agentSpaceId)?.conflictMarker`.
+> 4. **Troops-only gates to relax.** The refactored reducer has several
+>    troops-only checks that must also count `dreadnoughts.conflict`
+>    (when RoI is on): `getAutoCombatPassPlayerIds`, the END_TURN
+>    combat-skip filter (`playersWithTroops`), the combat-intrigue
+>    sword gate (`troopsInConflict > 0` in `applyRewardToPlayer`), and
+>    the REVEAL-turn strength block (`hasTroopsInCombat`).
+> 5. **Partially done.** `Player.dreadnoughts` (supply/garrison/conflict)
+>    exists; `utils/dreadnoughts.ts` has `getDreadnoughtsInConflict`;
+>    `CombatAreaCluster` already renders the conflict count.
+>    `CombatPlayerStat.tsx` is orphaned — ignore it (or delete it),
+>    don't extend it.
+> 6. **Icon** is `/icon/dreadnought.svg` (no `.png`).
 
 ---
 
@@ -94,15 +121,18 @@ strength calculation:
      When non-null, the `controlBonus` lookup goes to the dreadnought
      owner; when the dreadnought returns to garrison, the bonus goes
      back to the original `controlMarkers[space]` owner.
-6. **R6 — Deploy step UI.** Existing deploy step (`canDeployTroops`)
-   in `TurnControls` is reused: it currently lets the player choose to
-   commit troops to the Conflict. Extend it to also let them commit
-   dreadnoughts from garrison when the active Agent space is a
-   Combat space and they already have ≥ 1 dreadnought commissioned.
+6. **R6 — Deploy step UI.** ✦ The deploy step lives in the
+   **combat-area deploy strip** (`CombatAreaCluster` →
+   `CombatTroopControls`, props wired from `App.tsx` through
+   `ImageBoard`), not in `TurnControls`. Extend that strip to also let
+   the player commit dreadnoughts from garrison when the active Agent
+   space is a Combat space and they have ≥ 1 dreadnought commissioned.
    - Add `currTurn.deployableDreadnoughts: number` mirror to the existing
      `troopLimit` / `deployTroops` mechanism (cap is the standard
      "any from this turn + up to 2 from garrison" rule, but applied to
      **units** as a whole).
+   - Extend `CombatTroopDeployProps` (in `CombatAreaCluster.tsx`) with a
+     parallel dreadnought block, or add a sibling prop.
 7. **R7 — Recall (`Recall` phase end-of-round).** Dreadnoughts in
    `garrison` and `control` are NOT recalled. Only troops in `conflict`
    move per existing rules.
@@ -120,13 +150,14 @@ strength calculation:
 
 | File | Change |
 |---|---|
-| `client/src/components/GameContext/GameContext.tsx` | All reducer changes: commission action, deploy dreadnoughts, RESOLVE_COMBAT updates, control-cover bookkeeping, computeStrength helper. |
-| `client/src/utils/units.ts` | `unitsInConflictForPlayer(state, playerId)` (already from Task 02), `dreadnoughtStrengthEach(player)`. |
-| `client/src/utils/combatStrength.ts` (new) | Pure helper `computeStrength(state, playerId)`. Imported by reducer and used by tests. |
+| `client/src/components/GameContext/GameContext.tsx` | All reducer changes: commission action, deploy dreadnoughts, RESOLVE_COMBAT updates, control-cover bookkeeping, computeStrength helper. ✦ Also relax the troops-only gates: `getAutoCombatPassPlayerIds`, END_TURN combat-skip (`playersWithTroops`), combat-intrigue sword gate in `applyRewardToPlayer`, REVEAL strength block (`hasTroopsInCombat`). |
+| `client/src/utils/dreadnoughts.ts` (✦ was `units.ts`) | `unitsInConflictForPlayer(state, playerId)` (from Task 02), `dreadnoughtStrengthEach(player)`. |
+| `client/src/utils/combatStrength.ts` (new) | Pure helper `computeStrength(state, playerId)` — extracted from the currently inlined reducer strength logic. Imported by reducer and used by tests. |
 | `client/src/data/leaderAbilities/rhomburDreadnoughtStrength.ts` (new) | `dreadnoughtStrengthEach(leader: Leader): 3 \| 4` for the Rhombur override. |
 | `client/src/types/GameTypes.ts` | Update `GameState.controlMarkers` semantics (unchanged shape) and add `dreadnoughtCover: Record<ControlMarkerType, number \| null>`. Also `Player.dreadnoughts.control: Array<{ space: ControlMarkerType; placedRound: number }>`. |
-| `client/src/components/ImageBoard/ImageBoard.tsx` | Show dreadnought figure on covered control spaces; show conflict-row dreadnought count. |
-| `client/src/components/TurnControls/TurnControls.tsx` | Deploy panel: add Dreadnought ± buttons gated by deployableDreadnoughts. |
+| `client/src/components/ImageBoard/ImageBoard.tsx` | Show dreadnought figure on covered control spaces (control-marker section, `CONTROL_MARKER_POINTS`); pass dreadnought deploy props through to `CombatAreaCluster`. |
+| `client/src/components/ImageBoard/CombatAreaCluster.tsx` + `client/src/components/CombatTroopControls/CombatTroopControls.tsx` (✦ replaces the old `TurnControls` row) | Deploy strip: add Dreadnought ± controls gated by `deployableDreadnoughts`. |
+| `client/src/App.tsx` | ✦ Wire dreadnought deploy props alongside the existing `troopDeploy` wiring. |
 | `client/src/components/PlayerOverviewModal/PlayerOverviewModal.tsx` | Show dreadnought zones per player. |
 
 ---
@@ -141,7 +172,9 @@ this into pending choices when there is ambiguity:
 ```ts
 // Inside reward resolution
 if (reward.dreadnoughts && reward.dreadnoughts > 0) {
-  const canSend = state.currTurn?.agentSpace && spaceIsCombat(state.currTurn.agentSpace)
+  // ✦ agentSpace is an AgentIcon — detect combat spaces via agentSpaceId:
+  const space = BOARD_SPACES.find(s => s.id === state.currTurn?.agentSpaceId)
+  const canSend = Boolean(space?.conflictMarker)
   if (canSend) {
     // OR choice per dreadnought
     pendingChoices.push({
@@ -226,14 +259,16 @@ state.dreadnoughtCover[space] = null
 
 ### 4.4 Deploy step UI
 
-In `TurnControls`, the deploy panel currently shows
-`+ / - Troop` buttons. Add a parallel `+ / - Dreadnought` row visible
-only when `currTurn.deployableDreadnoughts > 0`:
+> ✦ 2026-06-10: the deploy strip lives in `CombatAreaCluster` /
+> `CombatTroopControls` (wired from `App.tsx` via `ImageBoard`), not
+> in `TurnControls`. Extend `CombatTroopControls` (or add a sibling
+> control next to it in the strip) with a `+ / - Dreadnought` row
+> visible only when `currTurn.deployableDreadnoughts > 0`:
 
 ```tsx
 {currTurn.deployableDreadnoughts > 0 && (
   <div className="deploy-row">
-    <img src="/icon/dreadnought.png" alt="" />
+    <img src="/icon/dreadnought.svg" alt="" />
     <span>{deployedDreadnoughts}</span>
     <button onClick={() => onAddDreadnought(playerId)}>+</button>
     <button onClick={() => onRemoveDreadnought(playerId)}>-</button>
@@ -241,8 +276,10 @@ only when `currTurn.deployableDreadnoughts > 0`:
 )}
 ```
 
-Backed by two new actions: `DEPLOY_DREADNOUGHT`, `RETREAT_DREADNOUGHT`.
-They mirror `DEPLOY_TROOP` / `RETREAT_TROOP`.
+Backed by two new actions: `DEPLOY_DREADNOUGHT`, `UNDEPLOY_DREADNOUGHT`
+(✦ renamed from `RETREAT_DREADNOUGHT`). They mirror
+`DEPLOY_TROOP` / `UNDEPLOY_TROOP` — note `RETREAT_TROOP` is the
+*effect*-driven retreat and is **not** the deploy undo.
 
 ### 4.5 Combat resolution choice for control space
 

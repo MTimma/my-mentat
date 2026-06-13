@@ -12,10 +12,10 @@
   padding: var(--ir-section-pad);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--color-arrakis-earth-dark, #5d3412) 68%, #050403 32%),
-    color-mix(in srgb, var(--color-footer-bg, #1a1612) 82%, #000 18%)
+    var(--chrome-imperium-top) 0%,
+    var(--chrome-imperium-bottom) 100%
   );
-  border: 1px solid rgba(212, 177, 106, 0.22);
+  border: 1px solid var(--chrome-border-accent);
   border-radius: 10px;
   margin-bottom: 2px;
   width: 100%;
@@ -28,7 +28,97 @@
 }
 
 .imperium-section--acquire-mode {
-  border-color: rgba(95, 170, 220, 0.28);
+  border-color: var(--chrome-accent-ring);
+}
+
+.imperium-section--sandbox-setup {
+  border-color: rgba(255, 215, 0, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(255, 215, 0, 0.12),
+    0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.imperium-section--sandbox-setup .imperium-row-strip {
+  justify-content: center;
+}
+
+.imperium-section--sandbox-setup .imperium-row-sandbox-area {
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: calc(100% - 8px);
+  margin-inline: auto;
+}
+
+.imperium-section--sandbox-setup .imperium-row-sandbox-slots {
+  flex: 0 0 auto;
+  width: auto;
+  justify-content: center;
+}
+
+.imperium-section--sandbox-setup .imperium-row-sandbox-slots .imperium-card {
+  flex: 0 0 auto;
+}
+
+.imperium-row-sandbox-area {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: stretch;
+  gap: var(--ir-gap);
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 2px dashed rgba(255, 215, 0, 0.55);
+  border-radius: 8px;
+  background: rgba(20, 18, 14, 0.78);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.imperium-row-sandbox-area:hover,
+.imperium-row-sandbox-area:focus-visible {
+  border-color: #ffd700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.35);
+  outline: none;
+}
+
+.imperium-row-sandbox-slots {
+  display: flex;
+  flex: 1 1 0;
+  align-items: stretch;
+  gap: var(--ir-gap);
+  min-width: 0;
+  pointer-events: none;
+}
+
+.imperium-row-sandbox-slots .imperium-card {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+}
+
+.imperium-card--sandbox-slot {
+  border: 2px dashed rgba(255, 215, 0, 0.55);
+  background: rgba(20, 18, 14, 0.78);
+  padding: var(--ir-card-pad);
+  font: inherit;
+}
+
+.imperium-card--sandbox-display {
+  cursor: inherit;
+  pointer-events: none;
+}
+
+.imperium-card--sandbox-display:hover,
+.imperium-card--sandbox-display:focus {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(255, 215, 0, 0.55);
+}
+
+.imperium-card--sandbox-empty {
+  min-height: clamp(52px, 12vw, 84px);
 }
 
 .imperium-row-layout {
@@ -74,13 +164,13 @@
   border-radius: 999px;
   background: linear-gradient(
     180deg,
-    rgba(255, 215, 0, 0.06) 0%,
-    rgba(212, 177, 106, 0.52) 20%,
-    rgba(212, 177, 106, 0.86) 50%,
-    rgba(212, 177, 106, 0.52) 80%,
-    rgba(255, 215, 0, 0.06) 100%
+    color-mix(in srgb, var(--chrome-accent) 6%, transparent) 0%,
+    color-mix(in srgb, var(--chrome-accent) 52%, transparent) 20%,
+    color-mix(in srgb, var(--chrome-accent) 86%, transparent) 50%,
+    color-mix(in srgb, var(--chrome-accent) 52%, transparent) 80%,
+    color-mix(in srgb, var(--chrome-accent) 6%, transparent) 100%
   );
-  box-shadow: 0 0 8px rgba(212, 177, 106, 0.22);
+  box-shadow: 0 0 8px var(--chrome-accent-glow);
 }
 
 .imperium-row-strip .imperium-card {
@@ -95,7 +185,7 @@
 }
 
 .imperium-card {
-  border: 1px solid rgba(88, 54, 28, 0.72);
+  border: 1px solid var(--chrome-imperium-card-border);
   border-radius: 8px;
   background-color: var(--card-art-backing, #0f0d0a);
   padding: var(--ir-card-pad);
@@ -116,29 +206,29 @@
 
 .imperium-card:hover,
 .imperium-card:focus {
-  border-color: rgba(160, 104, 58, 0.72);
+  border-color: var(--chrome-imperium-card-hover);
   box-shadow:
-    0 0 0 2px rgba(160, 104, 58, 0.18),
+    0 0 0 2px var(--chrome-accent-muted),
     0 4px 12px rgba(0, 0, 0, 0.38);
   outline: none;
   transform: translateY(-1px);
 }
 
 .imperium-card.can-acquire {
-  border-color: #5faadc;
+  border-color: var(--chrome-acquire-border);
   background-color: var(--card-art-backing, #0f0d0a);
   box-shadow:
-    0 0 0 1px rgba(95, 170, 220, 0.48),
-    0 0 14px rgba(95, 170, 220, 0.42),
+    0 0 0 1px var(--chrome-accent-ring),
+    0 0 14px var(--chrome-acquire-glow),
     0 3px 10px rgba(0, 0, 0, 0.42);
 }
 
 .imperium-card.can-acquire:hover,
 .imperium-card.can-acquire:focus {
-  border-color: #9bd3ff;
+  border-color: var(--chrome-acquire-hover-border);
   box-shadow:
-    0 0 0 2px rgba(155, 211, 255, 0.58),
-    0 0 18px rgba(95, 170, 220, 0.5),
+    0 0 0 2px var(--chrome-accent-ring),
+    0 0 18px var(--chrome-acquire-hover-glow),
     0 5px 14px rgba(0, 0, 0, 0.48);
 }
 
@@ -270,6 +360,41 @@
     width: 2px;
     margin: 1px 1px;
   }
+
+  /* Sandbox setup: compact portrait slots (~play/reveal button scale on mobile). */
+  .imperium-section--sandbox-setup .imperium-row-strip {
+    align-items: center;
+  }
+
+  .imperium-section--sandbox-setup .imperium-row-sandbox-area {
+    align-items: center;
+    padding: 4px 5px;
+  }
+
+  .imperium-section--sandbox-setup .imperium-row-sandbox-slots .imperium-card {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 45px;
+    height: 59px;
+    min-height: 59px;
+    max-height: 59px;
+    aspect-ratio: var(--ir-card-aspect);
+    align-self: center;
+  }
+
+  .imperium-section--sandbox-setup .imperium-card--sandbox-empty {
+    min-height: 59px;
+    max-height: 59px;
+  }
+
+  .imperium-section--sandbox-setup .imperium-row-sandbox-slots .card-image-ir {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    flex: 1 1 auto;
+    min-height: 0;
+    object-fit: contain;
+  }
 }
 
 @media (max-width: 400px) {
@@ -280,6 +405,14 @@
 
   .imperium-card {
     max-height: clamp(60px, 24vw, 92px);
+  }
+
+  .imperium-section--sandbox-setup .imperium-row-sandbox-slots .imperium-card,
+  .imperium-section--sandbox-setup .imperium-card--sandbox-empty {
+    max-width: 42px;
+    height: 55px;
+    min-height: 55px;
+    max-height: 55px;
   }
 }
 
@@ -361,5 +494,14 @@
     margin: 2px 4px;
     width: 3px;
     align-self: center;
+  }
+
+  .imperium-section--sandbox-setup .imperium-row-sandbox-slots .imperium-card,
+  .imperium-section--sandbox-setup .imperium-card--sandbox-empty {
+    width: auto;
+    height: var(--ir-card-height);
+    min-height: var(--ir-card-height);
+    max-height: var(--ir-card-height);
+    aspect-ratio: var(--ir-card-aspect);
   }
 }

@@ -50,8 +50,14 @@ Add a top-level boolean toggle **`riseOfIx`** that:
    are appended to `intrigueCards` for both
    `IntrigueDeckService` and `getFreshDefaultGameState`’s `intrigueDeck`.
 7. **R7 — Conflict deck.** When `riseOfIx === true`, the 4 RoI
-   conflict cards are appended to `CONFLICTS` and the per-tier filter
-   used at `ConflictSelect` reflects the new mix (1 × I / 5 × II / 4 × III).
+   conflict cards are appended to `CONFLICTS` and the per-round tier
+   filter reflects the new pool.
+   > ✦ 2026-06-10: the tier filter lives in **`App.tsx`** (~line 1129:
+   > round 1 → tier I, rounds 2–6 → tier II, 7+ → tier III), **not** in
+   > `ConflictSelect.tsx` — that component is now a portal-aware dumb
+   > renderer of the `conflicts` prop. Swap the pool source in `App.tsx`
+   > (`CONFLICTS` → `getConflictPool(expansions)`). Note also that the
+   > base tier mix is **4 / 10 / 4** (not 4 / 8 / 4).
    See [`10-conflict-cards.md`](./10-conflict-cards.md).
 8. **R8 — Board image / overlay.** `ImageBoard` shows
    `/board/riseofix/riseofix4.png` over Sell Melange + Secure Contract
@@ -125,23 +131,29 @@ expansions: Expansions
 
 ### 4.2 Setup UI (GameSetup.tsx)
 
-- Add a new section between "Number of Players" and the players list:
+> ✦ 2026-06-10: `GameSetup.tsx` was restructured. There is no
+> `setup-section` class; the layout is `setup-meta-row` (Game Name +
+> Players selects) followed by `players-setup` (per-player rows).
+> Place the toggle as a third `setup-field` inside `setup-meta-row`
+> (or a slim row right below it):
 
   ```tsx
-  <div className="setup-section">
-    <label className="riseofix-toggle">
-      <input
-        type="checkbox"
-        checked={expansions.riseOfIx}
-        onChange={(e) => setExpansions(prev => ({ ...prev, riseOfIx: e.target.checked }))}
-      />
-      Enable Rise of Ix
-    </label>
-  </div>
+  <label className="setup-field setup-field--compact riseofix-toggle">
+    <span className="setup-field-label">Rise of Ix</span>
+    <input
+      type="checkbox"
+      checked={expansions.riseOfIx}
+      onChange={(e) => setExpansions(prev => ({ ...prev, riseOfIx: e.target.checked }))}
+    />
+  </label>
   ```
 
-- Pass `expansions` to `onComplete` (extend its signature, or add a
+- Pass `expansions` to `onComplete` (current signature is
+  `onComplete(playerSetups: PlayerSetup[])` — extend it, or add a
   parallel callback). `App.tsx` then forwards it.
+- Note: `getAvailableLeaders` in `GameSetup.tsx` filters the static
+  `LEADERS` import — this is the call site to switch to
+  `getLeaderPool(expansions)` (R4).
 
 ### 4.3 Persistence (App.tsx)
 
@@ -213,7 +225,8 @@ drop `expansions` (it shouldn’t, but lock it in).
    re-entering setup keeps it ON.
 3. **AC3** — Starting a game with the toggle OFF produces:
    - An Imperium Row deck whose card names are a strict subset of the
-     base 64-card pool.
+     base **67-card** pool (✦ corrected — see `baseGameManifest.test.ts`;
+     the original plan said 64).
    - An Intrigue deck of exactly 32 cards.
    - A Conflict deck whose card names are a strict subset of the base 18.
    - A leaders dropdown showing exactly the 8 base leaders.
@@ -255,7 +268,7 @@ drop `expansions` (it shouldn’t, but lock it in).
 
 - [ ] `getConflictPool({ riseOfIx: false }).length === 18`
 - [ ] `getConflictPool({ riseOfIx: true }).length === 22`
-- [ ] `tier counts match the rulebook (1 / 5 / 4 + base 4 / 8 / 4)`
+- [ ] `tier counts match the data (base 4 / 10 / 4 + RoI additions — see 10-conflict-cards.md §4 for the resolved RoI tier split)`
 
 **Path:** `client/src/data/__tests__/leaderPool.test.ts` (new)
 

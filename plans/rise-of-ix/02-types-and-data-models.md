@@ -4,6 +4,21 @@
 > Strictly type-level / declarative — no reducer logic in this task.
 > Subsequent tasks (03–10) reference the symbols added here.
 
+> ✦ 2026-06-10 — partial groundwork already in the codebase:
+>
+> - `Player.dreadnoughts?: { supply, garrison, conflict }` exists in
+>   `GameTypes.ts` (no `control` zone yet — extend it, don't redeclare).
+> - `client/src/utils/dreadnoughts.ts` exists with `PlayerDreadnoughts`
+>   and `getDreadnoughtsInConflict(player)`. **Extend this file** with
+>   the units helpers instead of creating `client/src/utils/units.ts`
+>   (see R-note in §3/§4.2).
+> - `Leader` in `GameTypes.ts` is a **class** with a fixed constructor
+>   (`complexity: 1 | 2 | 3`), not an interface — R13 fields must be
+>   optional instance properties (same pattern as `signetRingTitle?`),
+>   and `complexity` needs widening to `1 | 2 | 3 | 4` for Tessia.
+> - `Cost.retreatUnits` / `Reward.retreatUnits` already exist — reuse
+>   for "unit" semantics where applicable.
+
 ---
 
 ## 1. Goal
@@ -58,6 +73,11 @@ No reducer code.
    - `techNegotiator?: number` — **NEW**, place N negotiators on Ix.
    - `dividens` — **NEW**, +5 solari to active player and
      +1 solari to each opponent. dividends should be implemented as rewards 5 solari and nested 'forOpponents' : 1 solari reward
+     > ✦ 2026-06-10: no `forOpponents` shape exists in `Reward` today.
+     > Either add `forOpponents?: Reward` here as a generic nested
+     > reward, or keep `dividends?: true` and expand it in the reducer
+     > (plan 05 §4 currently assumes reducer expansion — pick one and
+     > keep both plans consistent).
    - `revealUnload?: boolean` — **NEW**, marker that this card's Reveal
      box triggers on discard / trash also (Unload). Conceptually a card
      **property** rather than a per-effect reward — see §4.4 below; we
@@ -73,6 +93,13 @@ No reducer code.
      — track all 4 zones. Default for base players is
      `{ supply: 0, garrison: 0, conflict: 0, control: [] }`. With
      Rise of Ix on, `supply` is seeded at `2`.
+     > ✦ 2026-06-10: the first three zones already exist on `Player`
+     > (`GameTypes.ts`); only `control` is new. **Shape decision
+     > resolved in favour of plan 04:** use
+     > `control: Array<{ space: ControlMarkerType; placedRound: number }>`
+     > — the reducer needs `placedRound` to return the dreadnought to
+     > garrison at the end of the *next* Combat phase (plan 04 R4).
+     > Update the default seed accordingly (`control: []` still holds).
    - `freighterStep?: 0 | 1 | 2 | 3` — position on the Shipping
      track (0 = bottom, 3 = top). Default `0`.
    - `tech?: PlayerTechTile[]` — owned tech tiles, each carrying
@@ -190,6 +217,10 @@ No reducer code.
     - `gridSide?: 'main' | 'ix'` — marks whether the hotspot lives on
       the main board or the side Ix panel. Default `'main'`.
 13. **R13 — `Leader` extensions.**
+    > ✦ 2026-06-10: `Leader` is a **class**, not an interface. Add these
+    > as optional instance properties assigned in subclass constructors
+    > (the existing `signetRingTitle?` pattern), and widen
+    > `complexity` from `1 | 2 | 3` to `1 | 2 | 3 | 4` (Tessia is 4).
     - `riseOfIx?: boolean` — marks the 6 new RoI leaders.
     - `tessiaSnoopers?: Partial<Record<FactionType, boolean>>` — only
       used by Tessia. Storing per-faction snooper placement (the
@@ -206,7 +237,7 @@ No reducer code.
 | `client/src/types/GameTypes.ts` | All R1–R12 type/enum additions. Pure additions, no removals/renames. |
 | `client/src/data/techTiles.ts` (new) | The `TechTileId`, `TechTileTiming`, `TechTile` definitions and the 18-row `TECH_TILES: TechTile[]` array (declarative data only; reducer wiring later). |
 | `client/src/data/expansions.ts` (new) | `NO_EXPANSIONS`, `Expansions` type re-export, helper `withRiseOfIx<T>(state: T, when: () => T): T`. |
-| `client/src/utils/units.ts` (new) | Helpers `unitsInConflict(player)`, `unitsInGarrison(player)` returning `troops + dreadnoughts`. Used by every card / conflict that talks about "units". |
+| `client/src/utils/dreadnoughts.ts` (extend, ✦ was "units.ts (new)") | File already exists with `PlayerDreadnoughts` + `getDreadnoughtsInConflict`. Add `unitsInConflictForPlayer(state, playerId)` and `unitsInGarrison(player)` here — do **not** create a parallel `units.ts`. |
 | `client/src/data/cards.ts` | Type-level only: extend `Card` literal types in existing arrays to compile against `unload`. **No data added here in this task** — RoI cards are added in [`08`](./08-imperium-row-cards.md). |
 
 ---
@@ -224,23 +255,14 @@ in `Reward`.
 
 ### 4.2 Units helper
 
-```ts
-// client/src/utils/units.ts
-import { Player } from '../types/GameTypes'
+> ✦ 2026-06-10: lives in the **existing** `client/src/utils/dreadnoughts.ts`
+> (alongside `getDreadnoughtsInConflict`), not in a new `units.ts`.
 
-export function unitsInConflict(p: Player): number {
-  const t = p.combatTroops // wait — combatTroops is on GameState
-  // Re-derive from gameState in caller. See note below.
-  return 0 // placeholder; do not implement here, units helpers are mostly read in reducer with full state
-}
-```
-
-**Implementation note.** Because troops in combat live on
-`gameState.combatTroops[playerId]`, the `unitsInConflict` helper must
-take both `player` and the surrounding `gameState`. The actual
-signature is:
+Because troops in combat live on `gameState.combatTroops[playerId]`,
+the helper must take the surrounding `gameState`:
 
 ```ts
+// client/src/utils/dreadnoughts.ts (addition)
 export function unitsInConflictForPlayer(state: GameState, playerId: number): number {
   return (state.combatTroops?.[playerId] ?? 0)
        + (state.players.find(p => p.id === playerId)?.dreadnoughts?.conflict ?? 0)
@@ -306,7 +328,7 @@ references a `customEffect` (when needed) defined in `CustomEffect`.
 3. **AC3** — The base reducer compiles unchanged (all RoI types are
    optional or default-zeroed).
 4. **AC4** — `client/src/data/techTiles.ts` exports an array of length 18.
-5. **AC5** — `client/src/utils/units.ts` exports
+5. **AC5** — `client/src/utils/dreadnoughts.ts` exports
    `unitsInConflictForPlayer(state, playerId)` whose return is
    `combatTroops[playerId] ?? 0` when no dreadnoughts exist (base game
    parity).
@@ -315,7 +337,7 @@ references a `customEffect` (when needed) defined in `CustomEffect`.
 
 ## 6. Unit tests
 
-**Path:** `client/src/utils/__tests__/units.test.ts` (new)
+**Path:** `client/src/utils/__tests__/dreadnoughts.test.ts` (new — ✦ was `units.test.ts`)
 
 - [ ] `unitsInConflictForPlayer returns combatTroops only when dreadnoughts.conflict is 0`
 - [ ] `unitsInConflictForPlayer adds dreadnoughts.conflict to combatTroops`

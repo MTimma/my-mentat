@@ -1,0 +1,395 @@
+{
+  "schemaVersion": 1,
+  "intrigue": [
+    {
+      "id": 1,
+      "name": "Ambush",
+      "type": "combat",
+      "description": "Combat: +4 strength.",
+      "image": "/intrigue/base/ambush.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:1:play:0"
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "name": "Allied Armada",
+      "type": "combat",
+      "description": "If you have a faction alliance: pay 2 spice to gain +7 strength.",
+      "image": "/intrigue/base/allied_armada.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:2:play:0"
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "name": "Bindu Suspension",
+      "type": "plot",
+      "description": "At the start of your turn: draw 1 card. You may pass your turn (instead of taking an Agent or Reveal turn).",
+      "image": "/intrigue/base/bindu_suspension.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:3:play:0"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "name": "Bribery",
+      "type": "plot",
+      "description": "Pay 2 Solari to gain 1 influence with a faction of your choice.",
+      "image": "/intrigue/base/bribery.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:4:play:0"
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "name": "Bypass Protocol",
+      "type": "plot",
+      "description": "Acquire a card that costs 3 or less —OR— pay 2 spice to acquire a card that costs 5 or less to the top of your deck.",
+      "image": "/intrigue/base/bypass_protocol.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:5:play:0",
+          "effect:intrigue:5:play:1"
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "name": "Calculated Hire",
+      "type": "plot",
+      "description": "Pay 1 spice to take the Mentat from its designated space in the Landsraad.",
+      "image": "/intrigue/base/calculated_hire.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:6:play:0"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "name": "Charisma",
+      "type": "plot",
+      "description": "Gain 2 persuasion during your Reveal turn this round.",
+      "image": "/intrigue/base/charisma.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:7:play:0"
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "name": "CHOAM Shares",
+      "type": "plot",
+      "description": "Pay 7 Solari to gain 1 VP.",
+      "image": "/intrigue/base/choam_shares.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:8:play:0"
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "name": "Corner the Market",
+      "type": "endgame",
+      "description": "Endgame: If you have at least two The Spice Must Flow, gain 1 VP. If you have more The Spice Must Flow than each opponent, gain 1 VP.",
+      "image": "/intrigue/base/corner_the_market.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:9:play:0"
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "name": "Councilor’s Dispensation",
+      "type": "plot",
+      "description": "If you have a seat on the High Council: gain 2 spice.",
+      "image": "/intrigue/base/councilors_dispensation.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:10:play:0"
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "name": "Dispatch an Envoy",
+      "type": "plot",
+      "description": "The card you play this turn has the following icons.",
+      "image": "/intrigue/base/dispatch_an_envoy.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:11:play:0"
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "name": "Double Cross",
+      "type": "plot",
+      "description": "An opponent of your choice loses 1 troop in the Conflict and you deploy 1 troop from your supply to the Conflict.",
+      "image": "/intrigue/base/double_cross.png",
+      "targetPlayer": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:12:play:0"
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "name": "Favored Subject",
+      "type": "plot",
+      "description": "Gain 1 influence with the Emperor.",
+      "image": "/intrigue/base/favored_subject.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:13:play:0"
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "name": "Guild Authorization",
+      "type": "plot",
+      "description": "Gain 1 influence with the Spacing Guild.",
+      "image": "/intrigue/base/guild_authorization.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:14:play:0"
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "name": "Infiltrate",
+      "type": "plot",
+      "description": "Enemy Agents don’t block your next Agent at board spaces this turn.",
+      "image": "/intrigue/base/infiltrate.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:15:play:0"
+        ]
+      }
+    },
+    {
+      "id": 16,
+      "name": "Know Their Ways",
+      "type": "plot",
+      "description": "Gain 1 influence with the Fremen.",
+      "image": "/intrigue/base/know_their_ways.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:16:play:0"
+        ]
+      }
+    },
+    {
+      "id": 17,
+      "name": "Master Tactician",
+      "type": "combat",
+      "description": "Combat: +3 strength —OR— Retreat up to three of your troops.",
+      "image": "/intrigue/base/master_tactitian.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:17:play:0",
+          "effect:intrigue:17:play:1"
+        ]
+      }
+    },
+    {
+      "id": 18,
+      "name": "Plans Within Plans",
+      "type": "endgame",
+      "description": "Endgame: If you have 3+ influence on three faction tracks, gain 1 VP —OR— if you have 3+ influence on four faction tracks, gain 2 VP.",
+      "image": "/intrigue/base/plans_within_plans.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:18:play:0"
+        ]
+      }
+    },
+    {
+      "id": 19,
+      "name": "Private Army",
+      "type": "combat",
+      "description": "Pay 2 spice to gain +5 strength.",
+      "image": "/intrigue/base/private_army.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:19:play:0"
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "name": "Rapid Mobilization",
+      "type": "plot",
+      "description": "Deploy any number of your garrisoned troops to the Conflict.",
+      "image": "/intrigue/base/rapid_mobilization.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:20:play:0"
+        ]
+      }
+    },
+    {
+      "id": 21,
+      "name": "Recruitment Mission",
+      "type": "plot",
+      "description": "Gain 1 water during your Reveal turn this round. You may put cards you acquire on top of your deck.",
+      "image": "/intrigue/base/recruitment_mission.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:21:play:0",
+          "effect:intrigue:21:play:1"
+        ]
+      }
+    },
+    {
+      "id": 22,
+      "name": "Refocus",
+      "type": "plot",
+      "description": "Shuffle your discard pile into your deck, then draw 1 card.",
+      "image": "/intrigue/base/refocus.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:22:play:0",
+          "effect:intrigue:22:play:1"
+        ]
+      }
+    },
+    {
+      "id": 23,
+      "name": "Reinforcements",
+      "type": "plot",
+      "description": "Pay 3 Solari to gain 3 troops. If it’s your Reveal turn, you may deploy any of these troops to the Conflict.",
+      "image": "/intrigue/base/reinforcements.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:23:play:0"
+        ]
+      }
+    },
+    {
+      "id": 24,
+      "name": "Secret of the Sisterhood",
+      "type": "plot",
+      "description": "Gain 1 influence with the Bene Gesserit.",
+      "image": "/intrigue/base/secret_of_the_sisterhood.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:24:play:0"
+        ]
+      }
+    },
+    {
+      "id": 25,
+      "name": "Staged Incident",
+      "type": "combat",
+      "description": "Lose three of your troops in the Conflict to gain 1 VP.",
+      "image": "/intrigue/base/staged_incident.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:25:play:0"
+        ]
+      }
+    },
+    {
+      "id": 26,
+      "name": "The Sleeper Must Awaken",
+      "type": "plot",
+      "description": "Pay 4 spice to gain 1 VP.",
+      "image": "/intrigue/base/the_sleeper_must_awaken.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:26:play:0"
+        ]
+      }
+    },
+    {
+      "id": 27,
+      "name": "Tiebreaker",
+      "type": "combat",
+      "description": "Combat: +2 strength —OR— Endgame: counts as 10 spice for tiebreakers.",
+      "image": "/intrigue/base/tiebraker.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:27:play:0",
+          "effect:intrigue:27:play:1"
+        ]
+      }
+    },
+    {
+      "id": 28,
+      "name": "To the Victor…",
+      "type": "combat",
+      "description": "When you win a Conflict: gain 3 spice.",
+      "image": "/intrigue/base/to_the_victor.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:28:play:0"
+        ]
+      }
+    },
+    {
+      "id": 29,
+      "name": "Urgent Mission",
+      "type": "plot",
+      "description": "Recall one of your Agents.",
+      "image": "/intrigue/base/urgent_mission.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:29:play:0"
+        ]
+      }
+    },
+    {
+      "id": 30,
+      "name": "Water of Life",
+      "type": "plot",
+      "description": "Pay 1 water and 1 spice to draw 3 cards.",
+      "image": "/intrigue/base/water_of_life.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:30:play:0"
+        ]
+      }
+    },
+    {
+      "id": 31,
+      "name": "Water Peddlers Union",
+      "type": "plot",
+      "description": "Gain 1 water.",
+      "image": "/intrigue/base/water_peddlers_union.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:31:play:0"
+        ]
+      }
+    },
+    {
+      "id": 32,
+      "name": "Windfall",
+      "type": "plot",
+      "description": "Gain 2 Solari.",
+      "image": "/intrigue/base/windfall.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:32:play:0"
+        ]
+      }
+    }
+  ]
+}

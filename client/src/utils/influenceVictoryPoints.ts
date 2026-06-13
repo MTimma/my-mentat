@@ -74,9 +74,47 @@ export function getTotalVictoryPoints(
   return player.victoryPoints + influenceVPs
 }
 
+/** One-time resource bonus when a player first reaches 4 influence on a faction track. */
+export const FOURTH_INFLUENCE_MILESTONE_REWARDS: Record<
+  FactionType,
+  { troops?: number; solari?: number; intrigueCards?: number; water?: number }
+> = {
+  [FactionType.EMPEROR]: { troops: 2 },
+  [FactionType.SPACING_GUILD]: { solari: 3 },
+  [FactionType.BENE_GESSERIT]: { intrigueCards: 1 },
+  [FactionType.FREMEN]: { water: 1 },
+}
+
+export interface InfluenceMilestoneMeta {
+  troopsRecruited: number
+}
+
 export interface UpdateFactionInfluenceOptions {
   /** If provided, alliance gains are pushed here instead of creating a new gains array. Used when caller manages gains. */
   appendGainsTo?: Gain[]
+  /** When provided, incremented when milestone troops are granted (for deploy-limit updates). */
+  milestoneMeta?: InfluenceMilestoneMeta
+}
+
+/**
+ * Merges milestone resources applied inside updateFactionInfluence into a caller's local player copy.
+ */
+export function mergePlayerAfterFactionInfluence(
+  localPlayer: Player,
+  stateAfterInfluence: GameState,
+  baselinePlayer: Player
+): Player {
+  const statePlayer = stateAfterInfluence.players.find((p) => p.id === localPlayer.id)
+  if (!statePlayer) return localPlayer
+
+  return {
+    ...localPlayer,
+    troops: localPlayer.troops + (statePlayer.troops - baselinePlayer.troops),
+    solari: localPlayer.solari + (statePlayer.solari - baselinePlayer.solari),
+    water: localPlayer.water + (statePlayer.water - baselinePlayer.water),
+    intrigueCount:
+      localPlayer.intrigueCount + (statePlayer.intrigueCount - baselinePlayer.intrigueCount),
+  }
 }
 
 /**
@@ -155,14 +193,81 @@ export function updateFactionInfluence(
     }
   }
 
+  const milestoneGains: Gain[] = []
+  let updatedPlayers = state.players
+  const crossedFourthMilestone = currentInfluence < 4 && newInfluence >= 4
+  if (crossedFourthMilestone) {
+    const milestone = FOURTH_INFLUENCE_MILESTONE_REWARDS[faction]
+    const milestoneLabel = `${faction} 4th Influence`
+    if (milestone.troops) {
+      milestoneGains.push({
+        playerId,
+        source: GainSource.FIELD,
+        sourceId: 0,
+        round: state.currentRound,
+        name: milestoneLabel,
+        amount: milestone.troops,
+        type: RewardType.TROOPS,
+      })
+      if (options?.milestoneMeta) {
+        options.milestoneMeta.troopsRecruited += milestone.troops
+      }
+    }
+    if (milestone.solari) {
+      milestoneGains.push({
+        playerId,
+        source: GainSource.FIELD,
+        sourceId: 0,
+        round: state.currentRound,
+        name: milestoneLabel,
+        amount: milestone.solari,
+        type: RewardType.SOLARI,
+      })
+    }
+    if (milestone.intrigueCards) {
+      milestoneGains.push({
+        playerId,
+        source: GainSource.FIELD,
+        sourceId: 0,
+        round: state.currentRound,
+        name: milestoneLabel,
+        amount: milestone.intrigueCards,
+        type: RewardType.INTRIGUE,
+      })
+    }
+    if (milestone.water) {
+      milestoneGains.push({
+        playerId,
+        source: GainSource.FIELD,
+        sourceId: 0,
+        round: state.currentRound,
+        name: milestoneLabel,
+        amount: milestone.water,
+        type: RewardType.WATER,
+      })
+    }
+    updatedPlayers = state.players.map((p) => {
+      if (p.id !== playerId) return p
+      return {
+        ...p,
+        troops: p.troops + (milestone.troops ?? 0),
+        solari: p.solari + (milestone.solari ?? 0),
+        water: p.water + (milestone.water ?? 0),
+        intrigueCount: p.intrigueCount + (milestone.intrigueCards ?? 0),
+      }
+    })
+  }
+
   if (options?.appendGainsTo) {
     allianceGains.forEach((g) => options.appendGainsTo!.push(g))
+    milestoneGains.forEach((g) => options.appendGainsTo!.push(g))
   }
   const newGains =
-    options?.appendGainsTo ?? [...(state.gains ?? []), ...allianceGains]
+    options?.appendGainsTo ?? [...(state.gains ?? []), ...allianceGains, ...milestoneGains]
 
   return {
     ...state,
+    players: updatedPlayers,
     factionInfluence: newFactionInfluence,
     factionAlliances: {
       ...state.factionAlliances,

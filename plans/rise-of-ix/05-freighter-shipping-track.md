@@ -3,6 +3,27 @@
 > Depends on Tasks 01, 02, 03 (`riseofix4` overlay + optional freighter modal).
 > This is a reducer + small UI task.
 
+> ✦ 2026-06-10 — adjustments since this plan was written:
+>
+> 1. **Freighter status modal** (R5) must use the new board-modal
+>    portal pattern: `usePlayBoardModalPortal` + `PlayBoardModalContext`
+>    + overlay classes in `client/src/styles/playBoardModal.css`
+>    (reference: `CombatResults`, `PlayerOverviewModal`).
+> 2. **TurnControls** still renders generic `pendingChoices`
+>    (FIXED_OPTIONS) — the Advance/Recall buttons plug into that
+>    existing flow; no deploy-style custom panel needed there.
+> 3. **Blocked on Task 03 artifacts**: `SHIPPING_TRACK_ANCHORS`,
+>    the `riseofix4` overlay, and board spaces 25–26 do not exist yet
+>    (`boardSpaces.ts` currently ends at id 22; ids are free).
+> 4. **Step-1 reward contradiction resolved**: §2 R3 / §4.2 said
+>    Dividends is mandatory; §7 says step 1 is *Dividends OR +2 spice*.
+>    **§7 wins** — step 1 of a Recall enqueues an OR-choice
+>    (`{ dividends: true }` vs `{ spice: 2 }`); the `dividends: true`
+>    expansion itself (§4.2) is then mandatory once chosen.
+>    Verify against rulebook p. 5 before merging.
+> 5. **`Reward.dividends` / `forOpponents`** shapes don't exist yet —
+>    added by Task 02 (see its R4 note for the modeling decision).
+
 ---
 
 ## 1. Goal
@@ -51,17 +72,22 @@ Recall rewards by step (rulebook p. 5):
          it** as PendingRewards, then set `freighterStep = 0`.
 3. **R3 — Recall reward bundle.** For each step `k` where
    `1 ≤ k ≤ currentStep`, enqueue:
-   - k=1 → `dividends: true` → `+5 solari` to active player and
-     `+1 solari` to each other player. Logged as separate
-     `Gain` rows with `source: SHIPPING_TRACK`.
+   - k=1 → ✦ **OR-choice**: `{ dividends: true }` (+5 solari to active
+     player, +1 solari to each opponent) **or** `{ spice: 2 }` (see
+     §7 / header note 4). Logged as separate `Gain` rows with
+     `source: SHIPPING_TRACK`.
    - k=2 → `troops: 2` AND `influence: { chooseOne: true, amounts: [E,SG,BG,F at 1] }`.
    - k=3 → `acquireTech: { discount: 2 }`.
 4. **R4 — Persistence in history.** `freighterStep` is part of the
    snapshot. Undoing a recall must restore the previous step.
 5. **R5 — UI.**
    - 'UI of freighter status should be a modal, opened by the button next tot he fields in image board ( placed in empty space in top left space of board)
+     > ✦ implement with `usePlayBoardModalPortal` (board-scoped
+     > overlay); add its overlay class to `playBoardModal.css`.
    - `TurnControls`: when a freighter OR-choice is pending, render
-     two buttons "Advance" / "Recall" with current step (`0–3`) shown.
+     two buttons "Advance" / "Recall" with current step (`0–3`) shown
+     (✦ via the existing generic `pendingChoices` FIXED_OPTIONS
+     rendering — no bespoke panel).
    - `ImageBoard` on `riseofix4` (Task 03 §R9): per-player discs on the
      shipping track via `SHIPPING_TRACK_ANCHORS`; optional freighter
      status modal (Task 05 §R5 first bullet).
@@ -134,7 +160,7 @@ case CustomEffect.FREIGHTER_RECALL: {
   const step = player.freighterStep ?? 0
   pushGain(state, playerId, source, RewardType.FREIGHTER, -step, 'Recall')
   // enqueue stepwise pending rewards (k = 1..step)
-  if (step >= 1) enqueueReward({ dividends: true }, source)
+  if (step >= 1) enqueueStep1Choice(source) // ✦ OR-choice: { dividends: true } vs { spice: 2 }
   if (step >= 2) enqueueReward({ troops: 2, influence: { chooseOne: true, amounts: ALL_FOUR } }, source)
   if (step >= 3) enqueueReward({ acquireTech: { discount: 2 } }, source)
   updatePlayer(state, playerId, p => ({ ...p, freighterStep: 0 }))
@@ -156,7 +182,9 @@ case 'reward.dividends': {
 }
 ```
 
-`Dividends` is **mandatory** when triggered — it is not an OR choice.
+`Dividends` is **mandatory once chosen** — but reaching it from a
+step-1 Recall goes through the Dividends-vs-2-spice OR-choice first
+(✦ see header note 4 / §7).
 
 ### 4.3 UI strip
 
@@ -173,9 +201,9 @@ Influence`, `Dividends`, `Start`) for detail during Advance/Recall.
    Advance/Recall pending choice in `state.currTurn.pendingChoices`.
 2. **AC2** — Choosing Advance increments `player.freighterStep` by 1
    (capped at 3).
-3. **AC3** — Choosing Recall from step 3 enqueues exactly 3 rewards
-   (Dividends, Troops+Influence, Acquire Tech (-2)) and sets
-   `freighterStep = 0`.
+3. **AC3** — Choosing Recall from step 3 enqueues exactly 3 reward
+   steps (✦ step-1 Dividends-vs-2-spice OR-choice, Troops+Influence,
+   Acquire Tech (-2)) and sets `freighterStep = 0`.
 4. **AC4** — Dividends increments active player solari by 5 and each
    other player solari by 1.
 5. **AC5** — Recall from step 0 enqueues no rewards and logs a `-0`
@@ -197,7 +225,7 @@ Influence`, `Dividends`, `Start`) for detail during Advance/Recall.
 - [ ] `Advance from 0 -> 1`
 - [ ] `Advance from 3 stays at 3`
 - [ ] `Recall from 0 yields no rewards`
-- [ ] `Recall from 1 yields Dividends only`
+- [ ] `Recall from 1 yields the step-1 OR-choice (Dividends vs +2 spice) only`
 - [ ] `Recall from 2 yields Dividends + (troops + influence-OR)`
 - [ ] `Recall from 3 yields all three rewards`
 - [ ] `Dividends pays +5 to active and +1 to each other player`

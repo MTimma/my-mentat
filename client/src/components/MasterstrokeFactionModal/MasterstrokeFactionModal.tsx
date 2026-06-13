@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { FactionType } from '../../types/GameTypes'
+import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import './MasterstrokeFactionModal.css'
 
 const FACTIONS = Object.values(FactionType)
@@ -52,10 +53,16 @@ const MasterstrokeFactionModal: React.FC<MasterstrokeFactionModalProps> = ({
     onCancel()
   }
 
-  if (!open) return null
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(open)
 
-  return (
-    <div className="dialog-overlay masterstroke-faction-overlay" onClick={handleCancel}>
+  if (!open) return null
+  if (waitForBoardTarget) return null
+
+  return portalNode(
+    <div
+      className={['dialog-overlay', 'masterstroke-faction-overlay', scopedClass].filter(Boolean).join(' ')}
+      onClick={handleCancel}
+    >
       <div className="masterstroke-faction-modal" onClick={(e) => e.stopPropagation()}>
         <div className="masterstroke-faction-header">
           <h3>{title ?? defaultTitle}</h3>

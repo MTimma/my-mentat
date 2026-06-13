@@ -1,6 +1,7 @@
 import React from 'react'
 import { Leader } from '../../types/GameTypes'
 import { getLeaderImage } from '../../data/leaders'
+import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import './LeaderImageModal.css'
 
 interface LeaderImageModalProps {
@@ -11,11 +12,14 @@ interface LeaderImageModalProps {
 
 const LeaderImageModal: React.FC<LeaderImageModalProps> = ({ leader, isOpen, onClose }) => {
   const imagePath = getLeaderImage(leader.name)
-  if (!isOpen || !imagePath) return null
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(isOpen)
 
-  return (
+  if (!isOpen || !imagePath) return null
+  if (waitForBoardTarget) return null
+
+  return portalNode(
     <div
-      className="dialog-overlay leader-image-overlay"
+      className={['dialog-overlay', 'leader-image-overlay', scopedClass].filter(Boolean).join(' ')}
       onClick={(e) => { e.stopPropagation(); onClose() }}
       role="button"
       tabIndex={0}
@@ -44,5 +48,6 @@ const LeaderImageModal: React.FC<LeaderImageModalProps> = ({ leader, isOpen, onC
     </div>
   )
 }
+
 
 export default LeaderImageModal

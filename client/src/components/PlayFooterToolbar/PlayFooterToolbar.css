@@ -81,9 +81,16 @@
 }
 
 .history-banner-toolbar .history-toolbar-button[aria-pressed='true'] {
-  background: rgba(212, 175, 55, 0.28);
-  border-color: rgba(212, 175, 55, 0.55);
-  color: #f4e4bc;
+  background: var(--chrome-toolbar-pressed-bg);
+  border-color: var(--chrome-toolbar-pressed-border);
+  color: var(--chrome-text-strong);
+}
+
+.history-banner-toolbar .play-chrome-theme-button__label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.02em;
 }
 
 .history-banner-toolbar .board-peek-button {
@@ -91,9 +98,9 @@
 }
 
 .history-banner-toolbar .board-peek-button--active {
-  background: rgba(120, 180, 255, 0.28);
-  border-color: rgba(120, 180, 255, 0.55);
-  color: #d8ecff;
+  background: var(--chrome-peek-active-bg);
+  border-color: var(--chrome-peek-active-border);
+  color: var(--chrome-peek-active-text);
 }
 
 .history-banner-toolbar .utility-action-icon {

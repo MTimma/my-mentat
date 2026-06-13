@@ -5,6 +5,7 @@
 import {
   ControlMarkerType,
   FactionType,
+  MakerSpace,
   PlayerColor,
 } from '../types/GameTypes'
 import { layoutInnerPointPercent, layoutInnerRectPercent } from './boardHotspots'
@@ -45,6 +46,20 @@ export const INFLUENCE_TRACKS: Record<FactionType, InfluenceTrackLayout> = {
 }
 
 /**
+ * Full tap/highlight region for each faction influence column on the board art (inner %).
+ * Tune with ?markerDebug=1 — cyan outlines when influence selection is active.
+ */
+export const INFLUENCE_TRACK_AREAS: Record<
+  FactionType,
+  { left: number; top: number; width: number; height: number }
+> = {
+  [FactionType.EMPEROR]: { left: 3, top: 2, width: 9, height: 23 },
+  [FactionType.SPACING_GUILD]: { left: 3, top: 27, width: 9, height: 23 },
+  [FactionType.BENE_GESSERIT]: { left: 3, top: 51, width: 9, height: 23 },
+  [FactionType.FREMEN]: { left: 3, top: 76, width: 9, height: 23 },
+}
+
+/**
  * Victory track: one **vertical** lane per player (same order as elsewhere: sorted by `player.id`).
  *
  * - **`x`**: fixed column (inner %).
@@ -80,22 +95,40 @@ export const CONFLICT_CARD_RECT = {
 
 /**
  * Combat conflict rings (inner %, ring center). 2×2 on crossed swords:
- * red TL, green TR, yellow BL, blue BR. Tune with ?markerDebug=1.
+ * Clockwise: red TL, green TR, yellow BR, blue BL. Tune with ?markerDebug=1.
  */
 export const COMBAT_RING_ANCHORS: Record<PlayerColor, { x: number; y: number }> = {
-  [PlayerColor.RED]: { x: 55, y: 65 },
-  [PlayerColor.GREEN]: { x: 80, y: 65 },
-  [PlayerColor.YELLOW]: { x: 55, y: 75 },
-  [PlayerColor.BLUE]: { x: 80, y: 75 },
+  [PlayerColor.RED]: { x: 55, y: 60 },
+  [PlayerColor.GREEN]: { x: 85, y: 60 },
+  [PlayerColor.YELLOW]: { x: 85, y: 80 },
+  [PlayerColor.BLUE]: { x: 55, y: 80 },
 }
 
-/** Troop deploy dock vertical anchor (inner % Y); X is in App.css `.combat-troop-dock__anchor`. */
+/** Bounding box for the merged combat-area cluster (inner %). Tune with ?markerDebug=1. */
+export const COMBAT_AREA_BOUNDS = {
+  left: 47,
+  top: 56,
+  width: 45,
+  height: 34,
+} as const
+
+/** Effect-retreat dock vertical anchor (inner % Y); X is in App.css `.effect-retreat-troop-dock__anchor`. */
 export const COMBAT_STRENGTH_ORIGIN = { x: 58, y: 72 }
 
 export const CONTROL_MARKER_POINTS: Record<ControlMarkerType, { x: number; y: number }> = {
   [ControlMarkerType.ARRAKIN]: { x: 78, y: 34 },
-  [ControlMarkerType.CARTHAG]: { x: 60, y: 37 },
-  [ControlMarkerType.IMPERIAL_BASIN]: { x: 76, y: 51 },
+  [ControlMarkerType.CARTHAG]: { x: 61, y: 37 },
+  [ControlMarkerType.IMPERIAL_BASIN]: { x: 77, y:49 },
+}
+
+/**
+ * Bonus spice (Makers phase) badge anchors (inner %).
+ * Anchor is the badge center — same as agent/VP markers. Tune with ?markerDebug=1.
+ */
+export const BONUS_SPICE_ANCHORS: Record<MakerSpace, { x: number; y: number }> = {
+  [MakerSpace.IMPERIAL_BASIN]: { x: 88, y: 44 },
+  [MakerSpace.GREAT_FLAT]: { x: 43, y: 62 },
+  [MakerSpace.HAGGA_BASIN]: { x: 69, y: 50 },
 }
 
 /** Conflict card art under public/conflicts/cards/. */
@@ -127,6 +160,13 @@ export function conflictCardImageSrc(conflictId: number): string | null {
 
 export function clampInfluenceStep(v: number): number {
   return Math.max(0, Math.min(MAX_INFLUENCE, Math.round(v)))
+}
+
+/** Click/highlight rect for the full faction influence column (inner %). */
+export function influenceTrackAreaRect(
+  faction: FactionType
+): { left: number; top: number; width: number; height: number } {
+  return INFLUENCE_TRACK_AREAS[faction]
 }
 
 export function clampVpStep(v: number): number {

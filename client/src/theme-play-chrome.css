@@ -1,0 +1,164 @@
+/**
+ * Play chrome themes — void (warm charcoal + sand) and blueish (cool slate + steel).
+ * Set data-theme on <html> via playChromeTheme.ts. Layout unchanged; colors only.
+ */
+
+/* Persuasion — always blue (card iconography); not tied to void/blueish chrome accent. */
+:root {
+  --chrome-persuasion-fill: #2f9eea;
+  --chrome-persuasion-border: rgba(206, 239, 255, 0.85);
+  --chrome-persuasion-glow: rgba(75, 174, 238, 0.5);
+  --chrome-acquire-border: #5faadc;
+  --chrome-acquire-glow: rgba(95, 170, 220, 0.42);
+  --chrome-acquire-hover-border: #9bd3ff;
+  --chrome-acquire-hover-glow: rgba(95, 170, 220, 0.5);
+}
+
+:root,
+html[data-theme='void'] {
+  --chrome-shell: #14110f;
+  --chrome-surface: #1e1c1a;
+  --chrome-surface-raised: #262320;
+  --chrome-header: #1e1c1a;
+  --chrome-inset: rgba(0, 0, 0, 0.28);
+  --chrome-inset-soft: rgba(0, 0, 0, 0.16);
+  --chrome-border: rgba(255, 255, 255, 0.08);
+  --chrome-border-subtle: rgba(255, 255, 255, 0.06);
+  --chrome-border-strong: rgba(255, 255, 255, 0.14);
+  --chrome-border-accent: rgba(156, 120, 78, 0.28);
+  --chrome-border-accent-strong: rgba(156, 120, 78, 0.45);
+  --chrome-text: #e0d4c0;
+  --chrome-text-muted: rgba(224, 212, 192, 0.72);
+  --chrome-text-strong: rgba(224, 212, 192, 0.95);
+  --chrome-accent: #9c784e;
+  --chrome-accent-bright: #b8956a;
+  --chrome-accent-muted: rgba(156, 120, 78, 0.12);
+  --chrome-accent-hover: rgba(156, 120, 78, 0.22);
+  --chrome-accent-subtle: rgba(156, 120, 78, 0.1);
+  --chrome-accent-ring: rgba(156, 120, 78, 0.45);
+  --chrome-accent-glow: rgba(156, 120, 78, 0.35);
+  --chrome-active-stripe: #9c784e;
+  --chrome-highlight-name: #c9a050;
+  --chrome-success: rgba(143, 168, 130, 0.95);
+  --chrome-success-bg: rgba(143, 168, 130, 0.12);
+  --chrome-success-border: rgba(143, 168, 130, 0.45);
+  --chrome-danger: #b87a6e;
+  --chrome-danger-text: rgba(216, 180, 174, 0.95);
+  --chrome-danger-bg: rgba(184, 122, 110, 0.16);
+  --chrome-danger-border: rgba(184, 122, 110, 0.42);
+  --chrome-danger-hover-bg: rgba(184, 122, 110, 0.28);
+  --chrome-danger-hover-border: rgba(184, 122, 110, 0.72);
+  --chrome-cta-bg: #e8dcc8;
+  --chrome-cta-bg-hover: #ddd0b8;
+  --chrome-cta-border: #9c784e;
+  --chrome-cta-text: #1c1410;
+  --chrome-imperium-top: #161412;
+  --chrome-imperium-bottom: #14110f;
+  --chrome-imperium-card-border: rgba(110, 90, 66, 0.55);
+  --chrome-imperium-card-hover: rgba(156, 120, 78, 0.45);
+  --chrome-panel-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--chrome-shell) 98%, #000 2%) 0%,
+    var(--chrome-shell) 100%
+  );
+  --chrome-footer-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--chrome-shell) 94%, var(--chrome-accent) 6%) 0%,
+    var(--chrome-shell) 100%
+  );
+  --chrome-shadow-panel: -4px 0 24px rgba(0, 0, 0, 0.45);
+  --chrome-toolbar-pressed-bg: var(--chrome-accent-hover);
+  --chrome-toolbar-pressed-border: var(--chrome-border-accent-strong);
+  --chrome-peek-active-bg: var(--chrome-accent-muted);
+  --chrome-peek-active-border: var(--chrome-accent-ring);
+  --chrome-peek-active-text: var(--chrome-text-strong);
+
+  --color-app-bg: var(--chrome-shell);
+  --color-app-text: var(--chrome-text);
+  --color-app-text-muted: var(--chrome-text-muted);
+  --color-footer-bg: var(--chrome-shell);
+  --color-arrakis-sand: var(--chrome-accent);
+  --color-arrakis-parchment: var(--chrome-text);
+  --color-arrakis-parchment-muted: var(--chrome-text-muted);
+  --color-arrakis-earth: var(--chrome-cta-border);
+  --color-arrakis-earth-dark: #2a2218;
+  --color-arrakis-earth-hover: #3a3024;
+  --color-arrakis-parchment-helena: var(--chrome-cta-bg);
+  --color-arrakis-earth-shadow: rgba(0, 0, 0, 0.35);
+  --color-arrakis-earth-glow-soft: var(--chrome-accent-muted);
+  --color-arrakis-earth-overlay: rgba(20, 17, 15, 0.92);
+  --color-arrakis-earth-footer-glow: var(--chrome-accent-subtle);
+  --color-text-on-parchment: var(--chrome-cta-text);
+
+  --player-ring-red: #a85a52;
+  --player-ring-green: #6d8f62;
+  --player-ring-yellow: #b89a4a;
+  --player-ring-blue: #5a7f8f;
+}
+
+html[data-theme='blueish'] {
+  --chrome-shell: #16181c;
+  --chrome-surface: #1e2228;
+  --chrome-surface-raised: #242a32;
+  --chrome-header: #1e2228;
+  --chrome-inset: rgba(0, 0, 0, 0.32);
+  --chrome-inset-soft: rgba(0, 0, 0, 0.18);
+  --chrome-border: rgba(180, 190, 200, 0.1);
+  --chrome-border-subtle: rgba(180, 190, 200, 0.06);
+  --chrome-border-strong: rgba(180, 190, 200, 0.16);
+  --chrome-border-accent: rgba(90, 127, 143, 0.28);
+  --chrome-border-accent-strong: rgba(90, 127, 143, 0.48);
+  --chrome-text: #d8dce4;
+  --chrome-text-muted: rgba(216, 220, 228, 0.72);
+  --chrome-text-strong: rgba(216, 220, 228, 0.95);
+  --chrome-accent: #5a7f8f;
+  --chrome-accent-bright: #6d94a4;
+  --chrome-accent-muted: rgba(90, 127, 143, 0.14);
+  --chrome-accent-hover: rgba(90, 127, 143, 0.24);
+  --chrome-accent-subtle: rgba(90, 127, 143, 0.1);
+  --chrome-accent-ring: rgba(90, 127, 143, 0.5);
+  --chrome-accent-glow: rgba(90, 127, 143, 0.38);
+  --chrome-active-stripe: #5a7f8f;
+  --chrome-highlight-name: #8eb0c0;
+  --chrome-success: rgba(130, 168, 150, 0.95);
+  --chrome-success-bg: rgba(130, 168, 150, 0.12);
+  --chrome-success-border: rgba(130, 168, 150, 0.42);
+  --chrome-danger: #a86a62;
+  --chrome-danger-text: rgba(220, 180, 174, 0.95);
+  --chrome-danger-bg: rgba(168, 106, 98, 0.16);
+  --chrome-danger-border: rgba(168, 106, 98, 0.42);
+  --chrome-danger-hover-bg: rgba(168, 106, 98, 0.28);
+  --chrome-danger-hover-border: rgba(168, 106, 98, 0.72);
+  --chrome-cta-bg: #d8dce4;
+  --chrome-cta-bg-hover: #c8ced8;
+  --chrome-cta-border: #5a7f8f;
+  --chrome-cta-text: #12161c;
+  --chrome-imperium-top: #181c22;
+  --chrome-imperium-bottom: #16181c;
+  --chrome-imperium-card-border: rgba(90, 110, 130, 0.5);
+  --chrome-imperium-card-hover: rgba(90, 127, 143, 0.45);
+  --chrome-panel-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--chrome-shell) 98%, #000 2%) 0%,
+    var(--chrome-shell) 100%
+  );
+  --chrome-footer-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--chrome-shell) 94%, var(--chrome-accent) 6%) 0%,
+    var(--chrome-shell) 100%
+  );
+  --chrome-shadow-panel: -4px 0 24px rgba(0, 0, 0, 0.48);
+  --chrome-toolbar-pressed-bg: var(--chrome-accent-hover);
+  --chrome-toolbar-pressed-border: var(--chrome-border-accent-strong);
+  --chrome-peek-active-bg: var(--chrome-accent-muted);
+  --chrome-peek-active-border: var(--chrome-accent-ring);
+  --chrome-peek-active-text: var(--chrome-text-strong);
+
+  --color-arrakis-earth-dark: #1a2228;
+  --color-arrakis-earth-hover: #243038;
+
+  --player-ring-red: #9e5a54;
+  --player-ring-green: #5f8a68;
+  --player-ring-yellow: #9a8a4e;
+  --player-ring-blue: #5a7f8f;
+}

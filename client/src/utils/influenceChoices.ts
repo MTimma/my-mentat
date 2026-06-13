@@ -11,6 +11,7 @@ import {
 /** Resource kinds that can appear as optional-effect costs. */
 export type OptionalCostResourceKind = 'spice' | 'water' | 'solari' | 'troops' | 'influence'
 import { isAnyFactionInfluenceChoice } from './influenceDisplay'
+import { nextSemanticId } from './semanticIds'
 
 const ALL_FACTIONS: FactionType[] = [
   FactionType.EMPEROR,
@@ -66,6 +67,27 @@ export function canAffordInfluenceOptionalEffect(
   return true
 }
 
+/** Player can pay a fixed influence loss on a choice reward (e.g. Shifting Allegiances). */
+export function canAffordInfluenceReward(
+  state: GameState,
+  playerId: number,
+  reward?: Reward
+): boolean {
+  const influence = reward?.influence
+  if (!influence?.amounts?.length) return true
+  if (
+    influence.chooseOne &&
+    influence.amounts.every(entry => entry.amount >= 0)
+  ) {
+    return true
+  }
+  return influence.amounts.every(entry => {
+    if (entry.amount >= 0) return true
+    const loss = Math.abs(entry.amount)
+    return (state.factionInfluence[entry.faction]?.[playerId] ?? 0) >= loss
+  })
+}
+
 /** Which cost resources the player cannot pay across the given optional costs. */
 export function getLackingOptionalCostResources(
   state: GameState,
@@ -100,14 +122,15 @@ export function getLackingOptionalCostResources(
 export function createGainInfluenceChoice(
   influence: InfluenceAmounts,
   source: FixedOptionsChoice['source'],
-  prompt?: string
+  prompt?: string,
+  existingIds: Iterable<string> = []
 ): FixedOptionsChoice {
   const gain = getInfluenceGainAmount(influence)
   const factions = isAnyFactionInfluenceChoice(influence)
     ? ALL_FACTIONS
     : influence.amounts.map(entry => entry.faction)
   return {
-    id: `influence-gain-${source.type}-${source.id}-${crypto.randomUUID()}`,
+    id: nextSemanticId(source, 'INFLUENCE-GAIN', existingIds),
     type: ChoiceType.FIXED_OPTIONS,
     prompt: prompt ?? `Choose a faction to gain ${gain} influence`,
     options: factions.map(faction => ({
@@ -122,14 +145,15 @@ export function createLoseInfluenceChoice(
   playerId: number,
   influence: InfluenceAmounts,
   source: FixedOptionsChoice['source'],
-  meta: { payOnResolve?: Cost; thenGain?: InfluenceAmounts }
+  meta: { payOnResolve?: Cost; thenGain?: InfluenceAmounts },
+  existingIds: Iterable<string> = []
 ): FixedOptionsChoice {
   const loss = getInfluenceLossAmount(influence)
   const factions = isAnyFactionInfluenceChoice(influence)
     ? ALL_FACTIONS
     : influence.amounts.map(entry => entry.faction)
   return {
-    id: `influence-lose-${source.type}-${source.id}-${crypto.randomUUID()}`,
+    id: nextSemanticId(source, 'INFLUENCE-LOSE', existingIds),
     type: ChoiceType.FIXED_OPTIONS,
     prompt: `Choose a faction to lose ${loss} influence`,
     options: factions.map(faction => ({

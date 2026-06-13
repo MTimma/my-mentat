@@ -39,6 +39,8 @@ export interface TurnGainsDisplayProps {
   troopsRetreatedFromConflict?: number
   /** Opponent discards: one thumbnail row, no card-name titles. */
   inlineDiscards?: boolean
+  /** Totals row: show plain amounts for gains (e.g. 2 spice) without a leading +. */
+  omitPositiveSign?: boolean
 }
 
 /** Solari/spice: icon + count beside it (matches effect labels), not a count badge on the icon. */
@@ -62,6 +64,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   troopsDeployedToConflict = 0,
   troopsRetreatedFromConflict = 0,
   inlineDiscards = false,
+  omitPositiveSign = false,
 }) => {
   const deployedCount = Math.max(0, troopsDeployedToConflict)
   const retreatedCount = Math.max(0, troopsRetreatedFromConflict)
@@ -266,8 +269,14 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     )
   }
 
+  const sortResourceGainsForDisplay = (resourceGains: AggregatedResourceGain[]) =>
+    [...resourceGains].sort((a, b) => {
+      const rank = (type: RewardType | string) => (type === RewardType.PERSUASION ? 0 : 1)
+      return rank(a.type) - rank(b.type)
+    })
+
   const renderGainSide = (sideGains: Gain[], side: 'cost' | 'reward') => {
-    const resourceGains = aggregateResourceGains(sideGains)
+    const resourceGains = sortResourceGainsForDisplay(aggregateResourceGains(sideGains))
     const influenceGains = aggregateInfluenceGains(sideGains)
     if (resourceGains.length === 0 && influenceGains.length === 0) return null
 
@@ -289,11 +298,9 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     if (count === 0) return null
     return (
       <div className={`turn-gain-source-group turn-gain-combat-group turn-gain-combat-group--${variant}`}>
-        {showSourceTitles ? (
-          <span className="turn-gain-source-title" title={title}>
-            {title}
-          </span>
-        ) : null}
+        <span className="turn-gain-source-title turn-gain-source-title--combat" title={title}>
+          {title}
+        </span>
         <div
           className="turn-gain-source-flow"
           title={`${title}: ${count}`}
@@ -314,13 +321,42 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     )
   }
 
+  const formatSignedTotal = (value: number) => {
+    if (value === 0) return '0'
+    if (value < 0) return `−${Math.abs(value)}`
+    return omitPositiveSign ? String(value) : `+${value}`
+  }
+
   const renderTotalAmount = (value: number) => {
     if (value === 0) return null
-    const sign = value > 0 ? '+' : '−'
+    const isGain = value > 0
     return (
-      <span className={`turn-gain-total-amt turn-gain-total-amt--${value > 0 ? 'gain' : 'cost'}`}>
-        {sign}
-        {Math.abs(value)}
+      <span className={`turn-gain-total-amt turn-gain-total-amt--${isGain ? 'gain' : 'cost'}`}>
+        {formatSignedTotal(value)}
+      </span>
+    )
+  }
+
+  /** Single-unit gains where the icon alone is sufficient (matches effect labels). */
+  const renderTotalIconOnlyAmount = (value: number) => {
+    if (Math.abs(value) === 1) return null
+    return renderTotalAmount(value)
+  }
+
+  const renderTotalInfluenceAmount = renderTotalIconOnlyAmount
+
+  const renderTotalPersuasionAmount = (value: number) => {
+    if (value === 0) return null
+    const absAmount = Math.abs(value)
+    const isCost = value < 0
+    return (
+      <span
+        className="gain-persuasion-badge turn-gain-total-persuasion"
+        title={`Persuasion: ${isCost ? '−' : ''}${absAmount}`}
+        aria-label={`Persuasion ${isCost ? 'spent' : 'gained'} ${absAmount}`}
+      >
+        <span className="gain-persuasion-diamond" aria-hidden="true" />
+        <span className="gain-persuasion-count">{isCost ? `−${absAmount}` : absAmount}</span>
       </span>
     )
   }
@@ -329,25 +365,41 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     const iconPath = getRewardIcon(total.type)
     const displayName = getRewardDisplayName(total.type)
     const hasBoth = total.gained > 0 && total.spent > 0
+    const isPersuasion = total.type === RewardType.PERSUASION
+    const usesIconOnlyForSingleUnit =
+      total.type === RewardType.VICTORY_POINTS || total.type === RewardType.WATER
+    const renderAmount = usesIconOnlyForSingleUnit ? renderTotalIconOnlyAmount : renderTotalAmount
 
     return (
       <div
         key={total.type}
         className="turn-gain-total-item"
-        title={`${displayName}: ${total.net >= 0 ? '+' : ''}${total.net}`}
+        title={`${displayName}: ${formatSignedTotal(total.net)}`}
         aria-label={`${displayName} net ${total.net}`}
       >
-        {iconPath ? renderGainIcon(iconPath, displayName, 'turn-gain-total-icon') : null}
-        {hasBoth ? (
+        {isPersuasion ? null : iconPath ? renderGainIcon(iconPath, displayName, 'turn-gain-total-icon') : null}
+        {isPersuasion ? (
+          hasBoth ? (
+            <span className="turn-gain-total-flow">
+              <span className="turn-gain-total-spent">{renderTotalPersuasionAmount(-total.spent)}</span>
+              <span className="turn-gain-flow-arrow" aria-hidden="true">
+                →
+              </span>
+              <span className="turn-gain-total-gained">{renderTotalPersuasionAmount(total.gained)}</span>
+            </span>
+          ) : (
+            renderTotalPersuasionAmount(total.net)
+          )
+        ) : hasBoth ? (
           <span className="turn-gain-total-flow">
-            <span className="turn-gain-total-spent">{renderTotalAmount(-total.spent)}</span>
+            <span className="turn-gain-total-spent">{renderAmount(-total.spent)}</span>
             <span className="turn-gain-flow-arrow" aria-hidden="true">
               →
             </span>
-            <span className="turn-gain-total-gained">{renderTotalAmount(total.gained)}</span>
+            <span className="turn-gain-total-gained">{renderAmount(total.gained)}</span>
           </span>
         ) : (
-          renderTotalAmount(total.net)
+          renderAmount(total.net)
         )}
       </div>
     )
@@ -364,19 +416,19 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
       <div
         key={total.faction}
         className="turn-gain-total-item"
-        title={`Influence (${total.faction}): ${total.net >= 0 ? '+' : ''}${total.net}`}
+        title={`Influence (${total.faction}): ${formatSignedTotal(total.net)}`}
       >
         <img src={iconPath} alt="" className="turn-gain-total-icon turn-gain-total-icon--influence" />
         {hasBoth ? (
           <span className="turn-gain-total-flow">
-            <span className="turn-gain-total-spent">{renderTotalAmount(-total.lost)}</span>
+            <span className="turn-gain-total-spent">{renderTotalInfluenceAmount(-total.lost)}</span>
             <span className="turn-gain-flow-arrow" aria-hidden="true">
               →
             </span>
-            <span className="turn-gain-total-gained">{renderTotalAmount(total.gained)}</span>
+            <span className="turn-gain-total-gained">{renderTotalInfluenceAmount(total.gained)}</span>
           </span>
         ) : (
-          renderTotalAmount(total.net)
+          renderTotalInfluenceAmount(total.net)
         )}
       </div>
     )
@@ -415,7 +467,6 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         'turn-gains-display-root',
         showTotals || totalsOnly ? 'turn-gains-display-root--with-totals' : '',
         totalsOnly ? 'turn-gains-display-root--totals-only' : '',
-        hasCombatSection ? 'turn-gains-display-root--with-combat' : '',
         className,
       ]
         .filter(Boolean)
@@ -475,9 +526,8 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
           </div>
         )
       })}
-      </div>
       {hasCombatSection ? (
-        <div className="turn-gains-combat-section" aria-label="Conflict troop movement">
+        <>
           {renderCombatTroopCount(
             deployedCount,
             'deployed',
@@ -492,8 +542,9 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
             retreatIcon ?? troopIcon,
             retreatDisplayName
           )}
-        </div>
+        </>
       ) : null}
+      </div>
     </div>
   )
 }

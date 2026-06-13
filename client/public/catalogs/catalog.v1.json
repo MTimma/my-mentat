@@ -1,0 +1,5632 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "counts": {
+      "effects": 163,
+      "cards": 63,
+      "boardSpaces": 22,
+      "conflicts": 18,
+      "intrigue": 32,
+      "leaders": 8
+    }
+  },
+  "effects": [
+    {
+      "id": "effect:card:starting/the-voice:play:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/the-voice"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "THE_VOICE"
+      }
+    },
+    {
+      "id": "effect:card:starting/the-voice:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/the-voice"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:starting/reverend-mother-mohiam:play:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/reverend-mother-mohiam"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "REVEREND_MOTHER_MOHIAM"
+      }
+    },
+    {
+      "id": "effect:card:starting/reverend-mother-mohiam:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/reverend-mother-mohiam"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2,
+        "spice": 2
+      }
+    },
+    {
+      "id": "effect:card:starting/power-play:play:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/power-play"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "POWER_PLAY"
+      }
+    },
+    {
+      "id": "effect:card:starting/power-play:play:1",
+      "owner": {
+        "type": "card",
+        "id": "starting/power-play"
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "trashThisCard": true
+      }
+    },
+    {
+      "id": "effect:card:starting/convincing-argument:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/convincing-argument"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:starting/dagger:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/dagger"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:starting/diplomacy:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/diplomacy"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:starting/dune-the-desert-planet:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/dune-the-desert-planet"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:starting/reconnaissance:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/reconnaissance"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:starting/seek-allies:play:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/seek-allies"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "trashThisCard": true
+      }
+    },
+    {
+      "id": "effect:card:starting/signet-ring:play:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/signet-ring"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "SIGNET_RING"
+      }
+    },
+    {
+      "id": "effect:card:starting/signet-ring:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/signet-ring"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:starting/other-memory:play:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/other-memory"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 1
+      },
+      "choiceOpt": true
+    },
+    {
+      "id": "effect:card:starting/other-memory:play:1",
+      "owner": {
+        "type": "card",
+        "id": "starting/other-memory"
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "custom": "OTHER_MEMORY"
+      },
+      "choiceOpt": true
+    },
+    {
+      "id": "effect:card:starting/other-memory:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/other-memory"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:starting/kwisatz-haderach:play:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/kwisatz-haderach"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {}
+    },
+    {
+      "id": "effect:card:starting/kwisatz-haderach:play:1",
+      "owner": {
+        "type": "card",
+        "id": "starting/kwisatz-haderach"
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "custom": "KWISATZ_HADERACH"
+      }
+    },
+    {
+      "id": "effect:card:starting/kwisatz-haderach:play:2",
+      "owner": {
+        "type": "card",
+        "id": "starting/kwisatz-haderach"
+      },
+      "slot": "play",
+      "index": 2,
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:starting/fremen-camp:play:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/fremen-camp"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 2
+      },
+      "reward": {
+        "troops": 3
+      }
+    },
+    {
+      "id": "effect:card:starting/fremen-camp:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/fremen-camp"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:starting/gurney-halleck:play:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/gurney-halleck"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "troops": 2,
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:starting/gurney-halleck:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/gurney-halleck"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:starting/gurney-halleck:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "starting/gurney-halleck"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "cost": {
+        "solari": 3
+      },
+      "reward": {
+        "troops": 2,
+        "deployTroops": 2
+      }
+    },
+    {
+      "id": "effect:card:starting/liet-kynes:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/liet-kynes"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "custom": "LIET_KYNES"
+      }
+    },
+    {
+      "id": "effect:card:starting/liet-kynes:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/liet-kynes"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:starting/scout:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/scout"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1,
+        "retreatTroops": 2
+      }
+    },
+    {
+      "id": "effect:card:starting/shifting-allegiances:play:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/shifting-allegiances"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 2,
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "emperor",
+              "amount": 1
+            }
+          ]
+        }
+      },
+      "reward": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "spacing-guild",
+              "amount": 2
+            },
+            {
+              "faction": "fremen",
+              "amount": 2
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 2
+            },
+            {
+              "faction": "emperor",
+              "amount": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:starting/shifting-allegiances:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/shifting-allegiances"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/arrakis-recruiter:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/arrakis-recruiter"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "troops": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/arrakis-recruiter:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/arrakis-recruiter"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "combat": 1,
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/assassination-mission:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/assassination-mission"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "combat": 1,
+        "solari": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/assassination-mission:trash:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/assassination-mission"
+      },
+      "slot": "trash",
+      "index": 0,
+      "reward": {
+        "solari": 4
+      }
+    },
+    {
+      "id": "effect:card:imperium/bene-gesserit-initiate:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/bene-gesserit-initiate"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/bene-gesserit-initiate:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/bene-gesserit-initiate"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/bene-gesserit-sister:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/bene-gesserit-sister"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2,
+        "combat": 2
+      },
+      "choiceOpt": true
+    },
+    {
+      "id": "effect:card:imperium/carryall:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/carryall"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "CARRYALL"
+      }
+    },
+    {
+      "id": "effect:card:imperium/carryall:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/carryall"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "spice": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/chani:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/chani"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/chani:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/chani"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "reward": {
+        "retreatTroops": 9007199254740991
+      }
+    },
+    {
+      "id": "effect:card:imperium/chani:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/chani"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "water": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/choam-directorship:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/choam-directorship"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "solari": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/choam-directorship:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/choam-directorship"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "fremen",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "emperor",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/crysknife:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/crysknife"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "solari": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/crysknife:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/crysknife"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/crysknife:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/crysknife"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "requirement": {
+        "bond": "fremen"
+      },
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/dr-yueh:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/dr-yueh"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/dr-yueh:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/dr-yueh"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/duncan-idaho:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/duncan-idaho"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "water": 1
+      },
+      "reward": {
+        "drawCards": 1,
+        "troops": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/duncan-idaho:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/duncan-idaho"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "water": 1,
+        "combat": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/fedaykin-death-commando:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/fedaykin-death-commando"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "trash": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/fedaykin-death-commando:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/fedaykin-death-commando"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/fedaykin-death-commando:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/fedaykin-death-commando"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "requirement": {
+        "bond": "fremen"
+      },
+      "reward": {
+        "combat": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/firm-grip:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/firm-grip"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "solari": 2
+      },
+      "reward": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/firm-grip:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/firm-grip"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "requirement": {
+        "alliance": "emperor"
+      },
+      "reward": {
+        "persuasion": 4
+      }
+    },
+    {
+      "id": "effect:card:imperium/fremen-camp:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/fremen-camp"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 2
+      },
+      "reward": {
+        "troops": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/fremen-camp:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/fremen-camp"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/gene-manipulation:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/gene-manipulation"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "trash": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/gene-manipulation:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/gene-manipulation"
+      },
+      "slot": "play",
+      "index": 1,
+      "requirement": {
+        "inPlay": "bene-gesserit"
+      },
+      "reward": {
+        "spice": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/gene-manipulation:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/gene-manipulation"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/guild-administrator:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-administrator"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "trash": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/guild-administrator:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-administrator"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/guild-ambassador:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-ambassador"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            }
+          ]
+        }
+      },
+      "choiceOpt": true
+    },
+    {
+      "id": "effect:card:imperium/guild-ambassador:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-ambassador"
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "spice": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/guild-ambassador:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-ambassador"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "requirement": {
+        "alliance": "spacing-guild"
+      },
+      "cost": {
+        "spice": 3
+      },
+      "reward": {
+        "victoryPoints": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/guild-bankers:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-bankers"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "custom": "GUILD_BANKERS"
+      }
+    },
+    {
+      "id": "effect:card:imperium/gun-thopter:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/gun-thopter"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "GUN_THOPTER"
+      }
+    },
+    {
+      "id": "effect:card:imperium/gun-thopter:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/gun-thopter"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "combat": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/gun-thopter:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/gun-thopter"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "reward": {
+        "deployTroops": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/gurney-halleck:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/gurney-halleck"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "troops": 2,
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/gurney-halleck:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/gurney-halleck"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/gurney-halleck:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/gurney-halleck"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "cost": {
+        "solari": 3
+      },
+      "reward": {
+        "troops": 2,
+        "deployTroops": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/imperial-spy:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/imperial-spy"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "trashThisCard": true
+      },
+      "reward": {
+        "intrigueCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/imperial-spy:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/imperial-spy"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/kwisatz-haderach:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/kwisatz-haderach"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "KWISATZ_HADERACH"
+      }
+    },
+    {
+      "id": "effect:card:imperium/kwisatz-haderach:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/kwisatz-haderach"
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/lady-jessica:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/lady-jessica"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/lady-jessica:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/lady-jessica"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 3,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/lady-jessica:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/lady-jessica"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "emperor",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/liet-kynes:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/liet-kynes"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "custom": "LIET_KYNES"
+      }
+    },
+    {
+      "id": "effect:card:imperium/liet-kynes:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/liet-kynes"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/missionaria-protectiva:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/missionaria-protectiva"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "inPlay": "bene-gesserit"
+      },
+      "reward": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "emperor",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/missionaria-protectiva:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/missionaria-protectiva"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/other-memory:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/other-memory"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 1
+      },
+      "choiceOpt": true
+    },
+    {
+      "id": "effect:card:imperium/other-memory:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/other-memory"
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "custom": "OTHER_MEMORY"
+      },
+      "choiceOpt": true
+    },
+    {
+      "id": "effect:card:imperium/other-memory:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/other-memory"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/opulence:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/opulence"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "solari": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/opulence:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/opulence"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/opulence:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/opulence"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "cost": {
+        "solari": 6
+      },
+      "reward": {
+        "victoryPoints": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/piter-de-vries:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/piter-de-vries"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "intrigueCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/piter-de-vries:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/piter-de-vries"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 3,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/power-play:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/power-play"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "POWER_PLAY"
+      }
+    },
+    {
+      "id": "effect:card:imperium/power-play:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/power-play"
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "trashThisCard": true
+      }
+    },
+    {
+      "id": "effect:card:imperium/reverend-mother-mohiam:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/reverend-mother-mohiam"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "REVEREND_MOTHER_MOHIAM"
+      }
+    },
+    {
+      "id": "effect:card:imperium/reverend-mother-mohiam:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/reverend-mother-mohiam"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2,
+        "spice": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/sardaukar-infantry:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/sardaukar-infantry"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/sardaukar-legion:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/sardaukar-legion"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "troops": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/sardaukar-legion:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/sardaukar-legion"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "deployTroops": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/scout:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/scout"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1,
+        "retreatTroops": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/shifting-allegiances:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/shifting-allegiances"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 2,
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "emperor",
+              "amount": 1
+            }
+          ]
+        }
+      },
+      "reward": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "spacing-guild",
+              "amount": 2
+            },
+            {
+              "faction": "fremen",
+              "amount": 2
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 2
+            },
+            {
+              "faction": "emperor",
+              "amount": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/shifting-allegiances:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/shifting-allegiances"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/sietch-reverend-mother:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/sietch-reverend-mother"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "trash": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/sietch-reverend-mother:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/sietch-reverend-mother"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "requirement": {
+        "bond": "fremen"
+      },
+      "reward": {
+        "persuasion": 3,
+        "spice": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/smuggler-s-thopter:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/smuggler-s-thopter"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "requirement": {
+        "influence": {
+          "faction": "spacing-guild",
+          "amount": 2
+        }
+      },
+      "reward": {
+        "persuasion": 1,
+        "spice": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/space-travel:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/space-travel"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/space-travel:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/space-travel"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/spice-hunter:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/spice-hunter"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/spice-hunter:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/spice-hunter"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "requirement": {
+        "bond": "fremen"
+      },
+      "reward": {
+        "spice": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/spice-smugglers:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/spice-smugglers"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 2
+      },
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            }
+          ]
+        },
+        "solari": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/spice-smugglers:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/spice-smugglers"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/stilgar:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/stilgar"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "water": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/stilgar:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/stilgar"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2,
+        "combat": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/test-of-humanity:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/test-of-humanity"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "TEST_OF_HUMANITY"
+      }
+    },
+    {
+      "id": "effect:card:imperium/test-of-humanity:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/test-of-humanity"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/the-voice:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/the-voice"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "THE_VOICE"
+      }
+    },
+    {
+      "id": "effect:card:imperium/the-voice:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/the-voice"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/thufir-hawat:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/thufir-hawat"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/thufir-hawat:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/thufir-hawat"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "intrigueCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/worm-riders:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/worm-riders"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "spice": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/worm-riders:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/worm-riders"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "requirement": {
+        "influence": {
+          "faction": "fremen",
+          "amount": 2
+        }
+      },
+      "reward": {
+        "combat": 4
+      }
+    },
+    {
+      "id": "effect:card:imperium/worm-riders:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/worm-riders"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "requirement": {
+        "alliance": "fremen"
+      },
+      "reward": {
+        "combat": 2
+      }
+    },
+    {
+      "id": "effect:card:arrakis-liaison/arrakis-liaison:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "arrakis-liaison/arrakis-liaison"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:spice-must-flow/spice-must-flow:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "spice-must-flow/spice-must-flow"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "spice": 1
+      }
+    },
+    {
+      "id": "effect:card:spice-must-flow/spice-must-flow:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "spice-must-flow/spice-must-flow"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "victoryPoints": 1
+      }
+    },
+    {
+      "id": "effect:card:foldspace/foldspace:play:0",
+      "owner": {
+        "type": "card",
+        "id": "foldspace/foldspace"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 1,
+        "trashThisCard": true
+      }
+    },
+    {
+      "id": "effect:intrigue:1:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 1
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "combat": 4
+      }
+    },
+    {
+      "id": "effect:intrigue:2:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 2
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "or": [
+          {
+            "alliance": "emperor"
+          },
+          {
+            "alliance": "spacing-guild"
+          },
+          {
+            "alliance": "bene-gesserit"
+          },
+          {
+            "alliance": "fremen"
+          }
+        ]
+      },
+      "cost": {
+        "spice": 2
+      },
+      "reward": {
+        "combat": 7
+      }
+    },
+    {
+      "id": "effect:intrigue:3:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 3
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "BINDU_SUSPENSION"
+      }
+    },
+    {
+      "id": "effect:intrigue:4:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 4
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "solari": 2
+      },
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ],
+          "chooseOne": true
+        }
+      }
+    },
+    {
+      "id": "effect:intrigue:5:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 5
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "acquire": {
+          "limit": 3
+        }
+      },
+      "choiceOpt": true
+    },
+    {
+      "id": "effect:intrigue:5:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 5
+      },
+      "slot": "play",
+      "index": 1,
+      "cost": {
+        "spice": 2
+      },
+      "reward": {
+        "acquire": {
+          "limit": 5
+        },
+        "acquireToTopThisRound": true
+      },
+      "choiceOpt": true
+    },
+    {
+      "id": "effect:intrigue:6:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 6
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 1
+      },
+      "reward": {
+        "mentat": true
+      }
+    },
+    {
+      "id": "effect:intrigue:7:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 7
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      },
+      "timing": "on-reveal-this-round"
+    },
+    {
+      "id": "effect:intrigue:8:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 8
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "solari": 7
+      },
+      "reward": {
+        "victoryPoints": 1
+      }
+    },
+    {
+      "id": "effect:intrigue:9:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 9
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "CORNER_THE_MARKET"
+      },
+      "phase": "end-game"
+    },
+    {
+      "id": "effect:intrigue:10:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 10
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "highCouncil": true
+      },
+      "reward": {
+        "spice": 2
+      }
+    },
+    {
+      "id": "effect:intrigue:11:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 11
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "DISPATCH_ENVOY"
+      }
+    },
+    {
+      "id": "effect:intrigue:12:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 12
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "solari": 1
+      },
+      "reward": {
+        "custom": "DOUBLE_CROSS"
+      }
+    },
+    {
+      "id": "effect:intrigue:13:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 13
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:intrigue:14:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 14
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:intrigue:15:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 15
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "INFILTRATE_INTRIGUE"
+      }
+    },
+    {
+      "id": "effect:intrigue:16:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 16
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:intrigue:17:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 17
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "MASTER_TACTICIAN"
+      }
+    },
+    {
+      "id": "effect:intrigue:17:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 17
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "combat": 3
+      },
+      "choiceOpt": true,
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:18:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 18
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "PLANS_WITHIN_PLANS"
+      },
+      "phase": "end-game"
+    },
+    {
+      "id": "effect:intrigue:19:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 19
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 2
+      },
+      "reward": {
+        "combat": 5
+      }
+    },
+    {
+      "id": "effect:intrigue:20:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 20
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "RAPID_MOBILIZATION"
+      }
+    },
+    {
+      "id": "effect:intrigue:21:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 21
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "water": 1
+      },
+      "timing": "on-reveal-this-round"
+    },
+    {
+      "id": "effect:intrigue:21:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 21
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "acquireToTopThisRound": true
+      }
+    },
+    {
+      "id": "effect:intrigue:22:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 22
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "SHUFFLE_DISCARD_INTO_DECK"
+      }
+    },
+    {
+      "id": "effect:intrigue:22:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 22
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:intrigue:23:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 23
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "solari": 3
+      },
+      "reward": {
+        "troops": 3
+      }
+    },
+    {
+      "id": "effect:intrigue:24:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 24
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:intrigue:25:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 25
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "STAGED_INCIDENT"
+      }
+    },
+    {
+      "id": "effect:intrigue:26:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 26
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 4
+      },
+      "reward": {
+        "victoryPoints": 1
+      }
+    },
+    {
+      "id": "effect:intrigue:27:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 27
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:27:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 27
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "tiebreakerSpice": 10
+      },
+      "phase": "end-game"
+    },
+    {
+      "id": "effect:intrigue:28:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 28
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "TO_THE_VICTOR"
+      }
+    },
+    {
+      "id": "effect:intrigue:29:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 29
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "URGENT_MISSION"
+      }
+    },
+    {
+      "id": "effect:intrigue:30:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 30
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "water": 1,
+        "spice": 1
+      },
+      "reward": {
+        "drawCards": 3
+      }
+    },
+    {
+      "id": "effect:intrigue:31:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 31
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "water": 1
+      }
+    },
+    {
+      "id": "effect:intrigue:32:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 32
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "solari": 2
+      }
+    },
+    {
+      "id": "effect:board-space:9:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 9
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:board-space:12:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 12
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "troops": 1,
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:board-space:15:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 15
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "solari": 2
+      }
+    },
+    {
+      "id": "effect:board-space:14:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 14
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "solari": 5,
+        "troops": 2,
+        "intrigueCards": 1
+      }
+    },
+    {
+      "id": "effect:board-space:10:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 10
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:board-space:11:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 11
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "troops": 4
+      }
+    },
+    {
+      "id": "effect:board-space:17:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 17
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "troops": 5,
+        "water": 2
+      }
+    },
+    {
+      "id": "effect:board-space:21:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 21
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "troops": 1,
+        "water": 1
+      }
+    },
+    {
+      "id": "effect:board-space:3:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 3
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "drawCards": 3
+      }
+    },
+    {
+      "id": "effect:board-space:7:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 7
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "solari": 3
+      }
+    },
+    {
+      "id": "effect:board-space:18:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 18
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "intrigueCards": 1
+      }
+    },
+    {
+      "id": "effect:board-space:18:space:1",
+      "owner": {
+        "type": "board-space",
+        "id": 18
+      },
+      "slot": "space",
+      "index": 1,
+      "reward": {
+        "custom": "SECRETS_STEAL"
+      }
+    },
+    {
+      "id": "effect:board-space:19:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 19
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "drawCards": 2
+      }
+    },
+    {
+      "id": "effect:board-space:1:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 1
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "troops": 1,
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:board-space:2:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 2
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "troops": 1,
+        "intrigueCards": 1
+      }
+    },
+    {
+      "id": "effect:board-space:4:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 4
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "spice": 1
+      }
+    },
+    {
+      "id": "effect:board-space:22:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 22
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "water": 1
+      }
+    },
+    {
+      "id": "effect:board-space:20:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 20
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "troops": 2
+      }
+    },
+    {
+      "id": "effect:board-space:5:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 5
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "spice": 3
+      }
+    },
+    {
+      "id": "effect:board-space:6:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 6
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "spice": 2
+      }
+    }
+  ],
+  "cards": [
+    {
+      "id": "starting/the-voice",
+      "name": "The Voice",
+      "pool": "starting",
+      "cost": 2,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "image": "imperium_row/the_voice.avif",
+      "effects": {
+        "play": [
+          "effect:card:starting/the-voice:play:0"
+        ],
+        "reveal": [
+          "effect:card:starting/the-voice:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1061
+      ]
+    },
+    {
+      "id": "starting/reverend-mother-mohiam",
+      "name": "Reverend Mother Mohiam",
+      "pool": "starting",
+      "cost": 6,
+      "factions": [
+        "emperor",
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "emperor",
+        "bene-gesserit"
+      ],
+      "image": "imperium_row/reverend_mother_mohiam.avif",
+      "effects": {
+        "play": [
+          "effect:card:starting/reverend-mother-mohiam:play:0"
+        ],
+        "reveal": [
+          "effect:card:starting/reverend-mother-mohiam:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1043
+      ]
+    },
+    {
+      "id": "starting/power-play",
+      "name": "Power Play",
+      "pool": "starting",
+      "cost": 5,
+      "agentIcons": [
+        "emperor",
+        "spacing-guild",
+        "bene-gesserit",
+        "fremen"
+      ],
+      "image": "imperium_row/power_play.avif",
+      "effects": {
+        "play": [
+          "effect:card:starting/power-play:play:0",
+          "effect:card:starting/power-play:play:1"
+        ]
+      },
+      "authorIds": [
+        1040
+      ]
+    },
+    {
+      "id": "starting/convincing-argument",
+      "name": "Convincing Argument",
+      "pool": "starting",
+      "agentIcons": [],
+      "image": "starter_deck/convincing_argument.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:starting/convincing-argument:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": "starting/dagger",
+      "name": "Dagger",
+      "pool": "starting",
+      "agentIcons": [
+        "landsraad"
+      ],
+      "image": "starter_deck/dagger.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:starting/dagger:reveal:0"
+        ]
+      },
+      "authorIds": [
+        3,
+        4
+      ]
+    },
+    {
+      "id": "starting/diplomacy",
+      "name": "Diplomacy",
+      "pool": "starting",
+      "agentIcons": [
+        "fremen",
+        "bene-gesserit",
+        "spacing-guild",
+        "emperor"
+      ],
+      "image": "starter_deck/diplomacy.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:starting/diplomacy:reveal:0"
+        ]
+      },
+      "authorIds": [
+        5
+      ]
+    },
+    {
+      "id": "starting/dune-the-desert-planet",
+      "name": "Dune, the Desert Planet",
+      "pool": "starting",
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "image": "starter_deck/dune_the_desert_planet.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:starting/dune-the-desert-planet:reveal:0"
+        ]
+      },
+      "authorIds": [
+        6,
+        7
+      ]
+    },
+    {
+      "id": "starting/reconnaissance",
+      "name": "Reconnaissance",
+      "pool": "starting",
+      "agentIcons": [
+        "city"
+      ],
+      "image": "starter_deck/reconnaissance.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:starting/reconnaissance:reveal:0"
+        ]
+      },
+      "authorIds": [
+        8
+      ]
+    },
+    {
+      "id": "starting/seek-allies",
+      "name": "Seek Allies",
+      "pool": "starting",
+      "agentIcons": [
+        "fremen",
+        "bene-gesserit",
+        "spacing-guild",
+        "emperor"
+      ],
+      "image": "starter_deck/seek_allies.avif",
+      "effects": {
+        "play": [
+          "effect:card:starting/seek-allies:play:0"
+        ]
+      },
+      "authorIds": [
+        9
+      ]
+    },
+    {
+      "id": "starting/signet-ring",
+      "name": "Signet Ring",
+      "pool": "starting",
+      "agentIcons": [
+        "landsraad",
+        "city",
+        "spice-trade"
+      ],
+      "image": "starter_deck/signet_ring.avif",
+      "effects": {
+        "play": [
+          "effect:card:starting/signet-ring:play:0"
+        ],
+        "reveal": [
+          "effect:card:starting/signet-ring:reveal:0"
+        ]
+      },
+      "authorIds": [
+        10
+      ]
+    },
+    {
+      "id": "starting/other-memory",
+      "name": "Other Memory",
+      "pool": "starting",
+      "cost": 4,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "image": "imperium_row/other_memory.avif",
+      "effects": {
+        "play": [
+          "effect:card:starting/other-memory:play:0",
+          "effect:card:starting/other-memory:play:1"
+        ],
+        "reveal": [
+          "effect:card:starting/other-memory:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1036
+      ]
+    },
+    {
+      "id": "starting/kwisatz-haderach",
+      "name": "Kwisatz Haderach",
+      "pool": "starting",
+      "cost": 8,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade",
+        "landsraad",
+        "emperor",
+        "fremen",
+        "spacing-guild",
+        "bene-gesserit"
+      ],
+      "infiltrate": true,
+      "image": "imperium_row/kwisatz_haderach.avif",
+      "effects": {
+        "play": [
+          "effect:card:starting/kwisatz-haderach:play:0",
+          "effect:card:starting/kwisatz-haderach:play:1",
+          "effect:card:starting/kwisatz-haderach:play:2"
+        ]
+      },
+      "authorIds": [
+        1031
+      ]
+    },
+    {
+      "id": "starting/fremen-camp",
+      "name": "Fremen Camp",
+      "pool": "starting",
+      "cost": 4,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "image": "imperium_row/fremen_camp.avif",
+      "effects": {
+        "play": [
+          "effect:card:starting/fremen-camp:play:0"
+        ],
+        "reveal": [
+          "effect:card:starting/fremen-camp:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1021
+      ]
+    },
+    {
+      "id": "starting/gurney-halleck",
+      "name": "Gurney Halleck",
+      "pool": "starting",
+      "cost": 6,
+      "agentIcons": [
+        "city"
+      ],
+      "image": "imperium_row/gurney_halleck.avif",
+      "effects": {
+        "play": [
+          "effect:card:starting/gurney-halleck:play:0"
+        ],
+        "reveal": [
+          "effect:card:starting/gurney-halleck:reveal:0",
+          "effect:card:starting/gurney-halleck:reveal:1"
+        ]
+      },
+      "authorIds": [
+        1028
+      ]
+    },
+    {
+      "id": "starting/liet-kynes",
+      "name": "Liet Kynes",
+      "pool": "starting",
+      "cost": 5,
+      "factions": [
+        "fremen",
+        "emperor"
+      ],
+      "agentIcons": [
+        "fremen",
+        "city"
+      ],
+      "image": "imperium_row/liet_kynes.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:starting/liet-kynes:reveal:0"
+        ],
+        "acquire": "effect:card:starting/liet-kynes:acquire:0"
+      },
+      "authorIds": [
+        1033
+      ]
+    },
+    {
+      "id": "starting/scout",
+      "name": "Scout",
+      "pool": "starting",
+      "cost": 1,
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "image": "imperium_row/scout.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:starting/scout:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1048
+      ]
+    },
+    {
+      "id": "starting/shifting-allegiances",
+      "name": "Shifting Allegiances",
+      "pool": "starting",
+      "cost": 3,
+      "agentIcons": [
+        "landsraad",
+        "spice-trade"
+      ],
+      "image": "imperium_row/shifting_allegiances.avif",
+      "effects": {
+        "play": [
+          "effect:card:starting/shifting-allegiances:play:0"
+        ],
+        "reveal": [
+          "effect:card:starting/shifting-allegiances:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1051
+      ]
+    },
+    {
+      "id": "imperium/arrakis-recruiter",
+      "name": "Arrakis Recruiter",
+      "pool": "imperium",
+      "cost": 2,
+      "agentIcons": [
+        "city"
+      ],
+      "image": "imperium_row/arrakis_recruiter.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/arrakis-recruiter:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/arrakis-recruiter:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1001,
+        1002
+      ]
+    },
+    {
+      "id": "imperium/assassination-mission",
+      "name": "Assassination Mission",
+      "pool": "imperium",
+      "cost": 1,
+      "agentIcons": [],
+      "image": "imperium_row/assassination_mission.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/assassination-mission:reveal:0"
+        ],
+        "trash": [
+          "effect:card:imperium/assassination-mission:trash:0"
+        ]
+      },
+      "authorIds": [
+        1004,
+        1005
+      ]
+    },
+    {
+      "id": "imperium/bene-gesserit-initiate",
+      "name": "Bene Gesserit Initiate",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "landsraad",
+        "city",
+        "spice-trade"
+      ],
+      "image": "imperium_row/bene_gesserit_initiate.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/bene-gesserit-initiate:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/bene-gesserit-initiate:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1006,
+        1007
+      ]
+    },
+    {
+      "id": "imperium/bene-gesserit-sister",
+      "name": "Bene Gesserit Sister",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "landsraad",
+        "bene-gesserit"
+      ],
+      "image": "imperium_row/bene_gesserit_sister.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/bene-gesserit-sister:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1008,
+        1009,
+        1010
+      ]
+    },
+    {
+      "id": "imperium/carryall",
+      "name": "Carryall",
+      "pool": "imperium",
+      "cost": 5,
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "image": "imperium_row/carryall.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/carryall:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/carryall:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1011
+      ]
+    },
+    {
+      "id": "imperium/chani",
+      "name": "Chani",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "fremen",
+        "city",
+        "spice-trade"
+      ],
+      "image": "imperium_row/chani.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/chani:reveal:0",
+          "effect:card:imperium/chani:reveal:1"
+        ],
+        "acquire": "effect:card:imperium/chani:acquire:0"
+      },
+      "authorIds": [
+        1012
+      ]
+    },
+    {
+      "id": "imperium/choam-directorship",
+      "name": "CHOAM Directorship",
+      "pool": "imperium",
+      "cost": 8,
+      "agentIcons": [],
+      "image": "imperium_row/choam_directorship.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/choam-directorship:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/choam-directorship:acquire:0"
+      },
+      "authorIds": [
+        1013
+      ]
+    },
+    {
+      "id": "imperium/crysknife",
+      "name": "Crysknife",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [
+        "fremen",
+        "spice-trade"
+      ],
+      "image": "imperium_row/crysknife.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/crysknife:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/crysknife:reveal:0",
+          "effect:card:imperium/crysknife:reveal:1"
+        ]
+      },
+      "authorIds": [
+        1014
+      ]
+    },
+    {
+      "id": "imperium/dr-yueh",
+      "name": "Dr. Yueh",
+      "pool": "imperium",
+      "cost": 1,
+      "agentIcons": [
+        "city"
+      ],
+      "image": "imperium_row/dr_yueh.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/dr-yueh:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/dr-yueh:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1015
+      ]
+    },
+    {
+      "id": "imperium/duncan-idaho",
+      "name": "Duncan Idaho",
+      "pool": "imperium",
+      "cost": 4,
+      "agentIcons": [
+        "city"
+      ],
+      "image": "imperium_row/duncan_idaho.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/duncan-idaho:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/duncan-idaho:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1017
+      ]
+    },
+    {
+      "id": "imperium/fedaykin-death-commando",
+      "name": "Fedaykin Death Commando",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "spice-trade",
+        "city"
+      ],
+      "image": "imperium_row/fedaykin_death_commando.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/fedaykin-death-commando:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/fedaykin-death-commando:reveal:0",
+          "effect:card:imperium/fedaykin-death-commando:reveal:1"
+        ]
+      },
+      "authorIds": [
+        1018,
+        1019
+      ]
+    },
+    {
+      "id": "imperium/firm-grip",
+      "name": "Firm Grip",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "emperor",
+        "landsraad"
+      ],
+      "image": "imperium_row/firm_grip.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/firm-grip:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/firm-grip:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1020
+      ]
+    },
+    {
+      "id": "imperium/fremen-camp",
+      "name": "Fremen Camp",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "image": "imperium_row/fremen_camp.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/fremen-camp:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/fremen-camp:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1021,
+        1022
+      ]
+    },
+    {
+      "id": "imperium/gene-manipulation",
+      "name": "Gene Manipulation",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "landsraad",
+        "city"
+      ],
+      "image": "imperium_row/gene_manipulation.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/gene-manipulation:play:0",
+          "effect:card:imperium/gene-manipulation:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/gene-manipulation:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1023,
+        1024
+      ]
+    },
+    {
+      "id": "imperium/guild-administrator",
+      "name": "Guild Administrator",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "spacing-guild",
+        "spice-trade"
+      ],
+      "image": "imperium_row/guild_administrator.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/guild-administrator:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/guild-administrator:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1025,
+        1026
+      ]
+    },
+    {
+      "id": "imperium/guild-ambassador",
+      "name": "Guild Ambassador",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "landsraad"
+      ],
+      "image": "imperium_row/guild_ambassador.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/guild-ambassador:play:0",
+          "effect:card:imperium/guild-ambassador:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/guild-ambassador:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1026
+      ]
+    },
+    {
+      "id": "imperium/guild-bankers",
+      "name": "Guild Bankers",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "emperor",
+        "spacing-guild",
+        "landsraad"
+      ],
+      "image": "imperium_row/guild_bankers.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/guild-bankers:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1026
+      ]
+    },
+    {
+      "id": "imperium/gun-thopter",
+      "name": "Gun Thopter",
+      "pool": "imperium",
+      "cost": 4,
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "image": "imperium_row/gun_thopter.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/gun-thopter:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/gun-thopter:reveal:0",
+          "effect:card:imperium/gun-thopter:reveal:1"
+        ]
+      },
+      "authorIds": [
+        1027,
+        1028
+      ]
+    },
+    {
+      "id": "imperium/gurney-halleck",
+      "name": "Gurney Halleck",
+      "pool": "imperium",
+      "cost": 6,
+      "agentIcons": [
+        "city"
+      ],
+      "image": "imperium_row/gurney_halleck.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/gurney-halleck:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/gurney-halleck:reveal:0",
+          "effect:card:imperium/gurney-halleck:reveal:1"
+        ]
+      },
+      "authorIds": [
+        1029
+      ]
+    },
+    {
+      "id": "imperium/imperial-spy",
+      "name": "Imperial Spy",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "emperor"
+      ],
+      "image": "imperium_row/imperial_spy.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/imperial-spy:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/imperial-spy:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1030,
+        1031
+      ]
+    },
+    {
+      "id": "imperium/kwisatz-haderach",
+      "name": "Kwisatz Haderach",
+      "pool": "imperium",
+      "cost": 8,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade",
+        "landsraad",
+        "emperor",
+        "fremen",
+        "spacing-guild",
+        "bene-gesserit"
+      ],
+      "infiltrate": true,
+      "image": "imperium_row/kwisatz_haderach.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/kwisatz-haderach:play:0",
+          "effect:card:imperium/kwisatz-haderach:play:1"
+        ]
+      },
+      "authorIds": [
+        1032
+      ]
+    },
+    {
+      "id": "imperium/lady-jessica",
+      "name": "Lady Jessica",
+      "pool": "imperium",
+      "cost": 7,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "bene-gesserit",
+        "city",
+        "spice-trade",
+        "landsraad"
+      ],
+      "infiltrate": true,
+      "image": "imperium_row/lady_jessica.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/lady-jessica:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/lady-jessica:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/lady-jessica:acquire:0"
+      },
+      "authorIds": [
+        1033
+      ]
+    },
+    {
+      "id": "imperium/liet-kynes",
+      "name": "Liet Kynes",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "fremen",
+        "emperor"
+      ],
+      "agentIcons": [
+        "fremen",
+        "city"
+      ],
+      "image": "imperium_row/liet_kynes.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/liet-kynes:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/liet-kynes:acquire:0"
+      },
+      "authorIds": [
+        1034
+      ]
+    },
+    {
+      "id": "imperium/missionaria-protectiva",
+      "name": "Missionaria Protectiva",
+      "pool": "imperium",
+      "cost": 1,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "city"
+      ],
+      "image": "imperium_row/missionaria_protectiva.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/missionaria-protectiva:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/missionaria-protectiva:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1035,
+        1036
+      ]
+    },
+    {
+      "id": "imperium/other-memory",
+      "name": "Other Memory",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "image": "imperium_row/other_memory.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/other-memory:play:0",
+          "effect:card:imperium/other-memory:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/other-memory:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1037
+      ]
+    },
+    {
+      "id": "imperium/opulence",
+      "name": "Opulence",
+      "pool": "imperium",
+      "cost": 6,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "emperor"
+      ],
+      "image": "imperium_row/opulence.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/opulence:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/opulence:reveal:0",
+          "effect:card:imperium/opulence:reveal:1"
+        ]
+      },
+      "authorIds": [
+        1038
+      ]
+    },
+    {
+      "id": "imperium/piter-de-vries",
+      "name": "Piter De Vries",
+      "pool": "imperium",
+      "cost": 5,
+      "agentIcons": [
+        "city",
+        "landsraad"
+      ],
+      "image": "imperium_row/piter_de_vries.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/piter-de-vries:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/piter-de-vries:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1039
+      ]
+    },
+    {
+      "id": "imperium/power-play",
+      "name": "Power Play",
+      "pool": "imperium",
+      "cost": 5,
+      "agentIcons": [
+        "emperor",
+        "spacing-guild",
+        "bene-gesserit",
+        "fremen"
+      ],
+      "image": "imperium_row/power_play.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/power-play:play:0",
+          "effect:card:imperium/power-play:play:1"
+        ]
+      },
+      "authorIds": [
+        1040,
+        1041,
+        1042
+      ]
+    },
+    {
+      "id": "imperium/reverend-mother-mohiam",
+      "name": "Reverend Mother Mohiam",
+      "pool": "imperium",
+      "cost": 6,
+      "factions": [
+        "emperor",
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "emperor",
+        "bene-gesserit"
+      ],
+      "image": "imperium_row/reverend_mother_mohiam.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/reverend-mother-mohiam:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/reverend-mother-mohiam:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1043
+      ]
+    },
+    {
+      "id": "imperium/sardaukar-infantry",
+      "name": "Sardaukar Infantry",
+      "pool": "imperium",
+      "cost": 1,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [],
+      "image": "imperium_row/sardaukar_infantry.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/sardaukar-infantry:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1044,
+        1045
+      ]
+    },
+    {
+      "id": "imperium/sardaukar-legion",
+      "name": "Sardaukar Legion",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "emperor",
+        "landsraad"
+      ],
+      "image": "imperium_row/sardaukar_legion.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/sardaukar-legion:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/sardaukar-legion:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1046,
+        1047
+      ]
+    },
+    {
+      "id": "imperium/scout",
+      "name": "Scout",
+      "pool": "imperium",
+      "cost": 1,
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "image": "imperium_row/scout.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/scout:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1048,
+        1049
+      ]
+    },
+    {
+      "id": "imperium/shifting-allegiances",
+      "name": "Shifting Allegiances",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [
+        "landsraad",
+        "spice-trade"
+      ],
+      "image": "imperium_row/shifting_allegiances.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/shifting-allegiances:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/shifting-allegiances:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1050,
+        1051
+      ]
+    },
+    {
+      "id": "imperium/sietch-reverend-mother",
+      "name": "Sietch Reverend Mother",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "bene-gesserit",
+        "fremen"
+      ],
+      "agentIcons": [
+        "bene-gesserit",
+        "fremen"
+      ],
+      "image": "imperium_row/sietch_reverend_mother.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/sietch-reverend-mother:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/sietch-reverend-mother:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1052
+      ]
+    },
+    {
+      "id": "imperium/smuggler-s-thopter",
+      "name": "Smuggler's Thopter",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "image": "imperium_row/smugglers_thopter.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/smuggler-s-thopter:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1053,
+        1054
+      ]
+    },
+    {
+      "id": "imperium/space-travel",
+      "name": "Space Travel",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "spacing-guild"
+      ],
+      "image": "imperium_row/space_travel.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/space-travel:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/space-travel:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1055,
+        1056
+      ]
+    },
+    {
+      "id": "imperium/spice-hunter",
+      "name": "Spice Hunter",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "fremen",
+        "spice-trade"
+      ],
+      "image": "imperium_row/spice_hunter.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/spice-hunter:reveal:0",
+          "effect:card:imperium/spice-hunter:reveal:1"
+        ]
+      },
+      "authorIds": [
+        1057,
+        1057
+      ]
+    },
+    {
+      "id": "imperium/spice-smugglers",
+      "name": "Spice Smugglers",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "city"
+      ],
+      "image": "imperium_row/spice_smugglers.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/spice-smugglers:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/spice-smugglers:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1058,
+        1058
+      ]
+    },
+    {
+      "id": "imperium/stilgar",
+      "name": "Stilgar",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "fremen",
+        "city",
+        "spice-trade"
+      ],
+      "image": "imperium_row/stilgar.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/stilgar:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/stilgar:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1059
+      ]
+    },
+    {
+      "id": "imperium/test-of-humanity",
+      "name": "Test of Humanity",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "bene-gesserit",
+        "city",
+        "landsraad"
+      ],
+      "image": "imperium_row/test_of_humanity.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/test-of-humanity:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/test-of-humanity:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1060
+      ]
+    },
+    {
+      "id": "imperium/the-voice",
+      "name": "The Voice",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "image": "imperium_row/the_voice.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/the-voice:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/the-voice:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1061,
+        1062
+      ]
+    },
+    {
+      "id": "imperium/thufir-hawat",
+      "name": "Thufir Hawat",
+      "pool": "imperium",
+      "cost": 5,
+      "agentIcons": [
+        "emperor",
+        "spacing-guild",
+        "bene-gesserit",
+        "fremen",
+        "city",
+        "spice-trade"
+      ],
+      "image": "imperium_row/thufir_hawat.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/thufir-hawat:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/thufir-hawat:reveal:0"
+        ]
+      },
+      "authorIds": [
+        1063
+      ]
+    },
+    {
+      "id": "imperium/worm-riders",
+      "name": "Worm Riders",
+      "pool": "imperium",
+      "cost": 6,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "image": "imperium_row/worm_riders.avif",
+      "effects": {
+        "play": [
+          "effect:card:imperium/worm-riders:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/worm-riders:reveal:0",
+          "effect:card:imperium/worm-riders:reveal:1"
+        ]
+      },
+      "authorIds": [
+        1064,
+        1065
+      ]
+    },
+    {
+      "id": "arrakis-liaison/arrakis-liaison",
+      "name": "Arrakis Liaison",
+      "pool": "arrakis-liaison",
+      "cost": 2,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "landsraad",
+        "city"
+      ],
+      "image": "imperium_row/arrakis_liaison.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:arrakis-liaison/arrakis-liaison:reveal:0"
+        ]
+      },
+      "authorIds": [
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        208
+      ]
+    },
+    {
+      "id": "spice-must-flow/spice-must-flow",
+      "name": "Spice Must Flow",
+      "pool": "spice-must-flow",
+      "cost": 9,
+      "agentIcons": [],
+      "image": "imperium_row/spice_must_flow.avif",
+      "effects": {
+        "reveal": [
+          "effect:card:spice-must-flow/spice-must-flow:reveal:0"
+        ],
+        "acquire": "effect:card:spice-must-flow/spice-must-flow:acquire:0"
+      },
+      "authorIds": [
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308,
+        309,
+        310
+      ]
+    },
+    {
+      "id": "foldspace/foldspace",
+      "name": "Foldspace",
+      "pool": "foldspace",
+      "agentIcons": [
+        "city",
+        "spice-trade",
+        "landsraad",
+        "emperor",
+        "fremen",
+        "spacing-guild",
+        "bene-gesserit"
+      ],
+      "image": "imperium_row/foldspace.avif",
+      "effects": {
+        "play": [
+          "effect:card:foldspace/foldspace:play:0"
+        ]
+      },
+      "authorIds": [
+        401,
+        402,
+        403,
+        404,
+        405,
+        406,
+        407,
+        408
+      ]
+    }
+  ],
+  "decks": {
+    "starting": [
+      "starting/the-voice",
+      "starting/reverend-mother-mohiam",
+      "starting/power-play",
+      "starting/convincing-argument",
+      "starting/convincing-argument",
+      "starting/dagger",
+      "starting/dagger",
+      "starting/diplomacy",
+      "starting/dune-the-desert-planet",
+      "starting/dune-the-desert-planet",
+      "starting/reconnaissance",
+      "starting/seek-allies",
+      "starting/signet-ring",
+      "starting/other-memory",
+      "starting/kwisatz-haderach",
+      "starting/fremen-camp",
+      "starting/gurney-halleck",
+      "starting/liet-kynes",
+      "starting/scout",
+      "starting/shifting-allegiances"
+    ],
+    "imperium": [
+      "imperium/arrakis-recruiter",
+      "imperium/arrakis-recruiter",
+      "imperium/assassination-mission",
+      "imperium/assassination-mission",
+      "imperium/bene-gesserit-initiate",
+      "imperium/bene-gesserit-initiate",
+      "imperium/bene-gesserit-sister",
+      "imperium/bene-gesserit-sister",
+      "imperium/bene-gesserit-sister",
+      "imperium/carryall",
+      "imperium/chani",
+      "imperium/choam-directorship",
+      "imperium/crysknife",
+      "imperium/dr-yueh",
+      "imperium/duncan-idaho",
+      "imperium/fedaykin-death-commando",
+      "imperium/fedaykin-death-commando",
+      "imperium/firm-grip",
+      "imperium/fremen-camp",
+      "imperium/fremen-camp",
+      "imperium/gene-manipulation",
+      "imperium/gene-manipulation",
+      "imperium/guild-administrator",
+      "imperium/guild-administrator",
+      "imperium/guild-ambassador",
+      "imperium/guild-bankers",
+      "imperium/gun-thopter",
+      "imperium/gun-thopter",
+      "imperium/gurney-halleck",
+      "imperium/imperial-spy",
+      "imperium/imperial-spy",
+      "imperium/kwisatz-haderach",
+      "imperium/lady-jessica",
+      "imperium/liet-kynes",
+      "imperium/missionaria-protectiva",
+      "imperium/missionaria-protectiva",
+      "imperium/other-memory",
+      "imperium/opulence",
+      "imperium/piter-de-vries",
+      "imperium/power-play",
+      "imperium/power-play",
+      "imperium/power-play",
+      "imperium/reverend-mother-mohiam",
+      "imperium/sardaukar-infantry",
+      "imperium/sardaukar-infantry",
+      "imperium/sardaukar-legion",
+      "imperium/sardaukar-legion",
+      "imperium/scout",
+      "imperium/scout",
+      "imperium/shifting-allegiances",
+      "imperium/shifting-allegiances",
+      "imperium/sietch-reverend-mother",
+      "imperium/smuggler-s-thopter",
+      "imperium/smuggler-s-thopter",
+      "imperium/space-travel",
+      "imperium/space-travel",
+      "imperium/spice-hunter",
+      "imperium/spice-hunter",
+      "imperium/spice-smugglers",
+      "imperium/spice-smugglers",
+      "imperium/stilgar",
+      "imperium/test-of-humanity",
+      "imperium/the-voice",
+      "imperium/the-voice",
+      "imperium/thufir-hawat",
+      "imperium/worm-riders",
+      "imperium/worm-riders"
+    ],
+    "arrakis-liaison": [
+      "arrakis-liaison/arrakis-liaison",
+      "arrakis-liaison/arrakis-liaison",
+      "arrakis-liaison/arrakis-liaison",
+      "arrakis-liaison/arrakis-liaison",
+      "arrakis-liaison/arrakis-liaison",
+      "arrakis-liaison/arrakis-liaison",
+      "arrakis-liaison/arrakis-liaison",
+      "arrakis-liaison/arrakis-liaison"
+    ],
+    "spice-must-flow": [
+      "spice-must-flow/spice-must-flow",
+      "spice-must-flow/spice-must-flow",
+      "spice-must-flow/spice-must-flow",
+      "spice-must-flow/spice-must-flow",
+      "spice-must-flow/spice-must-flow",
+      "spice-must-flow/spice-must-flow",
+      "spice-must-flow/spice-must-flow",
+      "spice-must-flow/spice-must-flow",
+      "spice-must-flow/spice-must-flow",
+      "spice-must-flow/spice-must-flow"
+    ],
+    "foldspace": [
+      "foldspace/foldspace",
+      "foldspace/foldspace",
+      "foldspace/foldspace",
+      "foldspace/foldspace",
+      "foldspace/foldspace",
+      "foldspace/foldspace",
+      "foldspace/foldspace",
+      "foldspace/foldspace"
+    ]
+  },
+  "boardSpaces": [
+    {
+      "id": 9,
+      "name": "High Council",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "cost": {
+        "solari": 5
+      },
+      "specialEffect": "highCouncil",
+      "image": "board/high_council.png",
+      "effects": [
+        "effect:board-space:9:space:0"
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Hall of Oratory",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "image": "board/hall_of_oratory.png",
+      "effects": [
+        "effect:board-space:12:space:0"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Sell Melange",
+      "agentIcon": "spice-trade",
+      "conflictMarker": false,
+      "cost": {
+        "spice": 2
+      },
+      "specialEffect": "sellMelange",
+      "image": "board/sell_melange.png",
+      "effects": []
+    },
+    {
+      "id": 15,
+      "name": "Wealth",
+      "agentIcon": "emperor",
+      "conflictMarker": false,
+      "influence": {
+        "faction": "emperor",
+        "amount": 1
+      },
+      "image": "board/wealth.png",
+      "effects": [
+        "effect:board-space:15:space:0"
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Conspire",
+      "agentIcon": "emperor",
+      "conflictMarker": false,
+      "cost": {
+        "spice": 4
+      },
+      "influence": {
+        "faction": "emperor",
+        "amount": 1
+      },
+      "image": "board/conspire.png",
+      "effects": [
+        "effect:board-space:14:space:0"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Mentat",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "cost": {
+        "solari": 2
+      },
+      "specialEffect": "mentat",
+      "image": "board/mentat.png",
+      "effects": [
+        "effect:board-space:10:space:0"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Rally Troops",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "cost": {
+        "solari": 4
+      },
+      "image": "board/rally_troops.png",
+      "effects": [
+        "effect:board-space:11:space:0"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Swordmaster",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "cost": {
+        "solari": 8
+      },
+      "specialEffect": "swordmaster",
+      "image": "board/swordmaster.png",
+      "effects": []
+    },
+    {
+      "id": 16,
+      "name": "Foldspace",
+      "agentIcon": "spacing-guild",
+      "conflictMarker": false,
+      "influence": {
+        "faction": "spacing-guild",
+        "amount": 1
+      },
+      "specialEffect": "foldspace",
+      "image": "board/foldspace.png",
+      "effects": []
+    },
+    {
+      "id": 17,
+      "name": "Heighliner",
+      "agentIcon": "spacing-guild",
+      "conflictMarker": true,
+      "cost": {
+        "spice": 6
+      },
+      "influence": {
+        "faction": "spacing-guild",
+        "amount": 1
+      },
+      "image": "board/heighliner.png",
+      "effects": [
+        "effect:board-space:17:space:0"
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Sietch Tabr",
+      "agentIcon": "fremen",
+      "conflictMarker": true,
+      "influence": {
+        "faction": "fremen",
+        "amount": 1
+      },
+      "requiresInfluence": {
+        "faction": "fremen",
+        "amount": 2
+      },
+      "image": "board/sietch_tabr.png",
+      "effects": [
+        "effect:board-space:21:space:0"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Research Station",
+      "agentIcon": "city",
+      "conflictMarker": true,
+      "cost": {
+        "water": 2
+      },
+      "image": "board/research_station.png",
+      "effects": [
+        "effect:board-space:3:space:0"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Secure Contract",
+      "agentIcon": "spice-trade",
+      "conflictMarker": false,
+      "image": "board/secure_contract.png",
+      "effects": [
+        "effect:board-space:7:space:0"
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Secrets",
+      "agentIcon": "bene-gesserit",
+      "conflictMarker": false,
+      "influence": {
+        "faction": "bene-gesserit",
+        "amount": 1
+      },
+      "specialEffect": "secrets",
+      "image": "board/secrets.png",
+      "effects": [
+        "effect:board-space:18:space:0",
+        "effect:board-space:18:space:1"
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Selective Breeding",
+      "agentIcon": "bene-gesserit",
+      "conflictMarker": false,
+      "cost": {
+        "spice": 2
+      },
+      "influence": {
+        "faction": "bene-gesserit",
+        "amount": 1
+      },
+      "specialEffect": "selectiveBreeding",
+      "image": "board/selective_breeding.png",
+      "effects": [
+        "effect:board-space:19:space:0"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Arrakeen",
+      "agentIcon": "city",
+      "conflictMarker": true,
+      "controlMarker": "arrakin",
+      "controlBonus": {
+        "solari": 1
+      },
+      "image": "board/arrakeen.png",
+      "effects": [
+        "effect:board-space:1:space:0"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Carthag",
+      "agentIcon": "city",
+      "conflictMarker": true,
+      "controlMarker": "carthag",
+      "controlBonus": {
+        "solari": 1
+      },
+      "image": "board/carthag.png",
+      "effects": [
+        "effect:board-space:2:space:0"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Imperial Basin",
+      "agentIcon": "spice-trade",
+      "conflictMarker": true,
+      "makerSpace": "imperial-basin",
+      "controlMarker": "imperial-basin",
+      "controlBonus": {
+        "spice": 1
+      },
+      "image": "board/imperial_basin.png",
+      "effects": [
+        "effect:board-space:4:space:0"
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Stillsuits",
+      "agentIcon": "fremen",
+      "conflictMarker": true,
+      "influence": {
+        "faction": "fremen",
+        "amount": 1
+      },
+      "image": "board/stillsuits.png",
+      "effects": [
+        "effect:board-space:22:space:0"
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Hardy Warriors",
+      "agentIcon": "fremen",
+      "conflictMarker": true,
+      "cost": {
+        "water": 1
+      },
+      "influence": {
+        "faction": "fremen",
+        "amount": 1
+      },
+      "image": "board/hardy_warriors.png",
+      "effects": [
+        "effect:board-space:20:space:0"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "The Great Flat",
+      "agentIcon": "spice-trade",
+      "conflictMarker": true,
+      "cost": {
+        "water": 2
+      },
+      "makerSpace": "great-flat",
+      "image": "board/the_great_flat.png",
+      "effects": [
+        "effect:board-space:5:space:0"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Hagga Basin",
+      "agentIcon": "spice-trade",
+      "conflictMarker": true,
+      "cost": {
+        "water": 1
+      },
+      "makerSpace": "hagga-basin",
+      "image": "board/hagga_basin.png",
+      "effects": [
+        "effect:board-space:6:space:0"
+      ]
+    }
+  ],
+  "conflicts": [
+    {
+      "id": 901,
+      "tier": 1,
+      "name": "Skirmish",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Water",
+            "amount": 1
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 902,
+      "tier": 1,
+      "name": "Skirmish",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 2
+          },
+          {
+            "type": "Intrigue",
+            "amount": 1
+          }
+        ],
+        "third": [
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 903,
+      "tier": 1,
+      "name": "Skirmish",
+      "rewards": {
+        "first": [
+          {
+            "type": "Influence",
+            "amount": 1
+          },
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 904,
+      "tier": 1,
+      "name": "Skirmish",
+      "rewards": {
+        "first": [
+          {
+            "type": "Influence",
+            "amount": 1
+          },
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 905,
+      "tier": 2,
+      "name": "Siege of Arrakeen",
+      "controlSpace": "arrakin",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 1
+          },
+          {
+            "type": "Control",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 4
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 906,
+      "tier": 2,
+      "name": "Siege of Carthag",
+      "controlSpace": "carthag",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 1
+          },
+          {
+            "type": "Control",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 4
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 907,
+      "tier": 2,
+      "name": "Siege of Imperial Basin",
+      "controlSpace": "imperial-basin",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 1
+          },
+          {
+            "type": "Control",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Spice",
+            "amount": 4
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 908,
+      "tier": 2,
+      "name": "Cloak and Dagger",
+      "rewards": {
+        "first": [
+          {
+            "type": "Intrigue",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Intrigue",
+            "amount": 0,
+            "choiceOptions": [
+              {
+                "type": "Intrigue",
+                "amount": 1
+              },
+              {
+                "type": "Spice",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 909,
+      "tier": 2,
+      "name": "Machinations",
+      "rewards": {
+        "first": [
+          {
+            "type": "Influence",
+            "amount": 2,
+            "chooseFaction": true
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 910,
+      "tier": 2,
+      "name": "Desert Raid",
+      "rewards": {
+        "first": [
+          {
+            "type": "Spice",
+            "amount": 4
+          }
+        ],
+        "second": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 911,
+      "tier": 2,
+      "name": "Spice Harvest",
+      "rewards": {
+        "first": [
+          {
+            "type": "Spice",
+            "amount": 3
+          },
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 912,
+      "tier": 2,
+      "name": "Supply Lines",
+      "rewards": {
+        "first": [
+          {
+            "type": "Solari",
+            "amount": 6
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 913,
+      "tier": 2,
+      "name": "Rally the Troops",
+      "rewards": {
+        "first": [
+          {
+            "type": "Troops",
+            "amount": 3
+          }
+        ],
+        "second": [
+          {
+            "type": "Troops",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 914,
+      "tier": 2,
+      "name": "Political Maneuvering",
+      "rewards": {
+        "first": [
+          {
+            "type": "Influence",
+            "amount": 2
+          },
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Intrigue",
+            "amount": 1
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 915,
+      "tier": 3,
+      "name": "Heighliner Assault",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 6
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 916,
+      "tier": 3,
+      "name": "Battle for Arrakis",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Intrigue",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": 917,
+      "tier": 3,
+      "name": "Final Offensive",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Troops",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Solari",
+            "amount": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": 918,
+      "tier": 3,
+      "name": "Conquest of Dune",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 2
+          }
+        ],
+        "second": [
+          {
+            "type": "Influence",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  ],
+  "intrigue": [
+    {
+      "id": 1,
+      "name": "Ambush",
+      "type": "combat",
+      "description": "Combat: +4 strength.",
+      "image": "/intrigue/base/ambush.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:1:play:0"
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "name": "Allied Armada",
+      "type": "combat",
+      "description": "If you have a faction alliance: pay 2 spice to gain +7 strength.",
+      "image": "/intrigue/base/allied_armada.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:2:play:0"
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "name": "Bindu Suspension",
+      "type": "plot",
+      "description": "At the start of your turn: draw 1 card. You may pass your turn (instead of taking an Agent or Reveal turn).",
+      "image": "/intrigue/base/bindu_suspension.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:3:play:0"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "name": "Bribery",
+      "type": "plot",
+      "description": "Pay 2 Solari to gain 1 influence with a faction of your choice.",
+      "image": "/intrigue/base/bribery.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:4:play:0"
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "name": "Bypass Protocol",
+      "type": "plot",
+      "description": "Acquire a card that costs 3 or less —OR— pay 2 spice to acquire a card that costs 5 or less to the top of your deck.",
+      "image": "/intrigue/base/bypass_protocol.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:5:play:0",
+          "effect:intrigue:5:play:1"
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "name": "Calculated Hire",
+      "type": "plot",
+      "description": "Pay 1 spice to take the Mentat from its designated space in the Landsraad.",
+      "image": "/intrigue/base/calculated_hire.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:6:play:0"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "name": "Charisma",
+      "type": "plot",
+      "description": "Gain 2 persuasion during your Reveal turn this round.",
+      "image": "/intrigue/base/charisma.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:7:play:0"
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "name": "CHOAM Shares",
+      "type": "plot",
+      "description": "Pay 7 Solari to gain 1 VP.",
+      "image": "/intrigue/base/choam_shares.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:8:play:0"
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "name": "Corner the Market",
+      "type": "endgame",
+      "description": "Endgame: If you have at least two The Spice Must Flow, gain 1 VP. If you have more The Spice Must Flow than each opponent, gain 1 VP.",
+      "image": "/intrigue/base/corner_the_market.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:9:play:0"
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "name": "Councilor’s Dispensation",
+      "type": "plot",
+      "description": "If you have a seat on the High Council: gain 2 spice.",
+      "image": "/intrigue/base/councilors_dispensation.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:10:play:0"
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "name": "Dispatch an Envoy",
+      "type": "plot",
+      "description": "The card you play this turn has the following icons.",
+      "image": "/intrigue/base/dispatch_an_envoy.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:11:play:0"
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "name": "Double Cross",
+      "type": "plot",
+      "description": "An opponent of your choice loses 1 troop in the Conflict and you deploy 1 troop from your supply to the Conflict.",
+      "image": "/intrigue/base/double_cross.png",
+      "targetPlayer": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:12:play:0"
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "name": "Favored Subject",
+      "type": "plot",
+      "description": "Gain 1 influence with the Emperor.",
+      "image": "/intrigue/base/favored_subject.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:13:play:0"
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "name": "Guild Authorization",
+      "type": "plot",
+      "description": "Gain 1 influence with the Spacing Guild.",
+      "image": "/intrigue/base/guild_authorization.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:14:play:0"
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "name": "Infiltrate",
+      "type": "plot",
+      "description": "Enemy Agents don’t block your next Agent at board spaces this turn.",
+      "image": "/intrigue/base/infiltrate.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:15:play:0"
+        ]
+      }
+    },
+    {
+      "id": 16,
+      "name": "Know Their Ways",
+      "type": "plot",
+      "description": "Gain 1 influence with the Fremen.",
+      "image": "/intrigue/base/know_their_ways.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:16:play:0"
+        ]
+      }
+    },
+    {
+      "id": 17,
+      "name": "Master Tactician",
+      "type": "combat",
+      "description": "Combat: +3 strength —OR— Retreat up to three of your troops.",
+      "image": "/intrigue/base/master_tactitian.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:17:play:0",
+          "effect:intrigue:17:play:1"
+        ]
+      }
+    },
+    {
+      "id": 18,
+      "name": "Plans Within Plans",
+      "type": "endgame",
+      "description": "Endgame: If you have 3+ influence on three faction tracks, gain 1 VP —OR— if you have 3+ influence on four faction tracks, gain 2 VP.",
+      "image": "/intrigue/base/plans_within_plans.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:18:play:0"
+        ]
+      }
+    },
+    {
+      "id": 19,
+      "name": "Private Army",
+      "type": "combat",
+      "description": "Pay 2 spice to gain +5 strength.",
+      "image": "/intrigue/base/private_army.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:19:play:0"
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "name": "Rapid Mobilization",
+      "type": "plot",
+      "description": "Deploy any number of your garrisoned troops to the Conflict.",
+      "image": "/intrigue/base/rapid_mobilization.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:20:play:0"
+        ]
+      }
+    },
+    {
+      "id": 21,
+      "name": "Recruitment Mission",
+      "type": "plot",
+      "description": "Gain 1 water during your Reveal turn this round. You may put cards you acquire on top of your deck.",
+      "image": "/intrigue/base/recruitment_mission.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:21:play:0",
+          "effect:intrigue:21:play:1"
+        ]
+      }
+    },
+    {
+      "id": 22,
+      "name": "Refocus",
+      "type": "plot",
+      "description": "Shuffle your discard pile into your deck, then draw 1 card.",
+      "image": "/intrigue/base/refocus.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:22:play:0",
+          "effect:intrigue:22:play:1"
+        ]
+      }
+    },
+    {
+      "id": 23,
+      "name": "Reinforcements",
+      "type": "plot",
+      "description": "Pay 3 Solari to gain 3 troops. If it’s your Reveal turn, you may deploy any of these troops to the Conflict.",
+      "image": "/intrigue/base/reinforcements.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:23:play:0"
+        ]
+      }
+    },
+    {
+      "id": 24,
+      "name": "Secret of the Sisterhood",
+      "type": "plot",
+      "description": "Gain 1 influence with the Bene Gesserit.",
+      "image": "/intrigue/base/secret_of_the_sisterhood.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:24:play:0"
+        ]
+      }
+    },
+    {
+      "id": 25,
+      "name": "Staged Incident",
+      "type": "combat",
+      "description": "Lose three of your troops in the Conflict to gain 1 VP.",
+      "image": "/intrigue/base/staged_incident.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:25:play:0"
+        ]
+      }
+    },
+    {
+      "id": 26,
+      "name": "The Sleeper Must Awaken",
+      "type": "plot",
+      "description": "Pay 4 spice to gain 1 VP.",
+      "image": "/intrigue/base/the_sleeper_must_awaken.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:26:play:0"
+        ]
+      }
+    },
+    {
+      "id": 27,
+      "name": "Tiebreaker",
+      "type": "combat",
+      "description": "Combat: +2 strength —OR— Endgame: counts as 10 spice for tiebreakers.",
+      "image": "/intrigue/base/tiebraker.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:27:play:0",
+          "effect:intrigue:27:play:1"
+        ]
+      }
+    },
+    {
+      "id": 28,
+      "name": "To the Victor…",
+      "type": "combat",
+      "description": "When you win a Conflict: gain 3 spice.",
+      "image": "/intrigue/base/to_the_victor.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:28:play:0"
+        ]
+      }
+    },
+    {
+      "id": 29,
+      "name": "Urgent Mission",
+      "type": "plot",
+      "description": "Recall one of your Agents.",
+      "image": "/intrigue/base/urgent_mission.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:29:play:0"
+        ]
+      }
+    },
+    {
+      "id": 30,
+      "name": "Water of Life",
+      "type": "plot",
+      "description": "Pay 1 water and 1 spice to draw 3 cards.",
+      "image": "/intrigue/base/water_of_life.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:30:play:0"
+        ]
+      }
+    },
+    {
+      "id": 31,
+      "name": "Water Peddlers Union",
+      "type": "plot",
+      "description": "Gain 1 water.",
+      "image": "/intrigue/base/water_peddlers_union.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:31:play:0"
+        ]
+      }
+    },
+    {
+      "id": 32,
+      "name": "Windfall",
+      "type": "plot",
+      "description": "Gain 2 Solari.",
+      "image": "/intrigue/base/windfall.png",
+      "effects": {
+        "play": [
+          "effect:intrigue:32:play:0"
+        ]
+      }
+    }
+  ],
+  "leaders": [
+    {
+      "id": "ariana",
+      "name": "Countess Ariana Thorvald",
+      "ability": {
+        "name": "Spice Addict",
+        "description": "Whenever you harvest spice, gain 1 less and draw a card."
+      },
+      "signetRingText": "Gain 1 water.",
+      "signetRingTitle": "Hidden Reservoir",
+      "complexity": 1,
+      "sogChoice": false
+    },
+    {
+      "id": "baron",
+      "name": "BARON VLADIMIR HARKONNEN",
+      "ability": {
+        "name": "Masterstroke",
+        "description": "When you deploy 4+ troops to the Conflict in a turn, choose 2 Factions and gain 1 Influence with each."
+      },
+      "signetRingText": "Pay 1 Solari to gain 1 Intrigue card.",
+      "signetRingTitle": "Scheme",
+      "complexity": 2,
+      "sogChoice": false
+    },
+    {
+      "id": "beast",
+      "name": "Glossu \"The Beast\" Rabban",
+      "ability": {
+        "name": "Arrakis Fiefdom",
+        "description": "Start the game with additional resources: 1 Spice, 1 Solari."
+      },
+      "signetRingText": "Gain 1 Troop OR 2 Troops if you have at least one Faction Alliance.",
+      "signetRingTitle": "Brutality",
+      "complexity": 1,
+      "sogChoice": false
+    },
+    {
+      "id": "ilban",
+      "name": "Count Ilban Richese",
+      "ability": {
+        "name": "Ruthless Negotiator",
+        "description": "Whenever you pay Solari for the cost of a board space: Draw 1 card."
+      },
+      "signetRingText": "Gain 1 Solari.",
+      "signetRingTitle": "Manufacturing",
+      "complexity": 1,
+      "sogChoice": false
+    },
+    {
+      "id": "leto",
+      "name": "Duke Leto Atreides",
+      "ability": {
+        "name": "Landsraad popularity",
+        "description": "Sending an Agent to a Landsraad board space costs you 1 Solari less."
+      },
+      "signetRingText": "Spend 1 Spice: Gain 1 Influence with a Faction where an opponent has more Influence than you.",
+      "signetRingTitle": "Prudent diplomacy",
+      "complexity": 1,
+      "sogChoice": false
+    },
+    {
+      "id": "helena",
+      "name": "Helena Richese",
+      "ability": {
+        "name": "Eyes Everywhere",
+        "description": "Enemy Agents don't block your Agents at Landsraad or City board spaces."
+      },
+      "signetRingText": "Remove and replace a card in the Imperium Row. During your Reveal turn this round, you may acquire the removed card for 1 Persuasion less.",
+      "signetRingTitle": "Manipulate",
+      "complexity": 2,
+      "sogChoice": false
+    },
+    {
+      "id": "memnon",
+      "name": "Earl Memnon Thorvald",
+      "ability": {
+        "name": "Connections",
+        "description": "When you take a High Council seat: Gain 1 Influence."
+      },
+      "signetRingText": "Gain 1 Spice.",
+      "signetRingTitle": "Spice hoard",
+      "complexity": 1,
+      "sogChoice": false
+    },
+    {
+      "id": "paul",
+      "name": "Paul Atreides",
+      "ability": {
+        "name": "Prescience",
+        "description": "You may look at the top card of your deck at any time."
+      },
+      "signetRingText": "Draw 1 card.",
+      "signetRingTitle": "Discipline",
+      "complexity": 1,
+      "sogChoice": false
+    }
+  ],
+  "customEffects": [
+    "OTHER_MEMORY",
+    "CARRYALL",
+    "GUN_THOPTER",
+    "KWISATZ_HADERACH",
+    "LIET_KYNES",
+    "SECRETS_STEAL",
+    "POWER_PLAY",
+    "REVEREND_MOTHER_MOHIAM",
+    "TEST_OF_HUMANITY",
+    "THE_VOICE",
+    "GUILD_BANKERS",
+    "SHUFFLE_DISCARD_INTO_DECK",
+    "SIGNET_RING",
+    "HELENA_SIGNET_RING",
+    "DISPATCH_ENVOY",
+    "INFILTRATE_INTRIGUE",
+    "DOUBLE_CROSS",
+    "RAPID_MOBILIZATION",
+    "URGENT_MISSION",
+    "CORNER_THE_MARKET",
+    "PLANS_WITHIN_PLANS",
+    "STAGED_INCIDENT",
+    "TO_THE_VICTOR",
+    "BINDU_SUSPENSION",
+    "MASTER_TACTICIAN"
+  ],
+  "choiceIdGrammar": {
+    "format": "<sourceType>-<sourceId>-<kind>[-<occurrence>]",
+    "sourceTypes": [
+      "card",
+      "board-space",
+      "field",
+      "control",
+      "intrigue",
+      "conflict",
+      "high-council",
+      "mentat",
+      "masterstroke",
+      "leader-ability",
+      "memnon-high-council"
+    ],
+    "kinds": [
+      "OR",
+      "CONFIRM",
+      "INFLUENCE",
+      "INFLUENCE-CHOOSE",
+      "INFLUENCE-GAIN",
+      "INFLUENCE-LOSE",
+      "ACQUIRE",
+      "ACQUIRE-OR",
+      "CARD-SELECT",
+      "SIGNET",
+      "REWARD",
+      "EFFECT",
+      "COMBAT-PAID",
+      "CONFLICT-REWARD-<placement>-p<playerId>",
+      "URGENT-MISSION",
+      "MASTER-TACTICIAN"
+    ],
+    "examples": [
+      "card-1036-OR",
+      "card-1021-EFFECT",
+      "card-1043-REWARD",
+      "board-space-15-INFLUENCE",
+      "intrigue-4-INFLUENCE-CHOOSE",
+      "intrigue-5-ACQUIRE-OR",
+      "conflict-909-CONFLICT-REWARD-1st place-p0",
+      "memnon-high-council-9-REWARD"
+    ]
+  }
+}

@@ -7,7 +7,8 @@ export function shouldGrantMemnonInfluence(player: Player): boolean {
 
 export function buildMemnonInfluenceReward(spaceId: number): PendingReward {
   return {
-    id: `memnon-high-council-${crypto.randomUUID()}`,
+    // One Memnon High Council reward can be pending at a time → base id suffices.
+    id: `memnon-high-council-${spaceId}-REWARD`,
     source: { type: GainSource.MEMNON_HIGH_COUNCIL, id: spaceId, name: 'Memnon: High Council' },
     reward: { influence: { amounts: [] } },
     isTrash: false,

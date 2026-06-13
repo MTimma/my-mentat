@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+import './styles/playBoardModal.css'
+import { PlayBoardModalProvider } from './context/PlayBoardModalContext'
 import GameBoard from './components/GameBoard'
 import ImageBoard from './components/ImageBoard/ImageBoard'
 import ImperiumRow from './components/ImperiumRow/ImperiumRow'
@@ -9,35 +11,52 @@ import { useGame } from './components/GameContext/GameContext'
 import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, OptionalEffect, Reward, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
 import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
 import TurnControls from './components/TurnControls/TurnControls'
 import PlayFooterToolbar from './components/PlayFooterToolbar/PlayFooterToolbar'
-import CombatTroopControls from './components/CombatTroopControls/CombatTroopControls'
 import RetreatTroopControls from './components/RetreatTroopControls/RetreatTroopControls'
 import { getEffectRetreatRemaining } from './utils/turnGainsDisplay'
 import CombatResults from './components/CombatResults/CombatResults'
 import CombatPhaseOverlay from './components/CombatPhaseOverlay/CombatPhaseOverlay'
+import EndgameOverlay from './components/EndgameOverlay/EndgameOverlay'
+import { endgameRevealIncomplete } from './utils/endgameResolution'
+import { mergeEndgameHistoryRow } from './utils/endgameHistoryDisplay'
+import { isCombatHistoryEntry, isEndgameHistoryEntry } from './utils/turnGainsDisplay'
 import { COMBAT_STRENGTH_ORIGIN } from './data/boardMarkerAnchors'
 import { CONFLICTS } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
 import GameStateSetup from './components/GameStateSetup/GameStateSetup'
 import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
 import CardCreator from './components/CardCreator/CardCreator'
-import { buildImperiumDeck } from './data/cards'
+import SandboxPlayerEditor from './components/SandboxPlayerEditor/SandboxPlayerEditor'
+import SandboxSetupControls from './components/SandboxSetupControls/SandboxSetupControls'
+import SandboxSetupHint from './components/SandboxSetupHint/SandboxSetupHint'
+import { buildImperiumDeck } from './catalog/runtime'
+import { applyStarterDeckReservationToImperium } from './services/starterDeckSetup'
+import { getStartingSpice, getStartingSolari } from './data/leaderAbilities/beastSetup'
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
-import LeaderResourceStrip from './components/LeaderResourceStrip/LeaderResourceStrip'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
 import UndoConfirmDialog from './components/TimeTravel/UndoConfirmDialog'
 import { getLeaderIconPath, LEADER_NAMES } from './data/leaders'
 import { getEndTurnButtonState } from './utils/endTurnState'
-import { getResolvedRewardForPlayer } from './data/leaderAbilities/arianaHarvest'
+import { buildSetupBlockFromConfiguration } from './save/buildSetupBlock'
+import { createGameInputDoc } from './save/createGameInput'
+import type { SaveDoc } from './save/types'
+import {
+  getInfluenceBoardChoiceMeta,
+  getInfluenceBoardPrompt,
+  isInfluenceBoardChoice,
+} from './utils/influenceBoardChoice'
 import {
   DESKTOP_PLAY_LAYOUT_MQ,
   DOCKED_HISTORY_LAYOUT_MQ,
 } from './constants/playLayout'
 import {
   countPlayerTurns,
+  formatTurnRoundHeader,
+  getDisplayRound,
+  getHistoryRowLabel,
   getLivePlayerTurnNumber,
   getPlayerTurnNumber,
 } from './utils/turnHistoryDisplay'
@@ -91,6 +110,9 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   const [voiceSelectionRewardId, setVoiceSelectionRewardId] = useState<string | null>(null)
   const [masterstrokeSelectionRewardId, setMasterstrokeSelectionRewardId] = useState<string | null>(null)
   const [memnonHighCouncilRewardId, setMemnonHighCouncilRewardId] = useState<string | null>(null)
+  const [sandboxImperiumOpen, setSandboxImperiumOpen] = useState(false)
+  const [sandboxConflictOpen, setSandboxConflictOpen] = useState(false)
+  const [sandboxEditPlayerId, setSandboxEditPlayerId] = useState<number | null>(null)
 
   useEffect(() => {
     setVoiceSelectionRewardId(null)
@@ -164,13 +186,6 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       const turnPlayerId = turnControlsState.currTurn?.playerId
       return p.id === (turnPlayerId ?? turnControlsState.activePlayerId)
     }) || null
-  const navResourcePlayer =
-    (isViewingHistory ? displayState : gameState).players.find(p => {
-      const state = isViewingHistory ? displayState : gameState
-      const turnPlayerId = state.currTurn?.playerId
-      return p.id === (turnPlayerId ?? state.activePlayerId)
-    }) ?? turnControlsActivePlayer
-
   const historyHighlightSpaceId =
     isViewingHistory &&
     displayState.currTurn?.type === TurnType.ACTION &&
@@ -229,18 +244,23 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     return null
   }
 
+  const undoFromLabel =
+    undoSourceRow === 0
+      ? 'setup'
+      : getHistoryRowLabel(gameState.history, undoSourceRow).toLowerCase()
   const undoTitle =
     undoSourceRow === 0
       ? 'Undo setup (re-select imperium row and conflict)'
-      : `Undo turn ${undoSourceRow} and all later turns`
+      : `Undo ${getHistoryRowLabel(gameState.history, undoSourceRow)} and all later turns`
   const undoAriaLabel =
-    undoSourceRow === 0 ? 'Undo setup' : `Undo turn ${undoSourceRow} and all later turns`
+    undoSourceRow === 0 ? 'Undo setup' : `Undo ${undoFromLabel} and all later turns`
 
   const turnHistoryUndoProps = {
     onUndo: handleNavUndoClick,
     canUndo,
     undoTitle,
     undoAriaLabel,
+    onOpenPlayerOverview: isDesktopPlayView ? () => setIsPlayerOverviewOpen(true) : undefined,
   }
 
   const handleCardSelect = (playerId: number, cardId: number, deckIndex?: number) => {
@@ -261,6 +281,10 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
 
   const handlePlayCombatIntrigue = (playerId: number, cardId: number) => {
     dispatch({ type: 'PLAY_COMBAT_INTRIGUE', playerId, cardId })
+  }
+
+  const handleRevealEndgameIntrigue = (playerId: number, cardIds: number[]) => {
+    dispatch({ type: 'REVEAL_ENDGAME_INTRIGUE', playerId, cardIds })
   }
 
   const handlePlaceAgent = (spaceId: number, extraData?: { trashedCardId: number } | { spiceCost: number; solariReward: number }) => {
@@ -292,17 +316,13 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     dispatch({ type: 'RESOLVE_COMBAT' });
   }
 
-  const handleResolveEndgame = () => {
-    dispatch({ type: 'RESOLVE_ENDGAME' })
-  }
-  
   const handleAddTroop = (playerId: number) => {
     dispatch({ type: 'DEPLOY_TROOP', playerId })
   }
 
-  const handleResolveChoice = (choiceId:string, reward: Reward, source?: { type: string; id: number; name: string }) => {
+  const handleResolveChoice = (choiceId: string, optionIndex: number, source?: { type: string; id: number; name: string }) => {
     if(!activePlayer) return;
-    dispatch({ type:'RESOLVE_CHOICE', playerId: activePlayer.id, choiceId, reward, source })
+    dispatch({ type:'RESOLVE_CHOICE', playerId: activePlayer.id, choiceId, optionIndex, source })
   }
 
   const handleResolveCardSelect = (choiceId: string, cardIds: number[]) => {
@@ -310,9 +330,9 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     dispatch({ type: 'RESOLVE_CARD_SELECT', playerId: activePlayer.id, choiceId, cardIds })
   }
 
-  const handlePayCost = (effect: OptionalEffect) => {
+  const handlePayCost = (effectId: string, data?: { trashedCardId?: number }) => {
     if(!activePlayer) return;
-    dispatch({ type: 'PAY_COST', playerId: activePlayer.id, effect })
+    dispatch({ type: 'PAY_COST', playerId: activePlayer.id, effectId, data })
   }
 
   const handleUndeployTroop = (playerId: number) => {
@@ -367,7 +387,15 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   }
 
   const handleClaimAllRewards = () => {
-    if (!activePlayer || voiceSelectionRewardId || masterstrokeSelectionRewardId || memnonHighCouncilRewardId) return
+    if (
+      !activePlayer ||
+      voiceSelectionRewardId ||
+      masterstrokeSelectionRewardId ||
+      memnonHighCouncilRewardId ||
+      influenceBoardSelectionActive
+    ) {
+      return
+    }
     dispatch({ type: 'CLAIM_ALL_REWARDS', playerId: activePlayer.id })
   }
 
@@ -486,7 +514,14 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
 
   useEffect(() => {
     if (!autoApplyMandatoryRewards || !activePlayer || isViewingHistory) return
-    if (voiceSelectionRewardId || masterstrokeSelectionRewardId || memnonHighCouncilRewardId) return
+    if (
+      voiceSelectionRewardId ||
+      masterstrokeSelectionRewardId ||
+      memnonHighCouncilRewardId ||
+      influenceBoardSelectionActive
+    ) {
+      return
+    }
 
     const autoApplicableRewards = getAutoApplicableRewards(gameState)
     if (autoApplicableRewards.length === 0) return
@@ -505,8 +540,18 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     memnonHighCouncilRewardId
   ])
 
+  // Sandbox setup turn: blocking round-start modals are replaced by on-board click targets.
+  const inSandboxSetup = Boolean(gameState.sandboxSetup) && !isViewingHistory
+  const sandboxReady =
+    gameState.imperiumRow.length === 5 && gameState.currentConflict.id > 0
+  const sandboxEditPlayer =
+    inSandboxSetup && sandboxEditPlayerId !== null
+      ? gameState.players.find(p => p.id === sandboxEditPlayerId) ?? null
+      : null
+
   const imperiumSelectionCount = Math.min(Math.max(0, 5 - gameState.imperiumRow.length), gameState.imperiumRowDeck.length)
-  const needsImperiumSelection = gameState.phase === GamePhase.ROUND_START && imperiumSelectionCount > 0
+  const needsImperiumSelection =
+    gameState.phase === GamePhase.ROUND_START && imperiumSelectionCount > 0 && !gameState.sandboxSetup
   const needsReplacementSelection = gameState.pendingImperiumRowReplacement !== null && gameState.imperiumRowDeck.length > 0
   const hidePlayShellFooter = needsImperiumSelection || needsReplacementSelection
 
@@ -520,15 +565,91 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   /** Lock board size per viewport until window resize (play-area content must not rescale the board). */
   const lockedBoardLayoutRef = useRef<{ viewportKey: string; boardEdgePx: number } | null>(null)
   const lockedBannerHeightForBoardRef = useRef(0)
+  const lockedPlayBandHeightForBoardRef = useRef(0)
   const remeasureBoardLayoutRef = useRef<((force?: boolean) => void) | null>(null)
+  const remeasurePlayChromeRef = useRef<(() => void) | null>(null)
 
   const MIN_PLAY_BAND_PX = 88
 
+  const viewingCombatHistory =
+    isViewingHistory && isCombatHistoryEntry(displayState)
+  const viewingEndgameHistory =
+    isViewingHistory && isEndgameHistoryEntry(displayState)
+
+  const showCombatOverlay =
+    (gameState.phase === GamePhase.COMBAT && !isViewingHistory) || viewingCombatHistory
+  const showEndgameOverlay =
+    (gameState.phase === GamePhase.END_GAME && !isViewingHistory) || viewingEndgameHistory
+
+  const combatOverlayState = viewingCombatHistory ? displayState : gameState
+  const endgameOverlayState = useMemo(() => {
+    if (viewingEndgameHistory && viewingTurnIndex != null) {
+      return mergeEndgameHistoryRow(
+        displayState,
+        gameState,
+        viewingTurnIndex === gameState.history.length - 1
+      )
+    }
+    return gameState
+  }, [viewingEndgameHistory, viewingTurnIndex, displayState, gameState])
+
+  const endgameNeedsRevealInput =
+    gameState.phase === GamePhase.END_GAME &&
+    !gameState.endgameWinners &&
+    endgameRevealIncomplete(gameState)
+
+  const endgameNeedsPlayerInput =
+    gameState.phase === GamePhase.END_GAME &&
+    !gameState.endgameWinners &&
+    !endgameNeedsRevealInput &&
+    ((gameState.currTurn?.pendingChoices?.length ?? 0) > 0 ||
+      (gameState.endgameApplyQueue?.length ?? 0) > 0 ||
+      gameState.pendingRewards.some(r => !r.disabled))
+
   const showTurnControlsFooter =
     !isViewingHistory &&
-    (gameState.phase === GamePhase.PLAYER_TURNS ||
+    (gameState.sandboxSetup ||
+      gameState.phase === GamePhase.PLAYER_TURNS ||
       gameState.phase === GamePhase.COMBAT ||
-      gameState.phase === GamePhase.END_GAME)
+      endgameNeedsPlayerInput)
+
+  const activeInfluenceBoardChoice = useMemo(() => {
+    if (isViewingHistory || gameState.sandboxSetup || !useImageBoard) return null
+    const choice = gameState.currTurn?.pendingChoices?.find(
+      pending =>
+        pending.type === ChoiceType.FIXED_OPTIONS &&
+        isInfluenceBoardChoice(pending as FixedOptionsChoice)
+    )
+    return (choice as FixedOptionsChoice | undefined) ?? null
+  }, [gameState.currTurn?.pendingChoices, gameState.sandboxSetup, isViewingHistory, useImageBoard])
+
+  const influenceBoardMeta =
+    activeInfluenceBoardChoice && activePlayer
+      ? getInfluenceBoardChoiceMeta(
+          activeInfluenceBoardChoice,
+          gameState,
+          activePlayer.id
+        )
+      : null
+
+  const influenceBoardSelectionActive = Boolean(activeInfluenceBoardChoice && influenceBoardMeta)
+
+  const influenceBoardPrompt = influenceBoardMeta
+    ? getInfluenceBoardPrompt(influenceBoardMeta.mode, influenceBoardMeta.amount)
+    : null
+
+  const handleInfluenceBoardFactionSelect = (faction: FactionType) => {
+    if (!activePlayer || !activeInfluenceBoardChoice || !influenceBoardMeta) return
+    const optionIndex = influenceBoardMeta.optionIndexByFaction[faction]
+    if (optionIndex == null) return
+    dispatch({
+      type: 'RESOLVE_CHOICE',
+      playerId: activePlayer.id,
+      choiceId: activeInfluenceBoardChoice.id,
+      optionIndex,
+      source: activeInfluenceBoardChoice.source,
+    })
+  }
 
   const endTurnButtonState = getEndTurnButtonState({
     isHistoryView: isViewingHistory,
@@ -539,13 +660,19 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     voiceSelectionActive: Boolean(voiceSelectionRewardId),
     masterstrokeSelectionActive: Boolean(masterstrokeSelectionRewardId),
     memnonHighCouncilSelectionActive: Boolean(memnonHighCouncilRewardId),
+    influenceBoardSelectionActive,
   })
 
-  const showFooterEndTurn =
-    !isViewingHistory && gameState.phase === GamePhase.PLAYER_TURNS && activePlayer
+  const showFooterEndTurn = Boolean(
+    !isViewingHistory &&
+      !gameState.sandboxSetup &&
+      gameState.phase === GamePhase.PLAYER_TURNS &&
+      activePlayer
+  )
 
-  const showFooterPassCombat =
+  const showFooterPassCombat = Boolean(
     !isViewingHistory && gameState.phase === GamePhase.COMBAT && activePlayer
+  )
 
   const hasPlayedCombatIntrigueThisVisit =
     activePlayer != null &&
@@ -554,10 +681,11 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   const combatFooterActionLabel = hasPlayedCombatIntrigueThisVisit ? 'Continue' : 'Pass Combat'
 
   const showPlayFooterToolbar = Boolean(
-    turnControlsActivePlayer &&
+    !gameState.sandboxSetup &&
+      turnControlsActivePlayer &&
       (gameState.phase === GamePhase.PLAYER_TURNS ||
         gameState.phase === GamePhase.COMBAT ||
-        gameState.phase === GamePhase.END_GAME)
+        endgameNeedsPlayerInput)
   )
 
   useLayoutEffect(() => {
@@ -573,6 +701,9 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     }
 
     const applyBoardMaxEdge = (boardEdgePx: number) => {
+      const currentRaw = getComputedStyle(root).getPropertyValue('--play-board-max-edge').trim()
+      const current = Number.parseFloat(currentRaw)
+      if (Number.isFinite(current) && Math.abs(current - boardEdgePx) < 2) return
       const boardEdgePxStr = `${boardEdgePx}px`
       root.style.setProperty('--play-board-max-edge', boardEdgePxStr)
       document.documentElement.style.setProperty('--play-board-max-edge', boardEdgePxStr)
@@ -585,13 +716,14 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     }
 
     const readBoardLayoutChrome = () => {
+      const desktop = window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
       const banner = historyBannerRef.current
       const measuredNav =
         banner && !banner.hidden ? Math.max(0, Math.ceil(banner.getBoundingClientRect().height)) : 0
-      if (measuredNav > lockedBannerHeightForBoardRef.current) {
+      if (!desktop && measuredNav > lockedBannerHeightForBoardRef.current) {
         lockedBannerHeightForBoardRef.current = measuredNav
       }
-      const navHeight = lockedBannerHeightForBoardRef.current || measuredNav
+      const navHeight = desktop ? 0 : lockedBannerHeightForBoardRef.current || measuredNav
       const imperium = imperiumRowRef.current
       const topChrome = imperium
         ? Math.max(0, Math.ceil(imperium.getBoundingClientRect().height))
@@ -600,26 +732,14 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       const playFooterReserved = getPlayFooterReservedPx()
       // Stable reserve for board math only — never use the flex-expanded turn-controls container
       // (its box grows with leftover viewport and would shrink the board in a feedback loop).
-      const playBandCap = Math.floor(viewportH * 0.34)
-      const playBandMin = Math.max(
+      const playBandCap = Math.floor(viewportH * 0.24)
+      const playBandReserve = Math.max(
         MIN_PLAY_BAND_PX,
         Math.min(playFooterReserved, playBandCap)
       )
-      const bottomChrome = navHeight + playBandMin
-      return { navHeight, topChrome, playFooterReserved, bottomChrome }
-    }
-
-    const measureBoardMaxEdgeFromArea = () => {
-      const area = mainAreaRef.current
-      if (!area) return null
-      const col = area.getBoundingClientRect()
-      if (col.width < 80) return null
-      const docked = window.matchMedia(DOCKED_HISTORY_LAYOUT_MQ).matches
-      if (!docked) {
-        if (col.height < 80) return null
-        return Math.max(160, Math.min(Math.floor(col.width), Math.floor(col.height)))
-      }
-      return null
+      const playBandHeight = playBandReserve
+      const bottomChrome = navHeight + playBandHeight + 2
+      return { navHeight, topChrome, playFooterReserved, bottomChrome, playBandReserve, playBandHeight }
     }
 
     const measurePlayFooterTop = () => {
@@ -718,13 +838,58 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       return { topChrome }
     }
 
+    const measureBoardColumnWidth = () => {
+      const col =
+        mainAreaRef.current ?? playShellBoardRowRef.current ?? playShellMainRef.current
+      if (!col) return 0
+      return Math.max(0, Math.floor(col.getBoundingClientRect().width))
+    }
+
+    const computeBoardMaxEdge = () => {
+      const docked = window.matchMedia(DOCKED_HISTORY_LAYOUT_MQ).matches
+      const desktop = window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
+      const { topChrome, bottomChrome } = readBoardLayoutChrome()
+      const viewportW = window.visualViewport?.width ?? window.innerWidth
+      const sidebarRaw =
+        getComputedStyle(document.documentElement)
+          .getPropertyValue('--play-history-sidebar-min-width')
+          .trim() ||
+        getComputedStyle(document.documentElement)
+          .getPropertyValue('--play-history-sidebar-width')
+          .trim()
+      const sidebarW = Number.parseFloat(sidebarRaw)
+      const dockedSidebarW =
+        docked && Number.isFinite(sidebarW) && sidebarW > 0 ? Math.ceil(sidebarW) : 0
+
+      let shellWidth = measureBoardColumnWidth()
+      if (shellWidth < 80) {
+        if (docked) {
+          shellWidth = Math.max(160, Math.floor((viewportW - dockedSidebarW) / 2))
+        } else {
+          shellWidth = Math.max(0, Math.floor(viewportW))
+        }
+      }
+
+      const viewportH = window.visualViewport?.height ?? window.innerHeight
+      const gapBottom =
+        Number.parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue('--vv-layout-gap-bottom')
+        ) || 0
+      const layoutGap = docked ? 0 : desktop ? 2 : 6
+      const boardStackFoot = bottomChrome + layoutGap
+      const availableH =
+        viewportH - boardStackFoot - topChrome - layoutGap - gapBottom
+      const minBoardEdge = docked ? 200 : 160
+      return Math.max(minBoardEdge, Math.min(shellWidth, Math.floor(availableH)))
+    }
+
     const measureBoardMaxEdge = (force = false) => {
       const viewportKey = getViewportLayoutKey()
       const locked = lockedBoardLayoutRef.current
       const docked = window.matchMedia(DOCKED_HISTORY_LAYOUT_MQ).matches
-      const desktop = window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
 
-      if (!force && locked?.viewportKey === viewportKey) {
+      // Board edge stays locked per viewport; footer/history absorb leftover space.
+      if (!force && locked?.viewportKey === viewportKey && locked.boardEdgePx > 0) {
         applyBoardMaxEdge(locked.boardEdgePx)
         requestAnimationFrame(() => {
           measurePlayFooterTop()
@@ -734,43 +899,21 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       }
 
       measureFooterStack()
-      const { topChrome, bottomChrome } = readBoardLayoutChrome()
-      const shellEl = docked && playShellMainRef.current ? playShellMainRef.current : root
-      let shellWidth = Math.max(0, Math.floor(shellEl.getBoundingClientRect().width))
-      if (docked) {
-        const sidebarRaw = getComputedStyle(document.documentElement)
-          .getPropertyValue('--play-history-sidebar-width')
-          .trim()
-        const sidebarW = Number.parseFloat(sidebarRaw)
-        if (Number.isFinite(sidebarW) && sidebarW > 0) {
-          shellWidth = Math.max(0, shellWidth - Math.ceil(sidebarW))
-        }
-      }
-      const viewportH = window.visualViewport?.height ?? window.innerHeight
-      const gapBottom = Number.parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue('--vv-layout-gap-bottom')
-      ) || 0
-      const layoutGap = docked ? 4 : desktop ? 6 : 10
-      const boardStackFoot = bottomChrome + layoutGap
-      const availableH =
-        viewportH - boardStackFoot - topChrome - layoutGap - gapBottom
-      const minBoardEdge = docked ? 200 : 160
-      let boardEdge = Math.max(minBoardEdge, Math.min(shellWidth, Math.floor(availableH)))
-
-      const fromArea = measureBoardMaxEdgeFromArea()
-      if (fromArea) {
-        boardEdge = Math.max(boardEdge, fromArea)
-      }
+      const boardEdge = computeBoardMaxEdge()
 
       lockedBoardLayoutRef.current = { viewportKey, boardEdgePx: boardEdge }
       applyBoardMaxEdge(boardEdge)
       requestAnimationFrame(() => {
-        const refined = measureBoardMaxEdgeFromArea()
-        if (refined && refined > boardEdge) {
-          applyBoardMaxEdge(refined)
-        }
         measurePlayFooterTop()
         measurePlayChromeInsets()
+        if (!docked) return
+        const refinedEdge = computeBoardMaxEdge()
+        if (Math.abs(refinedEdge - boardEdge) > 2) {
+          lockedBoardLayoutRef.current = { viewportKey, boardEdgePx: refinedEdge }
+          applyBoardMaxEdge(refinedEdge)
+          measurePlayFooterTop()
+          measurePlayChromeInsets()
+        }
       })
     }
 
@@ -790,6 +933,8 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       })
     }
 
+    remeasurePlayChromeRef.current = scheduleFooterMeasure
+
     const scheduleBoardMeasure = (force = false) => {
       cancelAnimationFrame(boardFrame)
       boardFrame = requestAnimationFrame(() => {
@@ -797,20 +942,16 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       })
     }
 
-    const onFooterResize = () => scheduleFooterMeasure()
+    const onFooterResize = () => {
+      scheduleFooterMeasure()
+    }
 
     const ro = new ResizeObserver(entries => {
       for (const entry of entries) {
         const target = entry.target as HTMLElement
-        if (target === turnControlsFooterRef.current) {
+        if (target === turnControlsFooterRef.current || target === historyBannerRef.current) {
           onFooterResize()
-        } else if (target === historyBannerRef.current) {
-          scheduleFooterMeasure()
-        } else if (
-          target === imperiumRowRef.current ||
-          target === mainAreaRef.current ||
-          target === playShellBoardRowRef.current
-        ) {
+        } else if (target === imperiumRowRef.current) {
           scheduleFooterMeasure()
           scheduleBoardMeasure(true)
         } else if (target === root) {
@@ -822,8 +963,6 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     if (turnControlsFooterRef.current) ro.observe(turnControlsFooterRef.current)
     if (historyBannerRef.current) ro.observe(historyBannerRef.current)
     if (imperiumRowRef.current) ro.observe(imperiumRowRef.current)
-    if (mainAreaRef.current) ro.observe(mainAreaRef.current)
-    if (playShellBoardRowRef.current) ro.observe(playShellBoardRowRef.current)
     ro.observe(root)
 
     const desktopMq = window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ)
@@ -831,6 +970,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     const onLayoutMqChange = () => {
       lockedBoardLayoutRef.current = null
       lockedBannerHeightForBoardRef.current = 0
+      lockedPlayBandHeightForBoardRef.current = 0
       scheduleFooterMeasure()
       scheduleBoardMeasure(true)
     }
@@ -840,6 +980,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     const onViewportResize = () => {
       lockedBoardLayoutRef.current = null
       lockedBannerHeightForBoardRef.current = 0
+      lockedPlayBandHeightForBoardRef.current = 0
       scheduleBoardMeasure(true)
     }
 
@@ -851,6 +992,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
 
     return () => {
       remeasureBoardLayoutRef.current = null
+      remeasurePlayChromeRef.current = null
       cancelAnimationFrame(footerFrame)
       cancelAnimationFrame(boardFrame)
       ro.disconnect()
@@ -860,6 +1002,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       window.visualViewport?.removeEventListener('resize', onViewportResize)
       lockedBoardLayoutRef.current = null
       lockedBannerHeightForBoardRef.current = 0
+      lockedPlayBandHeightForBoardRef.current = 0
       root.style.removeProperty('--footer-measured-height')
       root.style.removeProperty('--play-nav-measured-height')
       root.style.removeProperty('--turn-controls-measured-height')
@@ -886,16 +1029,21 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   useLayoutEffect(() => {
     remeasureBoardLayoutRef.current?.(true)
   }, [
-    isViewingHistory,
-    showTurnControlsFooter,
     hidePlayShellFooter,
-    isPlayChromeHeld,
     isMobilePlayView,
     isDesktopPlayView,
     isDockedHistoryLayout,
+    useImageBoard,
+  ])
+
+  useLayoutEffect(() => {
+    remeasurePlayChromeRef.current?.()
+  }, [
+    isViewingHistory,
+    showTurnControlsFooter,
+    isPlayChromeHeld,
     isTurnHistoryOpen,
     viewingTurnIndex,
-    useImageBoard,
   ])
 
   const renderImageBoard = useCallback(
@@ -907,7 +1055,9 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           infiltrate={isViewingHistory ? false : getInfiltrate(gameState)}
           onSpaceClick={isViewingHistory ? () => {} : handlePlaceAgent}
           occupiedSpaces={displayState.occupiedSpaces}
-          canPlaceAgent={isViewingHistory ? false : !gameState.canEndTurn}
+          canPlaceAgent={
+            isViewingHistory || gameState.sandboxSetup ? false : !gameState.canEndTurn
+          }
           combatTroops={displayState.combatTroops}
           players={displayState.players}
           factionInfluence={displayState.factionInfluence}
@@ -935,6 +1085,41 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           combatStrength={displayState.combatStrength ?? gameState.combatStrength}
           controlMarkers={displayState.controlMarkers}
           historyHighlightSpaceId={historyHighlightSpaceId}
+          troopDeploy={
+            isViewingHistory || gameState.sandboxSetup || !activePlayer
+              ? undefined
+              : {
+                  canDeploy: Boolean(gameState.currTurn?.canDeployTroops),
+                  deployableTroops: Math.min(
+                    (gameState.currTurn?.troopLimit || 0) -
+                      (gameState.currTurn?.removableTroops || 0),
+                    activePlayer.troops || 0
+                  ),
+                  deployedThisTurn: gameState.currTurn?.removableTroops || 0,
+                  garrisonTroops: activePlayer.troops || 0,
+                  onDeploy: () => handleAddTroop(activePlayer.id),
+                  onUndeploy: () => handleUndeployTroop(activePlayer.id),
+                }
+          }
+          sandboxSetup={
+            inSandboxSetup
+              ? {
+                  onConflictClick: () => setSandboxConflictOpen(true),
+                  onPlayerClick: (playerId: number) => setSandboxEditPlayerId(playerId),
+                }
+              : undefined
+          }
+          influenceSelection={
+            !isViewingHistory && influenceBoardMeta && activeInfluenceBoardChoice
+              ? {
+                  mode: influenceBoardMeta.mode,
+                  amount: influenceBoardMeta.amount,
+                  selectableFactions: influenceBoardMeta.selectableFactions,
+                  disabledFactions: influenceBoardMeta.disabledFactions,
+                  onFactionSelect: handleInfluenceBoardFactionSelect,
+                }
+              : undefined
+          }
         />
       ) : null,
     [
@@ -948,11 +1133,43 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       handleSelectiveBreedingRequested,
       handleVoiceSpaceSelect,
       historyHighlightSpaceId,
+      handleAddTroop,
+      handleUndeployTroop,
+      inSandboxSetup,
+      influenceBoardMeta,
+      activeInfluenceBoardChoice,
+      handleInfluenceBoardFactionSelect,
     ]
   )
 
   const holdToHidePlayChrome = isMobilePlayView && useImageBoard
   const showTurnHistoryPanel = isDockedHistoryLayout || isTurnHistoryOpen
+
+  useEffect(() => {
+    if (inSandboxSetup && !isDockedHistoryLayout) {
+      setIsTurnHistoryOpen(false)
+    }
+  }, [inSandboxSetup, isDockedHistoryLayout])
+
+  const sandboxSetupControls = (compact = false) =>
+    inSandboxSetup ? (
+      <SandboxSetupControls
+        compact={compact}
+        position={gameState.sandboxSetupPosition}
+        ready={sandboxReady}
+        onSetPosition={(round, playerTurn) =>
+          dispatch({ type: 'SANDBOX_SET_POSITION', round, playerTurn })
+        }
+        onCommit={() => dispatch({ type: 'SANDBOX_COMMIT_SETUP' })}
+      />
+    ) : null
+
+  const turnHistoryTopSlot =
+    inSandboxSetup && isDockedHistoryLayout ? sandboxSetupControls(false) : undefined
+  const sandboxSetupMobileBar =
+    inSandboxSetup && !isDockedHistoryLayout ? (
+      <div className="sandbox-setup-mobile-bar">{sandboxSetupControls(true)}</div>
+    ) : null
 
   return (
     <div
@@ -968,25 +1185,60 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         .filter(Boolean)
         .join(' ')}
     >
+      <PlayBoardModalProvider
+        boardContainerRef={mainAreaRef}
+        scopeModalsToBoard={isDesktopPlayView}
+      >
       <div ref={playShellMainRef} className="play-shell-main">
-      <div ref={imperiumRowRef} className="imperium-row-container">
-        <ImperiumRow 
-        canAcquire={isViewingHistory ? false : gameState.canAcquireIR}
-        cards={displayState.imperiumRow} 
-        alCount={displayState.arrakisLiaisonDeck.length} 
-        smfCount={displayState.spiceMustFlowDeck.length} 
-        persuasion={isViewingHistory ? 0 : (activePlayer?.persuasion || 0)} 
-        onAcquireArrakisLiaison={handleAcquireArrakisLiaison} 
-        onAcquireSpiceMustFlow={handleAcquireSpiceMustFlow} 
-        onAcquireCard={handleAcquireCard}
-        helenaRemovedCard={displayState.helenaRemovedCard ?? null}
-        activePlayerId={displayState.activePlayerId} />
+        <div className="play-board-column">
+      <div
+        ref={imperiumRowRef}
+        className="imperium-row-container"
+      >
+        <div
+          className={[
+            'imperium-row-container__column',
+            inSandboxSetup ? 'imperium-row-container__column--sandbox-setup' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          <div className="imperium-row-container__main">
+            <ImperiumRow
+              canAcquire={isViewingHistory ? false : gameState.canAcquireIR}
+              cards={displayState.imperiumRow}
+              alCount={displayState.arrakisLiaisonDeck.length}
+              smfCount={displayState.spiceMustFlowDeck.length}
+              persuasion={isViewingHistory ? 0 : activePlayer?.persuasion || 0}
+              onAcquireArrakisLiaison={handleAcquireArrakisLiaison}
+              onAcquireSpiceMustFlow={handleAcquireSpiceMustFlow}
+              onAcquireCard={handleAcquireCard}
+              helenaRemovedCard={displayState.helenaRemovedCard ?? null}
+              activePlayerId={displayState.activePlayerId}
+              sandboxSetup={
+                inSandboxSetup
+                  ? {
+                      onConfigure: () => setSandboxImperiumOpen(true),
+                      requiredCount: 5,
+                    }
+                  : undefined
+              }
+            />
+          </div>
+          {/* {inSandboxSetup ? (
+            <SandboxSetupHint
+              placement="inline"
+              className="sandbox-setup-hint--imperium-row"
+              label="Pick 5 imperium row cards"
+            />
+          ) : null} */}
+        </div>
       </div>
       <div
         ref={playShellBoardRowRef}
         className={[
-          'play-shell-board-row',
-          isDockedHistoryLayout && showTurnHistoryPanel ? 'play-shell-board-row--with-history' : '',
+          'play-board-and-history',
+          isDockedHistoryLayout && showTurnHistoryPanel ? 'play-board-and-history--with-history' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -1002,13 +1254,24 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             .join(' ')}
         >
           <CombatPhaseOverlay
-            players={gameState.players}
-            combatStrength={gameState.combatStrength}
-            combatPasses={gameState.combatPasses}
-            activePlayerId={gameState.activePlayerId}
-            activePlayerPlayedCombatIntrigue={hasPlayedCombatIntrigueThisVisit}
-            isVisible={!isViewingHistory && gameState.phase === GamePhase.COMBAT}
+            players={combatOverlayState.players}
+            combatStrength={combatOverlayState.combatStrength}
+            combatPasses={combatOverlayState.combatPasses}
+            activePlayerId={combatOverlayState.activePlayerId}
+            activePlayerPlayedCombatIntrigue={
+              viewingCombatHistory ? false : hasPlayedCombatIntrigueThisVisit
+            }
+            isVisible={showCombatOverlay}
+            readOnly={viewingCombatHistory}
             containerRef={mainAreaRef}
+          />
+          <EndgameOverlay
+            gameState={endgameOverlayState}
+            analyticsSourceState={gameState}
+            isVisible={showEndgameOverlay}
+            readOnly={viewingEndgameHistory}
+            containerRef={mainAreaRef}
+            onRevealIntrigue={handleRevealEndgameIntrigue}
           />
           {useImageBoard ? (
             renderImageBoard()
@@ -1019,7 +1282,9 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
               infiltrate={isViewingHistory ? false : getInfiltrate(gameState)}
               onSpaceClick={isViewingHistory ? () => {} : handlePlaceAgent}
               occupiedSpaces={displayState.occupiedSpaces}
-              canPlaceAgent={isViewingHistory ? false : !gameState.canEndTurn}
+              canPlaceAgent={
+            isViewingHistory || gameState.sandboxSetup ? false : !gameState.canEndTurn
+          }
               combatTroops={displayState.combatTroops}
               players={displayState.players}
               factionInfluence={displayState.factionInfluence}
@@ -1046,6 +1311,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             />
           )}
         </div>
+      </div>
         {showTurnHistoryPanel && isDockedHistoryLayout && (
           <TurnHistory
             layout="docked"
@@ -1055,10 +1321,10 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             currentGameState={gameState}
             onTurnChange={goToTurn}
             onReturnToCurrent={returnToCurrent}
+            topSlot={turnHistoryTopSlot}
             {...turnHistoryUndoProps}
           />
         )}
-      </div>
         {needsImperiumSelection && (
           <ImperiumRowSelect
             cards={gameState.imperiumRowDeck}
@@ -1073,18 +1339,85 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             onConfirm={handleImperiumRowReplacement}
           />
         )}
-        <div className="round-start-container" hidden={isViewingHistory || gameState.phase !== GamePhase.ROUND_START || needsImperiumSelection}>
-        <ConflictSelect
-          conflicts={(() => {
-            const tierForRound = gameState.currentRound === 1 ? 1 : gameState.currentRound <= 6 ? 2 : 3
-            return CONFLICTS.filter(
-              c => c.tier === tierForRound && !gameState.conflictsDiscard.includes(c)
-            )
-          })()}
-          currentRound={gameState.currentRound}
-          handleConflictSelect={handleConflictSelect}
-        />
-      </div>
+        {gameState.phase === GamePhase.ROUND_START &&
+          !isViewingHistory &&
+          !needsImperiumSelection &&
+          !gameState.sandboxSetup && (
+          <div className="round-start-container">
+            <ConflictSelect
+              conflicts={(() => {
+                const tierForRound = gameState.currentRound === 1 ? 1 : gameState.currentRound <= 6 ? 2 : 3
+                return CONFLICTS.filter(
+                  c => c.tier === tierForRound && !gameState.conflictsDiscard.includes(c)
+                )
+              })()}
+              currentRound={gameState.currentRound}
+              handleConflictSelect={handleConflictSelect}
+            />
+          </div>
+        )}
+        {inSandboxSetup && sandboxImperiumOpen && (
+          <ImperiumRowSelect
+            cards={[...gameState.imperiumRow, ...gameState.imperiumRowDeck]}
+            requiredCount={5}
+            initialSelectedCards={gameState.imperiumRow}
+            onConfirm={(cardIds) => {
+              dispatch({ type: 'SANDBOX_SET_IMPERIUM_ROW', cardIds })
+              setSandboxImperiumOpen(false)
+            }}
+            onCancel={() => setSandboxImperiumOpen(false)}
+          />
+        )}
+        {inSandboxSetup && sandboxConflictOpen && (
+          <ConflictSelect
+            conflicts={CONFLICTS}
+            currentRound={gameState.currentRound}
+            title="Select Conflict Card"
+            handleConflictSelect={(conflictId) => {
+              dispatch({ type: 'SANDBOX_SET_CONFLICT', conflictId })
+              setSandboxConflictOpen(false)
+            }}
+            onCancel={() => setSandboxConflictOpen(false)}
+          />
+        )}
+        {sandboxEditPlayer && (
+          <SandboxPlayerEditor
+            player={sandboxEditPlayer}
+            usedLeaderNames={gameState.players
+              .filter(p => p.id !== sandboxEditPlayer.id)
+              .map(p => p.leader.name)}
+            imperiumDeckCards={gameState.imperiumRowDeck}
+            arrakisLiaisonCards={gameState.arrakisLiaisonDeck}
+            spiceMustFlowCards={gameState.spiceMustFlowDeck}
+            foldspaceCards={gameState.foldspaceDeck}
+            controlMarkers={gameState.controlMarkers}
+            playerInfluence={{
+              [FactionType.EMPEROR]:
+                gameState.factionInfluence[FactionType.EMPEROR]?.[sandboxEditPlayer.id] ?? 0,
+              [FactionType.SPACING_GUILD]:
+                gameState.factionInfluence[FactionType.SPACING_GUILD]?.[sandboxEditPlayer.id] ?? 0,
+              [FactionType.BENE_GESSERIT]:
+                gameState.factionInfluence[FactionType.BENE_GESSERIT]?.[sandboxEditPlayer.id] ?? 0,
+              [FactionType.FREMEN]:
+                gameState.factionInfluence[FactionType.FREMEN]?.[sandboxEditPlayer.id] ?? 0,
+            }}
+            onUpdate={(patch) =>
+              dispatch({ type: 'SANDBOX_UPDATE_PLAYER', playerId: sandboxEditPlayer.id, patch })
+            }
+            onInfluenceUpdate={(faction, value) =>
+              dispatch({
+                type: 'SANDBOX_SET_PLAYER_INFLUENCE',
+                playerId: sandboxEditPlayer.id,
+                faction,
+                value,
+              })
+            }
+            onSetControl={(space, playerId) =>
+              dispatch({ type: 'SANDBOX_SET_CONTROL_MARKER', space, playerId })
+            }
+            onClose={() => setSandboxEditPlayerId(null)}
+          />
+        )}
       <div
         className={[
           'play-shell-footer',
@@ -1094,7 +1427,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           .join(' ')}
         hidden={hidePlayShellFooter}
       >
-      {useImageBoard && !isViewingHistory && activePlayer && (
+      {useImageBoard && !isViewingHistory && !gameState.sandboxSetup && activePlayer && (
         <>
           <div className="effect-retreat-troop-dock" data-marker="effect-retreat-troop-controls">
             <div className="effect-retreat-troop-dock__anchor">
@@ -1105,28 +1438,16 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
               />
             </div>
           </div>
-          <div className="combat-troop-dock" data-marker="combat-troop-controls">
-            <div className="combat-troop-dock__anchor">
-              <CombatTroopControls
-                canDeploy={Boolean(gameState.currTurn?.canDeployTroops)}
-                deployableTroops={Math.min(
-                  (gameState.currTurn?.troopLimit || 0) -
-                    (gameState.currTurn?.removableTroops || 0),
-                  activePlayer.troops || 0
-                )}
-                deployedThisTurn={gameState.currTurn?.removableTroops || 0}
-                garrisonTroops={activePlayer.troops || 0}
-                onDeploy={() => handleAddTroop(activePlayer.id)}
-                onUndeploy={() => handleUndeployTroop(activePlayer.id)}
-              />
-            </div>
-          </div>
         </>
       )}
         <div
           ref={turnControlsFooterRef}
           className="turn-controls-container"
-          hidden={turnControlsState.phase !== GamePhase.PLAYER_TURNS && turnControlsState.phase !== GamePhase.COMBAT && turnControlsState.phase !== GamePhase.END_GAME}
+          hidden={
+            !gameState.sandboxSetup &&
+            turnControlsState.phase !== GamePhase.PLAYER_TURNS &&
+            turnControlsState.phase !== GamePhase.COMBAT
+          }
         >
           <TurnControls
             activePlayer={turnControlsActivePlayer}
@@ -1174,14 +1495,29 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             masterstrokeSelectionActive={!isViewingHistory && Boolean(masterstrokeSelectionRewardId)}
             onMemnonHighCouncilSelectionStart={handleMemnonHighCouncilSelectionStart}
             memnonHighCouncilSelectionActive={!isViewingHistory && Boolean(memnonHighCouncilRewardId)}
+            influenceBoardSelectionActive={!isViewingHistory && influenceBoardSelectionActive}
+            influenceBoardPrompt={influenceBoardPrompt}
             onOpponentNoCardAck={handleOpponentNoCardAck}
             intrigueDeck={turnControlsState.intrigueDeck}
             gamePhase={turnControlsState.phase}
             activeIntrigueThisRound={turnControlsActivePlayer ? (turnControlsState.activeIntrigueThisRound?.[turnControlsActivePlayer.id] || []) : []}
             gameState={turnControlsState}
             isHistoryView={isViewingHistory}
+            showDesktopPlayBar={isDesktopPlayView}
+            showEndTurnButton={showFooterEndTurn && !isViewingHistory}
+            showPassCombatButton={showFooterPassCombat && !isViewingHistory}
+            onEndTurn={
+              activePlayer ? () => handleEndTurn(activePlayer.id) : undefined
+            }
+            onPassCombat={
+              activePlayer ? () => handlePassCombat(activePlayer.id) : undefined
+            }
+            endTurnDisabled={endTurnButtonState.disabled}
+            endTurnTitle={endTurnButtonState.title}
+            passCombatLabel={combatFooterActionLabel}
           />
         </div>
+      {sandboxSetupMobileBar}
       {/* Navigator / status strip — directly under the board; play band fills below. */}
       <div
         ref={historyBannerRef}
@@ -1193,9 +1529,10 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         ]
           .filter(Boolean)
           .join(' ')}
+        hidden={isDesktopPlayView}
       >
         <div className="history-banner-leading">
-          {showPlayFooterToolbar && turnControlsActivePlayer && (
+          {showPlayFooterToolbar && turnControlsActivePlayer && !isDesktopPlayView && (
             <PlayFooterToolbar
               player={turnControlsActivePlayer}
               onOpenPlayerOverview={() => setIsPlayerOverviewOpen(true)}
@@ -1209,18 +1546,20 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           )}
         </div>
         <div className="history-banner-center">
-          {navResourcePlayer && (
-            <LeaderResourceStrip
-              compact
-              player={navResourcePlayer}
-              gameState={isViewingHistory ? displayState : gameState}
-              include={['deck', 'discard', 'trash']}
-            />
-          )}
           {!isDockedHistoryLayout && (
             <span className="history-banner-turn-label">
               {viewingTurnIndex === null
-                ? `Turn ${getLivePlayerTurnNumber(gameState.history)}, round ${gameState.currentRound}`
+                ? gameState.sandboxSetup
+                  ? 'Setup'
+                  : gameState.phase === GamePhase.END_GAME
+                    ? 'Endgame'
+                    : formatTurnRoundHeader(
+                        getLivePlayerTurnNumber(
+                          gameState.history,
+                          gameState.playerTurnNumberOffset ?? 0
+                        ),
+                        getDisplayRound(gameState)
+                      )
                 : (() => {
                     const snapshot = gameState.history[viewingTurnIndex]
                     if (viewingTurnIndex === 0 || snapshot?.historyEntryKind === 'setup') return 'Setup'
@@ -1228,6 +1567,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
                       return `Round ${snapshot.currentRound} start`
                     }
                     if (snapshot?.historyEntryKind === 'combat') return 'Combat'
+                    if (snapshot?.historyEntryKind === 'endgame') return 'Endgame'
                     const turnNum = getPlayerTurnNumber(gameState.history, viewingTurnIndex)
                     const totalPlayerTurns = countPlayerTurns(gameState.history)
                     return turnNum != null
@@ -1316,6 +1656,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       </div>
       </div>
       </div>
+      </div>
       {showTurnHistoryPanel && !isDockedHistoryLayout && (
         <TurnHistory
           layout="overlay"
@@ -1325,46 +1666,30 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           currentGameState={gameState}
           onTurnChange={goToTurn}
           onReturnToCurrent={returnToCurrent}
+          topSlot={turnHistoryTopSlot}
           onClose={() => {
             setIsTurnHistoryOpen(false)
-            returnToCurrent()
+            if (!inSandboxSetup) {
+              returnToCurrent()
+            }
           }}
           {...turnHistoryUndoProps}
         />
       )}
-        <div className="endgame-container" hidden={isViewingHistory || gameState.phase !== GamePhase.END_GAME}>
-          <div style={{ color: 'white', marginTop: '12px' }}>
-            <h3>Endgame</h3>
-            <div>
-              Done: {gameState.endgameDonePlayers?.size || 0}/{gameState.players.length}
-            </div>
-            <button
-              type="button"
-              onClick={handleResolveEndgame}
-              disabled={(gameState.endgameDonePlayers?.size || 0) < gameState.players.length}
-              title={(gameState.endgameDonePlayers?.size || 0) < gameState.players.length ? 'All players must End Turn before resolving Endgame.' : undefined}
-            >
-              Resolve Endgame
-            </button>
-            {gameState.endgameWinners && (
-              <div style={{ marginTop: '8px' }}>
-                Winner(s): {gameState.endgameWinners.map(id => gameState.players.find(p => p.id === id)?.leader.name || `P${id}`).join(', ')}
-              </div>
-            )}
-          </div>
-      </div>
-      <div className="combat-results-container" hidden={gameState.phase !== GamePhase.COMBAT_REWARDS}>
-        <CombatResults
-          players={gameState.players}
-          combatStrength={gameState.combatStrength}
-          history={gameState.history}
-          onConfirm={handleConfirmCombat}
-          pendingConflictRewardChoices={gameState.pendingConflictRewardChoices}
-          onResolveConflictChoice={(choiceId, reward) =>
-            dispatch({ type: 'RESOLVE_CONFLICT_REWARD_CHOICE', choiceId, reward })
-          }
-        />
-      </div>
+      {gameState.phase === GamePhase.COMBAT_REWARDS && (
+        <div className="combat-results-container">
+          <CombatResults
+            players={gameState.players}
+            combatStrength={gameState.combatStrength}
+            history={gameState.history}
+            onConfirm={handleConfirmCombat}
+            pendingConflictRewardChoices={gameState.pendingConflictRewardChoices}
+            onResolveConflictChoice={(choiceId, optionIndex) =>
+              dispatch({ type: 'RESOLVE_CONFLICT_REWARD_CHOICE', choiceId, optionIndex })
+            }
+          />
+        </div>
+      )}
       <UndoConfirmDialog
         isOpen={undoToSetup || undoTargetIndex !== null}
         targetTurnIndex={undoToSetup ? 0 : (undoTargetIndex ?? 0)}
@@ -1373,7 +1698,6 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         currentHistoryLength={gameState.history.length}
         targetState={getUndoTargetState()}
         currentState={gameState}
-        players={gameState.players}
         onConfirm={handleUndoConfirm}
         onCancel={clearUndoState}
       />
@@ -1409,11 +1733,15 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           onClose={() => setIsPlayerOverviewOpen(false)}
         />
       )}
+      </PlayBoardModalProvider>
     </div>
   )
 }
 
 function getInfiltrate(gameState: GameState): boolean {
+  if (gameState.infiltrateIgnoreOccupancyOnce?.[gameState.activePlayerId]) {
+    return true
+  }
   return Boolean(getSelectedCard(gameState)?.infiltrate)
 }
 
@@ -1462,6 +1790,36 @@ const GameContentWithTimeTravel = ({ autoApplyMandatoryRewards }: GameContentWit
   )
 }
 
+function resolveFirstPlayer(setups: PlayerSetup[]): number {
+  const baronIndex = setups.findIndex(p => p.leader.name === LEADER_NAMES.BARON_VLADIMIR)
+  return baronIndex >= 0 ? baronIndex : 0
+}
+
+function buildGameInputFromConfiguration(
+  players: Player[],
+  imperiumRowDeck: Card[],
+  options: {
+    firstPlayer: number
+    currentRound?: number
+    sandbox?: boolean
+    title?: string
+  }
+): SaveDoc {
+  const { setup, unmapped } = buildSetupBlockFromConfiguration({
+    players,
+    firstPlayer: options.firstPlayer,
+    imperiumRowDeck,
+    currentRound: options.currentRound,
+    sandbox: options.sandbox,
+  })
+  return createGameInputDoc(setup, {
+    title: options.title ?? (options.sandbox ? 'Sandbox game' : 'New game'),
+    notes: unmapped.length
+      ? `Unmapped catalog entries: ${unmapped.join(', ')}`
+      : undefined,
+  })
+}
+
 function App() {
   const [screenState, setScreenState] = useState<ScreenState>(ScreenState.SETUP)
   const [autoApplyMandatoryRewards, setAutoApplyMandatoryRewards] = useState(() => {
@@ -1470,12 +1828,7 @@ function App() {
   const [creatorReturnScreen, setCreatorReturnScreen] = useState<ScreenState>(ScreenState.SETUP)
   const [playerSetups, setPlayerSetups] = useState<PlayerSetup[]>([])
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
-  const [initialGameState, setInitialGameState] = useState<{
-    players: Player[]
-    currentRound: number
-    imperiumRowDeck: Card[]
-  } | null>(null)
-  const [setupImperiumDeck, setSetupImperiumDeck] = useState<Card[]>(() => buildImperiumDeck())
+  const [gameInput, setGameInput] = useState<SaveDoc | null>(null)
 
   useEffect(() => {
     localStorage.setItem('myMentat.autoApplyMandatoryRewards', autoApplyMandatoryRewards ? 'true' : 'false')
@@ -1527,6 +1880,45 @@ function App() {
     }
   }
 
+  // Sandbox: skip leader choices and game-state setup; configure everything on the board.
+  const handleSandboxStart = (setups: PlayerSetup[]) => {
+    setPlayerSetups(setups)
+    const imperiumDeck = applyStarterDeckReservationToImperium(
+      buildImperiumDeck(),
+      setups.map(setup => setup.deck)
+    )
+    const players: Player[] = setups.map((setup, index) => ({
+      id: index,
+      leader: setup.leader,
+      color: setup.color,
+      spice: getStartingSpice(setup.leader),
+      water: 1,
+      solari: getStartingSolari(setup.leader),
+      troops: 3,
+      combatValue: 0,
+      agents: 2,
+      handCount: 5,
+      intrigueCount: 0,
+      deck: [...setup.deck],
+      discardPile: [],
+      trash: [],
+      hasHighCouncilSeat: false,
+      hasSwordmaster: false,
+      playArea: [],
+      persuasion: 0,
+      victoryPoints: 1,
+      revealed: false,
+    }))
+    setGameInput(
+      buildGameInputFromConfiguration(players, imperiumDeck, {
+        firstPlayer: resolveFirstPlayer(setups),
+        sandbox: true,
+        title: 'Sandbox game',
+      })
+    )
+    setScreenState(ScreenState.GAME)
+  }
+
   const handleLeaderChoicesComplete = (leader: Leader) => {
     playerSetups[currentPlayerIndex].leader = leader;
     if (currentPlayerIndex < playerSetups.length - 1) {
@@ -1537,10 +1929,19 @@ function App() {
     }
   }
 
-  const handleGameStateSetupComplete = (state: { players: Player[], currentRound: number, imperiumRowDeck: Card[] }) => {
-      setInitialGameState(state)
-      setSetupImperiumDeck(state.imperiumRowDeck)
-      setScreenState(ScreenState.GAME)
+  const handleGameStateSetupComplete = (state: {
+    players: Player[]
+    currentRound: number
+    imperiumRowDeck: Card[]
+  }) => {
+    setGameInput(
+      buildGameInputFromConfiguration(state.players, state.imperiumRowDeck, {
+        firstPlayer: resolveFirstPlayer(playerSetups),
+        currentRound: state.currentRound,
+        title: 'New game',
+      })
+    )
+    setScreenState(ScreenState.GAME)
   }
 
   const handleOpenCardCreator = () => {
@@ -1576,7 +1977,7 @@ function App() {
   return (
     <div className="app">
       {screenState === ScreenState.SETUP && (
-        <GameSetup onComplete={handleSetupComplete} />
+        <GameSetup onComplete={handleSetupComplete} onSandbox={handleSandboxStart} />
       )}
 
       {screenState === ScreenState.LEADER_CHOICES && renderLeaderChoices()}
@@ -1588,6 +1989,7 @@ function App() {
       {screenState === ScreenState.GAME_STATE_SETUP && (
         <GameStateSetup 
           playerSetups={playerSetups}
+          firstPlayer={firstPlayerId}
           onComplete={handleGameStateSetupComplete}
           onOpenCardCreator={handleOpenCardCreator}
           autoApplyMandatoryRewards={autoApplyMandatoryRewards}
@@ -1595,21 +1997,8 @@ function App() {
         />
       )}
 
-      {screenState === ScreenState.GAME && initialGameState && (
-        <GameProvider initialState={{
-          players: initialGameState.players,
-          currentRound: initialGameState.currentRound,
-          firstPlayerMarker: firstPlayerId,
-          activePlayerId: firstPlayerId,
-          factionInfluence:{
-            [FactionType.EMPEROR]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0])),
-            [FactionType.SPACING_GUILD]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0])),
-            [FactionType.BENE_GESSERIT]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0])),
-            [FactionType.FREMEN]: Object.fromEntries(playerSetups.map((_p, i) => [i, 0]))
-          },
-          phase: GamePhase.ROUND_START,
-          imperiumRowDeck: setupImperiumDeck
-        }}>
+      {screenState === ScreenState.GAME && gameInput && (
+        <GameProvider gameInput={gameInput}>
           <GameContentWithTimeTravel autoApplyMandatoryRewards={autoApplyMandatoryRewards} />
         </GameProvider>
       )}

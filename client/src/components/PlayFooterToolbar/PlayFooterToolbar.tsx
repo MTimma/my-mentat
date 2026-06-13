@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import { Player } from '../../types/GameTypes'
 import { getLeaderIconPath, getLeaderImage } from '../../data/leaders'
+import {
+  cyclePlayChromeTheme,
+  getPlayChromeTheme,
+  PLAY_CHROME_THEME_LABELS,
+  type PlayChromeTheme,
+} from '../../utils/playChromeTheme'
 import LeaderImageModal from '../LeaderImageModal/LeaderImageModal'
 import './PlayFooterToolbar.css'
 
@@ -73,8 +79,13 @@ const PlayFooterToolbar = ({
   }
 
   const [isLeaderImageOpen, setIsLeaderImageOpen] = useState(false)
+  const [playChromeTheme, setPlayChromeTheme] = useState<PlayChromeTheme>(() => getPlayChromeTheme())
   const leaderIconPath = getLeaderIconPath(player.leader.name)
   const hasLeaderImage = Boolean(getLeaderImage(player.leader.name))
+
+  const handleThemeCycle = () => {
+    setPlayChromeTheme(cyclePlayChromeTheme())
+  }
 
   return (
     <div className="history-banner-toolbar" aria-label="Game shortcuts">
@@ -117,6 +128,17 @@ const PlayFooterToolbar = ({
           <TurnHistoryIcon />
         </button>
       )}
+      <button
+        type="button"
+        className="utility-action-button history-toolbar-button play-chrome-theme-button"
+        onClick={handleThemeCycle}
+        title={`UI theme: ${PLAY_CHROME_THEME_LABELS[playChromeTheme]}`}
+        aria-label={`Switch UI theme (current: ${PLAY_CHROME_THEME_LABELS[playChromeTheme]})`}
+      >
+        <span className="play-chrome-theme-button__label" aria-hidden="true">
+          {playChromeTheme === 'void' ? 'V' : 'B'}
+        </span>
+      </button>
       {showBoardPeekButton && onBoardPeekHoldChange && (
         <button
           type="button"

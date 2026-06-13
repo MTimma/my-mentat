@@ -12,6 +12,7 @@
  * 3. Right-click a misaligned box → **Inspect**.
  * 4. In the **Elements** panel, edit the `style` attribute on that `<button>`: change `left`, `top`, `width`, `height` until the outline matches the art.
  * 5. Copy the four percentages into the matching entry here (`spaceId` = `data-space-id` on the button).
+ * 6. Agent meeple position: tune **`agentX`** / **`agentY`** (% of that hotspot’s width/height from its top-left). With `?hotspotDebug=1`, cyan dots show each anchor.
  *
  * ### City (blue circle) and desert / spice (yellow triangle) ids
  * | spaceId | name              |
@@ -42,6 +43,18 @@ export interface BoardHotspot {
   top: number
   width: number
   height: number
+  /** Agent meeple X as % of hotspot width from zone left (0–100). */
+  agentX: number
+  /** Agent meeple Y as % of hotspot height from zone top (0–100). */
+  agentY: number
+}
+
+function hotspot(
+  spaceId: number,
+  rect: { left: number; top: number; width: number; height: number },
+  agent: { x: number; y: number } = { x: 50, y: 40 }
+): BoardHotspot {
+  return { spaceId, ...rect, agentX: agent.x, agentY: agent.y }
 }
 
 /** Map hotspot (defined in inner board 0–100 space) to percentages of the full image/stage. */
@@ -96,50 +109,59 @@ export interface MarkerAnchor {
 
 export const BOARD_HOTSPOTS: BoardHotspot[] = [
   // === EMPEROR ===
-  { spaceId: 14, left: 12, top: 5, width: 11, height: 8 },   // Conspire
-  { spaceId: 15, left: 12, top: 15, width: 11, height: 8 },   // Wealth
+  hotspot(14, { left: 12, top: 4, width: 15, height: 10 }, { x: 34, y: 60}),   // Conspire
+  hotspot(15, { left: 12, top: 15, width: 15, height: 10 }, { x: 34, y: 60}),   // Wealth
 
   // === SPACING GUILD ===
-  { spaceId: 17, left: 12, top: 30, width: 11, height: 8 },  // Heighliner
-  { spaceId: 16, left: 12, top: 40, width: 11, height: 8 },  // Foldspace
+  hotspot(17, { left: 12, top: 29, width: 15, height: 10 }, { x: 34, y: 60}),  // Heighliner
+  hotspot(16, { left: 12, top: 40, width: 15, height: 10 }, { x: 34, y: 60}),  // Foldspace
 
   // === BENE GESSERIT ===
-  { spaceId: 19, left: 12, top: 55, width: 11, height: 8 },   // Selective Breeding
-  { spaceId: 18, left: 12, top: 65, width: 11, height: 8 },   // Secrets
+  hotspot(19, { left: 12, top: 53, width: 15, height: 10 }, { x: 34, y: 60}),   // Selective Breeding
+  hotspot(18, { left: 12, top: 64, width: 15, height: 10 }, { x: 34, y: 60}),   // Secrets
 
   // === FREMEN ===
-  { spaceId: 20, left: 12, top: 80, width: 11, height: 8 },  // Hardy Warriors
-  { spaceId: 22, left: 12, top: 90, width: 11, height: 8},  // Stillsuits
-  { spaceId: 21, left: 32, top: 48, width: 11, height: 8 },  // Sietch Tabr
+  hotspot(20, { left: 12, top: 78, width: 15, height: 10 }, { x: 34, y: 60}),  // Hardy Warriors
+  hotspot(22, { left: 12, top: 89, width: 15, height: 10 }, { x: 34, y: 60}),  // Stillsuits
+  hotspot(21, { left: 32, top: 45, width: 17, height: 11 }, { x: 30, y: 60 }),  // Sietch Tabr
 
   // === LANDSRAAD ===
-  { spaceId: 9,  left: 30, top: 3.5,  width: 11, height: 6 },  // High Council
-  { spaceId: 12, left: 63, top: 3.5,  width: 11, height: 5 },  // Hall of Oratory
-  { spaceId: 10, left: 31, top: 12, width: 11, height: 6 },  // Mentat
-  { spaceId: 13, left: 64, top: 12, width: 11, height: 6 },  // Swordmaster
-  { spaceId: 11, left: 48, top: 12, width: 11, height: 6 },  // Rally Troops
+  hotspot(9,  { left: 31, top: 1.5,  width: 31, height: 8 }, { x: 15, y: 52}),  // High Council
+  hotspot(12, { left: 62, top: 1.5,  width: 13, height: 8 }, { x: 36, y: 52}),  // Hall of Oratory
+  hotspot(10, { left: 31, top: 10, width: 16, height: 8 }, { x: 26, y: 50}),  // Mentat
+  hotspot(13, { left: 62, top: 10, width: 13, height: 8 }, { x: 36, y: 52}),  // Swordmaster
+  hotspot(11, { left: 48, top: 10, width: 14, height: 8 }, { x: 32, y: 52}),  // Rally Troops
 
   // === SPICE TRADE ===
-  { spaceId: 8,  left: 78, top: 2.3, width: 11.0, height: 8.0 },   // Sell Melange
-  { spaceId: 7,  left: 78, top: 11.0, width: 11.0, height: 8.0 },   // Secure Contract
+  hotspot(8,  { left: 79, top: 1.5, width: 19, height: 8.0 }, { x: 25, y: 60}),   // Sell Melange
+  hotspot(7,  { left: 79, top: 10.0, width: 19.0, height: 8.0 }, { x: 25, y: 60}),   // Secure Contract
 
   // === CITIES ===
-  { spaceId: 1,  left: 75, top: 25, width: 11, height: 8 },  // Arrakeen
-  { spaceId: 2,  left: 57, top: 28, width: 11, height: 8 },  // Carthag
-  { spaceId: 3,  left: 42, top: 37, width: 11, height: 8 },  // Research Station
+  hotspot(1,  { left: 75, top: 24, width: 16, height: 13 }, { x: 30, y: 40 }),  // Arrakeen
+  hotspot(2,  { left: 58, top: 27, width: 16, height: 13 }, { x: 30, y: 42 }),  // Carthag
+  hotspot(3,  { left: 42, top: 36, width: 16, height: 9 }, { x: 30, y: 55 }),  // Research Station
 
   // === DESERT / ARRAKIS ===
-  { spaceId: 4,  left: 75, top: 40, width: 11, height: 9 },  // Imperial Basin
-  { spaceId: 5,  left: 30, top: 57, width: 11, height: 9 },  // The Great Flat
-  { spaceId: 6,  left: 55, top: 45, width: 11, height: 9 },  // Hagga Basin
+  hotspot(4,  { left: 74, top: 39, width: 18, height: 13 }, { x: 28, y: 40 }),  // Imperial Basin
+  hotspot(5,  { left: 29, top: 57, width: 17, height: 9 }, { x: 23, y: 50 }),  // The Great Flat
+  hotspot(6,  { left: 55, top: 45, width: 17, height: 10 }, { x: 25, y: 50 }),  // Hagga Basin
 ]
 
+/** Agent meeple center on the full stage (0–100%), from hotspot zone + relative anchor. */
+export function layoutAgentAnchorPercent(h: BoardHotspot): { x: number; y: number } {
+  const box = layoutHotspotPercent(h)
+  return {
+    x: box.left + box.width * (h.agentX / 100),
+    y: box.top + box.height * (h.agentY / 100),
+  }
+}
+
 function markerFromHotspot(h: BoardHotspot): MarkerAnchor {
-  const p = layoutHotspotPercent(h)
+  const p = layoutAgentAnchorPercent(h)
   return {
     spaceId: h.spaceId,
-    x: p.left + p.width * 0.5,
-    y: p.top + p.height * 0.4,
+    x: p.x,
+    y: p.y,
   }
 }
 

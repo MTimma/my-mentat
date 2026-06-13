@@ -7,6 +7,8 @@ import './GameSetup/GameSetup.css'
 
 interface GameSetupProps {
   onComplete: (playerSetups: PlayerSetup[]) => void
+  /** Start sandbox mode: straight to the board with default state, configure everything there. */
+  onSandbox: (playerSetups: PlayerSetup[]) => void
 }
 
 const createPlayerSetup = (playerNumber: number, color: PlayerColor, leaderIndex: number): PlayerSetup => ({
@@ -17,7 +19,7 @@ const createPlayerSetup = (playerNumber: number, color: PlayerColor, leaderIndex
   startingHand: []
 })
 
-const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
+const GameSetup: React.FC<GameSetupProps> = ({ onComplete, onSandbox }) => {
   const [gameName, setGameName] = useState('Test Game')
   const [playerCount, setPlayerCount] = useState<number>(4)
   const [players, setPlayers] = useState<PlayerSetup[]>([
@@ -68,15 +70,16 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
     >
       <div className="setup-container">
         <div className="setup-container-scroll">
-        <h1>Dune: Imperium</h1>
-        <p className="game-description">
-          Lead your house to victory through strategic card play, 
-          careful resource management, and political influence.
-        </p>
+        <header className="setup-header">
+          <h1>Dune: Imperium</h1>
+          <p className="game-description">
+            Lead your house to victory through strategic card play and political influence.
+          </p>
+        </header>
 
-        <div className="setup-section">
-          <label>
-            Game Name:
+        <div className="setup-meta-row">
+          <label className="setup-field">
+            <span className="setup-field-label">Game Name</span>
             <input
               type="text"
               value={gameName}
@@ -85,18 +88,15 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
               className="game-name-input"
             />
           </label>
-        </div>
-
-        <div className="setup-section">
-          <label>
-            Number of Players:
-            <select 
+          <label className="setup-field setup-field--compact">
+            <span className="setup-field-label">Players</span>
+            <select
               value={playerCount}
               onChange={(e) => handlePlayerCountChange(Number(e.target.value))}
               className="player-count-select"
             >
-              <option value={3}>3 Players</option>
-              <option value={4}>4 Players</option>
+              <option value={3}>3</option>
+              <option value={4}>4</option>
             </select>
           </label>
         </div>
@@ -104,38 +104,36 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
         <div className="players-setup">
           {players.map((player, index) => (
             <div key={index} className="player-setup-row">
-              <h3>Player {index + 1}</h3>
-              
-              <div className="player-options">
-                <select
-                  value={player.color}
-                  onChange={(e) => handlePlayerChange(index, 'color', e.target.value as PlayerColor)}
-                  className={`color-select ${player.color.toLowerCase()}`}
-                >
-                  {getAvailableColors(index).map(color => (
-                    <option key={color} value={color}>
-                      {color}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={player.leader.name}
-                  onChange={(e) => {
-                    const selectedLeader = LEADERS.find(l => l.name === e.target.value)
-                    if (selectedLeader) {
-                      handlePlayerChange(index, 'leader', selectedLeader)
-                    }
-                  }}
-                  className="leader-select"
-                >
-                  {getAvailableLeaders(index).map(leader => (
-                    <option key={leader.name} value={leader.name}>
-                      {leader.name} ({leader.ability.name})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <span className="player-setup-label">P{index + 1}</span>
+              <select
+                value={player.color}
+                onChange={(e) => handlePlayerChange(index, 'color', e.target.value as PlayerColor)}
+                className={`color-select ${player.color.toLowerCase()}`}
+                aria-label={`Player ${index + 1} color`}
+              >
+                {getAvailableColors(index).map(color => (
+                  <option key={color} value={color}>
+                    {color}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={player.leader.name}
+                onChange={(e) => {
+                  const selectedLeader = LEADERS.find(l => l.name === e.target.value)
+                  if (selectedLeader) {
+                    handlePlayerChange(index, 'leader', selectedLeader)
+                  }
+                }}
+                className="leader-select"
+                aria-label={`Player ${index + 1} leader`}
+              >
+                {getAvailableLeaders(index).map(leader => (
+                  <option key={leader.name} value={leader.name}>
+                    {leader.name} ({leader.ability.name})
+                  </option>
+                ))}
+              </select>
             </div>
           ))}
         </div>
@@ -147,6 +145,14 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete }) => {
           onClick={() => onComplete(players)}
         >
           Start Game
+        </button>
+        <button
+          className="start-game-button start-game-button--sandbox"
+          disabled={!isSetupComplete()}
+          onClick={() => onSandbox(players)}
+          title="Skip setup screens — configure everything directly on the board"
+        >
+          Sandbox Mode
         </button>
       </div>
     </motion.div>

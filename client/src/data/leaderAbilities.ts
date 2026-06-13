@@ -1,6 +1,7 @@
 import { GameState, FactionType, PendingReward, GainSource } from '../types/GameTypes'
 import { LEADER_NAMES } from './leaders'
 import { updateFactionInfluence } from '../utils/influenceVictoryPoints'
+import { mintId } from '../utils/semanticIds'
 
 /**
  * Check and apply Vladimir's Masterstroke ability when 4+ troops are deployed in a turn.
@@ -23,7 +24,7 @@ export function checkAndApplyMasterstroke(
   const removableTroops = state.currTurn?.removableTroops ?? 0
   if (removableTroops < 4) return state
 
-  const rewardId = `masterstroke-${crypto.randomUUID()}`
+  const rewardId = mintId(state, { type: GainSource.MASTERSTROKE, id: 0 }, 'REWARD')
   const pendingReward: PendingReward = {
     id: rewardId,
     source: { type: GainSource.MASTERSTROKE, id: 0, name: 'Masterstroke' },

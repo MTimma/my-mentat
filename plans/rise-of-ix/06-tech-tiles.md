@@ -3,6 +3,34 @@
 > Depends on Tasks 01, 02, 03, 04 (dreadnoughts), 05 (freighter).
 > This is the largest piece of new mechanics in the expansion.
 
+> ✦ 2026-06-10 — adjustments since this plan was written:
+>
+> 1. **Assets done**: all 18 tile PNGs exist under
+>    `client/public/technologies/rise_of_ix/` (the `TECH_TILES` data
+>    file is still entirely to-do).
+> 2. **`TechStacksModal` must use the board-modal portal pattern**
+>    (`usePlayBoardModalPortal` + `PlayBoardModalContext` + classes in
+>    `client/src/styles/playBoardModal.css`); trigger button sits next
+>    to the `riseofix3` overlay per Task 03 §4.4. It must stay
+>    board-scoped so it works with the play-chrome
+>    `scopeModalsToBoard` mode.
+> 3. **Reducer modularization**: `GameContext.tsx` is a ~5300-line
+>    monolith. The "separate file" wish in §4 is **new** structure —
+>    name it explicitly, e.g.
+>    `client/src/components/GameContext/riseOfIxReducer.ts`, with pure
+>    functions called from the main reducer switch.
+> 4. **Existing hooks to reuse**: `state.acquireToTopThisRound`
+>    (Spaceport) and `state.infiltrateIgnoreOccupancyOnce`
+>    (Invasion Ships) already exist on `GameState` — extend their
+>    semantics, don't redeclare.
+> 5. **Blocked tiles**: Detonation Devices and Troop Transports depend
+>    on Task 04 (dreadnought win flow) and Task 05 (freighter step 2)
+>    respectively.
+> 6. **GameStateSetup seeding**: seed `ixBoard` in the same
+>    `onComplete` path that builds the initial `Player[]` (the setup
+>    flow also initializes the play-chrome theme — see
+>    `utils/playChromeTheme.ts` — keep the seeding alongside it).
+
 ---
 
 ## 1. Goal
@@ -122,8 +150,8 @@ Verify against the printed tiles before final implementation.
 |---|---|
 | `client/src/data/techTiles.ts` | Final declarative data per §3. |
 | `client/src/types/GameTypes.ts` | `GameAction` adds `'ACQUIRE_TECH'`, `'TECH_NEGOTIATOR'`, `'ACTIVATE_TECH'`, `'FLIP_TECH'` (utility). |
-| `client/src/components/GameContext/GameContext.tsx` | All reducer logic per R3–R6 + per-tile effect handlers. | If possible keep rise of ix logic reducer in a separate file that will be called here
-| `client/src/components/TechStacksModal/TechStacksModal.tsx` | Acquire flow incl. negotiator return; per-tile hover tooltip. |
+| `client/src/components/GameContext/GameContext.tsx` | All reducer logic per R3–R6 + per-tile effect handlers. ✦ Keep RoI logic in a separate module — `client/src/components/GameContext/riseOfIxReducer.ts` — with pure functions called from the main reducer switch. |
+| `client/src/components/TechStacksModal/TechStacksModal.tsx` | Acquire flow incl. negotiator return; per-tile hover tooltip. ✦ Built on `usePlayBoardModalPortal`; overlay class registered in `playBoardModal.css`. |
 | `client/src/components/PlayerOverviewModal/PlayerOverviewModal.tsx` | Show owned tiles. |
 | `client/src/components/TurnControls/TurnControls.tsx` | Per-player tech-activation buttons. |
 | `client/src/utils/techTiles.ts` (new) | Pure helpers: `tileById(id)`, `playerOwnsTile(player, id)`, `firstStackTops(state)`. |

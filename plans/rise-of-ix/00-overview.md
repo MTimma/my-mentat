@@ -43,6 +43,59 @@ React/TypeScript codebase.
 
 ---
 
+## 1b. Status update (2026-06-10) — codebase drift & existing groundwork
+
+The plans were written 2026-05-31. Since then the codebase received a large
+play-board UX refactor and a small amount of Rise of Ix groundwork already
+landed (commit `687eaff "Add Rise of Ix components"`). Each plan file now
+carries inline `> ✦ 2026-06-10` corrections; the global picture:
+
+**Already in the codebase (plans must extend, not re-create):**
+
+- `Player.dreadnoughts?: { supply, garrison, conflict }` in
+  `client/src/types/GameTypes.ts` — optional, **no `control` zone yet**.
+- `client/src/utils/dreadnoughts.ts` — `PlayerDreadnoughts` type +
+  `getDreadnoughtsInConflict(player)`.
+- `client/public/icon/dreadnought.svg` (SVG only; no `.png` export —
+  code standardizes on the `.svg`).
+- `CombatAreaCluster` (`client/src/components/ImageBoard/CombatAreaCluster.tsx`)
+  already renders the per-player dreadnought-in-conflict count
+  (`ExpansionStrip`) and hosts the troop deploy strip.
+- All image assets: `board/riseofix/*.png`, 18 tech tile PNGs,
+  RoI leaders / imperium row / intrigue / conflict art.
+
+**Refactor facts every task must respect:**
+
+1. **Board modals** go through `client/src/context/PlayBoardModalContext.tsx`
+   + `client/src/hooks/usePlayBoardModalPortal.ts` +
+   `client/src/styles/playBoardModal.css`. Any new RoI modal
+   (Tech Stacks, freighter status, …) must use this portal pattern.
+2. **Combat rendering** is the `CombatAreaCluster` 2×2 grid anchored by
+   `COMBAT_AREA_BOUNDS` (`boardMarkerAnchors.ts`); `COMBAT_RING_ANCHORS`
+   is debug-only and `CombatPlayerStat.tsx` is orphaned (unused).
+3. **Troop deploy controls** live in
+   `CombatAreaCluster` → `CombatTroopControls` (wired from `App.tsx`
+   through `ImageBoard`), **not** in `TurnControls`. The undo action is
+   `UNDEPLOY_TROOP` (`RETREAT_TROOP` exists but is the *effect* retreat).
+4. **Conflict tier filtering** happens in `App.tsx` (~line 1129), not in
+   `ConflictSelect.tsx` (which is now a portal-aware dumb renderer).
+5. **Hotspots** in `boardHotspots.ts` are built with a
+   `hotspot(id, rect, agent)` factory carrying `agentX/agentY` anchors.
+6. **Reducer test helpers** already exist:
+   `client/src/components/GameContext/__tests__/_helpers.ts`
+   (`getBaseTestState`, `makePlayer`, …). Vitest runs from `client/`,
+   environment `node` (no jsdom / testing-library), and
+   `src/__tests__/deferred/**` is excluded from the run.
+
+**Corrected base-game facts** (wrong in the original plan text):
+
+- Base `IMPERIUM_ROW_DECK` has **67** cards, not 64.
+- Base `CONFLICTS` (ids 901–918) tier mix is **4 / 10 / 4**, not 4 / 8 / 4.
+- `Leader` is a **class** (constructor-defined), not an interface, with
+  `complexity: 1 | 2 | 3`.
+
+---
+
 ## 2. Master scope (what Rise of Ix adds)
 
 | Area | Base game | Rise of Ix change |

@@ -1,4 +1,4 @@
-import { ALL_IMPERIUM_ROW_CARDS, FOLDSPACE_DECK } from '../data/cards'
+import { ALL_IMPERIUM_ROW_CARDS, FOLDSPACE_DECK, STARTING_DECK } from '../data/cards'
 import { Card, GameState, GainSource, RewardType, TurnType } from '../types/GameTypes'
 import { computeTurnGainTotals, getGainsForTurnState, type TurnGainTotals } from './turnGainsDisplay'
 
@@ -28,8 +28,16 @@ export function resolveCardInSnapshot(
 
   return (
     ALL_IMPERIUM_ROW_CARDS.find(c => c.id === cardId) ??
-    FOLDSPACE_DECK.find(c => c.id === cardId)
+    FOLDSPACE_DECK.find(c => c.id === cardId) ??
+    STARTING_DECK.find(c => c.id === cardId)
   )
+}
+
+/** Agent-turn card played this turn — still resolvable after trash-this-card effects. */
+export function resolvePlayedCardForTurn(state: GameState): Card | null {
+  const curr = state.currTurn
+  if (!curr?.cardId || curr.type !== TurnType.ACTION || curr.playerId == null) return null
+  return resolveCardInSnapshot(state, curr.playerId, curr.cardId) ?? null
 }
 
 export function resolveCardInSnapshotByName(

@@ -4,6 +4,35 @@
 > Reducer + per-leader ability files, following the existing
 > `client/src/data/leaderAbilities/*.ts` pattern.
 
+> ✦ 2026-06-10 — adjustments since this plan was written:
+>
+> 1. **`Leader` is a class** with `complexity: 1 | 2 | 3` — widen the
+>    type to `1 | 2 | 3 | 4` (Tessia) and add RoI fields as optional
+>    instance properties (see Task 02 R13 note).
+> 2. **No re-export barrel.** `client/src/data/leaderAbilities.ts`
+>    contains only the Masterstroke helpers; per-leader hooks are
+>    imported **directly** from `data/leaderAbilities/*.ts` into
+>    `GameContext.tsx`. Drop the "re-export the new hooks" row — follow
+>    the direct-import pattern.
+> 3. **`rhomburDreadnoughtStrength.ts` does not exist yet** ("already
+>    referenced by Task 04" means referenced *by the plan*, not by
+>    code). The only existing helper is
+>    `utils/dreadnoughts.ts: getDreadnoughtsInConflict`.
+> 4. **Ilesa signet:** mirror the existing `ACQUIRE_AL` / `ACQUIRE_SMF`
+>    actions as `ACQUIRE_FS` (or generalize to `ACQUIRE_RESERVE_CARD`).
+> 5. **Hudro:** no `HUDRO_PEEK_DONE` action exists; given the app
+>    simplification (just +1 `intrigueCount`), prefer seeding it in
+>    `LeaderSetupChoices` / setup flow with a one-time flag rather than
+>    a dedicated reducer action — keep tests aligned with whichever is
+>    chosen.
+> 6. **Tessia snooper UI** touches `ImageBoard` (influence-track
+>    markers, see `INFLUENCE_TRACKS` in `boardMarkerAnchors.ts`) and
+>    `LeaderImageModal` (snoopers parked on the leader sheet) — both
+>    components were refactored; name them explicitly in the work.
+> 7. **Pool plumbing:** `getLeaderPool(expansions)` (Task 01 R4) is the
+>    blocker; `GameSetup.tsx` currently filters the static `LEADERS`
+>    import in `getAvailableLeaders`.
+
 ---
 
 ## 1. Goal
@@ -107,8 +136,10 @@ The 6 new leaders are:
 
 - New module `armandTrashInPlay.ts`. At the **start of Reveal turn**,
   check if `state.occupiedSpaces` has 2 agents for this player on
-  spaces whose `agentIcon` is `CITY` (yellow), `SPICE_TRADE` (yellow),
-  `LANDSRAAD` (green)
+  spaces whose `agentIcon` is `CITY` (blue), `SPICE_TRADE` (yellow),
+  or `LANDSRAAD` (green) — ✦ all **three** icon groups count (this
+  list previously omitted nothing but mislabeled CITY; AC6's
+  "Yellow/Blue/Green" is the authoritative set).
   Push a `CARD_SELECT` pending choice over the player's `playArea`, revealed cards still give effect
 - Signet: push a `CARD_SELECT` pending choice over Imperium Row cards
   whose `cost <= 3`, free acquire (uses existing `acquire: { limit: 3 }`
@@ -163,8 +194,9 @@ Do not skip this logic.
 | `client/src/data/leaderAbilities/yunaSolariBonus.ts` (new) | +1 solari on own turn. |
 | `client/src/data/leaderAbilities/armandTrashInPlay.ts` (new) | Reveal-start trash trigger. |
 | `client/src/data/leaderAbilities/ilesaSetAside.ts` (new) | Set-aside card + 2nd-turn bonus. |
-| `client/src/data/signetRingEffects.ts` | 6 new entries. |
-| `client/src/data/leaderAbilities.ts` | Re-export the new hooks (mirroring existing). |
+| `client/src/data/signetRingEffectsRiseOfIx.ts` (new, ✦ per R5 "separate file") | 6 new entries, merged into the `SIGNET_RING_EFFECTS` lookup. |
+| ~~`client/src/data/leaderAbilities.ts`~~ | ✦ Dropped — no re-export barrel exists; import hooks directly into `GameContext.tsx` like the base leaders do. |
+| `client/src/types/GameTypes.ts` | ✦ Widen `Leader.complexity` to `1 \| 2 \| 3 \| 4`; add optional RoI instance fields (Task 02 R13). |
 | `client/src/components/GameContext/GameContext.tsx` | Wire the 4 ability hooks at the appropriate transition points (REVEAL_CARDS for Armand, applyRewardToPlayer for Yuna, ROUND_START for Ilesa, intrigue setup for Hudro, snooper setup for Tessia). |
 | `client/src/components/LeaderSetupChoices/LeaderSetupChoices.tsx` | Add screens for Hudro (peek) once both have `sogChoice = true`. |
 

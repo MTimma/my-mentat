@@ -3,6 +3,37 @@
 > Cross-cutting. Aggregates the per-task test lists from 01–10 into a
 > single execution / coverage plan, and sets the test-style standards.
 
+> ✦ 2026-06-10 — current test infrastructure facts:
+>
+> 1. **`_helpers.ts` already exists**
+>    (`client/src/components/GameContext/__tests__/_helpers.ts`) with
+>    `getBaseTestState`, `makePlayer`, `stubDeckCard`, `withCardOnTop`,
+>    `snapshotAfterAgentTurn`. §4.1's `getRoiTestState` is an
+>    **extension** of this file, not a new one.
+> 2. **Tests run from `client/`** (`cd client && npm run test`); there
+>    is no root `package.json`.
+> 3. **Vitest environment is `node`**, not jsdom; `@testing-library/*`
+>    is not installed. Component (`.tsx`) tests need
+>    `jsdom` + `@testing-library/react` + `@testing-library/jest-dom`
+>    and a per-file `// @vitest-environment jsdom` pragma (or env
+>    override for `*.test.tsx`).
+> 4. **`client/src/__tests__/deferred/`** exists and is **excluded**
+>    from the normal run (`vite.config.ts`); UI specs can be parked
+>    there until the jsdom deps land.
+> 5. **`client/src/data/__tests__/` does not exist.** Keep data-level
+>    tests under `GameContext/__tests__/` (the codebase convention;
+>    plans 08/10 were updated to match), or create the directory once
+>    and document it here.
+> 6. **No coverage script exists** — add
+>    `"test:coverage": "vitest run --coverage"` + `@vitest/coverage-v8`
+>    if §5's ≥90% goal is to be enforced.
+> 7. **Post-refactor reducer test template:** see
+>    `boardSpaceCostGains.test.ts` (uses `getGainsForTurnState`) and
+>    `imperiumRowCards.test.ts` (manifest-driven `it.todo` scaffold).
+> 8. **Modal component tests** must wrap `PlayBoardModalProvider`
+>    (ConflictSelect / ImperiumRowSelect / TechStacksModal are
+>    portal-based).
+
 ---
 
 ## 1. Goal
@@ -17,9 +48,9 @@ agents don't drift apart. All tests use the existing **Vitest** setup
 
 | Category | Where | Mechanism |
 |---|---|---|
-| **Pure functions** | `client/src/utils/__tests__/*`, `client/src/data/__tests__/*` | Synchronous assertions on return values. |
-| **Reducer slice tests** | `client/src/components/GameContext/__tests__/*` | Use `applyGameAction(state, action)` and `getFreshDefaultGameState()` helpers (already used in `intrigueCards.test.ts`). |
-| **Component tests** | `client/src/components/<Component>/__tests__/*.test.tsx` | Use `vitest` + `@testing-library/react` (add as a dev dep if not present). |
+| **Pure functions** | `client/src/utils/__tests__/*` (✦ `data/__tests__/` doesn't exist — data assertions go in `GameContext/__tests__/`) | Synchronous assertions on return values. |
+| **Reducer slice tests** | `client/src/components/GameContext/__tests__/*` | Use `applyGameAction(state, action)` and `getFreshDefaultGameState()` helpers (already used in `intrigueCards.test.ts`); extend the existing `_helpers.ts`. |
+| **Component tests** | `client/src/components/<Component>/__tests__/*.test.tsx` | Use `vitest` + `@testing-library/react` (✦ not installed; needs jsdom env too — see header note 3, or park in `src/__tests__/deferred/`). |
 | **Snapshot tests for history** | Reducer slice tests with `state.history.length` and `state.history[i].expansions` assertions. | – |
 
 ---
@@ -37,8 +68,10 @@ agents don't drift apart. All tests use the existing **Vitest** setup
 
 ### 3.2 Types & helpers (Task 02)
 
-- [ ] `units.test.ts` — `unitsInConflictForPlayer`.
-- [ ] `techTiles.test.ts` (data) — 18 entries, image paths.
+- [ ] `utils/__tests__/dreadnoughts.test.ts` (✦ renamed from
+  `units.test.ts`) — `unitsInConflictForPlayer`.
+- [ ] `techTiles.test.ts` (data — ✦ under `GameContext/__tests__/`) —
+  18 entries, image paths.
 
 ### 3.3 Board overlays, tech-stacks modal & dreadnought icon (Task 03)
 
@@ -105,7 +138,8 @@ agents don't drift apart. All tests use the existing **Vitest** setup
 ### 4.1 `getRoiTestState()`
 
 Inside `client/src/components/GameContext/__tests__/_helpers.ts`
-(new), to mirror `basePlotState` but with the flag on and the right
+(✦ **existing file** — extend it; it already provides
+`getBaseTestState` / `makePlayer`), with the flag on and the right
 player seeds:
 
 ```ts
@@ -141,16 +175,18 @@ test body can just assert.
 
 ## 5. Coverage target
 
-- **Reducer** (`GameContext.tsx`) RoI lines: ≥ 90% line coverage.
-- **Pure helpers** (`utils/units.ts`, `utils/combatStrength.ts`,
+- **Reducer** (`GameContext.tsx` + `riseOfIxReducer.ts`) RoI lines:
+  ≥ 90% line coverage.
+- **Pure helpers** (`utils/dreadnoughts.ts` ✦, `utils/combatStrength.ts`,
   `data/leaderAbilities/*.ts`): 100% line coverage.
-- **UI components** (board overlays, `TechStacksModal`, turn controls
+- **UI components** (board overlays, `TechStacksModal`, deploy-strip
   additions): smoke tests only (render + click).
 
-Run with:
+Run with (✦ from the `client/` directory; requires adding
+`@vitest/coverage-v8`):
 
 ```bash
-npm run test -- --coverage
+cd client && npm run test -- --coverage
 ```
 
 The CI step (if present) should fail on coverage drops in
@@ -162,8 +198,9 @@ The CI step (if present) should fail on coverage drops in
 
 1. **AC1** — All tests listed in `11-tests-overview.md` exist as
    passing or `it.todo(...)` entries after each task is implemented.
-2. **AC2** — A new agent can run `npm run test` from the repo root
-   and see only green / `[todo]` markers — no red.
+2. **AC2** — A new agent can run `npm run test` from the **`client/`
+   directory** (✦ no root `package.json`) and see only green /
+   `[todo]` markers — no red.
 3. **AC3** — A future regression (e.g. breaking the freighter
    recall) trips at least one specific test in this suite.
 4. **AC4** — `client/src/components/GameContext/__tests__/_helpers.ts`

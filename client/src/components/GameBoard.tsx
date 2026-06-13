@@ -103,7 +103,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
     }
 
     const space = BOARD_SPACES.find(s => s.id === spaceId)
-    if (space?.name === "Sell Melange") {
+    if (space?.specialEffect === 'sellMelange') {
       setSelectedSpaceId(spaceId)
       setShowSellMelangePopup(true)
     } else {

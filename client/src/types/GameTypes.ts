@@ -128,7 +128,7 @@ export interface SpaceProps {
     spice?: number
     solari?: number
   }
-  specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'highCouncil'
+  specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'highCouncil' | 'sellMelange'
 }
 
 export interface PlayReq extends CardEffectReq {
@@ -571,6 +571,8 @@ export interface GameState {
   endgameTiebreakerSpice: Record<number, number>
   // Endgame: players who have finished playing endgame intrigue
   endgameDonePlayers: Set<number>
+  /** Endgame: players who have manually selected which intrigue cards to reveal. */
+  endgameRevealDonePlayers?: Set<number>
   // Endgame: computed winners (after RESOLVE_ENDGAME)
   endgameWinners: number[] | null
   blockedSpaces?: Array<{ spaceId: number; playerId: number }> // Spaces blocked by The Voice
@@ -601,8 +603,27 @@ export interface GameState {
   pendingRapidMobilization?: number | null
   /** To the Victor…: if true, grant 3 spice when this player wins the current Conflict */
   pendingVictorSpiceThisCombat?: Record<number, boolean>
-  /** Labels a row in `history` (setup baseline, round start, combat resolution). */
-  historyEntryKind?: 'setup' | 'round-start' | 'combat'
+  /** Labels a row in `history` (setup baseline, round start, combat resolution, endgame). */
+  historyEntryKind?: 'setup' | 'round-start' | 'combat' | 'endgame'
+  /** All intrigue cards revealed at endgame, keyed by player id. */
+  endgameRevealedIntrigue?: Record<number, IntrigueCard[]>
+  /** Endgame-effect cards still waiting to be applied (may require choices). */
+  endgameApplyQueue?: Array<{ playerId: number; cardId: number }>
+  /** Sandbox mode: true while the single freeform setup turn is in progress; cleared by SANDBOX_COMMIT_SETUP. */
+  sandboxSetup?: boolean
+  /** Sandbox setup only: optional starting round/turn (null = imaginary position, no label). */
+  sandboxSetupPosition?: SandboxSetupPosition
+  /** Added to computed live player-turn numbers (sandbox mid-round starts). */
+  playerTurnNumberOffset?: number
+  /** When true, play chrome omits the round number (imaginary sandbox position). */
+  hideRoundLabel?: boolean
+}
+
+export interface SandboxSetupPosition {
+  /** Starting round when play begins; null = imaginary (no round shown). */
+  round: number | null
+  /** 1-based player turn when play begins; null = turn 1. */
+  playerTurn: number | null
 }
 
 /** Faction agent icons added by Dispatch an Envoy (union with card icons). */
