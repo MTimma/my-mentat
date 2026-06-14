@@ -9,7 +9,7 @@ const COMBAT_STATUS_ORDER: PlayerColor[] = [
   PlayerColor.YELLOW,
 ]
 
-function PlayerCombatSlot({
+export function PlayerCombatSlot({
   player,
   troops,
   strength,

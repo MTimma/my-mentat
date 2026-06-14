@@ -973,7 +973,10 @@ function applyConflictChoiceReward(
   if (reward.influence) {
     const milestoneMeta: InfluenceMilestoneMeta = { troopsRecruited: 0 }
     reward.influence.amounts.forEach(({ faction, amount }) => {
-      newState = updateFactionInfluence(newState, faction, playerId, amount, { milestoneMeta })
+      newState = updateFactionInfluence(newState, faction, playerId, amount, {
+        appendGainsTo: newState.gains,
+        milestoneMeta,
+      })
       pushGain(amount, RewardType.INFLUENCE)
     })
     if (milestoneMeta.troopsRecruited > 0) {
@@ -1064,7 +1067,10 @@ function applyChoiceReward(
   if (reward.influence) {
     const milestoneMeta: InfluenceMilestoneMeta = { troopsRecruited: 0 }
     reward.influence.amounts.forEach(({ faction, amount }) => {
-      newState = updateFactionInfluence(newState, faction, playerId, amount, { milestoneMeta })
+      newState = updateFactionInfluence(newState, faction, playerId, amount, {
+        appendGainsTo: newState.gains,
+        milestoneMeta,
+      })
       pushGain(amount, RewardType.INFLUENCE, faction)
     })
     if (milestoneMeta.troopsRecruited > 0) {
@@ -2405,7 +2411,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             : p
         ),
         activePlayerId: nextPlayer.id,
-        history: [...newState.history, snapshotStateForHistory(newState)],
+        history: [...state.history, snapshotStateForHistory(state)],
         currTurn: null,
         canEndTurn: false,
         selectedCard: null,
@@ -3039,13 +3045,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Create or update the current turn
       const isContinuingTurn = state.currTurn?.playerId === playerId
       const cardChanged = isContinuingTurn && state.currTurn?.cardId !== cardId
+      const gainsStartIndex =
+        isContinuingTurn && !cardChanged
+          ? state.currTurn!.gainsStartIndex ?? state.gains.length
+          : state.gains.length
       const currentTurn: GameTurn = isContinuingTurn
         ? {
             ...state.currTurn!,
             playerId,
             type: TurnType.ACTION,
             cardId,
-            gainsStartIndex: state.gains.length,
+            gainsStartIndex,
             ...(cardChanged
               ? {
                   agentSpace: undefined,
@@ -3116,6 +3126,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedGains: Gain[] = isReplacingPlacement
         ? newState.gains.slice(0, turnGainsStart)
         : [...newState.gains]
+      const placementGainsStartIndex = isReplacingPlacement
+        ? updatedGains.length
+        : (newState.currTurn?.gainsStartIndex ?? updatedGains.length)
       const updatedPlayers: Player[] = [...newState.players]
       const currPlayer: Player = {...updatedPlayers.find(p => p.id === playerId)} as Player
       const selectedDeckIndex =
@@ -3138,7 +3151,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         troopsRetreatedFromConflict: 0,
         effectRetreatAllowance: 0,
         effectRetreatsUsed: 0,
-        gainsStartIndex: updatedGains.length,
+        gainsStartIndex: placementGainsStartIndex,
         persuasionCount: 0,
         gainedEffects: [],
         acquiredCards: newState.currTurn?.acquiredCards ?? [],
@@ -5887,7 +5900,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
 
         const next = gameReducer(prev, action)
 
-        if (isReplayable(action)) {
+        if (isReplayable(action) && next !== prev) {
           assertJsonSerializable(action, action.type)
           const entry: EventEntry = {
             a: JSON.parse(JSON.stringify(action)) as GameAction,
@@ -5898,7 +5911,27 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
           recordedEventsRef.current = [...recordedEventsRef.current, entry]
         }
 
-        const history = buildHistoryFromEvents(gameInput.setup, recordedEventsRef.current)
+        let history = buildHistoryFromEvents(gameInput.setup, recordedEventsRef.current)
+        // Prefer the live pre-END_TURN snapshot so turn gains match what the player saw
+        // (event replay can miss optional PAY_COST / influence VP rows when ids diverge).
+        if (
+          action.type === 'END_TURN' &&
+          next !== prev &&
+          prev.currTurn &&
+          history.length > 0
+        ) {
+          const last = history[history.length - 1]
+          const kind = last.historyEntryKind
+          const isPlayerTurnRow =
+            last.currTurn != null &&
+            kind !== 'setup' &&
+            kind !== 'round-start' &&
+            kind !== 'combat' &&
+            kind !== 'endgame'
+          if (isPlayerTurnRow) {
+            history = [...history.slice(0, -1), snapshotStateForHistory(prev)]
+          }
+        }
         return { ...next, history }
       })
     },

@@ -504,12 +504,8 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   }
 
   const handleAutoApplyRewards = () => {
-    if (!activePlayer) return
-    const autoApplicableRewards = getAutoApplicableRewards(gameState)
-
-    autoApplicableRewards.forEach(reward => {
-      dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId: reward.id })
-    })
+    if (getAutoApplicableRewards(gameState).length === 0) return
+    handleClaimAllRewards()
   }
 
   useEffect(() => {
@@ -523,12 +519,9 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       return
     }
 
-    const autoApplicableRewards = getAutoApplicableRewards(gameState)
-    if (autoApplicableRewards.length === 0) return
+    if (getAutoApplicableRewards(gameState).length === 0) return
 
-    autoApplicableRewards.forEach(reward => {
-      dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId: reward.id })
-    })
+    dispatch({ type: 'CLAIM_ALL_REWARDS', playerId: activePlayer.id })
   }, [
     autoApplyMandatoryRewards,
     activePlayer?.id,
@@ -537,7 +530,8 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     gameState.currTurn?.pendingChoices,
     voiceSelectionRewardId,
     masterstrokeSelectionRewardId,
-    memnonHighCouncilRewardId
+    memnonHighCouncilRewardId,
+    dispatch,
   ])
 
   // Sandbox setup turn: blocking round-start modals are replaced by on-board click targets.

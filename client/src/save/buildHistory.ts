@@ -47,6 +47,7 @@ export function buildHistoryFromEvents(setup: SetupBlock, events: EventEntry[]):
 
   for (const entry of events) {
     const action: GameAction = entry.a
+    const stateBeforeAction = action.type === 'END_TURN' ? state : null
 
     if (action.type === 'RESOLVE_COMBAT') {
       stateBeforeCombat = state
@@ -65,7 +66,9 @@ export function buildHistoryFromEvents(setup: SetupBlock, events: EventEntry[]):
       }
       case 'END_TURN': {
         if (state.phase === GamePhase.END_GAME) break
-        history = [...history, snapshotStateForHistory(state)]
+        if (stateBeforeAction?.currTurn) {
+          history = [...history, snapshotStateForHistory(stateBeforeAction)]
+        }
         break
       }
       case 'RESOLVE_COMBAT': {
@@ -125,6 +128,7 @@ export function historyIndexToEventIndex(
 
   for (let eventIndex = 0; eventIndex < events.length; eventIndex++) {
     const action = events[eventIndex].a
+    const stateBeforeAction = action.type === 'END_TURN' ? state : null
     if (action.type === 'RESOLVE_COMBAT') stateBeforeCombat = state
     state = applyGameAction(state, action)
 
@@ -139,8 +143,8 @@ export function historyIndexToEventIndex(
         break
       }
       case 'END_TURN':
-        if (state.phase !== GamePhase.END_GAME) {
-          history = [...history, snapshotStateForHistory(state)]
+        if (state.phase !== GamePhase.END_GAME && stateBeforeAction?.currTurn) {
+          history = [...history, snapshotStateForHistory(stateBeforeAction)]
         }
         break
       case 'RESOLVE_COMBAT':

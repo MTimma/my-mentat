@@ -2,7 +2,7 @@ import React, { useMemo, useState, type RefObject } from 'react'
 import { GameState, PlayerColor, type Player } from '../../types/GameTypes'
 import { getLeaderImage } from '../../data/leaders'
 import CombatPlayerDetailModal from './CombatPlayerDetailModal'
-import CombatStatusStrip from './CombatStatusStrip'
+import { PlayerCombatSlot } from './CombatStatusStrip'
 import CombatTroopControls from '../CombatTroopControls/CombatTroopControls'
 
 type ResourceDef = {
@@ -21,12 +21,10 @@ const RESOURCE_CELLS: ResourceDef[] = [
   { icon: '/icon/intrigue.png', title: 'Intrigue cards', getValue: player => player.intrigueCount },
 ]
 
-/** Clockwise seats in 2×2 grid: red TL, green TR, blue BL, yellow BR. */
-const COMBAT_AREA_QUADRANTS: PlayerColor[] = [
-  PlayerColor.RED,
-  PlayerColor.GREEN,
-  PlayerColor.BLUE,
-  PlayerColor.YELLOW,
+/** Left / right columns: red+blue, green+yellow — stats sit under each leader. */
+const COMBAT_AREA_COLUMNS: PlayerColor[][] = [
+  [PlayerColor.RED, PlayerColor.BLUE],
+  [PlayerColor.GREEN, PlayerColor.YELLOW],
 ]
 
 function renderResourceCell(resource: ResourceDef, player: Player) {
@@ -128,7 +126,7 @@ export interface CombatAreaClusterProps {
   gameState?: GameState
   modalContainerRef?: RefObject<HTMLElement | null>
   troopDeploy?: CombatTroopDeployProps
-  /** Inner-board % height of the combat cluster (status strip extends below). */
+  /** Inner-board % height of leader grid; status rows are included inside the cluster. */
   gridHeightPercent?: number
   /** Overrides quadrant click (sandbox setup opens the player editor instead of the detail modal). */
   onPlayerSelect?: (player: Player) => void
@@ -180,30 +178,40 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
         data-marker={dataMarker}
       >
         <div className="combat-area-cluster-stack">
-          <div className="combat-area-cluster combat-area-cluster--with-status-below">
-            {COMBAT_AREA_QUADRANTS.map(color => {
-              const player = playerByColor.get(color)
-              if (!player) return null
+          <div className="combat-area-cluster combat-area-cluster--with-status-inline">
+            {COMBAT_AREA_COLUMNS.map((columnColors, columnIndex) => (
+              <div key={columnIndex} className="combat-area-cluster__column">
+                {columnColors.map(color => {
+                  const player = playerByColor.get(color)
+                  if (!player) return null
 
-              return (
-                <PlayerQuadrant
-                  key={color}
-                  player={player}
-                  isActive={player.id === activePlayerId}
-                  onSelect={() =>
-                    onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
-                  }
-                />
-              )
-            })}
+                  return (
+                    <div
+                      key={color}
+                      className={[
+                        'combat-area-cluster__seat',
+                        `combat-area-cluster__seat--${color}`,
+                      ].join(' ')}
+                    >
+                      <PlayerQuadrant
+                        player={player}
+                        isActive={player.id === activePlayerId}
+                        onSelect={() =>
+                          onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
+                        }
+                      />
+                      <PlayerCombatSlot
+                        player={player}
+                        troops={troops[player.id] ?? 0}
+                        strength={strength[player.id] ?? 0}
+                        isActive={player.id === activePlayerId}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
           </div>
-
-          <CombatStatusStrip
-            players={players}
-            troops={troops}
-            strength={strength}
-            activePlayerId={activePlayerId}
-          />
 
           {troopDeploy ? (
             <div

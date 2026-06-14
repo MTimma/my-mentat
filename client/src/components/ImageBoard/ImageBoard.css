@@ -628,7 +628,7 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 .combat-area-cluster {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: 1fr;
   width: 100%;
   flex: 1 1 0;
   min-width: 0;
@@ -637,11 +637,47 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   pointer-events: auto;
 }
 
-.combat-area-cluster--with-status-below {
+.combat-area-cluster--with-status-inline {
   border: none;
   border-radius: 0;
   box-shadow: none;
   background: transparent;
+}
+
+.combat-area-cluster__column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.combat-area-cluster__column:first-child {
+  border-right: 1px solid rgba(255, 248, 232, 0.1);
+}
+
+.combat-area-cluster__seat {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.combat-area-cluster__seat--red,
+.combat-area-cluster__seat--green {
+  border-bottom: 1px solid rgba(255, 248, 232, 0.1);
+}
+
+.combat-area-cluster__seat .combat-area-cluster__quadrant {
+  flex: 1 1 0;
+  height: auto;
+}
+
+.combat-area-cluster__seat .combat-status-strip__slot {
+  flex: 0 0 var(--combat-status-slot-height, 2.15em);
+  border-top: 1px solid rgba(255, 248, 232, 0.08);
+  background: rgba(2, 3, 5, 0.94);
+  pointer-events: none;
 }
 
 .game-container--play.play-chrome-held .combat-area-cluster-stack {
@@ -650,7 +686,7 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   background: transparent;
 }
 
-.game-container--play.play-chrome-held .combat-area-cluster--with-status-below {
+.game-container--play.play-chrome-held .combat-area-cluster--with-status-inline {
   border: 1px solid rgba(255, 248, 232, 0.18);
   border-radius: 0.42em;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
@@ -684,16 +720,6 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 .combat-area-cluster__quadrant--active {
   box-shadow: inset 0 0 0 2px rgba(255, 215, 0, 0.72);
   background: rgba(255, 215, 0, 0.07);
-}
-
-.combat-area-cluster__quadrant--red,
-.combat-area-cluster__quadrant--green {
-  border-bottom: 1px solid rgba(255, 248, 232, 0.1);
-}
-
-.combat-area-cluster__quadrant--red,
-.combat-area-cluster__quadrant--blue {
-  border-right: 1px solid rgba(255, 248, 232, 0.1);
 }
 
 .combat-area-cluster__leader {
@@ -817,18 +843,7 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
 }
 
-/* Combat status strip — 2×2 under leader quadrants (red/green, blue/yellow) */
-.combat-status-strip {
-  flex: 0 0 var(--combat-status-strip-height, 4.3em);
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  align-items: stretch;
-  min-width: 0;
-  pointer-events: auto;
-  border-top: 1px solid rgba(255, 248, 232, 0.12);
-  background: rgba(2, 3, 5, 0.94);
-}
+/* Combat status slot — rendered under each leader in combat-area-cluster__seat */
 
 /* Deploy dock — own row below status strip; scales with board font-size */
 .combat-deploy-dock {
@@ -904,16 +919,6 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   min-width: 0;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-}
-
-.combat-status-strip__slot--red,
-.combat-status-strip__slot--green {
-  border-bottom: 1px solid rgba(255, 248, 232, 0.08);
-}
-
-.combat-status-strip__slot--red,
-.combat-status-strip__slot--blue {
-  border-right: 1px solid rgba(255, 248, 232, 0.08);
 }
 
 .combat-status-strip__slot--active {

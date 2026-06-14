@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Card, Gain, IntrigueCard, Player, GameState, GamePhase, TurnType } from '../types/GameTypes'
 import { BOARD_SPACES } from '../data/boardSpaces'
 import { getLeaderIconPath } from '../data/leaders'
@@ -45,6 +45,7 @@ import {
 } from '../utils/playChromeTheme'
 import SetupSnapshotPreview from './SetupSnapshotPreview/SetupSnapshotPreview'
 import TurnGainsDisplay from './TurnGainsDisplay/TurnGainsDisplay'
+import { useGame } from './GameContext/GameContext'
 import './TurnHistory.css'
 
 interface TurnHistoryProps {
@@ -149,7 +150,9 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   topSlot,
 }) => {
   const isDocked = layout === 'docked'
+  const { exportSaveDoc } = useGame()
   const [showDebugModal, setShowDebugModal] = useState(false)
+  const [debugView, setDebugView] = useState<'save' | 'runtime'>('save')
   const [playChromeTheme, setPlayChromeTheme] = useState<PlayChromeTheme>(() => getPlayChromeTheme())
   const listRef = useRef<HTMLDivElement>(null)
   const liveEntryRef = useRef<HTMLDivElement>(null)
@@ -158,6 +161,15 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
 
   // Determine which turn is being viewed (null means current/live)
   const isViewingHistory = viewingTurnIndex !== null
+
+  const debugJson = useMemo(() => {
+    if (!showDebugModal) return ''
+    if (debugView === 'save') {
+      return JSON.stringify(exportSaveDoc(), null, 2)
+    }
+    const { history: _history, setupBaseline: _setupBaseline, ...runtime } = currentGameState
+    return JSON.stringify(runtime, null, 2)
+  }, [showDebugModal, debugView, exportSaveDoc, currentGameState])
 
   const scrollListToBottom = useCallback(() => {
     const list = listRef.current
@@ -850,9 +862,12 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         <button
           type="button"
           className="turn-history-icon-btn turn-history-icon-btn--details"
-          onClick={() => setShowDebugModal(true)}
-          title="View full game state (includes turn history)"
-          aria-label="View full game state debug"
+          onClick={() => {
+            setDebugView('save')
+            setShowDebugModal(true)
+          }}
+          title="View save document (setup + event log) or runtime state"
+          aria-label="View save document debug"
         >
           <DetailsIcon />
         </button>
@@ -1084,12 +1099,31 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         </div>
       )}
 
-      {/* Full game state debug (live snapshot includes history[]) */}
       {showDebugModal && (
         <div className="turn-details-modal">
           <div className="turn-details-content">
-            <h3>Game state</h3>
-            <pre>{JSON.stringify(currentGameState, null, 2)}</pre>
+            <h3>Debug</h3>
+            <div className="turn-details-tabs" role="tablist" aria-label="Debug view">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={debugView === 'save'}
+                className={debugView === 'save' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
+                onClick={() => setDebugView('save')}
+              >
+                Save document
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={debugView === 'runtime'}
+                className={debugView === 'runtime' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
+                onClick={() => setDebugView('runtime')}
+              >
+                Runtime
+              </button>
+            </div>
+            <pre>{debugJson}</pre>
             <button type="button" className="close-button" onClick={() => setShowDebugModal(false)}>
               Close
             </button>

@@ -193,6 +193,23 @@ export function updateFactionInfluence(
     }
   }
 
+  const secondInfluenceGains: Gain[] = []
+  const hadSecondInfluence = currentInfluence >= 2
+  const hasSecondInfluence = newInfluence >= 2
+  if (hadSecondInfluence !== hasSecondInfluence) {
+    secondInfluenceGains.push({
+      playerId,
+      source: GainSource.FIELD,
+      sourceId: 0,
+      round: state.currentRound,
+      name: hasSecondInfluence
+        ? `${faction} 2nd Influence`
+        : `${faction} 2nd Influence lost`,
+      amount: hasSecondInfluence ? 1 : -1,
+      type: RewardType.VICTORY_POINTS,
+    })
+  }
+
   const milestoneGains: Gain[] = []
   let updatedPlayers = state.players
   const crossedFourthMilestone = currentInfluence < 4 && newInfluence >= 4
@@ -260,10 +277,12 @@ export function updateFactionInfluence(
 
   if (options?.appendGainsTo) {
     allianceGains.forEach((g) => options.appendGainsTo!.push(g))
+    secondInfluenceGains.forEach((g) => options.appendGainsTo!.push(g))
     milestoneGains.forEach((g) => options.appendGainsTo!.push(g))
   }
   const newGains =
-    options?.appendGainsTo ?? [...(state.gains ?? []), ...allianceGains, ...milestoneGains]
+    options?.appendGainsTo ??
+    [...(state.gains ?? []), ...allianceGains, ...secondInfluenceGains, ...milestoneGains]
 
   return {
     ...state,

@@ -818,6 +818,32 @@
   text-transform: uppercase;
 }
 
+.turn-details-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  justify-content: center;
+}
+
+.turn-details-tab {
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--chrome-text-muted, rgba(244, 228, 188, 0.7));
+  border: 1px solid var(--chrome-border-accent);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.turn-details-tab--active {
+  background: var(--chrome-accent-muted);
+  color: var(--chrome-text);
+  border-color: var(--chrome-border-accent-strong);
+}
+
 .turn-details-content pre {
   background: rgba(0, 0, 0, 0.35);
   color: rgba(244, 228, 188, 0.88);

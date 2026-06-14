@@ -59,6 +59,75 @@ function baseState(overrides: Partial<GameState> = {}): GameState {
   } as GameState
 }
 
+describe('updateFactionInfluence second-influence VP gains', () => {
+  it('grants +1 VP gain when crossing from 1 to 2', () => {
+    const state = baseState({
+      factionInfluence: {
+        ...baseState().factionInfluence,
+        [FactionType.BENE_GESSERIT]: { 0: 1, 1: 0 },
+      },
+    })
+    const next = updateFactionInfluence(state, FactionType.BENE_GESSERIT, 0, 1)
+    expect(next.gains).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          playerId: 0,
+          type: RewardType.VICTORY_POINTS,
+          amount: 1,
+          name: `${FactionType.BENE_GESSERIT} 2nd Influence`,
+        }),
+      ])
+    )
+  })
+
+  it('grants +1 VP once when jumping from 0 to 3 in a single step', () => {
+    const next = updateFactionInfluence(
+      baseState(),
+      FactionType.BENE_GESSERIT,
+      0,
+      3
+    )
+    expect(
+      next.gains.filter(
+        g => g.type === RewardType.VICTORY_POINTS && g.name?.includes('2nd Influence')
+      )
+    ).toHaveLength(1)
+  })
+
+  it('records -1 VP when dropping below 2 influence', () => {
+    const state = baseState({
+      factionInfluence: {
+        ...baseState().factionInfluence,
+        [FactionType.BENE_GESSERIT]: { 0: 2, 1: 0 },
+      },
+    })
+    const next = updateFactionInfluence(state, FactionType.BENE_GESSERIT, 0, -1)
+    expect(next.gains).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          playerId: 0,
+          type: RewardType.VICTORY_POINTS,
+          amount: -1,
+          name: `${FactionType.BENE_GESSERIT} 2nd Influence lost`,
+        }),
+      ])
+    )
+  })
+
+  it('does not grant 2nd-influence VP when already at 2 or higher', () => {
+    const state = baseState({
+      factionInfluence: {
+        ...baseState().factionInfluence,
+        [FactionType.BENE_GESSERIT]: { 0: 2, 1: 0 },
+      },
+    })
+    const next = updateFactionInfluence(state, FactionType.BENE_GESSERIT, 0, 1)
+    expect(
+      next.gains.filter(g => g.name?.includes('2nd Influence'))
+    ).toHaveLength(0)
+  })
+})
+
 describe('updateFactionInfluence fourth-influence milestone rewards', () => {
   it('grants Emperor milestone (2 troops) when crossing from 3 to 4', () => {
     const state = baseState({
