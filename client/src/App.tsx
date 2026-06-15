@@ -508,6 +508,8 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     handleClaimAllRewards()
   }
 
+  const autoAppliedBatchRef = useRef<string | null>(null)
+
   useEffect(() => {
     if (!autoApplyMandatoryRewards || !activePlayer || isViewingHistory) return
     if (
@@ -519,7 +521,18 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       return
     }
 
-    if (getAutoApplicableRewards(gameState).length === 0) return
+    const applicable = getAutoApplicableRewards(gameState)
+    if (applicable.length === 0) {
+      autoAppliedBatchRef.current = null
+      return
+    }
+
+    const batchKey = applicable
+      .map(r => r.id)
+      .sort()
+      .join('|')
+    if (autoAppliedBatchRef.current === batchKey) return
+    autoAppliedBatchRef.current = batchKey
 
     dispatch({ type: 'CLAIM_ALL_REWARDS', playerId: activePlayer.id })
   }, [

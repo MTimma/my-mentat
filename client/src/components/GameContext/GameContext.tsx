@@ -2,7 +2,7 @@
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react'
 import { buildHistoryFromEvents, historyIndexToEventIndex } from '../../save/buildHistory'
 import { replayEvents } from '../../save/replay'
-import { assertJsonSerializable, computeChecksum, isReplayable } from '../../save/recording'
+import { assertJsonSerializable, computeChecksum, isReplayable, shouldRecordEvent } from '../../save/recording'
 import { buildInitialState } from '../../save/buildInitialState'
 import { SAVE_SCHEMA_VERSION, type EventEntry, type SaveDoc, type SetupBlock } from '../../save/types'
 import {
@@ -4471,6 +4471,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       const pendingChoiceForSource = state.currTurn.pendingChoices?.find(c => c.id === action.choiceId)
 
+      if (action.optionIndex != null && !pendingChoiceForSource) return state
+
       // Decision events (plans/reducer/02): `optionIndex` selects from the live
       // choice's options; the embedded `reward` payload is the legacy path.
       let reward = action.reward
@@ -5252,24 +5254,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         r => !r.disabled && r.reward.custom === CustomEffect.POWER_PLAY
       )
 
-      let newState = { ...state }
-      const baselinePlayer = { ...player }
-      let newPlayer = { ...player }
-      const newGains = [...state.gains]
-      const milestoneMeta: InfluenceMilestoneMeta = { troopsRecruited: 0 }
-      
       // Group rewards by source to identify sources with trash
       const sourcesWithTrash = new Set<string>()
-      
-      // Find all sources that contain trash rewards
       state.pendingRewards.forEach(r => {
         if (r.isTrash) {
           sourcesWithTrash.add(`${r.source.type}-${r.source.id}`)
         }
       })
-      
-      // Apply rewards only from sources WITHOUT trash and that are NOT disabled
-      const rewardsToApply = state.pendingRewards.filter(r => 
+
+      const rewardsToApply = state.pendingRewards.filter(r =>
         !sourcesWithTrash.has(`${r.source.type}-${r.source.id}`) &&
         !r.disabled &&
         !r.reward.custom &&
@@ -5279,6 +5272,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           r.reward.influence
         )
       )
+
+      if (rewardsToApply.length === 0) return state
+
+      let newState = { ...state }
+      const baselinePlayer = { ...player }
+      let newPlayer = { ...player }
+      const newGains = [...state.gains]
+      const milestoneMeta: InfluenceMilestoneMeta = { troopsRecruited: 0 }
       
       // Track total troops recruited for troopLimit update
       let totalTroopsRecruited = 0
@@ -5900,7 +5901,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
 
         const next = gameReducer(prev, action)
 
-        if (isReplayable(action) && next !== prev) {
+        const lastEvent = recordedEventsRef.current[recordedEventsRef.current.length - 1]
+        if (isReplayable(action) && shouldRecordEvent(prev, next, action, lastEvent)) {
           assertJsonSerializable(action, action.type)
           const entry: EventEntry = {
             a: JSON.parse(JSON.stringify(action)) as GameAction,

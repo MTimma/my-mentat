@@ -5,7 +5,35 @@
  */
 import type { GameAction } from '../components/GameContext/GameContext'
 import type { GameState } from '../types/GameTypes'
-import type { PlayerChecksum } from './types'
+import type { EventEntry, PlayerChecksum } from './types'
+
+/** Decision events that must not appear twice in a row (Strict Mode / double-click). */
+const CONSECUTIVE_DEDUP_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
+  'CLAIM_ALL_REWARDS',
+  'END_TURN',
+  'RESOLVE_CHOICE',
+  'SANDBOX_COMMIT_SETUP',
+])
+
+function decisionEventFingerprint(action: GameAction): string | null {
+  if (!CONSECUTIVE_DEDUP_ACTIONS.has(action.type)) return null
+  return JSON.stringify(action)
+}
+
+/** Whether to append `action` after `prev → next` (reference equality + consecutive dedup). */
+export function shouldRecordEvent(
+  prev: GameState,
+  next: GameState,
+  action: GameAction,
+  lastEntry: EventEntry | undefined
+): boolean {
+  if (next === prev) return false
+  const fingerprint = decisionEventFingerprint(action)
+  if (fingerprint && lastEntry && decisionEventFingerprint(lastEntry.a) === fingerprint) {
+    return false
+  }
+  return true
+}
 
 /**
  * Actions recorded into the event log. Everything in GameAction except undo
