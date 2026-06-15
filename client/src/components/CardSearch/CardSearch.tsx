@@ -165,6 +165,8 @@ interface CardSearchProps {
   playabilityInvalidateKey?: unknown
   /** When true, render inline inside a parent dialog instead of a full-screen portal overlay. */
   embedded?: boolean
+  /** Allow confirming without filling every selection slot (for open-ended pile picks). */
+  allowPartialSelection?: boolean
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({
@@ -188,6 +190,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
   confirmAdornment,
   playabilityInvalidateKey,
   embedded = false,
+  allowPartialSelection = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectionSlots, setSelectionSlots] = useState<(Card | null)[]>([])
@@ -367,7 +370,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
 
   const handleConfirm = () => {
     const selected = filledCards(selectionSlots)
-    if (selected.length === selectionCount) {
+    if (allowPartialSelection || selected.length === selectionCount) {
       onSelect(selected)
       setSelectionSlots(buildSlots([]))
       setSearchTerm('')
@@ -451,7 +454,9 @@ const CardSearch: React.FC<CardSearchProps> = ({
         type="button"
         className="header-confirm-button"
         onClick={handleConfirm}
-        disabled={filledCards(selectionSlots).length !== selectionCount}
+        disabled={
+          !allowPartialSelection && filledCards(selectionSlots).length !== selectionCount
+        }
       >
         Select
       </button>

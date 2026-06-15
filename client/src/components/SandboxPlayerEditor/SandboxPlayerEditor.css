@@ -187,11 +187,13 @@
 }
 
 .sandbox-player-editor__deck-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   font-size: 0.85rem;
+}
+
+.sandbox-player-editor__deck-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .sandbox-player-editor__deck-button {
@@ -205,8 +207,13 @@
   cursor: pointer;
 }
 
-.sandbox-player-editor__deck-button:hover {
+.sandbox-player-editor__deck-button:hover:not(:disabled) {
   background: rgba(255, 215, 0, 0.12);
+}
+
+.sandbox-player-editor__deck-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* Deck editor overlay sits on top of the player editor */

@@ -108,11 +108,10 @@ const StarterDeckEditor: React.FC<StarterDeckEditorProps> = ({
             <header className="starter-deck-editor-header">
               <h2>Edit Player {editingPlayer.playerNumber} Starter Deck</h2>
               <p>
-                Select exactly {editingPlayer.deck.length} cards. Available cards include this player&apos;s current deck and every
-                unclaimed Imperium deck card.
+                Select cards for this player&apos;s starter deck (the default rules deck is 20 cards, but you can use any size). Available cards include this player&apos;s current deck and every unclaimed Imperium deck card.
               </p>
               <div className="starter-deck-editor-count">
-                Selected {selectedCards.length} / {editingPlayer.deck.length}
+                {selectedCards.length} cards selected
               </div>
             </header>
 
@@ -123,7 +122,9 @@ const StarterDeckEditor: React.FC<StarterDeckEditorProps> = ({
                 onSelect={handleConfirm}
                 onCancel={handleCancel}
                 isRevealTurn={true}
-                selectionCount={editingPlayer.deck.length}
+                selectionCount={Math.max(1, availableCards.length)}
+                allowPartialSelection={true}
+                showSelectionPreview={false}
                 text={`Edit Player ${editingPlayer.playerNumber} starter deck`}
                 onSelectionChange={setSelectedCards}
                 hideTitle={true}

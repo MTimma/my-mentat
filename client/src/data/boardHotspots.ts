@@ -110,19 +110,19 @@ export interface MarkerAnchor {
 export const BOARD_HOTSPOTS: BoardHotspot[] = [
   // === EMPEROR ===
   hotspot(14, { left: 12, top: 4, width: 15, height: 10 }, { x: 34, y: 60}),   // Conspire
-  hotspot(15, { left: 12, top: 15, width: 15, height: 10 }, { x: 34, y: 60}),   // Wealth
+  hotspot(15, { left: 12, top: 15, width: 15, height: 10 }, { x: 34, y: 50}),   // Wealth
 
   // === SPACING GUILD ===
   hotspot(17, { left: 12, top: 29, width: 15, height: 10 }, { x: 34, y: 60}),  // Heighliner
-  hotspot(16, { left: 12, top: 40, width: 15, height: 10 }, { x: 34, y: 60}),  // Foldspace
+  hotspot(16, { left: 12, top: 40, width: 15, height: 10 }, { x: 34, y: 50}),  // Foldspace
 
   // === BENE GESSERIT ===
   hotspot(19, { left: 12, top: 53, width: 15, height: 10 }, { x: 34, y: 60}),   // Selective Breeding
-  hotspot(18, { left: 12, top: 64, width: 15, height: 10 }, { x: 34, y: 60}),   // Secrets
+  hotspot(18, { left: 12, top: 64, width: 15, height: 10 }, { x: 34, y: 50}),   // Secrets
 
   // === FREMEN ===
   hotspot(20, { left: 12, top: 78, width: 15, height: 10 }, { x: 34, y: 60}),  // Hardy Warriors
-  hotspot(22, { left: 12, top: 89, width: 15, height: 10 }, { x: 34, y: 60}),  // Stillsuits
+  hotspot(22, { left: 12, top: 89, width: 15, height: 10 }, { x: 34, y: 50}),  // Stillsuits
   hotspot(21, { left: 32, top: 45, width: 17, height: 11 }, { x: 30, y: 60 }),  // Sietch Tabr
 
   // === LANDSRAAD ===

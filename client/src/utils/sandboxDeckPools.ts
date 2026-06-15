@@ -22,6 +22,34 @@ function countCardIds(cards: Card[]): Map<number, number> {
   return counts
 }
 
+/** Split a card pool into a selected pile (discard/trash) and the remainder (deck). */
+export function splitCardPool(
+  pool: Card[],
+  selected: Card[]
+): { inPile: Card[]; remainder: Card[] } {
+  const selectedCounts = countCardIds(selected)
+  const inPile: Card[] = []
+  const remainder: Card[] = []
+  for (const card of pool) {
+    const remaining = selectedCounts.get(card.id) ?? 0
+    if (remaining > 0) {
+      inPile.push(card)
+      selectedCounts.set(card.id, remaining - 1)
+    } else {
+      remainder.push(card)
+    }
+  }
+  return { inPile, remainder }
+}
+
+export function playerOwnedCards(player: {
+  deck: Card[]
+  discardPile: Card[]
+  trash: Card[]
+}): Card[] {
+  return [...player.deck, ...player.discardPile, ...player.trash]
+}
+
 /** Move cards between a player deck and the shared sandbox pools (imperium + reserve decks). */
 export function applySandboxDeckEdit(
   pools: SandboxDeckPools,

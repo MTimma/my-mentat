@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applySandboxDeckEdit, sandboxCardPoolForId } from '../sandboxDeckPools'
+import { applySandboxDeckEdit, sandboxCardPoolForId, splitCardPool } from '../sandboxDeckPools'
 import type { Card } from '../../types/GameTypes'
 
 function stubCard(id: number, name = `Card ${id}`): Card {
@@ -72,5 +72,13 @@ describe('sandboxDeckPools', () => {
     expect(next.spiceMustFlowDeck).toHaveLength(0)
     expect(next.foldspaceDeck).toHaveLength(0)
     expect(next.imperiumRowDeck.map(c => c.id)).toEqual([9001])
+  })
+
+  it('splitCardPool moves selected cards into a pile and leaves the rest in deck', () => {
+    const pool = [stubCard(1), stubCard(2), stubCard(2), stubCard(3)]
+    const { inPile, remainder } = splitCardPool(pool, [stubCard(2), stubCard(3)])
+
+    expect(inPile.map(c => c.id)).toEqual([2, 3])
+    expect(remainder.map(c => c.id)).toEqual([1, 2])
   })
 })

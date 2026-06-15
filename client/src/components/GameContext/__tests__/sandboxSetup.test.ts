@@ -147,6 +147,45 @@ describe('Sandbox setup turn', () => {
     expect(s.imperiumRowDeck.some(c => c.id === oldCard.id)).toBe(true)
   })
 
+  it('SANDBOX_UPDATE_PLAYER moving cards to discard does not return them to the imperium pool', () => {
+    let s = getSandboxSetupState()
+    const deck = s.players[0].deck
+    const toDiscard = deck[0]
+    const remaining = deck.slice(1)
+    const poolSizeBefore = s.imperiumRowDeck.length
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 0,
+      patch: { deck: remaining, discardPile: [toDiscard] },
+    })
+
+    expect(s.players[0].deck.map(c => c.id)).toEqual(remaining.map(c => c.id))
+    expect(s.players[0].discardPile.map(c => c.id)).toEqual([toDiscard.id])
+    expect(s.imperiumRowDeck).toHaveLength(poolSizeBefore)
+    expect(s.imperiumRowDeck.some(c => c.id === toDiscard.id)).toBe(false)
+  })
+
+  it('SANDBOX_UPDATE_PLAYER toggles high council seat and seat order', () => {
+    let s = getSandboxSetupState()
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 1,
+      patch: { hasHighCouncilSeat: true },
+    })
+    expect(s.players[1].hasHighCouncilSeat).toBe(true)
+    expect(s.highCouncilSeatOrder).toEqual([1])
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 1,
+      patch: { hasHighCouncilSeat: false },
+    })
+    expect(s.players[1].hasHighCouncilSeat).toBe(false)
+    expect(s.highCouncilSeatOrder).toEqual([])
+  })
+
   it('SANDBOX_COMMIT_SETUP starts player turns with a single setup row', () => {
     let s = getSandboxSetupState()
     s = applyGameAction(s, {

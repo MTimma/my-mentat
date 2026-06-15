@@ -6,6 +6,7 @@ import AgentIcon from '../AgentIcon/AgentIcon'
 import CardSearch from '../CardSearch/CardSearch'
 import ValueStepper from '../ValueStepper/ValueStepper'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
+import { splitCardPool } from '../../utils/sandboxDeckPools'
 import { MAX_INFLUENCE } from '../../utils/influenceVictoryPoints'
 import './SandboxPlayerEditor.css'
 
@@ -81,6 +82,8 @@ function pickNumericDraft(player: Player): Record<NumericKey, number> {
   }
 }
 
+type PileEditor = 'deck' | 'discard' | 'trash'
+
 const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   player,
   usedLeaderNames,
@@ -95,8 +98,8 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   onSetControl,
   onClose,
 }) => {
-  const [editingDeck, setEditingDeck] = useState(false)
-  const [selectedDeckCards, setSelectedDeckCards] = useState<Card[]>([])
+  const [pileEditor, setPileEditor] = useState<PileEditor | null>(null)
+  const [selectedPileCards, setSelectedPileCards] = useState<Card[]>([])
   const [numericDraft, setNumericDraft] = useState(() => pickNumericDraft(player))
   const [influenceDraft, setInfluenceDraft] = useState(() => ({ ...playerInfluence }))
   const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true)
@@ -143,6 +146,63 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
       ]),
     [player.deck, imperiumDeckCards, arrakisLiaisonCards, spiceMustFlowCards, foldspaceCards]
   )
+
+  const discardEditorPool = useMemo(
+    () => sortCards([...player.deck, ...player.discardPile]),
+    [player.deck, player.discardPile]
+  )
+
+  const trashEditorPool = useMemo(
+    () => sortCards([...player.deck, ...player.trash]),
+    [player.deck, player.trash]
+  )
+
+  const pileEditorConfig = useMemo(() => {
+    switch (pileEditor) {
+      case 'deck':
+        return {
+          title: `Edit Player ${player.id + 1} deck`,
+          description:
+            "Select the cards in this player's deck (the default rules deck is 20 cards, but you can use any size). Available cards include the current deck, the Imperium deck, and reserve cards (Arrakis Liaison, Spice Must Flow, Foldspace).",
+          cards: deckEditorCards,
+          initialSelected: player.deck,
+          selectionCount: deckEditorCards.length,
+          allowPartialSelection: true,
+          showSelectionPreview: false,
+        }
+      case 'discard':
+        return {
+          title: `Edit Player ${player.id + 1} discard`,
+          description:
+            'Select cards for the discard pile. Any card not selected stays in the deck.',
+          cards: discardEditorPool,
+          initialSelected: player.discardPile,
+          selectionCount: discardEditorPool.length,
+          allowPartialSelection: true,
+        }
+      case 'trash':
+        return {
+          title: `Edit Player ${player.id + 1} trash`,
+          description:
+            'Select cards for the trash pile. Any card not selected stays in the deck.',
+          cards: trashEditorPool,
+          initialSelected: player.trash,
+          selectionCount: trashEditorPool.length,
+          allowPartialSelection: true,
+        }
+      default:
+        return null
+    }
+  }, [
+    pileEditor,
+    player.id,
+    player.deck,
+    player.discardPile,
+    player.trash,
+    deckEditorCards,
+    discardEditorPool,
+    trashEditorPool,
+  ])
 
   if (waitForBoardTarget) return null
 
@@ -204,10 +264,33 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
     onClose()
   }
 
-  const handleDeckConfirm = (deck: Card[]) => {
-    onUpdate({ deck })
-    setEditingDeck(false)
-    setSelectedDeckCards([])
+  const closePileEditor = () => {
+    setPileEditor(null)
+    setSelectedPileCards([])
+  }
+
+  const openPileEditor = (editor: PileEditor) => {
+    const initial =
+      editor === 'deck'
+        ? player.deck
+        : editor === 'discard'
+          ? player.discardPile
+          : player.trash
+    setSelectedPileCards(initial)
+    setPileEditor(editor)
+  }
+
+  const handlePileConfirm = (selected: Card[]) => {
+    if (pileEditor === 'deck') {
+      onUpdate({ deck: selected })
+    } else if (pileEditor === 'discard') {
+      const { inPile, remainder } = splitCardPool(discardEditorPool, selected)
+      onUpdate({ deck: remainder, discardPile: inPile })
+    } else if (pileEditor === 'trash') {
+      const { inPile, remainder } = splitCardPool(trashEditorPool, selected)
+      onUpdate({ deck: remainder, trash: inPile })
+    }
+    closePileEditor()
   }
 
   const overlay = (
@@ -260,8 +343,18 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
           </div>
 
           <div className="sandbox-player-editor__control-row">
-            <span className="sandbox-player-editor__control-heading">Control</span>
+            <span className="sandbox-player-editor__control-heading">Board</span>
             <div className="sandbox-player-editor__control-toggles">
+              <label className="sandbox-player-editor__control-toggle">
+                <input
+                  type="checkbox"
+                  checked={player.hasHighCouncilSeat}
+                  onChange={() =>
+                    onUpdate({ hasHighCouncilSeat: !player.hasHighCouncilSeat })
+                  }
+                />
+                <span>High Council</span>
+              </label>
               {CONTROL_SPACES.map(space => {
                 const held = controlMarkers[space.type] === player.id
                 return (
@@ -311,53 +404,74 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
           </div>
 
           <div className="sandbox-player-editor__deck-row">
-            <span>{player.deck.length} cards in deck</span>
+            <span>
+              {player.deck.length} deck · {player.discardPile.length} discard ·{' '}
+              {player.trash.length} trash
+            </span>
+          </div>
+          <div className="sandbox-player-editor__deck-actions">
             <button
               type="button"
               className="sandbox-player-editor__deck-button"
-              onClick={() => {
-                setSelectedDeckCards(player.deck)
-                setEditingDeck(true)
-              }}
+              onClick={() => openPileEditor('deck')}
             >
               Edit deck
+            </button>
+            <button
+              type="button"
+              className="sandbox-player-editor__deck-button"
+              onClick={() => openPileEditor('discard')}
+              disabled={discardEditorPool.length === 0}
+            >
+              Edit discard
+            </button>
+            <button
+              type="button"
+              className="sandbox-player-editor__deck-button"
+              onClick={() => openPileEditor('trash')}
+              disabled={trashEditorPool.length === 0}
+            >
+              Edit trash
             </button>
           </div>
         </div>
       </div>
 
-      {editingDeck && (
+      {pileEditor && pileEditorConfig && (
         <div
           className="sandbox-player-editor__deck-overlay"
           onClick={event => event.stopPropagation()}
         >
           <div className="sandbox-player-editor__deck-dialog">
             <header className="sandbox-player-editor__deck-header">
-              <h3>Edit Player {player.id + 1} deck</h3>
-              <p>
-                Select exactly {player.deck.length} cards. Available cards include this player&apos;s
-                deck, the Imperium deck, and reserve cards (Arrakis Liaison, Spice Must Flow,
-                Foldspace).
-              </p>
+              <h3>{pileEditorConfig.title}</h3>
+              <p>{pileEditorConfig.description}</p>
               <div className="sandbox-player-editor__deck-count">
-                Selected {selectedDeckCards.length} / {player.deck.length}
+                {pileEditor === 'deck' ? (
+                  <>{selectedPileCards.length} cards in deck</>
+                ) : (
+                  <>{selectedPileCards.length} in pile</>
+                )}
               </div>
             </header>
             <div className="sandbox-player-editor__deck-search">
               <CardSearch
                 isOpen={true}
-                cards={deckEditorCards}
-                onSelect={handleDeckConfirm}
-                onCancel={() => {
-                  setEditingDeck(false)
-                  setSelectedDeckCards([])
-                }}
+                cards={pileEditorConfig.cards}
+                onSelect={handlePileConfirm}
+                onCancel={closePileEditor}
                 isRevealTurn={true}
-                selectionCount={player.deck.length}
-                text={`Edit Player ${player.id + 1} deck`}
-                onSelectionChange={setSelectedDeckCards}
+                selectionCount={
+                  pileEditorConfig.allowPartialSelection
+                    ? Math.max(1, pileEditorConfig.selectionCount)
+                    : pileEditorConfig.selectionCount
+                }
+                allowPartialSelection={pileEditorConfig.allowPartialSelection}
+                showSelectionPreview={pileEditorConfig.showSelectionPreview}
+                text={pileEditorConfig.title}
+                onSelectionChange={setSelectedPileCards}
                 hideTitle={true}
-                initialSelectedCards={player.deck}
+                initialSelectedCards={pileEditorConfig.initialSelected}
                 cancelButtonText="Cancel"
                 embedded
               />

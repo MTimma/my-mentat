@@ -2180,9 +2180,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const player = state.players.find(p => p.id === action.playerId)
       if (!player) return state
 
-      // Deck edits swap cards with the imperium + reserve deck pools so card counts stay coherent.
+      // Card pile edits swap with imperium + reserve pools only when cards enter/leave the player.
+      const touchesCardPiles =
+        action.patch.deck !== undefined ||
+        action.patch.discardPile !== undefined ||
+        action.patch.trash !== undefined
+
       let poolUpdate: ReturnType<typeof applySandboxDeckEdit> | null = null
-      if (action.patch.deck) {
+      if (touchesCardPiles) {
+        const newDeck = action.patch.deck ?? player.deck
+        const newDiscard = action.patch.discardPile ?? player.discardPile
+        const newTrash = action.patch.trash ?? player.trash
         poolUpdate = applySandboxDeckEdit(
           {
             imperiumRowDeck: state.imperiumRowDeck,
@@ -2190,8 +2198,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             spiceMustFlowDeck: state.spiceMustFlowDeck,
             foldspaceDeck: state.foldspaceDeck,
           },
-          player.deck,
-          action.patch.deck
+          [...player.deck, ...player.discardPile, ...player.trash],
+          [...newDeck, ...newDiscard, ...newTrash]
         )
       }
 
@@ -2200,16 +2208,34 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ? applyLeaderStartingResourceDelta(player, action.patch.leader)
           : null
 
+      let highCouncilSeatOrder = state.highCouncilSeatOrder ?? []
+      if (action.patch.hasHighCouncilSeat !== undefined) {
+        if (action.patch.hasHighCouncilSeat) {
+          if (!highCouncilSeatOrder.includes(action.playerId)) {
+            highCouncilSeatOrder = [...highCouncilSeatOrder, action.playerId]
+          }
+        } else {
+          highCouncilSeatOrder = highCouncilSeatOrder.filter(id => id !== action.playerId)
+        }
+      }
+
       return withSandboxSetupHistory({
         ...state,
         ...(poolUpdate ?? {}),
+        highCouncilSeatOrder,
         players: state.players.map(p =>
           p.id === action.playerId
             ? {
                 ...p,
                 ...action.patch,
                 ...(leaderResourceAdjust ?? {}),
-                deck: action.patch.deck ? [...action.patch.deck] : p.deck,
+                deck:
+                  action.patch.deck !== undefined ? [...action.patch.deck] : p.deck,
+                discardPile:
+                  action.patch.discardPile !== undefined
+                    ? [...action.patch.discardPile]
+                    : p.discardPile,
+                trash: action.patch.trash !== undefined ? [...action.patch.trash] : p.trash,
               }
             : p
         ),
