@@ -4074,7 +4074,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedDeck = shouldAcquireToTop ? [card, ...player.deck] : player.deck
       const updatedDiscardPile = shouldAcquireToTop ? player.discardPile : [...player.discardPile, card]
 
-      const updatedPlayer: Player = {
+      let updatedPlayer: Player = {
         ...player,
         persuasion: freeAcquire ? player.persuasion : player.persuasion - effectiveCost,
         deck: updatedDeck,
