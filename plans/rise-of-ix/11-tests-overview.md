@@ -206,6 +206,10 @@ The CI step (if present) should fail on coverage drops in
 4. **AC4** — `client/src/components/GameContext/__tests__/_helpers.ts`
    exists and is used by every Rise of Ix reducer-slice test in this
    plan.
+5. **AC5** — The regression runbook in
+   `plans/rise-of-ix/regression/` is kept in sync with implemented
+   functionality, and the manual UI checklist records any blocked Rise of Ix
+   flow as an explicit gap.
 
 ---
 

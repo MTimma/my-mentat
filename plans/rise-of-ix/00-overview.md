@@ -128,6 +128,7 @@ carries inline `> ✦ 2026-06-10` corrections; the global picture:
 | `09-intrigue-cards.md` | Per-card data + reducer analysis for each new Intrigue card. | TODO |
 | `10-conflict-cards.md` | The 4 new Conflict cards + the new tier mix (1 / 5 / 4) when the toggle is on. | TODO |
 | `11-tests-overview.md` | Test strategy: where to add Vitest specs and what to cover at minimum. | TODO |
+| `regression/` | Rule/unit-test matrix and manual multi-game UI regression checklist for Rise of Ix. | TODO |
 
 Each task file in this folder follows the **same standard structure**:
 
