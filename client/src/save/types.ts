@@ -7,7 +7,7 @@
  * mirrored by serde structs in the Rust engine later.
  */
 import type { GameAction } from '../components/GameContext/GameContext'
-import type { PlayerColor } from '../types/GameTypes'
+import type { Expansions, PlayerColor } from '../types/GameTypes'
 
 export const SAVE_SCHEMA_VERSION = 1
 
@@ -51,6 +51,8 @@ export interface SetupBlock {
   initialConflictId?: number
   /** Sandbox games start in setup mode (SANDBOX_* events configure the board). */
   sandbox?: boolean
+  /** Expansion flags locked at game creation. */
+  expansions?: Expansions
 }
 
 export interface SaveBranch {

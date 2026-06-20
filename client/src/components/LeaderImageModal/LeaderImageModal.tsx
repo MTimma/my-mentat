@@ -1,6 +1,10 @@
 import React from 'react'
 import { Leader } from '../../types/GameTypes'
 import { getLeaderImage } from '../../data/leaders'
+import {
+  isTessiaLeader,
+  TESSIA_PARKED_SNOOPER_SLOTS,
+} from '../../data/leaderAbilities/tessiaSnoopers'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import './LeaderImageModal.css'
 
@@ -13,6 +17,7 @@ interface LeaderImageModalProps {
 const LeaderImageModal: React.FC<LeaderImageModalProps> = ({ leader, isOpen, onClose }) => {
   const imagePath = getLeaderImage(leader.name)
   const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(isOpen)
+  const showParkedSnoopers = isTessiaLeader(leader)
 
   if (!isOpen || !imagePath) return null
   if (waitForBoardTarget) return null
@@ -38,11 +43,29 @@ const LeaderImageModal: React.FC<LeaderImageModalProps> = ({ leader, isOpen, onC
           </button>
         </div>
         <div className="leader-image-body">
-          <img
-            src={imagePath}
-            alt={leader.name}
-            className="leader-image-img"
-          />
+          <div className="leader-image-frame">
+            <img
+              src={imagePath}
+              alt={leader.name}
+              className="leader-image-img"
+            />
+            {showParkedSnoopers
+              ? TESSIA_PARKED_SNOOPER_SLOTS.map(slot => {
+                  if (!leader.tessiaSnoopers?.[slot.faction]) return null
+                  return (
+                    <div
+                      key={`parked-snooper-${slot.faction}`}
+                      className="leader-image-snooper"
+                      data-faction={slot.faction}
+                      style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+                      title={`Parked snooper (${slot.faction})`}
+                    >
+                      <img src="/icon/snooper.svg" alt="" aria-hidden="true" />
+                    </div>
+                  )
+                })
+              : null}
+          </div>
         </div>
       </div>
     </div>

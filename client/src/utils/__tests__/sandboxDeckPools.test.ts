@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { applySandboxDeckEdit, sandboxCardPoolForId, splitCardPool } from '../sandboxDeckPools'
+import { applySandboxDeckEdit, buildSandboxDeckPools, sandboxCardPoolForId, splitCardPool } from '../sandboxDeckPools'
+import { NO_EXPANSIONS } from '../../types/GameTypes'
 import type { Card } from '../../types/GameTypes'
 
 function stubCard(id: number, name = `Card ${id}`): Card {
@@ -72,6 +73,14 @@ describe('sandboxDeckPools', () => {
     expect(next.spiceMustFlowDeck).toHaveLength(0)
     expect(next.foldspaceDeck).toHaveLength(0)
     expect(next.imperiumRowDeck.map(c => c.id)).toEqual([9001])
+  })
+
+  it('buildSandboxDeckPools includes RoI imperium cards when riseOfIx', () => {
+    const pools = buildSandboxDeckPools({ riseOfIx: true, riseOfIxEpic: false })
+    expect(pools.imperiumRowDeck.some(c => c.name === 'Appropriate')).toBe(true)
+    expect(pools.imperiumRowDeck.length).toBeGreaterThan(
+      buildSandboxDeckPools(NO_EXPANSIONS).imperiumRowDeck.length
+    )
   })
 
   it('splitCardPool moves selected cards into a pile and leaves the rest in deck', () => {

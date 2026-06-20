@@ -283,3 +283,21 @@ html:has(.game-container--play) .dialog-overlay.combat-player-detail-overlay--bo
 .combat-player-detail-overlay--board-scoped .combat-player-detail-pile-count {
   font-size: 1.2rem;
 }
+
+.combat-player-detail-tech {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.combat-player-detail-tech-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 248, 232, 0.72);
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-tech-heading {
+  font-size: 0.82rem;
+}

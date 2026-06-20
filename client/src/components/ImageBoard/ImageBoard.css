@@ -50,6 +50,175 @@
   z-index: 1;
 }
 
+.image-board__riseofix-overlay {
+  position: absolute;
+  object-fit: fill;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.image-board__choam-overlay,
+.image-board__landsraad-ix-overlay {
+  position: absolute;
+  object-fit: fill;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Desktop: Ix panel (`riseofix2`) docked beside the board (see App.css column width). */
+.image-board--with-ix-dock {
+  max-width: none;
+  width: 100%;
+  margin-inline: 0;
+}
+
+.image-board__desktop-shell {
+  display: contents;
+}
+
+.image-board__ix-dock {
+  display: none;
+}
+
+.game-container--desktop-play .image-board__desktop-shell {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: clamp(6px, 0.8vw, 12px);
+  width: 100%;
+}
+
+.game-container--desktop-play .image-board--with-ix-dock .image-board__stage {
+  flex: 0 1 var(--play-board-max-edge, 72vh);
+  max-width: var(--play-board-max-edge, 72vh);
+  min-width: 0;
+  width: 100%;
+}
+
+.game-container--desktop-play .image-board__ix-dock {
+  display: block;
+  flex: 0 0 auto;
+  width: clamp(132px, 18vmin, 220px);
+  aspect-ratio: 1;
+  align-self: flex-start;
+  position: relative;
+}
+
+.image-board__tech-stacks-btn {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  pointer-events: auto;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 215, 0, 0.65);
+  background: rgba(20, 16, 10, 0.88);
+  color: #ffd700;
+  font-size: clamp(7px, 1.2cqw, 11px);
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.image-board__tech-stacks-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.image-board__tech-stacks-btn:hover:not(:disabled) {
+  background: rgba(255, 215, 0, 0.18);
+}
+
+.image-board__freighter-status-btn {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  pointer-events: auto;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 215, 0, 0.65);
+  background: rgba(20, 16, 10, 0.88);
+  color: #ffd700;
+  font-size: clamp(7px, 1.2cqw, 11px);
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.image-board__freighter-status-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.image-board__freighter-status-btn:hover:not(:disabled) {
+  background: rgba(255, 215, 0, 0.18);
+}
+
+.image-board__negotiator-counters {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  pointer-events: none;
+  display: flex;
+  gap: 0.35em;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(8, 8, 8, 0.55);
+  font-size: clamp(7px, 1.1cqw, 10px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.image-board__negotiator-counter {
+  min-width: 1ch;
+  text-align: center;
+}
+
+.image-board__freighter-disc {
+  position: absolute;
+  width: clamp(5px, 1.05%, 10px);
+  aspect-ratio: 1;
+  height: auto;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 3;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.image-board__dreadnought-control-marker {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.image-board__dreadnought-control-badge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(12px, 2.2cqw, 18px);
+  height: clamp(12px, 2.2cqw, 18px);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.45),
+    0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
+.image-board__dreadnought-control-marker .image-board__dreadnought-control-icon {
+  position: static;
+  transform: none;
+  width: 72%;
+  height: 72%;
+  filter: brightness(0) invert(1) drop-shadow(0 0 1px rgba(0, 0, 0, 0.85));
+}
+
 /*
  * Hotspots stay clickable (pointer-events: auto on buttons).
  * Tracker nodes are normally pointer-events: none so clicks reach hotspots beneath.
@@ -292,6 +461,42 @@
 
 .image-board__tracker-circle--control {
   width: clamp(5px, 1.15%, 11px);
+}
+
+.image-board__tracker-circle--mentat-available {
+  width: clamp(6px, 1.2%, 11px);
+  background-color: #c9a227;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.image-board__snooper-token {
+  position: absolute;
+  width: clamp(7px, 1.35%, 13px);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 3;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.8));
+}
+
+.image-board__snooper-token img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.image-board__marker-debug-dot--snooper {
+  background: #c9a227;
+  box-shadow: 0 0 0 1px #1a1a1a;
+}
+
+.image-board__marker-debug-dot--mentat {
+  background: #c9a227;
+  box-shadow: 0 0 0 1px #1a1a1a;
+}
+
+.image-board__marker-debug-dot--swordmaster {
+  background: #7b68ee;
+  box-shadow: 0 0 0 1px #1a1a1a;
 }
 
 .image-board__conflict-panel {
@@ -730,6 +935,43 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   pointer-events: none;
 }
 
+.combat-area-cluster__first-player-badge {
+  position: absolute;
+  top: 0.12em;
+  left: 0.12em;
+  z-index: 2;
+  padding: 0.08em 0.28em;
+  border-radius: 0.22em;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 215, 0, 0.75);
+  color: #ffd700;
+  font-size: 0.62em;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.combat-area-cluster__mentat-badge {
+  position: absolute;
+  right: 0.22em;
+  bottom: 100%;
+  margin-bottom: 2px;
+  z-index: 3;
+  padding: 0.08em 0.28em;
+  border-radius: 0.22em;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(196, 168, 255, 0.8);
+  color: #e8dcff;
+  font-size: 0.62em;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
 .combat-area-cluster__leader-img {
   display: block;
   width: 100%;
@@ -783,9 +1025,9 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 .combat-area-cluster__resources-panel {
   display: flex;
   flex-direction: column;
-  gap: 0.08em;
+  gap: 0;
   width: 100%;
-  padding: 0.14em 0.1em 0.1em;
+  padding: 0.08em 0.06em 0.06em;
   box-sizing: border-box;
   border-radius: 0.18em 0.18em 0 0;
   background: linear-gradient(180deg, #2a2c32 0%, #12141a 100%);
@@ -807,22 +1049,44 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   background: linear-gradient(180deg, #9a7618 0%, #5c4608 100%);
 }
 
-/* Resources: 3 cols × 2 rows on shared panel background */
+/* Resources: 4 cols — vp/spice/solari/water, agents/hand/intrigue/troops (+ dread RoI) */
 .combat-area-cluster__resources {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(2, auto);
-  gap: 0.06em 0.08em;
+  gap: 0.02em 0.04em;
   width: 100%;
   padding: 0;
   box-sizing: border-box;
+}
+
+.combat-area-cluster__resources--rise-of-ix {
+  grid-template-rows: repeat(3, auto);
+}
+
+.combat-area-cluster__icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.combat-area-cluster__agent-icon {
+  width: 0.82em;
+  height: 1.15em;
+}
+
+.combat-area-cluster__icon--dreadnought {
+  width: 0.82em;
+  height: 0.82em;
+  object-fit: contain;
 }
 
 .combat-area-cluster__resource {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.08em;
+  gap: 0.04em;
   padding: 0;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -831,13 +1095,13 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 }
 
 .combat-area-cluster__value {
-  min-width: 1.2ch;
-  font-size: 1.32em;
+  min-width: 1ch;
+  font-size: 1.15em;
 }
 
 .combat-area-cluster__icon {
-  width: 1.1em;
-  height: 1.1em;
+  width: 0.95em;
+  height: 0.95em;
   object-fit: contain;
   flex-shrink: 0;
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));

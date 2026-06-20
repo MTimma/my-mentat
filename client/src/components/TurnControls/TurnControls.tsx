@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, Fragment, cloneElement, isValidElement } from 'react'
 import { Player, Card, Leader, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, InfluenceAmounts, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS } from '../../types/GameTypes'
-import { intrigueCardHasCustom } from '../../utils/intrigueCardCustom'
+import { intrigueCardHasCustom, intrigueHasPhaseEffect } from '../../utils/intrigueCardCustom'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { getLeaderIconPath } from '../../data/leaders'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS, REVEAL_EFFECT_TEXTS } from '../../data/effectTexts'
 import { intrigueRequirementSatisfied } from '../GameContext/requirements'
+import type { TechTileId } from '../../data/techTiles'
+import {
+  filterAcquireTechFromChoices,
+  filterAcquireTechOptionalEffects,
+} from '../GameContext/riseOfIx/techTurnControlsUi'
+import TurnControlsTechRow from '../TurnControlsTechRow/TurnControlsTechRow'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import { getPlayAreaCardsForTurnView, getOpponentDiscardableCards } from '../../utils/playAreaDisplay'
 import {
@@ -97,6 +103,7 @@ interface TurnControlsProps {
   showPassCombatButton?: boolean
   onEndTurn?: () => void
   onPassCombat?: () => void
+  onActivateTech?: (playerId: number, tileId: TechTileId) => void
   endTurnDisabled?: boolean
   endTurnTitle?: string
   passCombatLabel?: string
@@ -160,6 +167,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   showPassCombatButton = false,
   onEndTurn,
   onPassCombat,
+  onActivateTech,
   endTurnDisabled = false,
   endTurnTitle,
   passCombatLabel = 'Pass Combat',
@@ -261,15 +269,35 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
   }, [activeFixedChoice, pendingChoices])
 
+  const riseOfIx = gameState?.expansions?.riseOfIx === true
+  const turnControlOptionalEffects = useMemo(
+    () => filterAcquireTechOptionalEffects(optionalEffects),
+    [optionalEffects]
+  )
+  const turnControlPendingChoices = useMemo(
+    () => filterAcquireTechFromChoices(pendingChoices),
+    [pendingChoices]
+  )
+
   const pendingPlayInputKey = useMemo(
     () =>
       [
         ...pendingRewards.filter(reward => !reward.disabled).map(reward => reward.id),
-        ...optionalEffects.map(effect => effect.id),
-        ...pendingChoices.filter(choice => !choice.disabled).map(choice => choice.id),
+        ...turnControlOptionalEffects.map(effect => effect.id),
+        ...turnControlPendingChoices.filter(choice => !choice.disabled).map(choice => choice.id),
       ].join(','),
-    [pendingRewards, optionalEffects, pendingChoices]
+    [pendingRewards, turnControlOptionalEffects, turnControlPendingChoices]
   )
+
+  const techControlsRow =
+    riseOfIx && activePlayer && gameState && !isCombatPhase ? (
+      <TurnControlsTechRow
+        gameState={gameState}
+        player={activePlayer}
+        onActivateTech={isHistoryView ? undefined : onActivateTech}
+        isHistoryView={isHistoryView}
+      />
+    ) : null
 
   useLayoutEffect(() => {
     if (isHistoryView || !pendingPlayInputKey) return
@@ -374,9 +402,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     hasRecallableAgent &&
     activePlayer.deck.some(isKwisatzHaderach)
 
-  /** After agent placement or while in reveal flow / post-reveal, hide primary turn actions. */
-  const hidePlayAndReveal =
-    !isCombatPhase && !isEndGame && (Boolean(agentPlaced) || activePlayer.revealed || isRevealTurn)
+  const primaryTurnActionsHidden = isHistoryView || isCombatPhase || isEndGame
   const playBarTurnLabel = (() => {
     if (!isHistoryView || !gameState?.currTurn) return null
     const curr = gameState.currTurn
@@ -389,7 +415,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     return null
   })()
 
-  const primaryTurnActionsHidden = isHistoryView || isCombatPhase || isEndGame || hidePlayAndReveal
   const playActionDisabled =
     isSandboxSetup ||
     (activePlayer.agents === 0 && !canPlayKwisatzWithNoAgents) ||
@@ -463,9 +488,16 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           )
         }
         if (gamePhase === GamePhase.COMBAT) {
-          return card.type === IntrigueCardType.COMBAT
+          return (
+            card.type === IntrigueCardType.COMBAT || intrigueHasPhaseEffect(card, GamePhase.COMBAT)
+          )
         }
-        // In normal Player Turns, only Plot intrigue can be played (combat handled separately)
+        if (gamePhase === GamePhase.PLAYER_TURNS) {
+          return (
+            card.type === IntrigueCardType.PLOT ||
+            intrigueHasPhaseEffect(card, GamePhase.PLAYER_TURNS)
+          )
+        }
         return card.type === IntrigueCardType.PLOT
       }),
     [intrigueDeck, gamePhase]
@@ -543,6 +575,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const isAffordable = (cost: Cost | undefined, reward?: Reward): boolean => {
     if (!cost && !reward) return true
     if (!activePlayer || !gameState) return false
+    if (reward?.techNegotiator && (activePlayer.troopSupply ?? 0) < reward.techNegotiator) return false
+    if (reward?.acquireTech !== undefined && !gameState.ixBoard?.stacks?.some(stack => stack.length > 0)) {
+      return false
+    }
+    if (cost?.poolTroop && (activePlayer.troopSupply ?? 0) < cost.poolTroop) return false
     if (!canAffordInfluenceOptionalEffect(gameState, activePlayer.id, cost, reward)) return false
     if (!canAffordInfluenceReward(gameState, activePlayer.id, reward)) return false
     return true
@@ -551,6 +588,13 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const isFixedChoiceOptionDisabled = (option: { reward: Reward; cost?: Cost; disabled?: boolean }): boolean => {
     if (option.reward.custom && option.disabled) return true
     if (!activePlayer || !gameState) return Boolean(option.disabled)
+    if (option.cost?.poolTroop && (activePlayer.troopSupply ?? 0) < option.cost.poolTroop) return true
+    if (option.reward.acquireTech !== undefined && !gameState.ixBoard?.stacks?.some(stack => stack.length > 0)) {
+      return true
+    }
+    if (option.reward.techNegotiator && (activePlayer.troopSupply ?? 0) < option.reward.techNegotiator) {
+      return true
+    }
     if (option.reward.influence) {
       return !canAffordInfluenceReward(gameState, activePlayer.id, option.reward)
     }
@@ -894,6 +938,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       left.push(renderCostResource(cost.spice, 'spice'))
       left.push(renderCostResource(cost.water, 'water'))
       left.push(renderCostResource(cost.solari, 'solari'))
+      if (cost.poolTroop) {
+        left.push(
+          <span key="pool-troop" className="effect-pool-troop" title={`Pay ${cost.poolTroop} troop(s) from pool`}>
+            <span className="effect-pool-label">pool</span>
+            {renderRepeatedIconReward('pool-troop', 'troop', cost.poolTroop, 'Pool troop')}
+          </span>
+        )
+      }
       if(cost.trash || cost.trashThisCard) {
         left.push(
           <span key="trash" className="effect-icon-token" title="Trash">
@@ -918,6 +970,32 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     if(reward.combat) right.push(<React.Fragment key="combat">{renderIconValue('dagger', reward.combat, 'Combat', '+')}</React.Fragment>)
     right.push(renderRepeatedIconReward('draw', 'draw', reward.drawCards, 'Draw'))
     if(reward.troops) right.push(<React.Fragment key="troops">{renderIconValue('troop', reward.troops, 'Troops')}</React.Fragment>)
+    if(reward.techNegotiator) {
+      right.push(
+        <span key="tech-negotiator" className="effect-icon-token" title={`Tech Negotiator +${reward.techNegotiator}`}>
+          {Array.from({ length: Math.max(0, reward.techNegotiator) }, (_, index) => (
+            <img key={index} src="/icon/negotiator.svg" alt="" className="effect-token-icon" />
+          ))}
+        </span>
+      )
+    }
+    if (reward.acquireTech !== undefined) {
+      const discount = reward.acquireTech.discount ?? 0
+      right.push(
+        <span
+          key="acquire-tech"
+          className="effect-icon-token"
+          title={discount > 0 ? `Acquire Tech (−${discount} spice)` : 'Acquire Tech'}
+        >
+          <img
+            src="/technologies/rise_of_ix/holtzman_engine.png"
+            alt=""
+            className="effect-token-icon effect-token-icon--tech"
+          />
+          {discount > 0 ? <span className="effect-token-amt">−{discount}</span> : null}
+        </span>
+      )
+    }
     right.push(renderRepeatedIconReward('intrigue', 'intrigue', reward.intrigueCards, 'Intrigue'))
     if(reward.trash || reward.trashThisCard) {
       right.push(
@@ -1313,18 +1391,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           effectCard.choices.some(c => !c.disabled))
     )
 
-  /** Leader/ability effects use the inline panel or a modal, not the played-card frame. */
-  const effectCardCountsForLonePlayedCardHighlight = (effectCard: EffectCard): boolean => {
-    switch (effectCard.source.type) {
-      case GainSource.MASTERSTROKE:
-      case GainSource.MEMNON_HIGH_COUNCIL:
-      case GainSource.LEADER_ABILITY:
-        return false
-      default:
-        return effectCardHasPendingInput(effectCard)
-    }
-  }
-
   const buildEffectCards = () => {
     const sourceMap = new Map<string, EffectCard>()
     
@@ -1343,7 +1409,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     })
     
     // Add optional effects
-    optionalEffects.forEach(effect => {
+    turnControlOptionalEffects.forEach(effect => {
       const key = `${effect.source.type}-${effect.source.id}`
       if (!sourceMap.has(key)) {
         sourceMap.set(key, {
@@ -1357,7 +1423,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     })
     
     // Add pending choices
-    pendingChoices.forEach(choice => {
+    turnControlPendingChoices.forEach(choice => {
       const key = `${choice.source.type}-${choice.source.id}`
       if (!sourceMap.has(key)) {
         sourceMap.set(key, {
@@ -1935,17 +2001,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
   const renderTurnCard = (card: Card, mode: 'played' | 'revealed', effectCards: EffectCard[]) => {
     const effectCard = effectCards.find(entry => entry.source.type === GainSource.CARD && entry.source.id === card.id)
-    const hasPendingInput = effectCardHasPendingInput(effectCard)
-    const hasExternalPendingForPlayedCards = effectCards.some(
-      effectCardCountsForLonePlayedCardHighlight
-    )
-    const highlightsLonePlayedCardWithExternalPending =
-      mode === 'played' &&
-      hasExternalPendingForPlayedCards &&
-      !hasPendingInput &&
-      playedAreaCards.length === 1 &&
-      playedAreaCards[0]?.id === card.id
-    const shouldHighlightPending = hasPendingInput || highlightsLonePlayedCardWithExternalPending
+    const shouldHighlightPending = effectCardHasPendingInput(effectCard)
     return (
       <button
         key={card.id}
@@ -2041,7 +2097,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             alt=""
             className="selected-card-action-intrigue-icon"
             decoding="sync"
-            fetchPriority="high"
+            fetchpriority="high"
           />
           <span className="selected-card-action-count selected-card-action-count--intrigue-overlay">
             {activePlayer.intrigueCount}
@@ -2860,6 +2916,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   </button>
                 )}
                 {!isHistoryView && !isEndGame && renderIntrigueActionButton()}
+                {techControlsRow}
               </div>
             )}
           </div>

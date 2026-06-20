@@ -4,6 +4,7 @@ import { FactionType, GameState, Player } from '../../types/GameTypes'
 import { getLeaderImage } from '../../data/leaders'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import PlayerPlayAreaModal from '../PlayerPlayAreaModal/PlayerPlayAreaModal'
+import PlayerTechTiles from '../PlayerTechTiles/PlayerTechTiles'
 import './CombatPlayerDetailModal.css'
 
 type CardPileKind = 'deck' | 'discard' | 'trash'
@@ -51,6 +52,9 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
         : openPile === 'trash'
           ? player.trash
           : []
+
+  const riseOfIx = gameState?.expansions?.riseOfIx === true
+  const ownedTech = player.tech ?? []
 
   const stats: Array<{ icon?: string; label: string; value: number }> = [
     { icon: '/icon/vp.png', label: 'Victory points', value: vp },
@@ -142,6 +146,18 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
                   </div>
                 ))}
               </div>
+
+              {riseOfIx ? (
+                <div className="combat-player-detail-tech" aria-label="Technology tiles">
+                  <span className="combat-player-detail-tech-heading">Technology</span>
+                  <PlayerTechTiles
+                    tiles={ownedTech}
+                    variant="inline"
+                    emptyLabel="No tech tiles"
+                    ariaLabel={`${player.leader.name} technology tiles`}
+                  />
+                </div>
+              ) : null}
 
               <div className="combat-player-detail-piles">
                 {(['deck', 'discard', 'trash'] as const).map(kind => {

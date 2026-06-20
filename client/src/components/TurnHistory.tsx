@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Card, Gain, IntrigueCard, Player, GameState, GamePhase, TurnType } from '../types/GameTypes'
-import { BOARD_SPACES } from '../data/boardSpaces'
 import { getLeaderIconPath } from '../data/leaders'
 import {
   computeTurnGainTotals,
@@ -20,6 +19,7 @@ import {
   getHistoryRowBadge,
   getLivePlayerTurnNumber,
   getPlayerTurnNumber,
+  getTurnActionLabel,
   isMetaHistoryEntry,
 } from '../utils/turnHistoryDisplay'
 import {
@@ -46,6 +46,8 @@ import {
 import SetupSnapshotPreview from './SetupSnapshotPreview/SetupSnapshotPreview'
 import TurnGainsDisplay from './TurnGainsDisplay/TurnGainsDisplay'
 import { useGame } from './GameContext/GameContext'
+import SaveDocImportPanel from './SaveDocImportPanel/SaveDocImportPanel'
+import type { SaveDoc } from '../save/types'
 import './TurnHistory.css'
 
 interface TurnHistoryProps {
@@ -65,6 +67,17 @@ interface TurnHistoryProps {
   onOpenPlayerOverview?: () => void
   /** Rendered at the top of the panel (e.g. sandbox setup controls). */
   topSlot?: React.ReactNode
+  /** Replace the current session with a loaded SaveDoc (in-game debug load). */
+  onLoadSave?: (doc: SaveDoc) => void
+}
+
+function slugifySaveFilename(title: string): string {
+  const slug = title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+  return slug ? `${slug}.json` : `save-${Date.now()}.json`
 }
 
 const DetailsIcon = () => (
@@ -148,11 +161,13 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   undoAriaLabel,
   onOpenPlayerOverview,
   topSlot,
+  onLoadSave,
 }) => {
   const isDocked = layout === 'docked'
   const { exportSaveDoc } = useGame()
   const [showDebugModal, setShowDebugModal] = useState(false)
-  const [debugView, setDebugView] = useState<'save' | 'runtime'>('save')
+  const [debugView, setDebugView] = useState<'save' | 'runtime' | 'load'>('save')
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null)
   const [playChromeTheme, setPlayChromeTheme] = useState<PlayChromeTheme>(() => getPlayChromeTheme())
   const listRef = useRef<HTMLDivElement>(null)
   const liveEntryRef = useRef<HTMLDivElement>(null)
@@ -170,6 +185,46 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     const { history: _history, setupBaseline: _setupBaseline, ...runtime } = currentGameState
     return JSON.stringify(runtime, null, 2)
   }, [showDebugModal, debugView, exportSaveDoc, currentGameState])
+
+  const handleCopySave = useCallback(async () => {
+    const text = JSON.stringify(exportSaveDoc(), null, 2)
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopyFeedback('Copied')
+      window.setTimeout(() => setCopyFeedback(null), 2000)
+    } catch {
+      setCopyFeedback('Copy failed')
+      window.setTimeout(() => setCopyFeedback(null), 2000)
+    }
+  }, [exportSaveDoc])
+
+  const handleDownloadSave = useCallback(() => {
+    const doc = exportSaveDoc()
+    const json = JSON.stringify(doc, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = slugifySaveFilename(doc.meta.title)
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }, [exportSaveDoc])
+
+  const handleLoadSaveFromPanel = useCallback(
+    (doc: SaveDoc) => {
+      if (!onLoadSave) return
+      const current = exportSaveDoc()
+      if (current.events.length > 0) {
+        const ok = window.confirm(
+          'Replace the current game with the pasted save? Unsaved progress in this session will be lost.'
+        )
+        if (!ok) return
+      }
+      onLoadSave(doc)
+      setShowDebugModal(false)
+    },
+    [exportSaveDoc, onLoadSave]
+  )
 
   const scrollListToBottom = useCallback(() => {
     const list = listRef.current
@@ -346,7 +401,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     if (turn.historyEntryKind === 'combat') return 'Combat'
     if (turn.historyEntryKind === 'round-start') return `Round ${turn.currentRound} start`
     if (index === 0 || turn.historyEntryKind === 'setup') return 'Setup'
-    return getTurnLabel(turn)
+    return getTurnActionLabel(turn)
   }
 
   const getPlayedIntrigueForTurn = (turn: GameState): IntrigueCard[] => {
@@ -398,23 +453,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         ))}
       </div>
     )
-  }
-
-  const getTurnLabel = (turn: GameState): string => {
-    if (turn.phase === GamePhase.COMBAT) return 'Combat'
-    const curr = turn.currTurn
-    if (!curr) return '—'
-    if (curr.type === TurnType.ACTION) {
-      const spaceId = curr.agentSpaceId
-      if (spaceId != null) {
-        const space = BOARD_SPACES.find(s => s.id === spaceId)
-        if (space) return space.name
-      }
-      return 'Agent'
-    }
-    if (curr.type === TurnType.REVEAL) return 'Reveal'
-    if (curr.type === TurnType.PASS) return 'Pass'
-    return curr.type
   }
 
   const renderPlayerBadge = (player: Player | undefined) => {
@@ -681,9 +719,13 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     )
   }
 
+  const turnNumberOffset = currentGameState.playerTurnNumberOffset ?? 0
+  const inSandboxSetup = Boolean(currentGameState.sandboxSetup)
+
   const effectiveViewIndex = viewingTurnIndex ?? turns.length
-  const canGoToPreviousTurn = effectiveViewIndex > 0
-  const canGoToNextTurn = viewingTurnIndex !== null && effectiveViewIndex < turns.length
+  const canGoToPreviousTurn = !inSandboxSetup && effectiveViewIndex > 0
+  const canGoToNextTurn =
+    !inSandboxSetup && viewingTurnIndex !== null && effectiveViewIndex < turns.length
 
   const goToPreviousTurn = useCallback(() => {
     if (!canGoToPreviousTurn) return
@@ -726,6 +768,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
 
   // Handle clicking on a turn row
   const handleTurnClick = (index: number) => {
+    if (inSandboxSetup) return
+
     if (index === turns.length) {
       onReturnToCurrent()
       return
@@ -741,9 +785,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
 
     onTurnChange(index)
   }
-
-  const turnNumberOffset = currentGameState.playerTurnNumberOffset ?? 0
-  const inSandboxSetup = Boolean(currentGameState.sandboxSetup)
 
   const getDockedHeaderTitle = (): string => {
     if (viewingTurnIndex === null) {
@@ -951,6 +992,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           const showRevealGains =
             isRevealTurn &&
             (showRevealSummary || gains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0)
+          const isRowClickable = !inSandboxSetup
 
           return (
             <div
@@ -966,13 +1008,18 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                 isRevealTurn ? 'turn-history-row--reveal' : '',
                 isAgentTurn ? 'turn-history-row--agent' : '',
                 isDocked ? 'turn-history-row--docked-layout' : '',
+                !isRowClickable ? 'turn-history-row--static' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
-              onClick={() => handleTurnClick(index)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && handleTurnClick(index)}
+              onClick={isRowClickable ? () => handleTurnClick(index) : undefined}
+              role={isRowClickable ? 'button' : undefined}
+              tabIndex={isRowClickable ? 0 : undefined}
+              onKeyDown={
+                isRowClickable
+                  ? (e) => e.key === 'Enter' && handleTurnClick(index)
+                  : undefined
+              }
             >
               {renderPlayerTurnRowContent({
                 turn: displayTurn,
@@ -1068,7 +1115,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             isRevealTurn: liveIsRevealTurn,
             isAgentTurn: liveIsAgentTurn,
             playedIntrigue: livePlayedIntrigue,
-            title: getTurnLabel(currentGameState),
+            title: getTurnActionLabel(currentGameState),
             gains: liveGains,
             gainsForDisplay: liveGainsForDisplay,
             otherPlayerGains: liveOtherPlayerGains,
@@ -1122,8 +1169,35 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               >
                 Runtime
               </button>
+              {onLoadSave && (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={debugView === 'load'}
+                  className={debugView === 'load' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
+                  onClick={() => setDebugView('load')}
+                >
+                  Load
+                </button>
+              )}
             </div>
-            <pre>{debugJson}</pre>
+            {debugView === 'load' && onLoadSave ? (
+              <SaveDocImportPanel onLoad={handleLoadSaveFromPanel} buttonLabel="Load save" />
+            ) : (
+              <>
+                {debugView === 'save' && (
+                  <div className="turn-details-export-actions">
+                    <button type="button" className="turn-details-export-btn" onClick={handleCopySave}>
+                      {copyFeedback ?? 'Copy'}
+                    </button>
+                    <button type="button" className="turn-details-export-btn" onClick={handleDownloadSave}>
+                      Download .json
+                    </button>
+                  </div>
+                )}
+                <pre>{debugJson}</pre>
+              </>
+            )}
             <button type="button" className="close-button" onClick={() => setShowDebugModal(false)}>
               Close
             </button>

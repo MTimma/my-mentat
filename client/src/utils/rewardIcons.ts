@@ -10,6 +10,8 @@ export const REWARD_ICON_MAP: Partial<Record<RewardType, string>> = {
   [RewardType.VICTORY_POINTS]: 'icon/vp.png',
   [RewardType.INTRIGUE]: 'icon/intrigue.png',
   [RewardType.TROOPS]: 'icon/troop.png',
+  [RewardType.POOL_TROOP]: 'icon/troop.png',
+  [RewardType.NEGOTIATOR]: 'icon/negotiator.svg',
   [RewardType.INFLUENCE]: 'icon/bump.png',
   [RewardType.CONTROL]: 'icon/control.png',
   [RewardType.AGENT]: 'icon/agent.png',
@@ -20,7 +22,8 @@ export const REWARD_ICON_MAP: Partial<Record<RewardType, string>> = {
   [RewardType.RETREAT]: 'icon/retreat.png',
   [RewardType.DEPLOY]: 'icon/deploy.png',
   [RewardType.RECALL]: 'icon/recall.png',
-  [RewardType.PERSUASION]: 'icon/persuasion.png'
+  [RewardType.PERSUASION]: 'icon/persuasion.png',
+  [RewardType.DREADNOUGHT]: 'icon/dreadnought.svg',
 }
 
 /**
@@ -45,6 +48,8 @@ export function getRewardDisplayName(type: RewardType, name?: string): string {
     case RewardType.AGENT: return 'Agent'
     case RewardType.COMBAT: return 'Combat'
     case RewardType.TROOPS: return 'Troops'
+    case RewardType.POOL_TROOP: return 'Pool troop'
+    case RewardType.NEGOTIATOR: return 'Negotiator'
     case RewardType.CARD: return name || 'Card'
     case RewardType.DRAW: return 'Draw'
     case RewardType.DISCARD: return 'Discard'
@@ -53,7 +58,8 @@ export function getRewardDisplayName(type: RewardType, name?: string): string {
     case RewardType.DEPLOY: return 'Deploy'
     case RewardType.RECALL: return 'Recall'
     case RewardType.PERSUASION: return 'Persuasion'
-    
+    case RewardType.DREADNOUGHT: return 'Dreadnought'
+
     default: return type
   }
 }

@@ -14,11 +14,13 @@ export function PlayerCombatSlot({
   troops,
   strength,
   isActive,
+  riseOfIx = false,
 }: {
   player: Player
   troops: number
   strength: number
   isActive: boolean
+  riseOfIx?: boolean
 }) {
   const dreadnoughts = getDreadnoughtsInConflict(player)
 
@@ -31,9 +33,11 @@ export function PlayerCombatSlot({
       ]
         .filter(Boolean)
         .join(' ')}
-      title={`${player.leader.name}: ${troops} troops, ${strength} strength`}
+      title={`${player.leader.name}: ${troops} troops${
+        riseOfIx ? `, ${dreadnoughts} dreadnoughts` : ''
+      }, ${strength} strength`}
       aria-label={`${player.leader.name}, ${troops} troops in conflict${
-        dreadnoughts > 0 ? `, ${dreadnoughts} dreadnoughts` : ''
+        riseOfIx ? `, ${dreadnoughts} dreadnoughts` : ''
       }, ${strength} strength`}
     >
       <span className="combat-status-strip__color" aria-hidden="true" />
@@ -42,7 +46,7 @@ export function PlayerCombatSlot({
           <img src="/icon/troop.png" alt="" className="combat-status-strip__icon" aria-hidden="true" />
           <span className="combat-status-strip__value">{troops}</span>
         </span>
-        {dreadnoughts > 0 ? (
+        {riseOfIx ? (
           <span className="combat-status-strip__stat">
             <img
               src="/icon/dreadnought.svg"

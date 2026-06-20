@@ -16,6 +16,10 @@ mkdirSync(outDir, { recursive: true })
 const catalog = buildCatalog()
 const v = `v${CATALOG_SCHEMA_VERSION}`
 
+const expansionCounts = Object.fromEntries(
+  catalog.expansions.available.map(id => [id, catalog.expansions.byId[id].counts])
+)
+
 const files: Record<string, unknown> = {
   [`catalog.${v}.json`]: catalog,
   [`cards.${v}.json`]: { schemaVersion: catalog.schemaVersion, cards: catalog.cards, decks: catalog.decks },
@@ -24,6 +28,8 @@ const files: Record<string, unknown> = {
   [`conflicts.${v}.json`]: { schemaVersion: catalog.schemaVersion, conflicts: catalog.conflicts },
   [`intrigue.${v}.json`]: { schemaVersion: catalog.schemaVersion, intrigue: catalog.intrigue },
   [`leaders.${v}.json`]: { schemaVersion: catalog.schemaVersion, leaders: catalog.leaders },
+  [`tech-tiles.${v}.json`]: { schemaVersion: catalog.schemaVersion, techTiles: catalog.techTiles },
+  [`expansions.${v}.json`]: { schemaVersion: catalog.schemaVersion, expansions: catalog.expansions },
   [`choice-ids.${v}.json`]: {
     schemaVersion: catalog.schemaVersion,
     grammar: catalog.choiceIdGrammar,
@@ -32,6 +38,10 @@ const files: Record<string, unknown> = {
   'index.json': {
     schemaVersion: catalog.schemaVersion,
     counts: catalog.meta.counts,
+    expansions: {
+      available: catalog.expansions.available,
+      counts: expansionCounts,
+    },
     files: [
       `catalog.${v}.json`,
       `cards.${v}.json`,
@@ -40,6 +50,8 @@ const files: Record<string, unknown> = {
       `conflicts.${v}.json`,
       `intrigue.${v}.json`,
       `leaders.${v}.json`,
+      `tech-tiles.${v}.json`,
+      `expansions.${v}.json`,
       `choice-ids.${v}.json`,
     ],
   },

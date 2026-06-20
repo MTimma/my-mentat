@@ -400,24 +400,29 @@
     {
       "id": 915,
       "tier": 3,
-      "name": "Heighliner Assault",
+      "name": "Battle for Imperial Basin",
+      "controlSpace": "imperial-basin",
       "rewards": {
         "first": [
           {
             "type": "VP",
             "amount": 2
+          },
+          {
+            "type": "Control",
+            "amount": 1
           }
         ],
         "second": [
           {
-            "type": "Solari",
-            "amount": 6
+            "type": "Spice",
+            "amount": 5
           }
         ],
         "third": [
           {
             "type": "Spice",
-            "amount": 2
+            "amount": 3
           }
         ]
       }
@@ -425,23 +430,46 @@
     {
       "id": 916,
       "tier": 3,
-      "name": "Battle for Arrakis",
+      "name": "Battle for Arrakeen",
+      "controlSpace": "arrakin",
       "rewards": {
         "first": [
           {
             "type": "VP",
             "amount": 2
+          },
+          {
+            "type": "Control",
+            "amount": 1
           }
         ],
         "second": [
           {
             "type": "Intrigue",
-            "amount": 2
+            "amount": 0,
+            "choiceOptions": [
+              {
+                "type": "Intrigue",
+                "amount": 1
+              },
+              {
+                "type": "Spice",
+                "amount": 2
+              },
+              {
+                "type": "Solari",
+                "amount": 3
+              }
+            ]
           }
         ],
         "third": [
           {
-            "type": "Spice",
+            "type": "Intrigue",
+            "amount": 1
+          },
+          {
+            "type": "Solari",
             "amount": 2
           }
         ]
@@ -450,17 +478,60 @@
     {
       "id": 917,
       "tier": 3,
-      "name": "Final Offensive",
+      "name": "Battle for Carthag",
+      "controlSpace": "carthag",
       "rewards": {
         "first": [
           {
             "type": "VP",
             "amount": 2
+          },
+          {
+            "type": "Control",
+            "amount": 1
           }
         ],
         "second": [
           {
-            "type": "Troops",
+            "type": "Intrigue",
+            "amount": 1
+          },
+          {
+            "type": "Spice",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": 918,
+      "tier": 3,
+      "name": "Grand Vision",
+      "rewards": {
+        "first": [
+          {
+            "type": "Influence",
+            "amount": 1,
+            "chooseFaction": true
+          },
+          {
+            "type": "Intrigue",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Intrigue",
+            "amount": 1
+          },
+          {
+            "type": "Solari",
             "amount": 3
           }
         ],
@@ -473,29 +544,162 @@
       }
     },
     {
-      "id": 918,
-      "tier": 3,
-      "name": "Conquest of Dune",
+      "id": 919,
+      "tier": 1,
+      "name": "Skirmish IV",
       "rewards": {
         "first": [
           {
-            "type": "VP",
-            "amount": 2
+            "type": "Freighter",
+            "amount": 1
+          },
+          {
+            "type": "Troops",
+            "amount": 1
           }
         ],
         "second": [
           {
-            "type": "Influence",
+            "type": "Spice",
             "amount": 2
           }
         ],
         "third": [
           {
             "type": "Spice",
+            "amount": 1
+          }
+        ]
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": 920,
+      "tier": 1,
+      "name": "Skirmish V",
+      "rewards": {
+        "first": [
+          {
+            "type": "Freighter",
+            "amount": 1
+          },
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Solari",
             "amount": 2
           }
         ]
-      }
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": 921,
+      "tier": 3,
+      "name": "Economy Supremacy",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 1
+          },
+          {
+            "type": "VP",
+            "amount": 0,
+            "choiceOptions": [
+              {
+                "type": "VP",
+                "amount": 1,
+                "cost": {
+                  "solari": 6
+                }
+              },
+              {
+                "type": "VP",
+                "amount": 1,
+                "cost": {
+                  "spice": 4
+                }
+              },
+              {
+                "type": "Tech",
+                "amount": 1
+              }
+            ]
+          }
+        ],
+        "second": [
+          {
+            "type": "VP",
+            "amount": 1
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          },
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ]
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": 922,
+      "tier": 2,
+      "name": "Trade Monopoly",
+      "rewards": {
+        "first": [
+          {
+            "type": "Freighter",
+            "amount": 2
+          },
+          {
+            "type": "Troops",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Intrigue",
+            "amount": 1
+          },
+          {
+            "type": "Water",
+            "amount": 1
+          }
+        ],
+        "third": [
+          {
+            "type": "Intrigue",
+            "amount": 0,
+            "choiceOptions": [
+              {
+                "type": "Intrigue",
+                "amount": 1
+              },
+              {
+                "type": "Water",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "riseOfIx": true
     }
   ]
 }

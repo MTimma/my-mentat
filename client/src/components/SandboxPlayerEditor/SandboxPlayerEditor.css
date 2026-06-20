@@ -141,6 +141,37 @@
   gap: 8px 10px;
 }
 
+.sandbox-player-editor__snoopers {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.sandbox-player-editor__snoopers-label {
+  width: 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 248, 232, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sandbox-player-editor__snooper-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sandbox-player-editor__snooper-toggle img {
+  width: 14px;
+  height: 14px;
+}
+
 .sandbox-player-editor__counters .value-stepper {
   width: 100%;
   min-width: 0;

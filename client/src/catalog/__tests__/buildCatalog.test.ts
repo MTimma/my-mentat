@@ -1,0 +1,42 @@
+import { describe, expect, it } from 'vitest'
+import { buildCatalog } from '../buildCatalog'
+import {
+  RISE_OF_IX_IMPERIUM_DECK,
+} from '../../data/cards'
+import { RISE_OF_IX_UNIQUE_CARD_COUNT } from '../../data/cardsRiseOfIx'
+import { RISE_OF_IX_CONFLICTS } from '../../data/conflicts'
+import { RISE_OF_IX_LEADERS } from '../../data/leaders'
+import { RISE_OF_IX_INTRIGUE_CARDS } from '../../data/intrigueCards'
+import { TECH_TILES } from '../../data/techTiles'
+
+describe('buildCatalog Rise of Ix', () => {
+  const catalog = buildCatalog()
+
+  it('includes RoI imperium deck entries with riseOfIx when stubs exist', () => {
+    const roiCards = catalog.cards.filter(card => card.riseOfIx && card.pool === 'imperium')
+    expect(roiCards).toHaveLength(RISE_OF_IX_UNIQUE_CARD_COUNT)
+    expect(catalog.expansions.byId.riseOfIx.decks.imperium).toHaveLength(
+      RISE_OF_IX_IMPERIUM_DECK.length
+    )
+  })
+
+  it('includes RoI conflicts, leaders, and intrigue with riseOfIx flag', () => {
+    expect(catalog.conflicts.filter(c => c.riseOfIx)).toHaveLength(RISE_OF_IX_CONFLICTS.length)
+    expect(catalog.leaders.filter(l => l.riseOfIx)).toHaveLength(RISE_OF_IX_LEADERS.length)
+    expect(catalog.intrigue.filter(i => i.riseOfIx)).toHaveLength(RISE_OF_IX_INTRIGUE_CARDS.length)
+  })
+
+  it('publishes 18 tech tiles for Rise of Ix', () => {
+    expect(catalog.techTiles).toHaveLength(18)
+    expect(catalog.techTiles).toHaveLength(TECH_TILES.length)
+    expect(catalog.techTiles.every(tile => tile.riseOfIx)).toBe(true)
+    expect(catalog.expansions.byId.riseOfIx.counts.techTiles).toBe(18)
+  })
+
+  it('reports expansion counts in meta and byId', () => {
+    const counts = catalog.expansions.byId.riseOfIx.counts
+    expect(counts.boardSpaces).toBe(4)
+    expect(catalog.meta.counts.expansions).toBe(1)
+    expect(catalog.meta.counts.techTiles).toBe(18)
+  })
+})

@@ -10,6 +10,7 @@ import {
 } from '../types/GameTypes'
 import { LEADER_NAMES } from './leaders'
 import { mintId } from '../utils/semanticIds'
+import { RISE_OF_IX_SIGNET_RING_EFFECTS } from './signetRingEffectsRiseOfIx'
 
 export interface SignetRingContext {
   state: GameState
@@ -107,6 +108,7 @@ export const SIGNET_RING_EFFECTS: Record<string, (ctx: SignetRingContext) => Sig
       { reward: { drawCards: 1 }, source: SIGNET_RING_SOURCE, isTrash: false },
     ],
   }),
+  ...RISE_OF_IX_SIGNET_RING_EFFECTS,
 }
 
 export function resolveSignetRingEffect(

@@ -1,4 +1,5 @@
-import { GameState } from '../types/GameTypes'
+import { BOARD_SPACES } from '../data/boardSpaces'
+import { GamePhase, GameState, TurnType } from '../types/GameTypes'
 
 /** Non-player rows: setup, round start, combat resolution. */
 export function isMetaHistoryEntry(turn: GameState | undefined): boolean {
@@ -48,6 +49,13 @@ export function getHistoryRowLabel(turns: GameState[], index: number): string {
   }
   const turn = turns[index]
   if (!turn) return `Turn ${index}`
+  if (
+    turn.historyEntryKind === 'setup' &&
+    turn.phase === GamePhase.PLAYER_TURNS &&
+    !turn.sandboxSetup
+  ) {
+    return `Round ${turn.currentRound} start`
+  }
   if (index === 0 || turn.historyEntryKind === 'setup') return 'Setup'
   if (turn.historyEntryKind === 'round-start') return `Round ${turn.currentRound} start`
   if (turn.historyEntryKind === 'combat') return 'Combat'
@@ -56,10 +64,35 @@ export function getHistoryRowLabel(turns: GameState[], index: number): string {
   return playerTurnNum != null ? `Turn ${playerTurnNum}` : `Turn ${index}`
 }
 
+/** Board space name, "Reveal", "Agent", etc. for a player turn row. */
+export function getTurnActionLabel(turn: GameState): string {
+  if (turn.phase === GamePhase.COMBAT) return 'Combat'
+  const curr = turn.currTurn
+  if (!curr) return '—'
+  if (curr.type === TurnType.ACTION) {
+    const spaceId = curr.agentSpaceId
+    if (spaceId != null) {
+      const space = BOARD_SPACES.find(s => s.id === spaceId)
+      if (space) return space.name
+    }
+    return 'Agent'
+  }
+  if (curr.type === TurnType.REVEAL) return 'Reveal'
+  if (curr.type === TurnType.PASS) return 'Pass'
+  return curr.type
+}
+
 export function getHistoryRowBadge(turn: GameState, index: number, turns: GameState[]): string {
   if (turn.historyEntryKind === 'endgame') return 'Endgame'
   if (turn.historyEntryKind === 'combat') return 'Combat'
   if (turn.historyEntryKind === 'round-start') return 'Round'
+  if (
+    turn.historyEntryKind === 'setup' &&
+    turn.phase === GamePhase.PLAYER_TURNS &&
+    !turn.sandboxSetup
+  ) {
+    return 'Round'
+  }
   if (index === 0 || turn.historyEntryKind === 'setup') return 'Setup'
   const playerTurnNum = getPlayerTurnNumber(turns, index)
   return playerTurnNum != null ? String(playerTurnNum) : String(index)

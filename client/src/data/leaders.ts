@@ -1,4 +1,4 @@
-import { Leader, MasterStroke } from '../types/GameTypes'
+import { Expansions, Leader, MasterStroke } from '../types/GameTypes'
 
 export const LEADER_NAMES = {
   EARL_MEMNON_THORVALD: "Earl Memnon Thorvald",
@@ -9,6 +9,12 @@ export const LEADER_NAMES = {
   BEAST_RABBAN: 'Glossu "The Beast" Rabban',
   DUKE_LETO: "Duke Leto Atreides",
   PAUL_ATREIDES: "Paul Atreides",
+  PRINCE_RHOMBUR_VERNIUS: "Prince Rhombur Vernius",
+  VISCOUNT_HUDRO_MORITANI: "Viscount Hudro Moritani",
+  PRINCESS_YUNA_MORITANI: '"Princess" Yuna Moritani',
+  ARCHDUKE_ARMAND_ECAZ: "Archduke Armand Ecaz",
+  ILESA_ECAZ: "Ilesa Ecaz",
+  TESSIA_VERNIUS: "Tessia Vernius",
 } as const
 
 /** Maps leader names to full image paths. Returns undefined if no image exists. */
@@ -21,6 +27,12 @@ export const LEADER_IMAGES: Record<string, string> = {
   [LEADER_NAMES.DUKE_LETO]: '/leaders/leto.avif',
   [LEADER_NAMES.EARL_MEMNON_THORVALD]: '/leaders/memnon.avif',
   [LEADER_NAMES.PAUL_ATREIDES]: '/leaders/paul.avif',
+  [LEADER_NAMES.PRINCE_RHOMBUR_VERNIUS]: '/leaders/rise_of_ix/prince_rhombur_vernius.jpg',
+  [LEADER_NAMES.VISCOUNT_HUDRO_MORITANI]: '/leaders/rise_of_ix/viscount_hudro_moritani.jpg',
+  [LEADER_NAMES.PRINCESS_YUNA_MORITANI]: '/leaders/rise_of_ix/princess_yuna_moritani.jpg',
+  [LEADER_NAMES.ARCHDUKE_ARMAND_ECAZ]: '/leaders/rise_of_ix/archduke_armand_ecaz.jpg',
+  [LEADER_NAMES.ILESA_ECAZ]: '/leaders/rise_of_ix/ilesa_ecaz.jpg',
+  [LEADER_NAMES.TESSIA_VERNIUS]: '/leaders/rise_of_ix/tessia_vernius.jpg',
 }
 export const getLeaderImage = (leaderName: string): string | undefined => LEADER_IMAGES[leaderName]
 
@@ -34,6 +46,12 @@ export const LEADER_ICON_SLUGS: Record<string, string> = {
   [LEADER_NAMES.DUKE_LETO]: 'leto',
   [LEADER_NAMES.EARL_MEMNON_THORVALD]: 'memnon',
   [LEADER_NAMES.PAUL_ATREIDES]: 'paul',
+  [LEADER_NAMES.PRINCE_RHOMBUR_VERNIUS]: 'prince-rhombur-vernius',
+  [LEADER_NAMES.VISCOUNT_HUDRO_MORITANI]: 'viscount-hudro-moritani',
+  [LEADER_NAMES.PRINCESS_YUNA_MORITANI]: 'princess-yuna-moritani',
+  [LEADER_NAMES.ARCHDUKE_ARMAND_ECAZ]: 'archduke-armand-ecaz',
+  [LEADER_NAMES.ILESA_ECAZ]: 'ilesa-ecaz',
+  [LEADER_NAMES.TESSIA_VERNIUS]: 'tessia-vernius',
 }
 export const getLeaderIconPath = (leaderName: string): string | undefined => {
   const slug = LEADER_ICON_SLUGS[leaderName]
@@ -142,3 +160,89 @@ export const LEADERS: Leader[] = [
     sogChoice: false
   }
 ]
+
+/** Rise of Ix leaders (6 new; Baron remains in base LEADERS pool). */
+export const RISE_OF_IX_LEADERS: Leader[] = [
+  {
+    name: LEADER_NAMES.PRINCE_RHOMBUR_VERNIUS,
+    ability: {
+      name: 'Ixian Royalty',
+      description: 'Your dreadnoughts have a strength of 4 instead of 3.',
+    },
+    signetRingText: 'Buy 1 tech, or add 1 tech negotiator.',
+    signetRingTitle: 'Tech Negotiation',
+    complexity: 1,
+    sogChoice: false,
+    riseOfIx: true,
+  },
+  {
+    name: LEADER_NAMES.VISCOUNT_HUDRO_MORITANI,
+    ability: {
+      name: 'Intelligence',
+      description:
+        'Game start: look at the top 2 Intrigue cards, keep one (once per game).',
+    },
+    signetRingText: '1 spice → +1 on shipping track.',
+    signetRingTitle: 'Spice → Shipping',
+    complexity: 1,
+    sogChoice: false,
+    riseOfIx: true,
+    hudroPeekUsed: false,
+  },
+  {
+    name: LEADER_NAMES.PRINCESS_YUNA_MORITANI,
+    ability: {
+      name: 'Spice Royalty',
+      description:
+        'You start with no water. When you gain Solari on your turn, increase the amount by 1.',
+    },
+    signetRingText: '7 Solari → +1 influence (choose), +1 spice, +1 troop.',
+    signetRingTitle: '7 Solari',
+    complexity: 2,
+    sogChoice: false,
+    riseOfIx: true,
+  },
+  {
+    name: LEADER_NAMES.ARCHDUKE_ARMAND_ECAZ,
+    ability: {
+      name: "Houses' Confidence",
+      description:
+        'If you have at least 2 agents on Yellow/Blue/Green spaces upon reveal, you may trash 1 card in play.',
+    },
+    signetRingText: 'You may acquire a card that costs 3 or less.',
+    signetRingTitle: 'Free 3-cost acquire',
+    complexity: 2,
+    sogChoice: false,
+    riseOfIx: true,
+  },
+  {
+    name: LEADER_NAMES.ILESA_ECAZ,
+    ability: {
+      name: 'Hidden Pact',
+      description:
+        'Round start: set a card aside. When played on your 2nd turn: +1 Solari, or if only 1 agent icon +1 spice.',
+    },
+    signetRingText: '1 Solari → 1 Foldspace card.',
+    signetRingTitle: 'Free Foldspace',
+    complexity: 3,
+    sogChoice: false,
+    riseOfIx: true,
+  },
+  {
+    name: LEADER_NAMES.TESSIA_VERNIUS,
+    ability: {
+      name: 'Subtle Subterfuge',
+      description: 'Place snooper tokens on influence tracks.',
+    },
+    signetRingText:
+      '−1 influence (choose) → +1 influence with a faction where you have a snooper token.',
+    signetRingTitle: 'Influence steal',
+    complexity: 4,
+    sogChoice: false,
+    riseOfIx: true,
+  },
+]
+
+export function getLeaderPool(expansions: Expansions): Leader[] {
+  return expansions.riseOfIx ? [...LEADERS, ...RISE_OF_IX_LEADERS] : LEADERS
+}

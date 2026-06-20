@@ -2,7 +2,7 @@
  * Build a SetupBlock from the game-creation UI (catalog ids + optional overrides).
  * This is the canonical "game input" genesis — App stores it inside a SaveDoc.
  */
-import type { Card, Player } from '../types/GameTypes'
+import type { Card, Expansions, Player } from '../types/GameTypes'
 import { LEADER_ICON_SLUGS } from '../data/leaders'
 import { slugify } from '../catalog/buildCatalog'
 import { catalogIdForCard, catalogIdsForCards } from './catalogIds'
@@ -15,6 +15,7 @@ export interface BuildSetupBlockInput {
   currentRound?: number
   initialConflictId?: number
   sandbox?: boolean
+  expansions?: Expansions
 }
 
 export interface BuiltSetupBlock {
@@ -69,6 +70,7 @@ export function buildSetupBlockFromConfiguration(
       : {}),
     ...(input.initialConflictId != null ? { initialConflictId: input.initialConflictId } : {}),
     ...(input.sandbox ? { sandbox: true } : {}),
+    ...(input.expansions ? { expansions: input.expansions } : {}),
   }
 
   return { setup, unmapped: [...new Set(unmapped)] }

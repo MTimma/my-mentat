@@ -1,14 +1,37 @@
 import { describe, expect, it } from 'vitest'
 import { BOARD_SPACES } from '../../../data/boardSpaces'
-import { BOARD_HOTSPOTS } from '../../../data/boardHotspots'
+import { BOARD_HOTSPOTS_FOR_EXPANSIONS } from '../../../data/boardHotspots'
+import { IX_BOARD_HOTSPOTS } from '../../../data/ixBoardAnchors'
 import { AgentIcon, FactionType } from '../../../types/GameTypes'
 
-describe('Board spaces — base game', () => {
-  const hotspotBySpace = new Map(BOARD_HOTSPOTS.map(h => [h.spaceId, h]))
+import { NO_EXPANSIONS } from '../../../types/GameTypes'
 
-  it.each(BOARD_SPACES)('$name (id $id) has a board hotspot', space => {
-    expect(hotspotBySpace.has(space.id)).toBe(true)
+describe('Board spaces — base game', () => {
+  const baseHotspotBySpace = new Map(
+    BOARD_HOTSPOTS_FOR_EXPANSIONS(NO_EXPANSIONS).map(h => [h.spaceId, h])
+  )
+  const roiHotspotBySpace = new Map(
+    BOARD_HOTSPOTS_FOR_EXPANSIONS({ riseOfIx: true, riseOfIxEpic: false }).map(h => [h.spaceId, h])
+  )
+  const ixHotspotBySpace = new Map(IX_BOARD_HOTSPOTS.map(h => [h.spaceId, h]))
+
+  it.each(BOARD_SPACES.filter(s => !s.riseOfIx))('$name (id $id) has a base-game hotspot', space => {
+    expect(baseHotspotBySpace.has(space.id)).toBe(true)
   })
+
+  it.each(BOARD_SPACES.filter(s => s.riseOfIx && s.id >= 25))(
+    '$name (id $id) has a main-board RoI hotspot',
+    space => {
+      expect(roiHotspotBySpace.has(space.id)).toBe(true)
+    }
+  )
+
+  it.each(BOARD_SPACES.filter(s => s.riseOfIx && s.id < 25))(
+    '$name (id $id) has an Ix board hotspot',
+    space => {
+      expect(ixHotspotBySpace.has(space.id)).toBe(true)
+    }
+  )
 
   it('Conspire costs 4 spice', () => {
     const conspire = BOARD_SPACES.find(s => s.name === 'Conspire')

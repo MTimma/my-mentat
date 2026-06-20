@@ -13,10 +13,13 @@
 .imperium-select-overlay.play-board-modal-overlay--scoped,
 .card-selection-dialog-overlay.play-board-modal-overlay--scoped,
 .imperium-preview-overlay.play-board-modal-overlay--scoped,
+.tech-acquire-overlay.play-board-modal-overlay--scoped,
 .combat-results-overlay.play-board-modal-overlay--scoped,
+.freighter-status-overlay.play-board-modal-overlay--scoped,
 .card-trashing-dialog-overlay.play-board-modal-overlay--scoped,
 .selective-breeding-dialog-overlay.play-board-modal-overlay--scoped,
 .sell-melange-popup.play-board-modal-overlay--scoped,
+.tech-stacks-overlay.play-board-modal-overlay--scoped,
 .undo-confirm-overlay.play-board-modal-overlay--scoped,
 .dialog-overlay.player-overview-overlay.play-board-modal-overlay--scoped,
 .dialog-overlay.player-play-area-overlay--board-scoped,
@@ -38,6 +41,21 @@
   padding: 12px;
   box-sizing: border-box;
   border-radius: inherit;
+}
+
+.tech-stacks-overlay.play-board-modal-overlay--scoped {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.freighter-status-overlay.play-board-modal-overlay--scoped .freighter-status-modal {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.tech-stacks-overlay.play-board-modal-overlay--scoped .tech-stacks-modal {
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 .play-board-modal-overlay--scoped .combat-results,

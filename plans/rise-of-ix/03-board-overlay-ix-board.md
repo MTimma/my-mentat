@@ -34,39 +34,39 @@
 
 Render the Rise of Ix board changes on top of the existing `Board.jpg`:
 
-- Overlay **`riseofix4.png`** on the **top-right** brown rectangle that
+- Overlay **`riseofix2.png`** on the **top-right** brown rectangle that
   currently shows **Sell Melange** and **Secure Contract** (ids 7–8).
   This graphic is the **CHOAM strip**: Smuggling, Interstellar Shipping,
   and the vertical **Freighter / shipping track** art (discs rendered in
   code — see [`05`](./05-freighter-shipping-track.md)).
-- Overlay **`riseofix3.png`** on the **middle-top-left** free strip for
+- Overlay **`riseofix1.png`** on the **middle-top-left** free strip for
   the two **Landsraad** spaces: **Dreadnought** and **Tech Negotiation**.
   The three face-up tech tiles do **not** fit on the board — place a
   small control **next to** this overlay that opens a **Technology Stacks
   modal** (select stack → acquire). Render **tech negotiator counters**
   beside the same overlay (both next to and inside the modal).
 - Add **hotspots** for all four new board spaces; **disable** hotspots
-  for base spaces covered by `riseofix4` (Sell Melange, Secure Contract).
+  for base spaces covered by `riseofix2` (Sell Melange, Secure Contract).
 - Add a **dreadnought icon** (flat spaceship silhouette, `/icon/` style)
   for combat stats, garrison badges, and control markers.
 
-**Assets not used in this task:** `riseofix1.png`, `riseofix2.png`
-(superseded by 4 and 3 respectively).
+**Assets not used in this task:** `riseofix3.png`, `riseofix4.png`
+(superseded by 1 and 2 respectively).
 
 ---
 
 ## 2. Requirements
 
 1. **R1 — Overlays gated by `expansions.riseOfIx`.**
-   - `riseofix4.png` — CHOAM / spice-trade corner.
-   - `riseofix3.png` — Dreadnought + Tech Negotiation strip.
+   - `riseofix2.png` — CHOAM / spice-trade corner.
+   - `riseofix1.png` — Dreadnought + Tech Negotiation strip.
    - Base `Board.jpg` always renders underneath.
 
 2. **R2 — Overlay anchors.** Same `BOARD_VIEWPORT_INSETS` / percent
    system as `client/src/data/boardHotspots.ts`. New constants:
    - `CHOAM_OVERLAY_RECT` — `{ left, top, width, height }` for
-     `riseofix4.png` (covers Sell Melange + Secure Contract).
-   - `LANDSRAAD_IX_OVERLAY_RECT` — same shape for `riseofix3.png`
+     `riseofix2.png` (covers Sell Melange + Secure Contract).
+   - `LANDSRAAD_IX_OVERLAY_RECT` — same shape for `riseofix1.png`
      (Dreadnought + Tech Negotiation only).
 
 3. **R3 — New board spaces.** Four entries in `BOARD_SPACES`:
@@ -79,12 +79,12 @@ Render the Rise of Ix board changes on top of the existing `Board.jpg`:
    | 26 | Interstellar Shipping | SPICE_TRADE | false | – | requiresInfluence:{SG,2}, freighter:2 |
 
    - Each marked `riseOfIx: true` (Task 02).
-   - Hotspot art aligns with overlay slices (`riseofix3` vs `riseofix4`),
+   - Hotspot art aligns with overlay slices (`riseofix1` vs `riseofix2`),
      not separate per-space PNGs unless tuning needs them later.
 
 4. **R4 — Hotspot disabling.** When `riseOfIx === true`:
    - Remove/disable hotspots for **Sell Melange** (id 8) and **Secure
-     Contract** (id 7) — covered by `riseofix4`.
+     Contract** (id 7) — covered by `riseofix2`.
    - **Keep** Hall of Oratory and Swordmaster (not covered by either
      overlay).
    - Add hotspots for ids 23–26.
@@ -96,7 +96,7 @@ Render the Rise of Ix board changes on top of the existing `Board.jpg`:
    (name may vary; avoid implying freighter/CHOAM content).
 
    **Opened by:** a compact button anchored **next to**
-   `LANDSRAAD_IX_OVERLAY_RECT` (same real estate as `riseofix3`), e.g.
+   `LANDSRAAD_IX_OVERLAY_RECT` (same real estate as `riseofix1`), e.g.
    label “Tech” or stack icon. Disabled in time-travel view.
 
    **Modal contents only:**
@@ -112,7 +112,7 @@ Render the Rise of Ix board changes on top of the existing `Board.jpg`:
    or other tasks.
 
 6. **R6 — Tech negotiator counters on the board.**
-   Beside `riseofix3` (not inside the modal): show per-player negotiator
+   Beside `riseofix1` (not inside the modal): show per-player negotiator
    counts on Ix — coloured dots or small badges, sum =
    `players[i].negotiatorsOnIx`. Anchor via
    `NEGOTIATOR_COUNTERS_ANCHOR` in `boardMarkerAnchors.ts`.
@@ -133,7 +133,7 @@ Render the Rise of Ix board changes on top of the existing `Board.jpg`:
      by side (`PlayerOverviewModal` and/or `CombatPlayerDetailModal`).
 
 9. **R9 — Freighter discs on CHOAM overlay.** Vertical 0–3 track with
-   per-player discs on `riseofix4`, anchored via
+   per-player discs on `riseofix2`, anchored via
    `SHIPPING_TRACK_ANCHORS` in `boardMarkerAnchors.ts` ([`05`](./05-freighter-shipping-track.md)).
 
 ---
@@ -167,14 +167,14 @@ Inside `ImageBoard.tsx`, after the base board `<img>`:
   <>
     <img
       className="image-board__choam-overlay"
-      src="/board/riseofix/riseofix4.png"
+      src="/board/riseofix/riseofix2.png"
       alt="CHOAM overlay"
       draggable={false}
       style={percentToStyle(layoutInnerRectPercent(CHOAM_OVERLAY_RECT))}
     />
     <img
       className="image-board__landsraad-ix-overlay"
-      src="/board/riseofix/riseofix3.png"
+      src="/board/riseofix/riseofix1.png"
       alt="Dreadnought and Tech Negotiation"
       draggable={false}
       style={percentToStyle(layoutInnerRectPercent(LANDSRAAD_IX_OVERLAY_RECT))}
@@ -186,10 +186,10 @@ Inside `ImageBoard.tsx`, after the base board `<img>`:
 **First-pass rects** (tune with `?hotspotDebug=1`):
 
 ```ts
-// riseofix4 — top-right; covers Sell Melange + Secure Contract
+// riseofix2 — top-right; covers Sell Melange + Secure Contract
 export const CHOAM_OVERLAY_RECT = { left: 73, top: 0, width: 27, height: 22 }
 
-// riseofix3 — middle-top-left; Dreadnought + Tech Negotiation only
+// riseofix1 — middle-top-left; Dreadnought + Tech Negotiation only
 export const LANDSRAAD_IX_OVERLAY_RECT = { left: 21, top: 0, width: 17, height: 22 }
 ```
 
@@ -200,17 +200,17 @@ export const LANDSRAAD_IX_OVERLAY_RECT = { left: 21, top: 0, width: 17, height: 
 > anchors; default `{ x: 50, y: 40 }`).
 
 ```ts
-// riseofix3 — Landsraad strip
+// riseofix1 — Landsraad strip
 hotspot(23, { left: 56, top: 3.5, width: 11, height: 6 }),  // Dreadnought
 hotspot(24, { left: 56, top: 12,  width: 11, height: 6 }),  // Tech Negotiation
 
-// riseofix4 — CHOAM / spice-trade corner (replaces ids 7–8)
+// riseofix2 — CHOAM / spice-trade corner (replaces ids 7–8)
 hotspot(25, { left: 78, top: 11, width: 11, height: 8 }),   // Smuggling
 hotspot(26, { left: 78, top: 2,  width: 11, height: 8 }),   // Interstellar Shipping
 ```
 
-Percentages are first-pass — align to art in `riseofix3.png` /
-`riseofix4.png` under debug mode.
+Percentages are first-pass — align to art in `riseofix1.png` /
+`riseofix2.png` under debug mode.
 
 ```ts
 const VISIBLE_HOTSPOTS = (exp: Expansions) => {
@@ -243,17 +243,17 @@ const VISIBLE_HOTSPOTS = (exp: Expansions) => {
   `{ type: 'ACQUIRE_TECH', playerId, tileId, negotiatorsReturned, discount }`
   ([`06-tech-tiles.md`](./06-tech-tiles.md)).
 - Negotiator-return controls live in the modal acquire flow; **board-side
-  counter display** (R6) is read-only totals beside `riseofix3`.
+  counter display** (R6) is read-only totals beside `riseofix1`.
 - ✦ 2026-06-10: implement with `usePlayBoardModalPortal` (board-scoped
   overlay; works with the play-chrome `scopeModalsToBoard` mode). Add
   the modal's overlay class to `playBoardModal.css`. Reference
   implementations: `CombatResults`, `PlayerOverviewModal`,
   `ConflictSelect`.
 
-### 4.4 Board chrome next to `riseofix3`
+### 4.4 Board chrome next to `riseofix1`
 
 ```
-[ riseofix3 overlay: Dreadnought | Tech Negotiation ]
+[ riseofix1 overlay: Dreadnought | Tech Negotiation ]
 [ Tech stacks btn ]  [ negotiator dots: ●● per player ]
 ```
 
@@ -276,19 +276,19 @@ visual tuning).
 
 1. **AC1** — `riseOfIx === false`: board pixel-identical to today (no
    overlays, no extra hotspots, no Tech button).
-2. **AC2** — `riseOfIx === true`: `riseofix4.png` covers Sell Melange +
-   Secure Contract per `CHOAM_OVERLAY_RECT`; `riseofix3.png` covers
+2. **AC2** — `riseOfIx === true`: `riseofix2.png` covers Sell Melange +
+   Secure Contract per `CHOAM_OVERLAY_RECT`; `riseofix1.png` covers
    Dreadnought + Tech Negotiation per `LANDSRAAD_IX_OVERLAY_RECT`.
 3. **AC3** — `?hotspotDebug=1`: outlines for ids 23–26 on overlay art;
    ids 7–8 not clickable.
-4. **AC4** — Tech Stacks button beside `riseofix3` opens modal with three
+4. **AC4** — Tech Stacks button beside `riseofix1` opens modal with three
    stacks; Acquire dispatches `ACQUIRE_TECH`.
 5. **AC5** — Negotiator counters visible beside overlay when
    `negotiatorsOnIx > 0` (or always show zeros — product choice).
 6. **AC6** — ✦ already satisfied: `/icon/dreadnought.svg` loads and
    `CombatAreaCluster` shows the dreadnought count when
    `dreadnoughts.conflict > 0` (verify it still holds after changes).
-7. **AC7** — Freighter discs on `riseofix4` track (coordination with Task 05).
+7. **AC7** — Freighter discs on `riseofix2` track (coordination with Task 05).
 8. **AC8** — Pre-existing tests pass.
 
 ---
@@ -305,7 +305,7 @@ visual tuning).
 **Path:** `client/src/components/ImageBoard/__tests__/overlay.test.tsx`
 
 - [ ] No RoI overlays when `expansions.riseOfIx` is false
-- [ ] Renders `riseofix4.png` and `riseofix3.png` when true
+- [ ] Renders `riseofix2.png` and `riseofix1.png` when true
 - [ ] Hotspots 7–8 omitted when true; 23–26 present
 - [ ] Tech Stacks button rendered when true
 
@@ -325,15 +325,15 @@ visual tuning).
 
 ## 7. Notes
 
-- **Overlay ↔ base board mapping (confirmed):** `riseofix4` replaces
+- **Overlay ↔ base board mapping (confirmed):** `riseofix2` replaces
   **Sell Melange** and **Secure Contract** only. Hall of Oratory and
-  Swordmaster stay. `riseofix3` adds **Dreadnought** and **Tech
+  Swordmaster stay. `riseofix1` adds **Dreadnought** and **Tech
   Negotiation** on the middle-top-left strip — it does **not** replace
   other base spaces.
 - **Technology UI split:** Interactive 3-stack **select + acquire** =
-  modal via button next to `riseofix3`. Decorative tech-market art on
-  `riseofix4` (if present in the PNG) is not wired to state.
+  modal via button next to `riseofix1`. Decorative tech-market art on
+  `riseofix2` (if present in the PNG) is not wired to state.
 - **Dreadnought icon:** Longer aspect ratio than troop; distinct at a glance.
 - **Thumbnails:** Reuse `client/public/technologies/rise_of_ix/*.png`.
-- **Deprecated assets:** Do not reference `riseofix1.png` or
-  `riseofix2.png` in implementation; keep files in repo for reference only.
+- **Deprecated assets:** Do not reference `riseofix3.png` or
+  `riseofix4.png` in implementation; keep files in repo for reference only.

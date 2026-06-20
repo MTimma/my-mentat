@@ -121,7 +121,7 @@ export function historyIndexToEventIndex(
   events: EventEntry[],
   historyIndex: number
 ): number {
-  if (historyIndex <= 0) return -1
+  if (historyIndex < 0) return -1
   let state = buildInitialState(setup)
   let history: GameState[] = [setupSnapshot(state)]
   let stateBeforeCombat: GameState | null = null
@@ -133,6 +133,7 @@ export function historyIndexToEventIndex(
     state = applyGameAction(state, action)
 
     const beforeLen = history.length
+    let index0Replaced = false
     switch (action.type) {
       case 'SELECT_CONFLICT': {
         const roundStart = roundStartSnapshot(state)
@@ -140,6 +141,12 @@ export function historyIndexToEventIndex(
         history = isOpening
           ? [{ ...roundStart, historyEntryKind: 'setup' as const }]
           : [...history, roundStart]
+        index0Replaced = isOpening
+        break
+      }
+      case 'SANDBOX_COMMIT_SETUP': {
+        history = [setupSnapshot(state)]
+        index0Replaced = true
         break
       }
       case 'END_TURN':
@@ -162,9 +169,13 @@ export function historyIndexToEventIndex(
       default:
         break
     }
+    if (historyIndex === 0 && index0Replaced) {
+      return eventIndex
+    }
     if (history.length > beforeLen && history.length - 1 === historyIndex) {
       return eventIndex
     }
   }
+  if (historyIndex === 0) return -1
   return events.length - 1
 }

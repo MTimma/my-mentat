@@ -4,6 +4,8 @@ export enum IntrigueCardType {
   ENDGAME = 'endgame'
 }
 
+import type { PlayerTechTile, TechTileId } from '../data/techTiles'
+
 // Contains display values for the leader
 export class Leader {
   constructor(
@@ -13,11 +15,17 @@ export class Leader {
       description: string
     },
     public signetRingText: string,
-    public complexity: 1 | 2 | 3, // Number of icons after name
+    public complexity: 1 | 2 | 3 | 4, // Number of icons after name (4 = Tessia Vernius)
     public sogChoice: boolean = false
   ) {}
   /** Optional display title for the signet ring (e.g. "Hidden Reservoir", "Scheme"). */
   public signetRingTitle?: string
+  /** Rise of Ix — marks one of the six RoI leaders. */
+  public riseOfIx?: boolean
+  /** Tessia Vernius only — snoopers placed on faction influence tracks at game start. */
+  public tessiaSnoopers?: Partial<Record<FactionType, boolean>>
+  /** Viscount Hundro Vernius — once-per-game intrigue peek flag. */
+  public hudroPeekUsed?: boolean
 }
 
 export interface MasterStroke {
@@ -37,6 +45,8 @@ export interface Player {
   color: PlayerColor
   leader: Leader
   troops: number
+  /** Troops in the bank (not garrison, conflict, or on Ix). Max 12 total pieces per player. */
+  troopSupply?: number
   spice: number
   water: number
   solari: number
@@ -59,9 +69,31 @@ export interface Player {
     supply: number
     garrison: number
     conflict: number
+    control: Array<{ space: ControlMarkerType; placedRound: number }>
   }
+  /** CHOAM Shipping track position (0 = bottom, 3 = top). */
+  freighterStep?: 0 | 1 | 2 | 3
+  /** Acquired tech tiles (face-up / face-down). */
+  tech?: PlayerTechTile[]
+  /** Negotiators placed on the Ix board (similar to conflict-deployed troops). */
+  negotiatorsOnIx?: number
+  /** Tessia Vernius — per-faction snooper placement on influence tracks. */
+  snoopers?: Partial<Record<FactionType, boolean>>
+  /** Ilesa Ecaz — card set aside at round start. */
+  setAsideCard?: Card | null
+  /** Ilesa Ecaz — awaiting round-start set-aside choice. */
+  ilesaSetAsidePending?: boolean
+  /** Agent turns taken this round (for Ilesa 2nd-turn bonus). */
+  agentTurnsThisRound?: number
+  /** Rise of Ix — tech tiles activated this round (once-per-round timings). */
+  activatedTechThisRound?: TechTileId[]
 }
 
+/**
+ * Board agent icons. Rise of Ix board spaces reuse existing icons
+ * (Landsraad, Spice Trade) — no IX or CHOAM enum members are added.
+ * Tech Negotiator and Acquire Tech on cards are `Reward` fields, not agent icons.
+ */
 export enum AgentIcon {
   CITY = 'city',
   SPICE_TRADE = 'spice-trade',
@@ -112,10 +144,12 @@ export interface SpaceProps {
     solari?: number
   }
   reward?: Reward
-  effects?:[{
+  effects?: {
     cost?: Cost
     reward: Reward
-  }]
+    /** Per rules, Acquire Tech / Tech Negotiator on board spaces are optional ("may"). */
+    optional?: boolean
+  }[]
   influence?: InfluenceAmount
   maxAgents?: number
   occupiedBy?: number[]
@@ -129,6 +163,10 @@ export interface SpaceProps {
     solari?: number
   }
   specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'highCouncil' | 'sellMelange'
+  /** Rise of Ix — CHOAM-overlay board space. */
+  riseOfIx?: boolean
+  /** Hotspot panel: main board vs Ix side panel. */
+  gridSide?: 'main' | 'ix'
 }
 
 export interface PlayReq extends CardEffectReq {
@@ -171,9 +209,17 @@ export interface Cost {
   discard?: number
   influence?: InfluenceAmounts
   troops?: number
+  /** Rise of Ix — pay troop pieces from supply (not garrison). */
+  poolTroop?: number
   retreatTroops?: number
   retreatUnits?: number
   deployTroops?: number
+  /** Rise of Ix — pay dreadnoughts from supply/garrison. */
+  dreadnoughts?: number
+  /** Rise of Ix — return negotiators from Ix (amount chosen at resolve time). */
+  negotiator?: boolean
+  /** Rise of Ix — place N intrigue cards on the bottom of the intrigue deck. */
+  intrigueBottom?: number
   custom?: string
 }
 
@@ -207,6 +253,22 @@ export interface Reward {
   recallSpaceId?: number
   /** Master Tactician: retreat this many troops from Conflict to garrison */
   retreatFromConflict?: number
+  /** Rise of Ix — commission N dreadnoughts from supply. */
+  dreadnoughts?: number
+  /** Rise of Ix — when commissioning on a combat space, deploy directly to Conflict. */
+  dreadnoughtToConflict?: boolean
+  /** Rise of Ix — place a winning dreadnought on this control space. */
+  dreadnoughtControlSpace?: ControlMarkerType
+  /** Rise of Ix — advance N spaces on Shipping track, or recall and collect rewards. */
+  freighter?: number | 'recall'
+  /** Rise of Ix — acquire one tech tile, optionally with a built-in spice discount. */
+  acquireTech?: { discount?: 0 | 1 | 2; paySolariInsteadOfSpice?: boolean }
+  /** Rise of Ix — place N negotiators on Ix. */
+  techNegotiator?: number
+  /** Rise of Ix — +5 solari to active player; reducer expands to all players. */
+  dividends?: true
+  /** Nested reward applied to each opponent (e.g. dividends: 1 solari each). */
+  forOpponents?: Reward
 }
 
 export enum EffectTiming {
@@ -219,6 +281,8 @@ export interface CardEffect<R extends CardEffectReq = CardEffectReq> {
   cost?: Cost
   reward: Reward
   choiceOpt?: boolean
+  /** When true, or by default for acquireTech / techNegotiator rewards ("may" icons). */
+  optional?: boolean
   timing?: EffectTiming
   // Optional phase gating (primarily used for intrigue cards that can be used in multiple phases)
   phase?: GamePhase | GamePhase[]
@@ -245,7 +309,13 @@ export enum GainSource {
   MENTAT = 'mentat',
   MASTERSTROKE = 'masterstroke',
   LEADER_ABILITY = 'leader-ability',
-  MEMNON_HIGH_COUNCIL = 'memnon-high-council'
+  MEMNON_HIGH_COUNCIL = 'memnon-high-council',
+  /** Rise of Ix — gain tied to a tech tile firing. */
+  TECH = 'tech',
+  /** Rise of Ix — gain tied to acquiring a tech tile from the Ix board. */
+  IX_BOARD = 'ix-board',
+  /** Rise of Ix — gain from freighter recall on the Shipping track. */
+  SHIPPING_TRACK = 'shipping-track',
 }
 
 export interface Card {
@@ -255,7 +325,12 @@ export interface Card {
   faction?: FactionType[]
   cost?: number
   agentIcons: AgentIcon[]
+  /** Ignore occupancy on one Agent placement (base + Rise of Ix infiltration cards). */
   infiltrate?: boolean
+  /** Rise of Ix — Reveal effects also fire when this card is discarded or trashed. */
+  unload?: boolean
+  /** Rise of Ix — source marker for UI badge and deck filtering. */
+  riseOfIx?: boolean
   trashEffect?: CardEffect[]
   playEffect?: PlayEffect[]
   revealEffect?: RevealEffect[]
@@ -266,6 +341,10 @@ export interface Card {
     trash?: number,
     influence?: InfluenceAmounts,
     water?: number,
+    /** Rise of Ix — acquire-time freighter icon(s). */
+    freighter?: number
+    /** Rise of Ix — commission dreadnought(s) on acquire. */
+    dreadnoughts?: number
   }
 }
 
@@ -331,6 +410,8 @@ export interface IntrigueCardPlay {
 export interface ConflictReward {
   type: RewardType
   amount: number
+  /** Optional payment before receiving this reward (e.g. purchasable VP on Economy Supremacy). */
+  cost?: Cost
   /** When set, player chooses one of these options instead of receiving this reward directly */
   choiceOptions?: ConflictReward[]
   /** When true for INFLUENCE, player chooses which faction to gain influence with */
@@ -440,12 +521,26 @@ export interface GameTurn {
   agentSpaceId?: number
   canDeployTroops?: boolean
   troopLimit?: number
+  /** Slots that may only be filled by troops from a "deploy these troops" reward (e.g. Gurney). */
+  theseTroopsDeployLimit?: number
+  /** Troops deployed this turn via theseTroopsDeployLimit (subset of removableTroops). */
+  removableTheseTroops?: number
   /** Troops still in Conflict that may be retreated this turn. */
   removableTroops?: number
+  /** Dreadnoughts deployed to Conflict this turn (undo via UNDEPLOY_DREADNOUGHT). */
+  removableDreadnoughts?: number
+  /** Negotiators deployed from Ix to Conflict this turn (undo via UNDEPLOY_NEGOTIATOR). */
+  removableNegotiators?: number
+  /** Total dreadnoughts sent to Conflict this turn. */
+  dreadnoughtsDeployedToConflict?: number
   /** Total troops sent to Conflict this turn (does not decrease on retreat). */
   troopsDeployedToConflict?: number
   /** Total troops retreated from Conflict this turn. */
   troopsRetreatedFromConflict?: number
+  /** Diversion intrigue — grant freighter when 4+ units are in the Conflict this turn. */
+  diversionActive?: boolean
+  /** Diversion — freighter reward was granted and may be reverted if units drop below 4. */
+  diversionFreighterGranted?: boolean
   /** Max troops that may be retreated via card/leader effects (separate from deploy undo). */
   effectRetreatAllowance?: number
   /** Troops already retreated via effect allowance this turn. */
@@ -469,6 +564,10 @@ export interface GameTurn {
     sourceCardId?: number
     sourceCardName?: string
   }
+  /** Weirding Way — player may take another Agent/Reveal turn before rotation. */
+  extraTurnAllowed?: boolean
+  /** Treachery — deploy allowance must be used before ending turn. */
+  mandatoryDeployTroops?: boolean
 }
 
 export enum GamePhase {
@@ -503,6 +602,8 @@ export enum RewardType {
   AGENT = 'Agent',
   COMBAT = 'Combat',
   TROOPS = 'Troops',
+  /** Rise of Ix — troop piece in supply (not garrison). */
+  POOL_TROOP = 'Pool troop',
   CARD = 'Card',
   DRAW = 'Draw',
   DISCARD = 'Discard',
@@ -512,7 +613,12 @@ export enum RewardType {
   RECALL = 'Recall',
   PERSUASION = 'Persuasion',
   MENTAT = "Mentat",
-  SWORDMASTER = "Swordmaster"
+  SWORDMASTER = "Swordmaster",
+  /** Rise of Ix */
+  DREADNOUGHT = 'Dreadnought',
+  FREIGHTER = 'Freighter',
+  TECH = 'Tech',
+  NEGOTIATOR = 'Negotiator',
 }
 
 export interface PlayerSetup {
@@ -554,6 +660,8 @@ export interface GameState {
   currTurn: GameTurn | null
   combatStrength: Record<number, number>
   combatTroops: Record<number, number>
+  /** Rise of Ix — negotiators deployed from Ix to the Conflict. */
+  combatNegotiators?: Record<number, number>
   currentConflict: ConflictCard
   combatPasses: Set<number>
   occupiedSpaces: Record<number, number[]>
@@ -603,6 +711,10 @@ export interface GameState {
   pendingRapidMobilization?: number | null
   /** To the Victor…: if true, grant 3 spice when this player wins the current Conflict */
   pendingVictorSpiceThisCombat?: Record<number, boolean>
+  /** Strategic Push: if true, grant 2 solari when this player wins the current Conflict */
+  pendingVictorSolariThisCombat?: Record<number, boolean>
+  /** Second Wave: player must deploy up to 2 garrison units to the Conflict */
+  pendingSecondWave?: number | null
   /** Labels a row in `history` (setup baseline, round start, combat resolution, endgame). */
   historyEntryKind?: 'setup' | 'round-start' | 'combat' | 'endgame'
   /** All intrigue cards revealed at endgame, keyed by player id. */
@@ -617,6 +729,41 @@ export interface GameState {
   playerTurnNumberOffset?: number
   /** When true, play chrome omits the round number (imaginary sandbox position). */
   hideRoundLabel?: boolean
+  /** Expansion flags — configuration, not mutated during play. */
+  expansions: Expansions
+  /** Rise of Ix — tech tile stacks on the Ix board (undefined when RoI is off). */
+  ixBoard?: {
+    stacks: TechTileId[][]
+    nextFaceUpRevealed: Record<number, boolean>
+  }
+  /** Rise of Ix — player id with a dreadnought on each control space. */
+  dreadnoughtCover?: Record<ControlMarkerType, number | null>
+  /** Rise of Ix — player may acquire a tech tile with this spice discount (from board reward). */
+  pendingAcquireTech?: {
+    playerId: number
+    discount: number
+    /** Appropriate: pay tile cost in Solari at 1:1 instead of spice. */
+    paySolariInsteadOfSpice?: boolean
+  } | null
+  /** Rise of Ix — Heighliner spice discount for active player this turn (Guild Accord). */
+  heighlinerDiscountThisTurn?: Record<number, number>
+}
+
+export interface Expansions {
+  riseOfIx: boolean
+  /** Reserved — not implemented in this iteration. */
+  riseOfIxEpic: boolean
+}
+
+export const NO_EXPANSIONS: Expansions = {
+  riseOfIx: false,
+  riseOfIxEpic: false,
+}
+
+/** Backwards-compatible default when loading state without `expansions`. */
+export function normalizeExpansions(expansions?: Expansions | null): Expansions {
+  if (!expansions) return NO_EXPANSIONS
+  return { ...NO_EXPANSIONS, ...expansions }
 }
 
 export interface SandboxSetupPosition {
@@ -671,6 +818,71 @@ export enum CustomEffect {
   BINDU_SUSPENSION = 'BINDU_SUSPENSION',
   /** Combat Master Tactician: marker for pending OR-choice UI (PLAY_COMBAT_INTRIGUE); choice lines use choiceOpt */
   MASTER_TACTICIAN = 'MASTER_TACTICIAN',
+  // Rise of Ix — enum only; handlers wired in later tasks
+  COMMISSION_DREADNOUGHT = 'COMMISSION_DREADNOUGHT',
+  DREADNOUGHT_CONTROL = 'DREADNOUGHT_CONTROL',
+  ACQUIRE_TECH = 'ACQUIRE_TECH',
+  ACQUIRE_TECH_DISCOUNT_1 = 'ACQUIRE_TECH_DISCOUNT_1',
+  ACQUIRE_TECH_DISCOUNT_2 = 'ACQUIRE_TECH_DISCOUNT_2',
+  TECH_NEGOTIATOR = 'TECH_NEGOTIATOR',
+  FREIGHTER_ADVANCE = 'FREIGHTER_ADVANCE',
+  FREIGHTER_RECALL = 'FREIGHTER_RECALL',
+  DIVIDENDS = 'DIVIDENDS',
+  UNLOAD_REVEAL = 'UNLOAD_REVEAL',
+  DISCARD_FROM_HAND = 'DISCARD_FROM_HAND',
+  GLIMPSE_THE_PATH = 'GLIMPSE_THE_PATH',
+  GRAND_CONSPIRACY = 'GRAND_CONSPIRACY',
+  MACHINE_CULTURE = 'MACHINE_CULTURE',
+  CULL = 'CULL',
+  QUID_PRO_QUO = 'QUID_PRO_QUO',
+  STRONGARM = 'STRONGARM',
+  SECRET_FORCES = 'SECRET_FORCES',
+  IXIAN_PROBE = 'IXIAN_PROBE',
+  DIVERSION = 'DIVERSION',
+  EXPEDITE = 'EXPEDITE',
+  BLACKMAIL = 'BLACKMAIL',
+  CANNON_TURRETS = 'CANNON_TURRETS',
+  STRATEGIC_PUSH = 'STRATEGIC_PUSH',
+  SECOND_WAVE = 'SECOND_WAVE',
+  WAR_CHEST = 'WAR_CHEST',
+  FINESSE = 'FINESSE',
+  ADVANCED_WEAPONRY = 'ADVANCED_WEAPONRY',
+  RHOMBUR_DREADNOUGHT_STRENGTH = 'RHOMBUR_DREADNOUGHT_STRENGTH',
+  /** Rise of Ix imperium cards */
+  BOUNTY_INFILTRATION_BONUS = 'BOUNTY_INFILTRATION_BONUS',
+  DESERT_AMBUSH = 'DESERT_AMBUSH',
+  FULLSCALE_DREAD_SWORDS = 'FULLSCALE_DREAD_SWORDS',
+  GUILD_ACCORD_HEIGHTLINER_DISCOUNT = 'GUILD_ACCORD_HEIGHTLINER_DISCOUNT',
+  IMPERIAL_BASHAR_SWORDS = 'IMPERIAL_BASHAR_SWORDS',
+  SHOCKTROOPER_EM_BONUS = 'SHOCKTROOPER_EM_BONUS',
+  IXIAN_ENGINEER_VP = 'IXIAN_ENGINEER_VP',
+  NEGOTIATED_WITHDRAWAL = 'NEGOTIATED_WITHDRAWAL',
+  TREACHERY_DOUBLE_INFLUENCE = 'TREACHERY_DOUBLE_INFLUENCE',
+  WEB_OF_POWER = 'WEB_OF_POWER',
+  WEIRDING_WAY_EXTRA_TURN = 'WEIRDING_WAY_EXTRA_TURN',
+  HUDRO_INTRIGUE_PEEK = 'HUDRO_INTRIGUE_PEEK',
+  YUNA_SOLARI_BONUS = 'YUNA_SOLARI_BONUS',
+  ARMAND_TRASH_IN_PLAY = 'ARMAND_TRASH_IN_PLAY',
+  ILESA_SET_ASIDE = 'ILESA_SET_ASIDE',
+  TESSIA_SNOOPER = 'TESSIA_SNOOPER',
+  ACQUIRE_FOLDSPACE = 'ACQUIRE_FOLDSPACE',
+  /** Rise of Ix tech tiles — per-tile custom handlers in riseOfIxReducer. */
+  ARTILLERY = 'ARTILLERY',
+  CHAUMURKY = 'CHAUMURKY',
+  DETONATION_DEVICES = 'DETONATION_DEVICES',
+  DISPOSAL_FACILITY = 'DISPOSAL_FACILITY',
+  FLAGSHIP = 'FLAGSHIP',
+  HOLOPROJECTORS = 'HOLOPROJECTORS',
+  HOLTZMAN_ENGINE = 'HOLTZMAN_ENGINE',
+  INVASION_SHIPS = 'INVASION_SHIPS',
+  MEMOCORDERS = 'MEMOCORDERS',
+  RESTRICTED_ORDINANCE = 'RESTRICTED_ORDINANCE',
+  SONIC_SNOOPERS = 'SONIC_SNOOPERS',
+  SPACEPORT = 'SPACEPORT',
+  SPY_SATELLITES = 'SPY_SATELLITES',
+  TRAINING_DRONES = 'TRAINING_DRONES',
+  TROOP_TRANSPORTS = 'TROOP_TRANSPORTS',
+  WINDTRAPS = 'WINDTRAPS',
 }
 
 // Custom effects that are auto-applied and don't need user input

@@ -4,11 +4,23 @@ import './AgentIcon.css'
 interface AgentIconProps {
   playerId: number
   className?: string
+  variant?: 'troop' | 'dreadnought'
 }
 
-const AgentIcon: React.FC<AgentIconProps> = ({ playerId, className = '' }) => {
+const AgentIcon: React.FC<AgentIconProps> = ({ playerId, className = '', variant = 'troop' }) => {
+  if (variant === 'dreadnought') {
+    return (
+      <img
+        className={`agent agent--dreadnought player-${playerId} ${className}`}
+        src="/icon/dreadnought.svg"
+        alt=""
+        draggable={false}
+      />
+    )
+  }
+
   return (
-    <svg 
+    <svg
       className={`agent player-${playerId} ${className}`}
       viewBox="0 0 24 36"
       xmlns="http://www.w3.org/2000/svg"

@@ -60,3 +60,5 @@ When adding an expansion:
 1. Add expansion cards to spreadsheet; filter a new manifest (or extend `generate-base-game-manifest.py`).
 2. Duplicate the manifest test pattern under `plans/<expansion>/`.
 3. Keep **base** tests green — they must not depend on expansion flags unless explicitly gated with `expansions.riseOfIx` (etc.).
+
+**Rise of Ix:** [`plans/rise-of-ix/regression-test/`](../rise-of-ix/regression-test/README.md) — full regression map + hosted UI scenarios.

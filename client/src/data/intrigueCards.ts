@@ -356,6 +356,8 @@ export const intrigueCards: IntrigueCard[] = [
   }
 ]
 
+export { RISE_OF_IX_INTRIGUE_CARDS } from './intrigueCardsRiseOfIx'
+
 /** Resolve static intrigue definition by a custom effect marker (avoids hard-coded card ids in reducers). */
 export function getIntrigueCardByCustom(effect: CustomEffect): IntrigueCard | undefined {
   return intrigueCards.find(c => c.playEffect?.some(e => e.reward?.custom === effect))

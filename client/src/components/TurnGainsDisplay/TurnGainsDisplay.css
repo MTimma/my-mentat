@@ -241,6 +241,21 @@
   border: 1px solid rgba(176, 190, 197, 0.28);
 }
 
+.turn-gain-pool-troop {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 0;
+}
+
+.turn-gain-pool-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: rgba(244, 228, 188, 0.55);
+  line-height: 1.2;
+  text-transform: lowercase;
+}
+
 .turn-gain-combat-token {
   display: inline-flex;
   align-items: center;

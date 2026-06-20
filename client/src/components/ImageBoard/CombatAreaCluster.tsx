@@ -1,25 +1,56 @@
 import React, { useMemo, useState, type RefObject } from 'react'
 import { GameState, PlayerColor, type Player } from '../../types/GameTypes'
 import { getLeaderImage } from '../../data/leaders'
+import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
+import AgentIcon from '../AgentIcon/AgentIcon'
 import CombatPlayerDetailModal from './CombatPlayerDetailModal'
 import { PlayerCombatSlot } from './CombatStatusStrip'
 import CombatTroopControls from '../CombatTroopControls/CombatTroopControls'
 
 type ResourceDef = {
-  icon: string
+  key: string
   title: string
+  icon?: string
+  renderIcon?: (player: Player) => React.ReactNode
   getValue: (player: Player) => number
 }
 
-/** 3 cols × 2 rows: spice/solari/water, troops/cards/intrigue. */
-const RESOURCE_CELLS: ResourceDef[] = [
-  { icon: '/icon/spice.png', title: 'Spice', getValue: player => player.spice },
-  { icon: '/icon/solari.png', title: 'Solari', getValue: player => player.solari },
-  { icon: '/icon/water.png', title: 'Water', getValue: player => player.water },
-  { icon: '/icon/troop.png', title: 'Garrison troops', getValue: player => player.troops },
-  { icon: '/icon/draw.png', title: 'Cards in hand', getValue: player => player.handCount },
-  { icon: '/icon/intrigue.png', title: 'Intrigue cards', getValue: player => player.intrigueCount },
-]
+function resourceCellsFor(riseOfIx: boolean, gameState?: GameState): ResourceDef[] {
+  return [
+    {
+      key: 'vp',
+      title: 'Victory points',
+      icon: '/icon/vp.png',
+      getValue: player =>
+        gameState ? getTotalVictoryPoints(player, gameState) : player.victoryPoints,
+    },
+    { key: 'spice', title: 'Spice', icon: '/icon/spice.png', getValue: player => player.spice },
+    { key: 'solari', title: 'Solari', icon: '/icon/solari.png', getValue: player => player.solari },
+    { key: 'water', title: 'Water', icon: '/icon/water.png', getValue: player => player.water },
+    {
+      key: 'agents',
+      title: 'Agents remaining',
+      renderIcon: player => (
+        <AgentIcon playerId={player.id} className="combat-area-cluster__agent-icon" />
+      ),
+      getValue: player => player.agents,
+    },
+    { key: 'hand', title: 'Cards in hand', icon: '/icon/draw.png', getValue: player => player.handCount },
+    {
+      key: 'intrigue',
+      title: 'Intrigue cards',
+      icon: '/icon/intrigue.png',
+      getValue: player => player.intrigueCount,
+    },
+    { key: 'troops', title: 'Garrison troops', icon: '/icon/troop.png', getValue: player => player.troops },
+    {
+      key: 'dreadnoughts',
+      title: 'Dreadnoughts in garrison',
+      icon: '/icon/dreadnought.svg',
+      getValue: player => (riseOfIx ? player.dreadnoughts?.garrison ?? 0 : 0),
+    },
+  ]
+}
 
 /** Left / right columns: red+blue, green+yellow — stats sit under each leader. */
 const COMBAT_AREA_COLUMNS: PlayerColor[][] = [
@@ -30,32 +61,65 @@ const COMBAT_AREA_COLUMNS: PlayerColor[][] = [
 function renderResourceCell(resource: ResourceDef, player: Player) {
   return (
     <span
-      key={resource.title}
+      key={resource.key}
       className="combat-area-cluster__resource"
       title={resource.title}
     >
-      <img
-        src={resource.icon}
-        alt=""
-        className="combat-area-cluster__icon"
-        aria-hidden="true"
-      />
+      {resource.renderIcon ? (
+        <span className="combat-area-cluster__icon-wrap" aria-hidden="true">
+          {resource.renderIcon(player)}
+        </span>
+      ) : resource.icon ? (
+        <img
+          src={resource.icon}
+          alt=""
+          className={[
+            'combat-area-cluster__icon',
+            resource.key === 'dreadnoughts' ? 'combat-area-cluster__icon--dreadnought' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          aria-hidden="true"
+        />
+      ) : null}
       <span className="combat-area-cluster__value">{resource.getValue(player)}</span>
     </span>
   )
 }
 
-function ResourceGrid({ player }: { player: Player }) {
+function ResourceGrid({
+  player,
+  riseOfIx,
+  gameState,
+}: {
+  player: Player
+  riseOfIx: boolean
+  gameState?: GameState
+}) {
+  const cells = useMemo(() => resourceCellsFor(riseOfIx, gameState), [riseOfIx, gameState])
   return (
     <div className="combat-area-cluster__resources-panel">
-      <div className="combat-area-cluster__resources">
-        {RESOURCE_CELLS.map(resource => renderResourceCell(resource, player))}
+      <div
+        className={[
+          'combat-area-cluster__resources',
+          riseOfIx ? 'combat-area-cluster__resources--rise-of-ix' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        {cells.map(resource => renderResourceCell(resource, player))}
       </div>
     </div>
   )
 }
 
-function LeaderPortrait({ player }: { player: Player }) {
+function LeaderPortrait({
+  player,
+  isFirstPlayer,
+}: {
+  player: Player
+  isFirstPlayer: boolean
+}) {
   const leaderImage = getLeaderImage(player.leader.name)
   if (!leaderImage) return null
 
@@ -73,6 +137,11 @@ function LeaderPortrait({ player }: { player: Player }) {
         className="combat-area-cluster__leader-img"
         draggable={false}
       />
+      {isFirstPlayer ? (
+        <span className="combat-area-cluster__first-player-badge" title="First player">
+          FP
+        </span>
+      ) : null}
     </div>
   )
 }
@@ -80,12 +149,23 @@ function LeaderPortrait({ player }: { player: Player }) {
 function PlayerQuadrant({
   player,
   isActive,
+  isFirstPlayer,
+  hasMentat,
+  riseOfIx,
+  gameState,
   onSelect,
 }: {
   player: Player
   isActive: boolean
+  isFirstPlayer: boolean
+  hasMentat: boolean
+  riseOfIx: boolean
+  gameState?: GameState
   onSelect: () => void
 }) {
+  const mentatSuffix = hasMentat ? ', mentat holder' : ''
+  const firstPlayerSuffix = isFirstPlayer ? ' (first player)' : ''
+
   return (
     <button
       type="button"
@@ -97,13 +177,18 @@ function PlayerQuadrant({
         .filter(Boolean)
         .join(' ')}
       data-player-id={player.id}
-      title={`${player.leader.name}: view details`}
-      aria-label={`${player.leader.name}. View player details.`}
+      title={`${player.leader.name}${firstPlayerSuffix}${mentatSuffix}: view details`}
+      aria-label={`${player.leader.name}${firstPlayerSuffix}${mentatSuffix}. View player details.`}
       onClick={onSelect}
     >
-      <LeaderPortrait player={player} />
+      <LeaderPortrait player={player} isFirstPlayer={isFirstPlayer} />
       <div className="combat-area-cluster__quadrant-body">
-        <ResourceGrid player={player} />
+        {hasMentat ? (
+          <span className="combat-area-cluster__mentat-badge" title="Mentat (this round)">
+            M
+          </span>
+        ) : null}
+        <ResourceGrid player={player} riseOfIx={riseOfIx} gameState={gameState} />
       </div>
     </button>
   )
@@ -118,6 +203,24 @@ export interface CombatTroopDeployProps {
   onUndeploy: () => void
 }
 
+export interface CombatDreadnoughtDeployProps {
+  canDeploy: boolean
+  deployableDreadnoughts: number
+  deployedThisTurn: number
+  garrisonDreadnoughts: number
+  onDeploy: () => void
+  onUndeploy: () => void
+}
+
+export interface CombatNegotiatorDeployProps {
+  canDeploy: boolean
+  deployableNegotiators: number
+  deployedThisTurn: number
+  negotiatorsOnIx: number
+  onDeploy: () => void
+  onUndeploy: () => void
+}
+
 export interface CombatAreaClusterProps {
   players: Player[]
   troops: Record<number, number>
@@ -126,10 +229,15 @@ export interface CombatAreaClusterProps {
   gameState?: GameState
   modalContainerRef?: RefObject<HTMLElement | null>
   troopDeploy?: CombatTroopDeployProps
+  dreadnoughtDeploy?: CombatDreadnoughtDeployProps
+  negotiatorDeploy?: CombatNegotiatorDeployProps
   /** Inner-board % height of leader grid; status rows are included inside the cluster. */
   gridHeightPercent?: number
   /** Overrides quadrant click (sandbox setup opens the player editor instead of the detail modal). */
   onPlayerSelect?: (player: Player) => void
+  riseOfIx?: boolean
+  firstPlayerMarker?: number
+  mentatOwner?: number | null
   className?: string
   style?: React.CSSProperties
   'data-marker'?: string
@@ -143,8 +251,13 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   gameState,
   modalContainerRef,
   troopDeploy,
+  dreadnoughtDeploy,
+  negotiatorDeploy,
   gridHeightPercent,
   onPlayerSelect,
+  riseOfIx = false,
+  firstPlayerMarker = 0,
+  mentatOwner = null,
   className,
   style,
   'data-marker': dataMarker,
@@ -153,10 +266,19 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   const playerByColor = new Map(players.map(p => [p.color, p]))
 
   const deployStripVisible = Boolean(
-    troopDeploy &&
+    (troopDeploy &&
       troopDeploy.canDeploy &&
       ((troopDeploy.deployableTroops > 0 && troopDeploy.garrisonTroops > 0) ||
-        troopDeploy.deployedThisTurn > 0)
+        troopDeploy.deployedThisTurn > 0)) ||
+    (dreadnoughtDeploy &&
+      dreadnoughtDeploy.canDeploy &&
+      ((dreadnoughtDeploy.deployableDreadnoughts > 0 &&
+        dreadnoughtDeploy.garrisonDreadnoughts > 0) ||
+        dreadnoughtDeploy.deployedThisTurn > 0)) ||
+    (negotiatorDeploy &&
+      negotiatorDeploy.canDeploy &&
+      ((negotiatorDeploy.deployableNegotiators > 0 && negotiatorDeploy.negotiatorsOnIx > 0) ||
+        negotiatorDeploy.deployedThisTurn > 0))
   )
 
   const outerStyle = useMemo(() => {
@@ -196,6 +318,10 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                       <PlayerQuadrant
                         player={player}
                         isActive={player.id === activePlayerId}
+                        isFirstPlayer={player.id === firstPlayerMarker}
+                        hasMentat={player.id === mentatOwner}
+                        riseOfIx={riseOfIx}
+                        gameState={gameState}
                         onSelect={() =>
                           onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
                         }
@@ -205,6 +331,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                         troops={troops[player.id] ?? 0}
                         strength={strength[player.id] ?? 0}
                         isActive={player.id === activePlayerId}
+                        riseOfIx={riseOfIx}
                       />
                     </div>
                   )
@@ -213,16 +340,42 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
             ))}
           </div>
 
-          {troopDeploy ? (
+          {(troopDeploy || dreadnoughtDeploy) ? (
             <div
               className="combat-deploy-dock"
               data-marker="combat-troop-controls"
               hidden={!deployStripVisible}
             >
-              <CombatTroopControls
-                {...troopDeploy}
-                className="combat-deploy-dock__controls"
-              />
+              {troopDeploy ? (
+                <CombatTroopControls
+                  {...troopDeploy}
+                  className="combat-deploy-dock__controls"
+                />
+              ) : null}
+              {dreadnoughtDeploy ? (
+                <CombatTroopControls
+                  variant="dreadnought"
+                  canDeploy={dreadnoughtDeploy.canDeploy}
+                  deployableTroops={dreadnoughtDeploy.deployableDreadnoughts}
+                  deployedThisTurn={dreadnoughtDeploy.deployedThisTurn}
+                  garrisonTroops={dreadnoughtDeploy.garrisonDreadnoughts}
+                  onDeploy={dreadnoughtDeploy.onDeploy}
+                  onUndeploy={dreadnoughtDeploy.onUndeploy}
+                  className="combat-deploy-dock__controls combat-deploy-dock__controls--dreadnought"
+                />
+              ) : null}
+              {negotiatorDeploy ? (
+                <CombatTroopControls
+                  variant="negotiator"
+                  canDeploy={negotiatorDeploy.canDeploy}
+                  deployableTroops={negotiatorDeploy.deployableNegotiators}
+                  deployedThisTurn={negotiatorDeploy.deployedThisTurn}
+                  garrisonTroops={negotiatorDeploy.negotiatorsOnIx}
+                  onDeploy={negotiatorDeploy.onDeploy}
+                  onUndeploy={negotiatorDeploy.onUndeploy}
+                  className="combat-deploy-dock__controls combat-deploy-dock__controls--negotiator"
+                />
+              ) : null}
             </div>
           ) : null}
         </div>

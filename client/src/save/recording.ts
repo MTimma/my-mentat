@@ -44,9 +44,14 @@ export const REPLAYABLE_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
   'PLAY_CARD',
   'DEPLOY_TROOP',
   'UNDEPLOY_TROOP',
+  'DEPLOY_DREADNOUGHT',
+  'UNDEPLOY_DREADNOUGHT',
+  'DEPLOY_NEGOTIATOR',
+  'UNDEPLOY_NEGOTIATOR',
   'RETREAT_TROOP',
   'PLAY_INTRIGUE',
   'MOBILIZE_GARRISON',
+  'MOBILIZE_SECOND_WAVE',
   'ACQUIRE_CARD',
   'PLAY_COMBAT_INTRIGUE',
   'RESOLVE_COMBAT',
@@ -58,7 +63,7 @@ export const REPLAYABLE_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
   'ACQUIRE_AL',
   'ACQUIRE_SMF',
   'PAY_COST',
-  'RESOLVE_CHOICE',
+  'RESOLVE_CHOICE', // Freighter Advance/Recall use this with optionIndex + CustomEffect
   'RESOLVE_CARD_SELECT',
   'CUSTOM_EFFECT',
   'TRASH_CARD',
@@ -76,13 +81,36 @@ export const REPLAYABLE_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
   'SANDBOX_COMMIT_SETUP',
   'SANDBOX_SET_CONFLICT',
   'SANDBOX_SET_IMPERIUM_ROW',
+  'SANDBOX_SET_IX_BOARD_TOP',
   'SANDBOX_UPDATE_PLAYER',
   'SANDBOX_SET_CONTROL_MARKER',
+  'SANDBOX_SET_MENTAT_OWNER',
   'SANDBOX_SET_POSITION',
+  'ACQUIRE_TECH',
+  'ACTIVATE_TECH',
+  'TECH_NEGOTIATOR',
 ] satisfies Array<GameAction['type']>)
 
 export function isReplayable(action: GameAction): boolean {
   return REPLAYABLE_ACTIONS.has(action.type)
+}
+
+/** Sandbox setup edits maintain history[0] in the reducer; event replay only snapshots on commit. */
+export const SANDBOX_SETUP_HISTORY_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
+  'SANDBOX_SET_IMPERIUM_ROW',
+  'SANDBOX_SET_CONFLICT',
+  'SANDBOX_SET_CONTROL_MARKER',
+  'SANDBOX_SET_MENTAT_OWNER',
+  'SANDBOX_SET_POSITION',
+  'SANDBOX_UPDATE_PLAYER',
+  'SANDBOX_SET_IX_BOARD_TOP',
+  'SANDBOX_COMMIT_SETUP',
+])
+
+/** Keep sandbox configuration events when re-opening setup; drop commit and gameplay after it. */
+export function truncateSandboxEventsForSetupReedit(events: EventEntry[]): EventEntry[] {
+  const lastCommitIdx = events.findLastIndex(entry => entry.a.type === 'SANDBOX_COMMIT_SETUP')
+  return lastCommitIdx >= 0 ? events.slice(0, lastCommitIdx) : events
 }
 
 export function computeChecksum(state: GameState, playerId: number): PlayerChecksum {

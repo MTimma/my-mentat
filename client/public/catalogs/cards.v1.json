@@ -1415,6 +1415,742 @@
       ]
     },
     {
+      "id": "imperium/appropriate",
+      "name": "Appropriate",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "landsraad",
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/appropriate.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/appropriate:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/appropriate:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/appropriate:acquire:0"
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/bounty-hunter",
+      "name": "Bounty Hunter",
+      "pool": "imperium",
+      "cost": 1,
+      "agentIcons": [
+        "city"
+      ],
+      "infiltrate": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/bounty_hunter.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/bounty-hunter:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/bounty-hunter:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/choam-delegate",
+      "name": "CHOAM Delegate",
+      "pool": "imperium",
+      "cost": 1,
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "infiltrate": true,
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/choam_delegate.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/choam-delegate:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/court-intrigue",
+      "name": "Court Intrigue",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "emperor"
+      ],
+      "infiltrate": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/court_intrigue.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/court-intrigue:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/court-intrigue:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/desert-ambush",
+      "name": "Desert Ambush",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/desert_ambush.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/desert-ambush:reveal:0",
+          "effect:card:imperium/desert-ambush:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/embedded-agent",
+      "name": "Embedded Agent",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "landsraad"
+      ],
+      "infiltrate": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/embedded_agent.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/embedded-agent:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/embedded-agent:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/esmar-tuek",
+      "name": "Esmar Tuek",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/esmar_tuek.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/esmar-tuek:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/esmar-tuek:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/freighter-fleet",
+      "name": "Freighter Fleet",
+      "pool": "imperium",
+      "cost": 2,
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/freighter_fleet.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/freighter-fleet:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/full-scale-assault",
+      "name": "Full-Scale Assault",
+      "pool": "imperium",
+      "cost": 8,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "emperor",
+        "city"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/full_scale_assault.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/full-scale-assault:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/full-scale-assault:reveal:0",
+          "effect:card:imperium/full-scale-assault:reveal:1"
+        ],
+        "acquire": "effect:card:imperium/full-scale-assault:acquire:0"
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/guild-accord",
+      "name": "Guild Accord",
+      "pool": "imperium",
+      "cost": 6,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "spacing-guild"
+      ],
+      "infiltrate": true,
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/guild_accord.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/guild-accord:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/guild-accord:reveal:0",
+          "effect:card:imperium/guild-accord:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/guild-chief-administrator",
+      "name": "Guild Chief Administrator",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "spacing-guild",
+        "city",
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/guild_chief_administrator.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/guild-chief-administrator:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/guild-chief-administrator:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/imperial-bashar",
+      "name": "Imperial Bashar",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "city"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/imperial_bashar.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/imperial-bashar:play:0",
+          "effect:card:imperium/imperial-bashar:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/imperial-bashar:reveal:0",
+          "effect:card:imperium/imperial-bashar:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/imperial-shock-trooper",
+      "name": "Imperial Shock Trooper",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/imperial_shock_trooper.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/imperial-shock-trooper:reveal:0",
+          "effect:card:imperium/imperial-shock-trooper:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/in-the-shadows",
+      "name": "In the Shadows",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "landsraad",
+        "city"
+      ],
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/in_the_shadows.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/in-the-shadows:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/in-the-shadows:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/ix-guild-compact",
+      "name": "Ix-Guild Compact",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "spacing-guild"
+      ],
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/ix_guild_compact.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/ix-guild-compact:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/ix-guild-compact:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/ixian-engineer",
+      "name": "Ixian Engineer",
+      "pool": "imperium",
+      "cost": 5,
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/ixian_engineer.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/ixian-engineer:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/ixian-engineer:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/jamis",
+      "name": "Jamis",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "fremen"
+      ],
+      "infiltrate": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/jamis.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/jamis:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/jamis:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/landing-rights",
+      "name": "Landing Rights",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "city"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/landing_rights.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/landing-rights:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/landing-rights:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/local-fence",
+      "name": "Local Fence",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [
+        "city"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/local_fence.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/local-fence:play:0",
+          "effect:card:imperium/local-fence:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/local-fence:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/negotiated-withdrawel",
+      "name": "Negotiated Withdrawel",
+      "pool": "imperium",
+      "cost": 4,
+      "agentIcons": [
+        "spice-trade",
+        "landsraad",
+        "city"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/negotiated_withdrawel.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/negotiated-withdrawel:reveal:0",
+          "effect:card:imperium/negotiated-withdrawel:reveal:1"
+        ],
+        "acquire": "effect:card:imperium/negotiated-withdrawel:acquire:0"
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/satellite-ban",
+      "name": "Satellite Ban",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "spacing-guild",
+        "fremen"
+      ],
+      "agentIcons": [
+        "spacing-guild",
+        "fremen"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/satellite_ban.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/satellite-ban:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/satellite-ban:reveal:0",
+          "effect:card:imperium/satellite-ban:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/sayyadina",
+      "name": "Sayyadina",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "bene-gesserit",
+        "fremen"
+      ],
+      "agentIcons": [
+        "bene-gesserit",
+        "fremen"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/sayyadina.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/sayyadina:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/sayyadina:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/shai-hulud",
+      "name": "Shai-Hulud",
+      "pool": "imperium",
+      "cost": 7,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/shai_hulud.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/shai-hulud:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/shai-hulud:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/shai-hulud:acquire:0"
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/spice-trader",
+      "name": "Spice Trader",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/spice_trader.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/spice-trader:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/spice-trader:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/treachery",
+      "name": "Treachery",
+      "pool": "imperium",
+      "cost": 6,
+      "agentIcons": [
+        "emperor",
+        "spacing-guild",
+        "bene-gesserit",
+        "fremen"
+      ],
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/treachery.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/treachery:play:0",
+          "effect:card:imperium/treachery:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/treachery:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/truthsayer",
+      "name": "Truthsayer",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "emperor",
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "emperor",
+        "bene-gesserit",
+        "landsraad"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/truthsayer.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/truthsayer:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/truthsayer:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/water-peddler",
+      "name": "Water Peddler",
+      "pool": "imperium",
+      "cost": 1,
+      "agentIcons": [],
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/water_peddler.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/water-peddler:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/water-peddler:acquire:0"
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/web-of-power",
+      "name": "Web of Power",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "bene-gesserit"
+      ],
+      "infiltrate": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/web_of_power.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/web-of-power:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/web-of-power:reveal:0",
+          "effect:card:imperium/web-of-power:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/weirding-way",
+      "name": "Weirding Way",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/weirding_way.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/weirding-way:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/weirding-way:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
       "id": "arrakis-liaison/arrakis-liaison",
       "name": "Arrakis Liaison",
       "pool": "arrakis-liaison",

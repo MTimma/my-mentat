@@ -227,4 +227,49 @@ export const BOARD_SPACES: SpaceProps[] = [
     makerSpace: MakerSpace.HAGGA_BASIN,
     image: "board/hagga_basin.png"
   },
+
+  {
+    id: 23,
+    name: "Dreadnought",
+    conflictMarker: false,
+    agentIcon: AgentIcon.LANDSRAAD,
+    cost: { solari: 3 },
+    effects: [
+      { reward: { dreadnoughts: 1 } },
+      { reward: { acquireTech: {} }, optional: true },
+    ],
+    riseOfIx: true,
+    image: "board/dreadnought.png"
+  },
+  {
+    id: 24,
+    name: "Tech Negotiation",
+    conflictMarker: false,
+    agentIcon: AgentIcon.LANDSRAAD,
+    effects: [
+      { reward: { acquireTech: { discount: 1 } }, optional: true },
+      { reward: { techNegotiator: 1 }, optional: true },
+    ],
+    riseOfIx: true,
+    image: "board/tech_negotiation.png"
+  },
+  {
+    id: 25,
+    name: "Smuggling",
+    conflictMarker: false,
+    agentIcon: AgentIcon.SPICE_TRADE,
+    effects: [{ reward: { solari: 1, freighter: 1 } }],
+    riseOfIx: true,
+    image: "board/smuggling.png"
+  },
+  {
+    id: 26,
+    name: "Interstellar Shipping",
+    conflictMarker: false,
+    agentIcon: AgentIcon.SPICE_TRADE,
+    requiresInfluence: { faction: FactionType.SPACING_GUILD, amount: 2 },
+    effects: [{ reward: { freighter: 2 } }],
+    riseOfIx: true,
+    image: "board/interstellar_shipping.png"
+  },
 ] 

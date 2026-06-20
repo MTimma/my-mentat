@@ -1,13 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Card, ControlMarkerType, FactionType, Player } from '../../types/GameTypes'
+import { Card, ControlMarkerType, Expansions, FactionType, Player } from '../../types/GameTypes'
 import { applyLeaderStartingResourceDelta } from '../../data/leaderAbilities/beastSetup'
-import { LEADERS, getLeaderImage } from '../../data/leaders'
+import { isTessiaLeader } from '../../data/leaderAbilities/tessiaSnoopers'
+import { getLeaderPool, getLeaderImage } from '../../data/leaders'
 import AgentIcon from '../AgentIcon/AgentIcon'
+import { defaultDreadnoughtsForExpansions } from '../../utils/dreadnoughts'
+import { seedTroopSupply } from '../../utils/troops'
 import CardSearch from '../CardSearch/CardSearch'
 import ValueStepper from '../ValueStepper/ValueStepper'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import { splitCardPool } from '../../utils/sandboxDeckPools'
 import { MAX_INFLUENCE } from '../../utils/influenceVictoryPoints'
+import type { TechTileId } from '../../data/techTiles'
+import { TECH_TILES } from '../../data/techTiles'
+import SandboxPlayerTechSelect from '../SandboxPlayerTechSelect/SandboxPlayerTechSelect'
 import './SandboxPlayerEditor.css'
 
 const CONTROL_SPACES: Array<{ type: ControlMarkerType; label: string }> = [
@@ -18,6 +24,7 @@ const CONTROL_SPACES: Array<{ type: ControlMarkerType; label: string }> = [
 
 interface SandboxPlayerEditorProps {
   player: Player
+  expansions: Expansions
   /** Leaders already taken by other players (excluded from the leader picker). */
   usedLeaderNames: string[]
   /** Imperium deck pool available when editing this player's deck. */
@@ -27,10 +34,14 @@ interface SandboxPlayerEditorProps {
   spiceMustFlowCards: Card[]
   foldspaceCards: Card[]
   controlMarkers: Record<ControlMarkerType, number | null>
+  mentatOwner: number | null
   playerInfluence: Record<FactionType, number>
+  /** Tech tiles on the Ix board or other players — unavailable for this player. */
+  blockedTechTileIds?: TechTileId[]
   onUpdate: (patch: Partial<Player>) => void
   onInfluenceUpdate: (faction: FactionType, value: number) => void
   onSetControl: (space: ControlMarkerType, playerId: number | null) => void
+  onSetMentatOwner: (playerId: number | null) => void
   onClose: () => void
 }
 
@@ -86,22 +97,30 @@ type PileEditor = 'deck' | 'discard' | 'trash'
 
 const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   player,
+  expansions,
   usedLeaderNames,
   imperiumDeckCards,
   arrakisLiaisonCards,
   spiceMustFlowCards,
   foldspaceCards,
   controlMarkers,
+  mentatOwner,
   playerInfluence,
+  blockedTechTileIds = [],
   onUpdate,
   onInfluenceUpdate,
   onSetControl,
+  onSetMentatOwner,
   onClose,
 }) => {
   const [pileEditor, setPileEditor] = useState<PileEditor | null>(null)
+  const [techEditorOpen, setTechEditorOpen] = useState(false)
   const [selectedPileCards, setSelectedPileCards] = useState<Card[]>([])
   const [numericDraft, setNumericDraft] = useState(() => pickNumericDraft(player))
   const [influenceDraft, setInfluenceDraft] = useState(() => ({ ...playerInfluence }))
+  const [dreadnoughtGarrisonDraft, setDreadnoughtGarrisonDraft] = useState(
+    () => player.dreadnoughts?.garrison ?? 0
+  )
   const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true)
 
   // Re-sync when opening for another player or when leader/resources change in game state.
@@ -130,9 +149,13 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
     playerInfluence[FactionType.FREMEN],
   ])
 
+  useEffect(() => {
+    setDreadnoughtGarrisonDraft(player.dreadnoughts?.garrison ?? 0)
+  }, [player.id, player.dreadnoughts?.garrison])
+
   const availableLeaders = useMemo(
-    () => LEADERS.filter(leader => !usedLeaderNames.includes(leader.name)),
-    [usedLeaderNames]
+    () => getLeaderPool(expansions).filter(leader => !usedLeaderNames.includes(leader.name)),
+    [expansions, usedLeaderNames]
   )
 
   const deckEditorCards = useMemo(
@@ -209,7 +232,7 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   const leaderImage = getLeaderImage(player.leader.name)
 
   const handleLeaderChange = (leaderName: string) => {
-    const leader = LEADERS.find(l => l.name === leaderName)
+    const leader = getLeaderPool(expansions).find(l => l.name === leaderName)
     if (!leader || leader.name === player.leader.name) return
 
     const { spice, solari } = applyLeaderStartingResourceDelta(player, leader)
@@ -234,7 +257,11 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
     const next = Math.max(0, value)
     setNumericDraft(prev => ({ ...prev, [key]: next }))
     if (next !== player[key]) {
-      onUpdate({ [key]: next })
+      const patch: Partial<Player> = { [key]: next }
+      if (key === 'troops') {
+        Object.assign(patch, seedTroopSupply({ ...player, troops: next }))
+      }
+      onUpdate(patch)
     }
   }
 
@@ -269,6 +296,15 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
     setSelectedPileCards([])
   }
 
+  const closeTechEditor = () => {
+    setTechEditorOpen(false)
+  }
+
+  const handleTechConfirm = (tech: NonNullable<Player['tech']>) => {
+    onUpdate({ tech })
+    closeTechEditor()
+  }
+
   const openPileEditor = (editor: PileEditor) => {
     const initial =
       editor === 'deck'
@@ -291,6 +327,32 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
       onUpdate({ deck: remainder, trash: inPile })
     }
     closePileEditor()
+  }
+
+  const adjustDreadnoughtGarrison = (value: number) => {
+    const base = player.dreadnoughts ?? defaultDreadnoughtsForExpansions(expansions) ?? {
+      supply: 0,
+      garrison: 0,
+      conflict: 0,
+      control: [],
+    }
+    const conflict = base.conflict ?? 0
+    const controlCount = base.control?.length ?? 0
+    const maxGarrison = Math.max(0, 2 - conflict - controlCount)
+    const next = Math.max(0, Math.min(maxGarrison, value))
+    const supply = Math.max(0, 2 - next - conflict - controlCount)
+    setDreadnoughtGarrisonDraft(next)
+    if (next !== (player.dreadnoughts?.garrison ?? 0)) {
+      onUpdate({
+        dreadnoughts: {
+          ...base,
+          garrison: next,
+          supply,
+          conflict,
+          control: base.control ?? [],
+        },
+      })
+    }
   }
 
   const overlay = (
@@ -355,6 +417,16 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                 />
                 <span>High Council</span>
               </label>
+              <label className="sandbox-player-editor__control-toggle">
+                <input
+                  type="checkbox"
+                  checked={mentatOwner === player.id}
+                  onChange={() =>
+                    onSetMentatOwner(mentatOwner === player.id ? null : player.id)
+                  }
+                />
+                <span>Mentat</span>
+              </label>
               {CONTROL_SPACES.map(space => {
                 const held = controlMarkers[space.type] === player.id
                 return (
@@ -389,6 +461,57 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                 increaseLabel={`Increase ${field.label}`}
               />
             ))}
+            {expansions.riseOfIx ? (
+              <ValueStepper
+                compact
+                max={2}
+                value={dreadnoughtGarrisonDraft}
+                onChange={adjustDreadnoughtGarrison}
+                icon={
+                  <img
+                    src="/icon/dreadnought.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="sandbox-player-editor__dreadnought-icon"
+                  />
+                }
+                decreaseLabel="Decrease dreadnought garrison"
+                increaseLabel="Increase dreadnought garrison"
+              />
+            ) : null}
+            {expansions.riseOfIx ? (
+              <ValueStepper
+                compact
+                label="shipping"
+                min={0}
+                max={3}
+                value={player.freighterStep ?? 0}
+                onChange={value =>
+                  onUpdate({ freighterStep: Math.max(0, Math.min(3, value)) as 0 | 1 | 2 | 3 })
+                }
+                decreaseLabel="Decrease shipping track position"
+                increaseLabel="Increase shipping track position"
+              />
+            ) : null}
+            {expansions.riseOfIx ? (
+              <ValueStepper
+                compact
+                label="techneg"
+                max={12}
+                value={player.negotiatorsOnIx ?? 0}
+                onChange={value => {
+                  const next = Math.max(0, value)
+                  const seeded = seedTroopSupply({ ...player, negotiatorsOnIx: next })
+                  onUpdate({
+                    negotiatorsOnIx: next,
+                    troopSupply: seeded.troopSupply,
+                  })
+                }}
+                icon={<img src="/icon/negotiator.svg" alt="" aria-hidden="true" />}
+                decreaseLabel="Decrease tech negotiators on Ix"
+                increaseLabel="Increase tech negotiators on Ix"
+              />
+            ) : null}
             {INFLUENCE_FIELDS.map(field => (
               <ValueStepper
                 key={field.faction}
@@ -401,12 +524,45 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                 increaseLabel={`Increase ${field.label} influence`}
               />
             ))}
+            {expansions.riseOfIx && isTessiaLeader(player.leader) ? (
+              <div className="sandbox-player-editor__snoopers">
+                <span className="sandbox-player-editor__snoopers-label">Snoopers on track</span>
+                {INFLUENCE_FIELDS.map(field => (
+                  <label key={`snooper-${field.faction}`} className="sandbox-player-editor__snooper-toggle">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(player.snoopers?.[field.faction])}
+                      onChange={event => {
+                        const onTrack = event.target.checked
+                        onUpdate({
+                          snoopers: { ...player.snoopers, [field.faction]: onTrack },
+                          leader: {
+                            ...player.leader,
+                            tessiaSnoopers: {
+                              ...(player.leader.tessiaSnoopers ?? {}),
+                              [field.faction]: onTrack
+                                ? false
+                                : Boolean(player.leader.tessiaSnoopers?.[field.faction]),
+                            },
+                          },
+                        })
+                      }}
+                    />
+                    <img src="/icon/snooper.svg" alt="" aria-hidden="true" />
+                    <span>{field.label}</span>
+                  </label>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="sandbox-player-editor__deck-row">
             <span>
               {player.deck.length} deck · {player.discardPile.length} discard ·{' '}
               {player.trash.length} trash
+              {expansions.riseOfIx
+                ? ` · ${player.tech?.length ?? 0} tech tile${(player.tech?.length ?? 0) === 1 ? '' : 's'}`
+                : ''}
             </span>
           </div>
           <div className="sandbox-player-editor__deck-actions">
@@ -433,6 +589,15 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
             >
               Edit trash
             </button>
+            {expansions.riseOfIx ? (
+              <button
+                type="button"
+                className="sandbox-player-editor__deck-button"
+                onClick={() => setTechEditorOpen(true)}
+              >
+                Edit tech
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
@@ -479,6 +644,23 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
           </div>
         </div>
       )}
+
+      {techEditorOpen && expansions.riseOfIx ? (
+        <div
+          className="sandbox-player-editor__deck-overlay"
+          onClick={event => event.stopPropagation()}
+        >
+          <div className="sandbox-player-editor__deck-dialog">
+            <SandboxPlayerTechSelect
+              tiles={TECH_TILES}
+              blockedTileIds={blockedTechTileIds}
+              initialSelected={player.tech}
+              onConfirm={handleTechConfirm}
+              onCancel={closeTechEditor}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 

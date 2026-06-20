@@ -11,12 +11,14 @@ import { useGame } from './components/GameContext/GameContext'
 import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType, Expansions, NO_EXPANSIONS } from './types/GameTypes'
 import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
 import TurnControls from './components/TurnControls/TurnControls'
 import PlayFooterToolbar from './components/PlayFooterToolbar/PlayFooterToolbar'
 import RetreatTroopControls from './components/RetreatTroopControls/RetreatTroopControls'
 import { getEffectRetreatRemaining } from './utils/turnGainsDisplay'
+import { getRemainingDeploySlots } from './utils/dreadnoughtLifecycle'
+import { getRemainingTroopDeploySlots } from './utils/troops'
 import CombatResults from './components/CombatResults/CombatResults'
 import CombatPhaseOverlay from './components/CombatPhaseOverlay/CombatPhaseOverlay'
 import EndgameOverlay from './components/EndgameOverlay/EndgameOverlay'
@@ -24,17 +26,32 @@ import { endgameRevealIncomplete } from './utils/endgameResolution'
 import { mergeEndgameHistoryRow } from './utils/endgameHistoryDisplay'
 import { isCombatHistoryEntry, isEndgameHistoryEntry } from './utils/turnGainsDisplay'
 import { COMBAT_STRENGTH_ORIGIN } from './data/boardMarkerAnchors'
-import { CONFLICTS } from './data/conflicts'
+import { getConflictPool } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
 import GameStateSetup from './components/GameStateSetup/GameStateSetup'
 import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
+import TechMarketRow from './components/TechMarketRow/TechMarketRow'
+import TechAcquireModal from './components/TechAcquireModal/TechAcquireModal'
+import TechTileSelect from './components/TechTileSelect/TechTileSelect'
+import { TECH_TILES, getTechTile, type TechTileId } from './data/techTiles'
+import { effectiveTechCost } from './utils/techTiles'
+import {
+  isSandboxIxBoardReady,
+  playerTechTileIds,
+  sandboxBlockedTechIdsForPlayer,
+  sandboxStackTopsFromIxBoard,
+  sandboxTechSetupSummary,
+} from './utils/sandboxTechTiles'
+import { getTechAcquireOffer } from './components/GameContext/riseOfIx/techAcquireOffer'
 import CardCreator from './components/CardCreator/CardCreator'
 import SandboxPlayerEditor from './components/SandboxPlayerEditor/SandboxPlayerEditor'
 import SandboxSetupControls from './components/SandboxSetupControls/SandboxSetupControls'
-import SandboxSetupHint from './components/SandboxSetupHint/SandboxSetupHint'
 import { buildImperiumDeck } from './catalog/runtime'
 import { applyStarterDeckReservationToImperium } from './services/starterDeckSetup'
 import { getStartingSpice, getStartingSolari } from './data/leaderAbilities/beastSetup'
+import { getStartingWater } from './data/leaderAbilities/yunaSolariBonus'
+import { applyHudroStartingIntrigue } from './data/leaderAbilities/hudroIntriguePeek'
+import { seedTessiaSnoopers } from './data/leaderAbilities/tessiaSnoopers'
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
 import UndoConfirmDialog from './components/TimeTravel/UndoConfirmDialog'
@@ -63,9 +80,10 @@ import {
 
 interface GameContentProps {
   autoApplyMandatoryRewards: boolean
+  onLoadSave?: (doc: SaveDoc) => void
 }
 
-const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
+const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps) => {
   const {
     gameState,
     dispatch,
@@ -111,8 +129,10 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   const [masterstrokeSelectionRewardId, setMasterstrokeSelectionRewardId] = useState<string | null>(null)
   const [memnonHighCouncilRewardId, setMemnonHighCouncilRewardId] = useState<string | null>(null)
   const [sandboxImperiumOpen, setSandboxImperiumOpen] = useState(false)
+  const [sandboxTechOpen, setSandboxTechOpen] = useState(false)
   const [sandboxConflictOpen, setSandboxConflictOpen] = useState(false)
   const [sandboxEditPlayerId, setSandboxEditPlayerId] = useState<number | null>(null)
+  const [techAcquireStackIndex, setTechAcquireStackIndex] = useState<number | null>(null)
 
   useEffect(() => {
     setVoiceSelectionRewardId(null)
@@ -202,9 +222,10 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
 
   const undoSourceRow = viewingTurnIndex ?? gameState.history.length
   const canUndo =
-    undoSourceRow === 0
+    !gameState.sandboxSetup &&
+    (undoSourceRow === 0
       ? Boolean(gameState.setupBaseline)
-      : undoSourceRow > 0
+      : undoSourceRow > 0)
 
   const handleNavUndoClick = () => {
     setUndoSourceRowIndex(undoSourceRow)
@@ -248,12 +269,19 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     undoSourceRow === 0
       ? 'setup'
       : getHistoryRowLabel(gameState.history, undoSourceRow).toLowerCase()
+  const isSandboxGame = Boolean(gameState.setupBaseline?.sandboxSetup)
   const undoTitle =
     undoSourceRow === 0
-      ? 'Undo setup (re-select imperium row and conflict)'
+      ? isSandboxGame
+        ? 'Edit setup (keep current configuration)'
+        : 'Undo setup (re-select imperium row and conflict)'
       : `Undo ${getHistoryRowLabel(gameState.history, undoSourceRow)} and all later turns`
   const undoAriaLabel =
-    undoSourceRow === 0 ? 'Undo setup' : `Undo ${undoFromLabel} and all later turns`
+    undoSourceRow === 0
+      ? isSandboxGame
+        ? 'Edit setup'
+        : 'Undo setup'
+      : `Undo ${undoFromLabel} and all later turns`
 
   const turnHistoryUndoProps = {
     onUndo: handleNavUndoClick,
@@ -339,6 +367,22 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
     dispatch({ type: 'UNDEPLOY_TROOP', playerId })
   }
 
+  const handleAddDreadnought = (playerId: number) => {
+    dispatch({ type: 'DEPLOY_DREADNOUGHT', playerId })
+  }
+
+  const handleUndeployDreadnought = (playerId: number) => {
+    dispatch({ type: 'UNDEPLOY_DREADNOUGHT', playerId })
+  }
+
+  const handleDeployNegotiator = (playerId: number) => {
+    dispatch({ type: 'DEPLOY_NEGOTIATOR', playerId })
+  }
+
+  const handleUndeployNegotiator = (playerId: number) => {
+    dispatch({ type: 'UNDEPLOY_NEGOTIATOR', playerId })
+  }
+
   const handleEffectRetreatTroop = (playerId: number) => {
     dispatch({ type: 'RETREAT_TROOP', playerId, fromEffect: true })
   }
@@ -354,6 +398,78 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   const handleAcquireSpiceMustFlow = () => {
     dispatch({ type: 'ACQUIRE_SMF', playerId: activePlayer?.id || 0 })
   }
+
+  const handleActivateTech = useCallback(
+    (playerId: number, tileId: TechTileId) => {
+      dispatch({ type: 'ACTIVATE_TECH', playerId, tileId })
+    },
+    [dispatch]
+  )
+
+  const handleAcquireTechTile = useCallback(
+    (stackIndex: number, negotiatorsReturned: number, nextFaceUpTileId?: TechTileId) => {
+      const player = activePlayer
+      if (!player) return
+
+      const offer = getTechAcquireOffer(gameState, player.id)
+      if (!offer) return
+
+      const tileId = gameState.ixBoard?.stacks[stackIndex]?.[0]
+      if (!tileId) return
+      const tile = getTechTile(tileId)
+      if (!tile) return
+
+      if (negotiatorsReturned < 0 || negotiatorsReturned > (player.negotiatorsOnIx ?? 0)) return
+      const cost = effectiveTechCost(tile.cost, offer.discount, negotiatorsReturned)
+      const canAfford = offer.paySolariInsteadOfSpice
+        ? player.solari >= cost
+        : player.spice >= cost
+      if (!canAfford) return
+
+      if (offer.pendingOptionalEffectId) {
+        dispatch({
+          type: 'PAY_COST',
+          playerId: player.id,
+          effectId: offer.pendingOptionalEffectId,
+        })
+      } else if (offer.pendingChoice) {
+        dispatch({
+          type: 'RESOLVE_CHOICE',
+          playerId: player.id,
+          choiceId: offer.pendingChoice.choiceId,
+          optionIndex: offer.pendingChoice.optionIndex,
+          source: offer.pendingChoice.source,
+        })
+      }
+
+      dispatch({
+        type: 'ACQUIRE_TECH',
+        playerId: player.id,
+        tileId,
+        stackIndex,
+        negotiatorsReturned,
+        discount: 0,
+        nextFaceUpTileId,
+      })
+      setTechAcquireStackIndex(null)
+    },
+    [activePlayer, dispatch, gameState]
+  )
+
+  const techAcquireOffer = useMemo(() => {
+    if (isViewingHistory || gameState.sandboxSetup || !activePlayer) return null
+    return getTechAcquireOffer(gameState, activePlayer.id)
+  }, [isViewingHistory, gameState, gameState.sandboxSetup, activePlayer])
+
+  useEffect(() => {
+    if (isViewingHistory) {
+      setTechAcquireStackIndex(null)
+    }
+  }, [isViewingHistory])
+
+  const handleTechTileAcquireClick = useCallback((stackIndex: number) => {
+    setTechAcquireStackIndex(stackIndex)
+  }, [])
 
   const handleImperiumRowSetup = (cardIds: number[]) => {
     dispatch({ type: 'RESET_IMPERIUM_ROW', cardIds })
@@ -549,8 +665,14 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
 
   // Sandbox setup turn: blocking round-start modals are replaced by on-board click targets.
   const inSandboxSetup = Boolean(gameState.sandboxSetup) && !isViewingHistory
+  const riseOfIx = Boolean(gameState.expansions?.riseOfIx)
+  const sandboxTechSummary = sandboxTechSetupSummary(gameState.players)
+  const ixBoardReady =
+    !riseOfIx || isSandboxIxBoardReady(gameState.players, gameState.ixBoard)
   const sandboxReady =
-    gameState.imperiumRow.length === 5 && gameState.currentConflict.id > 0
+    gameState.imperiumRow.length === 5 &&
+    gameState.currentConflict.id > 0 &&
+    ixBoardReady
   const sandboxEditPlayer =
     inSandboxSetup && sandboxEditPlayerId !== null
       ? gameState.players.find(p => p.id === sandboxEditPlayerId) ?? null
@@ -1038,7 +1160,8 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
   }, [
     hidePlayShellFooter,
     isMobilePlayView,
-    isDesktopPlayView,
+      isDesktopPlayView,
+      gameState.expansions?.riseOfIx,
     isDockedHistoryLayout,
     useImageBoard,
   ])
@@ -1092,14 +1215,14 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           combatStrength={displayState.combatStrength ?? gameState.combatStrength}
           controlMarkers={displayState.controlMarkers}
           historyHighlightSpaceId={historyHighlightSpaceId}
+          isViewingHistory={isViewingHistory}
           troopDeploy={
             isViewingHistory || gameState.sandboxSetup || !activePlayer
               ? undefined
               : {
                   canDeploy: Boolean(gameState.currTurn?.canDeployTroops),
                   deployableTroops: Math.min(
-                    (gameState.currTurn?.troopLimit || 0) -
-                      (gameState.currTurn?.removableTroops || 0),
+                    getRemainingTroopDeploySlots(gameState),
                     activePlayer.troops || 0
                   ),
                   deployedThisTurn: gameState.currTurn?.removableTroops || 0,
@@ -1108,11 +1231,52 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
                   onUndeploy: () => handleUndeployTroop(activePlayer.id),
                 }
           }
+          dreadnoughtDeploy={
+            isViewingHistory ||
+            gameState.sandboxSetup ||
+            !activePlayer ||
+            !gameState.expansions?.riseOfIx
+              ? undefined
+              : {
+                  canDeploy: Boolean(gameState.currTurn?.canDeployTroops),
+                  deployableDreadnoughts: Math.min(
+                    getRemainingDeploySlots(gameState),
+                    activePlayer.dreadnoughts?.garrison ?? 0
+                  ),
+                  deployedThisTurn: gameState.currTurn?.removableDreadnoughts || 0,
+                  garrisonDreadnoughts: activePlayer.dreadnoughts?.garrison ?? 0,
+                  onDeploy: () => handleAddDreadnought(activePlayer.id),
+                  onUndeploy: () => handleUndeployDreadnought(activePlayer.id),
+                }
+          }
+          negotiatorDeploy={
+            isViewingHistory ||
+            gameState.sandboxSetup ||
+            !activePlayer ||
+            !gameState.expansions?.riseOfIx
+              ? undefined
+              : {
+                  canDeploy: Boolean(gameState.currTurn?.canDeployTroops),
+                  deployableNegotiators: Math.min(
+                    getRemainingDeploySlots(gameState),
+                    activePlayer.negotiatorsOnIx ?? 0
+                  ),
+                  deployedThisTurn: gameState.currTurn?.removableNegotiators || 0,
+                  negotiatorsOnIx: activePlayer.negotiatorsOnIx ?? 0,
+                  onDeploy: () => handleDeployNegotiator(activePlayer.id),
+                  onUndeploy: () => handleUndeployNegotiator(activePlayer.id),
+                }
+          }
           sandboxSetup={
             inSandboxSetup
               ? {
                   onConflictClick: () => setSandboxConflictOpen(true),
                   onPlayerClick: (playerId: number) => setSandboxEditPlayerId(playerId),
+                  onTechTilesClick:
+                    riseOfIx && sandboxTechSummary.tilesForBoard > 0
+                      ? () => setSandboxTechOpen(true)
+                      : undefined,
+                  sandboxTechRequiredFilledStacks: sandboxTechSummary.requiredFilledStacks,
                 }
               : undefined
           }
@@ -1127,6 +1291,19 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
                 }
               : undefined
           }
+          ixBoardPlacement={
+            isDesktopPlayView && gameState.expansions?.riseOfIx ? 'docked' : 'embedded'
+          }
+          pendingAcquireTech={
+            techAcquireOffer && activePlayer
+              ? {
+                  playerId: activePlayer.id,
+                  discount: techAcquireOffer.discount,
+                  paySolariInsteadOfSpice: techAcquireOffer.paySolariInsteadOfSpice,
+                }
+              : undefined
+          }
+          onTechTileAcquire={!isViewingHistory ? handleTechTileAcquireClick : undefined}
         />
       ) : null,
     [
@@ -1142,10 +1319,20 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
       historyHighlightSpaceId,
       handleAddTroop,
       handleUndeployTroop,
+      handleAddDreadnought,
+      handleUndeployDreadnought,
+      handleDeployNegotiator,
+      handleUndeployNegotiator,
+      handleAcquireTechTile,
+      techAcquireOffer,
+      handleTechTileAcquireClick,
       inSandboxSetup,
+      riseOfIx,
+      sandboxTechSummary,
       influenceBoardMeta,
       activeInfluenceBoardChoice,
       handleInfluenceBoardFactionSelect,
+      isDesktopPlayView,
     ]
   )
 
@@ -1164,6 +1351,10 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         compact={compact}
         position={gameState.sandboxSetupPosition}
         ready={sandboxReady}
+        riseOfIx={riseOfIx}
+        imperiumRowDone={gameState.imperiumRow.length === 5}
+        techTilesDone={ixBoardReady}
+        conflictDone={gameState.currentConflict.id > 0}
         onSetPosition={(round, playerTurn) =>
           dispatch({ type: 'SANDBOX_SET_POSITION', round, playerTurn })
         }
@@ -1185,6 +1376,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         'game-container',
         'game-container--play',
         isDesktopPlayView ? 'game-container--desktop-play' : '',
+        isDesktopPlayView && gameState.expansions?.riseOfIx ? 'game-container--ix-dock' : '',
         isDockedHistoryLayout ? 'game-container--history-docked' : '',
         isViewingHistory ? 'viewing-history' : '',
         isPlayChromeHeld ? 'play-chrome-held' : '',
@@ -1232,13 +1424,16 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
               }
             />
           </div>
-          {/* {inSandboxSetup ? (
-            <SandboxSetupHint
-              placement="inline"
-              className="sandbox-setup-hint--imperium-row"
-              label="Pick 5 imperium row cards"
+          {techAcquireOffer && activePlayer && gameState.ixBoard?.stacks && !useImageBoard ? (
+            <TechMarketRow
+              key={`tech-acquire-${techAcquireOffer.playerId}-${techAcquireOffer.discount}`}
+              stacks={gameState.ixBoard.stacks}
+              player={activePlayer}
+              discount={techAcquireOffer.discount}
+              paySolariInsteadOfSpice={techAcquireOffer.paySolariInsteadOfSpice}
+              onAcquire={handleAcquireTechTile}
             />
-          ) : null} */}
+          ) : null}
         </div>
       </div>
       <div
@@ -1315,6 +1510,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
               voiceSelectionActive={isViewingHistory ? false : Boolean(voiceSelectionRewardId)}
               onVoiceSpaceSelect={handleVoiceSpaceSelect}
               blockedSpaces={displayState.blockedSpaces || []}
+              expansions={displayState.expansions}
             />
           )}
         </div>
@@ -1329,6 +1525,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             onTurnChange={goToTurn}
             onReturnToCurrent={returnToCurrent}
             topSlot={turnHistoryTopSlot}
+            onLoadSave={onLoadSave}
             {...turnHistoryUndoProps}
           />
         )}
@@ -1354,7 +1551,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             <ConflictSelect
               conflicts={(() => {
                 const tierForRound = gameState.currentRound === 1 ? 1 : gameState.currentRound <= 6 ? 2 : 3
-                return CONFLICTS.filter(
+                return getConflictPool(gameState.expansions).filter(
                   c => c.tier === tierForRound && !gameState.conflictsDiscard.includes(c)
                 )
               })()}
@@ -1375,9 +1572,41 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             onCancel={() => setSandboxImperiumOpen(false)}
           />
         )}
+        {inSandboxSetup && sandboxTechOpen && riseOfIx && (
+          <TechTileSelect
+            tiles={TECH_TILES}
+            players={gameState.players}
+            tilesForBoard={sandboxTechSummary.tilesForBoard}
+            requiredFilledStacks={sandboxTechSummary.requiredFilledStacks}
+            allowedEmptyStacks={sandboxTechSummary.allowedEmptyStacks}
+            blockedTileIds={playerTechTileIds(gameState.players)}
+            initialStackTops={sandboxStackTopsFromIxBoard(gameState.ixBoard)}
+            onConfirm={stackTops => {
+              dispatch({ type: 'SANDBOX_SET_IX_BOARD_TOP', stackTops })
+              setSandboxTechOpen(false)
+            }}
+            onCancel={() => setSandboxTechOpen(false)}
+          />
+        )}
+        {activePlayer &&
+          gameState.ixBoard?.stacks &&
+          techAcquireStackIndex != null &&
+          useImageBoard && (
+            <TechAcquireModal
+              isOpen
+              stackIndex={techAcquireStackIndex}
+              stacks={gameState.ixBoard.stacks}
+              player={activePlayer}
+              canAcquire={Boolean(techAcquireOffer)}
+              discount={techAcquireOffer?.discount ?? 0}
+              paySolariInsteadOfSpice={techAcquireOffer?.paySolariInsteadOfSpice}
+              onAcquire={handleAcquireTechTile}
+              onClose={() => setTechAcquireStackIndex(null)}
+            />
+          )}
         {inSandboxSetup && sandboxConflictOpen && (
           <ConflictSelect
-            conflicts={CONFLICTS}
+            conflicts={getConflictPool(gameState.expansions)}
             currentRound={gameState.currentRound}
             title="Select Conflict Card"
             handleConflictSelect={(conflictId) => {
@@ -1390,6 +1619,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
         {sandboxEditPlayer && (
           <SandboxPlayerEditor
             player={sandboxEditPlayer}
+            expansions={gameState.expansions}
             usedLeaderNames={gameState.players
               .filter(p => p.id !== sandboxEditPlayer.id)
               .map(p => p.leader.name)}
@@ -1398,6 +1628,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             spiceMustFlowCards={gameState.spiceMustFlowDeck}
             foldspaceCards={gameState.foldspaceDeck}
             controlMarkers={gameState.controlMarkers}
+            mentatOwner={gameState.mentatOwner}
             playerInfluence={{
               [FactionType.EMPEROR]:
                 gameState.factionInfluence[FactionType.EMPEROR]?.[sandboxEditPlayer.id] ?? 0,
@@ -1422,6 +1653,14 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             onSetControl={(space, playerId) =>
               dispatch({ type: 'SANDBOX_SET_CONTROL_MARKER', space, playerId })
             }
+            onSetMentatOwner={playerId =>
+              dispatch({ type: 'SANDBOX_SET_MENTAT_OWNER', playerId })
+            }
+            blockedTechTileIds={sandboxBlockedTechIdsForPlayer(
+              gameState.players,
+              sandboxEditPlayer.id,
+              gameState.ixBoard
+            )}
             onClose={() => setSandboxEditPlayerId(null)}
           />
         )}
@@ -1522,6 +1761,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
             endTurnDisabled={endTurnButtonState.disabled}
             endTurnTitle={endTurnButtonState.title}
             passCombatLabel={combatFooterActionLabel}
+            onActivateTech={isViewingHistory ? undefined : handleActivateTech}
           />
         </div>
       {sandboxSetupMobileBar}
@@ -1674,6 +1914,7 @@ const GameContent = ({ autoApplyMandatoryRewards }: GameContentProps) => {
           onTurnChange={goToTurn}
           onReturnToCurrent={returnToCurrent}
           topSlot={turnHistoryTopSlot}
+          onLoadSave={onLoadSave}
           onClose={() => {
             setIsTurnHistoryOpen(false)
             if (!inSandboxSetup) {
@@ -1781,9 +2022,13 @@ function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
 // Wrapper component that provides TimeTravel context to GameContent
 interface GameContentWithTimeTravelProps {
   autoApplyMandatoryRewards: boolean
+  onLoadSave?: (doc: SaveDoc) => void
 }
 
-const GameContentWithTimeTravel = ({ autoApplyMandatoryRewards }: GameContentWithTimeTravelProps) => {
+const GameContentWithTimeTravel = ({
+  autoApplyMandatoryRewards,
+  onLoadSave,
+}: GameContentWithTimeTravelProps) => {
   const { gameState, dispatch } = useGame()
   
   const handleUndoToTurn = (turnIndex: number) => {
@@ -1792,7 +2037,7 @@ const GameContentWithTimeTravel = ({ autoApplyMandatoryRewards }: GameContentWit
   
   return (
     <TimeTravelProvider gameState={gameState} onUndoToTurn={handleUndoToTurn}>
-      <GameContent autoApplyMandatoryRewards={autoApplyMandatoryRewards} />
+      <GameContent autoApplyMandatoryRewards={autoApplyMandatoryRewards} onLoadSave={onLoadSave} />
     </TimeTravelProvider>
   )
 }
@@ -1810,6 +2055,7 @@ function buildGameInputFromConfiguration(
     currentRound?: number
     sandbox?: boolean
     title?: string
+    expansions?: Expansions
   }
 ): SaveDoc {
   const { setup, unmapped } = buildSetupBlockFromConfiguration({
@@ -1818,6 +2064,7 @@ function buildGameInputFromConfiguration(
     imperiumRowDeck,
     currentRound: options.currentRound,
     sandbox: options.sandbox,
+    expansions: options.expansions,
   })
   return createGameInputDoc(setup, {
     title: options.title ?? (options.sandbox ? 'Sandbox game' : 'New game'),
@@ -1832,14 +2079,32 @@ function App() {
   const [autoApplyMandatoryRewards, setAutoApplyMandatoryRewards] = useState(() => {
     return localStorage.getItem('myMentat.autoApplyMandatoryRewards') !== 'false'
   })
+  const [expansions, setExpansions] = useState<Expansions>(() => {
+    const raw = localStorage.getItem('myMentat.riseOfIx')
+    return { ...NO_EXPANSIONS, riseOfIx: raw === 'true' }
+  })
   const [creatorReturnScreen, setCreatorReturnScreen] = useState<ScreenState>(ScreenState.SETUP)
   const [playerSetups, setPlayerSetups] = useState<PlayerSetup[]>([])
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
   const [gameInput, setGameInput] = useState<SaveDoc | null>(null)
+  const [gameSessionKey, setGameSessionKey] = useState(0)
+
+  const handleLoadSaveDoc = useCallback((doc: SaveDoc) => {
+    if (doc.setup.expansions) {
+      setExpansions(doc.setup.expansions)
+    }
+    setGameInput(doc)
+    setGameSessionKey(k => k + 1)
+    setScreenState(ScreenState.GAME)
+  }, [])
 
   useEffect(() => {
     localStorage.setItem('myMentat.autoApplyMandatoryRewards', autoApplyMandatoryRewards ? 'true' : 'false')
   }, [autoApplyMandatoryRewards])
+
+  useEffect(() => {
+    localStorage.setItem('myMentat.riseOfIx', expansions.riseOfIx ? 'true' : 'false')
+  }, [expansions.riseOfIx])
 
   // iOS Safari: fixed bottom UIs anchor to the layout viewport, which extends below the visible
   // area when chrome shows. Shift up by this gap so turn controls/modals align with VisualViewport bottom.
@@ -1877,7 +2142,8 @@ function App() {
     }
   }, [])
 
-  const handleSetupComplete = (setups: PlayerSetup[]) => {
+  const handleSetupComplete = (setups: PlayerSetup[], setupExpansions: Expansions) => {
+    setExpansions(setupExpansions)
     setPlayerSetups(setups)
     if (setups.every(s => !s.leader.sogChoice)) {
       setScreenState(ScreenState.GAME_STATE_SETUP)
@@ -1888,39 +2154,47 @@ function App() {
   }
 
   // Sandbox: skip leader choices and game-state setup; configure everything on the board.
-  const handleSandboxStart = (setups: PlayerSetup[]) => {
+  const handleSandboxStart = (setups: PlayerSetup[], setupExpansions: Expansions) => {
+    setExpansions(setupExpansions)
     setPlayerSetups(setups)
     const imperiumDeck = applyStarterDeckReservationToImperium(
-      buildImperiumDeck(),
+      buildImperiumDeck(setupExpansions),
       setups.map(setup => setup.deck)
     )
-    const players: Player[] = setups.map((setup, index) => ({
-      id: index,
-      leader: setup.leader,
-      color: setup.color,
-      spice: getStartingSpice(setup.leader),
-      water: 1,
-      solari: getStartingSolari(setup.leader),
-      troops: 3,
-      combatValue: 0,
-      agents: 2,
-      handCount: 5,
-      intrigueCount: 0,
-      deck: [...setup.deck],
-      discardPile: [],
-      trash: [],
-      hasHighCouncilSeat: false,
-      hasSwordmaster: false,
-      playArea: [],
-      persuasion: 0,
-      victoryPoints: 1,
-      revealed: false,
-    }))
+    const players: Player[] = setups.map((setup, index) =>
+      seedTessiaSnoopers(
+        applyHudroStartingIntrigue({
+          id: index,
+          leader: setup.leader,
+          color: setup.color,
+          spice: getStartingSpice(setup.leader),
+          water: getStartingWater(setup.leader),
+          solari: getStartingSolari(setup.leader),
+          troops: 3,
+          combatValue: 0,
+          agents: 2,
+          handCount: 5,
+          intrigueCount: 0,
+          deck: [...setup.deck],
+          discardPile: [],
+          trash: [],
+          hasHighCouncilSeat: false,
+          hasSwordmaster: false,
+          playArea: [],
+          persuasion: 0,
+          victoryPoints: 1,
+          revealed: false,
+          ...(setupExpansions.riseOfIx ? { freighterStep: 0 as const } : {}),
+        }),
+        setupExpansions.riseOfIx
+      )
+    )
     setGameInput(
       buildGameInputFromConfiguration(players, imperiumDeck, {
         firstPlayer: resolveFirstPlayer(setups),
         sandbox: true,
         title: 'Sandbox game',
+        expansions: setupExpansions,
       })
     )
     setScreenState(ScreenState.GAME)
@@ -1946,6 +2220,7 @@ function App() {
         firstPlayer: resolveFirstPlayer(playerSetups),
         currentRound: state.currentRound,
         title: 'New game',
+        expansions,
       })
     )
     setScreenState(ScreenState.GAME)
@@ -1984,7 +2259,13 @@ function App() {
   return (
     <div className="app">
       {screenState === ScreenState.SETUP && (
-        <GameSetup onComplete={handleSetupComplete} onSandbox={handleSandboxStart} />
+        <GameSetup
+          expansions={expansions}
+          onExpansionsChange={setExpansions}
+          onComplete={handleSetupComplete}
+          onSandbox={handleSandboxStart}
+          onLoadSave={handleLoadSaveDoc}
+        />
       )}
 
       {screenState === ScreenState.LEADER_CHOICES && renderLeaderChoices()}
@@ -1997,6 +2278,7 @@ function App() {
         <GameStateSetup 
           playerSetups={playerSetups}
           firstPlayer={firstPlayerId}
+          expansions={expansions}
           onComplete={handleGameStateSetupComplete}
           onOpenCardCreator={handleOpenCardCreator}
           autoApplyMandatoryRewards={autoApplyMandatoryRewards}
@@ -2005,8 +2287,11 @@ function App() {
       )}
 
       {screenState === ScreenState.GAME && gameInput && (
-        <GameProvider gameInput={gameInput}>
-          <GameContentWithTimeTravel autoApplyMandatoryRewards={autoApplyMandatoryRewards} />
+        <GameProvider key={gameSessionKey} gameInput={gameInput}>
+          <GameContentWithTimeTravel
+            autoApplyMandatoryRewards={autoApplyMandatoryRewards}
+            onLoadSave={handleLoadSaveDoc}
+          />
         </GameProvider>
       )}
     </div>

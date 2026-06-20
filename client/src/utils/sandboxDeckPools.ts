@@ -1,4 +1,10 @@
-import { Card } from '../types/GameTypes'
+import { Card, NO_EXPANSIONS, type Expansions } from '../types/GameTypes'
+import {
+  ARRAKIS_LIAISON_DECK,
+  buildImperiumDeck,
+  FOLDSPACE_DECK,
+  SPICE_MUST_FLOW_DECK,
+} from '../catalog/runtime'
 
 export type SandboxCardPool = 'imperium' | 'arrakisLiaison' | 'spiceMustFlow' | 'foldspace'
 
@@ -7,6 +13,16 @@ export interface SandboxDeckPools {
   arrakisLiaisonDeck: Card[]
   spiceMustFlowDeck: Card[]
   foldspaceDeck: Card[]
+}
+
+/** Build sandbox card pools; RoI imperium cards included when `expansions.riseOfIx`. */
+export function buildSandboxDeckPools(expansions: Expansions = NO_EXPANSIONS): SandboxDeckPools {
+  return {
+    imperiumRowDeck: buildImperiumDeck(expansions),
+    arrakisLiaisonDeck: [...ARRAKIS_LIAISON_DECK],
+    spiceMustFlowDeck: [...SPICE_MUST_FLOW_DECK],
+    foldspaceDeck: [...FOLDSPACE_DECK],
+  }
 }
 
 export function sandboxCardPoolForId(cardId: number): SandboxCardPool {

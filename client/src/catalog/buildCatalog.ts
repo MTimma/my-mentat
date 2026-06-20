@@ -23,16 +23,20 @@ import {
   SPICE_MUST_FLOW_DECK,
   FOLDSPACE_DECK,
   IMPERIUM_ROW_DECK,
+  RISE_OF_IX_IMPERIUM_DECK,
 } from '../data/cards'
 import { BOARD_SPACES } from '../data/boardSpaces'
-import { CONFLICTS } from '../data/conflicts'
-import { LEADERS, LEADER_ICON_SLUGS } from '../data/leaders'
+import { CONFLICTS, RISE_OF_IX_CONFLICTS } from '../data/conflicts'
+import { LEADERS, LEADER_ICON_SLUGS, RISE_OF_IX_LEADERS } from '../data/leaders'
 import { intrigueCards } from '../data/intrigueCards'
+import { RISE_OF_IX_INTRIGUE_CARDS } from '../data/intrigueCardsRiseOfIx'
+import { TECH_TILES, type TechTile } from '../data/techTiles'
 import {
   Card,
   CardEffect,
   ConflictCard,
   CustomEffect,
+  IntrigueCard,
   Leader,
   SpaceProps,
 } from '../types/GameTypes'
@@ -72,6 +76,10 @@ export interface CatalogCardEntry {
   factions?: string[]
   agentIcons: string[]
   infiltrate?: boolean
+  /** Rise of Ix — Reveal effects also fire when discarded or trashed. */
+  unload?: boolean
+  /** Rise of Ix — source marker for deck filtering and UI. */
+  riseOfIx?: boolean
   image: string
   /** Effect ids per slot — definitions live in the `effects` registry. */
   effects: {
@@ -98,6 +106,9 @@ export interface CatalogSpaceEntry {
   specialEffect?: string
   maxAgents?: number
   image?: string
+  /** Rise of Ix — CHOAM-overlay board space (ids 23–26). */
+  riseOfIx?: boolean
+  gridSide?: 'main' | 'ix'
   effects: string[]
 }
 
@@ -107,6 +118,7 @@ export interface CatalogConflictEntry {
   name: string
   controlSpace?: string
   rewards: ConflictCard['rewards']
+  riseOfIx?: boolean
 }
 
 export interface CatalogIntrigueEntry {
@@ -116,6 +128,7 @@ export interface CatalogIntrigueEntry {
   description: string
   image: string
   targetPlayer?: boolean
+  riseOfIx?: boolean
   effects: { play?: string[] }
 }
 
@@ -128,6 +141,43 @@ export interface CatalogLeaderEntry {
   signetRingTitle?: string
   complexity: number
   sogChoice: boolean
+  riseOfIx?: boolean
+}
+
+export interface CatalogTechTileEntry {
+  id: string
+  name: string
+  cost: number
+  image: string
+  timing: string[]
+  description: string
+  customEffect?: string
+  acquireEffect?: unknown
+  riseOfIx: true
+}
+
+export interface CatalogExpansionCounts {
+  cards: number
+  conflicts: number
+  leaders: number
+  intrigue: number
+  boardSpaces: number
+  techTiles: number
+}
+
+export interface CatalogExpansionMeta {
+  id: string
+  name: string
+  counts: CatalogExpansionCounts
+  /** Deck composition rules — catalog card ids incl. duplicates. */
+  decks: {
+    imperium: string[]
+  }
+}
+
+export interface CatalogExpansions {
+  available: string[]
+  byId: Record<string, CatalogExpansionMeta>
 }
 
 export interface Catalog {
@@ -143,6 +193,8 @@ export interface Catalog {
   conflicts: CatalogConflictEntry[]
   intrigue: CatalogIntrigueEntry[]
   leaders: CatalogLeaderEntry[]
+  techTiles: CatalogTechTileEntry[]
+  expansions: CatalogExpansions
   customEffects: string[]
   /** Semantic choice/reward id grammar (plans/reducer/02-deterministic-ids.md). */
   choiceIdGrammar: {
@@ -198,7 +250,8 @@ function registerEffects(
 function buildCardEntries(
   registry: CatalogEffectEntry[],
   pool: CardPool,
-  deck: Card[]
+  deck: Card[],
+  options?: { riseOfIx?: boolean }
 ): { entries: CatalogCardEntry[]; deckIds: string[] } {
   const byName = new Map<string, CatalogCardEntry>()
   const deckIds: string[] = []
@@ -225,6 +278,7 @@ function buildCardEntries(
       })
       effects.acquire = id
     }
+    const riseOfIx = options?.riseOfIx ?? card.riseOfIx
     byName.set(card.name, {
       id: catalogId,
       name: card.name,
@@ -233,6 +287,8 @@ function buildCardEntries(
       factions: card.faction,
       agentIcons: card.agentIcons,
       infiltrate: card.infiltrate,
+      unload: card.unload,
+      riseOfIx,
       image: card.image,
       effects,
       authorIds: [card.id],
@@ -271,9 +327,44 @@ function buildSpaceEntries(registry: CatalogEffectEntry[]): CatalogSpaceEntry[] 
       specialEffect: space.specialEffect,
       maxAgents: space.maxAgents,
       image: space.image,
+      riseOfIx: space.riseOfIx,
+      gridSide: space.gridSide,
       effects: effectIds,
     }
   })
+}
+
+function buildTechTileEntries(tiles: TechTile[]): CatalogTechTileEntry[] {
+  return tiles.map(tile => ({
+    id: tile.id,
+    name: tile.name,
+    cost: tile.cost,
+    image: tile.image,
+    timing: tile.timing,
+    description: tile.description,
+    customEffect: tile.customEffect,
+    acquireEffect: tile.acquireEffect,
+    riseOfIx: true as const,
+  }))
+}
+
+function buildIntrigueEntries(
+  registry: CatalogEffectEntry[],
+  cards: IntrigueCard[],
+  riseOfIx?: boolean
+): CatalogIntrigueEntry[] {
+  return cards.map(card => ({
+    id: card.id,
+    name: card.name,
+    type: card.type,
+    description: card.description,
+    image: card.image,
+    targetPlayer: card.targetPlayer,
+    riseOfIx,
+    effects: {
+      play: registerEffects(registry, 'intrigue', card.id, 'play', card.playEffect),
+    },
+  }))
 }
 
 export function buildCatalog(): Catalog {
@@ -281,6 +372,9 @@ export function buildCatalog(): Catalog {
 
   const starting = buildCardEntries(effects, 'starting', STARTING_DECK)
   const imperium = buildCardEntries(effects, 'imperium', IMPERIUM_ROW_DECK)
+  const roiImperium = buildCardEntries(effects, 'imperium', RISE_OF_IX_IMPERIUM_DECK, {
+    riseOfIx: true,
+  })
   const liaison = buildCardEntries(effects, 'arrakis-liaison', ARRAKIS_LIAISON_DECK)
   const smf = buildCardEntries(effects, 'spice-must-flow', SPICE_MUST_FLOW_DECK)
   const foldspace = buildCardEntries(effects, 'foldspace', FOLDSPACE_DECK)
@@ -288,40 +382,80 @@ export function buildCatalog(): Catalog {
   const cards = [
     ...starting.entries,
     ...imperium.entries,
+    ...roiImperium.entries,
     ...liaison.entries,
     ...smf.entries,
     ...foldspace.entries,
   ]
 
-  const intrigue: CatalogIntrigueEntry[] = intrigueCards.map(card => ({
-    id: card.id,
-    name: card.name,
-    type: card.type,
-    description: card.description,
-    image: card.image,
-    targetPlayer: card.targetPlayer,
-    effects: {
-      play: registerEffects(effects, 'intrigue', card.id, 'play', card.playEffect),
+  const intrigue: CatalogIntrigueEntry[] = [
+    ...buildIntrigueEntries(effects, intrigueCards),
+    ...buildIntrigueEntries(effects, RISE_OF_IX_INTRIGUE_CARDS, true),
+  ]
+
+  const leaders: CatalogLeaderEntry[] = [
+    ...LEADERS.map((leader: Leader) => ({
+      id: LEADER_ICON_SLUGS[leader.name] ?? slugify(leader.name),
+      name: leader.name,
+      ability: leader.ability,
+      signetRingText: leader.signetRingText,
+      signetRingTitle: leader.signetRingTitle,
+      complexity: leader.complexity,
+      sogChoice: leader.sogChoice,
+    })),
+    ...RISE_OF_IX_LEADERS.map((leader: Leader) => ({
+      id: LEADER_ICON_SLUGS[leader.name] ?? slugify(leader.name),
+      name: leader.name,
+      ability: leader.ability,
+      signetRingText: leader.signetRingText,
+      signetRingTitle: leader.signetRingTitle,
+      complexity: leader.complexity,
+      sogChoice: leader.sogChoice,
+      riseOfIx: true as const,
+    })),
+  ]
+
+  const conflicts: CatalogConflictEntry[] = [
+    ...CONFLICTS.map(conflict => ({
+      id: conflict.id,
+      tier: conflict.tier,
+      name: conflict.name,
+      controlSpace: conflict.controlSpace,
+      rewards: conflict.rewards,
+    })),
+    ...RISE_OF_IX_CONFLICTS.map(conflict => ({
+      id: conflict.id,
+      tier: conflict.tier,
+      name: conflict.name,
+      controlSpace: conflict.controlSpace,
+      rewards: conflict.rewards,
+      riseOfIx: true as const,
+    })),
+  ]
+
+  const techTiles = buildTechTileEntries(TECH_TILES)
+  const roiBoardSpaces = BOARD_SPACES.filter(space => space.riseOfIx)
+
+  const expansions: CatalogExpansions = {
+    available: ['riseOfIx'],
+    byId: {
+      riseOfIx: {
+        id: 'riseOfIx',
+        name: 'Rise of Ix',
+        counts: {
+          cards: roiImperium.entries.length,
+          conflicts: RISE_OF_IX_CONFLICTS.length,
+          leaders: RISE_OF_IX_LEADERS.length,
+          intrigue: RISE_OF_IX_INTRIGUE_CARDS.length,
+          boardSpaces: roiBoardSpaces.length,
+          techTiles: techTiles.length,
+        },
+        decks: {
+          imperium: roiImperium.deckIds,
+        },
+      },
     },
-  }))
-
-  const leaders: CatalogLeaderEntry[] = LEADERS.map((leader: Leader) => ({
-    id: LEADER_ICON_SLUGS[leader.name] ?? slugify(leader.name),
-    name: leader.name,
-    ability: leader.ability,
-    signetRingText: leader.signetRingText,
-    signetRingTitle: leader.signetRingTitle,
-    complexity: leader.complexity,
-    sogChoice: leader.sogChoice,
-  }))
-
-  const conflicts: CatalogConflictEntry[] = CONFLICTS.map(conflict => ({
-    id: conflict.id,
-    tier: conflict.tier,
-    name: conflict.name,
-    controlSpace: conflict.controlSpace,
-    rewards: conflict.rewards,
-  }))
+  }
 
   const catalog: Catalog = {
     schemaVersion: CATALOG_SCHEMA_VERSION,
@@ -333,6 +467,8 @@ export function buildCatalog(): Catalog {
         conflicts: conflicts.length,
         intrigue: intrigue.length,
         leaders: leaders.length,
+        techTiles: techTiles.length,
+        expansions: expansions.available.length,
       },
     },
     effects,
@@ -348,6 +484,8 @@ export function buildCatalog(): Catalog {
     conflicts,
     intrigue,
     leaders,
+    techTiles,
+    expansions,
     customEffects: Object.values(CustomEffect),
     choiceIdGrammar: {
       format: '<sourceType>-<sourceId>-<kind>[-<occurrence>]',

@@ -6,7 +6,10 @@ import {
   SPICE_MUST_FLOW_DECK,
 } from '../../../data/cards'
 import { BOARD_SPACES } from '../../../data/boardSpaces'
-import { BOARD_HOTSPOTS } from '../../../data/boardHotspots'
+import { BOARD_HOTSPOTS_FOR_EXPANSIONS } from '../../../data/boardHotspots'
+import { IX_BOARD_HOTSPOTS } from '../../../data/ixBoardAnchors'
+import { RISE_OF_IX_DISABLED_BASE_SPACE_IDS } from '../../../data/boardSpaceAvailability'
+import { NO_EXPANSIONS } from '../../../types/GameTypes'
 import { intrigueCards } from '../../../services/IntrigueDeckService'
 import {
   baseGameManifest,
@@ -69,9 +72,35 @@ describe('Base game manifest — data integrity', () => {
     expect(CONFLICTS.length).toBeGreaterThanOrEqual(10)
   })
 
-  it('board has a hotspot for every board space', () => {
-    const hotspotIds = new Set(BOARD_HOTSPOTS.map(h => h.spaceId))
-    const missing = BOARD_SPACES.filter(s => !hotspotIds.has(s.id)).map(s => s.name)
+  it('board has a hotspot for every base board space', () => {
+    const hotspotIds = new Set(
+      BOARD_HOTSPOTS_FOR_EXPANSIONS(NO_EXPANSIONS).map(h => h.spaceId)
+    )
+    const baseSpaces = BOARD_SPACES.filter(s => !s.riseOfIx)
+    const missing = baseSpaces.filter(s => !hotspotIds.has(s.id)).map(s => s.name)
+    expect(missing, `Spaces without hotspots: ${missing.join(', ')}`).toEqual([])
+  })
+
+  it('board has a hotspot for every Rise of Ix board space', () => {
+    const mainHotspotIds = new Set(
+      BOARD_HOTSPOTS_FOR_EXPANSIONS({ riseOfIx: true, riseOfIxEpic: false }).map(h => h.spaceId)
+    )
+    const ixHotspotIds = new Set(IX_BOARD_HOTSPOTS.map(h => h.spaceId))
+    const roiSpaces = BOARD_SPACES.filter(s => s.riseOfIx)
+    const missing = roiSpaces
+      .filter(s => !mainHotspotIds.has(s.id) && !ixHotspotIds.has(s.id))
+      .map(s => s.name)
+    expect(missing, `RoI spaces without hotspots: ${missing.join(', ')}`).toEqual([])
+  })
+
+  it('board has a hotspot for every active base space when Rise of Ix is on', () => {
+    const hotspotIds = new Set(
+      BOARD_HOTSPOTS_FOR_EXPANSIONS({ riseOfIx: true, riseOfIxEpic: false }).map(h => h.spaceId)
+    )
+    const activeBaseSpaces = BOARD_SPACES.filter(
+      s => !s.riseOfIx && !RISE_OF_IX_DISABLED_BASE_SPACE_IDS.has(s.id)
+    )
+    const missing = activeBaseSpaces.filter(s => !hotspotIds.has(s.id)).map(s => s.name)
     expect(missing, `Spaces without hotspots: ${missing.join(', ')}`).toEqual([])
   })
 

@@ -16,10 +16,11 @@ import {
   type OptionalEffect,
   type Player,
 } from '../../../types/GameTypes'
+import { seedTroopSupply } from '../../../utils/troops'
 
 function makePlayer(id: number, overrides: Partial<Player> = {}): Player {
   const colors = [PlayerColor.RED, PlayerColor.BLUE, PlayerColor.GREEN, PlayerColor.YELLOW]
-  return {
+  const player = {
     id,
     color: colors[id % 4] ?? PlayerColor.RED,
     leader: new Leader('Test', { name: 'Ability', description: '' }, 'Signet', 1),
@@ -42,6 +43,7 @@ function makePlayer(id: number, overrides: Partial<Player> = {}): Player {
     trash: [],
     ...overrides,
   }
+  return 'troopSupply' in overrides ? player : seedTroopSupply(player)
 }
 
 const SHIFTING_ALLEGIANCES: Card = {

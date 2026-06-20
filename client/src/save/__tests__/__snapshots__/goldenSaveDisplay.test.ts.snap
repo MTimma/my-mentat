@@ -1,0 +1,42 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden save display > fixture: agent-reveal-two-turns > matches display projection snapshot 1`] = `
+[
+  {
+    "badge": "Setup",
+    "gainSummary": [],
+    "historyEntryKind": "setup",
+    "index": 0,
+    "playerId": 0,
+    "rowLabel": "Setup",
+  },
+  {
+    "actionLabel": "Hall of Oratory",
+    "badge": "1",
+    "gainSummary": [
+      "Persuasion net +1",
+      "Troops net +1",
+    ],
+    "historyEntryKind": undefined,
+    "index": 1,
+    "playedCardName": "Fremen Camp",
+    "playerId": 0,
+    "rowLabel": "Turn 1",
+    "turnType": "action",
+  },
+  {
+    "actionLabel": "Wealth",
+    "badge": "2",
+    "gainSummary": [
+      "Solari net +2",
+      "emperor influence net +1",
+    ],
+    "historyEntryKind": undefined,
+    "index": 2,
+    "playedCardName": "The Voice",
+    "playerId": 1,
+    "rowLabel": "Turn 2",
+    "turnType": "action",
+  },
+]
+`;

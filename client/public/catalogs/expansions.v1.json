@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "expansions": {
+    "available": [
+      "riseOfIx"
+    ],
+    "byId": {
+      "riseOfIx": {
+        "id": "riseOfIx",
+        "name": "Rise of Ix",
+        "counts": {
+          "cards": 29,
+          "conflicts": 4,
+          "leaders": 6,
+          "intrigue": 17,
+          "boardSpaces": 4,
+          "techTiles": 18
+        },
+        "decks": {
+          "imperium": [
+            "imperium/appropriate",
+            "imperium/bounty-hunter",
+            "imperium/choam-delegate",
+            "imperium/court-intrigue",
+            "imperium/desert-ambush",
+            "imperium/embedded-agent",
+            "imperium/esmar-tuek",
+            "imperium/freighter-fleet",
+            "imperium/freighter-fleet",
+            "imperium/full-scale-assault",
+            "imperium/guild-accord",
+            "imperium/guild-chief-administrator",
+            "imperium/imperial-bashar",
+            "imperium/imperial-shock-trooper",
+            "imperium/in-the-shadows",
+            "imperium/in-the-shadows",
+            "imperium/ix-guild-compact",
+            "imperium/ixian-engineer",
+            "imperium/ixian-engineer",
+            "imperium/jamis",
+            "imperium/landing-rights",
+            "imperium/local-fence",
+            "imperium/negotiated-withdrawel",
+            "imperium/negotiated-withdrawel",
+            "imperium/satellite-ban",
+            "imperium/sayyadina",
+            "imperium/shai-hulud",
+            "imperium/spice-trader",
+            "imperium/treachery",
+            "imperium/treachery",
+            "imperium/truthsayer",
+            "imperium/truthsayer",
+            "imperium/water-peddler",
+            "imperium/web-of-power",
+            "imperium/weirding-way"
+          ]
+        }
+      }
+    }
+  }
+}

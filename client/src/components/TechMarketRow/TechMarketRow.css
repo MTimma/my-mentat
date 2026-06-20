@@ -1,0 +1,180 @@
+.tech-market-section {
+  --tech-market-tile-max: min(48px, 7.5vw);
+  margin-top: 4px;
+  padding: 4px 6px 6px;
+}
+
+.tech-market-section__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  padding-inline: 2px;
+}
+
+.tech-market-section__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--chrome-accent, #ffd700);
+  letter-spacing: 0.02em;
+}
+
+.tech-market-section__player-spice {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  color: #e8dcc8;
+}
+
+.tech-market-section__currency-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.tech-market-section__discount {
+  font-size: 0.68rem;
+  color: #c9b87a;
+}
+
+.tech-market-section__hint {
+  margin: 0 0 6px;
+  padding-inline: 2px;
+  font-size: 0.68rem;
+  color: #d8ccb8;
+}
+
+.tech-market-section__negotiators {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 0.68rem;
+  color: #e8dcc8;
+}
+
+.tech-market-section__negotiators input {
+  width: 2.75rem;
+  padding: 1px 4px;
+  font-size: 0.68rem;
+}
+
+.tech-market-section__negotiators-total {
+  opacity: 0.75;
+}
+
+.tech-market-section__stacks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.tech-market-section__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.tech-market-section__cancel,
+.tech-market-section__confirm {
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: 5px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tech-market-section__cancel {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #e8dcc8;
+}
+
+.tech-market-section__confirm {
+  border: 1px solid rgba(255, 215, 0, 0.55);
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+}
+
+.tech-market-section__confirm:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tech-market-tile {
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--tech-market-tile-max);
+  aspect-ratio: 2.5 / 3.5;
+  padding: 1px;
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, filter 0.2s;
+}
+
+.tech-market-tile--empty {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.12);
+  cursor: default;
+  pointer-events: none;
+}
+
+.tech-market-tile--affordable,
+.tech-market-tile--pickable {
+  border-color: rgba(255, 215, 0, 0.55);
+}
+
+.tech-market-tile--affordable {
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.28);
+}
+
+.tech-market-tile--affordable:hover,
+.tech-market-tile--affordable:focus-visible,
+.tech-market-tile--pickable:hover,
+.tech-market-tile--pickable:focus-visible {
+  outline: none;
+  filter: brightness(1.06);
+}
+
+.tech-market-tile--selected {
+  border-color: var(--chrome-accent, #ffd700);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.45);
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.tech-market-tile--unaffordable {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tech-market-tile__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: 3px;
+}
+
+.tech-market-tile__cost {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  min-width: 0.95rem;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #ffd700;
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+}

@@ -1,4 +1,5 @@
 import type { GameState, Player } from '../types/GameTypes'
+import { recruitTroopsToGarrison } from './troops'
 import {
   FactionType,
   GainSource,
@@ -110,6 +111,9 @@ export function mergePlayerAfterFactionInfluence(
   return {
     ...localPlayer,
     troops: localPlayer.troops + (statePlayer.troops - baselinePlayer.troops),
+    troopSupply:
+      (localPlayer.troopSupply ?? 0) +
+      ((statePlayer.troopSupply ?? 0) - (baselinePlayer.troopSupply ?? 0)),
     solari: localPlayer.solari + (statePlayer.solari - baselinePlayer.solari),
     water: localPlayer.water + (statePlayer.water - baselinePlayer.water),
     intrigueCount:
@@ -265,9 +269,11 @@ export function updateFactionInfluence(
     }
     updatedPlayers = state.players.map((p) => {
       if (p.id !== playerId) return p
+      const recruited = milestone.troops
+        ? recruitTroopsToGarrison(p, milestone.troops)
+        : { player: p, recruited: 0 }
       return {
-        ...p,
-        troops: p.troops + (milestone.troops ?? 0),
+        ...recruited.player,
         solari: p.solari + (milestone.solari ?? 0),
         water: p.water + (milestone.water ?? 0),
         intrigueCount: p.intrigueCount + (milestone.intrigueCards ?? 0),

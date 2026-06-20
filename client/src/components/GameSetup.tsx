@@ -1,38 +1,53 @@
 import React, { useState } from 'react'
-import { PlayerColor, PlayerSetup } from '../types/GameTypes'
-import { LEADERS } from '../data/leaders'
+import { Expansions, PlayerColor, PlayerSetup } from '../types/GameTypes'
+import { getLeaderPool } from '../data/leaders'
 import { motion } from 'framer-motion'
 import { buildStartingDeck } from '../services/starterDeckSetup'
+import SaveDocImportPanel from './SaveDocImportPanel/SaveDocImportPanel'
+import type { SaveDoc } from '../save/types'
 import './GameSetup/GameSetup.css'
 
 interface GameSetupProps {
-  onComplete: (playerSetups: PlayerSetup[]) => void
+  expansions: Expansions
+  onExpansionsChange: (expansions: Expansions) => void
+  onComplete: (playerSetups: PlayerSetup[], expansions: Expansions) => void
   /** Start sandbox mode: straight to the board with default state, configure everything there. */
-  onSandbox: (playerSetups: PlayerSetup[]) => void
+  onSandbox: (playerSetups: PlayerSetup[], expansions: Expansions) => void
+  onLoadSave?: (doc: SaveDoc) => void
 }
 
-const createPlayerSetup = (playerNumber: number, color: PlayerColor, leaderIndex: number): PlayerSetup => ({
-  playerNumber,
-  color,
-  leader: leaderIndex === 4 ? LEADERS[4] : LEADERS[leaderIndex],
-  deck: buildStartingDeck(),
-  startingHand: []
-})
+const createPlayerSetup = (playerNumber: number, color: PlayerColor, leaderIndex: number, expansions: Expansions): PlayerSetup => {
+  const leaders = getLeaderPool(expansions)
+  return {
+    playerNumber,
+    color,
+    leader: leaderIndex === 4 ? leaders[4] : leaders[leaderIndex],
+    deck: buildStartingDeck(),
+    startingHand: []
+  }
+}
 
-const GameSetup: React.FC<GameSetupProps> = ({ onComplete, onSandbox }) => {
+const GameSetup: React.FC<GameSetupProps> = ({
+  expansions,
+  onExpansionsChange,
+  onComplete,
+  onSandbox,
+  onLoadSave,
+}) => {
   const [gameName, setGameName] = useState('Test Game')
   const [playerCount, setPlayerCount] = useState<number>(4)
+  const [loadSectionOpen, setLoadSectionOpen] = useState(false)
   const [players, setPlayers] = useState<PlayerSetup[]>([
-    createPlayerSetup(1, PlayerColor.RED, 1),
-    createPlayerSetup(2, PlayerColor.GREEN, 0),
-    createPlayerSetup(3, PlayerColor.YELLOW, 2),
-    createPlayerSetup(4, PlayerColor.BLUE, 3)
+    createPlayerSetup(1, PlayerColor.RED, 1, expansions),
+    createPlayerSetup(2, PlayerColor.GREEN, 0, expansions),
+    createPlayerSetup(3, PlayerColor.YELLOW, 2, expansions),
+    createPlayerSetup(4, PlayerColor.BLUE, 3, expansions)
   ])
 
   const handlePlayerCountChange = (count: number) => {
     setPlayerCount(count)
     const newPlayers = Array.from({ length: count }, (_, i) => ({
-      ...createPlayerSetup(i + 1, Object.values(PlayerColor)[i], i === 0 ? 1 : i - 1)
+      ...createPlayerSetup(i + 1, Object.values(PlayerColor)[i], i === 0 ? 1 : i - 1, expansions)
     }))
     setPlayers(newPlayers)
   }
@@ -54,7 +69,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete, onSandbox }) => {
     const usedLeaders = players
       .filter((_, i) => i !== currentIndex)
       .map(p => p.leader.name)
-    return LEADERS.filter(leader => !usedLeaders.includes(leader.name))
+    return getLeaderPool(expansions).filter(leader => !usedLeaders.includes(leader.name))
   }
 
   const isSetupComplete = () => {
@@ -99,6 +114,14 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete, onSandbox }) => {
               <option value={4}>4</option>
             </select>
           </label>
+          <label className="setup-field setup-field--compact riseofix-toggle">
+            <span className="setup-field-label">Rise of Ix</span>
+            <input
+              type="checkbox"
+              checked={expansions.riseOfIx}
+              onChange={(e) => onExpansionsChange({ ...expansions, riseOfIx: e.target.checked })}
+            />
+          </label>
         </div>
 
         <div className="players-setup">
@@ -120,7 +143,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete, onSandbox }) => {
               <select
                 value={player.leader.name}
                 onChange={(e) => {
-                  const selectedLeader = LEADERS.find(l => l.name === e.target.value)
+                  const selectedLeader = getLeaderPool(expansions).find(l => l.name === e.target.value)
                   if (selectedLeader) {
                     handlePlayerChange(index, 'leader', selectedLeader)
                   }
@@ -139,17 +162,28 @@ const GameSetup: React.FC<GameSetupProps> = ({ onComplete, onSandbox }) => {
         </div>
         </div>
 
+        {onLoadSave && (
+          <details
+            className="setup-load-save"
+            open={loadSectionOpen}
+            onToggle={e => setLoadSectionOpen(e.currentTarget.open)}
+          >
+            <summary className="setup-load-save-summary">Load saved game</summary>
+            <SaveDocImportPanel onLoad={onLoadSave} />
+          </details>
+        )}
+
         <button
           className="start-game-button"
           disabled={!isSetupComplete()}
-          onClick={() => onComplete(players)}
+          onClick={() => onComplete(players, expansions)}
         >
           Start Game
         </button>
         <button
           className="start-game-button start-game-button--sandbox"
           disabled={!isSetupComplete()}
-          onClick={() => onSandbox(players)}
+          onClick={() => onSandbox(players, expansions)}
           title="Skip setup screens — configure everything directly on the board"
         >
           Sandbox Mode

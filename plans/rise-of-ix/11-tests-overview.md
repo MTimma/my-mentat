@@ -42,6 +42,12 @@ Define the test surface for the Rise of Ix work so the implementing
 agents don't drift apart. All tests use the existing **Vitest** setup
 (`client/package.json` → `"test": "vitest run"`).
 
+> **Regression suite (agents / cloud QA):** [`regression-test/README.md`](./regression-test/README.md)
+> mirrors [`plans/base-game/regression-test/`](../base-game/regression-test/) —
+> master checklist, per-mechanic docs, turn-history/logging expectations, and
+> **hosted-app UI click scenarios** in
+> [`regression-test/10-ui-regression.md`](./regression-test/10-ui-regression.md).
+
 ---
 
 ## 2. Test categories
@@ -78,11 +84,11 @@ agents don't drift apart. All tests use the existing **Vitest** setup
 **`ImageBoard/__tests__/overlay.test.tsx`**
 
 - [ ] No RoI overlays when `expansions.riseOfIx` is false
-- [ ] Renders `riseofix4.png` (CHOAM) and `riseofix3.png` (Landsraad
-  strip) when true — not `riseofix1` / `riseofix2`
+- [ ] Renders `riseofix2.png` (CHOAM) and `riseofix1.png` (Landsraad
+  strip) when true — not `riseofix3` / `riseofix4`
 - [ ] Hotspots 7–8 (Sell Melange, Secure Contract) omitted when true;
   hotspots 23–26 present
-- [ ] Tech Stacks button rendered beside `riseofix3` overlay when true
+- [ ] Tech Stacks button rendered beside `riseofix1` overlay when true
 - [ ] Negotiator counter UI reflects sum of `players[*].negotiatorsOnIx`
   (smoke)
 
@@ -91,7 +97,7 @@ agents don't drift apart. All tests use the existing **Vitest** setup
 - [ ] Renders 3 stacks from `state.ixBoard.stacks`
 - [ ] Face-up tile name/image + Acquire per non-empty stack
 - [ ] Acquire dispatches `{ type: 'ACQUIRE_TECH', ... }`
-- [ ] Does **not** render freighter track (Task 05 / `riseofix4` board)
+- [ ] Does **not** render freighter track (Task 05 / `riseofix2` board)
 
 **`AgentIcon/__tests__/variant.test.tsx`**
 

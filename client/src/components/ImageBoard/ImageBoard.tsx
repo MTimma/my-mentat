@@ -7,17 +7,26 @@ import {
   MakerSpace,
   Card,
   GameState,
+  GamePhase,
   FactionType,
   ControlMarkerType,
   PlayerColor,
 } from '../../types/GameTypes'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import {
-  BOARD_HOTSPOTS,
-  MARKER_ANCHORS,
+  BOARD_HOTSPOTS_FOR_EXPANSIONS,
   layoutAgentAnchorPercent,
   layoutHotspotPercent,
+  layoutInnerRectPercent,
+  markerAnchorsForExpansions,
 } from '../../data/boardHotspots'
+import {
+  choamOverlayRectFor,
+  dreadnoughtControlPointsFor,
+  freighterStatusButtonFor,
+  shippingTrackAnchorsFor,
+} from '../../data/expansionBoardMarkers'
+import { IX_BOARD_HOTSPOTS, layoutIxLocalRectPercent } from '../../data/ixBoardAnchors'
 import { SpiceAmountBadge } from '../SpiceAmountBadge/SpiceAmountBadge'
 import {
   INFLUENCE_TRACKS,
@@ -34,18 +43,34 @@ import {
   clampVpStep,
   INFLUENCE_TRACK_AREAS,
   influenceTrackAreaRect,
+  SNOOPER_TOKEN_ANCHORS,
+  snooperTokenPoint,
+  mentatAvailabilityPoint,
+  swordmasterEligibilityPoint,
   stagePoint,
   stageRect,
 } from '../../data/boardMarkerAnchors'
+import { isTessiaLeader } from '../../data/leaderAbilities/tessiaSnoopers'
 import type { InfluenceBoardMode } from '../../utils/influenceBoardChoice'
 import SellMelangePopup from '../SellMelangePopup/SellMelangePopup'
 import BoardAgentFigure from '../AgentIcon/AgentIcon'
 import { canPlaceDespiteOccupancy } from '../../data/leaderAbilities/helenaUnblockedAgents'
 import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraadDiscount'
+import {
+  canPlayerVisitBoardSpaceOnce,
+  isBoardSpaceAvailableForExpansions,
+  isMentatAvailableOnBoard,
+  playersEligibleForSwordmaster,
+} from '../../data/boardSpaceAvailability'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { highCouncilSlotAssignments } from '../../utils/highCouncilDisplay'
-import CombatAreaCluster, { type CombatTroopDeployProps } from './CombatAreaCluster'
-import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
+import CombatAreaCluster, {
+  type CombatDreadnoughtDeployProps,
+  type CombatNegotiatorDeployProps,
+  type CombatTroopDeployProps,
+} from './CombatAreaCluster'
+import IxBoardOverlay, { type IxBoardPlacement } from './IxBoardOverlay'
+import FreighterStatusModal from '../FreighterStatusModal/FreighterStatusModal'
 import './ImageBoard.css'
 
 interface SellMelangeData {
@@ -83,12 +108,18 @@ interface ImageBoardProps {
   controlMarkers: Record<ControlMarkerType, number | null>
   /** When viewing turn history, outline the board space where this turn's agent was placed. */
   historyHighlightSpaceId?: number | null
+  /** Disabled in time-travel view (Tech Stacks button, etc.). */
+  isViewingHistory?: boolean
   /** Active-player troop deploy controls; rendered below the combat area cluster. */
   troopDeploy?: CombatTroopDeployProps
+  dreadnoughtDeploy?: CombatDreadnoughtDeployProps
+  negotiatorDeploy?: CombatNegotiatorDeployProps
   /** Sandbox setup turn: conflict slot and player quadrants become configuration targets. */
   sandboxSetup?: {
     onConflictClick: () => void
     onPlayerClick: (playerId: number) => void
+    onTechTilesClick?: () => void
+    sandboxTechRequiredFilledStacks?: number
   }
   /** Tap faction influence tracks (e.g. Shifting Allegiances). */
   influenceSelection?: {
@@ -98,6 +129,11 @@ interface ImageBoardProps {
     disabledFactions: FactionType[]
     onFactionSelect: (faction: FactionType) => void
   }
+  /** Desktop: Ix panel docked beside board; mobile: embedded on board art. */
+  ixBoardPlacement?: IxBoardPlacement
+  /** Rise of Ix — player may click a face-up tech tile on the Ix board to acquire. */
+  pendingAcquireTech?: GameState['pendingAcquireTech']
+  onTechTileAcquire?: (stackIndex: number) => void
 }
 
 const PLAYER_COLORS: Record<number, string> = {
@@ -116,6 +152,16 @@ const FACTIONS: FactionType[] = [
 
 /** Same path as The Voice cards in `cards.ts` — small board marker for blocked spaces */
 const VOICE_CARD_IMAGE_SRC = 'imperium_row/the_voice.avif'
+
+/** Map inner-board percent rect to CSS % on the full stage. */
+function percentToStyle(rect: { left: number; top: number; width: number; height: number }) {
+  return {
+    left: `${rect.left}%`,
+    top: `${rect.top}%`,
+    width: `${rect.width}%`,
+    height: `${rect.height}%`,
+  }
+}
 
 function playerMarkerColor(player: Player): string {
   switch (player.color) {
@@ -154,12 +200,19 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   combatStrength,
   controlMarkers,
   historyHighlightSpaceId = null,
+  isViewingHistory = false,
   troopDeploy,
+  dreadnoughtDeploy,
+  negotiatorDeploy,
   sandboxSetup,
   influenceSelection,
+  ixBoardPlacement = 'embedded',
+  pendingAcquireTech,
+  onTechTileAcquire,
 }) => {
   const boardMediaRef = useRef<HTMLDivElement>(null)
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
+  const [showFreighterStatusModal, setShowFreighterStatusModal] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
   const [imgError, setImgError] = useState(false)
   const [conflictImgFailed, setConflictImgFailed] = useState(false)
@@ -171,20 +224,33 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const blockedSpaceMap = new Map<number, number>()
   blockedSpaces.forEach(entry => blockedSpaceMap.set(entry.spaceId, entry.playerId))
 
+  const riseOfIx = Boolean(gameStateForMarkers.expansions?.riseOfIx)
+  const expansions = gameStateForMarkers.expansions
+  const choamOverlayRect = choamOverlayRectFor(expansions)
+  const shippingTrackAnchors = shippingTrackAnchorsFor(expansions)
+  const freighterStatusButton = freighterStatusButtonFor(expansions)
+  const dreadnoughtControlPoints = dreadnoughtControlPointsFor(expansions)
+  const ixBoardDocked = riseOfIx && ixBoardPlacement === 'docked'
+  const boardHotspots = BOARD_HOTSPOTS_FOR_EXPANSIONS(gameStateForMarkers.expansions)
+  const markerAnchors = markerAnchorsForExpansions(gameStateForMarkers.expansions).filter(
+    anchor => !ixBoardDocked || (anchor.spaceId !== 23 && anchor.spaceId !== 24)
+  )
+
   const canPayCosts = (space: SpaceProps): boolean => {
     if (recallMode) {
       return Boolean(occupiedSpaces[space.id]?.includes(currentPlayer))
     }
     const player = players.find(p => p.id === currentPlayer)
     if (!player) return false
+    if (!isBoardSpaceAvailableForExpansions(space, gameStateForMarkers.expansions)) {
+      return false
+    }
+    if (!canPlayerVisitBoardSpaceOnce(space, player)) return false
     if (occupiedSpaces[space.id]?.length > 0 && !infiltrate && !canPlaceDespiteOccupancy(space, player)) return false
     if (ignoreCosts) return true
     if (space.requiresInfluence) {
       const playerInfluence = factionInfluence[space.requiresInfluence.faction]?.[currentPlayer] || 0
       if (playerInfluence < space.requiresInfluence.amount) return false
-    }
-    if (space.name === "High Council") {
-      if (player?.hasHighCouncilSeat) return false
     }
     if (space.cost) {
       const effectiveSolari = getEffectiveSolariCost(space, player)
@@ -204,6 +270,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
     const space = BOARD_SPACES.find(s => s.id === spaceId)
     if (space?.specialEffect === 'sellMelange') {
+      if (riseOfIx) return
       setSelectedSpaceId(spaceId)
       setShowSellMelangePopup(true)
       return
@@ -267,19 +334,37 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const conflictBox = stageRect(CONFLICT_CARD_RECT)
   const conflictImgSrc =
     currentConflict && currentConflict.id > 0 ? conflictCardImageSrc(currentConflict.id) : null
+  const hasConflict = Boolean(currentConflict && currentConflict.id > 0)
+  const inActivePlay =
+    players.length > 0 &&
+    !gameStateForMarkers.sandboxSetup &&
+    gameStateForMarkers.phase !== GamePhase.ROUND_START
+  const showConflictPanel = hasConflict || Boolean(sandboxSetup)
+  const showCombatArea = showConflictPanel || inActivePlay
 
   const historyHighlightHotspot =
     historyHighlightSpaceId != null
-      ? BOARD_HOTSPOTS.find(h => h.spaceId === historyHighlightSpaceId)
+      ? boardHotspots.find(h => h.spaceId === historyHighlightSpaceId) ??
+        (!ixBoardDocked
+          ? IX_BOARD_HOTSPOTS.find(h => h.spaceId === historyHighlightSpaceId)
+          : undefined)
       : undefined
   const historyHighlightBox = historyHighlightHotspot
-    ? layoutHotspotPercent(historyHighlightHotspot)
+    ? boardHotspots.some(h => h.spaceId === historyHighlightHotspot.spaceId)
+      ? layoutHotspotPercent(historyHighlightHotspot)
+      : layoutIxLocalRectPercent({
+          left: historyHighlightHotspot.left,
+          top: historyHighlightHotspot.top,
+          width: historyHighlightHotspot.width,
+          height: historyHighlightHotspot.height,
+        })
     : null
 
   const trackerInspectMode = hotspotDebug || markerDebug
 
   const rootClass = [
     'image-board',
+    ixBoardDocked ? 'image-board--with-ix-dock' : '',
     hotspotDebug ? 'image-board--hotspot-debug' : '',
     markerDebug ? 'image-board--marker-debug' : '',
     trackerInspectMode ? 'image-board--tracker-inspect' : '',
@@ -287,10 +372,49 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     .filter(Boolean)
     .join(' ')
 
-  return (
-    <div className={rootClass}>
-      <div className="image-board__stage">
-        <div className="image-board__media" ref={boardMediaRef}>
+  const ixBoardOverlay =
+    riseOfIx ? (
+      <IxBoardOverlay
+        players={players}
+        occupiedSpaces={occupiedSpaces}
+        stacks={gameStateForMarkers.ixBoard?.stacks ?? [[], [], []]}
+        onSpaceClick={handleSpaceClick}
+        isSpaceEnabled={space => isSpaceEnabled(space)}
+        highlightedAreas={highlightedAreas}
+        hotspotDebug={hotspotDebug}
+        blockedSpaceMap={blockedSpaceMap}
+        placement={ixBoardPlacement}
+        historyHighlightSpaceId={
+          ixBoardDocked &&
+          (historyHighlightSpaceId === 23 || historyHighlightSpaceId === 24)
+            ? historyHighlightSpaceId
+            : null
+        }
+        sandboxTechSetup={
+          sandboxSetup?.onTechTilesClick
+            ? {
+                onConfigure: sandboxSetup.onTechTilesClick,
+                requiredFilledStacks: sandboxSetup.sandboxTechRequiredFilledStacks ?? 3,
+              }
+            : undefined
+        }
+        currentPlayerId={currentPlayer}
+        techAcquire={
+          pendingAcquireTech
+            ? {
+                playerId: pendingAcquireTech.playerId,
+                discount: pendingAcquireTech.discount,
+                paySolariInsteadOfSpice: pendingAcquireTech.paySolariInsteadOfSpice,
+              }
+            : undefined
+        }
+        onTechTileAcquire={onTechTileAcquire}
+      />
+    ) : null
+
+  const boardStage = (
+    <div className="image-board__stage">
+      <div className="image-board__media" ref={boardMediaRef}>
           {imgError ? (
             <div
               className="image-board__fallback"
@@ -307,8 +431,20 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             />
           )}
 
+          {choamOverlayRect && (
+            <img
+              className="image-board__choam-overlay"
+              src="/board/riseofix/riseofix1.png"
+              alt="CHOAM overlay"
+              draggable={false}
+              style={percentToStyle(layoutInnerRectPercent(choamOverlayRect))}
+            />
+          )}
+
+          {riseOfIx && !ixBoardDocked && ixBoardOverlay}
+
           <div className="image-board__overlay">
-          {BOARD_HOTSPOTS.map(hotspot => {
+          {boardHotspots.map(hotspot => {
             const space = spaceMap.get(hotspot.spaceId)
             if (!space) return null
 
@@ -368,7 +504,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           )}
 
           {hotspotDebug &&
-            BOARD_HOTSPOTS.map(h => {
+            boardHotspots.map(h => {
               const anchor = layoutAgentAnchorPercent(h)
               return (
                 <div
@@ -386,7 +522,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
           {/* The Voice — same anchor as agent figures; drawn under agents so figures stay visible when occupied */}
           {[...blockedSpaceMap.entries()].map(([spaceId, blockerPlayerId]) => {
-            const anchor = MARKER_ANCHORS.find(a => a.spaceId === spaceId)
+            const anchor = markerAnchors.find(a => a.spaceId === spaceId)
             if (!anchor) return null
             const ring = PLAYER_COLORS[blockerPlayerId] || '#ffa726'
             return (
@@ -406,7 +542,8 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             )
           })}
 
-          {MARKER_ANCHORS.map(anchor => {
+          {markerAnchors.map(anchor => {
+            if (riseOfIx && (anchor.spaceId === 23 || anchor.spaceId === 24)) return null
             const occupied = occupiedSpaces[anchor.spaceId] || []
             if (occupied.length === 0) return null
 
@@ -480,6 +617,33 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             })
           })}
 
+          {/* Tessia Vernius — snooper tokens on influence tracks (RoI only) */}
+          {riseOfIx &&
+            playersSorted.flatMap((player, laneIdx) => {
+              if (!isTessiaLeader(player.leader)) return []
+              return FACTIONS.flatMap(faction => {
+                if (!player.snoopers?.[faction]) return []
+                const inner = snooperTokenPoint(faction, laneIdx, INFLUENCE_TRACKS)
+                const st = stagePoint(inner.x, inner.y)
+                return (
+                  <div
+                    key={`snooper-${player.id}-${faction}`}
+                    className="image-board__snooper-token"
+                    data-marker="snooper"
+                    data-faction={faction}
+                    data-player-id={player.id}
+                    style={{
+                      left: `${st.x}%`,
+                      top: `${st.y}%`,
+                    }}
+                    title={`Snooper on ${faction} (${player.leader.name})`}
+                  >
+                    <img src="/icon/snooper.svg" alt="" aria-hidden="true" />
+                  </div>
+                )
+              })
+            })}
+
           {/* VP lanes */}
           {playersSorted.map((player, laneIdx) => {
             const lane = VP_LANES[laneIdx]
@@ -528,6 +692,50 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             )
           })}
 
+          {/* Mentat — on board when not held by a player */}
+          {(() => {
+            const mentatHotspot = boardHotspots.find(h => h.spaceId === 10)
+            if (!mentatHotspot || !isMentatAvailableOnBoard(gameStateForMarkers.mentatOwner)) {
+              return null
+            }
+            const pt = mentatAvailabilityPoint(mentatHotspot)
+            return (
+              <div
+                className="image-board__tracker-circle image-board__tracker-circle--mentat-available"
+                data-marker="mentat-available"
+                style={{
+                  left: `${pt.x}%`,
+                  top: `${pt.y}%`,
+                }}
+                title="Mentat available on board"
+              />
+            )
+          })()}
+
+          {/* Swordmaster — player colors for those who can still visit once */}
+          {(() => {
+            const swordHotspot = boardHotspots.find(h => h.spaceId === 13)
+            if (!swordHotspot) return null
+            const eligible = playersEligibleForSwordmaster(players)
+            return eligible.map((player, idx) => {
+              const pt = swordmasterEligibilityPoint(swordHotspot, idx, eligible.length)
+              return (
+                <div
+                  key={`sm-eligible-${player.id}`}
+                  className="image-board__tracker-circle"
+                  data-marker="swordmaster-eligibility"
+                  data-player-id={player.id}
+                  style={{
+                    left: `${pt.x}%`,
+                    top: `${pt.y}%`,
+                    backgroundColor: playerMarkerColor(player),
+                  }}
+                  title={`${player.leader.name} can still take Swordmaster`}
+                />
+              )
+            })
+          })()}
+
           {/* Control markers */}
           {(Object.keys(CONTROL_MARKER_POINTS) as ControlMarkerType[]).map(key => {
             const pid = controlMarkers[key]
@@ -536,29 +744,109 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             if (!p) return null
             const pt = CONTROL_MARKER_POINTS[key]
             const st = stagePoint(pt.x, pt.y)
+            const dreadOwnerId = gameStateForMarkers.dreadnoughtCover?.[key]
+            const dreadOwner = dreadOwnerId != null ? playerById.get(dreadOwnerId) : undefined
+            const dreadnoughtOnControl =
+              dreadOwner?.dreadnoughts?.control?.some(entry => entry.space === key) ??
+              players.some(pl => pl.dreadnoughts?.control?.some(entry => entry.space === key))
+            const dreadPlayer = dreadOwner ?? players.find(pl =>
+              pl.dreadnoughts?.control?.some(entry => entry.space === key)
+            )
+            const dreadPt = dreadnoughtControlPoints?.[key]
+            const dreadSt = dreadPt ? stagePoint(dreadPt.x, dreadPt.y) : null
             return (
-              <div
-                key={`ctl-${key}`}
-                className="image-board__tracker-circle image-board__tracker-circle--control"
-                data-marker="control"
-                data-control={key}
-                data-player-id={pid}
-                style={{
-                  left: `${st.x}%`,
-                  top: `${st.y}%`,
-                  backgroundColor: playerMarkerColor(p),
-                }}
-                title={`Control ${key} (${p.leader.name})`}
-              />
+              <React.Fragment key={`ctl-${key}`}>
+                <div
+                  className="image-board__tracker-circle image-board__tracker-circle--control"
+                  data-marker="control"
+                  data-control={key}
+                  data-player-id={pid}
+                  style={{
+                    left: `${st.x}%`,
+                    top: `${st.y}%`,
+                    backgroundColor: playerMarkerColor(p),
+                  }}
+                  title={`Control ${key} (${p.leader.name})`}
+                />
+                {dreadnoughtOnControl && dreadSt && dreadPlayer ? (
+                  <div
+                    className="image-board__dreadnought-control-marker"
+                    data-marker="dreadnought-control"
+                    data-control={key}
+                    data-player-id={dreadPlayer.id}
+                    style={{
+                      left: `${dreadSt.x}%`,
+                      top: `${dreadSt.y}%`,
+                    }}
+                    title={`Dreadnought on ${key} (${dreadPlayer.leader.name})`}
+                  >
+                    <div
+                      className={[
+                        'image-board__dreadnought-control-badge',
+                        `image-board__dreadnought-control-badge--${dreadPlayer.color}`,
+                      ].join(' ')}
+                      style={{ backgroundColor: playerMarkerColor(dreadPlayer) }}
+                    >
+                      <BoardAgentFigure
+                        playerId={dreadPlayer.id}
+                        variant="dreadnought"
+                        className="image-board__dreadnought-control-icon"
+                      />
+                    </div>
+                  </div>
+                ) : null}
+              </React.Fragment>
             )
           })}
 
-          {/* Conflict card + combat numbers (hidden until a real conflict is selected;
-              in sandbox setup both render as configuration targets) */}
-          {(Boolean(currentConflict && currentConflict.id > 0) || sandboxSetup) && (
+          {riseOfIx && shippingTrackAnchors && freighterStatusButton && (
             <>
               {(() => {
-                const hasConflict = Boolean(currentConflict && currentConflict.id > 0)
+                const btn = stagePoint(freighterStatusButton.x, freighterStatusButton.y)
+                return (
+                  <button
+                    type="button"
+                    className="image-board__freighter-status-btn"
+                    style={{ left: `${btn.x}%`, top: `${btn.y}%` }}
+                    title="CHOAM Shipping track"
+                    disabled={isViewingHistory}
+                    onClick={() => setShowFreighterStatusModal(true)}
+                  >
+                    Ship
+                  </button>
+                )
+              })()}
+
+              {playersSorted.map((player, laneIdx) => {
+                const step = player.freighterStep ?? 0
+                const laneAnchor = shippingTrackAnchors.find(a => a.player === laneIdx)
+                if (!laneAnchor) return null
+                const cy = laneAnchor.laneCenterY[step]
+                if (cy === undefined) return null
+                const st = stagePoint(laneAnchor.x, cy)
+                return (
+                  <div
+                    key={`freighter-${player.id}`}
+                    className="image-board__freighter-disc"
+                    data-marker="freighter"
+                    data-player-id={player.id}
+                    style={{
+                      left: `${st.x}%`,
+                      top: `${st.y}%`,
+                      backgroundColor: playerMarkerColor(player),
+                    }}
+                    title={`Freighter step ${step} (${player.leader.name})`}
+                  />
+                )
+              })}
+            </>
+          )}
+
+          {/* Conflict card: hidden until selected (sandbox shows a picker target).
+              Combat area: also shown during active play after sandbox commit. */}
+          {showConflictPanel && (
+            <>
+              {(() => {
                 const conflictContent =
                   hasConflict && conflictImgSrc && !conflictImgFailed ? (
                     <img
@@ -618,48 +906,41 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   </div>
                 )
               })()}
-
-              {(() => {
-                const area = stageRect(COMBAT_AREA_BOUNDS)
-                return (
-                  <>
-                    <CombatAreaCluster
-                      players={players}
-                      troops={combatTroops}
-                      strength={combatStrength}
-                      activePlayerId={currentPlayer}
-                      gameState={gameStateForMarkers}
-                      modalContainerRef={boardMediaRef}
-                      troopDeploy={troopDeploy}
-                      gridHeightPercent={COMBAT_AREA_BOUNDS.height}
-                      onPlayerSelect={
-                        sandboxSetup ? player => sandboxSetup.onPlayerClick(player.id) : undefined
-                      }
-                      className="image-board__combat-area-cluster"
-                      data-marker="combat-area"
-                      style={{
-                        left: `${area.left}%`,
-                        top: `${area.top}%`,
-                        width: `${area.width}%`,
-                        height: `${area.height}%`,
-                      }}
-                    />
-                    {/* {sandboxSetup ? (
-                      <SandboxSetupHint
-                        anchor="center"
-                        placement="above"
-                        label="Open leader to customize, deck, and resources"
-                        style={{
-                          left: `${area.left + area.width / 2}%`,
-                          top: `${area.top}%`,
-                        }}
-                      />
-                    ) : null} */}
-                  </>
-                )
-              })()}
-
             </>
+          )}
+
+          {showCombatArea && (
+            (() => {
+              const area = stageRect(COMBAT_AREA_BOUNDS)
+              return (
+                <CombatAreaCluster
+                  players={players}
+                  troops={combatTroops}
+                  strength={combatStrength}
+                  activePlayerId={currentPlayer}
+                  gameState={gameStateForMarkers}
+                  modalContainerRef={boardMediaRef}
+                  troopDeploy={troopDeploy}
+                  dreadnoughtDeploy={dreadnoughtDeploy}
+                  negotiatorDeploy={negotiatorDeploy}
+                  riseOfIx={riseOfIx}
+                  firstPlayerMarker={gameStateForMarkers.firstPlayerMarker}
+                  mentatOwner={gameStateForMarkers.mentatOwner}
+                  gridHeightPercent={COMBAT_AREA_BOUNDS.height}
+                  onPlayerSelect={
+                    sandboxSetup ? player => sandboxSetup.onPlayerClick(player.id) : undefined
+                  }
+                  className="image-board__combat-area-cluster"
+                  data-marker="combat-area"
+                  style={{
+                    left: `${area.left}%`,
+                    top: `${area.top}%`,
+                    width: `${area.width}%`,
+                    height: `${area.height}%`,
+                  }}
+                />
+              )
+            })()
           )}
 
           {influenceSelection ? (
@@ -748,6 +1029,33 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   />
                 )
               })}
+              {(() => {
+                const mentatHotspot = boardHotspots.find(h => h.spaceId === 10)
+                if (!mentatHotspot) return null
+                const pt = mentatAvailabilityPoint(mentatHotspot)
+                return (
+                  <div
+                    key="db-mentat"
+                    className="image-board__marker-debug-dot image-board__marker-debug-dot--mentat"
+                    style={{ left: `${pt.x}%`, top: `${pt.y}%` }}
+                  />
+                )
+              })()}
+              {(() => {
+                const swordHotspot = boardHotspots.find(h => h.spaceId === 13)
+                if (!swordHotspot) return null
+                return playersSorted.map((player, idx) => {
+                  const pt = swordmasterEligibilityPoint(swordHotspot, idx, playersSorted.length)
+                  return (
+                    <div
+                      key={`db-sm-${player.id}`}
+                      className="image-board__marker-debug-dot image-board__marker-debug-dot--swordmaster"
+                      data-player-id={player.id}
+                      style={{ left: `${pt.x}%`, top: `${pt.y}%` }}
+                    />
+                  )
+                })
+              })()}
               {(Object.keys(INFLUENCE_TRACK_AREAS) as FactionType[]).map(faction => {
                 const areaBox = stageRect(INFLUENCE_TRACK_AREAS[faction])
                 return (
@@ -807,6 +1115,21 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   />
                 )
               })}
+              {SNOOPER_TOKEN_ANCHORS.flatMap(anchor =>
+                INFLUENCE_TRACKS[anchor.faction].laneCenterX.map((cx, li) => {
+                  const tr = INFLUENCE_TRACKS[anchor.faction]
+                  const cy = tr.baselineY + tr.stepY * anchor.step
+                  const st = stagePoint(cx, cy)
+                  return (
+                    <div
+                      key={`db-snooper-${anchor.faction}-${li}`}
+                      className="image-board__marker-debug-dot image-board__marker-debug-dot--snooper"
+                      data-faction={anchor.faction}
+                      style={{ left: `${st.x}%`, top: `${st.y}%` }}
+                    />
+                  )
+                })
+              )}
               {(Object.keys(CONTROL_MARKER_POINTS) as ControlMarkerType[]).map(key => {
                 const pt = CONTROL_MARKER_POINTS[key]
                 const st = stagePoint(pt.x, pt.y)
@@ -863,9 +1186,23 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           )}
           </div>
         </div>
-      </div>
+    </div>
+  )
 
-      {showSellMelangePopup && (
+  return (
+    <div className={rootClass}>
+      {ixBoardDocked ? (
+        <div className="image-board__desktop-shell">
+          {boardStage}
+          <aside className="image-board__ix-dock" aria-label="Ix board">
+            {ixBoardOverlay}
+          </aside>
+        </div>
+      ) : (
+        boardStage
+      )}
+
+      {showSellMelangePopup && !riseOfIx && (
         <SellMelangePopup
           playerSpice={players.find(p => p.id === currentPlayer)?.spice || 0}
           onOptionSelect={handleSellMelangeOptionSelect}
@@ -875,6 +1212,12 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           }}
         />
       )}
+
+      <FreighterStatusModal
+        isOpen={riseOfIx && showFreighterStatusModal}
+        onClose={() => setShowFreighterStatusModal(false)}
+        players={players}
+      />
     </div>
   )
 }

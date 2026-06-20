@@ -2,12 +2,14 @@
   "schemaVersion": 1,
   "meta": {
     "counts": {
-      "effects": 163,
-      "cards": 63,
-      "boardSpaces": 22,
-      "conflicts": 18,
-      "intrigue": 32,
-      "leaders": 8
+      "effects": 255,
+      "cards": 92,
+      "boardSpaces": 26,
+      "conflicts": 22,
+      "intrigue": 49,
+      "leaders": 14,
+      "techTiles": 18,
+      "expansions": 1
     }
   },
   "effects": [
@@ -1777,6 +1779,957 @@
       }
     },
     {
+      "id": "effect:card:imperium/appropriate:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/appropriate"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "influence": {
+          "faction": "emperor",
+          "amount": 2
+        }
+      },
+      "reward": {
+        "acquireTech": {
+          "paySolariInsteadOfSpice": true
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/appropriate:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/appropriate"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/appropriate:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/appropriate"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "freighter": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/bounty-hunter:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/bounty-hunter"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "BOUNTY_INFILTRATION_BONUS"
+      }
+    },
+    {
+      "id": "effect:card:imperium/bounty-hunter:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/bounty-hunter"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/choam-delegate:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/choam-delegate"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "solari": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/court-intrigue:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/court-intrigue"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "intrigueBottom": 1
+      },
+      "reward": {
+        "intrigueCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/court-intrigue:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/court-intrigue"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/desert-ambush:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/desert-ambush"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/desert-ambush:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/desert-ambush"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "reward": {
+        "custom": "DESERT_AMBUSH"
+      }
+    },
+    {
+      "id": "effect:card:imperium/embedded-agent:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/embedded-agent"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "inPlay": "bene-gesserit"
+      },
+      "reward": {
+        "freighter": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/embedded-agent:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/embedded-agent"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "intrigueCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/esmar-tuek:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/esmar-tuek"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 1
+      },
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            }
+          ]
+        },
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/esmar-tuek:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/esmar-tuek"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "spice": 2,
+        "solari": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/freighter-fleet:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/freighter-fleet"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "freighter": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/full-scale-assault:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/full-scale-assault"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "troops": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/full-scale-assault:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/full-scale-assault"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/full-scale-assault:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/full-scale-assault"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "reward": {
+        "custom": "FULLSCALE_DREAD_SWORDS"
+      }
+    },
+    {
+      "id": "effect:card:imperium/full-scale-assault:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/full-scale-assault"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "dreadnoughts": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/guild-accord:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-accord"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "GUILD_ACCORD_HEIGHTLINER_DISCOUNT"
+      }
+    },
+    {
+      "id": "effect:card:imperium/guild-accord:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-accord"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "water": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/guild-accord:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-accord"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "requirement": {
+        "alliance": "spacing-guild"
+      },
+      "reward": {
+        "spice": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/guild-chief-administrator:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-chief-administrator"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "discard": 1
+      },
+      "reward": {
+        "trash": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/guild-chief-administrator:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-chief-administrator"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "freighter": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/imperial-bashar:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/imperial-bashar"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "troops": 1
+      },
+      "choiceOpt": true
+    },
+    {
+      "id": "effect:card:imperium/imperial-bashar:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/imperial-bashar"
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "trash": 1
+      },
+      "choiceOpt": true
+    },
+    {
+      "id": "effect:card:imperium/imperial-bashar:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/imperial-bashar"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/imperial-bashar:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/imperial-bashar"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "reward": {
+        "custom": "IMPERIAL_BASHAR_SWORDS"
+      }
+    },
+    {
+      "id": "effect:card:imperium/imperial-shock-trooper:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/imperial-shock-trooper"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/imperial-shock-trooper:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/imperial-shock-trooper"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "reward": {
+        "custom": "SHOCKTROOPER_EM_BONUS"
+      }
+    },
+    {
+      "id": "effect:card:imperium/in-the-shadows:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/in-the-shadows"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "influence": {
+          "faction": "bene-gesserit",
+          "amount": 2
+        }
+      },
+      "cost": {
+        "discard": 1
+      },
+      "reward": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/in-the-shadows:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/in-the-shadows"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/ix-guild-compact:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/ix-guild-compact"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "discard": 2
+      },
+      "reward": {
+        "dreadnoughts": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/ix-guild-compact:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/ix-guild-compact"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "techNegotiator": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/ixian-engineer:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/ixian-engineer"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "acquireTech": {}
+      }
+    },
+    {
+      "id": "effect:card:imperium/ixian-engineer:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/ixian-engineer"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "custom": "IXIAN_ENGINEER_VP"
+      }
+    },
+    {
+      "id": "effect:card:imperium/jamis:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/jamis"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "trash": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/jamis:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/jamis"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/landing-rights:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/landing-rights"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "freighter": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/landing-rights:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/landing-rights"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/local-fence:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/local-fence"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 2
+      },
+      "reward": {
+        "solari": 5
+      },
+      "choiceOpt": true
+    },
+    {
+      "id": "effect:card:imperium/local-fence:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/local-fence"
+      },
+      "slot": "play",
+      "index": 1,
+      "cost": {
+        "solari": 5
+      },
+      "reward": {
+        "spice": 4
+      },
+      "choiceOpt": true
+    },
+    {
+      "id": "effect:card:imperium/local-fence:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/local-fence"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/negotiated-withdrawel:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/negotiated-withdrawel"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/negotiated-withdrawel:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/negotiated-withdrawel"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "reward": {
+        "custom": "NEGOTIATED_WITHDRAWAL"
+      }
+    },
+    {
+      "id": "effect:card:imperium/negotiated-withdrawel:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/negotiated-withdrawel"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "troops": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/satellite-ban:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/satellite-ban"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "discard": 1
+      },
+      "reward": {
+        "spice": 1,
+        "water": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/satellite-ban:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/satellite-ban"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/satellite-ban:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/satellite-ban"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "reward": {
+        "retreatTroops": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/sayyadina:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/sayyadina"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "water": 3
+      },
+      "reward": {
+        "victoryPoints": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/sayyadina:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/sayyadina"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "requirement": {
+        "bond": "fremen"
+      },
+      "reward": {
+        "persuasion": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/shai-hulud:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/shai-hulud"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "trash": 1
+      },
+      "reward": {
+        "troops": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/shai-hulud:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/shai-hulud"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "requirement": {
+        "bond": "fremen"
+      },
+      "reward": {
+        "combat": 5
+      }
+    },
+    {
+      "id": "effect:card:imperium/shai-hulud:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/shai-hulud"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "trash": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/spice-trader:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/spice-trader"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "influence": {
+          "faction": "fremen",
+          "amount": 2
+        }
+      },
+      "cost": {
+        "discard": 1
+      },
+      "reward": {
+        "spice": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/spice-trader:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/spice-trader"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/treachery:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/treachery"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "TREACHERY_DOUBLE_INFLUENCE"
+      }
+    },
+    {
+      "id": "effect:card:imperium/treachery:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/treachery"
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "trashThisCard": true
+      }
+    },
+    {
+      "id": "effect:card:imperium/treachery:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/treachery"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "troops": 2,
+        "deployTroops": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/truthsayer:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/truthsayer"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "discard": 1
+      },
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/truthsayer:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/truthsayer"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/water-peddler:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/water-peddler"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "water": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/water-peddler:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/water-peddler"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "water": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/web-of-power:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/web-of-power"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "WEB_OF_POWER"
+      }
+    },
+    {
+      "id": "effect:card:imperium/web-of-power:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/web-of-power"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/web-of-power:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/web-of-power"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "reward": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/weirding-way:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/weirding-way"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "WEIRDING_WAY_EXTRA_TURN"
+      }
+    },
+    {
+      "id": "effect:card:imperium/weirding-way:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/weirding-way"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 2
+      }
+    },
+    {
       "id": "effect:card:arrakis-liaison/arrakis-liaison:reveal:0",
       "owner": {
         "type": "card",
@@ -2383,6 +3336,404 @@
       }
     },
     {
+      "id": "effect:intrigue:33:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 33
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": -1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": -1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": -1
+            },
+            {
+              "faction": "fremen",
+              "amount": -1
+            }
+          ]
+        }
+      },
+      "reward": {
+        "combat": 5
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:34:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 34
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:34:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 34
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "custom": "CANNON_TURRETS"
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:35:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 35
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:35:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 35
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "custom": "STRATEGIC_PUSH"
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:36:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 36
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:36:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 36
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "custom": "SECOND_WAVE"
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:37:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 37
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "solari": 2
+      },
+      "reward": {
+        "combat": 4
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:37:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 37
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "custom": "WAR_CHEST"
+      },
+      "phase": "end-game"
+    },
+    {
+      "id": "effect:intrigue:38:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 38
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:38:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 38
+      },
+      "slot": "play",
+      "index": 1,
+      "cost": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": -1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": -1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": -1
+            },
+            {
+              "faction": "fremen",
+              "amount": -1
+            }
+          ]
+        }
+      },
+      "reward": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
+      },
+      "phase": "player-turns"
+    },
+    {
+      "id": "effect:intrigue:39:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 39
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "ADVANCED_WEAPONRY"
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:39:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 39
+      },
+      "slot": "play",
+      "index": 1,
+      "cost": {
+        "solari": 3
+      },
+      "reward": {
+        "dreadnoughts": 1
+      },
+      "phase": "player-turns"
+    },
+    {
+      "id": "effect:intrigue:40:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 40
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "GRAND_CONSPIRACY"
+      },
+      "phase": "end-game"
+    },
+    {
+      "id": "effect:intrigue:41:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 41
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "troops": 1
+      },
+      "reward": {
+        "custom": "STRONGARM"
+      }
+    },
+    {
+      "id": "effect:intrigue:42:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 42
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "discard": 2
+      },
+      "reward": {
+        "drawCards": 2
+      }
+    },
+    {
+      "id": "effect:intrigue:43:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 43
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "solari": 1
+      },
+      "reward": {
+        "trash": 1
+      }
+    },
+    {
+      "id": "effect:intrigue:44:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 44
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "highCouncil": true
+      },
+      "reward": {
+        "troops": 2
+      }
+    },
+    {
+      "id": "effect:intrigue:45:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 45
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 2
+      },
+      "reward": {
+        "custom": "QUID_PRO_QUO"
+      }
+    },
+    {
+      "id": "effect:intrigue:46:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 46
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 1
+      },
+      "reward": {
+        "water": 1,
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:intrigue:47:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 47
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "DIVERSION"
+      }
+    },
+    {
+      "id": "effect:intrigue:48:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 48
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "spice": 1
+      },
+      "reward": {
+        "freighter": 1
+      }
+    },
+    {
+      "id": "effect:intrigue:49:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 49
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "acquireTech": {}
+      },
+      "phase": "player-turns"
+    },
+    {
+      "id": "effect:intrigue:49:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 49
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "custom": "MACHINE_CULTURE"
+      },
+      "phase": "end-game"
+    },
+    {
       "id": "effect:board-space:9:space:0",
       "owner": {
         "type": "board-space",
@@ -2627,6 +3978,81 @@
       "index": 0,
       "reward": {
         "spice": 2
+      }
+    },
+    {
+      "id": "effect:board-space:23:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 23
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "dreadnoughts": 1
+      }
+    },
+    {
+      "id": "effect:board-space:23:space:1",
+      "owner": {
+        "type": "board-space",
+        "id": 23
+      },
+      "slot": "space",
+      "index": 1,
+      "reward": {
+        "acquireTech": {}
+      }
+    },
+    {
+      "id": "effect:board-space:24:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 24
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "acquireTech": {
+          "discount": 1
+        }
+      }
+    },
+    {
+      "id": "effect:board-space:24:space:1",
+      "owner": {
+        "type": "board-space",
+        "id": 24
+      },
+      "slot": "space",
+      "index": 1,
+      "reward": {
+        "techNegotiator": 1
+      }
+    },
+    {
+      "id": "effect:board-space:25:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 25
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "solari": 1,
+        "freighter": 1
+      }
+    },
+    {
+      "id": "effect:board-space:26:space:0",
+      "owner": {
+        "type": "board-space",
+        "id": 26
+      },
+      "slot": "space",
+      "index": 0,
+      "reward": {
+        "freighter": 2
       }
     }
   ],
@@ -4045,6 +5471,742 @@
       ]
     },
     {
+      "id": "imperium/appropriate",
+      "name": "Appropriate",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "landsraad",
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/appropriate.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/appropriate:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/appropriate:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/appropriate:acquire:0"
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/bounty-hunter",
+      "name": "Bounty Hunter",
+      "pool": "imperium",
+      "cost": 1,
+      "agentIcons": [
+        "city"
+      ],
+      "infiltrate": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/bounty_hunter.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/bounty-hunter:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/bounty-hunter:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/choam-delegate",
+      "name": "CHOAM Delegate",
+      "pool": "imperium",
+      "cost": 1,
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "infiltrate": true,
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/choam_delegate.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/choam-delegate:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/court-intrigue",
+      "name": "Court Intrigue",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "emperor"
+      ],
+      "infiltrate": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/court_intrigue.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/court-intrigue:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/court-intrigue:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/desert-ambush",
+      "name": "Desert Ambush",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/desert_ambush.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/desert-ambush:reveal:0",
+          "effect:card:imperium/desert-ambush:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/embedded-agent",
+      "name": "Embedded Agent",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "landsraad"
+      ],
+      "infiltrate": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/embedded_agent.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/embedded-agent:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/embedded-agent:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/esmar-tuek",
+      "name": "Esmar Tuek",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/esmar_tuek.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/esmar-tuek:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/esmar-tuek:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/freighter-fleet",
+      "name": "Freighter Fleet",
+      "pool": "imperium",
+      "cost": 2,
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/freighter_fleet.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/freighter-fleet:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/full-scale-assault",
+      "name": "Full-Scale Assault",
+      "pool": "imperium",
+      "cost": 8,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "emperor",
+        "city"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/full_scale_assault.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/full-scale-assault:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/full-scale-assault:reveal:0",
+          "effect:card:imperium/full-scale-assault:reveal:1"
+        ],
+        "acquire": "effect:card:imperium/full-scale-assault:acquire:0"
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/guild-accord",
+      "name": "Guild Accord",
+      "pool": "imperium",
+      "cost": 6,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "spacing-guild"
+      ],
+      "infiltrate": true,
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/guild_accord.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/guild-accord:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/guild-accord:reveal:0",
+          "effect:card:imperium/guild-accord:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/guild-chief-administrator",
+      "name": "Guild Chief Administrator",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "spacing-guild",
+        "city",
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/guild_chief_administrator.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/guild-chief-administrator:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/guild-chief-administrator:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/imperial-bashar",
+      "name": "Imperial Bashar",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "city"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/imperial_bashar.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/imperial-bashar:play:0",
+          "effect:card:imperium/imperial-bashar:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/imperial-bashar:reveal:0",
+          "effect:card:imperium/imperial-bashar:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/imperial-shock-trooper",
+      "name": "Imperial Shock Trooper",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/imperial_shock_trooper.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/imperial-shock-trooper:reveal:0",
+          "effect:card:imperium/imperial-shock-trooper:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/in-the-shadows",
+      "name": "In the Shadows",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "landsraad",
+        "city"
+      ],
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/in_the_shadows.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/in-the-shadows:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/in-the-shadows:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/ix-guild-compact",
+      "name": "Ix-Guild Compact",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "spacing-guild"
+      ],
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/ix_guild_compact.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/ix-guild-compact:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/ix-guild-compact:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/ixian-engineer",
+      "name": "Ixian Engineer",
+      "pool": "imperium",
+      "cost": 5,
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/ixian_engineer.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/ixian-engineer:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/ixian-engineer:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/jamis",
+      "name": "Jamis",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "fremen"
+      ],
+      "infiltrate": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/jamis.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/jamis:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/jamis:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/landing-rights",
+      "name": "Landing Rights",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "city"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/landing_rights.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/landing-rights:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/landing-rights:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/local-fence",
+      "name": "Local Fence",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [
+        "city"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/local_fence.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/local-fence:play:0",
+          "effect:card:imperium/local-fence:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/local-fence:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/negotiated-withdrawel",
+      "name": "Negotiated Withdrawel",
+      "pool": "imperium",
+      "cost": 4,
+      "agentIcons": [
+        "spice-trade",
+        "landsraad",
+        "city"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/negotiated_withdrawel.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/negotiated-withdrawel:reveal:0",
+          "effect:card:imperium/negotiated-withdrawel:reveal:1"
+        ],
+        "acquire": "effect:card:imperium/negotiated-withdrawel:acquire:0"
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/satellite-ban",
+      "name": "Satellite Ban",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "spacing-guild",
+        "fremen"
+      ],
+      "agentIcons": [
+        "spacing-guild",
+        "fremen"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/satellite_ban.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/satellite-ban:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/satellite-ban:reveal:0",
+          "effect:card:imperium/satellite-ban:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/sayyadina",
+      "name": "Sayyadina",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "bene-gesserit",
+        "fremen"
+      ],
+      "agentIcons": [
+        "bene-gesserit",
+        "fremen"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/sayyadina.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/sayyadina:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/sayyadina:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/shai-hulud",
+      "name": "Shai-Hulud",
+      "pool": "imperium",
+      "cost": 7,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/shai_hulud.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/shai-hulud:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/shai-hulud:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/shai-hulud:acquire:0"
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/spice-trader",
+      "name": "Spice Trader",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/spice_trader.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/spice-trader:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/spice-trader:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/treachery",
+      "name": "Treachery",
+      "pool": "imperium",
+      "cost": 6,
+      "agentIcons": [
+        "emperor",
+        "spacing-guild",
+        "bene-gesserit",
+        "fremen"
+      ],
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/treachery.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/treachery:play:0",
+          "effect:card:imperium/treachery:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/treachery:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/truthsayer",
+      "name": "Truthsayer",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "emperor",
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "emperor",
+        "bene-gesserit",
+        "landsraad"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/truthsayer.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/truthsayer:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/truthsayer:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/water-peddler",
+      "name": "Water Peddler",
+      "pool": "imperium",
+      "cost": 1,
+      "agentIcons": [],
+      "unload": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/water_peddler.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/water-peddler:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/water-peddler:acquire:0"
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/web-of-power",
+      "name": "Web of Power",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "bene-gesserit"
+      ],
+      "infiltrate": true,
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/web_of_power.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/web-of-power:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/web-of-power:reveal:0",
+          "effect:card:imperium/web-of-power:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/weirding-way",
+      "name": "Weirding Way",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "riseOfIx": true,
+      "image": "imperium_row/rise_of_ix/weirding_way.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/weirding-way:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/weirding-way:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
       "id": "arrakis-liaison/arrakis-liaison",
       "name": "Arrakis Liaison",
       "pool": "arrakis-liaison",
@@ -4568,6 +6730,59 @@
       "effects": [
         "effect:board-space:6:space:0"
       ]
+    },
+    {
+      "id": 23,
+      "name": "Dreadnought",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "cost": {
+        "solari": 3
+      },
+      "image": "board/dreadnought.png",
+      "riseOfIx": true,
+      "effects": [
+        "effect:board-space:23:space:0",
+        "effect:board-space:23:space:1"
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Tech Negotiation",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "image": "board/tech_negotiation.png",
+      "riseOfIx": true,
+      "effects": [
+        "effect:board-space:24:space:0",
+        "effect:board-space:24:space:1"
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Smuggling",
+      "agentIcon": "spice-trade",
+      "conflictMarker": false,
+      "image": "board/smuggling.png",
+      "riseOfIx": true,
+      "effects": [
+        "effect:board-space:25:space:0"
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Interstellar Shipping",
+      "agentIcon": "spice-trade",
+      "conflictMarker": false,
+      "requiresInfluence": {
+        "faction": "spacing-guild",
+        "amount": 2
+      },
+      "image": "board/interstellar_shipping.png",
+      "riseOfIx": true,
+      "effects": [
+        "effect:board-space:26:space:0"
+      ]
     }
   ],
   "conflicts": [
@@ -4970,24 +7185,29 @@
     {
       "id": 915,
       "tier": 3,
-      "name": "Heighliner Assault",
+      "name": "Battle for Imperial Basin",
+      "controlSpace": "imperial-basin",
       "rewards": {
         "first": [
           {
             "type": "VP",
             "amount": 2
+          },
+          {
+            "type": "Control",
+            "amount": 1
           }
         ],
         "second": [
           {
-            "type": "Solari",
-            "amount": 6
+            "type": "Spice",
+            "amount": 5
           }
         ],
         "third": [
           {
             "type": "Spice",
-            "amount": 2
+            "amount": 3
           }
         ]
       }
@@ -4995,23 +7215,46 @@
     {
       "id": 916,
       "tier": 3,
-      "name": "Battle for Arrakis",
+      "name": "Battle for Arrakeen",
+      "controlSpace": "arrakin",
       "rewards": {
         "first": [
           {
             "type": "VP",
             "amount": 2
+          },
+          {
+            "type": "Control",
+            "amount": 1
           }
         ],
         "second": [
           {
             "type": "Intrigue",
-            "amount": 2
+            "amount": 0,
+            "choiceOptions": [
+              {
+                "type": "Intrigue",
+                "amount": 1
+              },
+              {
+                "type": "Spice",
+                "amount": 2
+              },
+              {
+                "type": "Solari",
+                "amount": 3
+              }
+            ]
           }
         ],
         "third": [
           {
-            "type": "Spice",
+            "type": "Intrigue",
+            "amount": 1
+          },
+          {
+            "type": "Solari",
             "amount": 2
           }
         ]
@@ -5020,17 +7263,60 @@
     {
       "id": 917,
       "tier": 3,
-      "name": "Final Offensive",
+      "name": "Battle for Carthag",
+      "controlSpace": "carthag",
       "rewards": {
         "first": [
           {
             "type": "VP",
             "amount": 2
+          },
+          {
+            "type": "Control",
+            "amount": 1
           }
         ],
         "second": [
           {
-            "type": "Troops",
+            "type": "Intrigue",
+            "amount": 1
+          },
+          {
+            "type": "Spice",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": 918,
+      "tier": 3,
+      "name": "Grand Vision",
+      "rewards": {
+        "first": [
+          {
+            "type": "Influence",
+            "amount": 1,
+            "chooseFaction": true
+          },
+          {
+            "type": "Intrigue",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Intrigue",
+            "amount": 1
+          },
+          {
+            "type": "Solari",
             "amount": 3
           }
         ],
@@ -5043,29 +7329,162 @@
       }
     },
     {
-      "id": 918,
-      "tier": 3,
-      "name": "Conquest of Dune",
+      "id": 919,
+      "tier": 1,
+      "name": "Skirmish IV",
       "rewards": {
         "first": [
           {
-            "type": "VP",
-            "amount": 2
+            "type": "Freighter",
+            "amount": 1
+          },
+          {
+            "type": "Troops",
+            "amount": 1
           }
         ],
         "second": [
           {
-            "type": "Influence",
+            "type": "Spice",
             "amount": 2
           }
         ],
         "third": [
           {
             "type": "Spice",
+            "amount": 1
+          }
+        ]
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": 920,
+      "tier": 1,
+      "name": "Skirmish V",
+      "rewards": {
+        "first": [
+          {
+            "type": "Freighter",
+            "amount": 1
+          },
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Solari",
+            "amount": 3
+          }
+        ],
+        "third": [
+          {
+            "type": "Solari",
             "amount": 2
           }
         ]
-      }
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": 921,
+      "tier": 3,
+      "name": "Economy Supremacy",
+      "rewards": {
+        "first": [
+          {
+            "type": "VP",
+            "amount": 1
+          },
+          {
+            "type": "VP",
+            "amount": 0,
+            "choiceOptions": [
+              {
+                "type": "VP",
+                "amount": 1,
+                "cost": {
+                  "solari": 6
+                }
+              },
+              {
+                "type": "VP",
+                "amount": 1,
+                "cost": {
+                  "spice": 4
+                }
+              },
+              {
+                "type": "Tech",
+                "amount": 1
+              }
+            ]
+          }
+        ],
+        "second": [
+          {
+            "type": "VP",
+            "amount": 1
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 2
+          },
+          {
+            "type": "Solari",
+            "amount": 2
+          }
+        ]
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": 922,
+      "tier": 2,
+      "name": "Trade Monopoly",
+      "rewards": {
+        "first": [
+          {
+            "type": "Freighter",
+            "amount": 2
+          },
+          {
+            "type": "Troops",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Intrigue",
+            "amount": 1
+          },
+          {
+            "type": "Water",
+            "amount": 1
+          }
+        ],
+        "third": [
+          {
+            "type": "Intrigue",
+            "amount": 0,
+            "choiceOptions": [
+              {
+                "type": "Intrigue",
+                "amount": 1
+              },
+              {
+                "type": "Water",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "riseOfIx": true
     }
   ],
   "intrigue": [
@@ -5458,6 +7877,234 @@
           "effect:intrigue:32:play:0"
         ]
       }
+    },
+    {
+      "id": 33,
+      "name": "Blackmail",
+      "type": "combat",
+      "description": "Combat: Lose 1 influence (your choice) to gain +5 strength.",
+      "image": "/intrigue/rise_of_ix/blackmail.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:33:play:0"
+        ]
+      }
+    },
+    {
+      "id": 34,
+      "name": "Cannon Turrets",
+      "type": "combat",
+      "description": "Combat: +2 strength. Each opponent retreats 1 dreadnought from the Conflict.",
+      "image": "/intrigue/rise_of_ix/cannon_turrets.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:34:play:0",
+          "effect:intrigue:34:play:1"
+        ]
+      }
+    },
+    {
+      "id": 35,
+      "name": "Strategic Push",
+      "type": "combat",
+      "description": "Combat: +2 strength. If you win this Conflict: +2 Solari.",
+      "image": "/intrigue/rise_of_ix/strategic_push.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:35:play:0",
+          "effect:intrigue:35:play:1"
+        ]
+      }
+    },
+    {
+      "id": 36,
+      "name": "Second Wave",
+      "type": "combat",
+      "description": "Combat: +2 strength. Deploy up to 2 units from your garrison to the Conflict.",
+      "image": "/intrigue/rise_of_ix/second_wave.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:36:play:0",
+          "effect:intrigue:36:play:1"
+        ]
+      }
+    },
+    {
+      "id": 37,
+      "name": "War Chest",
+      "type": "combat",
+      "description": "Combat: Pay 2 Solari to gain +4 strength —OR— Endgame: If you have 10+ Solari, gain 1 VP.",
+      "image": "/intrigue/rise_of_ix/war_chest.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:37:play:0",
+          "effect:intrigue:37:play:1"
+        ]
+      }
+    },
+    {
+      "id": 38,
+      "name": "Finesse",
+      "type": "combat",
+      "description": "Combat: +2 strength —OR— Plot: Lose 1 influence (your choice) to gain 1 influence (your choice).",
+      "image": "/intrigue/rise_of_ix/finesse.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:38:play:0",
+          "effect:intrigue:38:play:1"
+        ]
+      }
+    },
+    {
+      "id": 39,
+      "name": "Advanced Weaponry",
+      "type": "combat",
+      "description": "Combat: If you have 3 tech: +4 strength —OR— Plot: Pay 3 Solari to commission 1 dreadnought.",
+      "image": "/intrigue/rise_of_ix/advanced_weaponry.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:39:play:0",
+          "effect:intrigue:39:play:1"
+        ]
+      }
+    },
+    {
+      "id": 40,
+      "name": "Grand Conspiracy",
+      "type": "endgame",
+      "description": "Endgame: If you meet 3 of 4 conditions (2 dreadnoughts, 1 SMF, 4+ influence on 2 tracks, High Council): 1 VP. All 4: 2 VP.",
+      "image": "/intrigue/rise_of_ix/grand_conspiracy.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:40:play:0"
+        ]
+      }
+    },
+    {
+      "id": 41,
+      "name": "Strongarm",
+      "type": "plot",
+      "description": "Lose a troop to gain 1 influence on the faction track where you placed an Agent this turn.",
+      "image": "/intrigue/rise_of_ix/strongarm.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:41:play:0"
+        ]
+      }
+    },
+    {
+      "id": 42,
+      "name": "Ixian Probe",
+      "type": "plot",
+      "description": "Discard 2 cards to draw 2 cards.",
+      "image": "/intrigue/rise_of_ix/ixian_probe.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:42:play:0"
+        ]
+      }
+    },
+    {
+      "id": 43,
+      "name": "Cull",
+      "type": "plot",
+      "description": "Pay 1 Solari to trash 1 card.",
+      "image": "/intrigue/rise_of_ix/cull.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:43:play:0"
+        ]
+      }
+    },
+    {
+      "id": 44,
+      "name": "Secret Forces",
+      "type": "plot",
+      "description": "Gain 2 troops if you have a seat on the High Council.",
+      "image": "/intrigue/rise_of_ix/secret_forces.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:44:play:0"
+        ]
+      }
+    },
+    {
+      "id": 45,
+      "name": "Quid Pro Quo",
+      "type": "plot",
+      "description": "Pay 2 spice to gain 1 influence on each faction track where you currently have an Agent.",
+      "image": "/intrigue/rise_of_ix/quid_pro_quo.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:45:play:0"
+        ]
+      }
+    },
+    {
+      "id": 46,
+      "name": "Glimpse the Path",
+      "type": "plot",
+      "description": "Pay 1 spice to gain 1 water and draw 1 card.",
+      "image": "/intrigue/rise_of_ix/glimpse_the_path.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:46:play:0"
+        ]
+      }
+    },
+    {
+      "id": 47,
+      "name": "Diversion",
+      "type": "plot",
+      "description": "When you deploy 4 units to the Conflict in one turn, gain +1 on the Shipping track.",
+      "image": "/intrigue/rise_of_ix/diversion.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:47:play:0"
+        ]
+      }
+    },
+    {
+      "id": 48,
+      "name": "Expedite",
+      "type": "plot",
+      "description": "Pay 1 spice to advance 1 space on the Shipping track.",
+      "image": "/intrigue/rise_of_ix/expedite.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:48:play:0"
+        ]
+      }
+    },
+    {
+      "id": 49,
+      "name": "Machine Culture",
+      "type": "plot",
+      "description": "Plot: Acquire 1 tech tile —OR— Endgame: If you have 3 tech: gain 1 VP.",
+      "image": "/intrigue/rise_of_ix/machine_culture.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:49:play:0",
+          "effect:intrigue:49:play:1"
+        ]
+      }
     }
   ],
   "leaders": [
@@ -5556,8 +8203,429 @@
       "signetRingTitle": "Discipline",
       "complexity": 1,
       "sogChoice": false
+    },
+    {
+      "id": "prince-rhombur-vernius",
+      "name": "Prince Rhombur Vernius",
+      "ability": {
+        "name": "Ixian Royalty",
+        "description": "Your dreadnoughts have a strength of 4 instead of 3."
+      },
+      "signetRingText": "Buy 1 tech, or add 1 tech negotiator.",
+      "signetRingTitle": "Tech Negotiation",
+      "complexity": 1,
+      "sogChoice": false,
+      "riseOfIx": true
+    },
+    {
+      "id": "viscount-hudro-moritani",
+      "name": "Viscount Hudro Moritani",
+      "ability": {
+        "name": "Intelligence",
+        "description": "Game start: look at the top 2 Intrigue cards, keep one (once per game)."
+      },
+      "signetRingText": "1 spice → +1 on shipping track.",
+      "signetRingTitle": "Spice → Shipping",
+      "complexity": 1,
+      "sogChoice": false,
+      "riseOfIx": true
+    },
+    {
+      "id": "princess-yuna-moritani",
+      "name": "\"Princess\" Yuna Moritani",
+      "ability": {
+        "name": "Spice Royalty",
+        "description": "You start with no water. When you gain Solari on your turn, increase the amount by 1."
+      },
+      "signetRingText": "7 Solari → +1 influence (choose), +1 spice, +1 troop.",
+      "signetRingTitle": "7 Solari",
+      "complexity": 2,
+      "sogChoice": false,
+      "riseOfIx": true
+    },
+    {
+      "id": "archduke-armand-ecaz",
+      "name": "Archduke Armand Ecaz",
+      "ability": {
+        "name": "Houses' Confidence",
+        "description": "If you have at least 2 agents on Yellow/Blue/Green spaces upon reveal, you may trash 1 card in play."
+      },
+      "signetRingText": "You may acquire a card that costs 3 or less.",
+      "signetRingTitle": "Free 3-cost acquire",
+      "complexity": 2,
+      "sogChoice": false,
+      "riseOfIx": true
+    },
+    {
+      "id": "ilesa-ecaz",
+      "name": "Ilesa Ecaz",
+      "ability": {
+        "name": "Hidden Pact",
+        "description": "Round start: set a card aside. When played on your 2nd turn: +1 Solari, or if only 1 agent icon +1 spice."
+      },
+      "signetRingText": "1 Solari → 1 Foldspace card.",
+      "signetRingTitle": "Free Foldspace",
+      "complexity": 3,
+      "sogChoice": false,
+      "riseOfIx": true
+    },
+    {
+      "id": "tessia-vernius",
+      "name": "Tessia Vernius",
+      "ability": {
+        "name": "Subtle Subterfuge",
+        "description": "Place snooper tokens on influence tracks."
+      },
+      "signetRingText": "−1 influence (choose) → +1 influence with a faction where you have a snooper token.",
+      "signetRingTitle": "Influence steal",
+      "complexity": 4,
+      "sogChoice": false,
+      "riseOfIx": true
     }
   ],
+  "techTiles": [
+    {
+      "id": "artillery",
+      "name": "Artillery",
+      "cost": 1,
+      "image": "/technologies/rise_of_ix/artillery.png",
+      "timing": [
+        "reveal"
+      ],
+      "description": "Reveal: +1 sword for each revealed card that provides ≥1 sword this turn.",
+      "customEffect": "ARTILLERY",
+      "riseOfIx": true
+    },
+    {
+      "id": "chaumurky",
+      "name": "Chaumurky",
+      "cost": 4,
+      "image": "/technologies/rise_of_ix/chaumurky.png",
+      "timing": [
+        "endgame"
+      ],
+      "description": "Endgame: win tiebreakers.",
+      "customEffect": "CHAUMURKY",
+      "acquireEffect": {
+        "intrigueCards": 2
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "detonation_devices",
+      "name": "Detonation Devices",
+      "cost": 3,
+      "image": "/technologies/rise_of_ix/detonation_devices.png",
+      "timing": [
+        "after-conflict"
+      ],
+      "description": "When you win a Conflict with a dreadnought in it: +1 VP and return dreadnought to supply, or take control normally.",
+      "customEffect": "DETONATION_DEVICES",
+      "riseOfIx": true
+    },
+    {
+      "id": "disposal_facility",
+      "name": "Disposal Facility",
+      "cost": 3,
+      "image": "/technologies/rise_of_ix/disposal_facility.png",
+      "timing": [
+        "reveal"
+      ],
+      "description": "Reveal: if persuasion ≥ 6, you may trash one card in play.",
+      "customEffect": "DISPOSAL_FACILITY",
+      "acquireEffect": {
+        "trash": 1
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "flagship",
+      "name": "Flagship",
+      "cost": 8,
+      "image": "/technologies/rise_of_ix/flagship.png",
+      "timing": [
+        "agent-reveal-once-per-round"
+      ],
+      "description": "Pay 4 Solari → recruit 3 troops (once per round).",
+      "customEffect": "FLAGSHIP",
+      "acquireEffect": {
+        "victoryPoints": 1
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "holoprojectors",
+      "name": "Holoprojectors",
+      "cost": 3,
+      "image": "/technologies/rise_of_ix/holoprojectors.png",
+      "timing": [
+        "agent-reveal-once-per-round"
+      ],
+      "description": "Discard 1 card → draw 1 card (once per round).",
+      "customEffect": "HOLOPROJECTORS",
+      "riseOfIx": true
+    },
+    {
+      "id": "holtzman_engine",
+      "name": "Holtzman Engine",
+      "cost": 6,
+      "image": "/technologies/rise_of_ix/holtzman_engine.png",
+      "timing": [
+        "round-start",
+        "endgame"
+      ],
+      "description": "Round Start: draw 1 card. Endgame: +1 VP if you have ≥2 Spice Must Flow.",
+      "customEffect": "HOLTZMAN_ENGINE",
+      "riseOfIx": true
+    },
+    {
+      "id": "invasion_ships",
+      "name": "Invasion Ships",
+      "cost": 5,
+      "image": "/technologies/rise_of_ix/invasion_ships.png",
+      "timing": [
+        "agent"
+      ],
+      "description": "Agent (once per round): discard 1 → enemy agents do not block your agent this turn.",
+      "customEffect": "INVASION_SHIPS",
+      "acquireEffect": {
+        "troops": 4
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "memocorders",
+      "name": "Memocorders",
+      "cost": 2,
+      "image": "/technologies/rise_of_ix/memocorders.png",
+      "timing": [
+        "endgame"
+      ],
+      "description": "Endgame: +1 VP if you have ≥3 influence on all four tracks.",
+      "customEffect": "MEMOCORDERS",
+      "acquireEffect": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "minimic_film",
+      "name": "Minimic Film",
+      "cost": 2,
+      "image": "/technologies/rise_of_ix/minimic_film.png",
+      "timing": [
+        "reveal"
+      ],
+      "description": "Reveal: +1 persuasion.",
+      "riseOfIx": true
+    },
+    {
+      "id": "restricted_ordinance",
+      "name": "Restricted Ordinance",
+      "cost": 4,
+      "image": "/technologies/rise_of_ix/restricted_ordinance.png",
+      "timing": [
+        "reveal"
+      ],
+      "description": "Reveal: +4 swords if you have a High Council seat.",
+      "customEffect": "RESTRICTED_ORDINANCE",
+      "riseOfIx": true
+    },
+    {
+      "id": "shuttle_fleet",
+      "name": "Shuttle Fleet",
+      "cost": 6,
+      "image": "/technologies/rise_of_ix/shuttle_fleet.png",
+      "timing": [
+        "round-start"
+      ],
+      "description": "Round Start: +2 solari.",
+      "acquireEffect": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "sonic_snoopers",
+      "name": "Sonic Snoopers",
+      "cost": 2,
+      "image": "/technologies/rise_of_ix/sonic_snoopers.png",
+      "timing": [
+        "agent-reveal-one-time"
+      ],
+      "description": "Trash this → put intrigue on bottom of deck, draw that many.",
+      "customEffect": "SONIC_SNOOPERS",
+      "acquireEffect": {
+        "intrigueCards": 1
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "spaceport",
+      "name": "Spaceport",
+      "cost": 5,
+      "image": "/technologies/rise_of_ix/spaceport.png",
+      "timing": [
+        "agent-reveal-always"
+      ],
+      "description": "Passive: you may put cards you acquire on top of your deck.",
+      "customEffect": "SPACEPORT",
+      "acquireEffect": {
+        "drawCards": 2
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "spy_satellites",
+      "name": "Spy Satellites",
+      "cost": 4,
+      "image": "/technologies/rise_of_ix/spy_satellites.png",
+      "timing": [
+        "agent-reveal-one-time",
+        "endgame"
+      ],
+      "description": "Pay 3 spice, trash this → +1 VP. Endgame: +1 VP per faction where you have ≤1 influence.",
+      "customEffect": "SPY_SATELLITES",
+      "riseOfIx": true
+    },
+    {
+      "id": "training_drones",
+      "name": "Training Drones",
+      "cost": 3,
+      "image": "/technologies/rise_of_ix/training_drones.png",
+      "timing": [
+        "agent-reveal-once-per-round"
+      ],
+      "description": "Recruit 1 troop (once per round).",
+      "customEffect": "TRAINING_DRONES",
+      "riseOfIx": true
+    },
+    {
+      "id": "troop_transports",
+      "name": "Troop Transports",
+      "cost": 2,
+      "image": "/technologies/rise_of_ix/troop_transports.png",
+      "timing": [
+        "agent-reveal-always"
+      ],
+      "description": "When recruiting from Shipping track, recruit +1 troop (may deploy to Conflict).",
+      "customEffect": "TROOP_TRANSPORTS",
+      "riseOfIx": true
+    },
+    {
+      "id": "windtraps",
+      "name": "Windtraps",
+      "cost": 2,
+      "image": "/technologies/rise_of_ix/windtraps.png",
+      "timing": [
+        "after-conflict"
+      ],
+      "description": "When you win a Conflict: +1 water.",
+      "customEffect": "WINDTRAPS",
+      "acquireEffect": {
+        "water": 1
+      },
+      "riseOfIx": true
+    }
+  ],
+  "expansions": {
+    "available": [
+      "riseOfIx"
+    ],
+    "byId": {
+      "riseOfIx": {
+        "id": "riseOfIx",
+        "name": "Rise of Ix",
+        "counts": {
+          "cards": 29,
+          "conflicts": 4,
+          "leaders": 6,
+          "intrigue": 17,
+          "boardSpaces": 4,
+          "techTiles": 18
+        },
+        "decks": {
+          "imperium": [
+            "imperium/appropriate",
+            "imperium/bounty-hunter",
+            "imperium/choam-delegate",
+            "imperium/court-intrigue",
+            "imperium/desert-ambush",
+            "imperium/embedded-agent",
+            "imperium/esmar-tuek",
+            "imperium/freighter-fleet",
+            "imperium/freighter-fleet",
+            "imperium/full-scale-assault",
+            "imperium/guild-accord",
+            "imperium/guild-chief-administrator",
+            "imperium/imperial-bashar",
+            "imperium/imperial-shock-trooper",
+            "imperium/in-the-shadows",
+            "imperium/in-the-shadows",
+            "imperium/ix-guild-compact",
+            "imperium/ixian-engineer",
+            "imperium/ixian-engineer",
+            "imperium/jamis",
+            "imperium/landing-rights",
+            "imperium/local-fence",
+            "imperium/negotiated-withdrawel",
+            "imperium/negotiated-withdrawel",
+            "imperium/satellite-ban",
+            "imperium/sayyadina",
+            "imperium/shai-hulud",
+            "imperium/spice-trader",
+            "imperium/treachery",
+            "imperium/treachery",
+            "imperium/truthsayer",
+            "imperium/truthsayer",
+            "imperium/water-peddler",
+            "imperium/web-of-power",
+            "imperium/weirding-way"
+          ]
+        }
+      }
+    }
+  },
   "customEffects": [
     "OTHER_MEMORY",
     "CARRYALL",
@@ -5583,7 +8651,69 @@
     "STAGED_INCIDENT",
     "TO_THE_VICTOR",
     "BINDU_SUSPENSION",
-    "MASTER_TACTICIAN"
+    "MASTER_TACTICIAN",
+    "COMMISSION_DREADNOUGHT",
+    "DREADNOUGHT_CONTROL",
+    "ACQUIRE_TECH",
+    "ACQUIRE_TECH_DISCOUNT_1",
+    "ACQUIRE_TECH_DISCOUNT_2",
+    "TECH_NEGOTIATOR",
+    "FREIGHTER_ADVANCE",
+    "FREIGHTER_RECALL",
+    "DIVIDENDS",
+    "UNLOAD_REVEAL",
+    "DISCARD_FROM_HAND",
+    "GLIMPSE_THE_PATH",
+    "GRAND_CONSPIRACY",
+    "MACHINE_CULTURE",
+    "CULL",
+    "QUID_PRO_QUO",
+    "STRONGARM",
+    "SECRET_FORCES",
+    "IXIAN_PROBE",
+    "DIVERSION",
+    "EXPEDITE",
+    "BLACKMAIL",
+    "CANNON_TURRETS",
+    "STRATEGIC_PUSH",
+    "SECOND_WAVE",
+    "WAR_CHEST",
+    "FINESSE",
+    "ADVANCED_WEAPONRY",
+    "RHOMBUR_DREADNOUGHT_STRENGTH",
+    "BOUNTY_INFILTRATION_BONUS",
+    "DESERT_AMBUSH",
+    "FULLSCALE_DREAD_SWORDS",
+    "GUILD_ACCORD_HEIGHTLINER_DISCOUNT",
+    "IMPERIAL_BASHAR_SWORDS",
+    "SHOCKTROOPER_EM_BONUS",
+    "IXIAN_ENGINEER_VP",
+    "NEGOTIATED_WITHDRAWAL",
+    "TREACHERY_DOUBLE_INFLUENCE",
+    "WEB_OF_POWER",
+    "WEIRDING_WAY_EXTRA_TURN",
+    "HUDRO_INTRIGUE_PEEK",
+    "YUNA_SOLARI_BONUS",
+    "ARMAND_TRASH_IN_PLAY",
+    "ILESA_SET_ASIDE",
+    "TESSIA_SNOOPER",
+    "ACQUIRE_FOLDSPACE",
+    "ARTILLERY",
+    "CHAUMURKY",
+    "DETONATION_DEVICES",
+    "DISPOSAL_FACILITY",
+    "FLAGSHIP",
+    "HOLOPROJECTORS",
+    "HOLTZMAN_ENGINE",
+    "INVASION_SHIPS",
+    "MEMOCORDERS",
+    "RESTRICTED_ORDINANCE",
+    "SONIC_SNOOPERS",
+    "SPACEPORT",
+    "SPY_SATELLITES",
+    "TRAINING_DRONES",
+    "TROOP_TRANSPORTS",
+    "WINDTRAPS"
   ],
   "choiceIdGrammar": {
     "format": "<sourceType>-<sourceId>-<kind>[-<occurrence>]",

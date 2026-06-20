@@ -1,12 +1,30 @@
-import { IntrigueCard, CustomEffect } from '../types/GameTypes'
+import { IntrigueCard, CustomEffect, Expansions, NO_EXPANSIONS } from '../types/GameTypes'
 import { INTRIGUE_CARDS } from '../catalog/runtime'
+import { RISE_OF_IX_INTRIGUE_CARDS } from '../data/intrigueCards'
+
+export { RISE_OF_IX_INTRIGUE_CARDS } from '../data/intrigueCards'
 
 /** Runtime intrigue deck — hydrated from public/catalogs/intrigue.v1.json + effects.v1.json */
 export const intrigueCards: IntrigueCard[] = INTRIGUE_CARDS
 
+export function buildIntrigueDeck(expansions: Expansions = NO_EXPANSIONS): IntrigueCard[] {
+  return expansions.riseOfIx
+    ? [...INTRIGUE_CARDS, ...RISE_OF_IX_INTRIGUE_CARDS]
+    : [...INTRIGUE_CARDS]
+}
+
+export function ALL_INTRIGUE_CARDS(expansions: Expansions = NO_EXPANSIONS): IntrigueCard[] {
+  return buildIntrigueDeck(expansions)
+}
+
 /** Resolve static intrigue definition by a custom effect marker (avoids hard-coded card ids in reducers). */
-export function getIntrigueCardByCustom(effect: CustomEffect): IntrigueCard | undefined {
-  return intrigueCards.find(c => c.playEffect?.some(e => e.reward?.custom === effect))
+export function getIntrigueCardByCustom(
+  effect: CustomEffect,
+  expansions: Expansions = NO_EXPANSIONS
+): IntrigueCard | undefined {
+  return ALL_INTRIGUE_CARDS(expansions).find(c =>
+    c.playEffect?.some(e => e.reward?.custom === effect)
+  )
 }
 
 export class IntrigueDeckService {

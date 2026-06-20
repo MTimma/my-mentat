@@ -3,6 +3,7 @@ import { BOARD_SPACES } from '../../../data/boardSpaces'
 import {
   AgentIcon,
   ChoiceType,
+  FactionType,
   GainSource,
   GamePhase,
   RewardType,
@@ -186,6 +187,75 @@ describe('REVEAL_CARDS', () => {
     expect(s.players[0].spice).toBe(10)
   })
 
+  it('Gurney Halleck pay-3-solari reveal deploys only the recruited troops', () => {
+    const gurney = stubDeckCard(9161, {
+      name: 'Gurney Halleck',
+      revealEffect: [
+        { reward: { persuasion: 2 } },
+        { cost: { solari: 3 }, reward: { troops: 2, deployTroops: 2 } },
+      ],
+    })
+    let s = getBaseTestState({
+      deck: [gurney],
+      handCount: 1,
+      solari: 20,
+      troops: 4,
+      troopSupply: 6,
+      negotiatorsOnIx: 2,
+      dreadnoughts: { supply: 1, garrison: 1, conflict: 0, control: [] },
+    })
+    s = {
+      ...s,
+      expansions: { riseOfIx: true, riseOfIxEpic: false },
+    }
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [9161] })
+
+    expect(s.players[0].persuasion).toBe(2)
+    expect(s.currTurn?.optionalEffects).toHaveLength(1)
+    expect(s.currTurn?.optionalEffects?.[0]).toMatchObject({
+      cost: { solari: 3 },
+      reward: { troops: 2, deployTroops: 2 },
+      source: { type: GainSource.CARD, id: 9161, name: 'Gurney Halleck' },
+    })
+    expect(s.currTurn?.canDeployTroops).toBeFalsy()
+    expect(s.currTurn?.theseTroopsDeployLimit).toBeUndefined()
+
+    const effect = s.currTurn!.optionalEffects![0]
+    s = applyGameAction(s, { type: 'PAY_COST', playerId: 0, effect })
+
+    expect(s.players[0].solari).toBe(17)
+    expect(s.players[0].troops).toBe(6)
+    expect(s.currTurn?.canDeployTroops).toBe(true)
+    expect(s.currTurn?.theseTroopsDeployLimit).toBe(2)
+    expect(s.currTurn?.troopLimit ?? 0).toBe(0)
+    expect(s.currTurn?.optionalEffects).toHaveLength(0)
+
+    const beforeDread = s
+    s = applyGameAction(s, { type: 'DEPLOY_DREADNOUGHT', playerId: 0 })
+    expect(s.players[0].dreadnoughts?.conflict).toBe(0)
+    expect(s.players[0].dreadnoughts?.garrison).toBe(beforeDread.players[0].dreadnoughts?.garrison)
+
+    const beforeNeg = s
+    s = applyGameAction(s, { type: 'DEPLOY_NEGOTIATOR', playerId: 0 })
+    expect(s.combatNegotiators?.[0]).toBeUndefined()
+    expect(s.players[0].negotiatorsOnIx).toBe(beforeNeg.players[0].negotiatorsOnIx)
+
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(s.combatTroops[0]).toBe(1)
+    expect(s.currTurn?.removableTheseTroops).toBe(1)
+    expect(s.players[0].troops).toBe(5)
+
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(s.combatTroops[0]).toBe(2)
+    expect(s.currTurn?.removableTheseTroops).toBe(2)
+    expect(s.players[0].troops).toBe(4)
+
+    const atLimit = s
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(s.combatTroops[0]).toBe(atLimit.combatTroops[0])
+    expect(s.players[0].troops).toBe(atLimit.players[0].troops)
+  })
+
   it('REVEAL_CARDS by a non-active player is ignored', () => {
     const s = getBaseTestState(undefined, { players: 2, activeId: 0 })
     expect(applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 1, cardIds: [] })).toBe(s)
@@ -265,6 +335,91 @@ describe('ACQUIRE_CARD', () => {
     expect(s.gains).toContainEqual(
       expect.objectContaining({ name: 'stub-9205 Acquire', type: RewardType.SPICE, amount: 1 })
     )
+  })
+
+  it('acquireEffect dreadnought commissions to garrison, deducts persuasion, and logs the gain', () => {
+    const target = stubDeckCard(9208, { cost: 8, acquireEffect: { dreadnoughts: 1 } })
+    let s = rowState([target], 13)
+    s = {
+      ...s,
+      expansions: { riseOfIx: true, riseOfIxEpic: false },
+      players: s.players.map((p, i) =>
+        i === 0
+          ? {
+              ...p,
+              dreadnoughts: { supply: 2, garrison: 0, conflict: 0, control: [] },
+            }
+          : p
+      ),
+    }
+    s = applyGameAction(s, { type: 'ACQUIRE_CARD', playerId: 0, cardId: 9208 })
+
+    const p = s.players[0]
+    expect(p.persuasion).toBe(5)
+    expect(p.dreadnoughts?.garrison).toBe(1)
+    expect(p.dreadnoughts?.supply).toBe(1)
+    expect(s.gains).toContainEqual(
+      expect.objectContaining({
+        sourceId: 9208,
+        type: RewardType.DREADNOUGHT,
+        amount: 1,
+        source: GainSource.CARD,
+      })
+    )
+  })
+
+  it('acquireEffect multi-faction influence applies to all tracks (CHOAM Directorship)', () => {
+    const target = stubDeckCard(9214, {
+      cost: 8,
+      acquireEffect: {
+        influence: {
+          amounts: [
+            { faction: FactionType.FREMEN, amount: 1 },
+            { faction: FactionType.BENE_GESSERIT, amount: 1 },
+            { faction: FactionType.SPACING_GUILD, amount: 1 },
+            { faction: FactionType.EMPEROR, amount: 1 },
+          ],
+        },
+      },
+    })
+    let s = rowState([target], 10)
+    s = applyGameAction(s, { type: 'ACQUIRE_CARD', playerId: 0, cardId: 9214 })
+
+    const p = s.players[0]
+    expect(s.factionInfluence[FactionType.FREMEN][0]).toBe(1)
+    expect(s.factionInfluence[FactionType.BENE_GESSERIT][0]).toBe(1)
+    expect(s.factionInfluence[FactionType.SPACING_GUILD][0]).toBe(1)
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(1)
+    expect(p.persuasion).toBe(2)
+    expect(p.discardPile.map(c => c.id)).toEqual([9214])
+  })
+
+  it('acquireEffect multi-faction influence merges 4th-track milestone troops (CHOAM Directorship)', () => {
+    const target = stubDeckCard(9215, {
+      cost: 8,
+      acquireEffect: {
+        influence: {
+          amounts: [
+            { faction: FactionType.EMPEROR, amount: 1 },
+            { faction: FactionType.FREMEN, amount: 1 },
+            { faction: FactionType.BENE_GESSERIT, amount: 1 },
+            { faction: FactionType.SPACING_GUILD, amount: 1 },
+          ],
+        },
+      },
+    })
+    let s = rowState([target], 10)
+    s = {
+      ...s,
+      factionInfluence: {
+        ...s.factionInfluence,
+        [FactionType.EMPEROR]: { ...s.factionInfluence[FactionType.EMPEROR], 0: 3 },
+      },
+    }
+    s = applyGameAction(s, { type: 'ACQUIRE_CARD', playerId: 0, cardId: 9215 })
+
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(4)
+    expect(s.players[0].troops).toBe(10) // 8 garrison + 2 from Emperor 4th-influence milestone
   })
 })
 

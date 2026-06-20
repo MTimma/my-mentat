@@ -19,6 +19,18 @@
 .agent.player-2 .agent-fill { fill: #fbc02d; }
 .agent.player-3 .agent-fill { fill: #1976d2; }
 
+.agent--dreadnought {
+  width: clamp(14px, 2.8cqw, 20px);
+  height: clamp(14px, 2.8cqw, 20px);
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
+}
+
+.agent--dreadnought.player-0 { filter: drop-shadow(0 0 2px #d32f2f); }
+.agent--dreadnought.player-1 { filter: drop-shadow(0 0 2px #388e3c); }
+.agent--dreadnought.player-2 { filter: drop-shadow(0 0 2px #fbc02d); }
+.agent--dreadnought.player-3 { filter: drop-shadow(0 0 2px #1976d2); }
+
 @media (max-width: 900px) {
   .agent {
     width: 16px;

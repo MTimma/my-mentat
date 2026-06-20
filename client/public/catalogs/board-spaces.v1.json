@@ -313,6 +313,59 @@
       "effects": [
         "effect:board-space:6:space:0"
       ]
+    },
+    {
+      "id": 23,
+      "name": "Dreadnought",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "cost": {
+        "solari": 3
+      },
+      "image": "board/dreadnought.png",
+      "riseOfIx": true,
+      "effects": [
+        "effect:board-space:23:space:0",
+        "effect:board-space:23:space:1"
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Tech Negotiation",
+      "agentIcon": "landsraad",
+      "conflictMarker": false,
+      "image": "board/tech_negotiation.png",
+      "riseOfIx": true,
+      "effects": [
+        "effect:board-space:24:space:0",
+        "effect:board-space:24:space:1"
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Smuggling",
+      "agentIcon": "spice-trade",
+      "conflictMarker": false,
+      "image": "board/smuggling.png",
+      "riseOfIx": true,
+      "effects": [
+        "effect:board-space:25:space:0"
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Interstellar Shipping",
+      "agentIcon": "spice-trade",
+      "conflictMarker": false,
+      "requiresInfluence": {
+        "faction": "spacing-guild",
+        "amount": 2
+      },
+      "image": "board/interstellar_shipping.png",
+      "riseOfIx": true,
+      "effects": [
+        "effect:board-space:26:space:0"
+      ]
     }
   ]
 }

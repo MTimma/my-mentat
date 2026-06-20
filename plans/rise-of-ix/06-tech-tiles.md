@@ -11,7 +11,7 @@
 > 2. **`TechStacksModal` must use the board-modal portal pattern**
 >    (`usePlayBoardModalPortal` + `PlayBoardModalContext` + classes in
 >    `client/src/styles/playBoardModal.css`); trigger button sits next
->    to the `riseofix3` overlay per Task 03 §4.4. It must stay
+>    to the `riseofix1` overlay per Task 03 §4.4. It must stay
 >    board-scoped so it works with the play-chrome
 >    `scopeModalsToBoard` mode.
 > 3. **Reducer modularization**: `GameContext.tsx` is a ~5300-line

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CONFLICTS } from '../../../data/conflicts'
-import { GainSource, RewardType, GamePhase } from '../../../types/GameTypes'
+import { ControlMarkerType, GainSource, RewardType, GamePhase } from '../../../types/GameTypes'
 import { applyGameAction } from '../GameContext'
 import { getBaseTestState } from './_helpers'
 
@@ -10,6 +10,7 @@ function conflictGainKeys(gains: { playerId: number; name: string; type: RewardT
 
 const skirmish902 = CONFLICTS.find(c => c.id === 902)!
 const siege905 = CONFLICTS.find(c => c.id === 905)!
+const battle915 = CONFLICTS.find(c => c.id === 915)!
 const battle916 = CONFLICTS.find(c => c.id === 916)!
 
 function resolveCombat(
@@ -56,12 +57,27 @@ describe('combat reward duplication', () => {
     expect(s.players[2].solari).toBe(0)
   })
 
-  it('916 battle: 2nd intrigue only, 3rd spice only', () => {
+  it('915 Battle for Imperial Basin: 2 VP + control, 5 spice 2nd, 3 spice 3rd', () => {
+    const s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, battle915)
+    expect(battle915.name).toBe('Battle for Imperial Basin')
+    expect(s.players[0].victoryPoints).toBe(2)
+    expect(s.controlMarkers[ControlMarkerType.IMPERIAL_BASIN]).toBe(0)
+    expect(s.players[1].spice).toBe(5)
+    expect(s.players[2].spice).toBe(3)
+
+    const combat = s.history.find(h => h.historyEntryKind === 'combat')
+    const p1Gain = combat?.gains?.find(g => g.playerId === 1 && g.type === RewardType.SPICE)
+    expect(p1Gain?.name).toContain('Battle for Imperial Basin')
+    expect(p1Gain?.amount).toBe(5)
+  })
+
+  it('916 Battle for Arrakeen: defers 2nd-place choice; 3rd intrigue + solari', () => {
     const s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, battle916)
     expect(s.players[0].victoryPoints).toBe(2)
-    expect(s.players[1].intrigueCount).toBe(2)
-    expect(s.players[1].solari).toBe(0)
-    expect(s.players[2].spice).toBe(2)
+    expect(s.controlMarkers[ControlMarkerType.ARRAKIN]).toBe(0)
+    expect(s.pendingConflictRewardChoices?.some(c => c.placement === '2nd place' && c.playerId === 1)).toBe(true)
+    expect(s.players[2].intrigueCount).toBe(1)
+    expect(s.players[2].solari).toBe(2)
   })
 
   it('double RESOLVE_COMBAT does not re-apply solari after immediate rewards were applied', () => {

@@ -1,0 +1,284 @@
+.ix-board-overlay {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  container-type: size;
+  container-name: ix-board;
+}
+
+.ix-board-overlay__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.ix-board-overlay__layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ix-board-overlay--docked {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: 100%;
+}
+
+.ix-board-overlay__voice-block-thumb {
+  position: absolute;
+  width: clamp(10px, 22cqw, 22px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 4;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ix-board-overlay__voice-block-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ix-board-overlay__tech-slot {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.ix-board-overlay__tech-slot--sandbox,
+.ix-board-overlay__tech-slot--acquire,
+.ix-board-overlay__tech-slot--interactive {
+  pointer-events: auto;
+  z-index: 2;
+  padding: 0;
+  margin: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, opacity 0.2s;
+  /* Reset native <button> so tile art fills the percent-sized slot */
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  min-width: 0;
+  min-height: 0;
+}
+
+.ix-board-overlay__tech-slot--sandbox {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ix-board-overlay__tech-slot--sandbox.ix-board-overlay__tech-slot--empty {
+  border: 2px dashed rgba(255, 215, 0, 0.55);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(255, 215, 0, 0.12);
+}
+
+.ix-board-overlay__tech-slot--sandbox.ix-board-overlay__tech-slot--unset {
+  border: 2px dashed rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.ix-board-overlay__tech-empty-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 215, 0, 0.8);
+}
+
+.ix-board-overlay__tech-slot--sandbox.ix-board-overlay__tech-slot--filled {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.ix-board-overlay__tech-slot--sandbox:hover,
+.ix-board-overlay__tech-slot--sandbox:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 215, 0, 0.35),
+    0 0 0 2px rgba(255, 215, 0, 0.25);
+}
+
+.ix-board-overlay__tech-slot--browse {
+  opacity: 0.72;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.ix-board-overlay__tech-slot--browse:hover,
+.ix-board-overlay__tech-slot--browse:focus-visible {
+  outline: none;
+  opacity: 0.9;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.ix-board-overlay__tech-slot--acquire.ix-board-overlay__tech-slot--affordable,
+.ix-board-overlay__tech-slot--interactive.ix-board-overlay__tech-slot--affordable {
+  border-color: var(--chrome-accent, #ffd700);
+  box-shadow: 0 0 10px var(--chrome-accent-glow, rgba(255, 215, 0, 0.45));
+  background: rgba(255, 215, 0, 0.12);
+}
+
+.ix-board-overlay__tech-slot--acquire.ix-board-overlay__tech-slot--affordable:hover,
+.ix-board-overlay__tech-slot--acquire.ix-board-overlay__tech-slot--affordable:focus-visible,
+.ix-board-overlay__tech-slot--interactive.ix-board-overlay__tech-slot--affordable:hover,
+.ix-board-overlay__tech-slot--interactive.ix-board-overlay__tech-slot--affordable:focus-visible {
+  outline: none;
+  filter: brightness(1.06);
+}
+
+.ix-board-overlay__tech-slot--acquire.ix-board-overlay__tech-slot--unaffordable,
+.ix-board-overlay__tech-slot--interactive.ix-board-overlay__tech-slot--unaffordable {
+  opacity: 0.55;
+  cursor: pointer;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.ix-board-overlay__tech-img--dimmed {
+  opacity: 0.75;
+}
+
+.ix-board-overlay__tech-img {
+  display: block;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.ix-board-overlay__negotiator-lane {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1px, 0.35cqw, 2px);
+  width: clamp(10px, 7.5cqw, 18px);
+  line-height: 1;
+  font-weight: 700;
+}
+
+.ix-board-overlay__negotiator-square {
+  display: block;
+  width: clamp(3px, 2.6cqw, 7px);
+  height: clamp(3px, 2.6cqw, 7px);
+  background: currentColor;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.85);
+  flex: 0 0 auto;
+}
+
+.ix-board-overlay__negotiator-overflow {
+  font-size: clamp(5px, 2cqw, 8px);
+  line-height: 1;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.85);
+}
+
+.ix-board-overlay__hotspot {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 3;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.ix-board-overlay__hotspot:disabled {
+  cursor: not-allowed;
+}
+
+.ix-board-overlay__hotspot.highlighted:not(:disabled) {
+  border-color: var(--chrome-accent, #ffd700);
+  box-shadow: 0 0 10px var(--chrome-accent-glow, rgba(255, 215, 0, 0.45));
+  background: rgba(255, 215, 0, 0.15);
+}
+
+.ix-board-overlay__hotspot.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ix-board-overlay__hotspot.occupied:not(.highlighted) {
+  box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.12);
+}
+
+.image-board--hotspot-debug .ix-board-overlay__hotspot {
+  outline: 1px dashed magenta;
+  outline-offset: -1px;
+}
+
+.image-board--hotspot-debug .ix-board-overlay__hotspot.disabled {
+  outline-color: rgba(255, 165, 0, 0.9);
+}
+
+.image-board--hotspot-debug .ix-board-overlay__tech-slot {
+  outline: 1px dashed cyan;
+  outline-offset: -1px;
+}
+
+.ix-board-overlay__agent-anchor-debug {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: #00e5ff;
+  pointer-events: auto;
+  z-index: 5;
+}
+
+.ix-board-overlay__layer .image-board__marker {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.ix-board-overlay__layer .image-board__marker .image-board__agent-figure {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+}
+
+.image-board--tracker-inspect [data-marker='ix-board'],
+.image-board--tracker-inspect [data-marker='tech-tile'],
+.image-board--tracker-inspect [data-marker='ix-negotiator'] {
+  pointer-events: auto;
+}

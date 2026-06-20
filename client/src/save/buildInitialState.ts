@@ -17,11 +17,19 @@ import {
   GameState,
   Leader,
   Player,
+  normalizeExpansions,
 } from '../types/GameTypes'
-import { CONFLICTS } from '../catalog/runtime'
-import { LEADERS, LEADER_ICON_SLUGS } from '../data/leaders'
+import { getConflictPool } from '../data/conflicts'
+import { getLeaderPool, LEADER_ICON_SLUGS } from '../data/leaders'
 import { getStartingSpice, getStartingSolari } from '../data/leaderAbilities/beastSetup'
+import { getStartingWater } from '../data/leaderAbilities/yunaSolariBonus'
+import { applyHudroStartingIntrigue } from '../data/leaderAbilities/hudroIntriguePeek'
+import { seedTessiaSnoopers } from '../data/leaderAbilities/tessiaSnoopers'
 import { applyStarterDeckReservationToImperium } from '../services/starterDeckSetup'
+import { buildIntrigueDeck } from '../services/IntrigueDeckService'
+import { defaultDreadnoughtsForExpansions } from '../utils/dreadnoughts'
+import { seedTroopSupply } from '../utils/troops'
+import { buildInitialIxBoard } from '../components/GameContext/riseOfIxReducer'
 import { getFreshDefaultGameState } from '../components/GameContext/GameContext'
 import { slugify } from '../catalog/buildCatalog'
 import type { SetupBlock } from './types'
@@ -29,8 +37,9 @@ import { resolveCatalogCardIds, buildImperiumDeck } from '../catalog/runtime'
 
 export class SetupResolutionError extends Error {}
 
-function resolveLeader(leaderId: string): Leader {
-  const leader = LEADERS.find(
+function resolveLeader(leaderId: string, expansions = normalizeExpansions()): Leader {
+  const pool = getLeaderPool(expansions)
+  const leader = pool.find(
     l => (LEADER_ICON_SLUGS[l.name] ?? slugify(l.name)) === leaderId
   )
   if (!leader) throw new SetupResolutionError(`Unknown leader id: ${leaderId}`)
@@ -51,11 +60,14 @@ function resolveCards(catalogIds: string[]): Card[] {
 }
 
 /** Imperium deck instances re-id'd from 2000 (mirrors buildImperiumDeck). */
-function resolveImperiumDeck(catalogIds: string[] | undefined): Card[] {
+function resolveImperiumDeck(
+  catalogIds: string[] | undefined,
+  expansions = normalizeExpansions()
+): Card[] {
   if (catalogIds) {
     return buildImperiumDeckFromCatalogIds(catalogIds)
   }
-  return buildImperiumDeck()
+  return buildImperiumDeck(expansions)
 }
 
 function buildImperiumDeckFromCatalogIds(catalogIds: string[]): Card[] {
@@ -65,17 +77,18 @@ function buildImperiumDeckFromCatalogIds(catalogIds: string[]): Card[] {
 
 export function buildInitialState(setup: SetupBlock): GameState {
   const base = getFreshDefaultGameState()
+  const expansions = normalizeExpansions(setup.expansions)
 
   const players: Player[] = setup.players.map(playerSetup => {
-    const leader = resolveLeader(playerSetup.leaderId)
+    const leader = resolveLeader(playerSetup.leaderId, expansions)
     const deck = resolveCards(playerSetup.deckCardIds)
     const res = playerSetup.startingResources
-    return {
+    const basePlayer: Player = {
       id: playerSetup.id,
       leader,
       color: playerSetup.color,
       spice: res?.spice ?? getStartingSpice(leader),
-      water: res?.water ?? 1,
+      water: res?.water ?? getStartingWater(leader),
       solari: res?.solari ?? getStartingSolari(leader),
       troops: res?.troops ?? 3,
       combatValue: 0,
@@ -91,10 +104,17 @@ export function buildInitialState(setup: SetupBlock): GameState {
       persuasion: 0,
       victoryPoints: res?.victoryPoints ?? 1,
       revealed: false,
+      ...(defaultDreadnoughtsForExpansions(expansions)
+        ? { dreadnoughts: defaultDreadnoughtsForExpansions(expansions) }
+        : {}),
+      ...(expansions.riseOfIx
+        ? { freighterStep: 0 as const, negotiatorsOnIx: 0, tech: [] as const }
+        : {}),
     }
+    return seedTessiaSnoopers(applyHudroStartingIntrigue(seedTroopSupply(basePlayer)), expansions.riseOfIx)
   })
 
-  let imperiumRowDeck = resolveImperiumDeck(setup.imperiumRowDeckCardIds)
+  let imperiumRowDeck = resolveImperiumDeck(setup.imperiumRowDeckCardIds, expansions)
   imperiumRowDeck = applyStarterDeckReservationToImperium(
     imperiumRowDeck,
     players.map(p => p.deck)
@@ -116,6 +136,8 @@ export function buildInitialState(setup: SetupBlock): GameState {
 
   const state: GameState = {
     ...base,
+    expansions,
+    intrigueDeck: [...buildIntrigueDeck(expansions)],
     players,
     currentRound: setup.currentRound ?? 1,
     firstPlayerMarker: setup.firstPlayer,
@@ -132,7 +154,7 @@ export function buildInitialState(setup: SetupBlock): GameState {
   }
 
   if (setup.initialConflictId != null) {
-    const conflict = CONFLICTS.find(c => c.id === setup.initialConflictId)
+    const conflict = getConflictPool(expansions).find(c => c.id === setup.initialConflictId)
     if (!conflict) {
       throw new SetupResolutionError(`Unknown conflict id: ${setup.initialConflictId}`)
     }
@@ -141,6 +163,10 @@ export function buildInitialState(setup: SetupBlock): GameState {
 
   if (setup.sandbox) {
     ;(state as GameState & { sandboxSetup?: boolean }).sandboxSetup = true
+  }
+
+  if (expansions.riseOfIx && !setup.sandbox) {
+    state.ixBoard = buildInitialIxBoard()
   }
 
   return state

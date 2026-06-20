@@ -1,0 +1,53 @@
+.save-doc-import {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.save-doc-import-textarea {
+  width: 100%;
+  min-height: 6rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  resize: vertical;
+}
+
+.save-doc-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.save-doc-import-btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+}
+
+.save-doc-import-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.save-doc-import-btn--secondary {
+  opacity: 0.9;
+}
+
+.save-doc-import-file-input {
+  display: none;
+}
+
+.save-doc-import-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #f87171;
+}

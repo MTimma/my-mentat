@@ -13,7 +13,7 @@ import { getBaseTestState, withCardOnTop } from '../../components/GameContext/__
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { getGainsForHistoryRow } from '../../utils/turnGainsDisplay'
 import { buildInitialState } from '../buildInitialState'
-import { buildHistoryFromEvents } from '../buildHistory'
+import { buildHistoryFromEvents, historyIndexToEventIndex } from '../buildHistory'
 import type { EventEntry, SetupBlock } from '../types'
 
 const SHIFTING_ALLEGIANCES: Card = {
@@ -255,5 +255,45 @@ describe('buildHistoryFromEvents', () => {
     expect(
       getGainsForHistoryRow(replayRow).some(g => g.type === RewardType.VICTORY_POINTS && g.amount === 1)
     ).toBe(true)
+  })
+})
+
+describe('historyIndexToEventIndex', () => {
+  it('maps opening round-start at index 0 to SELECT_CONFLICT (not pre-setup)', () => {
+    let live = buildInitialState(makeSetup())
+    const rowIds = live.imperiumRowDeck.slice(0, 5).map(c => c.id)
+    live = applyGameAction(live, { type: 'RESET_IMPERIUM_ROW', cardIds: rowIds })
+    const conflictId = 901
+    const events = [
+      { a: { type: 'RESET_IMPERIUM_ROW' as const, cardIds: rowIds } },
+      { a: { type: 'SELECT_CONFLICT' as const, conflictId } },
+      { a: { type: 'PLAY_CARD' as const, playerId: 0, cardId: live.players[0].deck[0].id } },
+    ]
+    const history = buildHistoryFromEvents(makeSetup(), events)
+    expect(history).toHaveLength(1)
+    expect(history[0].phase).toBe(GamePhase.PLAYER_TURNS)
+
+    const eventIndex = historyIndexToEventIndex(makeSetup(), events, 0)
+    expect(eventIndex).toBe(1)
+  })
+
+  it('returns -1 for true pre-setup index 0 before SELECT_CONFLICT', () => {
+    const rowIds = buildInitialState(makeSetup()).imperiumRowDeck.slice(0, 5).map(c => c.id)
+    const events = [{ a: { type: 'RESET_IMPERIUM_ROW' as const, cardIds: rowIds } }]
+    expect(historyIndexToEventIndex(makeSetup(), events, 0)).toBe(-1)
+  })
+
+  it('maps player turn rows at index 1+', () => {
+    let live = buildInitialState(makeSetup())
+    live = { ...live, phase: GamePhase.PLAYER_TURNS, activePlayerId: 0 }
+    const cardId = live.players[0].deck[0].id
+    const events = [
+      { a: { type: 'PLAY_CARD' as const, playerId: 0, cardId } },
+      { a: { type: 'PLACE_AGENT' as const, playerId: 0, spaceId: 1 } },
+      { a: { type: 'CLAIM_ALL_REWARDS' as const, playerId: 0 } },
+      { a: { type: 'END_TURN' as const, playerId: 0 } },
+    ]
+    const history = buildHistoryFromEvents(makeSetup(), events)
+    expect(historyIndexToEventIndex(makeSetup(), events, 1)).toBe(3)
   })
 })

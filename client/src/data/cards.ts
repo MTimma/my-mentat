@@ -1,4 +1,7 @@
-import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS, CustomEffect } from '../types/GameTypes'
+import { Card, AgentIcon, FactionType, ALL_AGENT_ICONS, CustomEffect, NO_EXPANSIONS } from '../types/GameTypes'
+import { RISE_OF_IX_IMPERIUM_DECK } from './cardsRiseOfIx'
+
+export { RISE_OF_IX_IMPERIUM_DECK } from './cardsRiseOfIx'
 
 const cloneCardData = <T>(data: T): T => JSON.parse(JSON.stringify(data))
 // export const STARTING_DECK: Card[] = [
@@ -2676,9 +2679,12 @@ export const ALL_IMPERIUM_ROW_CARDS: Card[] = (() => {
   return list.sort((a, b) => a.name.localeCompare(b.name))
 })()
 
-export const buildImperiumDeck = (startId = 2000): Card[] => {
+export const buildImperiumDeck = (startId = 2000, expansions = NO_EXPANSIONS): Card[] => {
   let nextId = startId
-  return IMPERIUM_ROW_DECK.map(card => ({
+  const source = expansions.riseOfIx
+    ? [...IMPERIUM_ROW_DECK, ...RISE_OF_IX_IMPERIUM_DECK]
+    : IMPERIUM_ROW_DECK
+  return source.map(card => ({
     ...cloneCardData(card),
     id: nextId++
   }))

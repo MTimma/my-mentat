@@ -1,7 +1,10 @@
 import React, { useMemo, useState } from 'react'
-import { PlayerSetup, Player, Card } from '../../types/GameTypes'
+import { Expansions, PlayerSetup, Player, Card } from '../../types/GameTypes'
 import { motion } from 'framer-motion'
 import { getStartingSpice, getStartingSolari } from '../../data/leaderAbilities/beastSetup'
+import { getStartingWater } from '../../data/leaderAbilities/yunaSolariBonus'
+import { applyHudroStartingIntrigue } from '../../data/leaderAbilities/hudroIntriguePeek'
+import { seedTessiaSnoopers } from '../../data/leaderAbilities/tessiaSnoopers'
 import StarterDeckEditor from '../StarterDeckEditor/StarterDeckEditor'
 import ImperiumRowDeckCreator from '../ImperiumRowDeckCreator/ImperiumRowDeckCreator'
 import { applyStarterDeckReservationToImperium } from '../../services/starterDeckSetup'
@@ -14,11 +17,13 @@ import {
   PLAY_CHROME_THEME_LABELS,
   type PlayChromeTheme,
 } from '../../utils/playChromeTheme'
-import './GameStateSetup.css'
+import { defaultDreadnoughtsForExpansions } from '../../utils/dreadnoughts'
+import { seedTroopSupply } from '../../utils/troops'
 
 interface GameStateSetupProps {
   playerSetups: PlayerSetup[]
   firstPlayer: number
+  expansions: Expansions
   onComplete: (initialState: {
     players: Player[]
     currentRound: number
@@ -32,6 +37,7 @@ interface GameStateSetupProps {
 const GameStateSetup: React.FC<GameStateSetupProps> = ({
   playerSetups,
   firstPlayer,
+  expansions,
   onComplete,
   onOpenCardCreator,
   autoApplyMandatoryRewards,
@@ -42,7 +48,7 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
   const [showResourceEditor, setShowResourceEditor] = useState(false)
   const [showStarterDeckEditor, setShowStarterDeckEditor] = useState(false)
   const [showImperiumDeckCreator, setShowImperiumDeckCreator] = useState(false)
-  const [imperiumRowDeckDraft, setImperiumRowDeckDraft] = useState<Card[]>(() => buildImperiumDeck())
+  const [imperiumRowDeckDraft, setImperiumRowDeckDraft] = useState<Card[]>(() => buildImperiumDeck(expansions))
   const [editablePlayerSetups, setEditablePlayerSetups] = useState<PlayerSetup[]>(
     playerSetups.map(setup => ({
       ...setup,
@@ -51,28 +57,37 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
     }))
   )
   const [playerStates, setPlayerStates] = useState<Player[]>(
-    playerSetups.map((setup, index) => ({
-      id: index,
-      leader: setup.leader,
-      color: setup.color,
-      spice: getStartingSpice(setup.leader),
-      water: 1,
-      solari: getStartingSolari(setup.leader),
-      troops: 3,
-      combatValue: 0,
-      agents: 2,
-      handCount: 5,
-      intrigueCount: 0,
-      deck: [...setup.deck],
-      discardPile: [],
-      trash: [],
-      hasHighCouncilSeat: false,
-      hasSwordmaster: false,
-      playArea: [],
-      persuasion: 0,
-      victoryPoints: 1,
-      revealed: false,
-    }))
+    playerSetups.map((setup, index) => {
+      const base = applyHudroStartingIntrigue({
+        id: index,
+        leader: setup.leader,
+        color: setup.color,
+        spice: getStartingSpice(setup.leader),
+        water: getStartingWater(setup.leader),
+        solari: getStartingSolari(setup.leader),
+        troops: 3,
+        combatValue: 0,
+        agents: 2,
+        handCount: 5,
+        intrigueCount: 0,
+        deck: [...setup.deck],
+        discardPile: [],
+        trash: [],
+        hasHighCouncilSeat: false,
+        hasSwordmaster: false,
+        playArea: [],
+        persuasion: 0,
+        victoryPoints: 1,
+        revealed: false,
+        ...(defaultDreadnoughtsForExpansions(expansions)
+          ? { dreadnoughts: defaultDreadnoughtsForExpansions(expansions) }
+          : {}),
+        ...(expansions.riseOfIx
+          ? { freighterStep: 0 as const, negotiatorsOnIx: 0, tech: [] as const }
+          : {}),
+      })
+      return seedTessiaSnoopers(seedTroopSupply(applyHudroStartingIntrigue(base)), expansions.riseOfIx)
+    })
   )
 
   const handleResourceChange = (playerId: number, resource: keyof Player, value: number) => {
@@ -113,6 +128,7 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
       firstPlayer,
       imperiumRowDeck,
       currentRound,
+      expansions,
     })
     const doc = createGameInputDoc(setup, {
       title: 'New game (preview)',
@@ -124,6 +140,7 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
   }, [
     currentRound,
     editablePlayerSetups,
+    expansions,
     firstPlayer,
     imperiumRowDeckDraft,
     playerStates,

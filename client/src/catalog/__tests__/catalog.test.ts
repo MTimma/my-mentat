@@ -1,13 +1,24 @@
 import { describe, expect, it } from 'vitest'
-import { buildCatalog } from '../buildCatalog'
-import { STARTING_DECK, IMPERIUM_ROW_DECK } from '../../data/cards'
+import { buildCatalog, CATALOG_SCHEMA_VERSION, slugify } from '../buildCatalog'
+import { STARTING_DECK, IMPERIUM_ROW_DECK, RISE_OF_IX_IMPERIUM_DECK } from '../../data/cards'
 import { BOARD_SPACES } from '../../data/boardSpaces'
-import { CONFLICTS } from '../../data/conflicts'
-import { intrigueCards } from '../../services/IntrigueDeckService'
-import { LEADERS } from '../../data/leaders'
+import { CONFLICTS, RISE_OF_IX_CONFLICTS } from '../../data/conflicts'
+import { intrigueCards } from '../../data/intrigueCards'
+import { RISE_OF_IX_INTRIGUE_CARDS } from '../../data/intrigueCards'
+import { LEADERS, RISE_OF_IX_LEADERS } from '../../data/leaders'
+import { TECH_TILES } from '../../data/techTiles'
 
 describe('published id catalog', () => {
   const catalog = buildCatalog()
+
+  it('uses schema version 1 with expansion metadata', () => {
+    expect(catalog.schemaVersion).toBe(1)
+    expect(CATALOG_SCHEMA_VERSION).toBe(1)
+    expect(catalog.expansions.available).toContain('riseOfIx')
+    expect(catalog.expansions.byId.riseOfIx.decks.imperium).toEqual(
+      RISE_OF_IX_IMPERIUM_DECK.map(card => `imperium/${slugify(card.name)}`)
+    )
+  })
 
   it('is JSON round-trippable and deterministic', () => {
     const a = JSON.stringify(buildCatalog())
@@ -85,18 +96,32 @@ describe('published id catalog', () => {
     }
   })
 
-  it('board spaces, conflicts, intrigue and leaders are complete with unique ids', () => {
+  it('board spaces, conflicts, intrigue, leaders and tech tiles are complete with unique ids', () => {
     expect(catalog.boardSpaces).toHaveLength(BOARD_SPACES.length)
     expect(new Set(catalog.boardSpaces.map(s => s.id)).size).toBe(BOARD_SPACES.length)
 
-    expect(catalog.conflicts).toHaveLength(CONFLICTS.length)
-    expect(new Set(catalog.conflicts.map(c => c.id)).size).toBe(CONFLICTS.length)
+    expect(catalog.conflicts).toHaveLength(CONFLICTS.length + RISE_OF_IX_CONFLICTS.length)
+    expect(new Set(catalog.conflicts.map(c => c.id)).size).toBe(
+      CONFLICTS.length + RISE_OF_IX_CONFLICTS.length
+    )
 
-    expect(catalog.intrigue).toHaveLength(intrigueCards.length)
-    expect(new Set(catalog.intrigue.map(i => i.id)).size).toBe(intrigueCards.length)
+    expect(catalog.intrigue).toHaveLength(intrigueCards.length + RISE_OF_IX_INTRIGUE_CARDS.length)
+    expect(new Set(catalog.intrigue.map(i => i.id)).size).toBe(
+      intrigueCards.length + RISE_OF_IX_INTRIGUE_CARDS.length
+    )
 
-    expect(catalog.leaders).toHaveLength(LEADERS.length)
-    expect(new Set(catalog.leaders.map(l => l.id)).size).toBe(LEADERS.length)
+    expect(catalog.leaders).toHaveLength(LEADERS.length + RISE_OF_IX_LEADERS.length)
+    expect(new Set(catalog.leaders.map(l => l.id)).size).toBe(
+      LEADERS.length + RISE_OF_IX_LEADERS.length
+    )
+
+    expect(catalog.techTiles).toHaveLength(TECH_TILES.length)
+    expect(catalog.meta.counts.techTiles).toBe(18)
+  })
+
+  it('flags Rise of Ix board spaces 23–26', () => {
+    const roiSpaces = catalog.boardSpaces.filter(space => space.riseOfIx)
+    expect(roiSpaces.map(s => s.id).sort()).toEqual([23, 24, 25, 26])
   })
 
   it('publishes the choice-id grammar', () => {

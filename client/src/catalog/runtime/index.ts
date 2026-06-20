@@ -7,6 +7,7 @@ import type {
   Card,
   CardEffect,
   ConflictCard,
+  Expansions,
   FactionType,
   IntrigueCard,
   IntrigueCardType,
@@ -14,12 +15,14 @@ import type {
   RevealEffect,
   SpaceProps,
 } from '../../types/GameTypes'
+import { NO_EXPANSIONS } from '../../types/GameTypes'
 import { type CatalogCardEntry, type CatalogEffectEntry } from '../buildCatalog'
 import cardsFile from '../../../public/catalogs/cards.v1.json'
 import effectsFile from '../../../public/catalogs/effects.v1.json'
 import boardSpacesFile from '../../../public/catalogs/board-spaces.v1.json'
 import conflictsFile from '../../../public/catalogs/conflicts.v1.json'
 import intrigueFile from '../../../public/catalogs/intrigue.v1.json'
+import expansionsFile from '../../../public/catalogs/expansions.v1.json'
 import type {
   BoardSpacesCatalogFile,
   CardsCatalogFile,
@@ -33,6 +36,9 @@ const effectsCatalog = effectsFile as EffectsCatalogFile
 const boardSpacesCatalog = boardSpacesFile as BoardSpacesCatalogFile
 const conflictsCatalog = conflictsFile as ConflictsCatalogFile
 const intrigueCatalog = intrigueFile as IntrigueCatalogFile
+const expansionsCatalog = expansionsFile as {
+  expansions: { byId: Record<string, { decks: { imperium: string[] } }> }
+}
 
 const effectsById = new Map<string, CatalogEffectEntry>(
   effectsCatalog.effects.map(effect => [effect.id, effect])
@@ -73,6 +79,8 @@ function hydrateCardTemplate(entry: CatalogCardEntry, instanceId: number): Card 
     cost: entry.cost,
     agentIcons: entry.agentIcons as AgentIcon[],
     infiltrate: entry.infiltrate,
+    unload: entry.unload,
+    riseOfIx: entry.riseOfIx,
     playEffect: resolveEffectIds(entry.effects.play) as PlayEffect[] | undefined,
     revealEffect: resolveEffectIds(entry.effects.reveal) as RevealEffect[] | undefined,
     trashEffect: resolveEffectIds(entry.effects.trash),
@@ -102,16 +110,21 @@ export const ARRAKIS_LIAISON_DECK: Card[] = buildPoolDeck('arrakis-liaison')
 export const SPICE_MUST_FLOW_DECK: Card[] = buildPoolDeck('spice-must-flow')
 export const FOLDSPACE_DECK: Card[] = buildPoolDeck('foldspace')
 
-/** Unique imperium templates (one per catalog card entry in the imperium pool). */
+/** Unique imperium templates (base game only — excludes Rise of Ix). */
 export const IMPERIUM_ROW_DECK: Card[] = cardsCatalog.cards
-  .filter(card => card.pool === 'imperium')
+  .filter(card => card.pool === 'imperium' && !card.riseOfIx)
   .map(card => hydrateCardTemplate(card, card.authorIds[0]))
 
 export const ALL_IMPERIUM_ROW_CARDS: Card[] = [...IMPERIUM_ROW_DECK]
 
-export function buildImperiumDeck(): Card[] {
+export function buildImperiumDeck(expansions: Expansions = NO_EXPANSIONS): Card[] {
   let nextId = 2000
-  return resolveCatalogCardIds(cardsCatalog.decks.imperium).map(card => ({
+  const catalogIds = [...cardsCatalog.decks.imperium]
+  if (expansions.riseOfIx) {
+    catalogIds.push(...expansionsCatalog.expansions.byId.riseOfIx.decks.imperium)
+  }
+  const pool = resolveCatalogCardIds(catalogIds)
+  return pool.map(card => ({
     ...card,
     id: nextId++,
   }))
@@ -133,6 +146,8 @@ function hydrateBoardSpace(entry: CatalogSpaceCatalogEntry): SpaceProps {
     specialEffect: entry.specialEffect as SpaceProps['specialEffect'],
     maxAgents: entry.maxAgents,
     image: entry.image,
+    riseOfIx: entry.riseOfIx,
+    gridSide: entry.gridSide,
     effects: effects as SpaceProps['effects'],
   }
 }
@@ -156,7 +171,9 @@ function hydrateIntrigue(entry: IntrigueCatalogFile['intrigue'][number]): Intrig
   }
 }
 
-export const INTRIGUE_CARDS: IntrigueCard[] = intrigueCatalog.intrigue.map(hydrateIntrigue)
+export const INTRIGUE_CARDS: IntrigueCard[] = intrigueCatalog.intrigue
+  .filter(entry => !entry.riseOfIx)
+  .map(hydrateIntrigue)
 
 export function getEffectById(effectId: string): CatalogEffectEntry | undefined {
   return effectsById.get(effectId)

@@ -1,7 +1,11 @@
 import React, { useState } from 'react'
-import { SpaceProps, AgentIcon, Player, ConflictCard, MakerSpace, Card } from '../types/GameTypes'
+import { SpaceProps, AgentIcon, Player, ConflictCard, MakerSpace, Card, Expansions } from '../types/GameTypes'
 import BoardSpace from './BoardSpace/BoardSpace'
 import { BOARD_SPACES } from '../data/boardSpaces'
+import {
+  canPlayerVisitBoardSpaceOnce,
+  isBoardSpaceAvailableForExpansions,
+} from '../data/boardSpaceAvailability'
 import SellMelangePopup from './SellMelangePopup/SellMelangePopup'
 import { canPlaceDespiteOccupancy } from '../data/leaderAbilities/helenaUnblockedAgents'
 import { getEffectiveSolariCost } from '../data/leaderAbilities/letoLandsraadDiscount'
@@ -35,6 +39,7 @@ interface GameBoardProps {
   voiceSelectionActive?: boolean;
   onVoiceSpaceSelect?: (spaceId: number) => void;
   blockedSpaces?: Array<{ spaceId: number; playerId: number }>;
+  expansions?: Expansions;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -54,7 +59,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
   ignoreCosts = false,
   voiceSelectionActive = false,
   onVoiceSpaceSelect,
-  blockedSpaces = []
+  blockedSpaces = [],
+  expansions = { riseOfIx: false, riseOfIxEpic: false },
 }) => {
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
@@ -71,6 +77,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
     const player = players.find(p => p.id === currentPlayer)
     if (!player) return false
 
+    if (!isBoardSpaceAvailableForExpansions(space, expansions)) return false
+    if (!canPlayerVisitBoardSpaceOnce(space, player)) return false
+
     if (occupiedSpaces[space.id]?.length > 0 && !infiltrate && !canPlaceDespiteOccupancy(space, player)) return false
 
     if (ignoreCosts) {
@@ -80,10 +89,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
     if (space.requiresInfluence) {
       const playerInfluence = factionInfluence[space.requiresInfluence.faction]?.[currentPlayer] || 0
       if (playerInfluence < space.requiresInfluence.amount) return false
-    }
-
-    if (space.name === "High Council") {
-      if (player?.hasHighCouncilSeat) return false
     }
 
     if (space.cost) {
@@ -128,9 +133,10 @@ const GameBoard: React.FC<GameBoardProps> = ({
     }
   }
 
-  // Split spaces for custom layout
-  const firstRowSpaces = BOARD_SPACES.slice(0, 3);
-  const restSpaces = BOARD_SPACES.slice(3);
+  // Split spaces for custom layout (expansion-aware)
+  const visibleSpaces = BOARD_SPACES.filter(s => isBoardSpaceAvailableForExpansions(s, expansions))
+  const firstRowSpaces = visibleSpaces.slice(0, 3);
+  const restSpaces = visibleSpaces.slice(3);
 
   // Helper to chunk array into rows of 5
   const chunk = (arr: SpaceProps[], size: number): SpaceProps[][] => arr.length === 0 ? [] : [arr.slice(0, size), ...chunk(arr.slice(size), size)];

@@ -16,6 +16,7 @@ import {
   type GameState,
   type Player,
 } from '../../../types/GameTypes'
+import { seedTroopSupply } from '../../../utils/troops'
 
 function stubDeckCard(id: number): Card {
   return {
@@ -37,7 +38,7 @@ function makeLeader(): Leader {
 
 function makePlayer(id: number, overrides: Partial<Player> = {}): Player {
   const colors = [PlayerColor.RED, PlayerColor.BLUE, PlayerColor.GREEN, PlayerColor.YELLOW]
-  return {
+  const player = {
     id,
     color: colors[id % 4] ?? PlayerColor.RED,
     leader: makeLeader(),
@@ -60,6 +61,7 @@ function makePlayer(id: number, overrides: Partial<Player> = {}): Player {
     trash: [],
     ...overrides,
   }
+  return 'troopSupply' in overrides ? player : seedTroopSupply(player)
 }
 
 function basePlotState(players: Player[], activeId = 0): GameState {

@@ -1,6 +1,15 @@
 /**
- * Percent positions for board markers on the full image (inner-board 0–100, same as hotspots).
- * Tune with ?markerDebug=1 — edit values here to match Board.jpg.
+ * Base-game board marker positions (inner-board 0–100, same as `boardHotspots.ts`).
+ * Tune with `?markerDebug=1`.
+ *
+ * Expansion layout (CHOAM track, dreadnought badges, RoI hotspot retunes):
+ * - `expansionBoardMarkers.ts`
+ * - `expansionBoardHotspots.ts`
+ * - `ixBoardAnchors.ts` (Ix panel overlay)
+ *
+ * Rise of Ix leader / conflict assets:
+ * - `leaderAbilities/tessiaSnoopers.ts` (snooper tokens)
+ * - `conflictsRiseOfIx.ts` + `conflictCardImages.ts` (conflict card art)
  */
 import {
   ControlMarkerType,
@@ -10,6 +19,17 @@ import {
 } from '../types/GameTypes'
 import { layoutInnerPointPercent, layoutInnerRectPercent } from './boardHotspots'
 import { MAX_INFLUENCE } from '../utils/influenceVictoryPoints'
+
+export { conflictCardImageSrc, CONFLICT_CARD_IMAGE_FILE } from './conflictCardImages'
+export {
+  SNOOPER_TOKEN_ANCHORS,
+  snooperTokenPoint,
+  TESSIA_PARKED_SNOOPER_SLOTS,
+} from './leaderAbilities/tessiaSnoopers'
+export {
+  mentatAvailabilityPoint,
+  swordmasterEligibilityPoint,
+} from './boardHotspots'
 
 export const BOARD_MARKER_VP_MAX_STEPS = 12
 
@@ -40,7 +60,7 @@ export const INFLUENCE_TRACKS: Record<FactionType, InfluenceTrackLayout> = {
   },
   [FactionType.FREMEN]: {
     laneCenterX: [4, 5.8, 7.6, 9.4],
-    baselineY: 98,  
+    baselineY: 98,
     stepY: -3.5,
   },
 }
@@ -65,10 +85,6 @@ export const INFLUENCE_TRACK_AREAS: Record<
  * - **`x`**: fixed column (inner %).
  * - **`baselineY`**: marker position when **total VP = 0** (bottom of that lane on the art; larger Y = lower on the board image).
  * - **`stepY`**: add **`stepY * totalVp`** each frame. Use a **negative** value so each extra VP moves the marker **up** (smaller inner Y).
- *
- * **0 vs 1 VP:** The app uses **actual total VP** from `getTotalVictoryPoints` (includes printed starting VP, often **1**). So:
- * - At **0** VP, the piece sits on **`baselineY`**.
- * - At **1** VP, it sits at **`baselineY + stepY`** (one step up). If everyone starts at 1, all markers start one step above the “0” row; at **2** VP they move up again, etc.
  */
 export const VP_LANES: Array<{ x: number; baselineY: number; stepY: number }> = [
   { x: 96, baselineY: 97, stepY: -5.5 },
@@ -118,7 +134,7 @@ export const COMBAT_STRENGTH_ORIGIN = { x: 58, y: 72 }
 export const CONTROL_MARKER_POINTS: Record<ControlMarkerType, { x: number; y: number }> = {
   [ControlMarkerType.ARRAKIN]: { x: 78, y: 34 },
   [ControlMarkerType.CARTHAG]: { x: 61, y: 37 },
-  [ControlMarkerType.IMPERIAL_BASIN]: { x: 77, y:49 },
+  [ControlMarkerType.IMPERIAL_BASIN]: { x: 77, y: 49 },
 }
 
 /**
@@ -129,33 +145,6 @@ export const BONUS_SPICE_ANCHORS: Record<MakerSpace, { x: number; y: number }> =
   [MakerSpace.IMPERIAL_BASIN]: { x: 88, y: 44 },
   [MakerSpace.GREAT_FLAT]: { x: 43, y: 62 },
   [MakerSpace.HAGGA_BASIN]: { x: 69, y: 50 },
-}
-
-/** Conflict card art under public/conflicts/cards/. */
-export const CONFLICT_CARD_IMAGE_FILE: Partial<Record<number, string>> = {
-  901: 'skirmish-iii.webp',
-  902: 'skirmish-iiii.webp',
-  903: 'skirmish-ii.webp',
-  904: 'skirmish-i.webp',
-  905: 'siege-of-arrakeen.webp',
-  906: 'siege-of-carthag.webp',
-  907: 'secure-imperial-basin.webp',
-  908: 'cloak-and-dagger.webp',
-  909: 'machinations.webp',
-  910: 'desert-power.webp',
-  911: 'raid-stockpiles.webp',
-  912: 'sort-through-the-chaos.webp',
-  913: 'guild-bank-raid.webp',
-  914: 'terrible-purpose.webp',
-  915: 'battle-for-imperial-basin.webp',
-  916: 'battle-for-arrakeen.webp',
-  917: 'battle-for-carthag.webp',
-  918: 'grand-vision.webp',
-}
-
-export function conflictCardImageSrc(conflictId: number): string | null {
-  const filename = CONFLICT_CARD_IMAGE_FILE[conflictId]
-  return filename ? `/conflicts/cards/${filename}` : null
 }
 
 export function clampInfluenceStep(v: number): number {

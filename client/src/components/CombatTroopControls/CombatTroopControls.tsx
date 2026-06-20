@@ -8,6 +8,7 @@ export interface CombatTroopControlsProps {
   garrisonTroops: number
   onDeploy: () => void
   onUndeploy: () => void
+  variant?: 'troop' | 'dreadnought' | 'negotiator'
   className?: string
   style?: React.CSSProperties
 }
@@ -19,9 +20,19 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
   garrisonTroops,
   onDeploy,
   onUndeploy,
+  variant = 'troop',
   className,
   style,
 }) => {
+  const isDreadnought = variant === 'dreadnought'
+  const isNegotiator = variant === 'negotiator'
+  const unitLabel = isDreadnought ? 'dreadnought' : isNegotiator ? 'negotiator' : 'troop'
+  const iconSrc = isDreadnought
+    ? '/icon/dreadnought.svg'
+    : isNegotiator
+      ? '/icon/negotiator.svg'
+      : '/icon/troop.png'
+
   const visible =
     canDeploy &&
     ((deployableTroops > 0 && garrisonTroops > 0) || deployedThisTurn > 0)
@@ -33,25 +44,25 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
       className={['combat-troop-controls', className].filter(Boolean).join(' ')}
       style={style}
       role="group"
-      aria-label="Deploy or undo deployment of troops to the Conflict"
+      aria-label={`Deploy or undo deployment of ${unitLabel}s to the Conflict`}
     >
       <button
         type="button"
         className="troop-action-button troop-deploy-button"
         onClick={onDeploy}
         disabled={!canDeploy || garrisonTroops <= 0 || deployableTroops <= 0}
-        aria-label={`Deploy one troop. ${deployableTroops} available to deploy.`}
-        title={`Deploy troop (${deployableTroops} available)`}
+        aria-label={`Deploy one ${unitLabel}. ${deployableTroops} available to deploy.`}
+        title={`Deploy ${unitLabel} (${deployableTroops} available)`}
       >
         <span className="troop-available-count">{deployableTroops}</span>
-        <img src="/icon/troop.png" alt="" className="troop-action-icon" />
+        <img src={iconSrc} alt="" className="troop-action-icon" />
         <span className="troop-action-arrow" aria-hidden="true">
           ➤
         </span>
       </button>
       <div
         className="troop-action-status"
-        aria-label={`${deployedThisTurn} troops deployed this turn`}
+        aria-label={`${deployedThisTurn} ${unitLabel}s deployed this turn`}
       >
         <span className="troop-deployed-count">{deployedThisTurn}</span>
       </div>

@@ -9,6 +9,7 @@ import {
   type Player,
 } from '../../../types/GameTypes'
 import { intrigueCards } from '../../../services/IntrigueDeckService'
+import { seedTroopSupply } from '../../../utils/troops'
 import { applyGameAction, getFreshDefaultGameState } from '../GameContext'
 
 export function stubDeckCard(id: number, overrides: Partial<Card> = {}): Card {
@@ -37,7 +38,7 @@ export function makePlayer(id: number, overrides: Partial<Player> = {}): Player 
     PlayerColor.GREEN,
     PlayerColor.YELLOW,
   ]
-  return {
+  const player = {
     id,
     color: colors[id % 4] ?? PlayerColor.RED,
     leader: makeLeader(`Leader ${id}`),
@@ -60,6 +61,7 @@ export function makePlayer(id: number, overrides: Partial<Player> = {}): Player 
     trash: [],
     ...overrides,
   }
+  return 'troopSupply' in overrides ? player : seedTroopSupply(player)
 }
 
 /** Single-player agent/reveal tests with intrigue deck seeded. */

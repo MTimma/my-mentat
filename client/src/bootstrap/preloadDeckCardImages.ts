@@ -5,7 +5,7 @@ import {
   SPICE_MUST_FLOW_DECK,
   STARTING_DECK,
 } from '../data/cards'
-import { CONFLICT_CARD_IMAGE_FILE } from '../data/boardMarkerAnchors'
+import { CONFLICT_CARD_IMAGE_FILE } from '../data/conflictCardImages'
 import { schedulePreloadImageUrls } from './preloadImages'
 
 const DECK_CARD_SOURCES = [

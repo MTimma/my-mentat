@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { applyGameAction, getFreshDefaultGameState } from '../GameContext'
 import { CONFLICTS } from '../../../data/conflicts'
 import { LEADERS } from '../../../data/leaders'
-import { ControlMarkerType, FactionType, GamePhase, type GameState } from '../../../types/GameTypes'
+import { TechTileId } from '../../../data/techTiles'
+import { buildIxBoardFromFaceUpTiles, buildIxBoardFromSandboxStackTops } from '../riseOfIxReducer'
+import { ControlMarkerType, FactionType, GamePhase, NO_EXPANSIONS, type GameState } from '../../../types/GameTypes'
 import { makePlayer, stubDeckCard } from './_helpers'
 
 function getSandboxSetupState(): GameState {
@@ -204,7 +206,7 @@ describe('Sandbox setup turn', () => {
     expect(s.history[0].currentConflict.id).toBe(CONFLICTS[0].id)
   })
 
-  it('UNDO_TO_SETUP after commit restores the sandbox setup turn baseline', () => {
+  it('UNDO_TO_SETUP after commit reopens sandbox setup with the committed configuration', () => {
     const baseline = { ...getSandboxSetupState(), history: [] }
     let s = applyGameAction(
       { ...getSandboxSetupState(), setupBaseline: baseline },
@@ -219,7 +221,49 @@ describe('Sandbox setup turn', () => {
 
     expect(s.sandboxSetup).toBe(true)
     expect(s.phase).toBe(GamePhase.ROUND_START)
-    expect(s.imperiumRow).toHaveLength(0)
+    expect(s.imperiumRow.map(c => c.id)).toEqual([9001, 9002, 9003, 9004, 9005])
+    expect(s.currentConflict.id).toBe(CONFLICTS[0].id)
+    expect(s.history).toHaveLength(1)
+    expect(s.history[0].imperiumRow).toHaveLength(5)
+  })
+
+  it('UNDO_TO_SETUP after commit preserves sandbox round/turn position', () => {
+    const baseline = { ...getSandboxSetupState(), history: [] }
+    let s = applyGameAction(
+      { ...getSandboxSetupState(), setupBaseline: baseline },
+      {
+        type: 'SANDBOX_SET_IMPERIUM_ROW',
+        cardIds: [9001, 9002, 9003, 9004, 9005],
+      }
+    )
+    s = applyGameAction(s, { type: 'SANDBOX_SET_CONFLICT', conflictId: CONFLICTS[0].id })
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_POSITION',
+      round: 4,
+      playerTurn: 7,
+    })
+    s = applyGameAction(s, { type: 'SANDBOX_COMMIT_SETUP' })
+    s = applyGameAction(s, { type: 'UNDO_TO_SETUP' })
+
+    expect(s.sandboxSetupPosition).toEqual({ round: 4, playerTurn: 7 })
+  })
+
+  it('UNDO_TO_TURN index 0 after commit reopens sandbox setup editing', () => {
+    const baseline = { ...getSandboxSetupState(), history: [] }
+    let s = applyGameAction(
+      { ...getSandboxSetupState(), setupBaseline: baseline },
+      {
+        type: 'SANDBOX_SET_IMPERIUM_ROW',
+        cardIds: [9001, 9002, 9003, 9004, 9005],
+      }
+    )
+    s = applyGameAction(s, { type: 'SANDBOX_SET_CONFLICT', conflictId: CONFLICTS[0].id })
+    s = applyGameAction(s, { type: 'SANDBOX_COMMIT_SETUP' })
+    s = applyGameAction(s, { type: 'UNDO_TO_TURN', turnIndex: 0 })
+
+    expect(s.sandboxSetup).toBe(true)
+    expect(s.imperiumRow.map(c => c.id)).toEqual([9001, 9002, 9003, 9004, 9005])
+    expect(s.currentConflict.id).toBe(CONFLICTS[0].id)
   })
 
   it('SANDBOX_SET_PLAYER_INFLUENCE patches faction influence for one player', () => {
@@ -260,6 +304,19 @@ describe('Sandbox setup turn', () => {
     expect(s.controlMarkers[ControlMarkerType.ARRAKIN]).toBe(1)
     expect(s.controlMarkers[ControlMarkerType.CARTHAG]).toBeNull()
     expect(s.history[0].controlMarkers[ControlMarkerType.ARRAKIN]).toBe(1)
+  })
+
+  it('SANDBOX_SET_MENTAT_OWNER assigns mentat to one player', () => {
+    let s = getSandboxSetupState()
+
+    s = applyGameAction(s, { type: 'SANDBOX_SET_MENTAT_OWNER', playerId: 1 })
+    expect(s.mentatOwner).toBe(1)
+
+    s = applyGameAction(s, { type: 'SANDBOX_SET_MENTAT_OWNER', playerId: 0 })
+    expect(s.mentatOwner).toBe(0)
+
+    s = applyGameAction(s, { type: 'SANDBOX_SET_MENTAT_OWNER', playerId: null })
+    expect(s.mentatOwner).toBeNull()
   })
 
   it('SANDBOX_SET_POSITION stores round and turn for commit', () => {
@@ -340,5 +397,154 @@ describe('Sandbox setup turn', () => {
     expect(afterRow).toBe(s)
     expect(afterConflict).toBe(s)
     expect(afterCommit).toBe(s)
+  })
+
+  it('SANDBOX_SET_IX_BOARD_TOP builds three stacks with chosen face-up tiles', () => {
+    let s = {
+      ...getSandboxSetupState(),
+      expansions: { ...NO_EXPANSIONS, riseOfIx: true },
+      ixBoard: undefined,
+    }
+    const faceUp = [TechTileId.ARTILLERY, TechTileId.WINDTRAPS, TechTileId.FLAGSHIP] as const
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_IX_BOARD_TOP',
+      stackTops: [...faceUp],
+    })
+
+    expect(s.ixBoard?.stacks).toHaveLength(3)
+    expect(s.ixBoard?.stacks.map(stack => stack[0])).toEqual([...faceUp])
+    expect(s.ixBoard?.stacks.every(stack => stack.length === 6)).toBe(true)
+    expect(s.sandboxSetup).toBe(true)
+    expect(s.history).toHaveLength(1)
+    expect(s.history[0].ixBoard?.stacks.map(stack => stack[0])).toEqual([...faceUp])
+  })
+
+  it('SANDBOX_SET_IX_BOARD_TOP supports one empty stack when six tiles are with players', () => {
+    let s = {
+      ...getSandboxSetupState(),
+      expansions: { ...NO_EXPANSIONS, riseOfIx: true },
+      players: [
+        {
+          ...makePlayer(0),
+          tech: [
+            { id: TechTileId.CHAUMURKY, faceUp: true },
+            { id: TechTileId.DETONATION_DEVICES, faceUp: true },
+            { id: TechTileId.DISPOSAL_FACILITY, faceUp: true },
+            { id: TechTileId.HOLOPROJECTORS, faceUp: true },
+            { id: TechTileId.HOLTZMAN_ENGINE, faceUp: true },
+            { id: TechTileId.INVASION_SHIPS, faceUp: true },
+          ],
+        },
+        makePlayer(1),
+      ],
+    }
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_IX_BOARD_TOP',
+      stackTops: [TechTileId.ARTILLERY, TechTileId.WINDTRAPS, null],
+    })
+
+    expect(s.ixBoard?.stacks.map(stack => stack[0] ?? null)).toEqual([
+      TechTileId.ARTILLERY,
+      TechTileId.WINDTRAPS,
+      null,
+    ])
+    expect(s.ixBoard?.stacks[2]).toEqual([])
+    expect(s.ixBoard?.stacks[0]).toHaveLength(6)
+    expect(s.ixBoard?.stacks[1]).toHaveLength(6)
+  })
+
+  it('SANDBOX_SET_IX_BOARD_TOP auto-clears the board when player tech invalidates setup', () => {
+    let s = {
+      ...getSandboxSetupState(),
+      expansions: { ...NO_EXPANSIONS, riseOfIx: true },
+      ixBoard: buildIxBoardFromFaceUpTiles(
+        [TechTileId.ARTILLERY, TechTileId.WINDTRAPS, TechTileId.FLAGSHIP],
+        undefined,
+        () => 0
+      ),
+    }
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 0,
+      patch: {
+        tech: Array.from({ length: 6 }, (_, index) => ({
+          id: [
+            TechTileId.CHAUMURKY,
+            TechTileId.DETONATION_DEVICES,
+            TechTileId.DISPOSAL_FACILITY,
+            TechTileId.HOLOPROJECTORS,
+            TechTileId.HOLTZMAN_ENGINE,
+            TechTileId.INVASION_SHIPS,
+          ][index],
+          faceUp: true,
+        })),
+      },
+    })
+
+    expect(s.ixBoard).toBeUndefined()
+  })
+
+  it('SANDBOX_UPDATE_PLAYER auto-empties the board when all 18 tiles are with players', () => {
+    const allTiles = Object.values(TechTileId)
+    let s = {
+      ...getSandboxSetupState(),
+      expansions: { ...NO_EXPANSIONS, riseOfIx: true },
+      players: [makePlayer(0), makePlayer(1)],
+    }
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 0,
+      patch: {
+        tech: allTiles.slice(0, 10).map(id => ({ id, faceUp: true })),
+      },
+    })
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 1,
+      patch: {
+        tech: allTiles.slice(10).map(id => ({ id, faceUp: true })),
+      },
+    })
+
+    expect(s.ixBoard?.stacks).toEqual([[], [], []])
+  })
+
+  it('SANDBOX_SET_IX_BOARD_TOP is ignored when riseOfIx is off', () => {
+    const s = getSandboxSetupState()
+    const after = applyGameAction(s, {
+      type: 'SANDBOX_SET_IX_BOARD_TOP',
+      stackTops: [TechTileId.ARTILLERY, TechTileId.WINDTRAPS, TechTileId.FLAGSHIP],
+    })
+    expect(after).toBe(s)
+    expect(after.ixBoard).toBeUndefined()
+  })
+
+  it('buildIxBoardFromSandboxStackTops places remaining tiles face-down per filled stack', () => {
+    const board = buildIxBoardFromSandboxStackTops(
+      [TechTileId.ARTILLERY, TechTileId.WINDTRAPS, null],
+      [TechTileId.CHAUMURKY, TechTileId.DETONATION_DEVICES, TechTileId.DISPOSAL_FACILITY, TechTileId.HOLOPROJECTORS, TechTileId.HOLTZMAN_ENGINE, TechTileId.INVASION_SHIPS],
+      () => 0
+    )
+    expect(board.stacks[2]).toEqual([])
+    expect(board.stacks[0]).toHaveLength(6)
+    expect(board.stacks[1]).toHaveLength(6)
+    const allIds = board.stacks.flat()
+    expect(allIds).toHaveLength(12)
+    expect(new Set(allIds).size).toBe(12)
+  })
+
+  it('buildIxBoardFromFaceUpTiles places remaining tiles face-down per stack', () => {
+    const board = buildIxBoardFromFaceUpTiles(
+      [TechTileId.ARTILLERY, TechTileId.WINDTRAPS, TechTileId.FLAGSHIP],
+      undefined,
+      () => 0
+    )
+    const allIds = board.stacks.flat()
+    expect(allIds).toHaveLength(18)
+    expect(new Set(allIds).size).toBe(18)
   })
 })

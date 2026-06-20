@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 1,
+  "techTiles": [
+    {
+      "id": "artillery",
+      "name": "Artillery",
+      "cost": 1,
+      "image": "/technologies/rise_of_ix/artillery.png",
+      "timing": [
+        "reveal"
+      ],
+      "description": "Reveal: +1 sword for each revealed card that provides ≥1 sword this turn.",
+      "customEffect": "ARTILLERY",
+      "riseOfIx": true
+    },
+    {
+      "id": "chaumurky",
+      "name": "Chaumurky",
+      "cost": 4,
+      "image": "/technologies/rise_of_ix/chaumurky.png",
+      "timing": [
+        "endgame"
+      ],
+      "description": "Endgame: win tiebreakers.",
+      "customEffect": "CHAUMURKY",
+      "acquireEffect": {
+        "intrigueCards": 2
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "detonation_devices",
+      "name": "Detonation Devices",
+      "cost": 3,
+      "image": "/technologies/rise_of_ix/detonation_devices.png",
+      "timing": [
+        "after-conflict"
+      ],
+      "description": "When you win a Conflict with a dreadnought in it: +1 VP and return dreadnought to supply, or take control normally.",
+      "customEffect": "DETONATION_DEVICES",
+      "riseOfIx": true
+    },
+    {
+      "id": "disposal_facility",
+      "name": "Disposal Facility",
+      "cost": 3,
+      "image": "/technologies/rise_of_ix/disposal_facility.png",
+      "timing": [
+        "reveal"
+      ],
+      "description": "Reveal: if persuasion ≥ 6, you may trash one card in play.",
+      "customEffect": "DISPOSAL_FACILITY",
+      "acquireEffect": {
+        "trash": 1
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "flagship",
+      "name": "Flagship",
+      "cost": 8,
+      "image": "/technologies/rise_of_ix/flagship.png",
+      "timing": [
+        "agent-reveal-once-per-round"
+      ],
+      "description": "Pay 4 Solari → recruit 3 troops (once per round).",
+      "customEffect": "FLAGSHIP",
+      "acquireEffect": {
+        "victoryPoints": 1
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "holoprojectors",
+      "name": "Holoprojectors",
+      "cost": 3,
+      "image": "/technologies/rise_of_ix/holoprojectors.png",
+      "timing": [
+        "agent-reveal-once-per-round"
+      ],
+      "description": "Discard 1 card → draw 1 card (once per round).",
+      "customEffect": "HOLOPROJECTORS",
+      "riseOfIx": true
+    },
+    {
+      "id": "holtzman_engine",
+      "name": "Holtzman Engine",
+      "cost": 6,
+      "image": "/technologies/rise_of_ix/holtzman_engine.png",
+      "timing": [
+        "round-start",
+        "endgame"
+      ],
+      "description": "Round Start: draw 1 card. Endgame: +1 VP if you have ≥2 Spice Must Flow.",
+      "customEffect": "HOLTZMAN_ENGINE",
+      "riseOfIx": true
+    },
+    {
+      "id": "invasion_ships",
+      "name": "Invasion Ships",
+      "cost": 5,
+      "image": "/technologies/rise_of_ix/invasion_ships.png",
+      "timing": [
+        "agent"
+      ],
+      "description": "Agent (once per round): discard 1 → enemy agents do not block your agent this turn.",
+      "customEffect": "INVASION_SHIPS",
+      "acquireEffect": {
+        "troops": 4
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "memocorders",
+      "name": "Memocorders",
+      "cost": 2,
+      "image": "/technologies/rise_of_ix/memocorders.png",
+      "timing": [
+        "endgame"
+      ],
+      "description": "Endgame: +1 VP if you have ≥3 influence on all four tracks.",
+      "customEffect": "MEMOCORDERS",
+      "acquireEffect": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "minimic_film",
+      "name": "Minimic Film",
+      "cost": 2,
+      "image": "/technologies/rise_of_ix/minimic_film.png",
+      "timing": [
+        "reveal"
+      ],
+      "description": "Reveal: +1 persuasion.",
+      "riseOfIx": true
+    },
+    {
+      "id": "restricted_ordinance",
+      "name": "Restricted Ordinance",
+      "cost": 4,
+      "image": "/technologies/rise_of_ix/restricted_ordinance.png",
+      "timing": [
+        "reveal"
+      ],
+      "description": "Reveal: +4 swords if you have a High Council seat.",
+      "customEffect": "RESTRICTED_ORDINANCE",
+      "riseOfIx": true
+    },
+    {
+      "id": "shuttle_fleet",
+      "name": "Shuttle Fleet",
+      "cost": 6,
+      "image": "/technologies/rise_of_ix/shuttle_fleet.png",
+      "timing": [
+        "round-start"
+      ],
+      "description": "Round Start: +2 solari.",
+      "acquireEffect": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "sonic_snoopers",
+      "name": "Sonic Snoopers",
+      "cost": 2,
+      "image": "/technologies/rise_of_ix/sonic_snoopers.png",
+      "timing": [
+        "agent-reveal-one-time"
+      ],
+      "description": "Trash this → put intrigue on bottom of deck, draw that many.",
+      "customEffect": "SONIC_SNOOPERS",
+      "acquireEffect": {
+        "intrigueCards": 1
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "spaceport",
+      "name": "Spaceport",
+      "cost": 5,
+      "image": "/technologies/rise_of_ix/spaceport.png",
+      "timing": [
+        "agent-reveal-always"
+      ],
+      "description": "Passive: you may put cards you acquire on top of your deck.",
+      "customEffect": "SPACEPORT",
+      "acquireEffect": {
+        "drawCards": 2
+      },
+      "riseOfIx": true
+    },
+    {
+      "id": "spy_satellites",
+      "name": "Spy Satellites",
+      "cost": 4,
+      "image": "/technologies/rise_of_ix/spy_satellites.png",
+      "timing": [
+        "agent-reveal-one-time",
+        "endgame"
+      ],
+      "description": "Pay 3 spice, trash this → +1 VP. Endgame: +1 VP per faction where you have ≤1 influence.",
+      "customEffect": "SPY_SATELLITES",
+      "riseOfIx": true
+    },
+    {
+      "id": "training_drones",
+      "name": "Training Drones",
+      "cost": 3,
+      "image": "/technologies/rise_of_ix/training_drones.png",
+      "timing": [
+        "agent-reveal-once-per-round"
+      ],
+      "description": "Recruit 1 troop (once per round).",
+      "customEffect": "TRAINING_DRONES",
+      "riseOfIx": true
+    },
+    {
+      "id": "troop_transports",
+      "name": "Troop Transports",
+      "cost": 2,
+      "image": "/technologies/rise_of_ix/troop_transports.png",
+      "timing": [
+        "agent-reveal-always"
+      ],
+      "description": "When recruiting from Shipping track, recruit +1 troop (may deploy to Conflict).",
+      "customEffect": "TROOP_TRANSPORTS",
+      "riseOfIx": true
+    },
+    {
+      "id": "windtraps",
+      "name": "Windtraps",
+      "cost": 2,
+      "image": "/technologies/rise_of_ix/windtraps.png",
+      "timing": [
+        "after-conflict"
+      ],
+      "description": "When you win a Conflict: +1 water.",
+      "customEffect": "WINDTRAPS",
+      "acquireEffect": {
+        "water": 1
+      },
+      "riseOfIx": true
+    }
+  ]
+}

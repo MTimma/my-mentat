@@ -1,0 +1,147 @@
+.tech-acquire-overlay .tech-acquire-modal {
+  max-width: min(92vw, 420px);
+  padding: 16px 18px 14px;
+}
+
+.tech-acquire-modal__title {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  color: var(--chrome-accent, #ffd700);
+}
+
+.tech-acquire-modal__subtitle {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: #d8ccb8;
+}
+
+.tech-acquire-modal__tile-img {
+  max-height: min(42vh, 280px);
+  width: auto;
+  margin-inline: auto;
+}
+
+.tech-acquire-modal__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tech-acquire-modal__tile-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.tech-acquire-modal__cost {
+  font-size: 0.88rem;
+  color: #e8dcc8;
+}
+
+.tech-acquire-modal__cost-base {
+  opacity: 0.7;
+  font-size: 0.8rem;
+}
+
+.tech-acquire-modal__resources {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 14px;
+  margin: 10px 0 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  font-size: 0.82rem;
+}
+
+.tech-acquire-modal__resource {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tech-acquire-modal__resource-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.tech-acquire-modal__discount {
+  margin: 4px 0 8px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #c9b87a;
+}
+
+.tech-acquire-modal__negotiators {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 6px 0 8px;
+  font-size: 0.8rem;
+  color: #e8dcc8;
+}
+
+.tech-acquire-modal__negotiators input {
+  width: 3rem;
+  padding: 2px 6px;
+  font-size: 0.8rem;
+}
+
+.tech-acquire-modal__negotiators-hint {
+  opacity: 0.75;
+  font-size: 0.75rem;
+}
+
+.tech-acquire-modal__description {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #c7c7c7;
+  line-height: 1.35;
+}
+
+.tech-acquire-modal__view-only-hint {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #a89a82;
+  font-style: italic;
+}
+
+.tech-acquire-modal__actions {
+  margin-top: 4px;
+}
+
+.tech-acquire-modal__pick-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tech-acquire-modal__pick-tile {
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+}
+
+.tech-acquire-modal__pick-tile img {
+  display: block;
+  width: min(72px, 18vw);
+  height: auto;
+  border-radius: 4px;
+}
+
+.tech-acquire-modal__pick-tile--selected {
+  border-color: var(--chrome-accent, #ffd700);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.35);
+}

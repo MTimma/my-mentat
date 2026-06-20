@@ -390,6 +390,234 @@
           "effect:intrigue:32:play:0"
         ]
       }
+    },
+    {
+      "id": 33,
+      "name": "Blackmail",
+      "type": "combat",
+      "description": "Combat: Lose 1 influence (your choice) to gain +5 strength.",
+      "image": "/intrigue/rise_of_ix/blackmail.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:33:play:0"
+        ]
+      }
+    },
+    {
+      "id": 34,
+      "name": "Cannon Turrets",
+      "type": "combat",
+      "description": "Combat: +2 strength. Each opponent retreats 1 dreadnought from the Conflict.",
+      "image": "/intrigue/rise_of_ix/cannon_turrets.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:34:play:0",
+          "effect:intrigue:34:play:1"
+        ]
+      }
+    },
+    {
+      "id": 35,
+      "name": "Strategic Push",
+      "type": "combat",
+      "description": "Combat: +2 strength. If you win this Conflict: +2 Solari.",
+      "image": "/intrigue/rise_of_ix/strategic_push.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:35:play:0",
+          "effect:intrigue:35:play:1"
+        ]
+      }
+    },
+    {
+      "id": 36,
+      "name": "Second Wave",
+      "type": "combat",
+      "description": "Combat: +2 strength. Deploy up to 2 units from your garrison to the Conflict.",
+      "image": "/intrigue/rise_of_ix/second_wave.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:36:play:0",
+          "effect:intrigue:36:play:1"
+        ]
+      }
+    },
+    {
+      "id": 37,
+      "name": "War Chest",
+      "type": "combat",
+      "description": "Combat: Pay 2 Solari to gain +4 strength —OR— Endgame: If you have 10+ Solari, gain 1 VP.",
+      "image": "/intrigue/rise_of_ix/war_chest.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:37:play:0",
+          "effect:intrigue:37:play:1"
+        ]
+      }
+    },
+    {
+      "id": 38,
+      "name": "Finesse",
+      "type": "combat",
+      "description": "Combat: +2 strength —OR— Plot: Lose 1 influence (your choice) to gain 1 influence (your choice).",
+      "image": "/intrigue/rise_of_ix/finesse.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:38:play:0",
+          "effect:intrigue:38:play:1"
+        ]
+      }
+    },
+    {
+      "id": 39,
+      "name": "Advanced Weaponry",
+      "type": "combat",
+      "description": "Combat: If you have 3 tech: +4 strength —OR— Plot: Pay 3 Solari to commission 1 dreadnought.",
+      "image": "/intrigue/rise_of_ix/advanced_weaponry.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:39:play:0",
+          "effect:intrigue:39:play:1"
+        ]
+      }
+    },
+    {
+      "id": 40,
+      "name": "Grand Conspiracy",
+      "type": "endgame",
+      "description": "Endgame: If you meet 3 of 4 conditions (2 dreadnoughts, 1 SMF, 4+ influence on 2 tracks, High Council): 1 VP. All 4: 2 VP.",
+      "image": "/intrigue/rise_of_ix/grand_conspiracy.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:40:play:0"
+        ]
+      }
+    },
+    {
+      "id": 41,
+      "name": "Strongarm",
+      "type": "plot",
+      "description": "Lose a troop to gain 1 influence on the faction track where you placed an Agent this turn.",
+      "image": "/intrigue/rise_of_ix/strongarm.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:41:play:0"
+        ]
+      }
+    },
+    {
+      "id": 42,
+      "name": "Ixian Probe",
+      "type": "plot",
+      "description": "Discard 2 cards to draw 2 cards.",
+      "image": "/intrigue/rise_of_ix/ixian_probe.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:42:play:0"
+        ]
+      }
+    },
+    {
+      "id": 43,
+      "name": "Cull",
+      "type": "plot",
+      "description": "Pay 1 Solari to trash 1 card.",
+      "image": "/intrigue/rise_of_ix/cull.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:43:play:0"
+        ]
+      }
+    },
+    {
+      "id": 44,
+      "name": "Secret Forces",
+      "type": "plot",
+      "description": "Gain 2 troops if you have a seat on the High Council.",
+      "image": "/intrigue/rise_of_ix/secret_forces.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:44:play:0"
+        ]
+      }
+    },
+    {
+      "id": 45,
+      "name": "Quid Pro Quo",
+      "type": "plot",
+      "description": "Pay 2 spice to gain 1 influence on each faction track where you currently have an Agent.",
+      "image": "/intrigue/rise_of_ix/quid_pro_quo.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:45:play:0"
+        ]
+      }
+    },
+    {
+      "id": 46,
+      "name": "Glimpse the Path",
+      "type": "plot",
+      "description": "Pay 1 spice to gain 1 water and draw 1 card.",
+      "image": "/intrigue/rise_of_ix/glimpse_the_path.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:46:play:0"
+        ]
+      }
+    },
+    {
+      "id": 47,
+      "name": "Diversion",
+      "type": "plot",
+      "description": "When you deploy 4 units to the Conflict in one turn, gain +1 on the Shipping track.",
+      "image": "/intrigue/rise_of_ix/diversion.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:47:play:0"
+        ]
+      }
+    },
+    {
+      "id": 48,
+      "name": "Expedite",
+      "type": "plot",
+      "description": "Pay 1 spice to advance 1 space on the Shipping track.",
+      "image": "/intrigue/rise_of_ix/expedite.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:48:play:0"
+        ]
+      }
+    },
+    {
+      "id": 49,
+      "name": "Machine Culture",
+      "type": "plot",
+      "description": "Plot: Acquire 1 tech tile —OR— Endgame: If you have 3 tech: gain 1 VP.",
+      "image": "/intrigue/rise_of_ix/machine_culture.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:49:play:0",
+          "effect:intrigue:49:play:1"
+        ]
+      }
     }
   ]
 }

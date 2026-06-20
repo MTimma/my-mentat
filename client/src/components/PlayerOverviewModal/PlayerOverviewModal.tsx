@@ -74,12 +74,38 @@ const PlayerOverviewModal = ({
   const vpValue = (player: Player) =>
     gameState ? getTotalVictoryPoints(player, gameState) : player.victoryPoints
 
+  const riseOfIx = gameState?.expansions?.riseOfIx === true
+
   const baseRows: NumericRow[] = [
     { key: 'vp', label: 'VP', icon: 'vp', value: vpValue, highlightBest: true },
     { key: 'spice', label: 'Spice', icon: 'spice', value: player => player.spice, highlightBest: true },
     { key: 'water', label: 'Water', icon: 'water', value: player => player.water, highlightBest: true },
     { key: 'solari', label: 'Solari', icon: 'solari', value: player => player.solari, highlightBest: true },
     { key: 'garrison', label: 'Garrison', value: player => player.troops, highlightBest: true },
+    ...(riseOfIx
+      ? ([
+          {
+            key: 'dread-supply',
+            label: 'Dread supply',
+            value: (player: Player) => player.dreadnoughts?.supply ?? 0,
+          },
+          {
+            key: 'dread-garrison',
+            label: 'Dread garrison',
+            value: (player: Player) => player.dreadnoughts?.garrison ?? 0,
+          },
+          {
+            key: 'dread-conflict',
+            label: 'Dread conflict',
+            value: (player: Player) => player.dreadnoughts?.conflict ?? 0,
+          },
+          {
+            key: 'dread-control',
+            label: 'Dread control',
+            value: (player: Player) => player.dreadnoughts?.control?.length ?? 0,
+          },
+        ] as NumericRow[])
+      : []),
     { key: 'deployed', label: 'Deployed', value: player => combatTroops[player.id] || 0, highlightBest: true },
     { key: 'strength', label: 'Strength', value: player => combatStrength[player.id] || 0, highlightBest: true },
     { key: 'hand', label: 'Hand', value: player => player.handCount, highlightBest: true },

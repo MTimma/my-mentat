@@ -3,10 +3,18 @@
  */
 import type { Card } from '../types/GameTypes'
 import cardsFile from '../../public/catalogs/cards.v1.json'
+import expansionsFile from '../../public/catalogs/expansions.v1.json'
 import { slugify, type CardPool, type CatalogCardEntry } from '../catalog/buildCatalog'
 import type { CardsCatalogFile } from '../catalog/runtime/types'
+import type { Expansions } from '../types/GameTypes'
 
 const cardsCatalog = cardsFile as CardsCatalogFile
+const expansionsCatalog = expansionsFile as {
+  schemaVersion: number
+  expansions: {
+    byId: Record<string, { decks: { imperium: string[] } }>
+  }
+}
 
 const POOL_ORDER: CardPool[] = [
   'starting',
@@ -55,4 +63,13 @@ export function catalogIdForCard(card: Card, preferredPool?: CardPool): string {
 
 export function catalogIdsForCards(cards: Card[], preferredPool?: CardPool): string[] {
   return cards.map(card => catalogIdForCard(card, preferredPool))
+}
+
+/** Imperium deck catalog ids for the given expansion flags (base + RoI append). */
+export function catalogIdsForImperiumDeck(expansions: Expansions): string[] {
+  const ids = [...cardsCatalog.decks.imperium]
+  if (expansions.riseOfIx) {
+    ids.push(...expansionsCatalog.expansions.byId.riseOfIx.decks.imperium)
+  }
+  return ids
 }

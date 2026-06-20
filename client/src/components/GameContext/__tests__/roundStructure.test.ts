@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyGameAction, getFreshDefaultGameState } from '../GameContext'
 import { CONFLICTS } from '../../../data/conflicts'
-import { GamePhase } from '../../../types/GameTypes'
+import { GamePhase, RewardType, type ConflictCard } from '../../../types/GameTypes'
 import { getBaseTestState, stubDeckCard } from './_helpers'
 
 describe('Round structure (base rules)', () => {
@@ -136,6 +136,48 @@ describe('Round structure (base rules)', () => {
 
   it.todo('round flow: ROUND_START → draw 5 → PLAYER_TURNS → COMBAT → MAKERS → RECALL')
   it.todo('after Reveal turn, player skips remaining agent turns until all have revealed')
+  it('recall: clears mentatOwner and occupied spaces after combat', () => {
+    let s = getBaseTestState(undefined, { players: 2 })
+    s = {
+      ...s,
+      mentatOwner: 0,
+      occupiedSpaces: { 5: [0] },
+      phase: GamePhase.COMBAT_REWARDS,
+      combatTroops: { 0: 2, 1: 1 },
+      combatStrength: { 0: 4, 1: 2 },
+    }
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(s.mentatOwner).toBeNull()
+    expect(s.occupiedSpaces).toEqual({})
+    expect(s.players[0].agents).toBe(2)
+  })
+
+  it('recall: conflict Agent reward gives mentat to winner for next round', () => {
+    const agentConflict: ConflictCard = {
+      id: 99901,
+      tier: 2,
+      name: 'Mentat Skirmish',
+      rewards: {
+        first: [{ type: RewardType.AGENT, amount: 1 }],
+        second: [{ type: RewardType.SOLARI, amount: 2 }],
+      },
+    }
+    let s = getBaseTestState(undefined, { players: 4 })
+    s = {
+      ...s,
+      mentatOwner: 1,
+      occupiedSpaces: { 5: [1] },
+      currentConflict: agentConflict,
+      phase: GamePhase.COMBAT_REWARDS,
+      combatTroops: { 0: 2, 1: 1, 2: 1, 3: 1 },
+      combatStrength: { 0: 8, 1: 4, 2: 2, 3: 2 },
+    }
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(s.mentatOwner).toBe(0)
+    expect(s.players[0].agents).toBe(3)
+    expect(s.players[1].agents).toBe(2)
+  })
+
   it.todo('recall: agents return to leader; first player marker passes clockwise')
   it.todo('makers: +1 bonus spice on each unoccupied maker space')
   it.todo('endgame at 10 VP or empty conflict deck')

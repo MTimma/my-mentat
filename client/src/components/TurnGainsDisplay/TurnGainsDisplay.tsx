@@ -49,10 +49,12 @@ const usesIconWithAmountLabel = (type: RewardType): boolean =>
 
 const usesStackedRepeatIcons = (type: RewardType): boolean =>
   type === RewardType.TROOPS ||
+  type === RewardType.POOL_TROOP ||
   type === RewardType.CARD ||
   type === RewardType.DRAW ||
   type === RewardType.WATER ||
-  type === RewardType.INTRIGUE
+  type === RewardType.INTRIGUE ||
+  type === RewardType.DREADNOUGHT
 
 const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   gains,
@@ -216,7 +218,19 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         className={`gain-item gain-item--${side}`}
         aria-label={ariaLabel}
       >
-        {rewardType === RewardType.CARD ||
+        {rewardType === RewardType.POOL_TROOP ? (
+          <span className="turn-gain-pool-troop" title={displayName}>
+            <span className="turn-gain-pool-label">pool</span>
+            {iconPath ? (
+              <>
+                {renderGainIcon(iconPath, displayName)}
+                {renderGainMultiplier(gain.amount)}
+              </>
+            ) : (
+              <span className="gain-text-fallback">{displayName}</span>
+            )}
+          </span>
+        ) : rewardType === RewardType.CARD ||
         rewardType === RewardType.TRASH ||
         rewardType === RewardType.DISCARD ? (
           renderCardGains(gain.cardId, gain.name, gain.amount, `${side}-card-${index}`)

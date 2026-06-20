@@ -128,6 +128,9 @@ carries inline `> ✦ 2026-06-10` corrections; the global picture:
 | `09-intrigue-cards.md` | Per-card data + reducer analysis for each new Intrigue card. | TODO |
 | `10-conflict-cards.md` | The 4 new Conflict cards + the new tier mix (1 / 5 / 4) when the toggle is on. | TODO |
 | `11-tests-overview.md` | Test strategy: where to add Vitest specs and what to cover at minimum. | TODO |
+| [`regression-test/`](./regression-test/README.md) | Agent-oriented regression suite: unit-test map + hosted UI click scenarios (mirrors `plans/base-game/regression-test/`). | – |
+
+**Follow-up tasks** (post–Task 10 deferred work): [`follow-ups/00-overview.md`](./follow-ups/00-overview.md).
 
 Each task file in this folder follows the **same standard structure**:
 

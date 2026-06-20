@@ -1,0 +1,34 @@
+.sandbox-player-tech-select {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.sandbox-player-tech-select__header h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+
+.sandbox-player-tech-select__header p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #bbb;
+  line-height: 1.35;
+}
+
+.sandbox-player-tech-select__count {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e8c84a;
+}
+
+.sandbox-player-tech-select__preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}

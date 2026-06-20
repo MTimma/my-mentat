@@ -18,3 +18,41 @@
   z-index: 1000;
 }
 
+.setup-load-save {
+  margin: 12px 0 4px;
+  padding: 0 4px;
+}
+
+.setup-load-save-summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  margin-bottom: 8px;
+}
+
+.setup-load-save .save-doc-import {
+  margin-top: 8px;
+}
+
+.setup-load-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: left;
+}
+
+.setup-load-toggle {
+  background: none;
+  border: none;
+  color: rgba(244, 228, 188, 0.9);
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 0.25rem 0;
+  margin-bottom: 0.5rem;
+}
+
+.setup-load-toggle:hover {
+  text-decoration: underline;
+}
+

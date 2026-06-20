@@ -1,6 +1,6 @@
 # Task 05 — Freighter & Shipping track
 
-> Depends on Tasks 01, 02, 03 (`riseofix4` overlay + optional freighter modal).
+> Depends on Tasks 01, 02, 03 (`riseofix2` overlay + optional freighter modal).
 > This is a reducer + small UI task.
 
 > ✦ 2026-06-10 — adjustments since this plan was written:
@@ -13,7 +13,7 @@
 >    (FIXED_OPTIONS) — the Advance/Recall buttons plug into that
 >    existing flow; no deploy-style custom panel needed there.
 > 3. **Blocked on Task 03 artifacts**: `SHIPPING_TRACK_ANCHORS`,
->    the `riseofix4` overlay, and board spaces 25–26 do not exist yet
+>    the `riseofix2` overlay, and board spaces 25–26 do not exist yet
 >    (`boardSpaces.ts` currently ends at id 22; ids are free).
 > 4. **Step-1 reward contradiction resolved**: §2 R3 / §4.2 said
 >    Dividends is mandatory; §7 says step 1 is *Dividends OR +2 spice*.
@@ -88,7 +88,7 @@ Recall rewards by step (rulebook p. 5):
      two buttons "Advance" / "Recall" with current step (`0–3`) shown
      (✦ via the existing generic `pendingChoices` FIXED_OPTIONS
      rendering — no bespoke panel).
-   - `ImageBoard` on `riseofix4` (Task 03 §R9): per-player discs on the
+   - `ImageBoard` on `riseofix2` (Task 03 §R9): per-player discs on the
      shipping track via `SHIPPING_TRACK_ANCHORS`; optional freighter
      status modal (Task 05 §R5 first bullet).
 6. **R6 — Recall when at step 0.** A recall at step 0 yields **no
@@ -113,7 +113,7 @@ Recall rewards by step (rulebook p. 5):
 | `client/src/components/GameContext/GameContext.tsx` | Reward expansion for `freighter` and `dividends`; new `pendingChoices` for advance/recall; recall reward bundle. place rise of ix logic in separate module/file from base reducer logic.|
 | `client/src/data/boardMarkerAnchors.ts` | `SHIPPING_TRACK_ANCHORS`. |
 | `client/src/components/TurnControls/TurnControls.tsx` | Render the Advance / Recall choice. |
-| `client/src/components/ImageBoard/ImageBoard.tsx` | Freighter discs on `riseofix4`; optional freighter modal trigger. |
+| `client/src/components/ImageBoard/ImageBoard.tsx` | Freighter discs on `riseofix2`; optional freighter modal trigger. |
 
 ---
 
@@ -188,7 +188,7 @@ step-1 Recall goes through the Dividends-vs-2-spice OR-choice first
 
 ### 4.3 UI strip
 
-Freighter discs on `ImageBoard` sit on the `riseofix4.png` overlay,
+Freighter discs on `ImageBoard` sit on the `riseofix2.png` overlay,
 anchored via `SHIPPING_TRACK_ANCHORS` (rows 3..0). An optional modal
 (next to CHOAM fields) can show row labels (`Tech (-2)`, `Troops +
 Influence`, `Dividends`, `Start`) for detail during Advance/Recall.

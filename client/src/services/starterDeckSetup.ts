@@ -1,4 +1,4 @@
-import { Card } from '../types/GameTypes'
+import { Card, Expansions, NO_EXPANSIONS } from '../types/GameTypes'
 import { STARTING_DECK, buildImperiumDeck } from '../catalog/runtime'
 
 const cloneCards = (cards: Card[]): Card[] => cards.map(card => JSON.parse(JSON.stringify(card)))
@@ -32,5 +32,8 @@ export const applyStarterDeckReservationToImperium = (
   })
 }
 
-export const buildSetupImperiumDeck = (playerDecks: Card[][]): Card[] =>
-  applyStarterDeckReservationToImperium(buildImperiumDeck(), playerDecks)
+export const buildSetupImperiumDeck = (
+  playerDecks: Card[][],
+  expansions: Expansions = NO_EXPANSIONS
+): Card[] =>
+  applyStarterDeckReservationToImperium(buildImperiumDeck(expansions), playerDecks)

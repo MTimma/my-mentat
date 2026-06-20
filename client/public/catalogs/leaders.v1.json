@@ -96,6 +96,84 @@
       "signetRingTitle": "Discipline",
       "complexity": 1,
       "sogChoice": false
+    },
+    {
+      "id": "prince-rhombur-vernius",
+      "name": "Prince Rhombur Vernius",
+      "ability": {
+        "name": "Ixian Royalty",
+        "description": "Your dreadnoughts have a strength of 4 instead of 3."
+      },
+      "signetRingText": "Buy 1 tech, or add 1 tech negotiator.",
+      "signetRingTitle": "Tech Negotiation",
+      "complexity": 1,
+      "sogChoice": false,
+      "riseOfIx": true
+    },
+    {
+      "id": "viscount-hudro-moritani",
+      "name": "Viscount Hudro Moritani",
+      "ability": {
+        "name": "Intelligence",
+        "description": "Game start: look at the top 2 Intrigue cards, keep one (once per game)."
+      },
+      "signetRingText": "1 spice → +1 on shipping track.",
+      "signetRingTitle": "Spice → Shipping",
+      "complexity": 1,
+      "sogChoice": false,
+      "riseOfIx": true
+    },
+    {
+      "id": "princess-yuna-moritani",
+      "name": "\"Princess\" Yuna Moritani",
+      "ability": {
+        "name": "Spice Royalty",
+        "description": "You start with no water. When you gain Solari on your turn, increase the amount by 1."
+      },
+      "signetRingText": "7 Solari → +1 influence (choose), +1 spice, +1 troop.",
+      "signetRingTitle": "7 Solari",
+      "complexity": 2,
+      "sogChoice": false,
+      "riseOfIx": true
+    },
+    {
+      "id": "archduke-armand-ecaz",
+      "name": "Archduke Armand Ecaz",
+      "ability": {
+        "name": "Houses' Confidence",
+        "description": "If you have at least 2 agents on Yellow/Blue/Green spaces upon reveal, you may trash 1 card in play."
+      },
+      "signetRingText": "You may acquire a card that costs 3 or less.",
+      "signetRingTitle": "Free 3-cost acquire",
+      "complexity": 2,
+      "sogChoice": false,
+      "riseOfIx": true
+    },
+    {
+      "id": "ilesa-ecaz",
+      "name": "Ilesa Ecaz",
+      "ability": {
+        "name": "Hidden Pact",
+        "description": "Round start: set a card aside. When played on your 2nd turn: +1 Solari, or if only 1 agent icon +1 spice."
+      },
+      "signetRingText": "1 Solari → 1 Foldspace card.",
+      "signetRingTitle": "Free Foldspace",
+      "complexity": 3,
+      "sogChoice": false,
+      "riseOfIx": true
+    },
+    {
+      "id": "tessia-vernius",
+      "name": "Tessia Vernius",
+      "ability": {
+        "name": "Subtle Subterfuge",
+        "description": "Place snooper tokens on influence tracks."
+      },
+      "signetRingText": "−1 influence (choose) → +1 influence with a faction where you have a snooper token.",
+      "signetRingTitle": "Influence steal",
+      "complexity": 4,
+      "sogChoice": false,
+      "riseOfIx": true
     }
   ]
 }

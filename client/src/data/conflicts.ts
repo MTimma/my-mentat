@@ -1,4 +1,4 @@
-import { ConflictCard, ControlMarkerType, RewardType } from "../types/GameTypes";
+import { ConflictCard, ControlMarkerType, Expansions, RewardType } from "../types/GameTypes";
 
 export const CONFLICTS: ConflictCard[] = [
 //   {
@@ -230,41 +230,80 @@ export const CONFLICTS: ConflictCard[] = [
   {
     id: 915,
     tier: 3,
-    name: "Heighliner Assault",
+    name: "Battle for Imperial Basin",
+    controlSpace: ControlMarkerType.IMPERIAL_BASIN,
     rewards: {
-      first: [{ type: RewardType.VICTORY_POINTS, amount: 2 }],
-      second: [{ type: RewardType.SOLARI, amount: 6 }],
-      third: [{ type: RewardType.SPICE, amount: 2 }]
-    }
+      first: [
+        { type: RewardType.VICTORY_POINTS, amount: 2 },
+        { type: RewardType.CONTROL, amount: 1 },
+      ],
+      second: [{ type: RewardType.SPICE, amount: 5 }],
+      third: [{ type: RewardType.SPICE, amount: 3 }],
+    },
   },
   {
     id: 916,
     tier: 3,
-    name: "Battle for Arrakis",
+    name: "Battle for Arrakeen",
+    controlSpace: ControlMarkerType.ARRAKIN,
     rewards: {
-      first: [{ type: RewardType.VICTORY_POINTS, amount: 2 }],
-      second: [{ type: RewardType.INTRIGUE, amount: 2 }],
-      third: [{ type: RewardType.SPICE, amount: 2 }]
-    }
+      first: [
+        { type: RewardType.VICTORY_POINTS, amount: 2 },
+        { type: RewardType.CONTROL, amount: 1 },
+      ],
+      second: [{
+        type: RewardType.INTRIGUE,
+        amount: 0,
+        choiceOptions: [
+          { type: RewardType.INTRIGUE, amount: 1 },
+          { type: RewardType.SPICE, amount: 2 },
+          { type: RewardType.SOLARI, amount: 3 },
+        ],
+      }],
+      third: [
+        { type: RewardType.INTRIGUE, amount: 1 },
+        { type: RewardType.SOLARI, amount: 2 },
+      ],
+    },
   },
   {
     id: 917,
     tier: 3,
-    name: "Final Offensive",
+    name: "Battle for Carthag",
+    controlSpace: ControlMarkerType.CARTHAG,
     rewards: {
-      first: [{ type: RewardType.VICTORY_POINTS, amount: 2 }],
-      second: [{ type: RewardType.TROOPS, amount: 3 }],
-      third: [{ type: RewardType.SOLARI, amount: 3 }]
-    }
+      first: [
+        { type: RewardType.VICTORY_POINTS, amount: 2 },
+        { type: RewardType.CONTROL, amount: 1 },
+      ],
+      second: [
+        { type: RewardType.INTRIGUE, amount: 1 },
+        { type: RewardType.SPICE, amount: 3 },
+      ],
+      third: [{ type: RewardType.SPICE, amount: 3 }],
+    },
   },
   {
     id: 918,
     tier: 3,
-    name: "Conquest of Dune",
+    name: "Grand Vision",
     rewards: {
-      first: [{ type: RewardType.VICTORY_POINTS, amount: 2 }],
-      second: [{ type: RewardType.INFLUENCE, amount: 2 }],
-      third: [{ type: RewardType.SPICE, amount: 2 }]
-    }
-  }
+      first: [
+        { type: RewardType.INFLUENCE, amount: 1, chooseFaction: true },
+        { type: RewardType.INTRIGUE, amount: 1 },
+      ],
+      second: [
+        { type: RewardType.INTRIGUE, amount: 1 },
+        { type: RewardType.SOLARI, amount: 3 },
+      ],
+      third: [{ type: RewardType.SOLARI, amount: 3 }],
+    },
+  },
 ]
+
+export { RISE_OF_IX_CONFLICTS } from './conflictsRiseOfIx'
+import { RISE_OF_IX_CONFLICTS } from './conflictsRiseOfIx'
+
+export function getConflictPool(expansions: Expansions): ConflictCard[] {
+  return expansions.riseOfIx ? [...CONFLICTS, ...RISE_OF_IX_CONFLICTS] : CONFLICTS
+}

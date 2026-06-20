@@ -1,12 +1,29 @@
 {
   "schemaVersion": 1,
   "counts": {
-    "effects": 163,
-    "cards": 63,
-    "boardSpaces": 22,
-    "conflicts": 18,
-    "intrigue": 32,
-    "leaders": 8
+    "effects": 255,
+    "cards": 92,
+    "boardSpaces": 26,
+    "conflicts": 22,
+    "intrigue": 49,
+    "leaders": 14,
+    "techTiles": 18,
+    "expansions": 1
+  },
+  "expansions": {
+    "available": [
+      "riseOfIx"
+    ],
+    "counts": {
+      "riseOfIx": {
+        "cards": 29,
+        "conflicts": 4,
+        "leaders": 6,
+        "intrigue": 17,
+        "boardSpaces": 4,
+        "techTiles": 18
+      }
+    }
   },
   "files": [
     "catalog.v1.json",
@@ -16,6 +33,8 @@
     "conflicts.v1.json",
     "intrigue.v1.json",
     "leaders.v1.json",
+    "tech-tiles.v1.json",
+    "expansions.v1.json",
     "choice-ids.v1.json"
   ]
 }

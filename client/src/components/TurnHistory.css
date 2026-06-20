@@ -3,7 +3,7 @@
   top: 0;
   right: 0;
   bottom: var(--footer-height, var(--footer-height-static, 84px));
-  width: min(380px, 92vw);
+  width: min(var(--play-history-sidebar-min-width, 304px), 92vw);
   height: auto;
   background: var(--chrome-panel-gradient);
   color: var(--chrome-text);
@@ -169,6 +169,16 @@
   transition: background 0.2s, border-color 0.2s;
   gap: 6px;
   cursor: pointer;
+}
+
+.turn-history-row--static {
+  cursor: default;
+  pointer-events: none;
+}
+
+.turn-history-row--static:hover {
+  background: var(--chrome-accent-subtle);
+  border-color: var(--chrome-border-accent);
 }
 
 .turn-history-row-top,
@@ -844,6 +854,27 @@
   border-color: var(--chrome-border-accent-strong);
 }
 
+.turn-details-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.turn-details-export-btn {
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border: 1px solid var(--chrome-border-accent-strong);
+  border-radius: 6px;
+  background: var(--chrome-accent-muted);
+  color: var(--chrome-text);
+}
+
+.turn-details-export-btn:hover {
+  filter: brightness(1.08);
+}
+
 .turn-details-content pre {
   background: rgba(0, 0, 0, 0.35);
   color: rgba(244, 228, 188, 0.88);
@@ -1150,7 +1181,7 @@
     right: 0;
     left: auto;
     bottom: calc(var(--footer-height, var(--footer-height-static, 84px)) + var(--vv-layout-gap-bottom, 0px));
-    width: min(380px, 36vw);
+    width: min(var(--play-history-sidebar-min-width, 304px), 28.8vw);
     height: auto;
     border-right: 1px solid var(--chrome-border-accent);
     border-radius: 0;

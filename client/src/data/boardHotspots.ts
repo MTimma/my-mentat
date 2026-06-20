@@ -1,3 +1,11 @@
+import type { Expansions } from '../types/GameTypes'
+import {
+  activeExpansionBoardHotspots,
+  extraMarkerAnchorsForExpansions,
+  mergeBoardHotspots,
+} from './expansionBoardHotspots'
+import { BOARD_SPACES } from './boardSpaces'
+
 /**
  * Hotspot regions and marker anchors for the full-image board (`public/board/Board.jpg`).
  *
@@ -143,9 +151,22 @@ export const BOARD_HOTSPOTS: BoardHotspot[] = [
 
   // === DESERT / ARRAKIS ===
   hotspot(4,  { left: 74, top: 39, width: 18, height: 13 }, { x: 28, y: 40 }),  // Imperial Basin
-  hotspot(5,  { left: 29, top: 57, width: 17, height: 9 }, { x: 23, y: 50 }),  // The Great Flat
+  hotspot(5,  { left: 29, top: 57, width: 17, height: 9 }, { x: 27, y: 50 }),  // The Great Flat
   hotspot(6,  { left: 55, top: 45, width: 17, height: 10 }, { x: 25, y: 50 }),  // Hagga Basin
 ]
+
+const BASE_BOARD_SPACE_IDS = new Set(
+  BOARD_SPACES.filter(space => !space.riseOfIx).map(space => space.id)
+)
+
+/** Hotspots visible for the current expansion flags. */
+export function BOARD_HOTSPOTS_FOR_EXPANSIONS(expansions: Expansions): BoardHotspot[] {
+  const layers = activeExpansionBoardHotspots(expansions)
+  if (layers.length === 0) {
+    return BOARD_HOTSPOTS.filter(h => BASE_BOARD_SPACE_IDS.has(h.spaceId))
+  }
+  return mergeBoardHotspots(BOARD_HOTSPOTS, layers)
+}
 
 /** Agent meeple center on the full stage (0–100%), from hotspot zone + relative anchor. */
 export function layoutAgentAnchorPercent(h: BoardHotspot): { x: number; y: number } {
@@ -166,6 +187,48 @@ function markerFromHotspot(h: BoardHotspot): MarkerAnchor {
 }
 
 export const MARKER_ANCHORS: MarkerAnchor[] = BOARD_HOTSPOTS.map(markerFromHotspot)
+
+export function markerAnchorsForExpansions(expansions: Expansions): MarkerAnchor[] {
+  const anchors = BOARD_HOTSPOTS_FOR_EXPANSIONS(expansions).map(markerFromHotspot)
+  const extra = extraMarkerAnchorsForExpansions(expansions)
+  return extra.length > 0 ? [...anchors, ...extra] : anchors
+}
+
+/**
+ * Mentat availability token on the Mentat hotspot (stage %).
+ * Derived from hotspot geometry so base and expansion retunes stay aligned.
+ */
+export function mentatAvailabilityPoint(h: BoardHotspot): { x: number; y: number } {
+  const box = layoutHotspotPercent(h)
+  return {
+    x: box.left + box.width * 0.85,
+    y: box.top + box.height * 0.6,
+  }
+}
+
+/**
+ * One eligibility dot per player who has not taken Swordmaster yet (stage %).
+ * `laneIndex` is 0..laneCount-1 in ascending player id order.
+ *
+ * Dots stack **vertically** on the agent anchor (`agentX` / `agentY`) so RoI retunes
+ * stay aligned with the printed icon without spilling into the CHOAM track.
+ */
+export function swordmasterEligibilityPoint(
+  h: BoardHotspot,
+  laneIndex: number,
+  laneCount: number
+): { x: number; y: number } {
+  const box = layoutHotspotPercent(h)
+  const anchorX = box.left + box.width * 0.80
+  const anchorY = box.top + box.height * (h.agentY / 100)
+  const spread = box.height * 0.35
+  const startY = anchorY - spread * 0.5
+  const t = laneCount <= 1 ? 0.5 : laneIndex / Math.max(1, laneCount - 1)
+  return {
+    x: anchorX,
+    y: startY + spread * t,
+  }
+}
 
 /** Aspect ratio of `Board.jpg` (width / height). Current asset: 1024×1024 → 1. */
 export const BOARD_ASPECT_RATIO = 1

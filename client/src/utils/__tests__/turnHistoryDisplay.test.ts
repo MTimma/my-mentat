@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GamePhase, type GameState } from '../../types/GameTypes'
+import { GamePhase, TurnType, type GameState } from '../../types/GameTypes'
 import {
   countPlayerTurns,
   formatTurnRoundHeader,
@@ -8,8 +8,10 @@ import {
   getHistoryRowLabel,
   getLivePlayerTurnNumber,
   getPlayerTurnNumber,
+  getTurnActionLabel,
   isMetaHistoryEntry,
 } from '../turnHistoryDisplay'
+import { BOARD_SPACES } from '../../data/boardSpaces'
 
 function row(partial: Partial<GameState>): GameState {
   return partial as GameState
@@ -74,7 +76,7 @@ describe('turnHistoryDisplay', () => {
     expect(getHistoryRowLabel(turns, 4)).toBe('Turn 3')
   })
 
-  it('shows setup badge for merged opening round row', () => {
+  it('labels merged opening round-start at index 0 as round start, not setup', () => {
     const turns: GameState[] = [
       row({
         historyEntryKind: 'setup',
@@ -82,7 +84,42 @@ describe('turnHistoryDisplay', () => {
         currentRound: 1,
       }),
     ]
-    expect(getHistoryRowBadge(turns[0], 0, turns)).toBe('Setup')
+    expect(getHistoryRowLabel(turns, 0)).toBe('Round 1 start')
+    expect(getHistoryRowBadge(turns[0], 0, turns)).toBe('Round')
     expect(getLivePlayerTurnNumber(turns)).toBe(1)
+  })
+
+  it('getTurnActionLabel returns board space name for agent turns', () => {
+    const space = BOARD_SPACES[0]
+    expect(
+      getTurnActionLabel(
+        row({
+          phase: GamePhase.PLAYER_TURNS,
+          currTurn: { playerId: 0, type: TurnType.ACTION, agentSpaceId: space.id },
+        })
+      )
+    ).toBe(space.name)
+  })
+
+  it('getTurnActionLabel returns Reveal for reveal turns', () => {
+    expect(
+      getTurnActionLabel(
+        row({
+          phase: GamePhase.PLAYER_TURNS,
+          currTurn: { playerId: 0, type: TurnType.REVEAL },
+        })
+      )
+    ).toBe('Reveal')
+  })
+
+  it('getTurnActionLabel returns Agent when no board space', () => {
+    expect(
+      getTurnActionLabel(
+        row({
+          phase: GamePhase.PLAYER_TURNS,
+          currTurn: { playerId: 0, type: TurnType.ACTION },
+        })
+      )
+    ).toBe('Agent')
   })
 })

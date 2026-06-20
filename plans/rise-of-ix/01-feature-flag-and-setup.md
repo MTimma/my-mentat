@@ -60,8 +60,8 @@ Add a top-level boolean toggle **`riseOfIx`** that:
    > base tier mix is **4 / 10 / 4** (not 4 / 8 / 4).
    See [`10-conflict-cards.md`](./10-conflict-cards.md).
 8. **R8 — Board image / overlay.** `ImageBoard` shows
-   `/board/riseofix/riseofix4.png` over Sell Melange + Secure Contract
-   and `/board/riseofix/riseofix3.png` over the Dreadnought / Tech
+   `/board/riseofix/riseofix1.png`
+   and `/board/riseofix/riseofix2.png` 
    Negotiation strip **only when the flag is true** — see
    [`03-board-overlay-ix-board.md`](./03-board-overlay-ix-board.md).
 9. **R9 — Default-off invariants.** With `riseOfIx === false`:
@@ -238,8 +238,8 @@ drop `expansions` (it shouldn’t, but lock it in).
      per-tier draw, and the per-round tier mix matches
      [`10-conflict-cards.md`](./10-conflict-cards.md).
    - A leaders dropdown showing 14 leaders (8 base + 6 RoI).
-   - `riseofix4.png` over Sell Melange + Secure Contract and
-     `riseofix3.png` over the middle-top-left Landsraad strip.
+   - `riseofix2.png` over Sell Melange + Secure Contract and
+     `riseofix1.png` over the middle-top-left Landsraad strip.
 5. **AC5** — All existing tests in `client/src/components/GameContext/__tests__`
    and `client/src/services/__tests__` still pass with no modification.
 6. **AC6** — Time travel: from a Rise of Ix game, `UNDO_TO_TURN`

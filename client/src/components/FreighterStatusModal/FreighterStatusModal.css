@@ -1,0 +1,105 @@
+.freighter-status-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.freighter-status-modal {
+  background: linear-gradient(180deg, #2a2418 0%, #14100c 100%);
+  border: 2px solid rgba(255, 215, 0, 0.45);
+  border-radius: 10px;
+  padding: 16px;
+  max-width: min(100%, 420px);
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  color: #f0e6d4;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+}
+
+.freighter-status-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.freighter-status-modal__header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #ffd700;
+}
+
+.freighter-status-modal__close {
+  background: transparent;
+  border: none;
+  color: #f0e6d4;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.freighter-status-modal__track {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.freighter-status-modal__step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.freighter-status-modal__step--active {
+  border-color: rgba(255, 215, 0, 0.55);
+  background: rgba(255, 215, 0, 0.08);
+}
+
+.freighter-status-modal__step-label {
+  flex: 0 0 3.5rem;
+  font-weight: 600;
+  color: #ffd700;
+}
+
+.freighter-status-modal__step-reward {
+  flex: 1;
+  font-size: 0.92rem;
+}
+
+.freighter-status-modal__players {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.freighter-status-modal__players h3 {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: rgba(240, 230, 212, 0.75);
+  font-weight: 500;
+}
+
+.freighter-status-modal__player-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 0.9rem;
+}
+
+.freighter-status-modal__player-step {
+  font-weight: 600;
+  color: #ffd700;
+}

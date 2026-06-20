@@ -140,6 +140,8 @@
   gap: 8px;
   flex: 0 0 auto;
   margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .selected-card-inline-slot {
@@ -1744,6 +1746,20 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   gap: 4px 6px;
 }
 
+.effect-pool-troop {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.effect-pool-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(244, 228, 188, 0.55);
+  line-height: 1.2;
+  text-transform: lowercase;
+}
+
 .effect-icon-token {
   display: inline-flex;
   align-items: center;
@@ -2131,6 +2147,27 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   align-self: center;
   min-height: 32px;
   padding: 0.35rem 0.72rem !important;
+}
+
+.tech-activation-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.25rem 0;
+}
+
+.tech-activation-button {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 4px;
+  border: 1px solid rgba(180, 140, 60, 0.55);
+  background: rgba(40, 32, 18, 0.85);
+  color: #f0d9a0;
+  cursor: pointer;
+}
+
+.tech-activation-button:hover {
+  background: rgba(60, 48, 24, 0.95);
 }
 
 /* Horizontal OR choice layout */

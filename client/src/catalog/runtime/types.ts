@@ -25,3 +25,13 @@ export interface IntrigueCatalogFile {
   schemaVersion: number
   intrigue: import('../buildCatalog').CatalogIntrigueEntry[]
 }
+
+export interface TechTilesCatalogFile {
+  schemaVersion: number
+  techTiles: import('../buildCatalog').CatalogTechTileEntry[]
+}
+
+export interface ExpansionsCatalogFile {
+  schemaVersion: number
+  expansions: import('../buildCatalog').CatalogExpansions
+}

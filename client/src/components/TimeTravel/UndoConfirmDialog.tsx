@@ -42,17 +42,25 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
   if (waitForBoardTarget) return null
   
   const history = currentState.history
+  const isSandboxEditUndo =
+    Boolean(currentState.setupBaseline?.sandboxSetup) &&
+    (undoToSetup || targetState.historyEntryKind === 'setup')
+
   const turnsToUndo = undoToSetup
     ? currentHistoryLength + 1
     : Math.max(1, currentHistoryLength - undoSourceRowIndex + 1)
 
-  const undoFromLabel = undoToSetup || undoSourceRowIndex === 0
-    ? 'the initial setup'
-    : getHistoryRowLabel(history, undoSourceRowIndex)
+  const undoFromLabel = isSandboxEditUndo
+    ? getHistoryRowLabel(history, undoSourceRowIndex)
+    : undoToSetup || undoSourceRowIndex === 0
+      ? 'the initial setup'
+      : getHistoryRowLabel(history, undoSourceRowIndex)
 
-  const revertLabel = undoToSetup
-    ? 'Setup'
-    : getHistoryRowLabel(history, targetTurnIndex)
+  const revertLabel = isSandboxEditUndo
+    ? 'Setup editing'
+    : undoToSetup
+      ? 'Setup'
+      : getHistoryRowLabel(history, targetTurnIndex)
 
   const currentLabel = undoSourceRowIndex >= history.length
     ? `${getHistoryRowLabel(history, undoSourceRowIndex)} (current)`
@@ -70,7 +78,9 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
         
         <div className="undo-confirm-body">
           <p className="undo-main-warning">
-            This will reset {undoFromLabel} and all future turns.
+            {isSandboxEditUndo
+              ? 'You will return to setup editing. Your board configuration will be kept.'
+              : `This will reset ${undoFromLabel} and all future turns.`}
           </p>
           
           <div className="undo-details">
