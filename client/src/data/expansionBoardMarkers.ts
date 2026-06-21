@@ -33,7 +33,6 @@ export interface ExpansionBoardMarkersLayer {
   /** `riseofix1.png` placement on Board.jpg (inner %). */
   choamOverlayRect?: { left: number; top: number; width: number; height: number }
   shippingTrackAnchors?: readonly ShippingTrackPlayerAnchor[]
-  freighterStatusButton?: { x: number; y: number }
   dreadnoughtControlPoints?: Record<ControlMarkerType, { x: number; y: number }>
 }
 
@@ -51,7 +50,6 @@ export const RISE_OF_IX_BOARD_MARKERS_LAYER: ExpansionBoardMarkersLayer = {
     { player: 2, x: 88, laneCenterY: [18, 13, 9, 5] },
     { player: 3, x: 90, laneCenterY: [18, 13, 9, 5] },
   ],
-  freighterStatusButton: { x: 22, y: 50 },
   dreadnoughtControlPoints: {
     [ControlMarkerType.ARRAKIN]: { x: 82, y: 34 },
     [ControlMarkerType.CARTHAG]: { x: 65, y: 37 },
@@ -84,12 +82,6 @@ export function shippingTrackAnchorsFor(
   expansions: Expansions
 ): readonly ShippingTrackPlayerAnchor[] | undefined {
   return lastActiveLayer(expansions)?.shippingTrackAnchors
-}
-
-export function freighterStatusButtonFor(
-  expansions: Expansions
-): { x: number; y: number } | undefined {
-  return lastActiveLayer(expansions)?.freighterStatusButton
 }
 
 export function dreadnoughtControlPointsFor(

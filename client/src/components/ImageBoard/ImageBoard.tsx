@@ -23,7 +23,6 @@ import {
 import {
   choamOverlayRectFor,
   dreadnoughtControlPointsFor,
-  freighterStatusButtonFor,
   shippingTrackAnchorsFor,
 } from '../../data/expansionBoardMarkers'
 import { IX_BOARD_HOTSPOTS, layoutIxLocalRectPercent } from '../../data/ixBoardAnchors'
@@ -70,7 +69,6 @@ import CombatAreaCluster, {
   type CombatTroopDeployProps,
 } from './CombatAreaCluster'
 import IxBoardOverlay, { type IxBoardPlacement } from './IxBoardOverlay'
-import FreighterStatusModal from '../FreighterStatusModal/FreighterStatusModal'
 import './ImageBoard.css'
 
 interface SellMelangeData {
@@ -108,8 +106,6 @@ interface ImageBoardProps {
   controlMarkers: Record<ControlMarkerType, number | null>
   /** When viewing turn history, outline the board space where this turn's agent was placed. */
   historyHighlightSpaceId?: number | null
-  /** Disabled in time-travel view (Tech Stacks button, etc.). */
-  isViewingHistory?: boolean
   /** Active-player troop deploy controls; rendered below the combat area cluster. */
   troopDeploy?: CombatTroopDeployProps
   dreadnoughtDeploy?: CombatDreadnoughtDeployProps
@@ -200,7 +196,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   combatStrength,
   controlMarkers,
   historyHighlightSpaceId = null,
-  isViewingHistory = false,
   troopDeploy,
   dreadnoughtDeploy,
   negotiatorDeploy,
@@ -212,7 +207,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 }) => {
   const boardMediaRef = useRef<HTMLDivElement>(null)
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
-  const [showFreighterStatusModal, setShowFreighterStatusModal] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
   const [imgError, setImgError] = useState(false)
   const [conflictImgFailed, setConflictImgFailed] = useState(false)
@@ -228,7 +222,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const expansions = gameStateForMarkers.expansions
   const choamOverlayRect = choamOverlayRectFor(expansions)
   const shippingTrackAnchors = shippingTrackAnchorsFor(expansions)
-  const freighterStatusButton = freighterStatusButtonFor(expansions)
   const dreadnoughtControlPoints = dreadnoughtControlPointsFor(expansions)
   const ixBoardDocked = riseOfIx && ixBoardPlacement === 'docked'
   const boardHotspots = BOARD_HOTSPOTS_FOR_EXPANSIONS(gameStateForMarkers.expansions)
@@ -799,24 +792,8 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             )
           })}
 
-          {riseOfIx && shippingTrackAnchors && freighterStatusButton && (
+          {riseOfIx && shippingTrackAnchors && (
             <>
-              {(() => {
-                const btn = stagePoint(freighterStatusButton.x, freighterStatusButton.y)
-                return (
-                  <button
-                    type="button"
-                    className="image-board__freighter-status-btn"
-                    style={{ left: `${btn.x}%`, top: `${btn.y}%` }}
-                    title="CHOAM Shipping track"
-                    disabled={isViewingHistory}
-                    onClick={() => setShowFreighterStatusModal(true)}
-                  >
-                    Ship
-                  </button>
-                )
-              })()}
-
               {playersSorted.map((player, laneIdx) => {
                 const step = player.freighterStep ?? 0
                 const laneAnchor = shippingTrackAnchors.find(a => a.player === laneIdx)
@@ -1213,11 +1190,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         />
       )}
 
-      <FreighterStatusModal
-        isOpen={riseOfIx && showFreighterStatusModal}
-        onClose={() => setShowFreighterStatusModal(false)}
-        players={players}
-      />
     </div>
   )
 }

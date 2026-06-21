@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Card, Gain, IntrigueCard, Player, GameState, GamePhase, TurnType } from '../types/GameTypes'
 import { getLeaderIconPath } from '../data/leaders'
 import {
@@ -320,9 +321,12 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
 
   const makeResolveCardForPlayer =
     (turn: GameState, playerId: number) =>
-    (cardId: number, name: string): Card | undefined =>
-      resolveCardInSnapshot(turn, playerId, cardId) ??
-      resolveCardInSnapshotByName(turn, playerId, name)
+    (cardId: number, name: string): Card | undefined => {
+      const byName = name ? resolveCardInSnapshotByName(turn, playerId, name) : undefined
+      const byId = resolveCardInSnapshot(turn, playerId, cardId)
+      if (byName && byId && byName.id !== byId.id) return byName
+      return byId ?? byName
+    }
 
   const renderEndgameRevealsByPlayer = (turn: GameState) => {
     const revealed = turn.endgameRevealedIntrigue
@@ -1146,64 +1150,67 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         </div>
       )}
 
-      {showDebugModal && (
-        <div className="turn-details-modal">
-          <div className="turn-details-content">
-            <h3>Debug</h3>
-            <div className="turn-details-tabs" role="tablist" aria-label="Debug view">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={debugView === 'save'}
-                className={debugView === 'save' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
-                onClick={() => setDebugView('save')}
-              >
-                Save document
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={debugView === 'runtime'}
-                className={debugView === 'runtime' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
-                onClick={() => setDebugView('runtime')}
-              >
-                Runtime
-              </button>
-              {onLoadSave && (
+      {showDebugModal &&
+        createPortal(
+          <div className="turn-details-modal">
+            <div className="turn-details-content">
+              <h3>Game data</h3>
+              <div className="turn-details-tabs" role="tablist" aria-label="Debug view">
                 <button
                   type="button"
                   role="tab"
-                  aria-selected={debugView === 'load'}
-                  className={debugView === 'load' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
-                  onClick={() => setDebugView('load')}
+                  aria-selected={debugView === 'save'}
+                  className={debugView === 'save' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
+                  onClick={() => setDebugView('save')}
                 >
-                  Load
+                  Save
                 </button>
-              )}
-            </div>
-            {debugView === 'load' && onLoadSave ? (
-              <SaveDocImportPanel onLoad={handleLoadSaveFromPanel} buttonLabel="Load save" />
-            ) : (
-              <>
-                {debugView === 'save' && (
-                  <div className="turn-details-export-actions">
-                    <button type="button" className="turn-details-export-btn" onClick={handleCopySave}>
-                      {copyFeedback ?? 'Copy'}
-                    </button>
-                    <button type="button" className="turn-details-export-btn" onClick={handleDownloadSave}>
-                      Download .json
-                    </button>
-                  </div>
+                {onLoadSave && (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={debugView === 'load'}
+                    className={debugView === 'load' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
+                    onClick={() => setDebugView('load')}
+                  >
+                    Load
+                  </button>
                 )}
-                <pre>{debugJson}</pre>
-              </>
-            )}
-            <button type="button" className="close-button" onClick={() => setShowDebugModal(false)}>
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+                {/* <button
+                  type="button"
+                  role="tab"
+                  aria-selected={debugView === 'runtime'}
+                  className={debugView === 'runtime' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
+                  onClick={() => setDebugView('runtime')}
+                >
+                  Runtime
+                </button> */}
+                
+              </div>
+              {debugView === 'load' && onLoadSave ? (
+                <SaveDocImportPanel onLoad={handleLoadSaveFromPanel} buttonLabel="Load save" />
+              ) : (
+                <>
+                  {debugView === 'save' && (
+                    <div className="turn-details-export-actions">
+                      <button type="button" className="turn-details-export-btn" onClick={handleCopySave}>
+                        {copyFeedback ?? 'Copy to clipboard'}
+                      </button>
+                      <button type="button" className="turn-details-export-btn" onClick={handleDownloadSave}>
+                        Download 
+                      </button>
+                    </div>
+                  )}
+                  <pre>{debugJson}</pre>
+                </>
+              )}
+              {/* <button type="button" className="close-button" onClick={() => setShowDebugModal(false)}>
+                Close
+              </button> */}
+            </div>
+          </div>,
+          document.body
+        )}
 
     </div>
   )

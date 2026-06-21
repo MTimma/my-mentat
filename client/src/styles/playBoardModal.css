@@ -15,7 +15,6 @@
 .imperium-preview-overlay.play-board-modal-overlay--scoped,
 .tech-acquire-overlay.play-board-modal-overlay--scoped,
 .combat-results-overlay.play-board-modal-overlay--scoped,
-.freighter-status-overlay.play-board-modal-overlay--scoped,
 .card-trashing-dialog-overlay.play-board-modal-overlay--scoped,
 .selective-breeding-dialog-overlay.play-board-modal-overlay--scoped,
 .sell-melange-popup.play-board-modal-overlay--scoped,
@@ -46,11 +45,6 @@
 .tech-stacks-overlay.play-board-modal-overlay--scoped {
   overflow: hidden;
   min-height: 0;
-}
-
-.freighter-status-overlay.play-board-modal-overlay--scoped .freighter-status-modal {
-  max-height: 100%;
-  overflow-y: auto;
 }
 
 .tech-stacks-overlay.play-board-modal-overlay--scoped .tech-stacks-modal {

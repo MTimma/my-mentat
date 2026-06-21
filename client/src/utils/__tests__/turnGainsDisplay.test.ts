@@ -463,4 +463,33 @@ describe('turnGainsDisplay', () => {
     expect(getAcquireEffectGainsForCard(gains, cardId)).toHaveLength(1)
     expect(excludeAcquireEffectGains(gains, [cardId])).toHaveLength(1)
   })
+
+  it('attributes acquire-trash gains to the acquired card source id', () => {
+    const acquiredId = 7001
+    const trashedId = 7002
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: acquiredId,
+        round: 1,
+        name: 'Shai-Hulud',
+        amount: 1,
+        type: RewardType.CARD,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: acquiredId,
+        round: 1,
+        name: 'Treachery',
+        amount: -1,
+        type: RewardType.TRASH,
+      },
+    ]
+    expect(getAcquireEffectGainsForCard(gains, acquiredId)).toContainEqual(
+      expect.objectContaining({ type: RewardType.TRASH, name: 'Treachery', sourceId: acquiredId })
+    )
+    expect(getAcquireEffectGainsForCard(gains, trashedId)).toHaveLength(0)
+  })
 })

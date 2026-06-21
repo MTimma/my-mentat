@@ -387,16 +387,16 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
     dispatch({ type: 'RETREAT_TROOP', playerId, fromEffect: true })
   }
 
-  const handleAcquireCard = (cardId: number) => {
-    dispatch({ type: 'ACQUIRE_CARD', playerId: activePlayer?.id || 0, cardId })
+  const handleAcquireCard = (cardId: number, acquireToTop?: boolean) => {
+    dispatch({ type: 'ACQUIRE_CARD', playerId: activePlayer?.id || 0, cardId, acquireToTop })
   }
 
-  const handleAcquireArrakisLiaison = () => {
-    dispatch({ type: 'ACQUIRE_AL', playerId: activePlayer?.id || 0 })
+  const handleAcquireArrakisLiaison = (acquireToTop?: boolean) => {
+    dispatch({ type: 'ACQUIRE_AL', playerId: activePlayer?.id || 0, acquireToTop })
   }
 
-  const handleAcquireSpiceMustFlow = () => {
-    dispatch({ type: 'ACQUIRE_SMF', playerId: activePlayer?.id || 0 })
+  const handleAcquireSpiceMustFlow = (acquireToTop?: boolean) => {
+    dispatch({ type: 'ACQUIRE_SMF', playerId: activePlayer?.id || 0, acquireToTop })
   }
 
   const handleActivateTech = useCallback(
@@ -1215,7 +1215,6 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
           combatStrength={displayState.combatStrength ?? gameState.combatStrength}
           controlMarkers={displayState.controlMarkers}
           historyHighlightSpaceId={historyHighlightSpaceId}
-          isViewingHistory={isViewingHistory}
           troopDeploy={
             isViewingHistory || gameState.sandboxSetup || !activePlayer
               ? undefined
@@ -1405,6 +1404,10 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
           <div className="imperium-row-container__main">
             <ImperiumRow
               canAcquire={isViewingHistory ? false : gameState.canAcquireIR}
+              canAcquireToTop={
+                !isViewingHistory &&
+                Boolean(activePlayer && gameState.acquireToTopThisRound?.[activePlayer.id])
+              }
               cards={displayState.imperiumRow}
               alCount={displayState.arrakisLiaisonDeck.length}
               smfCount={displayState.spiceMustFlowDeck.length}

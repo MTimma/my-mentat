@@ -208,7 +208,8 @@ import {
   grantStrategicPushSolari,
   intrigueEffectNeedsDeferral,
 } from './riseOfIx/intrigue'
-import { fireUnloadIfApplicable } from './riseOfIx/unload'
+import { fireUnloadIfApplicable, withUnloadForNewlyTrashedCards } from './riseOfIx/unload'
+import { isMandatoryRecruitAndDeployEffect, applyImmediateTroopRecruit } from './riseOfIx/mandatoryDeploy'
 
 /** Merge RoI unit fields without clobbering resources already adjusted this placement. */
 function mergeRoiUnitFieldsFromRefreshed(target: Player, refreshed: Player): void {
@@ -238,7 +239,33 @@ function withUnloadAfterCardRemoved(
   reason: 'discard' | 'trash'
 ): GameState {
   if (!card) return state
-  return fireUnloadIfApplicable(state, playerId, card, reason)
+  return resolveMandatoryTroopDeploy(
+    fireUnloadIfApplicable(state, playerId, card, reason),
+    playerId
+  )
+}
+
+/** Treachery (and similar): auto-deploy all troops from a mandatory recruit+deploy effect. */
+function resolveMandatoryTroopDeploy(state: GameState, playerId: number): GameState {
+  if (!state.currTurn?.mandatoryDeployTroops) return state
+  let next = state
+  for (let attempt = 0; attempt < 20; attempt++) {
+    if (getRemainingTheseTroopsDeploySlots(next) <= 0) break
+    const player = next.players.find(p => p.id === playerId)
+    if (!player || player.troops <= 0) break
+    const before = next.combatTroops[playerId] ?? 0
+    next = gameReducer(next, { type: 'DEPLOY_TROOP', playerId })
+    if ((next.combatTroops[playerId] ?? 0) <= before) break
+  }
+  if (!next.currTurn) return next
+  const slotsLeft = getRemainingTheseTroopsDeploySlots(next)
+  return {
+    ...next,
+    currTurn: {
+      ...next.currTurn,
+      mandatoryDeployTroops: slotsLeft > 0 ? next.currTurn.mandatoryDeployTroops : false,
+    },
+  }
 }
 
 type CustomEffectData = {
@@ -275,8 +302,8 @@ export type GameAction =
   | { type: 'PASS_COMBAT'; playerId: number }
   | { type: 'PLACE_AGENT'; playerId: number; spaceId: number; sellMelangeData?: { spiceCost: number; solariReward: number }; selectiveBreedingData?: { trashedCardId: number } }
   | { type: 'REVEAL_CARDS'; playerId: number; cardIds: number[] }
-  | { type: 'ACQUIRE_AL'; playerId: number }
-  | { type: 'ACQUIRE_SMF'; playerId: number }
+  | { type: 'ACQUIRE_AL'; playerId: number; acquireToTop?: boolean }
+  | { type: 'ACQUIRE_SMF'; playerId: number; acquireToTop?: boolean }
   | { type: 'PAY_COST'; playerId: number; effectId?: string; data?: { trashedCardId?: number }; effect?: OptionalEffect }
   | { type: 'RESOLVE_CHOICE'; playerId: number; choiceId: string; optionIndex?: number; reward?: Reward; source?: { type: string; id: number; name: string } }
   | { type: 'RESOLVE_CARD_SELECT'; playerId: number; choiceId: string; cardIds: number[] }
@@ -1121,7 +1148,7 @@ function applyRewardToPlayer(
       gains.push({
         round: state.currentRound,
         playerId: player.id,
-        sourceId: trashedCard.id,
+        sourceId: source.id,
         name: trashedCard.name,
         amount: -1,
         type: RewardType.TRASH,
@@ -1596,6 +1623,15 @@ function handleIntrigueEffect(
       if (!phases.includes(state.phase)) return
     }
     if (effect.timing === EffectTiming.ON_REVEAL_THIS_ROUND) {
+      const active = newState.activeIntrigueThisRound[playerId] || []
+      if (!active.some(c => c.id === card.id)) {
+        newState.activeIntrigueThisRound[playerId] = [...active, card]
+      }
+      // Reveal already happened this turn — apply immediately (e.g. Recruitment Mission water).
+      if (player.revealed) {
+        applyReward(effect.reward)
+        return
+      }
       const scheduled = newState.scheduledIntrigueOnReveal[playerId] || []
       scheduled.push({
         cardId: card.id,
@@ -1604,11 +1640,6 @@ function handleIntrigueEffect(
         reward: effect.reward
       })
       newState.scheduledIntrigueOnReveal[playerId] = scheduled
-
-      const active = newState.activeIntrigueThisRound[playerId] || []
-      if (!active.some(c => c.id === card.id)) {
-        newState.activeIntrigueThisRound[playerId] = [...active, card]
-      }
       return
     }
     // Endgame-only tiebreaker modifier
@@ -5027,6 +5058,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             if(effect.reward?.drawCards) {
               addPendingReward({ drawCards: effect.reward.drawCards }, { type: GainSource.CARD, id: card.id, name: card.name })
             }
+            if (effect.reward?.troops) {
+              if (isMandatoryRecruitAndDeployEffect(card, effect.reward)) {
+                player = applyImmediateTroopRecruit(
+                  player,
+                  effect.reward.troops,
+                  updatedGains,
+                  state,
+                  playerId,
+                  card.id,
+                  card.name
+                )
+              } else {
+                addPendingReward({ troops: effect.reward.troops }, { type: GainSource.CARD, id: card.id, name: card.name })
+              }
+            }
             // Pick-a-card trash on reveal (trash counts as N); trashThisCard is mandatory and applied immediately below
             if (effect.reward?.trash && !effect.reward?.trashThisCard) {
               addPendingReward(
@@ -5235,32 +5281,36 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return next
       })()
 
-      return {
-        ...stateAfterRevealTech,
-        gains: gainsAfterRevealTech,
-        players: stateAfterRevealTech.players.map(p =>
-          p.id === playerId
-            ? {
-                ...ilesaPlayer,
-                deck: updatedDeck,
-                playArea: mutablePlayArea,
-                trash: mutableTrash,
-                selectedCard: null,
-                combatValue: updatedCombatValue,
-                handCount: 0,
-                persuasion: ilesaPlayer.persuasion + persuasionCount,
-                revealed: true
-              }
-            : p
-        ),
-        combatStrength: updatedCombatStrength,
-        currTurn: currentTurn,
-        pendingRewards,
-        canEndTurn: (pendingChoices.length > 0 || tempCurrTurn.pendingChoices?.length || pendingRewards.filter(r => !r.disabled).length > 0) ? false : true,
-        canAcquireIR: true,
-        scheduledIntrigueOnReveal: { ...(state.scheduledIntrigueOnReveal || {}), [playerId]: [] },
-        dispatchEnvoyActive: dispatchEnvoyActiveAfterReveal
-      }
+      return resolveMandatoryTroopDeploy(
+        {
+          ...stateAfterRevealTech,
+          gains: gainsAfterRevealTech,
+          players: stateAfterRevealTech.players.map(p =>
+            p.id === playerId
+              ? {
+                  ...ilesaPlayer,
+                  deck: updatedDeck,
+                  playArea: mutablePlayArea,
+                  trash: mutableTrash,
+                  selectedCard: null,
+                  combatValue: updatedCombatValue,
+                  handCount: 0,
+                  persuasion: ilesaPlayer.persuasion + persuasionCount,
+                  revealed: true,
+                  troops: player.troops,
+                }
+              : p
+          ),
+          combatStrength: updatedCombatStrength,
+          currTurn: currentTurn,
+          pendingRewards,
+          canEndTurn: (pendingChoices.length > 0 || tempCurrTurn.pendingChoices?.length || pendingRewards.filter(r => !r.disabled).length > 0) ? false : true,
+          canAcquireIR: true,
+          scheduledIntrigueOnReveal: { ...(state.scheduledIntrigueOnReveal || {}), [playerId]: [] },
+          dispatchEnvoyActive: dispatchEnvoyActiveAfterReveal,
+        },
+        playerId
+      )
     }
     case 'ACQUIRE_CARD': {
       const { playerId, cardId, freeAcquire, acquireToTop } = action
@@ -5284,11 +5334,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Only check persuasion cost if this is not a free acquire
       if (!freeAcquire && player.persuasion < effectiveCost) return state
 
-      // Check acquireToTop parameter first (for single-card acquisitions like Bypass Protocol),
-      // then fall back to round flag (for round-long effects like Recruitment Mission)
-      const shouldAcquireToTop = acquireToTop !== undefined 
-        ? acquireToTop 
-        : Boolean(state.acquireToTopThisRound?.[playerId])
+      // acquireToTop must be explicit (UI choice when Recruitment Mission / Spaceport is active).
+      const shouldAcquireToTop = acquireToTop === true
       const updatedDeck = shouldAcquireToTop ? [card, ...player.deck] : player.deck
       const updatedDiscardPile = shouldAcquireToTop ? player.discardPile : [...player.discardPile, card]
 
@@ -5491,14 +5538,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
     case 'ACQUIRE_AL': {
-      const { playerId } = action
+      const { playerId, acquireToTop } = action
       const player = state.players.find(p => p.id === playerId)
       if (!player) return state
       if (state.arrakisLiaisonDeck.length === 0) return state
       if (player.persuasion < 2) return state
       const alDeck = [...state.arrakisLiaisonDeck]
       const card = alDeck.pop() as Card
-      const discardPile = [...player.discardPile, card]
+      const toTop = acquireToTop === true
+      const deck = toTop ? [card, ...player.deck] : player.deck
+      const discardPile = toTop ? player.discardPile : [...player.discardPile, card]
       const persuasion = player.persuasion - 2
       const { gains, currTurn } = appendCardAcquisitionTracking(state, playerId, card, state.gains)
       return {
@@ -5507,12 +5556,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         gains,
         currTurn: currTurn ?? null,
         players: state.players.map(p =>
-          p.id === playerId ? { ...p, discardPile, persuasion } : p
+          p.id === playerId ? { ...p, deck, discardPile, persuasion } : p
         ),
       }
     }
     case 'ACQUIRE_SMF': {
-      const { playerId } = action
+      const { playerId, acquireToTop } = action
       const player = state.players.find(p => p.id === playerId)
       if (!player) return state
       if (state.spiceMustFlowDeck.length === 0) return state
@@ -5537,7 +5586,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         })
         victoryPoints += card.acquireEffect.victoryPoints
       }
-      const discardPile = [...player.discardPile, card]
+      const toTop = acquireToTop === true
+      const deck = toTop ? [card, ...player.deck] : player.deck
+      const discardPile = toTop ? player.discardPile : [...player.discardPile, card]
       const persuasion = player.persuasion - cost
 
       const tracked = appendCardAcquisitionTracking(state, playerId, card, updatedGains)
@@ -5551,7 +5602,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         gains: tracked.gains,
         currTurn: newCurrTurn,
         players: state.players.map(p =>
-          p.id === playerId ? { ...p, discardPile, persuasion, victoryPoints } : p
+          p.id === playerId ? { ...p, deck, discardPile, persuasion, victoryPoints } : p
         ),
       }
     }
@@ -6875,6 +6926,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         resolvedReward.trash && !resolvedReward.trashThisCard
           ? { ...resolvedReward, trash: customData?.trashedCardId as number }
           : resolvedReward
+      const trashBeforeClaim = player.trash
       newPlayer = applyRewardToPlayer(rewardToApply, newPlayer, newGains, state, reward.source)
       
       // Handle influence updates (needs state modification)
@@ -6920,7 +6972,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Update canEndTurn based on remaining pendingRewards and pendingChoices
       newState.canEndTurn = (newState.pendingRewards.filter(r => !r.disabled).length === 0 && (!newState.currTurn?.pendingChoices?.length))
       
-      return newState
+      return resolveMandatoryTroopDeploy(
+        withUnloadForNewlyTrashedCards(
+          newState,
+          playerId,
+          trashBeforeClaim,
+          newPlayer.trash,
+          'trash'
+        ),
+        playerId
+      )
     }
     case 'CLAIM_ALL_REWARDS': {
       const { playerId } = action
@@ -7007,7 +7068,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Update canEndTurn based on remaining pendingRewards and pendingChoices (excluding disabled rewards)
       newState.canEndTurn = (newState.pendingRewards.filter(r => !r.disabled).length === 0 && (!newState.currTurn?.pendingChoices?.length))
       
-      return newState
+      return resolveMandatoryTroopDeploy(newState, playerId)
     }
     case 'OPPONENT_DISCARD_CHOICE': {
       const { playerId: actingPlayerId, opponentId, choice } = action

@@ -1023,6 +1023,7 @@ body:has(.game-container--play) {
   flex-shrink: 0;
   width: 100%;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
@@ -1082,6 +1083,17 @@ body:has(.game-container--play) {
 .imperium-preview-acquire-button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.imperium-preview-acquire-button--secondary {
+  background: transparent;
+  color: var(--chrome-text-strong);
+  border-color: var(--chrome-border-accent);
+}
+
+.imperium-preview-acquire-button--secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--chrome-accent-ring);
 }
 
 @media (max-width: 400px) {

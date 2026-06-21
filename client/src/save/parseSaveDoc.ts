@@ -12,7 +12,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function parseSaveDocJson(raw: string): ParseSaveDocResult {
   const trimmed = raw.trim()
   if (!trimmed) {
-    return { ok: false, error: 'Paste Save document JSON to load' }
+    return { ok: false, error: 'Paste exported game' }
   }
 
   let parsed: unknown

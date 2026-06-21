@@ -13,12 +13,14 @@ interface HelenaRemovedCard {
 interface ImperiumRowProps {
   cards: Card[]
   canAcquire: boolean
+  /** Recruitment Mission / Spaceport: player may choose deck top vs discard per acquisition. */
+  canAcquireToTop?: boolean
   persuasion: number
   alCount: number
   smfCount: number
-  onAcquireArrakisLiaison: () => void
-  onAcquireSpiceMustFlow: () => void
-  onAcquireCard: (cardId: number) => void
+  onAcquireArrakisLiaison: (acquireToTop?: boolean) => void
+  onAcquireSpiceMustFlow: (acquireToTop?: boolean) => void
+  onAcquireCard: (cardId: number, acquireToTop?: boolean) => void
   helenaRemovedCard?: HelenaRemovedCard | null
   activePlayerId?: number
   /** Sandbox setup: row slots become click targets to pick all five cards. */
@@ -37,6 +39,7 @@ type PreviewSelection =
 const ImperiumRow: React.FC<ImperiumRowProps> = ({
   cards,
   canAcquire,
+  canAcquireToTop = false,
   persuasion,
   alCount,
   smfCount,
@@ -70,14 +73,14 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
           image: helenaSlotData.card.image,
           note: 'Helena discount: -1 Persuasion',
           disabled: !canAcquireHelenaCard,
-          onAcquire: () => onAcquireCard(helenaSlotData.card.id),
+          onAcquire: (acquireToTop?: boolean) => onAcquireCard(helenaSlotData.card.id, acquireToTop),
         }
       : rowPreviewCard
         ? {
             name: rowPreviewCard.name,
             image: rowPreviewCard.image,
             disabled: !canAcquireRowCard(rowPreviewCard),
-            onAcquire: () => onAcquireCard(rowPreviewCard.id),
+            onAcquire: (acquireToTop?: boolean) => onAcquireCard(rowPreviewCard.id, acquireToTop),
           }
         : previewSelection?.kind === 'arrakis-liaison'
           ? {
@@ -85,7 +88,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
               image: 'imperium_row/arrakis_liaison.avif',
               note: `Count: ${alCount}`,
               disabled: !canAcquireArrakisLiaison,
-              onAcquire: onAcquireArrakisLiaison,
+              onAcquire: (acquireToTop?: boolean) => onAcquireArrakisLiaison(acquireToTop),
             }
           : previewSelection?.kind === 'spice-must-flow'
             ? {
@@ -93,7 +96,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
                 image: 'imperium_row/spice_must_flow.avif',
                 note: `Count: ${smfCount}`,
                 disabled: !canAcquireSpiceMustFlow,
-                onAcquire: onAcquireSpiceMustFlow,
+                onAcquire: (acquireToTop?: boolean) => onAcquireSpiceMustFlow(acquireToTop),
               }
             : null
 
@@ -106,9 +109,9 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
     }
   }
 
-  const handleAcquirePreview = () => {
+  const handleAcquirePreview = (acquireToTop?: boolean) => {
     if (!preview || preview.disabled) return
-    preview.onAcquire()
+    preview.onAcquire(acquireToTop)
     setPreviewSelection(null)
   }
 
@@ -256,14 +259,35 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
             />
             {preview.note && <div className="imperium-preview-note">{preview.note}</div>}
             <div className="imperium-preview-actions">
-              <button
-                type="button"
-                className="imperium-preview-acquire-button"
-                onClick={handleAcquirePreview}
-                disabled={preview.disabled}
-              >
-                Acquire
-              </button>
+              {canAcquireToTop ? (
+                <>
+                  <button
+                    type="button"
+                    className="imperium-preview-acquire-button"
+                    onClick={() => handleAcquirePreview(true)}
+                    disabled={preview.disabled}
+                  >
+                    Acquire (top of deck)
+                  </button>
+                  <button
+                    type="button"
+                    className="imperium-preview-acquire-button imperium-preview-acquire-button--secondary"
+                    onClick={() => handleAcquirePreview(false)}
+                    disabled={preview.disabled}
+                  >
+                    Acquire (discard pile)
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="imperium-preview-acquire-button"
+                  onClick={() => handleAcquirePreview()}
+                  disabled={preview.disabled}
+                >
+                  Acquire
+                </button>
+              )}
             </div>
           </div>
         </div>

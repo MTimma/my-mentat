@@ -17,7 +17,11 @@ import {
 } from '../../../types/GameTypes'
 import { revealRequirementSatisfied } from '../requirements'
 import { nextSemanticId } from '../../../utils/semanticIds'
-import { applyDeployTroopsAllowance } from '../../../utils/troops'
+import { applyDeployTroopsAllowance, getRemainingTheseTroopsDeploySlots } from '../../../utils/troops'
+import {
+  applyImmediateTroopRecruit,
+  isMandatoryRecruitAndDeployEffect,
+} from './mandatoryDeploy'
 import {
   isRiseOfIxEnabled,
   pushFreighterChoicesFromReward,
@@ -41,11 +45,13 @@ export function unloadSource(card: Card): GainAttribution {
   return { type: GainSource.CARD, id: card.id, name: `${card.name} (Unload)` }
 }
 
-export function shouldFireUnload(state: GameState, playerId: number): boolean {
+export function shouldFireUnload(state: GameState, playerId: number, card: Card): boolean {
   if (!isRiseOfIxEnabled(state)) return false
   const player = state.players.find(p => p.id === playerId)
-  if (!player || player.revealed) return false
-  if (state.currTurn?.type === TurnType.REVEAL) return false
+  if (!player) return false
+  // Reveal effects already ran for cards revealed this turn; skip unload for those only.
+  const revealedThisTurn = state.currTurn?.revealedCardIds ?? []
+  if (revealedThisTurn.includes(card.id)) return false
   return true
 }
 
@@ -55,8 +61,22 @@ export function fireUnloadIfApplicable(
   card: Card,
   _reason: UnloadReason
 ): GameState {
-  if (!card.unload || !shouldFireUnload(state, playerId)) return state
+  if (!card.unload || !shouldFireUnload(state, playerId, card)) return state
   return applyUnloadRevealEffects(state, playerId, card)
+}
+
+/** Fire unload for each card newly added to a player's trash pile. */
+export function withUnloadForNewlyTrashedCards(
+  state: GameState,
+  playerId: number,
+  trashBefore: readonly Card[],
+  trashAfter: readonly Card[],
+  reason: UnloadReason = 'trash'
+): GameState {
+  const beforeIds = new Set(trashBefore.map(c => c.id))
+  return trashAfter
+    .filter(c => !beforeIds.has(c.id))
+    .reduce((next, card) => fireUnloadIfApplicable(next, playerId, card, reason), state)
 }
 
 /** Fire a single card's revealEffect[] as if unloaded (before Reveal turn). */
@@ -154,6 +174,21 @@ export function applyUnloadRevealEffects(
         addPendingReward({ intrigueCards: effect.reward.intrigueCards })
       }
       if (effect.reward?.drawCards) addPendingReward({ drawCards: effect.reward.drawCards })
+      if (effect.reward?.troops) {
+        if (isMandatoryRecruitAndDeployEffect(card, effect.reward)) {
+          nextPlayer = applyImmediateTroopRecruit(
+            nextPlayer,
+            effect.reward.troops,
+            nextState.gains,
+            nextState,
+            playerId,
+            card.id,
+            source.name
+          )
+        } else {
+          addPendingReward({ troops: effect.reward.troops })
+        }
+      }
       if (effect.reward?.freighter !== undefined && isRiseOfIxEnabled(nextState)) {
         addPendingReward({ freighter: effect.reward.freighter })
       }

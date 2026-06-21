@@ -10,7 +10,7 @@ import {
   type Card,
 } from '../../../types/GameTypes'
 import { applyGameAction } from '../GameContext'
-import { getBaseTestState, makePlayer } from './_helpers'
+import { getBaseTestState, makePlayer, stubDeckCard } from './_helpers'
 
 const ROI_EXPANSIONS = { riseOfIx: true, riseOfIxEpic: false }
 
@@ -104,6 +104,110 @@ describe('Unload (discard / trash)', () => {
     expect(freighterChoice?.source).toEqual(
       expect.objectContaining({ name: 'Freighter Fleet (Unload)' })
     )
+  })
+
+  it('trash Water Peddler via CLAIM_REWARD triggers unload water gain', () => {
+    const waterPeddler = roiCard('Water Peddler')
+    waterPeddler.id = 99005
+    const otherCard = stubDeckCard(99006)
+    let s = roiState()
+    s = {
+      ...s,
+      players: [makePlayer(0, { deck: [waterPeddler, otherCard], handCount: 2, water: 3 })],
+      pendingRewards: [
+        {
+          id: 'trash-water-peddler',
+          source: { type: GainSource.CARD, id: 1, name: 'Trash Effect' },
+          reward: { trash: 1 },
+          isTrash: true,
+        },
+      ],
+    }
+
+    s = applyGameAction(s, {
+      type: 'CLAIM_REWARD',
+      playerId: 0,
+      rewardId: 'trash-water-peddler',
+      customData: { trashedCardId: waterPeddler.id },
+    })
+
+    expect(s.players[0].trash.some(c => c.id === waterPeddler.id)).toBe(true)
+    expect(s.pendingRewards).toContainEqual(
+      expect.objectContaining({
+        source: expect.objectContaining({ name: 'Water Peddler (Unload)' }),
+        reward: { water: 1 },
+      })
+    )
+  })
+
+  it('trash Water Peddler via TRASH_CARD triggers unload water gain', () => {
+    const waterPeddler = roiCard('Water Peddler')
+    waterPeddler.id = 99007
+    let s = roiState()
+    s = {
+      ...s,
+      players: [makePlayer(0, { deck: [waterPeddler], handCount: 1, water: 3 })],
+    }
+
+    s = applyGameAction(s, { type: 'TRASH_CARD', playerId: 0, cardId: waterPeddler.id })
+
+    expect(s.pendingRewards).toContainEqual(
+      expect.objectContaining({
+        source: expect.objectContaining({ name: 'Water Peddler (Unload)' }),
+        reward: { water: 1 },
+      })
+    )
+  })
+
+  it('trash Treachery during reveal turn triggers unload troops and deploy', () => {
+    const treachery = roiCard('Treachery')
+    treachery.id = 99100
+    const shaiHulud = roiCard('Shai-Hulud')
+    shaiHulud.id = 99101
+    let s = roiState()
+    s = {
+      ...s,
+      players: [makePlayer(0, { discardPile: [treachery], revealed: true, handCount: 0, troops: 0 })],
+      currTurn: {
+        playerId: 0,
+        type: TurnType.REVEAL,
+        revealedCardIds: [99999],
+      },
+      pendingRewards: [
+        {
+          id: 'shai-trash',
+          source: { type: GainSource.CARD, id: shaiHulud.id, name: 'Shai-Hulud' },
+          reward: { trash: 1 },
+          isTrash: true,
+        },
+      ],
+    }
+
+    s = applyGameAction(s, {
+      type: 'CLAIM_REWARD',
+      playerId: 0,
+      rewardId: 'shai-trash',
+      customData: { trashedCardId: treachery.id },
+    })
+
+    expect(s.players[0].trash.some(c => c.id === treachery.id)).toBe(true)
+    expect(s.gains).toContainEqual(
+      expect.objectContaining({
+        name: 'Treachery (Unload)',
+        type: RewardType.TROOPS,
+        amount: 2,
+      })
+    )
+    expect(s.gains).toContainEqual(
+      expect.objectContaining({
+        name: 'Treachery (Unload)',
+        type: RewardType.DEPLOY,
+        amount: 2,
+      })
+    )
+    expect(s.currTurn?.mandatoryDeployTroops).toBe(false)
+    expect(s.combatTroops[0]).toBe(2)
+    expect(s.players[0].troops).toBe(0)
   })
 
   it('no unload on reveal turn for same card', () => {

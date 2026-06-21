@@ -57,7 +57,7 @@ const SaveDocImportPanel: React.FC<SaveDocImportPanelProps> = ({
           setJsonText(e.target.value)
           if (error) setError(null)
         }}
-        placeholder="Paste Save document JSON (Turn History → Save document tab)…"
+        placeholder="Paste exported game"
         rows={6}
         spellCheck={false}
       />

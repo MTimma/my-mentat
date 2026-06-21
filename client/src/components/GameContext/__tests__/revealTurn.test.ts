@@ -310,14 +310,24 @@ describe('ACQUIRE_CARD', () => {
     expect(s.players[0].discardPile).toEqual([])
   })
 
-  it('acquireToTopThisRound round flag puts the acquired card on top of the deck', () => {
+  it('acquireToTopThisRound enables optional top placement when acquireToTop is true', () => {
     const target = stubDeckCard(9207, { cost: 2 })
     let s = rowState([target], 5)
     s = { ...s, acquireToTopThisRound: { 0: true } }
-    s = applyGameAction(s, { type: 'ACQUIRE_CARD', playerId: 0, cardId: 9207 })
+    s = applyGameAction(s, { type: 'ACQUIRE_CARD', playerId: 0, cardId: 9207, acquireToTop: true })
 
     expect(s.players[0].deck.map(c => c.id)).toEqual([9207, 5000])
     expect(s.players[0].discardPile).toEqual([])
+  })
+
+  it('acquireToTopThisRound does not auto-top without an explicit acquireToTop choice', () => {
+    const target = stubDeckCard(9208, { cost: 2 })
+    let s = rowState([target], 5)
+    s = { ...s, acquireToTopThisRound: { 0: true } }
+    s = applyGameAction(s, { type: 'ACQUIRE_CARD', playerId: 0, cardId: 9208 })
+
+    expect(s.players[0].deck.map(c => c.id)).toEqual([5000])
+    expect(s.players[0].discardPile.map(c => c.id)).toEqual([9208])
   })
 
   it('acquireEffect rewards fire immediately (troops + spice)', () => {

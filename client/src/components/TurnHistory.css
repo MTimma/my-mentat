@@ -798,7 +798,7 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(2px);
-  z-index: calc(var(--z-play-history-strip) + 10);
+  z-index: var(--z-modal-overlay-top);
   display: flex;
   justify-content: center;
   align-items: center;
