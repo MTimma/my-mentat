@@ -1,4 +1,5 @@
 import { SAVE_SCHEMA_VERSION, type SaveDoc } from './types'
+import { normalizeSetupGamePack } from '../gamePacks/inferGamePack'
 
 export type ParseSaveDocResult =
   | { ok: true; doc: SaveDoc }
@@ -72,5 +73,8 @@ export function parseSaveDocJson(raw: string): ParseSaveDocResult {
     return { ok: false, error: 'Missing cursor block' }
   }
 
-  return { ok: true, doc: parsed as SaveDoc }
+  const doc = parsed as SaveDoc
+  doc.setup = normalizeSetupGamePack(doc.setup)
+
+  return { ok: true, doc }
 }

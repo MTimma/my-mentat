@@ -32,8 +32,10 @@ import { seedTroopSupply } from '../utils/troops'
 import { buildInitialIxBoard } from '../components/GameContext/riseOfIxReducer'
 import { getFreshDefaultGameState } from '../components/GameContext/GameContext'
 import { slugify } from '../catalog/buildCatalog'
+import { createCatalogRuntime, type CatalogRuntime } from '../catalog/runtime'
+import { inferGamePackId } from '../gamePacks/inferGamePack'
+import { resolveGamePack, GamePackResolutionError } from '../gamePacks/resolveGamePack'
 import type { SetupBlock } from './types'
-import { resolveCatalogCardIds, buildImperiumDeck } from '../catalog/runtime'
 
 export class SetupResolutionError extends Error {}
 
@@ -46,10 +48,9 @@ function resolveLeader(leaderId: string, expansions = normalizeExpansions()): Le
   return leader
 }
 
-/** Resolve catalog card ids to card instances with deterministic ids. */
-function resolveCards(catalogIds: string[]): Card[] {
+function resolveCards(runtime: CatalogRuntime, catalogIds: string[]): Card[] {
   try {
-    return resolveCatalogCardIds(catalogIds)
+    return runtime.resolveCatalogCardIds(catalogIds)
   } catch (error) {
     if (error instanceof Error && error.message.startsWith('Unknown catalog card id:')) {
       const catalogId = error.message.slice('Unknown catalog card id: '.length)
@@ -61,27 +62,41 @@ function resolveCards(catalogIds: string[]): Card[] {
 
 /** Imperium deck instances re-id'd from 2000 (mirrors buildImperiumDeck). */
 function resolveImperiumDeck(
+  runtime: CatalogRuntime,
   catalogIds: string[] | undefined,
   expansions = normalizeExpansions()
 ): Card[] {
   if (catalogIds) {
-    return buildImperiumDeckFromCatalogIds(catalogIds)
+    return buildImperiumDeckFromCatalogIds(runtime, catalogIds)
   }
-  return buildImperiumDeck(expansions)
+  return runtime.buildImperiumDeck(expansions)
 }
 
-function buildImperiumDeckFromCatalogIds(catalogIds: string[]): Card[] {
+function buildImperiumDeckFromCatalogIds(runtime: CatalogRuntime, catalogIds: string[]): Card[] {
   let nextId = 2000
-  return resolveCatalogCardIds(catalogIds).map(card => ({ ...card, id: nextId++ }))
+  return runtime.resolveCatalogCardIds(catalogIds).map(card => ({ ...card, id: nextId++ }))
 }
 
 export function buildInitialState(setup: SetupBlock): GameState {
   const base = getFreshDefaultGameState()
-  const expansions = normalizeExpansions(setup.expansions)
+  const gamePackId = inferGamePackId(setup)
+
+  let resolvedPack
+  try {
+    resolvedPack = resolveGamePack(gamePackId)
+  } catch (error) {
+    if (error instanceof GamePackResolutionError) {
+      throw new SetupResolutionError(error.message)
+    }
+    throw error
+  }
+
+  const runtime = createCatalogRuntime(resolvedPack)
+  const expansions = resolvedPack.structure.expansions
 
   const players: Player[] = setup.players.map(playerSetup => {
     const leader = resolveLeader(playerSetup.leaderId, expansions)
-    const deck = resolveCards(playerSetup.deckCardIds)
+    const deck = resolveCards(runtime, playerSetup.deckCardIds)
     const res = playerSetup.startingResources
     const basePlayer: Player = {
       id: playerSetup.id,
@@ -114,7 +129,7 @@ export function buildInitialState(setup: SetupBlock): GameState {
     return seedTessiaSnoopers(applyHudroStartingIntrigue(seedTroopSupply(basePlayer)), expansions.riseOfIx)
   })
 
-  let imperiumRowDeck = resolveImperiumDeck(setup.imperiumRowDeckCardIds, expansions)
+  let imperiumRowDeck = resolveImperiumDeck(runtime, setup.imperiumRowDeckCardIds, expansions)
   imperiumRowDeck = applyStarterDeckReservationToImperium(
     imperiumRowDeck,
     players.map(p => p.deck)
@@ -122,7 +137,6 @@ export function buildInitialState(setup: SetupBlock): GameState {
 
   let imperiumRow: Card[] = []
   if (setup.imperiumRowCardIds?.length) {
-    // Row cards are drawn from the deck: match by catalog identity, remove from deck.
     const rowIds = [...setup.imperiumRowCardIds]
     const deck = [...imperiumRowDeck]
     imperiumRow = rowIds.map(catalogId => {

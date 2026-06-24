@@ -1,53 +1,81 @@
-import React, { useState } from 'react'
-import { Expansions, PlayerColor, PlayerSetup } from '../types/GameTypes'
+import React, { useEffect, useMemo, useState } from 'react'
+import { PlayerColor, PlayerSetup } from '../types/GameTypes'
 import { getLeaderPool } from '../data/leaders'
+import LeaderSelect from './LeaderSelect/LeaderSelect'
 import { motion } from 'framer-motion'
 import { buildStartingDeck } from '../services/starterDeckSetup'
 import SaveDocImportPanel from './SaveDocImportPanel/SaveDocImportPanel'
+import GamePackEditor from './GamePackEditor/GamePackEditor'
 import type { SaveDoc } from '../save/types'
+import { getSelectableGamePacks } from '../gamePacks/registry'
+import { subscribeGamePacks } from '../gamePacks/customGamePacks'
+import { expansionsForGamePack } from '../gamePacks/resolveGamePack'
 import './GameSetup/GameSetup.css'
 
 interface GameSetupProps {
-  expansions: Expansions
-  onExpansionsChange: (expansions: Expansions) => void
-  onComplete: (playerSetups: PlayerSetup[], expansions: Expansions) => void
+  gamePackId: string
+  onGamePackChange: (gamePackId: string) => void
+  onComplete: (playerSetups: PlayerSetup[], gamePackId: string) => void
   /** Start sandbox mode: straight to the board with default state, configure everything there. */
-  onSandbox: (playerSetups: PlayerSetup[], expansions: Expansions) => void
+  onSandbox: (playerSetups: PlayerSetup[], gamePackId: string) => void
   onLoadSave?: (doc: SaveDoc) => void
 }
 
-const createPlayerSetup = (playerNumber: number, color: PlayerColor, leaderIndex: number, expansions: Expansions): PlayerSetup => {
+const createPlayerSetup = (playerNumber: number, color: PlayerColor, leaderIndex: number, gamePackId: string): PlayerSetup => {
+  const expansions = expansionsForGamePack(gamePackId)
   const leaders = getLeaderPool(expansions)
   return {
     playerNumber,
     color,
     leader: leaderIndex === 4 ? leaders[4] : leaders[leaderIndex],
-    deck: buildStartingDeck(),
+    deck: buildStartingDeck(gamePackId),
     startingHand: []
   }
 }
 
 const GameSetup: React.FC<GameSetupProps> = ({
-  expansions,
-  onExpansionsChange,
+  gamePackId,
+  onGamePackChange,
   onComplete,
   onSandbox,
   onLoadSave,
 }) => {
   const [gameName, setGameName] = useState('Test Game')
   const [playerCount, setPlayerCount] = useState<number>(4)
-  const [loadSectionOpen, setLoadSectionOpen] = useState(false)
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [packListVersion, setPackListVersion] = useState(0)
+  const selectablePacks = useMemo(() => getSelectableGamePacks(), [packListVersion])
+  const expansions = expansionsForGamePack(gamePackId)
   const [players, setPlayers] = useState<PlayerSetup[]>([
-    createPlayerSetup(1, PlayerColor.RED, 1, expansions),
-    createPlayerSetup(2, PlayerColor.GREEN, 0, expansions),
-    createPlayerSetup(3, PlayerColor.YELLOW, 2, expansions),
-    createPlayerSetup(4, PlayerColor.BLUE, 3, expansions)
+    createPlayerSetup(1, PlayerColor.RED, 1, gamePackId),
+    createPlayerSetup(2, PlayerColor.GREEN, 0, gamePackId),
+    createPlayerSetup(3, PlayerColor.YELLOW, 2, gamePackId),
+    createPlayerSetup(4, PlayerColor.BLUE, 3, gamePackId)
   ])
+
+  useEffect(() => subscribeGamePacks(() => setPackListVersion(v => v + 1)), [])
+
+  useEffect(() => {
+    setPlayers(prev =>
+      prev.map((player, index) => {
+        const leaders = getLeaderPool(expansions)
+        const leaderStillValid = leaders.some(l => l.name === player.leader.name)
+        const leaderIndex = leaderStillValid
+          ? leaders.findIndex(l => l.name === player.leader.name)
+          : Math.min(index, leaders.length - 1)
+        return {
+          ...player,
+          leader: leaders[leaderIndex] ?? leaders[0],
+          deck: buildStartingDeck(gamePackId),
+        }
+      })
+    )
+  }, [gamePackId, expansions])
 
   const handlePlayerCountChange = (count: number) => {
     setPlayerCount(count)
     const newPlayers = Array.from({ length: count }, (_, i) => ({
-      ...createPlayerSetup(i + 1, Object.values(PlayerColor)[i], i === 0 ? 1 : i - 1, expansions)
+      ...createPlayerSetup(i + 1, Object.values(PlayerColor)[i], i === 0 ? 1 : i - 1, gamePackId)
     }))
     setPlayers(newPlayers)
   }
@@ -114,14 +142,31 @@ const GameSetup: React.FC<GameSetupProps> = ({
               <option value={4}>4</option>
             </select>
           </label>
-          <label className="setup-field setup-field--compact riseofix-toggle">
-            <span className="setup-field-label">Rise of Ix</span>
-            <input
-              type="checkbox"
-              checked={expansions.riseOfIx}
-              onChange={(e) => onExpansionsChange({ ...expansions, riseOfIx: e.target.checked })}
-            />
+          <label className="setup-field setup-field--compact">
+            <span className="setup-field-label">Game pack</span>
+            <select
+              value={gamePackId}
+              onChange={(e) => onGamePackChange(e.target.value)}
+              className="game-pack-select"
+              aria-label="Game pack"
+            >
+              {selectablePacks.map(pack => (
+                <option key={pack.ref} value={pack.ref}>
+                  {pack.label}
+                </option>
+              ))}
+            </select>
           </label>
+        </div>
+
+        <div className="setup-game-pack-actions">
+          <button
+            type="button"
+            className="setup-game-pack-create-btn"
+            onClick={() => setEditorOpen(true)}
+          >
+            Create new game pack from selected…
+          </button>
         </div>
 
         <div className="players-setup">
@@ -140,57 +185,56 @@ const GameSetup: React.FC<GameSetupProps> = ({
                   </option>
                 ))}
               </select>
-              <select
-                value={player.leader.name}
-                onChange={(e) => {
-                  const selectedLeader = getLeaderPool(expansions).find(l => l.name === e.target.value)
-                  if (selectedLeader) {
-                    handlePlayerChange(index, 'leader', selectedLeader)
-                  }
-                }}
-                className="leader-select"
-                aria-label={`Player ${index + 1} leader`}
-              >
-                {getAvailableLeaders(index).map(leader => (
-                  <option key={leader.name} value={leader.name}>
-                    {leader.name} ({leader.ability.name})
-                  </option>
-                ))}
-              </select>
+              <LeaderSelect
+                leaders={getAvailableLeaders(index)}
+                value={player.leader}
+                onChange={leader => handlePlayerChange(index, 'leader', leader)}
+                ariaLabel={`Player ${index + 1} leader`}
+                variant="setup"
+              />
             </div>
           ))}
         </div>
         </div>
 
         {onLoadSave && (
-          <details
+          <SaveDocImportPanel
             className="setup-load-save"
-            open={loadSectionOpen}
-            onToggle={e => setLoadSectionOpen(e.currentTarget.open)}
-          >
-            <summary className="setup-load-save-summary">Load saved game</summary>
-            <SaveDocImportPanel onLoad={onLoadSave} />
-          </details>
+            variant="file"
+            buttonLabel="Load saved game…"
+            onLoad={onLoadSave}
+          />
         )}
 
         <button
           className="start-game-button"
           disabled={!isSetupComplete()}
-          onClick={() => onComplete(players, expansions)}
+          onClick={() => onComplete(players, gamePackId)}
         >
           Start Game
         </button>
         <button
           className="start-game-button start-game-button--sandbox"
           disabled={!isSetupComplete()}
-          onClick={() => onSandbox(players, expansions)}
+          onClick={() => onSandbox(players, gamePackId)}
           title="Skip setup screens — configure everything directly on the board"
         >
           Sandbox Mode
         </button>
       </div>
+
+      {editorOpen && (
+        <GamePackEditor
+          parentPackId={gamePackId}
+          onClose={() => setEditorOpen(false)}
+          onSaved={ref => {
+            onGamePackChange(ref)
+            setEditorOpen(false)
+          }}
+        />
+      )}
     </motion.div>
   )
 }
 
-export default GameSetup 
+export default GameSetup

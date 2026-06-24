@@ -1,8 +1,9 @@
 import React, { useMemo, useState, type RefObject } from 'react'
 import { GameState, PlayerColor, type Player } from '../../types/GameTypes'
 import { getLeaderImage } from '../../data/leaders'
-import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
+import { isTessiaLeader } from '../../data/leaderAbilities/tessiaSnoopers'
 import AgentIcon from '../AgentIcon/AgentIcon'
+import TessiaLeaderOverlays from '../TessiaLeaderOverlays/TessiaLeaderOverlays'
 import CombatPlayerDetailModal from './CombatPlayerDetailModal'
 import { PlayerCombatSlot } from './CombatStatusStrip'
 import CombatTroopControls from '../CombatTroopControls/CombatTroopControls'
@@ -15,15 +16,8 @@ type ResourceDef = {
   getValue: (player: Player) => number
 }
 
-function resourceCellsFor(riseOfIx: boolean, gameState?: GameState): ResourceDef[] {
+function resourceCellsFor(riseOfIx: boolean): ResourceDef[] {
   return [
-    {
-      key: 'vp',
-      title: 'Victory points',
-      icon: '/icon/vp.png',
-      getValue: player =>
-        gameState ? getTotalVictoryPoints(player, gameState) : player.victoryPoints,
-    },
     { key: 'spice', title: 'Spice', icon: '/icon/spice.png', getValue: player => player.spice },
     { key: 'solari', title: 'Solari', icon: '/icon/solari.png', getValue: player => player.solari },
     { key: 'water', title: 'Water', icon: '/icon/water.png', getValue: player => player.water },
@@ -90,13 +84,11 @@ function renderResourceCell(resource: ResourceDef, player: Player) {
 function ResourceGrid({
   player,
   riseOfIx,
-  gameState,
 }: {
   player: Player
   riseOfIx: boolean
-  gameState?: GameState
 }) {
-  const cells = useMemo(() => resourceCellsFor(riseOfIx, gameState), [riseOfIx, gameState])
+  const cells = useMemo(() => resourceCellsFor(riseOfIx), [riseOfIx])
   return (
     <div className="combat-area-cluster__resources-panel">
       <div
@@ -128,6 +120,7 @@ function LeaderPortrait({
       className={[
         'combat-area-cluster__leader',
         `combat-area-cluster__leader--${player.color}`,
+        isTessiaLeader(player.leader) ? 'combat-area-cluster__leader--tessia' : '',
       ].join(' ')}
       aria-hidden="true"
     >
@@ -137,6 +130,7 @@ function LeaderPortrait({
         className="combat-area-cluster__leader-img"
         draggable={false}
       />
+      <TessiaLeaderOverlays leader={player.leader} />
       {isFirstPlayer ? (
         <span className="combat-area-cluster__first-player-badge" title="First player">
           FP
@@ -152,7 +146,6 @@ function PlayerQuadrant({
   isFirstPlayer,
   hasMentat,
   riseOfIx,
-  gameState,
   onSelect,
 }: {
   player: Player
@@ -160,7 +153,6 @@ function PlayerQuadrant({
   isFirstPlayer: boolean
   hasMentat: boolean
   riseOfIx: boolean
-  gameState?: GameState
   onSelect: () => void
 }) {
   const mentatSuffix = hasMentat ? ', mentat holder' : ''
@@ -188,7 +180,7 @@ function PlayerQuadrant({
             M
           </span>
         ) : null}
-        <ResourceGrid player={player} riseOfIx={riseOfIx} gameState={gameState} />
+        <ResourceGrid player={player} riseOfIx={riseOfIx} />
       </div>
     </button>
   )
@@ -321,7 +313,6 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                         isFirstPlayer={player.id === firstPlayerMarker}
                         hasMentat={player.id === mentatOwner}
                         riseOfIx={riseOfIx}
-                        gameState={gameState}
                         onSelect={() =>
                           onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
                         }

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "packs": [
+    {
+      "ref": "custom/my-pack@1",
+      "file": "my-pack.v1.json"
+    }
+  ]
+}

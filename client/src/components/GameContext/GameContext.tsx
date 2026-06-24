@@ -172,7 +172,7 @@ import {
   prepareIlesaSecondTurnCard,
   beginIlesaSetAsideTurn,
 } from '../../data/leaderAbilities/ilesaSetAside'
-import { parkTessiaSnooperOnMilestone } from '../../data/leaderAbilities/tessiaSnoopers'
+import { seedTessiaSnoopers, tryTessiaSnooperClaim } from '../../data/leaderAbilities/tessiaSnoopers'
 import { countSpiceMustFlowCards } from '../../utils/spiceMustFlow'
 import { applySandboxDeckEdit } from '../../utils/sandboxDeckPools'
 import { getOpponentDiscardableCards } from '../../utils/playAreaDisplay'
@@ -916,7 +916,17 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
     case RewardType.INFLUENCE: {
       // chooseFaction rewards are handled via pendingConflictRewardChoices
       const faction = FactionType.EMPEROR
-      newState = updateFactionInfluence(newState, faction, recipientIds[0], reward.amount)
+      const player = newState.players.find(p => p.id === recipientIds[0])
+      if (player) {
+        const applied = applyInfluenceDeltaForPlayer(newState, player, faction, reward.amount, {
+          appendGainsTo: newState.gains,
+        })
+        newState = applied.state
+        newState.players = newState.players.map(p =>
+          p.id === applied.player.id ? applied.player : p
+        )
+        newState = appendTessiaPendingChoices(newState, applied.tessiaChoices)
+      }
       break
     }
     case RewardType.CONTROL:
@@ -1024,6 +1034,60 @@ function syncDeployTurnStats(
     removableDreadnoughts: dreadRemovable,
     dreadnoughtsDeployedToConflict: dreadRemovable,
   }
+}
+
+function appendTessiaPendingChoices(state: GameState, choices: PendingChoice[]): GameState {
+  if (choices.length === 0) return state
+  if (!state.currTurn) return state
+  return {
+    ...state,
+    currTurn: {
+      ...state.currTurn,
+      pendingChoices: [...(state.currTurn.pendingChoices ?? []), ...choices],
+    },
+    canEndTurn: false,
+  }
+}
+
+function applyInfluenceDeltaForPlayer(
+  state: GameState,
+  player: Player,
+  faction: FactionType,
+  delta: number,
+  options?: { appendGainsTo?: Gain[]; milestoneMeta?: InfluenceMilestoneMeta }
+): { state: GameState; player: Player; tessiaChoices: PendingChoice[] } {
+  const previous = state.factionInfluence[faction]?.[player.id] ?? 0
+  let newState = updateFactionInfluence(state, faction, player.id, delta, options)
+  const updated = newState.factionInfluence[faction]?.[player.id] ?? 0
+  const claim = tryTessiaSnooperClaim(
+    newState,
+    player,
+    faction,
+    previous,
+    updated,
+    collectLiveIds(newState),
+    options?.appendGainsTo
+  )
+  if (!claim) {
+    const statePlayer = newState.players.find(p => p.id === player.id)
+    return {
+      state: newState,
+      player: statePlayer
+        ? {
+            ...player,
+            troops: statePlayer.troops,
+            troopSupply: statePlayer.troopSupply,
+            solari: statePlayer.solari,
+            water: statePlayer.water,
+            intrigueCount: statePlayer.intrigueCount,
+            leader: statePlayer.leader,
+            snoopers: statePlayer.snoopers,
+          }
+        : player,
+      tessiaChoices: [],
+    }
+  }
+  return { state: claim.state, player: claim.player, tessiaChoices: claim.pendingChoices }
 }
 
 // Helper function to apply a reward to a player (shared by CLAIM_REWARD and CLAIM_ALL_REWARDS)
@@ -1257,17 +1321,22 @@ function applyConflictChoiceReward(
   if (reward.victoryPoints) { player.victoryPoints += reward.victoryPoints; pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS) }
   if (reward.influence) {
     const milestoneMeta: InfluenceMilestoneMeta = { troopsRecruited: 0 }
+    const tessiaChoices: PendingChoice[] = []
     reward.influence.amounts.forEach(({ faction, amount }) => {
-      newState = updateFactionInfluence(newState, faction, playerId, amount, {
+      const applied = applyInfluenceDeltaForPlayer(newState, player, faction, amount, {
         appendGainsTo: newState.gains,
         milestoneMeta,
       })
+      newState = applied.state
+      player = applied.player
+      tessiaChoices.push(...applied.tessiaChoices)
       pushGain(amount, RewardType.INFLUENCE)
     })
     if (milestoneMeta.troopsRecruited > 0) {
       newState = withRecruitedTroopsDeployLimit(newState, milestoneMeta.troopsRecruited)
     }
     player = mergePlayerAfterFactionInfluence(player, newState, originalPlayer)
+    newState = appendTessiaPendingChoices(newState, tessiaChoices)
   }
 
   newState.players = newState.players.map(p => (p.id === playerId ? player : p))
@@ -1407,20 +1476,22 @@ function applyChoiceReward(
   // Handle influence rewards (resolved amounts only — chooseOne uses follow-up choices)
   if (reward.influence && !reward.influence.chooseOne) {
     const milestoneMeta: InfluenceMilestoneMeta = { troopsRecruited: 0 }
+    const tessiaChoices: PendingChoice[] = []
     reward.influence.amounts.forEach(({ faction, amount }) => {
-      const previous = newState.factionInfluence[faction]?.[playerId] ?? 0
-      newState = updateFactionInfluence(newState, faction, playerId, amount, {
+      const applied = applyInfluenceDeltaForPlayer(newState, player, faction, amount, {
         appendGainsTo: newState.gains,
         milestoneMeta,
       })
-      const updated = newState.factionInfluence[faction]?.[playerId] ?? 0
-      player = parkTessiaSnooperOnMilestone(player, faction, previous, updated)
+      newState = applied.state
+      player = applied.player
+      tessiaChoices.push(...applied.tessiaChoices)
       pushGain(amount, RewardType.INFLUENCE, faction)
     })
     if (milestoneMeta.troopsRecruited > 0) {
       newState = withRecruitedTroopsDeployLimit(newState, milestoneMeta.troopsRecruited)
     }
     player = mergePlayerAfterFactionInfluence(player, newState, originalPlayer)
+    newState = appendTessiaPendingChoices(newState, tessiaChoices)
   }
 
   newState.players = newState.players.map(p => (p.id === playerId ? player : p))
@@ -1538,6 +1609,7 @@ function handleIntrigueEffect(
   const baselinePlayer = { ...updatedPlayers[playerIndex] }
   let updatedPlayer = { ...baselinePlayer }
   const milestoneMeta: InfluenceMilestoneMeta = { troopsRecruited: 0 }
+  const tessiaChoices: PendingChoice[] = []
   const pushGain = (amount: number, type: RewardType, gainName?: string) => {
     newState.gains.push({
       round: state.currentRound,
@@ -1593,9 +1665,13 @@ function handleIntrigueEffect(
     }
     if (reward.influence) {
       reward.influence.amounts.forEach(({ faction, amount }) => {
-        newState = updateFactionInfluence(newState, faction, playerId, amount, {
+        const applied = applyInfluenceDeltaForPlayer(newState, updatedPlayer, faction, amount, {
+          appendGainsTo: newState.gains,
           milestoneMeta,
-        }) as typeof newState
+        })
+        newState = applied.state
+        updatedPlayer = applied.player
+        tessiaChoices.push(...applied.tessiaChoices)
         pushGain(amount, RewardType.INFLUENCE, faction)
       })
     }
@@ -1836,10 +1912,13 @@ function handleIntrigueEffect(
     newState,
     baselinePlayer
   )
-  return {
-    ...newState,
-    players: updatedPlayers
-  }
+  return appendTessiaPendingChoices(
+    {
+      ...newState,
+      players: updatedPlayers,
+    },
+    tessiaChoices
+  )
 }
 
 /** Apply an intrigue card that is being played (or auto-applied at endgame after reveal). */
@@ -2800,21 +2879,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
 
-      const updatedPlayers = state.players.map(p =>
-        p.id === action.playerId
-          ? {
-              ...p,
-              ...action.patch,
-              ...(leaderResourceAdjust ?? {}),
-              deck: action.patch.deck !== undefined ? [...action.patch.deck] : p.deck,
-              discardPile:
-                action.patch.discardPile !== undefined
-                  ? [...action.patch.discardPile]
-                  : p.discardPile,
-              trash: action.patch.trash !== undefined ? [...action.patch.trash] : p.trash,
-            }
-          : p
-      )
+      const leaderChanged =
+        action.patch.leader !== undefined && action.patch.leader.name !== player.leader.name
+
+      const updatedPlayers = state.players.map(p => {
+        if (p.id !== action.playerId) return p
+        let next: Player = {
+          ...p,
+          ...action.patch,
+          ...(leaderResourceAdjust ?? {}),
+          deck: action.patch.deck !== undefined ? [...action.patch.deck] : p.deck,
+          discardPile:
+            action.patch.discardPile !== undefined
+              ? [...action.patch.discardPile]
+              : p.discardPile,
+          trash: action.patch.trash !== undefined ? [...action.patch.trash] : p.trash,
+        }
+        if (leaderChanged) {
+          next = seedTessiaSnoopers(next, state.expansions.riseOfIx)
+        }
+        return next
+      })
 
       let ixBoard = state.ixBoard
       if (action.patch.tech !== undefined) {
@@ -5436,13 +5521,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             )
           )
         } else {
-          const acquireBaselinePlayer = { ...player }
+          const acquireBaselinePlayer = { ...updatedPlayer }
           const milestoneMeta: InfluenceMilestoneMeta = { troopsRecruited: 0 }
           influence.amounts.forEach(({ faction, amount }) => {
-            workingState = updateFactionInfluence(workingState, faction, playerId, amount, {
+            const applied = applyInfluenceDeltaForPlayer(workingState, updatedPlayer, faction, amount, {
               appendGainsTo: updatedGains,
               milestoneMeta,
             })
+            workingState = applied.state
+            updatedPlayer = applied.player
+            pendingAcquireChoices.push(...applied.tessiaChoices)
             updatedGains.push({
               round: state.currentRound,
               playerId,
@@ -6065,6 +6153,35 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ? afterEndgamePlayerAction(resolved)
           : resolved
       }
+
+      if (reward.custom === CustomEffect.TESSIA_SNOOPER_DISCARD_SPICE && state.currTurn) {
+        const newPending = (state.currTurn.pendingChoices || []).filter(c => c.id !== action.choiceId)
+        const tessiaSource: GainAttribution = gainAttribution ?? {
+          type: GainSource.TESSIA_SNOOPER,
+          id: 0,
+          name: 'Tessia snooper',
+        }
+        const cardSelectChoice: CardSelectChoice = {
+          id: mintId(state, tessiaSource, 'DISCARD'),
+          type: ChoiceType.CARD_SELECT,
+          prompt: 'Discard a card to gain 1 spice',
+          piles: [CardPile.HAND],
+          selectionCount: 1,
+          disabled: player.handCount < 1,
+          onResolve: (cardIds: number[]) => ({
+            type: 'CUSTOM_EFFECT',
+            playerId,
+            customEffect: CustomEffect.TESSIA_SNOOPER_DISCARD_RESOLVED,
+            data: { cardIds, gainSource: tessiaSource },
+          }),
+          source: tessiaSource,
+        }
+        return {
+          ...state,
+          currTurn: { ...state.currTurn, pendingChoices: [...newPending, cardSelectChoice] },
+          canEndTurn: false,
+        }
+      }
       
       // Check if this reward has an acquire effect
       if(reward.acquire) {
@@ -6360,6 +6477,61 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             ),
           }
         }
+        case CustomEffect.TESSIA_SNOOPER_DISCARD_RESOLVED: {
+          const cardIds = (data?.cardIds as number[]) ?? []
+          const tessiaPlayer = state.players.find(p => p.id === playerId)
+          if (!tessiaPlayer || cardIds.length === 0) return state
+
+          const tessiaAttribution = data?.gainSource as GainAttribution | undefined
+          const gainSource = tessiaAttribution?.type ?? GainSource.TESSIA_SNOOPER
+          const gainSourceId = tessiaAttribution?.id ?? 0
+          const gainName = tessiaAttribution?.name ?? 'Tessia snooper'
+
+          let deck = [...tessiaPlayer.deck]
+          const discardPile = [...tessiaPlayer.discardPile]
+          for (const id of cardIds) {
+            const idx = deck.findIndex(c => c.id === id)
+            if (idx === -1) return state
+            const [removed] = deck.splice(idx, 1)
+            discardPile.push(removed)
+          }
+
+          return {
+            ...state,
+            gains: [
+              ...state.gains,
+              {
+                round: state.currentRound,
+                playerId,
+                sourceId: gainSourceId,
+                name: `${gainName} discard`,
+                amount: -cardIds.length,
+                type: RewardType.DRAW,
+                source: gainSource,
+              },
+              {
+                round: state.currentRound,
+                playerId,
+                sourceId: gainSourceId,
+                name: gainName,
+                amount: 1,
+                type: RewardType.SPICE,
+                source: gainSource,
+              },
+            ],
+            players: state.players.map(p =>
+              p.id === playerId
+                ? {
+                    ...p,
+                    deck,
+                    discardPile,
+                    handCount: Math.max(0, p.handCount - cardIds.length),
+                    spice: p.spice + 1,
+                  }
+                : p
+            ),
+          }
+        }
         case CustomEffect.ACQUIRE_FOLDSPACE: {
           const player = state.players.find(p => p.id === playerId)
           if (!player || state.foldspaceDeck.length === 0) return state
@@ -6600,7 +6772,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               pendingRewards: resolvePowerPlayOnPendingRewards(state.pendingRewards),
             }
           }
-          return applyPowerPlayBonusAfterInfluenceClaimed(state, playerId)
+          const powerPlayBonus = applyPowerPlayBonusAfterInfluenceClaimed(state, playerId)
+          return appendTessiaPendingChoices(powerPlayBonus.state, powerPlayBonus.pendingChoices)
         }
         case CustomEffect.REVEREND_MOTHER_MOHIAM: {
           const player = state.players.find(p => p.id === playerId)
@@ -6935,18 +7108,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         : reward.reward.influence?.amounts ?? []
       if (influenceAmounts.length > 0) {
         const milestoneMeta: InfluenceMilestoneMeta = { troopsRecruited: 0 }
+        const tessiaChoices: PendingChoice[] = []
         influenceAmounts.forEach(inf => {
           const influenceAmount = reward.powerPlay ? inf.amount + 1 : inf.amount
-          newState = updateFactionInfluence(newState, inf.faction, playerId, influenceAmount, {
+          const applied = applyInfluenceDeltaForPlayer(newState, newPlayer, inf.faction, influenceAmount, {
             appendGainsTo: newGains,
             milestoneMeta,
           })
+          newState = applied.state
+          newPlayer = applied.player
+          tessiaChoices.push(...applied.tessiaChoices)
           newGains.push({ round: newState.currentRound, playerId: playerId, sourceId: reward.source.id, name: inf.faction, amount: influenceAmount, type: RewardType.INFLUENCE, source: reward.source.type })
         })
         if (milestoneMeta.troopsRecruited > 0) {
           newState = withRecruitedTroopsDeployLimit(newState, milestoneMeta.troopsRecruited)
         }
         newPlayer = mergePlayerAfterFactionInfluence(newPlayer, newState, baselinePlayer)
+        newState = appendTessiaPendingChoices(newState, tessiaChoices)
       }
       
       if (reward.reward.troops) {
@@ -7018,6 +7196,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       let newPlayer = { ...player }
       const newGains = [...state.gains]
       const milestoneMeta: InfluenceMilestoneMeta = { troopsRecruited: 0 }
+      const tessiaChoices: PendingChoice[] = []
       
       // Track total troops recruited for troopLimit update
       let totalTroopsRecruited = 0
@@ -7036,10 +7215,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (reward.reward.influence) {
           reward.reward.influence.amounts.forEach(inf => {
             const influenceAmount = reward.powerPlay ? inf.amount + 1 : inf.amount
-            newState = updateFactionInfluence(newState, inf.faction, playerId, influenceAmount, {
+            const applied = applyInfluenceDeltaForPlayer(newState, newPlayer, inf.faction, influenceAmount, {
               appendGainsTo: newGains,
               milestoneMeta,
             })
+            newState = applied.state
+            newPlayer = applied.player
+            tessiaChoices.push(...applied.tessiaChoices)
             newGains.push({ round: newState.currentRound, playerId: playerId, sourceId: reward.source.id, name: inf.faction, amount: influenceAmount, type: RewardType.INFLUENCE, source: reward.source.type })
           })
         }
@@ -7049,6 +7231,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         newState = withRecruitedTroopsDeployLimit(newState, milestoneMeta.troopsRecruited)
       }
       newPlayer = mergePlayerAfterFactionInfluence(newPlayer, newState, baselinePlayer)
+      newState = appendTessiaPendingChoices(newState, tessiaChoices)
       
       if (totalTroopsRecruited > 0) {
         newState = withRecruitedTroopsDeployLimit(newState, totalTroopsRecruited)

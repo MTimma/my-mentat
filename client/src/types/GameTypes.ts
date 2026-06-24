@@ -22,8 +22,10 @@ export class Leader {
   public signetRingTitle?: string
   /** Rise of Ix — marks one of the six RoI leaders. */
   public riseOfIx?: boolean
-  /** Tessia Vernius only — snoopers placed on faction influence tracks at game start. */
+  /** Tessia Vernius only — snoopers parked on the leader mat (per faction). */
   public tessiaSnoopers?: Partial<Record<FactionType, boolean>>
+  /** Tessia Vernius only — next leader-mat reward slot to grant (1–4). */
+  public tessiaSnooperRewardSlot?: number
   /** Viscount Hundro Vernius — once-per-game intrigue peek flag. */
   public hudroPeekUsed?: boolean
 }
@@ -316,6 +318,8 @@ export enum GainSource {
   IX_BOARD = 'ix-board',
   /** Rise of Ix — gain from freighter recall on the Shipping track. */
   SHIPPING_TRACK = 'shipping-track',
+  /** Rise of Ix — Tessia Vernius snooper leader-mat reward. */
+  TESSIA_SNOOPER = 'tessia-snooper',
 }
 
 export interface Card {
@@ -466,10 +470,12 @@ export interface ChoiceOption {
   disabled?: boolean
 }
 
-// Card pile types for card selection
+// Card pile types for card selection UI
 export enum CardPile {
+  /** Rules “from hand”: deck in this app (played cards live in playArea, not deck). */
   HAND = 'HAND',
   DISCARD = 'DISCARD',
+  /** Same as HAND — deck is the selectable draw pile. */
   DECK = 'DECK',
   PLAY_AREA = 'PLAY_AREA'
 }
@@ -827,6 +833,10 @@ export enum CustomEffect {
   TECH_NEGOTIATOR = 'TECH_NEGOTIATOR',
   FREIGHTER_ADVANCE = 'FREIGHTER_ADVANCE',
   FREIGHTER_RECALL = 'FREIGHTER_RECALL',
+  /** Tessia Vernius — optional discard after claiming 1st snooper reward slot. */
+  TESSIA_SNOOPER_DISCARD_SPICE = 'TESSIA_SNOOPER_DISCARD_SPICE',
+  /** Tessia Vernius — resolve discard from CARD_SELECT for snooper reward. */
+  TESSIA_SNOOPER_DISCARD_RESOLVED = 'TESSIA_SNOOPER_DISCARD_RESOLVED',
   DIVIDENDS = 'DIVIDENDS',
   UNLOAD_REVEAL = 'UNLOAD_REVEAL',
   DISCARD_FROM_HAND = 'DISCARD_FROM_HAND',

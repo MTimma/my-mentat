@@ -221,6 +221,8 @@ function abilityTitleForGain(gain: Gain): string | undefined {
       return 'Masterstroke'
     case GainSource.MEMNON_HIGH_COUNCIL:
       return 'Memnon: High Council'
+    case GainSource.TESSIA_SNOOPER:
+      return 'Tessia snooper'
     default:
       return undefined
   }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PlayerColor } from '../../types/GameTypes'
+import { OFFICIAL_BASE_PACK } from '../../gamePacks/constants'
 import { LEADERS } from '../../data/leaders'
 import { STARTING_DECK } from '../../data/cards'
 import { buildSetupBlockFromConfiguration } from '../buildSetupBlock'
@@ -38,9 +39,11 @@ describe('buildSetupBlockFromConfiguration', () => {
       firstPlayer: 0,
       imperiumRowDeck: [],
       currentRound: 3,
+      gamePackId: OFFICIAL_BASE_PACK,
     })
     expect(unmapped).toEqual([])
     expect(setup.currentRound).toBe(3)
+    expect(setup.gamePackId).toBe(OFFICIAL_BASE_PACK)
     expect(setup.players[0].deckCardIds[0]).toMatch(/^starting\//)
     expect(setup.players[0].startingResources?.spice).toBe(2)
 

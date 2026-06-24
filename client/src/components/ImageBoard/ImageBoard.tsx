@@ -44,12 +44,13 @@ import {
   influenceTrackAreaRect,
   SNOOPER_TOKEN_ANCHORS,
   snooperTokenPoint,
+  snooperTokenHeightPercent,
   mentatAvailabilityPoint,
   swordmasterEligibilityPoint,
   stagePoint,
   stageRect,
 } from '../../data/boardMarkerAnchors'
-import { isTessiaLeader } from '../../data/leaderAbilities/tessiaSnoopers'
+import { isTessiaLeader, hasOnTrackSnooper } from '../../data/leaderAbilities/tessiaSnoopers'
 import type { InfluenceBoardMode } from '../../utils/influenceBoardChoice'
 import SellMelangePopup from '../SellMelangePopup/SellMelangePopup'
 import BoardAgentFigure from '../AgentIcon/AgentIcon'
@@ -612,12 +613,13 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
           {/* Tessia Vernius — snooper tokens on influence tracks (RoI only) */}
           {riseOfIx &&
-            playersSorted.flatMap((player, laneIdx) => {
+            playersSorted.flatMap(player => {
               if (!isTessiaLeader(player.leader)) return []
               return FACTIONS.flatMap(faction => {
-                if (!player.snoopers?.[faction]) return []
-                const inner = snooperTokenPoint(faction, laneIdx, INFLUENCE_TRACKS)
+                if (!hasOnTrackSnooper(player, faction)) return []
+                const inner = snooperTokenPoint(faction, INFLUENCE_TRACKS)
                 const st = stagePoint(inner.x, inner.y)
+                const tokenHeight = snooperTokenHeightPercent(faction, INFLUENCE_TRACKS)
                 return (
                   <div
                     key={`snooper-${player.id}-${faction}`}
@@ -628,10 +630,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                     style={{
                       left: `${st.x}%`,
                       top: `${st.y}%`,
+                      ['--snooper-token-height' as string]: `${tokenHeight}%`,
                     }}
                     title={`Snooper on ${faction} (${player.leader.name})`}
                   >
-                    <img src="/icon/snooper.svg" alt="" aria-hidden="true" />
+                    <img src="/icon/snooper.png" alt="" aria-hidden="true" />
                   </div>
                 )
               })
@@ -1092,21 +1095,18 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   />
                 )
               })}
-              {SNOOPER_TOKEN_ANCHORS.flatMap(anchor =>
-                INFLUENCE_TRACKS[anchor.faction].laneCenterX.map((cx, li) => {
-                  const tr = INFLUENCE_TRACKS[anchor.faction]
-                  const cy = tr.baselineY + tr.stepY * anchor.step
-                  const st = stagePoint(cx, cy)
-                  return (
-                    <div
-                      key={`db-snooper-${anchor.faction}-${li}`}
-                      className="image-board__marker-debug-dot image-board__marker-debug-dot--snooper"
-                      data-faction={anchor.faction}
-                      style={{ left: `${st.x}%`, top: `${st.y}%` }}
-                    />
-                  )
-                })
-              )}
+              {SNOOPER_TOKEN_ANCHORS.map(anchor => {
+                const inner = snooperTokenPoint(anchor.faction, INFLUENCE_TRACKS)
+                const st = stagePoint(inner.x, inner.y)
+                return (
+                  <div
+                    key={`db-snooper-${anchor.faction}`}
+                    className="image-board__marker-debug-dot image-board__marker-debug-dot--snooper"
+                    data-faction={anchor.faction}
+                    style={{ left: `${st.x}%`, top: `${st.y}%` }}
+                  />
+                )
+              })}
               {(Object.keys(CONTROL_MARKER_POINTS) as ControlMarkerType[]).map(key => {
                 const pt = CONTROL_MARKER_POINTS[key]
                 const st = stagePoint(pt.x, pt.y)

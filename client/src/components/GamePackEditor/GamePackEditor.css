@@ -1,0 +1,123 @@
+.game-pack-editor-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.game-pack-editor {
+  width: min(720px, 100%);
+  max-height: min(90dvh, 900px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #2a1810;
+  border: 1px solid rgba(244, 228, 188, 0.35);
+  border-radius: 10px;
+  padding: 16px;
+  color: #f4e4bc;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.game-pack-editor__header h2 {
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+}
+
+.game-pack-editor__subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.game-pack-editor__help {
+  font-size: 0.82rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.game-pack-editor__help ul {
+  margin: 6px 0 0;
+  padding-left: 1.2rem;
+}
+
+.game-pack-editor__json {
+  flex: 1;
+  min-height: 280px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(244, 228, 188, 0.25);
+  background: #1a1008;
+  color: #f8f0dc;
+  resize: vertical;
+}
+
+.game-pack-editor__error {
+  margin: 0;
+  color: #ffb4b4;
+  font-size: 0.9rem;
+}
+
+.game-pack-editor__status {
+  margin: 0;
+  color: #b8f0c8;
+  font-size: 0.85rem;
+}
+
+.game-pack-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.game-pack-editor__btn {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.game-pack-editor__btn--secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f4e4bc;
+}
+
+.game-pack-editor__btn--primary {
+  background: #c9a227;
+  color: #1a1008;
+}
+
+.game-pack-editor__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.setup-game-pack-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 4px 0;
+}
+
+.setup-game-pack-create-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(244, 228, 188, 0.35);
+  color: #f4e4bc;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.setup-game-pack-create-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}

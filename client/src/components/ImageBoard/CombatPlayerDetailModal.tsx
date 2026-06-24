@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { FactionType, GameState, Player } from '../../types/GameTypes'
 import { getLeaderImage } from '../../data/leaders'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
+import TessiaLeaderOverlays from '../TessiaLeaderOverlays/TessiaLeaderOverlays'
 import PlayerPlayAreaModal from '../PlayerPlayAreaModal/PlayerPlayAreaModal'
 import PlayerTechTiles from '../PlayerTechTiles/PlayerTechTiles'
 import './CombatPlayerDetailModal.css'
@@ -100,12 +101,15 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
           <div className="combat-player-detail-body">
             {leaderImage ? (
               <div className="combat-player-detail-leader">
-                <img
-                  src={leaderImage}
-                  alt={player.leader.name}
-                  className="combat-player-detail-leader-img"
-                  draggable={false}
-                />
+                <div className="combat-player-detail-leader-frame">
+                  <img
+                    src={leaderImage}
+                    alt={player.leader.name}
+                    className="combat-player-detail-leader-img"
+                    draggable={false}
+                  />
+                  <TessiaLeaderOverlays leader={player.leader} />
+                </div>
               </div>
             ) : null}
 

@@ -21,6 +21,7 @@
   --z-modal-overlay: 1250;
   --z-modal-overlay-raised: 1300;
   --z-modal-overlay-top: 1320;
+  --z-leader-select-menu: 1400;
 }
 
 #root {
@@ -1499,8 +1500,7 @@ body:has(.game-container--play) {
 
 .game-name-input,
 .player-count-select,
-.color-select,
-.leader-select {
+.color-select {
   width: 100%;
   max-width: 100%;
   padding: 0.35rem 0.45rem;
@@ -1523,14 +1523,20 @@ body:has(.game-container--play) {
 
 .player-setup-row {
   display: grid;
-  grid-template-columns: auto minmax(4.5rem, 0.34fr) minmax(0, 1fr);
+  grid-template-columns: auto minmax(4.5rem, 0.34fr) auto;
   gap: 0.35rem;
   align-items: center;
+  justify-content: start;
   background-color: white;
   padding: 0.3rem 0.4rem;
   border-radius: 6px;
   min-width: 0;
   box-sizing: border-box;
+}
+
+.player-setup-row--leader-menu-open {
+  position: relative;
+  z-index: 3;
 }
 
 .player-setup-label {

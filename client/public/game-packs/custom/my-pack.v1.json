@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "custom/my-pack",
+  "version": 1,
+  "label": "My custom pack",
+  "catalogVersion": 1,
+  "extends": "official/base+riseOfIx@1",
+  "structure": {
+    "expansions": {
+      "riseOfIx": true,
+      "riseOfIxEpic": false
+    },
+    "playerMode": "standard"
+  },
+  "overrides": {
+    "effects": {},
+    "cards": {},
+    "boardSpaces": {},
+    "intrigue": {},
+    "conflicts": {}
+  },
+  "additions": {
+    "cards": [],
+    "intrigue": [],
+    "deckPatches": {
+      "starting": {
+        "append": [
+          "starting/power-play",
+          "starting/power-play",
+          "starting/power-play"
+        ]
+      }
+    }
+  }
+}

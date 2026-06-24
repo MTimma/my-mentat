@@ -74,34 +74,33 @@
 
 .sandbox-player-editor__leader-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
 }
 
-.sandbox-player-editor__leader-img {
-  width: 72px;
-  border-radius: 6px;
-  flex-shrink: 0;
+.sandbox-player-editor__leader-row--menu-open {
+  position: relative;
+  z-index: 3;
 }
 
-.sandbox-player-editor__leader-select {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.sandbox-player-editor__pile-actions {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.sandbox-player-editor__leader-select select {
-  width: 100%;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 248, 232, 0.25);
-  background: rgba(0, 0, 0, 0.4);
-  color: #fff8e8;
-  font-size: 0.85rem;
+.sandbox-player-editor__pile-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.sandbox-player-editor__pile-count {
+  font-size: 0.78rem;
+  color: rgba(255, 248, 232, 0.72);
+  line-height: 1.25;
 }
 
 .sandbox-player-editor__control-row {
@@ -217,25 +216,17 @@
   height: 21px;
 }
 
-.sandbox-player-editor__deck-row {
-  font-size: 0.85rem;
-}
-
-.sandbox-player-editor__deck-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 .sandbox-player-editor__deck-button {
-  padding: 7px 14px;
+  width: 100%;
+  padding: 7px 10px;
   border-radius: 6px;
   border: 1px solid rgba(255, 215, 0, 0.55);
   background: transparent;
   color: #ffd700;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
+  text-align: center;
 }
 
 .sandbox-player-editor__deck-button:hover:not(:disabled) {

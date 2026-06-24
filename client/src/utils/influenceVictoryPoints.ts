@@ -95,11 +95,29 @@ export interface UpdateFactionInfluenceOptions {
   appendGainsTo?: Gain[]
   /** When provided, incremented when milestone troops are granted (for deploy-limit updates). */
   milestoneMeta?: InfluenceMilestoneMeta
+  /** Override gain attribution (e.g. Tessia snooper rewards). */
+  gainSource?: GainSource
+  gainSourceId?: number
 }
 
 /**
  * Merges milestone resources applied inside updateFactionInfluence into a caller's local player copy.
  */
+function mergeMilestoneResource(
+  localValue: number,
+  stateValue: number,
+  baselineValue: number
+): number {
+  const stateDelta = stateValue - baselineValue
+  const localDelta = localValue - baselineValue
+  // Local spends (e.g. intrigue costs) are applied only on the working copy until commit.
+  if (localDelta < 0 && stateDelta <= 0) {
+    return localValue
+  }
+  const localOnlyDelta = Math.max(0, localDelta - stateDelta)
+  return baselineValue + stateDelta + localOnlyDelta
+}
+
 export function mergePlayerAfterFactionInfluence(
   localPlayer: Player,
   stateAfterInfluence: GameState,
@@ -110,14 +128,124 @@ export function mergePlayerAfterFactionInfluence(
 
   return {
     ...localPlayer,
-    troops: localPlayer.troops + (statePlayer.troops - baselinePlayer.troops),
-    troopSupply:
-      (localPlayer.troopSupply ?? 0) +
-      ((statePlayer.troopSupply ?? 0) - (baselinePlayer.troopSupply ?? 0)),
-    solari: localPlayer.solari + (statePlayer.solari - baselinePlayer.solari),
-    water: localPlayer.water + (statePlayer.water - baselinePlayer.water),
-    intrigueCount:
-      localPlayer.intrigueCount + (statePlayer.intrigueCount - baselinePlayer.intrigueCount),
+    troops: mergeMilestoneResource(
+      localPlayer.troops,
+      statePlayer.troops,
+      baselinePlayer.troops
+    ),
+    troopSupply: mergeMilestoneResource(
+      localPlayer.troopSupply ?? 0,
+      statePlayer.troopSupply ?? 0,
+      baselinePlayer.troopSupply ?? 0
+    ),
+    solari: mergeMilestoneResource(
+      localPlayer.solari,
+      statePlayer.solari,
+      baselinePlayer.solari
+    ),
+    water: mergeMilestoneResource(
+      localPlayer.water,
+      statePlayer.water,
+      baselinePlayer.water
+    ),
+    intrigueCount: mergeMilestoneResource(
+      localPlayer.intrigueCount,
+      statePlayer.intrigueCount,
+      baselinePlayer.intrigueCount
+    ),
+    leader: statePlayer.leader,
+    snoopers: statePlayer.snoopers,
+  }
+}
+
+/** Grant the printed 4th-influence resource bonus without requiring 4 influence on the track. */
+export function applyFourthInfluenceBonusReward(
+  state: GameState,
+  playerId: number,
+  faction: FactionType,
+  options?: {
+    appendGainsTo?: Gain[]
+    milestoneMeta?: InfluenceMilestoneMeta
+    gainName?: string
+    gainSource?: GainSource
+    gainSourceId?: number
+  }
+): GameState {
+  const milestone = FOURTH_INFLUENCE_MILESTONE_REWARDS[faction]
+  const milestoneLabel = options?.gainName ?? `${faction} 4th Influence bonus`
+  const gainSource = options?.gainSource ?? GainSource.FIELD
+  const gainSourceId = options?.gainSourceId ?? 0
+  const milestoneGains: Gain[] = []
+
+  if (milestone.troops) {
+    milestoneGains.push({
+      playerId,
+      source: gainSource,
+      sourceId: gainSourceId,
+      round: state.currentRound,
+      name: milestoneLabel,
+      amount: milestone.troops,
+      type: RewardType.TROOPS,
+    })
+    if (options?.milestoneMeta) {
+      options.milestoneMeta.troopsRecruited += milestone.troops
+    }
+  }
+  if (milestone.solari) {
+    milestoneGains.push({
+      playerId,
+      source: gainSource,
+      sourceId: gainSourceId,
+      round: state.currentRound,
+      name: milestoneLabel,
+      amount: milestone.solari,
+      type: RewardType.SOLARI,
+    })
+  }
+  if (milestone.intrigueCards) {
+    milestoneGains.push({
+      playerId,
+      source: gainSource,
+      sourceId: gainSourceId,
+      round: state.currentRound,
+      name: milestoneLabel,
+      amount: milestone.intrigueCards,
+      type: RewardType.INTRIGUE,
+    })
+  }
+  if (milestone.water) {
+    milestoneGains.push({
+      playerId,
+      source: gainSource,
+      sourceId: gainSourceId,
+      round: state.currentRound,
+      name: milestoneLabel,
+      amount: milestone.water,
+      type: RewardType.WATER,
+    })
+  }
+
+  const updatedPlayers = state.players.map((p) => {
+    if (p.id !== playerId) return p
+    const recruited = milestone.troops
+      ? recruitTroopsToGarrison(p, milestone.troops)
+      : { player: p, recruited: 0 }
+    return {
+      ...recruited.player,
+      solari: p.solari + (milestone.solari ?? 0),
+      water: p.water + (milestone.water ?? 0),
+      intrigueCount: p.intrigueCount + (milestone.intrigueCards ?? 0),
+    }
+  })
+
+  if (options?.appendGainsTo) {
+    options.appendGainsTo.push(...milestoneGains)
+  }
+
+  return {
+    ...state,
+    players: updatedPlayers,
+    gains: options?.appendGainsTo ?? [...(state.gains ?? []), ...milestoneGains],
   }
 }
 

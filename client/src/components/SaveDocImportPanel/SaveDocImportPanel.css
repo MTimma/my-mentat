@@ -46,6 +46,10 @@
   display: none;
 }
 
+.save-doc-import--file {
+  gap: 0.35rem;
+}
+
 .save-doc-import-error {
   margin: 0;
   font-size: 0.8rem;

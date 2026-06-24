@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { GainSource, RewardType, TurnType } from '../../types/GameTypes'
+import { FactionType, GainSource, RewardType, TurnType } from '../../types/GameTypes'
 import {
   groupGainsBySource,
   groupGainsForDisplay,
   INLINE_DISCARDS_GROUP_KEY,
   splitGainsByCostAndReward,
   aggregateResourceGains,
+  aggregateInfluenceGains,
   computeTurnGainTotals,
   getGainsForTurnState,
   getOtherPlayersGainsForTurnState,
@@ -90,6 +91,74 @@ describe('turnGainsDisplay', () => {
     const { costs, rewards } = splitGainsByCostAndReward(groups[0].gains)
     expect(aggregateResourceGains(costs)[0]).toMatchObject({ type: RewardType.SOLARI, amount: 1 })
     expect(aggregateResourceGains(rewards)[0]).toMatchObject({ type: RewardType.INTRIGUE, amount: 1 })
+  })
+
+  it('groups Tessia snooper spice separately from 2nd-influence VP', () => {
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.FIELD,
+        sourceId: 0,
+        round: 1,
+        name: 'emperor 2nd Influence',
+        amount: 1,
+        type: RewardType.VICTORY_POINTS,
+      },
+      {
+        playerId: 0,
+        source: GainSource.TESSIA_SNOOPER,
+        sourceId: 1,
+        round: 1,
+        name: 'Tessia snooper (emperor)',
+        amount: 1,
+        type: RewardType.SPICE,
+      },
+    ]
+
+    const groups = groupGainsBySource(gains)
+    expect(groups).toHaveLength(2)
+    expect(groups[0].title).toBe('emperor 2nd Influence')
+    expect(groups[1].title).toBe('Tessia snooper')
+  })
+
+  it('groups Tessia snooper influence bump with faction milestone under Tessia snooper', () => {
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.FIELD,
+        sourceId: 0,
+        round: 1,
+        name: 'fremen 2nd Influence',
+        amount: 1,
+        type: RewardType.VICTORY_POINTS,
+      },
+      {
+        playerId: 0,
+        source: GainSource.TESSIA_SNOOPER,
+        sourceId: 4,
+        round: 1,
+        name: 'Tessia snooper (fremen)',
+        amount: 1,
+        type: RewardType.WATER,
+      },
+      {
+        playerId: 0,
+        source: GainSource.TESSIA_SNOOPER,
+        sourceId: 4,
+        round: 1,
+        name: FactionType.FREMEN,
+        amount: 1,
+        type: RewardType.INFLUENCE,
+      },
+    ]
+
+    const groups = groupGainsBySource(gains)
+    expect(groups).toHaveLength(2)
+    expect(groups[0].title).toBe('fremen 2nd Influence')
+    expect(groups[1].title).toBe('Tessia snooper')
+    expect(aggregateInfluenceGains(groups[1].gains)).toEqual([
+      { name: FactionType.FREMEN, amount: 1 },
+    ])
   })
 
   it('groups mandatory board-space rewards under the space name (Foldspace card + influence)', () => {

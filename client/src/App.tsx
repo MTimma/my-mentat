@@ -11,7 +11,7 @@ import { useGame } from './components/GameContext/GameContext'
 import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType, Expansions, NO_EXPANSIONS } from './types/GameTypes'
+import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
 import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
 import TurnControls from './components/TurnControls/TurnControls'
 import PlayFooterToolbar from './components/PlayFooterToolbar/PlayFooterToolbar'
@@ -60,6 +60,9 @@ import { getEndTurnButtonState } from './utils/endTurnState'
 import { buildSetupBlockFromConfiguration } from './save/buildSetupBlock'
 import { createGameInputDoc } from './save/createGameInput'
 import type { SaveDoc } from './save/types'
+import { GAME_PACK_STORAGE_KEY } from './gamePacks/constants'
+import { loadStoredGamePackId } from './gamePacks/inferGamePack'
+import { expansionsForGamePack } from './gamePacks/resolveGamePack'
 import {
   getInfluenceBoardChoiceMeta,
   getInfluenceBoardPrompt,
@@ -2058,7 +2061,7 @@ function buildGameInputFromConfiguration(
     currentRound?: number
     sandbox?: boolean
     title?: string
-    expansions?: Expansions
+    gamePackId: string
   }
 ): SaveDoc {
   const { setup, unmapped } = buildSetupBlockFromConfiguration({
@@ -2067,7 +2070,7 @@ function buildGameInputFromConfiguration(
     imperiumRowDeck,
     currentRound: options.currentRound,
     sandbox: options.sandbox,
-    expansions: options.expansions,
+    gamePackId: options.gamePackId,
   })
   return createGameInputDoc(setup, {
     title: options.title ?? (options.sandbox ? 'Sandbox game' : 'New game'),
@@ -2082,10 +2085,8 @@ function App() {
   const [autoApplyMandatoryRewards, setAutoApplyMandatoryRewards] = useState(() => {
     return localStorage.getItem('myMentat.autoApplyMandatoryRewards') !== 'false'
   })
-  const [expansions, setExpansions] = useState<Expansions>(() => {
-    const raw = localStorage.getItem('myMentat.riseOfIx')
-    return { ...NO_EXPANSIONS, riseOfIx: raw === 'true' }
-  })
+  const [gamePackId, setGamePackId] = useState<string>(() => loadStoredGamePackId())
+  const expansions = useMemo(() => expansionsForGamePack(gamePackId), [gamePackId])
   const [creatorReturnScreen, setCreatorReturnScreen] = useState<ScreenState>(ScreenState.SETUP)
   const [playerSetups, setPlayerSetups] = useState<PlayerSetup[]>([])
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
@@ -2093,8 +2094,10 @@ function App() {
   const [gameSessionKey, setGameSessionKey] = useState(0)
 
   const handleLoadSaveDoc = useCallback((doc: SaveDoc) => {
-    if (doc.setup.expansions) {
-      setExpansions(doc.setup.expansions)
+    if (doc.setup.gamePackId) {
+      setGamePackId(doc.setup.gamePackId)
+    } else if (doc.setup.expansions) {
+      setGamePackId(doc.setup.expansions.riseOfIx ? 'official/base+riseOfIx@1' : 'official/base@1')
     }
     setGameInput(doc)
     setGameSessionKey(k => k + 1)
@@ -2106,8 +2109,8 @@ function App() {
   }, [autoApplyMandatoryRewards])
 
   useEffect(() => {
-    localStorage.setItem('myMentat.riseOfIx', expansions.riseOfIx ? 'true' : 'false')
-  }, [expansions.riseOfIx])
+    localStorage.setItem(GAME_PACK_STORAGE_KEY, gamePackId)
+  }, [gamePackId])
 
   // iOS Safari: fixed bottom UIs anchor to the layout viewport, which extends below the visible
   // area when chrome shows. Shift up by this gap so turn controls/modals align with VisualViewport bottom.
@@ -2145,8 +2148,8 @@ function App() {
     }
   }, [])
 
-  const handleSetupComplete = (setups: PlayerSetup[], setupExpansions: Expansions) => {
-    setExpansions(setupExpansions)
+  const handleSetupComplete = (setups: PlayerSetup[], selectedGamePackId: string) => {
+    setGamePackId(selectedGamePackId)
     setPlayerSetups(setups)
     if (setups.every(s => !s.leader.sogChoice)) {
       setScreenState(ScreenState.GAME_STATE_SETUP)
@@ -2157,8 +2160,9 @@ function App() {
   }
 
   // Sandbox: skip leader choices and game-state setup; configure everything on the board.
-  const handleSandboxStart = (setups: PlayerSetup[], setupExpansions: Expansions) => {
-    setExpansions(setupExpansions)
+  const handleSandboxStart = (setups: PlayerSetup[], selectedGamePackId: string) => {
+    setGamePackId(selectedGamePackId)
+    const setupExpansions = expansionsForGamePack(selectedGamePackId)
     setPlayerSetups(setups)
     const imperiumDeck = applyStarterDeckReservationToImperium(
       buildImperiumDeck(setupExpansions),
@@ -2197,7 +2201,7 @@ function App() {
         firstPlayer: resolveFirstPlayer(setups),
         sandbox: true,
         title: 'Sandbox game',
-        expansions: setupExpansions,
+        gamePackId: selectedGamePackId,
       })
     )
     setScreenState(ScreenState.GAME)
@@ -2223,7 +2227,7 @@ function App() {
         firstPlayer: resolveFirstPlayer(playerSetups),
         currentRound: state.currentRound,
         title: 'New game',
-        expansions,
+        gamePackId,
       })
     )
     setScreenState(ScreenState.GAME)
@@ -2263,8 +2267,8 @@ function App() {
     <div className="app">
       {screenState === ScreenState.SETUP && (
         <GameSetup
-          expansions={expansions}
-          onExpansionsChange={setExpansions}
+          gamePackId={gamePackId}
+          onGamePackChange={setGamePackId}
           onComplete={handleSetupComplete}
           onSandbox={handleSandboxStart}
           onLoadSave={handleLoadSaveDoc}
@@ -2281,7 +2285,7 @@ function App() {
         <GameStateSetup 
           playerSetups={playerSetups}
           firstPlayer={firstPlayerId}
-          expansions={expansions}
+          gamePackId={gamePackId}
           onComplete={handleGameStateSetupComplete}
           onOpenCardCreator={handleOpenCardCreator}
           autoApplyMandatoryRewards={autoApplyMandatoryRewards}

@@ -31,7 +31,9 @@ source of truth; everything else is derived or cached.
     "imperiumRowCardIds": [2001, 2002, 2003, 2004, 2005],
     "imperiumRowDeckCardIds": [...],     // optional; omitted = full default pool
     "initialConflictId": 7,
-    "expansions": []                     // future: ["rise-of-ix"]
+    "gamePackId": "official/base+riseOfIx@1",  // canonical pack ref (see 07-game-packs.md)
+    "catalogVersion": 1,                 // optional; default from pack
+    "expansions": { "riseOfIx": true }   // legacy; derived from gamePackId when omitted
   },
 
   "events": [ ... ],                     // trunk — append-only, never rewritten

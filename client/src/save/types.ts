@@ -41,6 +41,10 @@ export interface PlayerSetupBlock {
 export interface SetupBlock {
   firstPlayer: number
   players: PlayerSetupBlock[]
+  /** Canonical game pack ref (e.g. official/base+riseOfIx@1). Required for new games. */
+  gamePackId?: string
+  /** Catalog dataset version; default from game pack when omitted. */
+  catalogVersion?: number
   /** Starting round when not 1 (game-creation UI). */
   currentRound?: number
   /** Catalog card ids for the initial imperium row (length 5); optional. */
@@ -51,7 +55,10 @@ export interface SetupBlock {
   initialConflictId?: number
   /** Sandbox games start in setup mode (SANDBOX_* events configure the board). */
   sandbox?: boolean
-  /** Expansion flags locked at game creation. */
+  /**
+   * Expansion flags — derived from gamePackId at hydrate time for new games.
+   * Legacy saves may only have this field; infer gamePackId on load.
+   */
   expansions?: Expansions
 }
 

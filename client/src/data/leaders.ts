@@ -54,6 +54,11 @@ export const LEADER_ICON_SLUGS: Record<string, string> = {
   [LEADER_NAMES.TESSIA_VERNIUS]: 'tessia-vernius',
 }
 export const getLeaderIconPath = (leaderName: string): string | undefined => {
+  const portraitPath = LEADER_IMAGES[leaderName]
+  if (portraitPath?.startsWith('/leaders/rise_of_ix/')) {
+    const basename = portraitPath.slice('/leaders/rise_of_ix/'.length)
+    return basename ? `/leaders/rise_of_ix/icons/${basename}` : undefined
+  }
   const slug = LEADER_ICON_SLUGS[leaderName]
   return slug ? `/leaders/icons/${slug}-head.png` : undefined
 }

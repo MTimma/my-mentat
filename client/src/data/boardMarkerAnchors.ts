@@ -24,6 +24,7 @@ export { conflictCardImageSrc, CONFLICT_CARD_IMAGE_FILE } from './conflictCardIm
 export {
   SNOOPER_TOKEN_ANCHORS,
   snooperTokenPoint,
+  snooperTokenHeightPercent,
   TESSIA_PARKED_SNOOPER_SLOTS,
 } from './leaderAbilities/tessiaSnoopers'
 export {

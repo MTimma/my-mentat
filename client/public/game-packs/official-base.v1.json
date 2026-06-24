@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "official/base",
+  "version": 1,
+  "label": "Base game",
+  "catalogVersion": 1,
+  "extends": null,
+  "structure": {
+    "expansions": {
+      "riseOfIx": false,
+      "riseOfIxEpic": false
+    },
+    "playerMode": "standard"
+  },
+  "overrides": {
+    "effects": {},
+    "cards": {},
+    "boardSpaces": {},
+    "intrigue": {},
+    "conflicts": {}
+  },
+  "additions": {
+    "cards": [],
+    "intrigue": [],
+    "deckPatches": {}
+  }
+}

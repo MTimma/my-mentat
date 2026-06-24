@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { AgentIcon, TurnType, type Card, type GameState, type Player } from '../../types/GameTypes'
-import { getOpponentDiscardableCards, getPlayAreaCardsForTurnView } from '../playAreaDisplay'
+import { getOpponentDiscardableCards, getPlayAreaCardsForTurnView, getSelectableDeckCards } from '../playAreaDisplay'
 
 function stubCard(id: number, name = `card-${id}`): Card {
   return { id, name, image: '', agentIcons: [AgentIcon.CITY] }
@@ -48,17 +48,22 @@ describe('playAreaDisplay', () => {
     expect(getPlayAreaCardsForTurnView(gameState, player)).toEqual([])
   })
 
-  it('getOpponentDiscardableCards returns entire deck minus cards in play', () => {
-    const hand = [stubCard(1), stubCard(2)]
-    const draw = [stubCard(3), stubCard(4)]
-    const inPlay = stubCard(5)
+  it('getSelectableDeckCards returns the full deck regardless of handCount', () => {
     const player = stubPlayer({
-      deck: [...hand, ...draw],
+      deck: [stubCard(1), stubCard(2), stubCard(3), stubCard(4), stubCard(5)],
       handCount: 2,
-      playArea: [inPlay],
+      playArea: [],
+    })
+    expect(getSelectableDeckCards(player).map(c => c.id)).toEqual([1, 2, 3, 4, 5])
+  })
+
+  it('getOpponentDiscardableCards returns the opponent deck', () => {
+    const player = stubPlayer({
+      deck: [stubCard(1), stubCard(2), stubCard(3), stubCard(4)],
+      handCount: 2,
+      playArea: [stubCard(5)],
     })
 
-    const discardable = getOpponentDiscardableCards(player)
-    expect(discardable.map(c => c.id)).toEqual([1, 2, 3, 4])
+    expect(getOpponentDiscardableCards(player).map(c => c.id)).toEqual([1, 2, 3, 4])
   })
 })

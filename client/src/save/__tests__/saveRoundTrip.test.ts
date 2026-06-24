@@ -12,6 +12,7 @@ import {
   replaySaveDoc,
 } from '../replay'
 import type { SaveDoc, SetupBlock } from '../types'
+import { OFFICIAL_BASE_PACK } from '../../gamePacks/constants'
 
 const STARTING_DECK_IDS = [
   'starting/the-voice',
@@ -29,6 +30,7 @@ const STARTING_DECK_IDS = [
 function makeSetup(overrides: Partial<SetupBlock> = {}): SetupBlock {
   return {
     firstPlayer: 0,
+    gamePackId: OFFICIAL_BASE_PACK,
     players: [
       { id: 0, leaderId: 'paul', color: PlayerColor.RED, deckCardIds: STARTING_DECK_IDS },
       { id: 1, leaderId: 'ilban', color: PlayerColor.BLUE, deckCardIds: STARTING_DECK_IDS },

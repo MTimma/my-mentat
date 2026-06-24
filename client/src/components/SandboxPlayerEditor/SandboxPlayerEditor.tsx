@@ -1,8 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Card, ControlMarkerType, Expansions, FactionType, Player } from '../../types/GameTypes'
 import { applyLeaderStartingResourceDelta } from '../../data/leaderAbilities/beastSetup'
-import { isTessiaLeader } from '../../data/leaderAbilities/tessiaSnoopers'
-import { getLeaderPool, getLeaderImage } from '../../data/leaders'
+import {
+  isTessiaLeader,
+  hasOnTrackSnooper,
+  recalculateTessiaSnooperRewardSlot,
+  seedTessiaSnoopers,
+} from '../../data/leaderAbilities/tessiaSnoopers'
+import { getLeaderPool } from '../../data/leaders'
+import LeaderSelect from '../LeaderSelect/LeaderSelect'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { defaultDreadnoughtsForExpansions } from '../../utils/dreadnoughts'
 import { seedTroopSupply } from '../../utils/troops'
@@ -153,10 +159,13 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
     setDreadnoughtGarrisonDraft(player.dreadnoughts?.garrison ?? 0)
   }, [player.id, player.dreadnoughts?.garrison])
 
-  const availableLeaders = useMemo(
-    () => getLeaderPool(expansions).filter(leader => !usedLeaderNames.includes(leader.name)),
-    [expansions, usedLeaderNames]
-  )
+  const availableLeaders = useMemo(() => {
+    const pool = getLeaderPool(expansions).filter(
+      leader => !usedLeaderNames.includes(leader.name)
+    )
+    if (pool.some(leader => leader.name === player.leader.name)) return pool
+    return [player.leader, ...pool]
+  }, [expansions, usedLeaderNames, player.leader])
 
   const deckEditorCards = useMemo(
     () =>
@@ -229,15 +238,14 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
 
   if (waitForBoardTarget) return null
 
-  const leaderImage = getLeaderImage(player.leader.name)
-
-  const handleLeaderChange = (leaderName: string) => {
-    const leader = getLeaderPool(expansions).find(l => l.name === leaderName)
-    if (!leader || leader.name === player.leader.name) return
+  const handleLeaderChange = (leader: typeof player.leader) => {
+    if (leader.name === player.leader.name) return
 
     const { spice, solari } = applyLeaderStartingResourceDelta(player, leader)
     setNumericDraft(prev => ({ ...prev, spice, solari }))
-    onUpdate({ leader, spice, solari })
+    onUpdate(
+      seedTessiaSnoopers({ ...player, leader, spice, solari }, expansions.riseOfIx)
+    )
   }
 
   const commitNumericDraft = (keys?: NumericKey[]) => {
@@ -381,27 +389,56 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
 
         <div className="sandbox-player-editor__body">
           <div className="sandbox-player-editor__leader-row">
-            {leaderImage ? (
-              <img
-                src={leaderImage}
-                alt={player.leader.name}
-                className="sandbox-player-editor__leader-img"
-                draggable={false}
-              />
-            ) : null}
-            <label className="sandbox-player-editor__leader-select">
-              <span>Leader</span>
-              <select
-                value={player.leader.name}
-                onChange={e => handleLeaderChange(e.target.value)}
-              >
-                {availableLeaders.map(leader => (
-                  <option key={leader.name} value={leader.name}>
-                    {leader.name} ({leader.ability.name})
-                  </option>
-                ))}
-              </select>
-            </label>
+            <LeaderSelect
+              leaders={availableLeaders}
+              value={player.leader}
+              onChange={handleLeaderChange}
+              ariaLabel="Leader"
+              variant="sandbox"
+            />
+            <div className="sandbox-player-editor__pile-actions">
+              <div className="sandbox-player-editor__pile-buttons">
+                <button
+                  type="button"
+                  className="sandbox-player-editor__deck-button"
+                  onClick={() => openPileEditor('deck')}
+                >
+                  Edit deck
+                </button>
+                <button
+                  type="button"
+                  className="sandbox-player-editor__deck-button"
+                  onClick={() => openPileEditor('discard')}
+                  disabled={discardEditorPool.length === 0}
+                >
+                  Edit discard
+                </button>
+                <button
+                  type="button"
+                  className="sandbox-player-editor__deck-button"
+                  onClick={() => openPileEditor('trash')}
+                  disabled={trashEditorPool.length === 0}
+                >
+                  Edit trash
+                </button>
+                {expansions.riseOfIx ? (
+                  <button
+                    type="button"
+                    className="sandbox-player-editor__deck-button"
+                    onClick={() => setTechEditorOpen(true)}
+                  >
+                    Edit tech
+                  </button>
+                ) : null}
+              </div>
+              <span className="sandbox-player-editor__pile-count">
+                {player.deck.length} deck · {player.discardPile.length} discard ·{' '}
+                {player.trash.length} trash
+                {expansions.riseOfIx
+                  ? ` · ${player.tech?.length ?? 0} tech tile${(player.tech?.length ?? 0) === 1 ? '' : 's'}`
+                  : ''}
+              </span>
+            </div>
           </div>
 
           <div className="sandbox-player-editor__control-row">
@@ -531,24 +568,24 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                   <label key={`snooper-${field.faction}`} className="sandbox-player-editor__snooper-toggle">
                     <input
                       type="checkbox"
-                      checked={Boolean(player.snoopers?.[field.faction])}
+                      checked={hasOnTrackSnooper(player, field.faction)}
                       onChange={event => {
                         const onTrack = event.target.checked
-                        onUpdate({
-                          snoopers: { ...player.snoopers, [field.faction]: onTrack },
-                          leader: {
-                            ...player.leader,
-                            tessiaSnoopers: {
-                              ...(player.leader.tessiaSnoopers ?? {}),
-                              [field.faction]: onTrack
-                                ? false
-                                : Boolean(player.leader.tessiaSnoopers?.[field.faction]),
-                            },
-                          },
-                        })
+                        const snoopers = { ...player.snoopers, [field.faction]: onTrack }
+                        const tessiaSnoopers = {
+                          ...(player.leader.tessiaSnoopers ?? {}),
+                          [field.faction]: onTrack
+                            ? false
+                            : Boolean(player.leader.tessiaSnoopers?.[field.faction]),
+                        }
+                        const leader = recalculateTessiaSnooperRewardSlot(
+                          { ...player.leader, tessiaSnoopers },
+                          { ...player, snoopers }
+                        )
+                        onUpdate({ snoopers, leader })
                       }}
                     />
-                    <img src="/icon/snooper.svg" alt="" aria-hidden="true" />
+                    <img src="/icon/snooper.png" alt="" aria-hidden="true" />
                     <span>{field.label}</span>
                   </label>
                 ))}
@@ -556,49 +593,6 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
             ) : null}
           </div>
 
-          <div className="sandbox-player-editor__deck-row">
-            <span>
-              {player.deck.length} deck · {player.discardPile.length} discard ·{' '}
-              {player.trash.length} trash
-              {expansions.riseOfIx
-                ? ` · ${player.tech?.length ?? 0} tech tile${(player.tech?.length ?? 0) === 1 ? '' : 's'}`
-                : ''}
-            </span>
-          </div>
-          <div className="sandbox-player-editor__deck-actions">
-            <button
-              type="button"
-              className="sandbox-player-editor__deck-button"
-              onClick={() => openPileEditor('deck')}
-            >
-              Edit deck
-            </button>
-            <button
-              type="button"
-              className="sandbox-player-editor__deck-button"
-              onClick={() => openPileEditor('discard')}
-              disabled={discardEditorPool.length === 0}
-            >
-              Edit discard
-            </button>
-            <button
-              type="button"
-              className="sandbox-player-editor__deck-button"
-              onClick={() => openPileEditor('trash')}
-              disabled={trashEditorPool.length === 0}
-            >
-              Edit trash
-            </button>
-            {expansions.riseOfIx ? (
-              <button
-                type="button"
-                className="sandbox-player-editor__deck-button"
-                onClick={() => setTechEditorOpen(true)}
-              >
-                Edit tech
-              </button>
-            ) : null}
-          </div>
         </div>
       </div>
 

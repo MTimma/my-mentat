@@ -1,5 +1,6 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { Card, CustomEffect, Player, CardPile } from '../../types/GameTypes'
+import { getSelectableDeckCards } from '../../utils/playAreaDisplay'
 import { PLAY_EFFECT_TEXTS, REVEAL_EFFECT_TEXTS } from '../../data/effectTexts'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
@@ -253,11 +254,11 @@ const CardSearch: React.FC<CardSearchProps> = ({
       if (!player) return []
       switch (pile) {
         case 'HAND':
-          return player.deck.slice(0, Math.max(0, player.handCount))
+        case 'DECK':
+          // “From hand” in rules → full deck in UI (see getSelectableDeckCards).
+          return getSelectableDeckCards(player)
         case 'DISCARD':
           return player.discardPile
-        case 'DECK':
-          return [] // Draw pile is not selectable (use HAND for cards in hand)
         case 'PLAY_AREA':
           return player.playArea
         default:
@@ -325,11 +326,6 @@ const CardSearch: React.FC<CardSearchProps> = ({
     return m
   }, [availableCards, playabilityInvalidateKey])
 
-  const selectedIds = useMemo(
-    () => new Set(selectionSlots.filter((card): card is Card => card !== null).map(card => card.id)),
-    [selectionSlots]
-  )
-
   const handleCardPick = useCallback((card: Card) => {
     const fn = getCardPlayabilityRef.current
     if (fn) {
@@ -343,7 +339,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
         slots.fill(null)
         slots[0] = card
       } else {
-        const existingIndex = slots.findIndex(slot => slot?.id === card.id)
+        const existingIndex = slots.findIndex(slot => slot === card)
         if (existingIndex !== -1) {
           slots[existingIndex] = null
         } else {
@@ -486,7 +482,9 @@ const CardSearch: React.FC<CardSearchProps> = ({
           <CardGridItem
             key={`${card.id}-${index}`}
             card={card}
-            isSelected={selectedIds.has(card.id)}
+            isSelected={
+              isRevealTurn ? selectionSlots.some(slot => slot === card) : selectionSlots[0] === card
+            }
             playability={
               getCardPlayability ? playabilityByCardId.get(card.id) ?? PLAYABLE_CARD : PLAYABLE_CARD
             }

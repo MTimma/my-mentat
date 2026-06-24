@@ -1,9 +1,15 @@
 import { Card, Expansions, NO_EXPANSIONS } from '../types/GameTypes'
-import { STARTING_DECK, buildImperiumDeck } from '../catalog/runtime'
+import { createCatalogRuntime, STARTING_DECK, buildImperiumDeck } from '../catalog/runtime'
+import { resolveGamePack } from '../gamePacks/resolveGamePack'
+import type { GamePackRef } from '../gamePacks/types'
 
 const cloneCards = (cards: Card[]): Card[] => cards.map(card => JSON.parse(JSON.stringify(card)))
 
-export const buildStartingDeck = (): Card[] => cloneCards(STARTING_DECK)
+export const buildStartingDeck = (gamePackId?: GamePackRef): Card[] => {
+  if (!gamePackId) return cloneCards(STARTING_DECK)
+  const runtime = createCatalogRuntime(resolveGamePack(gamePackId))
+  return cloneCards(runtime.resolveCatalogCardIds(runtime.slices.decks.starting))
+}
 
 /**
  * Removes copies from `imperiumDeck` that are reserved by player starter decks (matched by card name),

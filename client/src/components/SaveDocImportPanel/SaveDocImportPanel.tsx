@@ -7,12 +7,15 @@ export interface SaveDocImportPanelProps {
   onLoad: (doc: SaveDoc) => void
   buttonLabel?: string
   className?: string
+  /** `file` — single button opens a JSON file picker; `full` — paste + load + file (default). */
+  variant?: 'full' | 'file'
 }
 
 const SaveDocImportPanel: React.FC<SaveDocImportPanelProps> = ({
   onLoad,
   buttonLabel = 'Load game',
   className,
+  variant = 'full',
 }) => {
   const [jsonText, setJsonText] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -46,6 +49,32 @@ const SaveDocImportPanel: React.FC<SaveDocImportPanelProps> = ({
     }
     reader.readAsText(file)
     e.target.value = ''
+  }
+
+  if (variant === 'file') {
+    return (
+      <div className={['save-doc-import', 'save-doc-import--file', className].filter(Boolean).join(' ')}>
+        <button
+          type="button"
+          className="save-doc-import-btn save-doc-import-btn--file"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {buttonLabel}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,application/json"
+          className="save-doc-import-file-input"
+          onChange={handleFileChange}
+        />
+        {error && (
+          <p className="save-doc-import-error" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    )
   }
 
   return (

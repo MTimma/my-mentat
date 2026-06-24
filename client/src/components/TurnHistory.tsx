@@ -759,6 +759,10 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         return
       }
       if (e.key === 'Escape') {
+        if (showDebugModal) {
+          setShowDebugModal(false)
+          return
+        }
         if (isViewingHistory) {
           onReturnToCurrent()
         } else if (onClose) {
@@ -768,7 +772,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose, isViewingHistory, onReturnToCurrent, goToPreviousTurn, goToNextTurn])
+  }, [onClose, isViewingHistory, onReturnToCurrent, goToPreviousTurn, goToNextTurn, showDebugModal])
 
   // Handle clicking on a turn row
   const handleTurnClick = (index: number) => {
@@ -1152,8 +1156,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
 
       {showDebugModal &&
         createPortal(
-          <div className="turn-details-modal">
-            <div className="turn-details-content">
+          <div className="turn-details-modal" onClick={() => setShowDebugModal(false)}>
+            <div className="turn-details-content" onClick={e => e.stopPropagation()}>
               <h3>Game data</h3>
               <div className="turn-details-tabs" role="tablist" aria-label="Debug view">
                 <button

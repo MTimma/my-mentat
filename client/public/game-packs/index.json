@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "selectable": [
+    {
+      "ref": "official/base@1",
+      "label": "Base game",
+      "file": "official-base.v1.json"
+    },
+    {
+      "ref": "official/base+riseOfIx@1",
+      "label": "Base + Rise of Ix",
+      "file": "official-base-riseOfIx.v1.json"
+    }
+  ],
+  "reserved": [
+    "official/base+riseOfIx+immortality+bloodlines",
+    "official/uprising",
+    "official/uprising+bloodlines",
+    "official/uprising+bloodlines+immortality",
+    "official/uprising-3v3"
+  ]
+}

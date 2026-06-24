@@ -6,6 +6,7 @@ import type { Card, Expansions, Player } from '../types/GameTypes'
 import { LEADER_ICON_SLUGS } from '../data/leaders'
 import { slugify } from '../catalog/buildCatalog'
 import { catalogIdForCard, catalogIdsForCards } from './catalogIds'
+import { expansionsForGamePack } from '../gamePacks/resolveGamePack'
 import type { PlayerSetupBlock, SetupBlock } from './types'
 
 export interface BuildSetupBlockInput {
@@ -15,6 +16,9 @@ export interface BuildSetupBlockInput {
   currentRound?: number
   initialConflictId?: number
   sandbox?: boolean
+  /** Canonical game pack ref pinned in the save doc. */
+  gamePackId: string
+  /** @deprecated Use gamePackId; kept for callers that still pass expansions. */
   expansions?: Expansions
 }
 
@@ -64,13 +68,14 @@ export function buildSetupBlockFromConfiguration(
   const setup: SetupBlock = {
     firstPlayer: input.firstPlayer,
     players,
+    gamePackId: input.gamePackId,
     imperiumRowDeckCardIds,
     ...(input.currentRound != null && input.currentRound !== 1
       ? { currentRound: input.currentRound }
       : {}),
     ...(input.initialConflictId != null ? { initialConflictId: input.initialConflictId } : {}),
     ...(input.sandbox ? { sandbox: true } : {}),
-    ...(input.expansions ? { expansions: input.expansions } : {}),
+    expansions: input.expansions ?? expansionsForGamePack(input.gamePackId),
   }
 
   return { setup, unmapped: [...new Set(unmapped)] }

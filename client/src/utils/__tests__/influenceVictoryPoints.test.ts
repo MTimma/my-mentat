@@ -203,6 +203,30 @@ describe('updateFactionInfluence fourth-influence milestone rewards', () => {
     expect(next.gains.filter(g => g.name?.includes('4th Influence'))).toHaveLength(0)
   })
 
+  it('mergePlayerAfterFactionInfluence avoids double-counting synced milestone resources', () => {
+    const baseline = makePlayer(0, { intrigueCount: 1 })
+    const state = baseState({ players: [baseline, makePlayer(1)] })
+    const afterInfluence = {
+      ...state,
+      players: [
+        { ...baseline, intrigueCount: 2 },
+        state.players[1],
+      ],
+    }
+    const local = { ...baseline, intrigueCount: 2 }
+    const merged = mergePlayerAfterFactionInfluence(local, afterInfluence, baseline)
+    expect(merged.intrigueCount).toBe(2)
+  })
+
+  it('mergePlayerAfterFactionInfluence preserves local resource spends not yet on state', () => {
+    const baseline = makePlayer(0, { water: 3, spice: 10 })
+    const state = baseState({ players: [baseline, makePlayer(1)] })
+    const local = { ...baseline, water: 2, spice: 9 }
+    const merged = mergePlayerAfterFactionInfluence(local, state, baseline)
+    expect(merged.water).toBe(2)
+    expect(merged.spice).toBe(9)
+  })
+
   it('mergePlayerAfterFactionInfluence preserves local rewards plus milestones', () => {
     const state = baseState({
       factionInfluence: {

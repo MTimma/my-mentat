@@ -14,7 +14,11 @@ import {
 } from '../GameContext/riseOfIx/techTurnControlsUi'
 import TurnControlsTechRow from '../TurnControlsTechRow/TurnControlsTechRow'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
-import { getPlayAreaCardsForTurnView, getOpponentDiscardableCards } from '../../utils/playAreaDisplay'
+import {
+  getPlayAreaCardsForTurnView,
+  getOpponentDiscardableCards,
+  getSelectableDeckCards,
+} from '../../utils/playAreaDisplay'
 import {
   getAnyFactionInfluenceGainIcon,
   getAnyFactionInfluenceLossIcon,
@@ -508,6 +512,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     .sort((a, b) => a - b)
     .join(',')
   const handCardsForCardSearch = useMemo(() => activePlayer.deck, [handCardSearchIdsKey])
+  const selectableDeckCards = useMemo(
+    () => getSelectableDeckCards(activePlayer),
+    [handCardSearchIdsKey]
+  )
 
   const playCardPickerPlayabilityKey = useMemo(
     () => `${activePlayer.agents}|${JSON.stringify(gameState?.occupiedSpaces ?? {})}`,
@@ -1082,12 +1090,17 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
   const ChoiceDialog = () => {
     if (activeCardSelect) {
+      const usesDeckPiles = activeCardSelect.piles?.some(
+        pile => pile === CardPile.DECK || pile === CardPile.HAND
+      )
+      const cardSelectCards =
+        activeCardSelect.cards ?? (usesDeckPiles ? selectableDeckCards : undefined)
       return (
         <CardSearch
           isOpen={true}
           player={activePlayer!}
-          cards={activeCardSelect.cards}
-          piles={activeCardSelect.piles}
+          cards={cardSelectCards}
+          piles={cardSelectCards ? undefined : activeCardSelect.piles}
           customFilter={activeCardSelect.filter}
           selectionCount={activeCardSelect.selectionCount}
           text={activeCardSelect.prompt}

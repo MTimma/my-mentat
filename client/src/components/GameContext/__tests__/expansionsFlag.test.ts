@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { OFFICIAL_BASE_RISE_OF_IX_PACK } from '../../../gamePacks/constants'
 import { PlayerColor } from '../../../types/GameTypes'
 import { LEADERS } from '../../../data/leaders'
 import { STARTING_DECK } from '../../../data/cards'
@@ -14,7 +15,7 @@ describe('expansions feature flag', () => {
     expect(state.expansions).toEqual(NO_EXPANSIONS)
   })
 
-  it('expansions seeded from setup.expansions.riseOfIx === true', () => {
+  it('expansions seeded from setup gamePackId with Rise of Ix', () => {
     const leader = LEADERS[0]
     const deck = STARTING_DECK.slice(0, 10)
     const { setup } = buildSetupBlockFromConfiguration({
@@ -44,7 +45,7 @@ describe('expansions feature flag', () => {
       ],
       firstPlayer: 0,
       imperiumRowDeck: [],
-      expansions: { riseOfIx: true, riseOfIxEpic: false },
+      gamePackId: OFFICIAL_BASE_RISE_OF_IX_PACK,
     })
     const state = buildInitialState(setup)
     expect(state.expansions.riseOfIx).toBe(true)

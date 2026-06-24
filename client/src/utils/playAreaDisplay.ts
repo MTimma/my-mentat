@@ -56,8 +56,16 @@ export function getPlayAreaCardsForTurnView(gameState: GameState, player: Player
   return resolved.length > 0 ? resolved : fromPlayArea.filter(c => !trashedIds.has(c.id))
 }
 
-/** Cards an opponent may discard (entire deck minus cards in play). */
+/**
+ * Cards eligible when an effect says “from hand” (or otherwise picks from the draw pile).
+ * Hand identities are hidden — only `handCount` is tracked — so the picker lists `deck`.
+ * Play area, discard, and trash are separate piles; played cards are removed from `deck`.
+ */
+export function getSelectableDeckCards(player: Player): Card[] {
+  return player.deck ?? []
+}
+
+/** Cards an opponent may discard (their deck — played cards are not in deck). */
 export function getOpponentDiscardableCards(player: Player): Card[] {
-  const inPlay = new Set((player.playArea ?? []).map(c => c.id))
-  return (player.deck ?? []).filter(c => !inPlay.has(c.id))
+  return getSelectableDeckCards(player)
 }

@@ -114,6 +114,18 @@ html:has(.game-container--play) .dialog-overlay.combat-player-detail-overlay--bo
   flex-shrink: 0;
 }
 
+.combat-player-detail-leader-frame {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.combat-player-detail-overlay--board-scoped .combat-player-detail-leader-frame {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+}
+
 .combat-player-detail-overlay--board-scoped .combat-player-detail-leader {
   flex: 1 1 auto;
   min-height: 0;

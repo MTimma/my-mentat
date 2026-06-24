@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react'
-import { Expansions, PlayerSetup, Player, Card } from '../../types/GameTypes'
+import React, { useEffect, useMemo, useState } from 'react'
+import { PlayerSetup, Player, Card } from '../../types/GameTypes'
 import { motion } from 'framer-motion'
 import { getStartingSpice, getStartingSolari } from '../../data/leaderAbilities/beastSetup'
 import { getStartingWater } from '../../data/leaderAbilities/yunaSolariBonus'
@@ -8,7 +8,8 @@ import { seedTessiaSnoopers } from '../../data/leaderAbilities/tessiaSnoopers'
 import StarterDeckEditor from '../StarterDeckEditor/StarterDeckEditor'
 import ImperiumRowDeckCreator from '../ImperiumRowDeckCreator/ImperiumRowDeckCreator'
 import { applyStarterDeckReservationToImperium } from '../../services/starterDeckSetup'
-import { buildImperiumDeck } from '../../catalog/runtime'
+import { createCatalogRuntime } from '../../catalog/runtime'
+import { resolveGamePack } from '../../gamePacks/resolveGamePack'
 import { buildSetupBlockFromConfiguration } from '../../save/buildSetupBlock'
 import { createGameInputDoc } from '../../save/createGameInput'
 import {
@@ -23,7 +24,7 @@ import { seedTroopSupply } from '../../utils/troops'
 interface GameStateSetupProps {
   playerSetups: PlayerSetup[]
   firstPlayer: number
-  expansions: Expansions
+  gamePackId: string
   onComplete: (initialState: {
     players: Player[]
     currentRound: number
@@ -37,18 +38,32 @@ interface GameStateSetupProps {
 const GameStateSetup: React.FC<GameStateSetupProps> = ({
   playerSetups,
   firstPlayer,
-  expansions,
+  gamePackId,
   onComplete,
   onOpenCardCreator,
   autoApplyMandatoryRewards,
   onAutoApplyMandatoryRewardsChange,
 }) => {
+  const catalogRuntime = useMemo(
+    () => createCatalogRuntime(resolveGamePack(gamePackId)),
+    [gamePackId]
+  )
+  const expansions = useMemo(
+    () => resolveGamePack(gamePackId).structure.expansions,
+    [gamePackId]
+  )
   const [playChromeTheme, setPlayChromeTheme] = useState<PlayChromeTheme>(() => getPlayChromeTheme())
   const [currentRound, setCurrentRound] = useState(1)
   const [showResourceEditor, setShowResourceEditor] = useState(false)
   const [showStarterDeckEditor, setShowStarterDeckEditor] = useState(false)
   const [showImperiumDeckCreator, setShowImperiumDeckCreator] = useState(false)
-  const [imperiumRowDeckDraft, setImperiumRowDeckDraft] = useState<Card[]>(() => buildImperiumDeck(expansions))
+  const [imperiumRowDeckDraft, setImperiumRowDeckDraft] = useState<Card[]>(() =>
+    catalogRuntime.buildImperiumDeck(expansions)
+  )
+
+  useEffect(() => {
+    setImperiumRowDeckDraft(catalogRuntime.buildImperiumDeck(expansions))
+  }, [catalogRuntime, expansions])
   const [editablePlayerSetups, setEditablePlayerSetups] = useState<PlayerSetup[]>(
     playerSetups.map(setup => ({
       ...setup,
@@ -128,7 +143,7 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
       firstPlayer,
       imperiumRowDeck,
       currentRound,
-      expansions,
+      gamePackId,
     })
     const doc = createGameInputDoc(setup, {
       title: 'New game (preview)',
@@ -140,7 +155,7 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
   }, [
     currentRound,
     editablePlayerSetups,
-    expansions,
+    gamePackId,
     firstPlayer,
     imperiumRowDeckDraft,
     playerStates,
