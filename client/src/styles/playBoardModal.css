@@ -149,3 +149,15 @@
   max-width: 100%;
   width: auto;
 }
+
+/* target-dialog defaults to position:fixed + viewport centering; breaks inside board portal */
+.play-board-modal-overlay--scoped .target-dialog,
+.dialog-overlay.play-board-modal-overlay--scoped .target-dialog {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  z-index: auto;
+  max-height: 100%;
+  overflow-y: auto;
+}

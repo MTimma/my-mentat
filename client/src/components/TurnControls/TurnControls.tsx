@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, Fragment, cloneElement, isValidElement } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, Fragment } from 'react'
 import { Player, Card, Leader, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, InfluenceAmounts, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS } from '../../types/GameTypes'
 import { intrigueCardHasCustom, intrigueHasPhaseEffect } from '../../utils/intrigueCardCustom'
+import { isKwisatzHaderachCard, isKwisatzAgentSourceChoice } from '../../utils/kwisatzHaderach'
+import { FixedChoiceModal, useBoardScopedPortal } from '../BoardScopedModal'
 import CardSearch from '../CardSearch/CardSearch'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { getLeaderIconPath } from '../../data/leaders'
@@ -13,11 +15,11 @@ import {
   filterAcquireTechOptionalEffects,
 } from '../GameContext/riseOfIx/techTurnControlsUi'
 import TurnControlsTechRow from '../TurnControlsTechRow/TurnControlsTechRow'
-import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import {
   getPlayAreaCardsForTurnView,
   getOpponentDiscardableCards,
   getSelectableDeckCards,
+  getDiscardCostPlayability,
 } from '../../utils/playAreaDisplay'
 import {
   getAnyFactionInfluenceGainIcon,
@@ -70,6 +72,7 @@ interface TurnControlsProps {
   onResolveCardSelect?: (choiceId: string, cardIds: number[]) => void
   selectedCard?: Card | null
   recallMode?: boolean
+  placementPrompt?: string | null
   pendingRewards?: PendingReward[]
   onClaimReward?: (rewardId: string, customData?: { trashedCardId?: number; [key: string]: unknown }) => void
   onClaimAllRewards?: () => void
@@ -142,6 +145,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onResolveChoice,
   onResolveCardSelect,
   selectedCard = null,
+  recallMode = false,
+  placementPrompt = null,
   pendingRewards = [],
   onClaimReward,
   onAutoApplyRewards,
@@ -196,6 +201,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
   const [pendingTrashReward, setPendingTrashReward] = useState<PendingReward | null>(null)
   const [activeCardSelect, setActiveCardSelect] = useState<CardSelectChoice | null>(null)
+  const [discardCostSelection, setDiscardCostSelection] = useState<Card[]>([])
   const [opponentCardSelect, setOpponentCardSelect] = useState<{
     player: Player
     selectionCount: number
@@ -216,6 +222,12 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       closeCardEffectsDialog()
     }
   }, [influenceBoardSelectionActive, closeCardEffectsDialog])
+
+  useEffect(() => {
+    if (!activeCardSelect) {
+      setDiscardCostSelection([])
+    }
+  }, [activeCardSelect])
 
   const hasOpponentDiscard = Boolean(opponentDiscardState)
   const getReverendMotherDiscardCount = useCallback(
@@ -268,6 +280,21 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }, [pendingChoices, activeCardSelect, voiceSelectionActive, masterstrokeSelectionActive, hasOpponentDiscard])
 
   useEffect(() => {
+    const kwisatzChoices = pendingChoices.filter(
+      choice =>
+        choice.type === ChoiceType.FIXED_OPTIONS && isKwisatzAgentSourceChoice(choice.id)
+    ) as FixedOptionsChoice[]
+    if (
+      !isHistoryView &&
+      kwisatzChoices.length === 1 &&
+      !activeFixedChoice &&
+      !hasOpponentDiscard
+    ) {
+      setActiveFixedChoice(kwisatzChoices[0])
+    }
+  }, [pendingChoices, activeFixedChoice, isHistoryView, hasOpponentDiscard])
+
+  useEffect(() => {
     if (activeFixedChoice && !pendingChoices.some(choice => choice.id === activeFixedChoice.id)) {
       setActiveFixedChoice(null)
     }
@@ -279,7 +306,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     [optionalEffects]
   )
   const turnControlPendingChoices = useMemo(
-    () => filterAcquireTechFromChoices(pendingChoices),
+    () =>
+      filterAcquireTechFromChoices(pendingChoices).filter(
+        choice =>
+          !(choice.type === ChoiceType.FIXED_OPTIONS && isKwisatzAgentSourceChoice(choice.id))
+      ),
     [pendingChoices]
   )
 
@@ -393,11 +424,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }, [activeIntriguePreviewCard, isHistoryView, playAreaIntriguePreviewIdsKeyEarly])
 
   if (!activePlayer) return null
-  const isKwisatzHaderach = (card: Card) =>
-    card.playEffect?.some(effect =>
-      effect.beforePlaceAgent?.recallAgent ||
-      effect.reward?.custom === CustomEffect.KWISATZ_HADERACH
-    ) ?? false
+  const isKwisatzHaderach = (card: Card) => isKwisatzHaderachCard(card)
   const hasRecallableAgent = Object.values(gameState?.occupiedSpaces ?? {}).some(playerIds =>
     playerIds.includes(activePlayer.id)
   )
@@ -583,6 +610,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const isAffordable = (cost: Cost | undefined, reward?: Reward): boolean => {
     if (!cost && !reward) return true
     if (!activePlayer || !gameState) return false
+    if (cost?.discard && activePlayer.handCount < cost.discard) return false
+    if (cost?.spice && activePlayer.spice < cost.spice) return false
+    if (cost?.water && activePlayer.water < cost.water) return false
+    if (cost?.solari && activePlayer.solari < cost.solari) return false
+    if (cost?.troops && activePlayer.troops < cost.troops) return false
     if (reward?.techNegotiator && (activePlayer.troopSupply ?? 0) < reward.techNegotiator) return false
     if (reward?.acquireTech !== undefined && !gameState.ixBoard?.stacks?.some(stack => stack.length > 0)) {
       return false
@@ -1095,6 +1127,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       )
       const cardSelectCards =
         activeCardSelect.cards ?? (usesDeckPiles ? selectableDeckCards : undefined)
+      const discardCost = activeCardSelect.discardCost
       return (
         <CardSearch
           isOpen={true}
@@ -1105,14 +1138,27 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           selectionCount={activeCardSelect.selectionCount}
           text={activeCardSelect.prompt}
           isRevealTurn={activeCardSelect.selectionCount > 1}
+          onSelectionChange={discardCost ? setDiscardCostSelection : undefined}
+          getCardPlayability={
+            discardCost && activePlayer
+              ? getDiscardCostPlayability(activePlayer, discardCost, discardCostSelection)
+              : undefined
+          }
+          playabilityInvalidateKey={
+            discardCost
+              ? `${activePlayer?.handCount ?? 0}|${discardCostSelection.map(c => c.id).join(',')}`
+              : undefined
+          }
           onSelect={selectedCards => {
             if (onResolveCardSelect) {
               onResolveCardSelect(activeCardSelect.id, selectedCards.map(card => card.id))
             }
             setActiveCardSelect(null)
+            setDiscardCostSelection([])
           }}
           onCancel={() => {
             setActiveCardSelect(null)
+            setDiscardCostSelection([])
           }}
         />
       )
@@ -1339,38 +1385,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     )
   }
 
-  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true)
-
-  const portalOverlay = (overlay: React.ReactNode) => {
-    if (waitForBoardTarget) return null
-    const node =
-      scopedClass && isValidElement(overlay)
-        ? cloneElement(overlay as React.ReactElement<{ className?: string }>, {
-            className: [overlay.props.className, scopedClass].filter(Boolean).join(' '),
-          })
-        : overlay
-    return portalNode(node)
-  }
-
-  const FixedChoiceDialog = () => {
-    if (!activeFixedChoice) return null
-
-    return portalOverlay(
-      <div className="dialog-overlay">
-        <div className="target-dialog fixed-choice-dialog">
-          <h3>{activeFixedChoice.prompt || 'Choose one option'}</h3>
-          {renderFixedChoiceOptions(activeFixedChoice, 'dialog')}
-          <button
-            type="button"
-            className="secondary-btn fixed-choice-cancel"
-            onClick={() => setActiveFixedChoice(null)}
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    )
-  }
+  const { portalOverlay } = useBoardScopedPortal(true)
 
   type EffectSource = {
     type: GainSource
@@ -1720,6 +1735,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         })}
 
         {choices.map(choice => {
+          if (isKwisatzAgentSourceChoice(choice.id)) return null
+
           if (choice.type === ChoiceType.CARD_SELECT) {
             const cardSelectChoice = choice as CardSelectChoice
             return (
@@ -2110,7 +2127,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             alt=""
             className="selected-card-action-intrigue-icon"
             decoding="sync"
-            fetchpriority="high"
+            fetchPriority="high"
           />
           <span className="selected-card-action-count selected-card-action-count--intrigue-overlay">
             {activePlayer.intrigueCount}
@@ -2478,11 +2495,21 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           </span>
         </div>
       ) : null}
+      {!influenceBoardSelectionActive && placementPrompt ? (
+        <div className="placement-prompt-banner" role="status" aria-live="polite">
+          <span className="placement-prompt-banner__text">{placementPrompt}</span>
+        </div>
+      ) : null}
       {
         <ChoiceDialog />
         
       }
-      <FixedChoiceDialog />
+      <FixedChoiceModal
+        choice={activeFixedChoice}
+        onClose={() => setActiveFixedChoice(null)}
+      >
+        {activeFixedChoice ? renderFixedChoiceOptions(activeFixedChoice, 'dialog') : null}
+      </FixedChoiceModal>
       {activeCardPreviewCard &&
         portalOverlay(
           <div className="imperium-preview-overlay" onClick={closeCardEffectsDialog}>

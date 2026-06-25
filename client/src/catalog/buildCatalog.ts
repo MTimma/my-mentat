@@ -34,6 +34,7 @@ import { TECH_TILES, type TechTile } from '../data/techTiles'
 import {
   Card,
   CardEffect,
+  PlayEffect,
   ConflictCard,
   CustomEffect,
   IntrigueCard,
@@ -65,6 +66,7 @@ export interface CatalogEffectEntry {
   choiceOpt?: boolean
   timing?: string
   phase?: string | string[]
+  beforePlaceAgent?: { recallAgent?: boolean }
 }
 
 export interface CatalogCardEntry {
@@ -231,6 +233,7 @@ function registerEffects(
   if (!effects?.length) return undefined
   return effects.map((effect, index) => {
     const id = makeEffectId(ownerType, ownerId, slot, index)
+    const playEffect = effect as PlayEffect
     registry.push({
       id,
       owner: { type: ownerType, id: ownerId },
@@ -242,6 +245,9 @@ function registerEffects(
       choiceOpt: effect.choiceOpt,
       timing: effect.timing,
       phase: effect.phase,
+      ...(playEffect.beforePlaceAgent
+        ? { beforePlaceAgent: playEffect.beforePlaceAgent }
+        : {}),
     })
     return id
   })

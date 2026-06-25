@@ -83,7 +83,9 @@ function canAffordActivation(state: GameState, playerId: number, tileId: TechTil
       return player.solari >= 4
     case TechTileId.HOLOPROJECTORS:
     case TechTileId.INVASION_SHIPS:
-      return player.deck.length >= 1
+      return player.handCount >= 1
+    case TechTileId.SPY_SATELLITES:
+      return player.spice >= 3
     case TechTileId.TRAINING_DRONES:
     case TechTileId.SONIC_SNOOPERS:
       return true

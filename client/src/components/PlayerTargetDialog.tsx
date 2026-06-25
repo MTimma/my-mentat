@@ -1,6 +1,6 @@
 import React from 'react'
 import { Player, IntrigueCard } from '../types/GameTypes'
-import { usePlayBoardModalPortal } from '../hooks/usePlayBoardModalPortal'
+import { BoardDialogPanel, BoardScopedModal } from './BoardScopedModal'
 
 interface PlayerTargetDialogProps {
   card: IntrigueCard
@@ -15,23 +15,13 @@ const PlayerTargetDialog: React.FC<PlayerTargetDialogProps> = ({
   players,
   currentPlayerId,
   onSelectTarget,
-  onCancel
+  onCancel,
 }) => {
   const eligibleTargets = players.filter(p => p.id !== currentPlayerId)
-  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true)
 
-  if (waitForBoardTarget) return null
-
-  const dialog = (
-    <div
-      className={['dialog-overlay', scopedClass].filter(Boolean).join(' ')}
-      onClick={onCancel}
-    >
-      <div
-        className="target-dialog"
-        onClick={e => e.stopPropagation()}
-      >
-        <h3>Select Target for {card.name}</h3>
+  return (
+    <BoardScopedModal isOpen closeOnOverlayClick onClose={onCancel}>
+      <BoardDialogPanel title={`Select Target for ${card.name}`} onClose={onCancel} showCancel cancelLabel="Clear all">
         <p className="target-description">{card.description}</p>
         <div className="target-options">
           {eligibleTargets.map(player => (
@@ -47,14 +37,9 @@ const PlayerTargetDialog: React.FC<PlayerTargetDialogProps> = ({
             </button>
           ))}
         </div>
-        <button className="cancel-button" onClick={onCancel}>
-          Clear all
-        </button>
-      </div>
-    </div>
+      </BoardDialogPanel>
+    </BoardScopedModal>
   )
-
-  return portalNode(dialog)
 }
 
-export default PlayerTargetDialog 
+export default PlayerTargetDialog

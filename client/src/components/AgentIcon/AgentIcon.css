@@ -20,8 +20,8 @@
 .agent.player-3 .agent-fill { fill: #1976d2; }
 
 .agent--dreadnought {
-  width: clamp(14px, 2.8cqw, 20px);
-  height: clamp(14px, 2.8cqw, 20px);
+  width: clamp(18px, 3.6cqw, 26px);
+  height: clamp(11px, 2.2cqw, 16px);
   object-fit: contain;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
 }

@@ -223,6 +223,12 @@ function abilityTitleForGain(gain: Gain): string | undefined {
       return 'Memnon: High Council'
     case GainSource.TESSIA_SNOOPER:
       return 'Tessia snooper'
+    case GainSource.TECH:
+      return gain.name ? `Tech: ${gain.name}` : 'Tech'
+    case GainSource.SHIPPING_TRACK:
+      return 'Shipping track'
+    case GainSource.IX_BOARD:
+      return 'Ix board'
     default:
       return undefined
   }

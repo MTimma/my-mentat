@@ -97,7 +97,10 @@ interface ImageBoardProps {
   bonusSpice: { [key: string]: number }
   onSelectiveBreedingRequested: (cards: Card[], onSelect: (card: Card) => void) => void
   recallMode?: boolean
-  ignoreCosts?: boolean
+  /** Shown above the board during Kwisatz recall / agent-source steps. */
+  placementPrompt?: string | null
+  /** Kwisatz Haderach: ignore influence requirements (not spice/solari/water costs). */
+  ignoreSpaceRequirements?: boolean
   voiceSelectionActive?: boolean
   onVoiceSpaceSelect?: (spaceId: number) => void
   blockedSpaces?: Array<{ spaceId: number; playerId: number }>
@@ -189,7 +192,8 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   bonusSpice,
   onSelectiveBreedingRequested,
   recallMode = false,
-  ignoreCosts = false,
+  placementPrompt = null,
+  ignoreSpaceRequirements = false,
   voiceSelectionActive = false,
   onVoiceSpaceSelect,
   blockedSpaces = [],
@@ -241,8 +245,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     }
     if (!canPlayerVisitBoardSpaceOnce(space, player)) return false
     if (occupiedSpaces[space.id]?.length > 0 && !infiltrate && !canPlaceDespiteOccupancy(space, player)) return false
-    if (ignoreCosts) return true
-    if (space.requiresInfluence) {
+    if (space.requiresInfluence && !ignoreSpaceRequirements) {
       const playerInfluence = factionInfluence[space.requiresInfluence.faction]?.[currentPlayer] || 0
       if (playerInfluence < space.requiresInfluence.amount) return false
     }
@@ -444,6 +447,8 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
             const enabled = isSpaceEnabled(space)
             const isHighlighted = highlightedAreas?.includes(space.agentIcon) || false
+            const isRecallTarget =
+              recallMode && Boolean(occupiedSpaces[space.id]?.includes(currentPlayer))
             const isCombat = space.conflictMarker
             const blockedBy = blockedSpaceMap.get(space.id)
             const isVoiceBlocked = typeof blockedBy === 'number'
@@ -451,7 +456,9 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
             const classes = [
               'image-board__hotspot',
+              isRecallTarget ? 'recall-selectable' : '',
               isHighlighted && enabled ? 'highlighted' : '',
+              recallMode && !isRecallTarget ? 'recall-dimmed' : '',
               !enabled ? 'disabled' : '',
               isCombat ? 'combat-space' : '',
               voiceSelectionActive ? 'voice-selectable' : '',
@@ -552,7 +559,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                     top: `${anchor.y}%`,
                   }}
                 >
-                  <BoardAgentFigure playerId={playerId} className="image-board__agent-figure" />
+                  <BoardAgentFigure
+                    playerId={playerId}
+                    variant={anchor.spaceId === 23 ? 'dreadnought' : 'troop'}
+                    className="image-board__agent-figure"
+                  />
                 </div>
               )
             })
@@ -1168,6 +1179,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
   return (
     <div className={rootClass}>
+      {placementPrompt ? (
+        <div className="image-board__placement-prompt" role="status" aria-live="polite">
+          {placementPrompt}
+        </div>
+      ) : null}
       {ixBoardDocked ? (
         <div className="image-board__desktop-shell">
           {boardStage}

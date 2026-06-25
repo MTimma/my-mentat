@@ -103,6 +103,25 @@ export interface UpdateFactionInfluenceOptions {
 /**
  * Merges milestone resources applied inside updateFactionInfluence into a caller's local player copy.
  */
+/**
+ * After updateFactionInfluence, merge milestone resources from state into a working
+ * player copy without clobbering rewards applied locally during CLAIM_ALL_REWARDS.
+ */
+export function syncPlayerResourcesWithMilestoneState(
+  localPlayer: Player,
+  statePlayer: Player
+): Pick<Player, 'troops' | 'troopSupply' | 'solari' | 'water' | 'intrigueCount' | 'leader' | 'snoopers'> {
+  return {
+    troops: Math.max(localPlayer.troops, statePlayer.troops),
+    troopSupply: Math.max(localPlayer.troopSupply ?? 0, statePlayer.troopSupply ?? 0),
+    solari: Math.max(localPlayer.solari, statePlayer.solari),
+    water: Math.max(localPlayer.water, statePlayer.water),
+    intrigueCount: Math.max(localPlayer.intrigueCount, statePlayer.intrigueCount),
+    leader: statePlayer.leader,
+    snoopers: statePlayer.snoopers,
+  }
+}
+
 function mergeMilestoneResource(
   localValue: number,
   stateValue: number,

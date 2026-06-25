@@ -93,6 +93,80 @@ describe('turnGainsDisplay', () => {
     expect(aggregateResourceGains(rewards)[0]).toMatchObject({ type: RewardType.INTRIGUE, amount: 1 })
   })
 
+  it('groups RoI gain sources with readable titles', () => {
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: 0,
+        round: 1,
+        name: 'Flagship',
+        amount: 3,
+        type: RewardType.TROOPS,
+      },
+      {
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'Recall step 1',
+        amount: 2,
+        type: RewardType.SPICE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: 0,
+        round: 1,
+        name: 'Tech Negotiation',
+        amount: -1,
+        type: RewardType.TROOPS,
+      },
+    ])
+    expect(groups.map(g => g.title)).toEqual([
+      'Tech: Flagship',
+      'Shipping track',
+      'Ix board',
+    ])
+  })
+
+  it('groups RoI gain sources with readable titles', () => {
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: 0,
+        round: 1,
+        name: 'Flagship',
+        amount: 3,
+        type: RewardType.TROOPS,
+      },
+      {
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'Recall step 1',
+        amount: 2,
+        type: RewardType.SPICE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: 0,
+        round: 1,
+        name: 'Tech Negotiation',
+        amount: -1,
+        type: RewardType.TROOPS,
+      },
+    ])
+    expect(groups.map(g => g.title)).toEqual([
+      'Tech: Flagship',
+      'Shipping track',
+      'Ix board',
+    ])
+  })
+
   it('groups Tessia snooper spice separately from 2nd-influence VP', () => {
     const gains = [
       {

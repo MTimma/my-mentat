@@ -13,6 +13,7 @@ import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
 import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
 import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
+import { isKwisatzHaderachCard, canPlaceAgentOnBoard, isKwisatzSourceChoicePending, isKwisatzRecallMode, isAgentPlacementPending } from './utils/kwisatzHaderach'
 import TurnControls from './components/TurnControls/TurnControls'
 import PlayFooterToolbar from './components/PlayFooterToolbar/PlayFooterToolbar'
 import RetreatTroopControls from './components/RetreatTroopControls/RetreatTroopControls'
@@ -528,8 +529,6 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
     setVoiceSelectionRewardId(null)
   }
 
-  const handleVoiceSelectionCancel = () => setVoiceSelectionRewardId(null)
-
   const handleMasterstrokeSelectionStart = (rewardId: string) => {
     setMasterstrokeSelectionRewardId(rewardId)
   }
@@ -770,6 +769,19 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
     ? getInfluenceBoardPrompt(influenceBoardMeta.mode, influenceBoardMeta.amount)
     : null
 
+  const kwisatzRecallActive =
+    !isViewingHistory && isKwisatzRecallMode(gameState)
+  const kwisatzSourceChoiceActive =
+    !isViewingHistory && isKwisatzSourceChoicePending(gameState)
+  const agentPlacementPending =
+    !isViewingHistory && isAgentPlacementPending(gameState)
+
+  const boardPlacementPrompt = kwisatzSourceChoiceActive
+    ? 'Kwisatz Haderach: choose whether to use an Agent from your supply or recall one from the board.'
+    : kwisatzRecallActive
+      ? 'Recall one of your Agents — click a space where you already have an Agent.'
+      : null
+
   const handleInfluenceBoardFactionSelect = (faction: FactionType) => {
     if (!activePlayer || !activeInfluenceBoardChoice || !influenceBoardMeta) return
     const optionIndex = influenceBoardMeta.optionIndexByFaction[faction]
@@ -793,6 +805,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
     masterstrokeSelectionActive: Boolean(masterstrokeSelectionRewardId),
     memnonHighCouncilSelectionActive: Boolean(memnonHighCouncilRewardId),
     influenceBoardSelectionActive,
+    agentPlacementPending,
   })
 
   const showFooterEndTurn = Boolean(
@@ -1189,7 +1202,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
           onSpaceClick={isViewingHistory ? () => {} : handlePlaceAgent}
           occupiedSpaces={displayState.occupiedSpaces}
           canPlaceAgent={
-            isViewingHistory || gameState.sandboxSetup ? false : !gameState.canEndTurn
+            isViewingHistory || gameState.sandboxSetup ? false : canPlaceAgentOnBoard(gameState)
           }
           combatTroops={displayState.combatTroops}
           players={displayState.players}
@@ -1197,19 +1210,12 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
           currentConflict={displayState.currentConflict}
           bonusSpice={displayState.bonusSpice}
           onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
-          recallMode={
+          recallMode={isViewingHistory ? false : kwisatzRecallActive}
+          placementPrompt={isViewingHistory ? null : boardPlacementPrompt}
+          ignoreSpaceRequirements={
             isViewingHistory
               ? false
-              : Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))
-          }
-          ignoreCosts={
-            isViewingHistory
-              ? false
-              : Boolean(
-                  getSelectedCard(gameState)?.playEffect?.find(
-                    e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH
-                  )
-                )
+              : isKwisatzHaderachCard(getSelectedCard(gameState))
           }
           voiceSelectionActive={isViewingHistory ? false : Boolean(voiceSelectionRewardId)}
           onVoiceSpaceSelect={handleVoiceSpaceSelect}
@@ -1331,6 +1337,8 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
       inSandboxSetup,
       riseOfIx,
       sandboxTechSummary,
+      kwisatzRecallActive,
+      boardPlacementPrompt,
       influenceBoardMeta,
       activeInfluenceBoardChoice,
       handleInfluenceBoardFactionSelect,
@@ -1491,7 +1499,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
               onSpaceClick={isViewingHistory ? () => {} : handlePlaceAgent}
               occupiedSpaces={displayState.occupiedSpaces}
               canPlaceAgent={
-            isViewingHistory || gameState.sandboxSetup ? false : !gameState.canEndTurn
+            isViewingHistory || gameState.sandboxSetup ? false : canPlaceAgentOnBoard(gameState)
           }
               combatTroops={displayState.combatTroops}
               players={displayState.players}
@@ -1499,19 +1507,11 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
               currentConflict={displayState.currentConflict}
               bonusSpice={displayState.bonusSpice}
               onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
-              recallMode={
+              recallMode={isViewingHistory ? false : kwisatzRecallActive}
+              ignoreSpaceRequirements={
                 isViewingHistory
                   ? false
-                  : Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))
-              }
-              ignoreCosts={
-                isViewingHistory
-                  ? false
-                  : Boolean(
-                      getSelectedCard(gameState)?.playEffect?.find(
-                        e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH
-                      )
-                    )
+                  : isKwisatzHaderachCard(getSelectedCard(gameState))
               }
               voiceSelectionActive={isViewingHistory ? false : Boolean(voiceSelectionRewardId)}
               onVoiceSpaceSelect={handleVoiceSpaceSelect}
@@ -1723,7 +1723,8 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
             onPayCost={handlePayCost}
             showSelectiveBreeding={showSelectiveBreeding}
             selectedCard={isViewingHistory ? null : getSelectedCard(gameState)}
-            recallMode={!isViewingHistory && Boolean(gameState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED'))}
+            recallMode={!isViewingHistory && kwisatzRecallActive}
+            placementPrompt={!isViewingHistory ? boardPlacementPrompt : null}
             onSelectiveBreedingSelect={card => {
               if (onSelectiveBreedingSelect) onSelectiveBreedingSelect(card)
               setShowSelectiveBreeding(false)
@@ -1742,7 +1743,6 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
             combatTroops={turnControlsState.combatTroops}
             onVoiceSelectionStart={handleVoiceSelectionStart}
             voiceSelectionActive={!isViewingHistory && Boolean(voiceSelectionRewardId)}
-            onVoiceSelectionCancel={handleVoiceSelectionCancel}
             onMasterstrokeSelectionStart={handleMasterstrokeSelectionStart}
             masterstrokeSelectionActive={!isViewingHistory && Boolean(masterstrokeSelectionRewardId)}
             onMemnonHighCouncilSelectionStart={handleMemnonHighCouncilSelectionStart}
@@ -2016,6 +2016,7 @@ function getSelectedCard(gameState: GameState): Card | null {
 /** Board hotspots: only while picking a space — not after agent is placed for this action (`currTurn.agentSpace`). */
 function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
   if (gameState.currTurn?.agentSpace) return []
+  if (isKwisatzSourceChoicePending(gameState)) return []
   const card = getSelectedCard(gameState)
   if (!card) return []
   const base = [...card.agentIcons]

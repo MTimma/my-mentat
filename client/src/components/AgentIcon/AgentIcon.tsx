@@ -12,7 +12,7 @@ const AgentIcon: React.FC<AgentIconProps> = ({ playerId, className = '', variant
     return (
       <img
         className={`agent agent--dreadnought player-${playerId} ${className}`}
-        src="/icon/dreadnought.svg"
+        src="/icon/dreadnought.png"
         alt=""
         draggable={false}
       />

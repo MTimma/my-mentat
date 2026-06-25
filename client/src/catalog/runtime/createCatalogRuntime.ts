@@ -54,7 +54,7 @@ export interface CatalogRuntime {
 }
 
 function asCardEffect(entry: CatalogEffectEntry): CardEffect {
-  return {
+  const effect: CardEffect = {
     requirement: entry.requirement as CardEffect['requirement'],
     cost: entry.cost as CardEffect['cost'],
     reward: entry.reward as CardEffect['reward'],
@@ -62,6 +62,10 @@ function asCardEffect(entry: CatalogEffectEntry): CardEffect {
     timing: entry.timing as CardEffect['timing'],
     phase: entry.phase as CardEffect['phase'],
   }
+  if (entry.beforePlaceAgent) {
+    ;(effect as PlayEffect).beforePlaceAgent = entry.beforePlaceAgent
+  }
+  return effect
 }
 
 function buildRuntimeFromSlices(slices: MergedCatalogSlices): CatalogRuntime {

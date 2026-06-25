@@ -10,6 +10,8 @@ export interface EndTurnButtonStateInput {
   masterstrokeSelectionActive: boolean
   memnonHighCouncilSelectionActive: boolean
   influenceBoardSelectionActive?: boolean
+  /** Card selected for an agent turn but agent not placed yet. */
+  agentPlacementPending?: boolean
 }
 
 export function getEndTurnButtonState({
@@ -22,6 +24,7 @@ export function getEndTurnButtonState({
   masterstrokeSelectionActive,
   memnonHighCouncilSelectionActive,
   influenceBoardSelectionActive = false,
+  agentPlacementPending = false,
 }: EndTurnButtonStateInput): { disabled: boolean; title?: string } {
   const hasOpponentDiscard = Boolean(opponentDiscardState)
   const hasUnresolvedPendingRewards = pendingRewards.some(r => !r.disabled)
@@ -34,13 +37,14 @@ export function getEndTurnButtonState({
   const disabled =
     isHistoryView ||
     !canEndTurn ||
+    agentPlacementPending ||
     hasUnresolvedPendingRewards ||
     hasOpponentDiscard ||
     hasPendingChoicesToResolve ||
     selectionBlocksEndTurn
 
   let title: string | undefined
-  if (disabled && canEndTurn) {
+  if (disabled && canEndTurn && !agentPlacementPending) {
     if (hasUnresolvedPendingRewards) {
       title = 'Claim or resolve all pending rewards before ending your turn.'
     } else if (hasOpponentDiscard) {
@@ -50,6 +54,8 @@ export function getEndTurnButtonState({
     } else if (selectionBlocksEndTurn) {
       title = 'Finish the current selection before ending your turn.'
     }
+  } else if (disabled && agentPlacementPending) {
+    title = 'Place your Agent on a board space before ending your turn.'
   }
 
   return { disabled, title }

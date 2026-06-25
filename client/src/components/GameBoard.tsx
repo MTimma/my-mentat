@@ -35,7 +35,7 @@ interface GameBoardProps {
   bonusSpice: { [key: string]: number };
   onSelectiveBreedingRequested: (cards: Card[], onSelect: (card: Card) => void) => void;
   recallMode?: boolean;
-  ignoreCosts?: boolean;
+  ignoreSpaceRequirements?: boolean;
   voiceSelectionActive?: boolean;
   onVoiceSpaceSelect?: (spaceId: number) => void;
   blockedSpaces?: Array<{ spaceId: number; playerId: number }>;
@@ -56,7 +56,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   currentConflict,
   onSelectiveBreedingRequested,
   recallMode = false,
-  ignoreCosts = false,
+  ignoreSpaceRequirements = false,
   voiceSelectionActive = false,
   onVoiceSpaceSelect,
   blockedSpaces = [],
@@ -82,11 +82,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
     if (occupiedSpaces[space.id]?.length > 0 && !infiltrate && !canPlaceDespiteOccupancy(space, player)) return false
 
-    if (ignoreCosts) {
-      return true
-    }
-    
-    if (space.requiresInfluence) {
+    if (space.requiresInfluence && !ignoreSpaceRequirements) {
       const playerInfluence = factionInfluence[space.requiresInfluence.faction]?.[currentPlayer] || 0
       if (playerInfluence < space.requiresInfluence.amount) return false
     }

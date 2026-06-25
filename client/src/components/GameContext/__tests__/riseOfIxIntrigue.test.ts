@@ -9,6 +9,7 @@ import {
   CustomEffect,
   FactionType,
   FixedOptionsChoice,
+  GainSource,
   GamePhase,
   TurnType,
   type Card,
@@ -261,7 +262,13 @@ describe('Rise of Ix intrigue cards', () => {
 
   it('Ixian Probe: discard 2 draw 2', () => {
     const card = cardByName('Ixian Probe')
-    const deck: Card[] = [stubDeckCard(1), stubDeckCard(2), stubDeckCard(3)]
+    const deck: Card[] = [
+      stubDeckCard(1),
+      stubDeckCard(2),
+      stubDeckCard(3),
+      stubDeckCard(4),
+      stubDeckCard(5),
+    ]
     let s = roiPlotState([makePlayer(0, { intrigueCount: 1, deck, handCount: 3 })])
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
     const choice = s.currTurn?.pendingChoices?.[0]
@@ -274,6 +281,58 @@ describe('Rise of Ix intrigue cards', () => {
     })
     expect(s.players[0].handCount).toBe(3)
     expect(s.players[0].discardPile).toHaveLength(2)
+    expect(s.players[0].deck.map(c => c.id)).toEqual([3, 4, 5])
+  })
+
+  it('Ixian Probe: with empty hand discards from draw pile and draws 2', () => {
+    const card = cardByName('Ixian Probe')
+    const deck: Card[] = [stubDeckCard(1), stubDeckCard(2), stubDeckCard(3), stubDeckCard(4)]
+    let s = roiPlotState([makePlayer(0, { intrigueCount: 1, deck, handCount: 0 })])
+    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
+    const choice = s.currTurn?.pendingChoices?.[0]
+    expect(choice?.type).toBe(ChoiceType.CARD_SELECT)
+    expect(choice?.disabled).toBeFalsy()
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CARD_SELECT',
+      playerId: 0,
+      choiceId: choice!.id,
+      cardIds: [1, 2],
+    })
+    expect(s.players[0].handCount).toBe(2)
+    expect(s.players[0].deck.map(c => c.id)).toEqual([3, 4])
+    expect(s.players[0].discardPile.map(c => c.id)).toEqual([1, 2])
+  })
+
+  it('Ixian Probe: with 1 hand card discards hand then draw pile', () => {
+    const card = cardByName('Ixian Probe')
+    const deck: Card[] = [stubDeckCard(1), stubDeckCard(2), stubDeckCard(3), stubDeckCard(4)]
+    let s = roiPlotState([makePlayer(0, { intrigueCount: 1, deck, handCount: 1 })])
+    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
+    const choice = s.currTurn?.pendingChoices?.[0]
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CARD_SELECT',
+      playerId: 0,
+      choiceId: choice!.id,
+      cardIds: [1, 2],
+    })
+    expect(s.players[0].handCount).toBe(2)
+    expect(s.players[0].deck.map(c => c.id)).toEqual([3, 4])
+    expect(s.players[0].discardPile.map(c => c.id)).toEqual([1, 2])
+  })
+
+  it('Ixian Probe: rejects draw-pile discard before hand is exhausted', () => {
+    const deck: Card[] = [stubDeckCard(1), stubDeckCard(2), stubDeckCard(3)]
+    let s = roiPlotState([makePlayer(0, { intrigueCount: 1, deck, handCount: 1 })])
+    const before = s.players[0]
+    s = applyGameAction(s, {
+      type: 'CUSTOM_EFFECT',
+      playerId: 0,
+      customEffect: CustomEffect.IXIAN_PROBE,
+      data: { cardIds: [2, 3], drawCards: 2, sourceCardId: 42, discardCount: 2 },
+    })
+    expect(s.players[0].deck.map(c => c.id)).toEqual(before.deck.map(c => c.id))
+    expect(s.players[0].handCount).toBe(before.handCount)
+    expect(s.players[0].discardPile).toHaveLength(0)
   })
 
   it('Cull: solari cost and trash', () => {
@@ -335,6 +394,39 @@ describe('Rise of Ix intrigue cards', () => {
     })
     s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
     expect(s.currTurn?.pendingChoices?.some(c => c.prompt.startsWith('Freighter'))).toBe(true)
+    expect(s.currTurn?.diversionFreighterStepBefore).toBe(0)
+  })
+
+  it('Diversion: undeploy below 4 units restores freighter step and clears pending choice', () => {
+    let s = roiPlotState([makePlayer(0, { intrigueCount: 1, troops: 10, freighterStep: 2 })], {
+      combatTroops: { 0: 4 },
+      combatStrength: { 0: 8 },
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        diversionActive: false,
+        diversionFreighterGranted: true,
+        diversionFreighterStepBefore: 2,
+        diversionFreighterChoiceIds: ['diversion-freighter-test'],
+        canDeployTroops: true,
+        troopLimit: 10,
+        removableTroops: 4,
+        pendingChoices: [
+          {
+            id: 'diversion-freighter-test',
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Freighter (now at 2/3)',
+            source: { type: GainSource.INTRIGUE, id: 0, name: 'Diversion' },
+            options: [],
+          },
+        ],
+      },
+    })
+    s = applyGameAction(s, { type: 'UNDEPLOY_TROOP', playerId: 0 })
+    expect(s.players[0].freighterStep).toBe(2)
+    expect(s.currTurn?.diversionFreighterGranted).toBe(false)
+    expect(s.currTurn?.diversionActive).toBe(true)
+    expect(s.currTurn?.pendingChoices?.some(c => c.id === 'diversion-freighter-test')).toBe(false)
   })
 
   it('Expedite: spice for freighter choice', () => {

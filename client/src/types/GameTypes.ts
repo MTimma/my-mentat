@@ -512,6 +512,8 @@ export interface CardSelectChoice extends PendingChoiceBase {
   cards?: Card[] // Optional: cards to select from directly (e.g., Imperium Row)
   filter?: (c: Card) => boolean
   selectionCount: number
+  /** When set, selection must use hand cards first, then draw pile for any remainder. */
+  discardCost?: number
   onResolve: (cardIds: number[]) => unknown // GameAction will be defined in GameContext
 }
 
@@ -547,6 +549,10 @@ export interface GameTurn {
   diversionActive?: boolean
   /** Diversion — freighter reward was granted and may be reverted if units drop below 4. */
   diversionFreighterGranted?: boolean
+  /** Diversion — freighter step before the Diversion grant (for revert). */
+  diversionFreighterStepBefore?: 0 | 1 | 2 | 3
+  /** Diversion — pending choice ids created by the Diversion freighter grant. */
+  diversionFreighterChoiceIds?: string[]
   /** Max troops that may be retreated via card/leader effects (separate from deploy undo). */
   effectRetreatAllowance?: number
   /** Troops already retreated via effect allowance this turn. */
@@ -792,6 +798,10 @@ export enum CustomEffect {
   CARRYALL = 'CARRYALL',
   GUN_THOPTER = 'GUN_THOPTER',
   KWISATZ_HADERACH = 'KWISATZ_HADERACH',
+  /** Kwisatz agent-source choice: place from supply (normal space effects). */
+  KWISATZ_FROM_SUPPLY = 'KWISATZ_FROM_SUPPLY',
+  /** Kwisatz agent-source choice: recall from board first (no destination space effects). */
+  KWISATZ_RECALL_AGENT = 'KWISATZ_RECALL_AGENT',
   LIET_KYNES = 'LIET_KYNES',
   SECRETS_STEAL = 'SECRETS_STEAL',
   POWER_PLAY = 'POWER_PLAY', 

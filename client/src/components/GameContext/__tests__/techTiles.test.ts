@@ -296,6 +296,14 @@ describe('tech tiles reducer', () => {
     expect(after.acquireToTopThisRound[0]).toBe(true)
   })
 
+  it('Minimic Film adds persuasion on reveal when owned', () => {
+    const before = roiState({
+      players: [makePlayer(0, { tech: [{ id: TechTileId.MINIMIC_FILM, faceUp: true }] })],
+    })
+    const result = applyRevealTechEffects(before, 0, [], 0, 0)
+    expect(result.persuasionCount).toBe(1)
+  })
+
   it('Troop Transports: freighter step 2 reward becomes troops:3 with optional deploy', () => {
     const before = roiState({
       players: [makePlayer(0, { tech: [{ id: TechTileId.TROOP_TRANSPORTS, faceUp: true }] })],

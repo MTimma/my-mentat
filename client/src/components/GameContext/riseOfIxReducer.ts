@@ -1144,18 +1144,151 @@ function applyTrainingDronesActivation(
   return updatePlayer({ ...state, gains }, playerId, p => recruitTroopsToGarrison(p, 1).player)
 }
 
-function applySonicSnoopersActivation(
+function discardFromHand(
+  state: GameState,
+  playerId: number,
+  cardId: number,
+  source: { type: GainSource; id: number; name: string },
+  drawCards: number
+): GameState {
+  const player = state.players.find(p => p.id === playerId)
+  if (!player) return state
+
+  const deck = [...player.deck]
+  const idx = deck.findIndex(c => c.id === cardId)
+  if (idx === -1 || idx >= player.handCount) return state
+
+  const discardPile = [...player.discardPile]
+  const [removed] = deck.splice(idx, 1)
+  discardPile.push(removed)
+
+  let handCount = player.handCount - 1
+  const cardsInDrawPile = Math.max(0, deck.length - handCount)
+  const drawn = Math.min(drawCards, cardsInDrawPile)
+  handCount += drawn
+
+  const gains = [...state.gains]
+  pushGain(gains, state, playerId, source, -1, RewardType.DISCARD)
+  if (drawn > 0) {
+    pushGain(gains, state, playerId, source, drawn, RewardType.DRAW)
+  }
+
+  return updatePlayer({ ...state, gains }, playerId, p => ({
+    ...p,
+    deck,
+    discardPile,
+    handCount,
+  }))
+}
+
+function enqueueIntrigueCardChoice(
+  state: GameState,
+  playerId: number,
+  prompt: string,
+  cards: GameState['intrigueDeck'],
+  customEffect: CustomEffect,
+  data: Record<string, unknown>
+): GameState {
+  const source = techActivationSource(TechTileId.SONIC_SNOOPERS)
+  const choiceId = nextSemanticId(
+    source,
+    'SONIC-SNOOPERS',
+    (state.currTurn?.pendingChoices ?? []).map(c => c.id)
+  )
+  const choice: CardSelectChoice = {
+    id: choiceId,
+    type: ChoiceType.CARD_SELECT,
+    prompt,
+    piles: [],
+    cards: [...cards],
+    selectionCount: 1,
+    onResolve: (cardIds: number[]) => ({
+      type: 'CUSTOM_EFFECT',
+      playerId,
+      customEffect,
+      data: { ...data, cardId: cardIds[0] },
+    }),
+    source,
+  }
+  const currTurn = state.currTurn
+  if (!currTurn) return state
+  return {
+    ...state,
+    canEndTurn: false,
+    currTurn: {
+      ...currTurn,
+      pendingChoices: [...(currTurn.pendingChoices ?? []), choice],
+    },
+  }
+}
+
+export function applySonicSnoopersDraw(
+  state: GameState,
+  playerId: number,
+  cardId: number
+): GameState {
+  const card = state.intrigueDeck.find(c => c.id === cardId)
+  if (!card) return state
+  const source = techActivationSource(TechTileId.SONIC_SNOOPERS)
+  const gains = [...state.gains]
+  pushGain(gains, state, playerId, source, 1, RewardType.INTRIGUE)
+  const next: GameState = {
+    ...state,
+    gains,
+    intrigueDeck: state.intrigueDeck.filter(c => c.id !== cardId),
+    players: state.players.map(p =>
+      p.id === playerId ? { ...p, intrigueCount: p.intrigueCount + 1 } : p
+    ),
+  }
+  if (next.intrigueDiscard.length > 0) {
+    return enqueueIntrigueCardChoice(
+      next,
+      playerId,
+      'Sonic Snoopers: choose an intrigue card to return to the deck',
+      next.intrigueDiscard,
+      CustomEffect.SONIC_SNOOPERS,
+      { step: 'return' }
+    )
+  }
+  return next
+}
+
+export function applySonicSnoopersReturn(
+  state: GameState,
+  playerId: number,
+  cardId: number
+): GameState {
+  const card = state.intrigueDiscard.find(c => c.id === cardId)
+  if (!card) return state
+  const source = techActivationSource(TechTileId.SONIC_SNOOPERS)
+  const gains = [...state.gains]
+  pushGain(gains, state, playerId, source, -1, RewardType.INTRIGUE)
+  return {
+    ...state,
+    gains,
+    intrigueDiscard: state.intrigueDiscard.filter(c => c.id !== cardId),
+    intrigueDeck: [...state.intrigueDeck, card],
+    players: state.players.map(p =>
+      p.id === playerId ? { ...p, intrigueCount: Math.max(0, p.intrigueCount - 1) } : p
+    ),
+  }
+}
+
+function applySpySatellitesActivation(
   state: GameState,
   playerId: number,
   source: { type: GainSource; id: number; name: string }
 ): GameState {
+  const player = state.players.find(p => p.id === playerId)
+  if (!player || player.spice < 3) return state
   const gains = [...state.gains]
-  pushGain(gains, state, playerId, source, 1, RewardType.INTRIGUE)
-  return updatePlayer(
-    { ...state, gains },
-    playerId,
-    p => ({ ...p, intrigueCount: p.intrigueCount + 1 })
-  )
+  pushGain(gains, state, playerId, source, -3, RewardType.SPICE)
+  pushGain(gains, state, playerId, source, 1, RewardType.VICTORY_POINTS)
+  return updatePlayer({ ...state, gains }, playerId, p => ({
+    ...p,
+    spice: p.spice - 3,
+    victoryPoints: p.victoryPoints + 1,
+  }))
 }
 
 export function applyHoloprojectorsDiscard(
@@ -1163,25 +1296,14 @@ export function applyHoloprojectorsDiscard(
   playerId: number,
   cardIds: number[]
 ): GameState {
-  const player = state.players.find(p => p.id === playerId)
-  if (!player || cardIds.length !== 1) return state
-  const cardId = cardIds[0]
-  const source = techActivationSource(TechTileId.HOLOPROJECTORS)
-  let deck = [...player.deck]
-  const discardPile = [...player.discardPile]
-  const idx = deck.findIndex(c => c.id === cardId)
-  if (idx === -1) return state
-  const [removed] = deck.splice(idx, 1)
-  discardPile.push(removed)
-  const gains = [...state.gains]
-  pushGain(gains, state, playerId, source, -1, RewardType.DISCARD)
-  pushGain(gains, state, playerId, source, 1, RewardType.DRAW)
-  return updatePlayer({ ...state, gains }, playerId, p => ({
-    ...p,
-    deck,
-    discardPile,
-    handCount: p.handCount - 1 + 1,
-  }))
+  if (cardIds.length !== 1) return state
+  return discardFromHand(
+    state,
+    playerId,
+    cardIds[0],
+    techActivationSource(TechTileId.HOLOPROJECTORS),
+    1
+  )
 }
 
 export function applyInvasionShipsDiscard(
@@ -1189,26 +1311,19 @@ export function applyInvasionShipsDiscard(
   playerId: number,
   cardIds: number[]
 ): GameState {
-  const player = state.players.find(p => p.id === playerId)
-  if (!player || cardIds.length !== 1) return state
-  const cardId = cardIds[0]
-  const source = techActivationSource(TechTileId.INVASION_SHIPS)
-  let deck = [...player.deck]
-  const discardPile = [...player.discardPile]
-  const idx = deck.findIndex(c => c.id === cardId)
-  if (idx === -1) return state
-  const [removed] = deck.splice(idx, 1)
-  discardPile.push(removed)
-  const gains = [...state.gains]
-  pushGain(gains, state, playerId, source, -1, RewardType.DISCARD)
+  if (cardIds.length !== 1) return state
+  const applied = discardFromHand(
+    state,
+    playerId,
+    cardIds[0],
+    techActivationSource(TechTileId.INVASION_SHIPS),
+    0
+  )
+  if (applied === state) return state
   return {
-    ...updatePlayer({ ...state, gains }, playerId, p => ({
-      ...p,
-      deck,
-      discardPile,
-    })),
+    ...applied,
     infiltrateIgnoreOccupancyOnce: {
-      ...(state.infiltrateIgnoreOccupancyOnce ?? {}),
+      ...(applied.infiltrateIgnoreOccupancyOnce ?? {}),
       [playerId]: true,
     },
   }
@@ -1251,9 +1366,22 @@ export function handleActivateTech(state: GameState, action: ActivateTechAction)
         CustomEffect.INVASION_SHIPS
       )
     }
-    case TechTileId.SONIC_SNOOPERS: {
-      const applied = applySonicSnoopersActivation(state, playerId, source)
+    case TechTileId.SPY_SATELLITES: {
+      const applied = applySpySatellitesActivation(state, playerId, source)
+      if (applied === state) return state
       return markTileActivated(applied, playerId, tileId, { remove: true })
+    }
+    case TechTileId.SONIC_SNOOPERS: {
+      const marked = markTileActivated(state, playerId, tileId, { remove: true })
+      if (marked.intrigueDeck.length === 0) return marked
+      return enqueueIntrigueCardChoice(
+        marked,
+        playerId,
+        'Sonic Snoopers: choose an intrigue card from the deck',
+        marked.intrigueDeck,
+        CustomEffect.SONIC_SNOOPERS,
+        { step: 'draw' }
+      )
     }
     default:
       return state

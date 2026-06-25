@@ -2198,6 +2198,14 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   min-width: min(360px, calc(100vw - 32px));
 }
 
+.fixed-choice-dialog__lead {
+  margin: 0;
+  color: rgba(244, 228, 188, 0.88);
+  font-size: 0.88rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
 .imperium-preview-modal.card-effects-dialog {
   min-width: unset;
   max-width: min(92vw, 440px);
@@ -3015,6 +3023,28 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   font-size: 0.78rem;
   font-weight: 600;
   text-align: center;
+}
+
+.placement-prompt-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(100, 181, 246, 0.55);
+  background: linear-gradient(180deg, rgba(13, 44, 84, 0.94), rgba(8, 28, 56, 0.96));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+.placement-prompt-banner__text {
+  color: #e3f2fd;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.35;
 }
 
 .fixed-choice-cancel {

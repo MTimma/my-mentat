@@ -285,15 +285,23 @@ export function checkDiversionAfterDeployChange(state: GameState, playerId: numb
   const turn = state.currTurn
 
   if (turn.diversionActive && !turn.diversionFreighterGranted && units >= 4) {
+    const player = state.players.find(p => p.id === playerId)
+    const stepBefore = (player?.freighterStep ?? 0) as 0 | 1 | 2 | 3
+    const pendingBefore = new Set((turn.pendingChoices ?? []).map(c => c.id))
     const source = { type: GainSource.INTRIGUE, id: 0, name: 'Diversion' }
     const pendingChoices = [...(turn.pendingChoices ?? [])]
     pushFreighterChoicesFromReward(state, 1, playerId, source, pendingChoices)
+    const diversionFreighterChoiceIds = pendingChoices
+      .map(c => c.id)
+      .filter(id => !pendingBefore.has(id))
     return {
       ...state,
       currTurn: {
         ...turn,
         diversionActive: false,
         diversionFreighterGranted: true,
+        diversionFreighterStepBefore: stepBefore,
+        diversionFreighterChoiceIds,
         pendingChoices,
       },
       canEndTurn: false,
@@ -302,15 +310,16 @@ export function checkDiversionAfterDeployChange(state: GameState, playerId: numb
 
   if (turn.diversionFreighterGranted && units < 4) {
     const player = state.players.find(p => p.id === playerId)
-    const step = player?.freighterStep ?? 0
+    const stepBefore = turn.diversionFreighterStepBefore ?? (player?.freighterStep ?? 0)
+    const diversionChoiceIds = new Set(turn.diversionFreighterChoiceIds ?? [])
     const players = state.players.map(p =>
-      p.id === playerId
-        ? { ...p, freighterStep: Math.max(0, step - 1) as 0 | 1 | 2 | 3 }
-        : p
+      p.id === playerId ? { ...p, freighterStep: stepBefore as 0 | 1 | 2 | 3 } : p
     )
     const gains = [...state.gains]
     pushGain(gains, state, playerId, { type: GainSource.INTRIGUE, id: 0, name: 'Diversion revert' }, -1, RewardType.FREIGHTER)
-    const pendingChoices = (turn.pendingChoices ?? []).filter(c => !c.prompt.startsWith('Freighter'))
+    const pendingChoices = (turn.pendingChoices ?? []).filter(
+      c => !diversionChoiceIds.has(c.id) && !c.prompt.startsWith('Freighter')
+    )
     return {
       ...state,
       players,
@@ -319,6 +328,8 @@ export function checkDiversionAfterDeployChange(state: GameState, playerId: numb
         ...turn,
         diversionFreighterGranted: false,
         diversionActive: true,
+        diversionFreighterStepBefore: undefined,
+        diversionFreighterChoiceIds: undefined,
         pendingChoices,
       },
     }

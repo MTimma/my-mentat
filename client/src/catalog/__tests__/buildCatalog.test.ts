@@ -39,4 +39,11 @@ describe('buildCatalog Rise of Ix', () => {
     expect(catalog.meta.counts.expansions).toBe(1)
     expect(catalog.meta.counts.techTiles).toBe(18)
   })
+
+  it('preserves Kwisatz Haderach beforePlaceAgent recall in the effects registry', () => {
+    const effect = catalog.effects.find(
+      entry => entry.id === 'effect:card:starting/kwisatz-haderach:play:0'
+    )
+    expect(effect?.beforePlaceAgent).toEqual({ recallAgent: true })
+  })
 })

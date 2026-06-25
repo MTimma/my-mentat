@@ -69,3 +69,46 @@ export function getSelectableDeckCards(player: Player): Card[] {
 export function getOpponentDiscardableCards(player: Player): Card[] {
   return getSelectableDeckCards(player)
 }
+
+/** Whether a deck card is in the player's hand (first `handCount` entries of `deck`). */
+export function isCardInHand(player: Player, cardId: number): boolean {
+  const idx = (player.deck ?? []).findIndex(c => c.id === cardId)
+  return idx >= 0 && idx < player.handCount
+}
+
+/** True when the player can pay a discard cost from hand. */
+export function canPayDiscardCost(player: Player, discardCount: number): boolean {
+  return player.handCount >= discardCount
+}
+
+/** Validates discard-cost selections: all cards must come from hand. */
+export function validateDiscardCostSelection(
+  player: Player,
+  discardCount: number,
+  cardIds: number[]
+): boolean {
+  if (player.handCount < discardCount) return false
+  if (cardIds.length !== discardCount) return false
+  if (new Set(cardIds).size !== cardIds.length) return false
+  return cardIds.every(id => isCardInHand(player, id))
+}
+
+/** Card picker rules for discard costs: hand cards only. */
+export function getDiscardCostPlayability(
+  player: Player,
+  discardCount: number,
+  selectedCards: Card[]
+): (card: Card) => { playable: boolean; reason?: string } {
+  return (card: Card) => {
+    if (selectedCards.some(c => c.id === card.id)) {
+      return { playable: true }
+    }
+    if (selectedCards.length >= discardCount) {
+      return { playable: false, reason: 'Selection full' }
+    }
+    if (!isCardInHand(player, card.id)) {
+      return { playable: false, reason: 'Not in hand' }
+    }
+    return { playable: true }
+  }
+}

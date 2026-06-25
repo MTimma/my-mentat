@@ -228,7 +228,10 @@
       },
       "slot": "play",
       "index": 0,
-      "reward": {}
+      "reward": {},
+      "beforePlaceAgent": {
+        "recallAgent": true
+      }
     },
     {
       "id": "effect:card:starting/kwisatz-haderach:play:1",
@@ -1080,6 +1083,9 @@
       "index": 0,
       "reward": {
         "custom": "KWISATZ_HADERACH"
+      },
+      "beforePlaceAgent": {
+        "recallAgent": true
       }
     },
     {
@@ -8631,6 +8637,8 @@
     "CARRYALL",
     "GUN_THOPTER",
     "KWISATZ_HADERACH",
+    "KWISATZ_FROM_SUPPLY",
+    "KWISATZ_RECALL_AGENT",
     "LIET_KYNES",
     "SECRETS_STEAL",
     "POWER_PLAY",
@@ -8660,6 +8668,8 @@
     "TECH_NEGOTIATOR",
     "FREIGHTER_ADVANCE",
     "FREIGHTER_RECALL",
+    "TESSIA_SNOOPER_DISCARD_SPICE",
+    "TESSIA_SNOOPER_DISCARD_RESOLVED",
     "DIVIDENDS",
     "UNLOAD_REVEAL",
     "DISCARD_FROM_HAND",

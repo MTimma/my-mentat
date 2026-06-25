@@ -1752,7 +1752,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     name: "Kwisatz Haderach",
     image: "imperium_row/kwisatz_haderach.avif",
     faction: [FactionType.BENE_GESSERIT],
-    infiltrate: true, //TODO not only infiltrate, it ignores space costs as well
+    infiltrate: true,
     //TODO add to turn controls indicator when recalling agent
     agentIcons: ALL_AGENT_ICONS,
     cost: 8,
@@ -1775,7 +1775,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     name: "Lady Jessica",
     image: "imperium_row/lady_jessica.avif",
     faction: [FactionType.BENE_GESSERIT],
-    infiltrate: true, //TODO not only infiltrate, it ignores space costs as well
+    infiltrate: true,
     //TODO add to turn controls indicator when recalling agent
     agentIcons: [AgentIcon.BENE_GESSERIT, AgentIcon.CITY, AgentIcon.SPICE_TRADE, AgentIcon.LANDSRAAD],
     cost: 7,

@@ -2,9 +2,39 @@ import { describe, expect, it } from 'vitest'
 import { BOARD_SPACES } from '../../../data/boardSpaces'
 import { BOARD_HOTSPOTS_FOR_EXPANSIONS } from '../../../data/boardHotspots'
 import { IX_BOARD_HOTSPOTS } from '../../../data/ixBoardAnchors'
-import { AgentIcon, FactionType } from '../../../types/GameTypes'
+import { STARTING_DECK } from '../../../catalog/runtime'
+import { LEADERS, LEADER_NAMES } from '../../../data/leaders'
+import { applyGameAction } from '../GameContext'
+import {
+  AgentIcon,
+  ControlMarkerType,
+  FactionType,
+  GainSource,
+  NO_EXPANSIONS,
+  RewardType,
+} from '../../../types/GameTypes'
+import { getBaseTestState, stubDeckCard } from './_helpers'
 
-import { NO_EXPANSIONS } from '../../../types/GameTypes'
+const ARRAKEEN_ID = BOARD_SPACES.find(s => s.name === 'Arrakeen')!.id
+const IMPERIAL_BASIN_ID = BOARD_SPACES.find(s => s.name === 'Imperial Basin')!.id
+
+function placeAgentOnSpace(spaceId: number, controllerId = 1) {
+  const card = stubDeckCard(5000 + spaceId, { agentIcons: [AgentIcon.CITY] })
+  let s = getBaseTestState(undefined, { players: 2 })
+  s = {
+    ...s,
+    expansions: { ...NO_EXPANSIONS, riseOfIx: true },
+    players: s.players.map((p, i) =>
+      i === 0 ? { ...p, deck: [card], handCount: 1 } : p
+    ),
+    controlMarkers: {
+      ...s.controlMarkers,
+      [ControlMarkerType.ARRAKIN]: controllerId,
+    },
+  }
+  s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+  return applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId })
+}
 
 describe('Board spaces — base game', () => {
   const baseHotspotBySpace = new Map(
@@ -71,10 +101,102 @@ describe('Board spaces — base game', () => {
     }
   })
 
-  it.todo('control bonus: Arrakeen/Carthag +1 Solari to controller when any agent visits')
-  it.todo('control bonus: Imperial Basin +1 spice to controller')
   it.todo('deploy: combat space allows up to 2 garrison + turn recruits')
   it.todo('Rally Troops: pay 4 Solari for 4 troops')
+})
+
+describe('Board spaces — control bonus', () => {
+  it('Arrakeen visit grants +1 solari to control marker owner', () => {
+    const before = getBaseTestState(undefined, { players: 2 })
+    const controllerSolari = before.players[1].solari
+    const after = placeAgentOnSpace(ARRAKEEN_ID, 1)
+    expect(after.players[1].solari).toBe(controllerSolari + 1)
+    expect(
+      after.gains.some(
+        g =>
+          g.playerId === 1 &&
+          g.type === RewardType.SOLARI &&
+          g.source === GainSource.CONTROL &&
+          g.name.includes('Control Bonus')
+      )
+    ).toBe(true)
+  })
+
+  it('Imperial Basin visit grants +1 spice to control marker owner', () => {
+    const before = getBaseTestState(undefined, { players: 2 })
+    const controllerSpice = before.players[1].spice
+    let s = getBaseTestState(undefined, { players: 2 })
+    s = {
+      ...s,
+      expansions: { ...NO_EXPANSIONS, riseOfIx: true },
+      controlMarkers: {
+        ...s.controlMarkers,
+        [ControlMarkerType.IMPERIAL_BASIN]: 1,
+      },
+    }
+    const card = stubDeckCard(5100, { agentIcons: [AgentIcon.CITY] })
+    s = {
+      ...s,
+      players: s.players.map((p, i) =>
+        i === 0 ? { ...p, deck: [card], handCount: 1 } : p
+      ),
+    }
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+    const after = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: IMPERIAL_BASIN_ID })
+    expect(after.players[1].spice).toBe(controllerSpice + 1)
+  })
+
+  it('dreadnought cover overrides control marker for control bonus', () => {
+    const before = getBaseTestState(undefined, { players: 2 })
+    const coverOwnerSolari = before.players[0].solari
+    const card = stubDeckCard(5200, { agentIcons: [AgentIcon.CITY] })
+    let s = getBaseTestState(undefined, { players: 2 })
+    s = {
+      ...s,
+      expansions: { ...NO_EXPANSIONS, riseOfIx: true },
+      controlMarkers: {
+        ...s.controlMarkers,
+        [ControlMarkerType.ARRAKIN]: 1,
+      },
+      dreadnoughtCover: {
+        [ControlMarkerType.ARRAKIN]: 0,
+        [ControlMarkerType.CARTHAG]: null,
+        [ControlMarkerType.IMPERIAL_BASIN]: null,
+      },
+      players: s.players.map((p, i) =>
+        i === 0 ? { ...p, deck: [card], handCount: 1 } : p
+      ),
+    }
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+    const after = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: ARRAKEEN_ID })
+    expect(after.players[0].solari).toBe(coverOwnerSolari + 1)
+    expect(after.players[1].solari).toBe(before.players[1].solari)
+  })
+
+  it('Beast signet ring troops count toward combat deploy limit on Arrakeen', () => {
+    const beast = LEADERS.find(l => l.name === LEADER_NAMES.BEAST_RABBAN)!
+    const signet = structuredClone(STARTING_DECK.find(c => c.name === 'Signet Ring')!)
+    let s = getBaseTestState({ leader: beast, troops: 3 })
+    s = {
+      ...s,
+      players: s.players.map(p => ({ ...p, deck: [signet], handCount: 1, troops: 3 })),
+    }
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: signet.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: ARRAKEEN_ID })
+    expect(s.players[0].troops).toBe(4)
+    expect(s.currTurn?.troopLimit).toBe(3)
+
+    s = applyGameAction(s, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+    expect(s.players[0].troops).toBe(5)
+    expect(s.currTurn?.troopLimit).toBe(4)
+
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(s.currTurn?.removableTroops).toBe(4)
+    expect(s.combatTroops[0]).toBe(4)
+  })
 })
 
 describe('Board spaces — faction influence', () => {

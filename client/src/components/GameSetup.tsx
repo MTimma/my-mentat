@@ -45,7 +45,7 @@ const GameSetup: React.FC<GameSetupProps> = ({
   const [editorOpen, setEditorOpen] = useState(false)
   const [packListVersion, setPackListVersion] = useState(0)
   const selectablePacks = useMemo(() => getSelectableGamePacks(), [packListVersion])
-  const expansions = expansionsForGamePack(gamePackId)
+  const expansions = useMemo(() => expansionsForGamePack(gamePackId), [gamePackId])
   const [players, setPlayers] = useState<PlayerSetup[]>([
     createPlayerSetup(1, PlayerColor.RED, 1, gamePackId),
     createPlayerSetup(2, PlayerColor.GREEN, 0, gamePackId),

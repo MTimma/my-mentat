@@ -2,6 +2,7 @@ import {
   ChoiceType,
   CustomEffect,
   FactionType,
+  FixedOptionsChoice,
   GainSource,
   OptionalEffect,
 } from '../types/GameTypes'

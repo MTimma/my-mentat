@@ -32,3 +32,7 @@ plans/plan-leader-abilities-dependencies.md
 .cursor/mcp.json
 .venv-img/
 /knowerage
+
+# Rust / Cargo (server/)
+server/target/
+**/*.rs.bk

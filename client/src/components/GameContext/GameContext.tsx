@@ -40,6 +40,8 @@ import {
   handleTechNegotiator,
   applyHoloprojectorsDiscard,
   applyInvasionShipsDiscard,
+  applySonicSnoopersDraw,
+  applySonicSnoopersReturn,
   heighlinerDiscountForPlayer,
   markMandatoryDeploy,
   shouldConsumeExtraTurn,
@@ -101,8 +103,15 @@ import {
   updateFactionInfluence,
   getTotalVictoryPoints,
   mergePlayerAfterFactionInfluence,
+  syncPlayerResourcesWithMilestoneState,
   type InfluenceMilestoneMeta,
 } from '../../utils/influenceVictoryPoints'
+import {
+  GAINED_EFFECT_KWISATZ_FROM_BOARD,
+  GAINED_EFFECT_RECALL_REQUIRED,
+  isKwisatzAgentSourceChoice,
+  isKwisatzHaderachCard,
+} from '../../utils/kwisatzHaderach'
 import {
   endgameHasPendingWork,
   findRevealedEndgameCard,
@@ -175,7 +184,7 @@ import {
 import { seedTessiaSnoopers, tryTessiaSnooperClaim } from '../../data/leaderAbilities/tessiaSnoopers'
 import { countSpiceMustFlowCards } from '../../utils/spiceMustFlow'
 import { applySandboxDeckEdit } from '../../utils/sandboxDeckPools'
-import { getOpponentDiscardableCards } from '../../utils/playAreaDisplay'
+import { getOpponentDiscardableCards, validateDiscardCostSelection, isCardInHand } from '../../utils/playAreaDisplay'
 import { collectLiveIds, mintId, nextSemanticId } from '../../utils/semanticIds'
 import {
   applyDividendsReward,
@@ -991,14 +1000,22 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
  * Combat-space rule: deploy up to 2 from garrison plus any troops recruited this turn.
  * Increases the turn deploy cap when troops are gained while deployment is active.
  */
+function applyRecruitedTroopsToTurnDeployLimit(
+  currTurn: GameTurn,
+  troopsRecruited: number
+): GameTurn {
+  if (troopsRecruited <= 0 || !currTurn.canDeployTroops) return currTurn
+  return {
+    ...currTurn,
+    troopLimit: (currTurn.troopLimit ?? 0) + troopsRecruited,
+  }
+}
+
 function withRecruitedTroopsDeployLimit(state: GameState, troopsRecruited: number): GameState {
   if (troopsRecruited <= 0 || !state.currTurn?.canDeployTroops) return state
   return {
     ...state,
-    currTurn: {
-      ...state.currTurn,
-      troopLimit: (state.currTurn.troopLimit || 0) + troopsRecruited,
-    },
+    currTurn: applyRecruitedTroopsToTurnDeployLimit(state.currTurn, troopsRecruited),
   }
 }
 
@@ -1073,16 +1090,7 @@ function applyInfluenceDeltaForPlayer(
     return {
       state: newState,
       player: statePlayer
-        ? {
-            ...player,
-            troops: statePlayer.troops,
-            troopSupply: statePlayer.troopSupply,
-            solari: statePlayer.solari,
-            water: statePlayer.water,
-            intrigueCount: statePlayer.intrigueCount,
-            leader: statePlayer.leader,
-            snoopers: statePlayer.snoopers,
-          }
+        ? { ...player, ...syncPlayerResourcesWithMilestoneState(player, statePlayer) }
         : player,
       tessiaChoices: [],
     }
@@ -1540,6 +1548,7 @@ function canAffordIntrigueCost(state: GameState, player: Player, cost: Cost): bo
   if (cost.water && player.water < cost.water) return false
   if (cost.solari && player.solari < cost.solari) return false
   if (cost.troops && player.troops < cost.troops) return false
+  if (cost.discard && player.handCount < cost.discard) return false
   if (cost.influence?.chooseOne && !canPayInfluenceCost(state, player.id, cost.influence)) return false
   return true
 }
@@ -1577,7 +1586,9 @@ function canPlayIntrigueCardNow(state: GameState, player: Player, card: Intrigue
     if (effect.reward?.custom === CustomEffect.STRONGARM && !canPlayStrongarm(state, player.id)) {
       return false
     }
-    if (intrigueEffectNeedsDeferral(effect)) return true
+    if (intrigueEffectNeedsDeferral(effect)) {
+      return isAffordableEffect(effect)
+    }
     return isAffordableEffect(effect)
   })
 }
@@ -2074,6 +2085,7 @@ function applyIntrigueCardPlay(
 
     if (effect.cost?.discard) {
       const discardCount = effect.cost.discard
+      if (player.handCount < discardCount) return
       const choiceId = mintId(state, intrigueSource, 'DISCARD', pendingChoices.map(c => c.id))
       pendingChoices.push({
         id: choiceId,
@@ -2081,12 +2093,14 @@ function applyIntrigueCardPlay(
         prompt: `Discard ${discardCount} card(s)`,
         piles: [CardPile.HAND],
         selectionCount: discardCount,
-        disabled: player.deck.length < discardCount,
+        discardCost: discardCount,
+        disabled: player.handCount < discardCount,
+        filter: c => isCardInHand(player, c),
         onResolve: (cardIds: number[]) => ({
           type: 'CUSTOM_EFFECT',
           playerId,
           customEffect: CustomEffect.IXIAN_PROBE,
-          data: { cardIds, drawCards: effect.reward?.drawCards ?? 0, sourceCardId: card.id },
+          data: { cardIds, drawCards: effect.reward?.drawCards ?? 0, sourceCardId: card.id, discardCount },
         }),
         source: intrigueSource,
       })
@@ -4156,38 +4170,89 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             pendingChoices: [],
           }
 
-      // Check for before-place-agent requirement on play effects
-      const requiresReturn = card.playEffect?.some(e => e.beforePlaceAgent?.recallAgent)
-      if (requiresReturn) {
+      // Kwisatz Haderach: choose supply vs board recall, or auto-route when only one source exists
+      if (isKwisatzHaderachCard(card)) {
         const spaceIds = Object.entries(state.occupiedSpaces)
           .filter(([, ids]) => ids.includes(playerId))
           .map(([sid]) => Number(sid))
-        if (spaceIds.length === 0) {
-          // No agents on board; cannot play this card
+        const hasBoardAgents = spaceIds.length > 0
+        const hasSupplyAgents = player.agents > 0
+
+        if (!hasBoardAgents && !hasSupplyAgents) {
           return state
         }
-        const updatedTurn = {
-          ...currentTurn,
-          gainedEffects: [...(currentTurn.gainedEffects || []), 'RECALL_REQUIRED']
-        }
-        return {
+
+        const kwisatzBase = {
           ...state,
           selectedCard: cardId,
           selectedCardDeckIndex: resolvedDeckIndex,
-          currTurn: updatedTurn
+          currTurn: currentTurn,
         }
+
+        if (hasBoardAgents && hasSupplyAgents) {
+          const choiceId = nextSemanticId(
+            { type: GainSource.CARD, id: card.id },
+            'KWISATZ-AGENT-SOURCE',
+            (currentTurn.pendingChoices ?? []).map(c => c.id)
+          )
+          const pendingChoice: FixedOptionsChoice = {
+            id: choiceId,
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Kwisatz Haderach — agent source',
+            options: [
+              {
+                reward: { custom: CustomEffect.KWISATZ_FROM_SUPPLY },
+                rewardLabel: 'Agent from supply',
+              },
+              {
+                reward: { custom: CustomEffect.KWISATZ_RECALL_AGENT },
+                rewardLabel: 'Recall from board',
+              },
+            ],
+            source: { type: GainSource.CARD, id: card.id, name: card.name },
+          }
+          return {
+            ...kwisatzBase,
+            canEndTurn: false,
+            currTurn: {
+              ...currentTurn,
+              pendingChoices: [...(currentTurn.pendingChoices ?? []), pendingChoice],
+            },
+          }
+        }
+
+        if (hasBoardAgents && !hasSupplyAgents) {
+          return {
+            ...kwisatzBase,
+            canEndTurn: false,
+            currTurn: {
+              ...currentTurn,
+              gainedEffects: [...(currentTurn.gainedEffects ?? []), GAINED_EFFECT_RECALL_REQUIRED],
+            },
+          }
+        }
+
+        return kwisatzBase
       }
 
       return {
         ...state,
         selectedCard: cardId,
         selectedCardDeckIndex: resolvedDeckIndex,
-        currTurn: currentTurn
+        currTurn: currentTurn,
+        canEndTurn: false,
       }
     }
     case 'PLACE_AGENT': {
       const { playerId, spaceId, sellMelangeData, selectiveBreedingData } = action
       let newState = {...state}
+      if (
+        newState.currTurn?.pendingChoices?.some(
+          choice => choice.type === ChoiceType.FIXED_OPTIONS && isKwisatzAgentSourceChoice(choice.id)
+        )
+      ) {
+        return state
+      }
       const priorSpaceId = newState.currTurn?.agentSpaceId
       const isReplacingPlacement =
         priorSpaceId != null && priorSpaceId !== spaceId
@@ -4391,10 +4456,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                     addPendingReward(r.reward, r.source, r.isTrash ?? false)
                     return
                   }
+                  const troopsBefore = currPlayer.troops
                   Object.assign(
                     currPlayer,
                     applyRewardToPlayer(r.reward, currPlayer, updatedGains, newState, r.source)
                   )
+                  const troopsRecruited = currPlayer.troops - troopsBefore
+                  if (troopsRecruited > 0 && tempCurrTurn.canDeployTroops) {
+                    tempCurrTurn.troopLimit = (tempCurrTurn.troopLimit ?? 0) + troopsRecruited
+                  }
                 })
               }
               break
@@ -4517,9 +4587,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (!currPlayer || !card || !space || playerId !== newState.activePlayerId || !newState.selectedCard) return state
       
-      const ignoreSpaceCostAndReq = card.playEffect?.find(e => e.reward?.custom === CustomEffect.KWISATZ_HADERACH)
+      const isKwisatzPlacement = isKwisatzHaderachCard(card)
+      const kwisatzFromBoard =
+        newState.currTurn?.gainedEffects?.includes(GAINED_EFFECT_KWISATZ_FROM_BOARD) ?? false
       // Handle recall-before-placement requirement: interpret this click as recall if needed
-      if (newState.currTurn?.gainedEffects?.includes('RECALL_REQUIRED')) {
+      if (newState.currTurn?.gainedEffects?.includes(GAINED_EFFECT_RECALL_REQUIRED)) {
         const occupants = newState.occupiedSpaces[spaceId] || []
         if (!occupants.includes(playerId)) {
           // Not a valid recall click; ignore
@@ -4531,10 +4603,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           [spaceId]: occupants.filter(id => id !== playerId)
         }
         newState.players = newState.players.map(p => p.id === playerId ? { ...p, agents: p.agents + 1 } : p)
-        // Clear the recall flag; keep selectedCard so player can now place
+        // Clear recall flag; mark that the next placement skips board-space effects
         newState.currTurn = {
           ...newState.currTurn,
-          gainedEffects: (newState.currTurn?.gainedEffects || []).filter(e => e !== 'RECALL_REQUIRED')
+          gainedEffects: [
+            ...(newState.currTurn?.gainedEffects || []).filter(e => e !== GAINED_EFFECT_RECALL_REQUIRED),
+            GAINED_EFFECT_KWISATZ_FROM_BOARD,
+          ]
         }
         return newState
       }
@@ -4545,7 +4620,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Check if player can afford the space (Leto pays 1 less for Landsraad spaces)
       const heighlinerDiscount =
         space.id === 17 ? heighlinerDiscountForPlayer(newState, playerId) : 0
-      if (space.cost && !ignoreSpaceCostAndReq) {
+      if (space.cost) {
         const effectiveSolari = getEffectiveSolariCost(space, currPlayer)
         if (effectiveSolari > 0 && currPlayer.solari < effectiveSolari) return state
         if (space.cost.spice) {
@@ -4574,7 +4649,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       // Check if player has required influence
-      if (space.requiresInfluence && !ignoreSpaceCostAndReq) {
+      if (space.requiresInfluence && !isKwisatzPlacement) {
         const playerInfluence = newState.factionInfluence[space.requiresInfluence.faction as FactionType]?.[playerId] || 0
         if (playerInfluence < space.requiresInfluence.amount) return state
       }
@@ -4584,10 +4659,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if(controlPlayerId != null) {
           if(space.controlBonus?.solari) {
             updatedPlayers[controlPlayerId].solari += space.controlBonus.solari
+            if (controlPlayerId === playerId) {
+              currPlayer.solari += space.controlBonus.solari
+            }
             updatedGains.push({ round: newState.currentRound, playerId: controlPlayerId, sourceId: space.id, name: space.name + " Control Bonus", amount: space.controlBonus.solari, type: RewardType.SOLARI, source: GainSource.CONTROL } )
           }
           if(space.controlBonus?.spice) {
             updatedPlayers[controlPlayerId].spice += space.controlBonus.spice
+            if (controlPlayerId === playerId) {
+              currPlayer.spice += space.controlBonus.spice
+            }
             updatedGains.push({ round: newState.currentRound, playerId: controlPlayerId, sourceId: space.id, name: space.name + " Control Bonus", amount: space.controlBonus.spice, type: RewardType.SPICE, source: GainSource.CONTROL } )
           }
         }
@@ -4648,7 +4729,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           type: RewardType.SOLARI, 
           source: GainSource.BOARD_SPACE
         })
-      } else if (space.cost && !ignoreSpaceCostAndReq) {
+      } else if (space.cost) {
         if (space.cost.solari) {
           const solariPaid = getEffectiveSolariCost(space, currPlayer)
           currPlayer.solari -= solariPaid
@@ -4671,7 +4752,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       const optionalEffects: OptionalEffect[] = []
 
-      if (space.effects) {
+      if (space.effects && !kwisatzFromBoard) {
         const boardSource = { type: GainSource.BOARD_SPACE, id: space.id, name: space.name }
 
         if (space.id === TECH_NEGOTIATION_SPACE_ID && isRiseOfIxEnabled(newState)) {
@@ -4796,7 +4877,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       
       // Add influence to pending rewards (single bumps)
-      if (space.influence) {
+      if (space.influence && !kwisatzFromBoard) {
         const influenceReward = { influence: { amounts: [space.influence] } }
         const pendingReward = {
           id: nextSemanticId(
@@ -4822,7 +4903,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         updatedDeck.splice(selectedDeckIndex, 1)
       }
 
-      const canDeployTroops = tempCurrTurn?.canDeployTroops || false
+      const canDeployTroops = kwisatzFromBoard ? false : (tempCurrTurn?.canDeployTroops || false)
       const troopLimit = canDeployTroops ? (tempCurrTurn?.troopLimit|| 2): 2
       const persuasionCount = tempCurrTurn?.persuasionCount || 0
 
@@ -4842,7 +4923,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             gainsStartIndex: tempCurrTurn.gainsStartIndex,
             persuasionCount: (newState.currTurn?.persuasionCount || 0) + persuasionCount,
             optionalEffects: [...(newState.currTurn?.optionalEffects||[]), ...optionalEffects],
-            pendingChoices: [...(newState.currTurn?.pendingChoices||[]), ...(tempCurrTurn.pendingChoices||[])]
+            pendingChoices: [...(newState.currTurn?.pendingChoices||[]), ...(tempCurrTurn.pendingChoices||[])],
+            gainedEffects: (newState.currTurn?.gainedEffects || []).filter(
+              e => e !== GAINED_EFFECT_KWISATZ_FROM_BOARD
+            ),
           }
         : {
             playerId,
@@ -4863,7 +4947,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             pendingChoices: tempCurrTurn.pendingChoices || []
           }
 
-      if (space.specialEffect) {
+      if (space.specialEffect && !kwisatzFromBoard) {
         currentTurn.gainedEffects = [...(currentTurn.gainedEffects || []), space.specialEffect]
         switch (space.specialEffect) {
           case 'mentat':
@@ -6027,6 +6111,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           : afterRecall
       }
 
+      if (reward.custom === CustomEffect.KWISATZ_FROM_SUPPLY) {
+        const newPending = (state.currTurn.pendingChoices || []).filter(c => c.id !== action.choiceId)
+        const newTurn = { ...state.currTurn, pendingChoices: newPending }
+        const after = {
+          ...state,
+          currTurn: newTurn,
+          canEndTurn: false,
+        }
+        return state.phase === GamePhase.END_GAME ? afterEndgamePlayerAction(after) : after
+      }
+
+      if (reward.custom === CustomEffect.KWISATZ_RECALL_AGENT) {
+        const newPending = (state.currTurn.pendingChoices || []).filter(c => c.id !== action.choiceId)
+        const newTurn = {
+          ...state.currTurn,
+          pendingChoices: newPending,
+          gainedEffects: [...(state.currTurn.gainedEffects || []), GAINED_EFFECT_RECALL_REQUIRED],
+        }
+        const after = { ...state, currTurn: newTurn, canEndTurn: false }
+        return state.phase === GamePhase.END_GAME ? afterEndgamePlayerAction(after) : after
+      }
+
       if (reward.retreatFromConflict !== undefined) {
         const n = reward.retreatFromConflict
         if (n < 0) return state
@@ -6703,18 +6809,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           const cardIds = (data?.cardIds as number[]) ?? []
           const drawCards = (data?.drawCards as number) ?? 0
           const sourceCardId = (data?.sourceCardId as number) ?? 0
+          const discardCount = (data?.discardCount as number) ?? cardIds.length
           if (cardIds.length === 0) return state
+          if (!validateDiscardCostSelection(player, discardCount, cardIds)) return state
 
           let deck = [...player.deck]
           const discardPile = [...player.discardPile]
           const discardedCards: Card[] = []
+          let handCount = player.handCount
           for (const id of cardIds) {
             const idx = deck.findIndex(c => c.id === id)
             if (idx === -1) return state
             const [removed] = deck.splice(idx, 1)
             discardPile.push(removed)
             discardedCards.push(removed)
+            if (idx < handCount) {
+              handCount = Math.max(0, handCount - 1)
+            }
           }
+
+          const cardsInDrawPile = Math.max(0, deck.length - handCount)
+          const drawn = Math.min(drawCards, cardsInDrawPile)
+          handCount += drawn
 
           const gains = [...state.gains]
           gains.push({
@@ -6726,13 +6842,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             type: RewardType.DRAW,
             source: GainSource.INTRIGUE,
           })
-          if (drawCards > 0) {
+          if (drawn > 0) {
             gains.push({
               round: state.currentRound,
               playerId,
               sourceId: sourceCardId,
               name: 'Ixian Probe',
-              amount: drawCards,
+              amount: drawn,
               type: RewardType.DRAW,
               source: GainSource.INTRIGUE,
             })
@@ -6747,7 +6863,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                     ...p,
                     deck,
                     discardPile,
-                    handCount: p.handCount - cardIds.length + drawCards,
+                    handCount,
                   }
                 : p
             ),
@@ -6764,6 +6880,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         case CustomEffect.INVASION_SHIPS: {
           const cardIds = (data?.cardIds as number[]) ?? []
           return applyInvasionShipsDiscard(state, playerId, cardIds)
+        }
+        case CustomEffect.SONIC_SNOOPERS: {
+          const step = data?.step as string | undefined
+          const cardId = data?.cardId as number | undefined
+          if (cardId == null) return state
+          if (step === 'return') {
+            return applySonicSnoopersReturn(state, playerId, cardId)
+          }
+          return applySonicSnoopersDraw(state, playerId, cardId)
         }
         case CustomEffect.POWER_PLAY: {
           if (findPowerPlayInfluenceTarget(state.pendingRewards)) {
@@ -7237,12 +7362,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         newState = withRecruitedTroopsDeployLimit(newState, totalTroopsRecruited)
       }
       
-      // Remove all applied rewards from pendingRewards (keep only trash sources and disabled rewards)
-      newState.pendingRewards = state.pendingRewards.filter(r => 
-        sourcesWithTrash.has(`${r.source.type}-${r.source.id}`) || r.disabled ||
-        (hasUnclaimedPowerPlay && r.source.type === GainSource.BOARD_SPACE && r.reward.influence) ||
-        r.reward.custom === CustomEffect.POWER_PLAY
-      )
+      // Remove only rewards that were applied; keep interactive custom effects, trash groups, etc.
+      const appliedRewardIds = new Set(rewardsToApply.map(r => r.id))
+      newState.pendingRewards = state.pendingRewards.filter(r => !appliedRewardIds.has(r.id))
       
       // Update player and gains
       newState.players = newState.players.map(p => p.id === playerId ? newPlayer : p)

@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { getFreshDefaultGameState } from '../GameContext'
+import { getFreshDefaultGameState, applyGameAction } from '../GameContext'
 import { TechTileId } from '../../../data/techTiles'
-import { handleActivateTech } from '../riseOfIxReducer'
+import {
+  applyHoloprojectorsDiscard,
+  applySonicSnoopersDraw,
+  applySonicSnoopersReturn,
+  handleActivateTech,
+} from '../riseOfIxReducer'
 import { tilesActivatableNow } from '../../../utils/techTiles'
-import { GamePhase, NO_EXPANSIONS, TurnType } from '../../../types/GameTypes'
-import { makePlayer } from './_helpers'
+import { ChoiceType, GamePhase, NO_EXPANSIONS, TurnType } from '../../../types/GameTypes'
+import { makePlayer, stubDeckCard } from './_helpers'
+import { RISE_OF_IX_INTRIGUE_CARDS } from '../../../data/intrigueCardsRiseOfIx'
 
 const RISE_OF_IX = { ...NO_EXPANSIONS, riseOfIx: true }
 
@@ -82,5 +88,141 @@ describe('tech tile activation', () => {
       tileId: TechTileId.INVASION_SHIPS,
     })
     expect(after).toBe(before)
+  })
+
+  it('Spy Satellites activation costs 3 spice grants 1 VP and removes tile', () => {
+    const before = roiState({
+      players: [
+        makePlayer(0, {
+          spice: 5,
+          tech: [{ id: TechTileId.SPY_SATELLITES, faceUp: true }],
+        }),
+        makePlayer(1),
+      ],
+    })
+    const after = handleActivateTech(before, {
+      type: 'ACTIVATE_TECH',
+      playerId: 0,
+      tileId: TechTileId.SPY_SATELLITES,
+    })
+    expect(after.players[0].spice).toBe(2)
+    expect(after.players[0].victoryPoints).toBe(1)
+    expect(after.players[0].tech).toEqual([])
+  })
+
+  it('Spy Satellites no-op when spice below 3', () => {
+    const before = roiState({
+      players: [
+        makePlayer(0, {
+          spice: 2,
+          tech: [{ id: TechTileId.SPY_SATELLITES, faceUp: true }],
+        }),
+        makePlayer(1),
+      ],
+    })
+    const after = handleActivateTech(before, {
+      type: 'ACTIVATE_TECH',
+      playerId: 0,
+      tileId: TechTileId.SPY_SATELLITES,
+    })
+    expect(after).toBe(before)
+  })
+
+  it('Holoprojectors discard from hand draws 1 from deck', () => {
+    const hand1 = stubDeckCard(101)
+    const hand2 = stubDeckCard(102)
+    const drawTop = stubDeckCard(103)
+    const before = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.HOLOPROJECTORS, faceUp: true }],
+          deck: [hand1, hand2, drawTop],
+          handCount: 2,
+          discardPile: [],
+        }),
+        makePlayer(1),
+      ],
+    })
+    const after = applyHoloprojectorsDiscard(before, 0, [hand1.id])
+    const p = after.players[0]
+    expect(p.handCount).toBe(2)
+    expect(p.deck.map(c => c.id)).toEqual([hand2.id, drawTop.id])
+    expect(p.discardPile.map(c => c.id)).toEqual([hand1.id])
+  })
+
+  it('Sonic Snoopers activation enqueues intrigue deck choice and trashes tile', () => {
+    const before = roiState({
+      intrigueDeck: [...RISE_OF_IX_INTRIGUE_CARDS],
+      intrigueDiscard: [],
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.SONIC_SNOOPERS, faceUp: true }],
+          intrigueCount: 0,
+        }),
+        makePlayer(1),
+      ],
+    })
+    const after = handleActivateTech(before, {
+      type: 'ACTIVATE_TECH',
+      playerId: 0,
+      tileId: TechTileId.SONIC_SNOOPERS,
+    })
+    expect(after.players[0].tech).toEqual([])
+    const choice = after.currTurn?.pendingChoices?.[0]
+    expect(choice?.type).toBe(ChoiceType.CARD_SELECT)
+    expect(choice?.prompt).toContain('Sonic Snoopers')
+  })
+
+  it('Sonic Snoopers draw then return swaps intrigue deck and discard', () => {
+    const deckCard = RISE_OF_IX_INTRIGUE_CARDS[0]
+    const discardCard = RISE_OF_IX_INTRIGUE_CARDS[1]
+    const before = roiState({
+      intrigueDeck: [deckCard, ...RISE_OF_IX_INTRIGUE_CARDS.slice(2)],
+      intrigueDiscard: [discardCard],
+      players: [
+        makePlayer(0, { intrigueCount: 0 }),
+        makePlayer(1),
+      ],
+    })
+    const afterDraw = applySonicSnoopersDraw(before, 0, deckCard.id)
+    expect(afterDraw.players[0].intrigueCount).toBe(1)
+    expect(afterDraw.intrigueDeck.some(c => c.id === deckCard.id)).toBe(false)
+    expect(afterDraw.currTurn?.pendingChoices?.[0]?.prompt).toContain('return')
+
+    const afterReturn = applySonicSnoopersReturn(afterDraw, 0, discardCard.id)
+    expect(afterReturn.players[0].intrigueCount).toBe(0)
+    expect(afterReturn.intrigueDeck.some(c => c.id === discardCard.id)).toBe(true)
+    expect(afterReturn.intrigueDiscard.some(c => c.id === discardCard.id)).toBe(false)
+  })
+
+  it('Holoprojectors end-to-end via RESOLVE_CARD_SELECT', () => {
+    const hand1 = stubDeckCard(201)
+    const drawTop = stubDeckCard(202)
+    let s = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.HOLOPROJECTORS, faceUp: true }],
+          deck: [hand1, drawTop],
+          handCount: 1,
+        }),
+        makePlayer(1),
+      ],
+    })
+    s = handleActivateTech(s, {
+      type: 'ACTIVATE_TECH',
+      playerId: 0,
+      tileId: TechTileId.HOLOPROJECTORS,
+    })
+    const choice = s.currTurn?.pendingChoices?.[0]
+    expect(choice).toBeDefined()
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CARD_SELECT',
+      playerId: 0,
+      choiceId: choice!.id,
+      cardIds: [hand1.id],
+    })
+    expect(s.players[0].handCount).toBe(1)
+    expect(s.players[0].discardPile.map(c => c.id)).toEqual([hand1.id])
+    expect(s.players[0].deck.map(c => c.id)).toEqual([drawTop.id])
   })
 })

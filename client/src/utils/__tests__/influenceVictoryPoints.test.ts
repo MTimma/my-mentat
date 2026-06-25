@@ -3,6 +3,7 @@ import {
   updateFactionInfluence,
   FOURTH_INFLUENCE_MILESTONE_REWARDS,
   mergePlayerAfterFactionInfluence,
+  syncPlayerResourcesWithMilestoneState,
 } from '../influenceVictoryPoints'
 import {
   FactionType,
@@ -240,6 +241,20 @@ describe('updateFactionInfluence fourth-influence milestone rewards', () => {
     const merged = mergePlayerAfterFactionInfluence(local, afterInfluence, baseline)
     expect(merged.troops).toBe(7)
     expect(merged.solari).toBe(2)
+  })
+
+  it('syncPlayerResourcesWithMilestoneState keeps local solari when state is stale', () => {
+    const local = makePlayer(0, { solari: 2 })
+    const statePlayer = makePlayer(0, { solari: 0 })
+    const synced = syncPlayerResourcesWithMilestoneState(local, statePlayer)
+    expect(synced.solari).toBe(2)
+  })
+
+  it('syncPlayerResourcesWithMilestoneState takes milestone solari from state', () => {
+    const local = makePlayer(0, { solari: 2 })
+    const statePlayer = makePlayer(0, { solari: 5 })
+    const synced = syncPlayerResourcesWithMilestoneState(local, statePlayer)
+    expect(synced.solari).toBe(5)
   })
 })
 

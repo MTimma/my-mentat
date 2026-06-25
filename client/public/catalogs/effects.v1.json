@@ -216,7 +216,10 @@
       },
       "slot": "play",
       "index": 0,
-      "reward": {}
+      "reward": {},
+      "beforePlaceAgent": {
+        "recallAgent": true
+      }
     },
     {
       "id": "effect:card:starting/kwisatz-haderach:play:1",
@@ -1068,6 +1071,9 @@
       "index": 0,
       "reward": {
         "custom": "KWISATZ_HADERACH"
+      },
+      "beforePlaceAgent": {
+        "recallAgent": true
       }
     },
     {

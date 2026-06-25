@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { AgentIcon, TurnType, type Card, type GameState, type Player } from '../../types/GameTypes'
-import { getOpponentDiscardableCards, getPlayAreaCardsForTurnView, getSelectableDeckCards } from '../playAreaDisplay'
+import { getOpponentDiscardableCards, getPlayAreaCardsForTurnView, getSelectableDeckCards, validateDiscardCostSelection, getDiscardCostPlayability, isCardInHand, canPayDiscardCost } from '../playAreaDisplay'
 
 function stubCard(id: number, name = `card-${id}`): Card {
   return { id, name, image: '', agentIcons: [AgentIcon.CITY] }
@@ -65,5 +65,23 @@ describe('playAreaDisplay', () => {
     })
 
     expect(getOpponentDiscardableCards(player).map(c => c.id)).toEqual([1, 2, 3, 4])
+  })
+
+  it('discard cost helpers require hand cards only', () => {
+    const player = stubPlayer({
+      deck: [stubCard(1), stubCard(2), stubCard(3), stubCard(4)],
+      handCount: 1,
+    })
+    expect(isCardInHand(player, 1)).toBe(true)
+    expect(isCardInHand(player, 2)).toBe(false)
+    expect(canPayDiscardCost(player, 2)).toBe(false)
+    expect(canPayDiscardCost({ ...player, handCount: 2 }, 2)).toBe(true)
+    expect(validateDiscardCostSelection({ ...player, handCount: 2 }, 2, [1, 2])).toBe(true)
+    expect(validateDiscardCostSelection(player, 2, [1, 2])).toBe(false)
+    expect(validateDiscardCostSelection({ ...player, handCount: 2 }, 2, [2, 3])).toBe(false)
+
+    const playability = getDiscardCostPlayability({ ...player, handCount: 2 }, 2, [])
+    expect(playability(stubCard(1)).playable).toBe(true)
+    expect(playability(stubCard(3)).playable).toBe(false)
   })
 })
