@@ -197,6 +197,28 @@
   text-overflow: ellipsis;
   max-width: 100%;
   line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.turn-gain-source-title-icon {
+  width: 1.1em;
+  height: 1.1em;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.turn-gain-source-title--tech {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  overflow: visible;
+  white-space: normal;
+}
+
+.turn-gain-source-title__tech-name {
+  color: rgba(244, 228, 188, 0.72);
 }
 
 .turn-gain-source-flow {
@@ -357,6 +379,12 @@
   vertical-align: middle;
   opacity: 0.92;
   flex-shrink: 0;
+}
+
+.turn-gains-display .gain-icon.dreadnought-icon,
+.turn-gains-display .turn-gain-total-icon.dreadnought-icon {
+  width: 11px;
+  height: 14px;
 }
 
 .turn-gains-display .gain-persuasion-badge {

@@ -47,6 +47,7 @@ const RESOURCE_LABELS: Partial<Record<RewardType, string>> = {
   [RewardType.VICTORY_POINTS]: 'Victory points',
   [RewardType.MENTAT]: 'Mentat',
   [RewardType.AGENT]: 'Agent',
+  [RewardType.EXTRA_TURN]: 'Extra turn',
   [RewardType.CONTROL]: 'Control',
   [RewardType.DISCARD]: 'Discard',
   [RewardType.TRASH]: 'Trash',

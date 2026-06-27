@@ -67,12 +67,7 @@ button.player-tech-tiles__tile:disabled {
   display: block;
 }
 
-.player-tech-tiles__face-down {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: rgba(232, 220, 200, 0.65);
-}
-
-.player-tech-tiles--compact .player-tech-tiles__face-down {
-  font-size: 0.55rem;
+.player-tech-tiles__tile--face-down {
+  border-color: rgba(120, 100, 70, 0.45);
+  background: rgba(10, 8, 6, 0.85);
 }

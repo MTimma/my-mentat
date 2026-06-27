@@ -1,0 +1,65 @@
+.tech-tile-flip-badge {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.tech-tile-flip-badge--gain {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1px solid rgba(180, 140, 60, 0.35);
+}
+
+.tech-tile-flip-badge--compact {
+  border-radius: 3px;
+}
+
+.tech-tile-flip-badge__tile,
+.tech-tile-flip-badge__placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tech-tile-flip-badge__placeholder {
+  background: rgba(20, 16, 10, 0.9);
+}
+
+.tech-tile-flip-badge__tile {
+  filter: brightness(0.42) saturate(0.7);
+}
+
+.tech-tile-flip-badge__shade {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.38);
+  pointer-events: none;
+}
+
+.tech-tile-flip-badge__flip {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 58%;
+  height: 58%;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.65));
+}
+
+.tech-tile-flip-badge--compact .tech-tile-flip-badge__flip {
+  width: 68%;
+  height: 68%;
+}
+
+.tech-tile-flip-badge--gain .tech-tile-flip-badge__flip {
+  width: 62%;
+  height: 62%;
+}

@@ -1,5 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useCallback, useContext, useRef, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
+import { TimeTravelProvider } from '../TimeTravel'
+import { GameContext } from './gameContextState'
 import { buildHistoryFromEvents, historyIndexToEventIndex } from '../../save/buildHistory'
 import { buildInitialStateFromSaveDoc } from '../../save/buildInitialStateFromSaveDoc'
 import { replayEvents } from '../../save/replay'
@@ -80,6 +82,7 @@ import {
   CustomEffect,
   ChoiceType,
   CardPile,
+  AgentIcon,
   PendingReward,
   AUTO_APPLIED_CUSTOM_EFFECTS,
   EffectTiming,
@@ -129,6 +132,7 @@ import {
 import { dreadnoughtStrengthEach } from '../../data/leaderAbilities/rhomburDreadnoughtStrength'
 import {
   applyDreadnoughtControlPlacement,
+  applySandboxDreadnoughtControl,
   buildDreadnoughtControlChoices,
   handleDreadnoughtReward,
   resolveCommissionDreadnoughtChoice,
@@ -227,18 +231,6 @@ function mergeRoiUnitFieldsFromRefreshed(target: Player, refreshed: Player): voi
   if (refreshed.troopSupply != null) target.troopSupply = refreshed.troopSupply
 }
 
-interface GameContextType {
-  gameState: GameState
-  currentConflict: ConflictCard | null
-  imperiumRow: Card[]
-  intrigueDeck: IntrigueCard[]
-  dispatch: React.Dispatch<GameAction>
-  /** Event-sourced save: export the recorded action log (plans/reducer/01). */
-  exportSaveDoc: (meta?: { id?: string; title?: string }) => import('../../save/types').SaveDoc
-  /** Number of replayable events recorded so far in this session. */
-  getRecordedEventCount: () => number
-}
-
 type GainAttribution = { type: GainSource; id: number; name: string }
 
 function withUnloadAfterCardRemoved(
@@ -335,6 +327,7 @@ export type GameAction =
     | { type: 'SANDBOX_SET_CONFLICT'; conflictId: number }
     | { type: 'SANDBOX_UPDATE_PLAYER'; playerId: number; patch: Partial<Player> }
     | { type: 'SANDBOX_SET_CONTROL_MARKER'; space: ControlMarkerType; playerId: number | null }
+    | { type: 'SANDBOX_SET_DREADNOUGHT_CONTROL'; space: ControlMarkerType; playerId: number | null }
     | { type: 'SANDBOX_SET_MENTAT_OWNER'; playerId: number | null }
     | { type: 'SANDBOX_SET_PLAYER_INFLUENCE'; playerId: number; faction: FactionType; value: number }
     | { type: 'SANDBOX_SET_POSITION'; round: number | null; playerTurn: number | null }
@@ -353,15 +346,7 @@ export type GameAction =
     | { type: 'TECH_NEGOTIATOR'; playerId: number; amount: number }
     | { type: 'ACTIVATE_TECH'; playerId: number; tileId: TechTileId }
 
-const GameContext = createContext<GameContextType | undefined>(undefined)
-
-export const useGame = () => {
-  const context = useContext(GameContext)
-  if (!context) {
-    throw new Error('useGame must be used within a GameProvider')
-  }
-  return context
-}
+export { useGame } from './gameContextState'
 
 const initialGameState: GameState = {
   firstPlayerMarker: 0,
@@ -2812,6 +2797,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         },
       })
     }
+    case 'SANDBOX_SET_DREADNOUGHT_CONTROL': {
+      if (!state.sandboxSetup) return state
+
+      return withSandboxSetupHistory(
+        applySandboxDreadnoughtControl(state, action.space, action.playerId)
+      )
+    }
     case 'SANDBOX_SET_MENTAT_OWNER': {
       if (!state.sandboxSetup) return state
       if (action.playerId !== null && !state.players.some(p => p.id === action.playerId)) {
@@ -4423,7 +4415,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               newState = applyWebOfPower(newState, playerId, card.id, card.name)
               break
             case CustomEffect.WEIRDING_WAY_EXTRA_TURN:
-              newState = applyWeirdingWayExtraTurn(newState)
+              newState = applyWeirdingWayExtraTurn(
+                newState,
+                playerId,
+                card.id,
+                card.name,
+                updatedGains
+              )
               break
             case CustomEffect.TREACHERY_DOUBLE_INFLUENCE: {
               const iconFactions: Partial<Record<AgentIcon, FactionType>> = {
@@ -8060,6 +8058,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
 
   const getRecordedEventCount = useCallback(() => recordedEventsRef.current.length, [])
 
+  const handleUndoToTurn = useCallback(
+    (turnIndex: number) => {
+      recordingDispatch({ type: 'UNDO_TO_TURN', turnIndex })
+    },
+    [recordingDispatch]
+  )
+
   const value = {
     gameState,
     currentConflict: gameState.currentConflict,
@@ -8072,7 +8077,9 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
 
   return (
     <GameContext.Provider value={value}>
-      {children}
+      <TimeTravelProvider gameState={gameState} onUndoToTurn={handleUndoToTurn}>
+        {children}
+      </TimeTravelProvider>
     </GameContext.Provider>
   )
 }

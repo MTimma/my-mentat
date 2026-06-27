@@ -180,22 +180,13 @@
   display: inline-flex;
   flex-direction: row;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   gap: clamp(1px, 0.35cqw, 2px);
-  width: clamp(10px, 7.5cqw, 18px);
+  width: auto;
+  max-width: clamp(18px, 12cqw, 36px);
   line-height: 1;
   font-weight: 700;
-}
-
-.ix-board-overlay__negotiator-square {
-  display: block;
-  width: clamp(3px, 2.6cqw, 7px);
-  height: clamp(3px, 2.6cqw, 7px);
-  background: currentColor;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.85);
-  flex: 0 0 auto;
 }
 
 .ix-board-overlay__negotiator-overflow {

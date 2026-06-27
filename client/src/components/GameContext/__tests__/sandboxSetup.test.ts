@@ -306,6 +306,103 @@ describe('Sandbox setup turn', () => {
     expect(s.history[0].controlMarkers[ControlMarkerType.ARRAKIN]).toBe(1)
   })
 
+  it('SANDBOX_SET_DREADNOUGHT_CONTROL overlays control without removing the marker', () => {
+    let s = getSandboxSetupState()
+    s = {
+      ...s,
+      expansions: { ...NO_EXPANSIONS, riseOfIx: true },
+      controlMarkers: {
+        ...s.controlMarkers,
+        [ControlMarkerType.ARRAKIN]: 1,
+      },
+      players: s.players.map((p, i) =>
+        i === 0
+          ? {
+              ...p,
+              dreadnoughts: { supply: 2, garrison: 1, conflict: 0, control: [] },
+            }
+          : p
+      ),
+    }
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_DREADNOUGHT_CONTROL',
+      space: ControlMarkerType.ARRAKIN,
+      playerId: 0,
+    })
+
+    expect(s.controlMarkers[ControlMarkerType.ARRAKIN]).toBe(1)
+    expect(s.dreadnoughtCover?.[ControlMarkerType.ARRAKIN]).toBe(0)
+    expect(s.players[0].dreadnoughts?.control).toEqual([
+      { space: ControlMarkerType.ARRAKIN, placedRound: 1 },
+    ])
+    expect(s.players[0].dreadnoughts?.garrison).toBe(0)
+  })
+
+  it('SANDBOX_SET_DREADNOUGHT_CONTROL works on an uncontrolled space', () => {
+    let s = getSandboxSetupState()
+    s = {
+      ...s,
+      expansions: { ...NO_EXPANSIONS, riseOfIx: true },
+      players: s.players.map((p, i) =>
+        i === 0
+          ? {
+              ...p,
+              dreadnoughts: { supply: 2, garrison: 1, conflict: 0, control: [] },
+            }
+          : p
+      ),
+    }
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_DREADNOUGHT_CONTROL',
+      space: ControlMarkerType.CARTHAG,
+      playerId: 0,
+    })
+
+    expect(s.controlMarkers[ControlMarkerType.CARTHAG]).toBeNull()
+    expect(s.dreadnoughtCover?.[ControlMarkerType.CARTHAG]).toBe(0)
+    expect(s.players[0].dreadnoughts?.control).toEqual([
+      { space: ControlMarkerType.CARTHAG, placedRound: 1 },
+    ])
+  })
+
+  it('SANDBOX_SET_DREADNOUGHT_CONTROL clears cover and returns dreadnought to garrison', () => {
+    let s = getSandboxSetupState()
+    s = {
+      ...s,
+      expansions: { ...NO_EXPANSIONS, riseOfIx: true },
+      dreadnoughtCover: {
+        [ControlMarkerType.ARRAKIN]: 0,
+        [ControlMarkerType.CARTHAG]: null,
+        [ControlMarkerType.IMPERIAL_BASIN]: null,
+      },
+      players: s.players.map((p, i) =>
+        i === 0
+          ? {
+              ...p,
+              dreadnoughts: {
+                supply: 1,
+                garrison: 0,
+                conflict: 0,
+                control: [{ space: ControlMarkerType.ARRAKIN, placedRound: 1 }],
+              },
+            }
+          : p
+      ),
+    }
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_DREADNOUGHT_CONTROL',
+      space: ControlMarkerType.ARRAKIN,
+      playerId: null,
+    })
+
+    expect(s.dreadnoughtCover?.[ControlMarkerType.ARRAKIN]).toBeNull()
+    expect(s.players[0].dreadnoughts?.control).toHaveLength(0)
+    expect(s.players[0].dreadnoughts?.garrison).toBe(1)
+  })
+
   it('SANDBOX_SET_MENTAT_OWNER assigns mentat to one player', () => {
     let s = getSandboxSetupState()
 

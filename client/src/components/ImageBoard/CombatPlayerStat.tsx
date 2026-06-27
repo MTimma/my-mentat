@@ -2,6 +2,7 @@ import React from 'react'
 import type { Player } from '../../types/GameTypes'
 import { getLeaderIconPath } from '../../data/leaders'
 import { getDreadnoughtsInConflict } from '../../utils/dreadnoughts'
+import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 
 type ResourceDef = {
   icon: string
@@ -130,11 +131,9 @@ const CombatPlayerStat: React.FC<CombatPlayerStatProps> = ({
               </span>
               {dreadnoughts > 0 ? (
                 <span className="image-board__combat-stat-item">
-                  <img
-                    src="/icon/dreadnought.svg"
-                    alt=""
+                  <DreadnoughtIcon
+                    playerId={player.id}
                     className="image-board__combat-stat-icon image-board__combat-stat-icon--dreadnought"
-                    aria-hidden="true"
                   />
                   {dreadnoughts}
                 </span>
@@ -143,7 +142,7 @@ const CombatPlayerStat: React.FC<CombatPlayerStatProps> = ({
             <span className="image-board__combat-stat-strength">
               <span className="image-board__combat-stat-item image-board__combat-stat-item--strength">
                 <img
-                  src="/icon/dagger.png"
+                  src="/icon/sword.png"
                   alt=""
                   className="image-board__combat-stat-icon"
                   aria-hidden="true"

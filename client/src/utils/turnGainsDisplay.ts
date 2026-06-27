@@ -50,6 +50,7 @@ export const TURN_TOTAL_RESOURCE_ORDER: RewardType[] = [
   RewardType.VICTORY_POINTS,
   RewardType.MENTAT,
   RewardType.AGENT,
+  RewardType.EXTRA_TURN,
   RewardType.CONTROL,
   RewardType.DISCARD,
   RewardType.TRASH,
@@ -60,6 +61,21 @@ export interface TurnGainSourceGroup {
   key: string
   title: string
   gains: Gain[]
+}
+
+/** Icon beside a turn-history source group title (shipping, unload, signet ring, etc.). */
+export function getGainGroupIcon(group: TurnGainSourceGroup): string | null {
+  if (group.title === 'Shipping track') return '/icon/shipping.png'
+  if (
+    group.title === 'Signet Ring' ||
+    group.gains.some(gain => gain.name === 'Signet Ring')
+  ) {
+    return '/icon/ring.png'
+  }
+  if (group.gains.some(gain => gain.name?.includes('(Unload)'))) {
+    return '/icon/unload.png'
+  }
+  return null
 }
 
 /** Merged opponent discards — one horizontal row, no per-card titles. */
@@ -247,7 +263,9 @@ export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
     const key =
       gain.source === GainSource.CONFLICT
         ? `${gain.source}:${gain.sourceId}:${gain.name}:${gain.playerId}`
-        : `${gain.source}:${gain.sourceId}`
+        : gain.source === GainSource.TECH
+          ? `${gain.source}:${gain.name}:${gain.playerId}`
+          : `${gain.source}:${gain.sourceId}`
     const existing = map.get(key)
     if (existing) {
       existing.gains.push(gain)

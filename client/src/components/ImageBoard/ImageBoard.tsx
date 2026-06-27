@@ -54,6 +54,8 @@ import { isTessiaLeader, hasOnTrackSnooper } from '../../data/leaderAbilities/te
 import type { InfluenceBoardMode } from '../../utils/influenceBoardChoice'
 import SellMelangePopup from '../SellMelangePopup/SellMelangePopup'
 import BoardAgentFigure from '../AgentIcon/AgentIcon'
+import ControlMarkerIcon from '../ControlMarkerIcon/ControlMarkerIcon'
+import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import { canPlaceDespiteOccupancy } from '../../data/leaderAbilities/helenaUnblockedAgents'
 import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraadDiscount'
 import {
@@ -708,14 +710,16 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             const pt = mentatAvailabilityPoint(mentatHotspot)
             return (
               <div
-                className="image-board__tracker-circle image-board__tracker-circle--mentat-available"
+                className="image-board__mentat-marker"
                 data-marker="mentat-available"
                 style={{
                   left: `${pt.x}%`,
                   top: `${pt.y}%`,
                 }}
                 title="Mentat available on board"
-              />
+              >
+                <img src="/icon/mentat.png" alt="" className="image-board__mentat-marker-img" draggable={false} />
+              </div>
             )
           })()}
 
@@ -751,60 +755,62 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             if (!p) return null
             const pt = CONTROL_MARKER_POINTS[key]
             const st = stagePoint(pt.x, pt.y)
-            const dreadOwnerId = gameStateForMarkers.dreadnoughtCover?.[key]
-            const dreadOwner = dreadOwnerId != null ? playerById.get(dreadOwnerId) : undefined
-            const dreadnoughtOnControl =
-              dreadOwner?.dreadnoughts?.control?.some(entry => entry.space === key) ??
-              players.some(pl => pl.dreadnoughts?.control?.some(entry => entry.space === key))
-            const dreadPlayer = dreadOwner ?? players.find(pl =>
-              pl.dreadnoughts?.control?.some(entry => entry.space === key)
-            )
-            const dreadPt = dreadnoughtControlPoints?.[key]
-            const dreadSt = dreadPt ? stagePoint(dreadPt.x, dreadPt.y) : null
             return (
-              <React.Fragment key={`ctl-${key}`}>
-                <div
-                  className="image-board__tracker-circle image-board__tracker-circle--control"
-                  data-marker="control"
-                  data-control={key}
-                  data-player-id={pid}
-                  style={{
-                    left: `${st.x}%`,
-                    top: `${st.y}%`,
-                    backgroundColor: playerMarkerColor(p),
-                  }}
-                  title={`Control ${key} (${p.leader.name})`}
-                />
-                {dreadnoughtOnControl && dreadSt && dreadPlayer ? (
-                  <div
-                    className="image-board__dreadnought-control-marker"
-                    data-marker="dreadnought-control"
-                    data-control={key}
-                    data-player-id={dreadPlayer.id}
-                    style={{
-                      left: `${dreadSt.x}%`,
-                      top: `${dreadSt.y}%`,
-                    }}
-                    title={`Dreadnought on ${key} (${dreadPlayer.leader.name})`}
-                  >
-                    <div
-                      className={[
-                        'image-board__dreadnought-control-badge',
-                        `image-board__dreadnought-control-badge--${dreadPlayer.color}`,
-                      ].join(' ')}
-                      style={{ backgroundColor: playerMarkerColor(dreadPlayer) }}
-                    >
-                      <BoardAgentFigure
-                        playerId={dreadPlayer.id}
-                        variant="dreadnought"
-                        className="image-board__dreadnought-control-icon"
-                      />
-                    </div>
-                  </div>
-                ) : null}
-              </React.Fragment>
+              <div
+                key={`ctl-${key}`}
+                className="image-board__control-marker"
+                data-marker="control"
+                data-control={key}
+                data-player-id={pid}
+                style={{
+                  left: `${st.x}%`,
+                  top: `${st.y}%`,
+                }}
+                title={`Control ${key} (${p.leader.name})`}
+              >
+                <ControlMarkerIcon playerId={pid} className="image-board__control-marker-icon" />
+              </div>
             )
           })}
+
+          {/* Dreadnought control — overlays control bonus; may exist without a control marker */}
+          {riseOfIx &&
+            dreadnoughtControlPoints &&
+            (Object.keys(CONTROL_MARKER_POINTS) as ControlMarkerType[]).map(key => {
+              const dreadOwnerId = gameStateForMarkers.dreadnoughtCover?.[key]
+              const dreadOwner =
+                dreadOwnerId != null ? playerById.get(dreadOwnerId) : undefined
+              const dreadnoughtOnControl =
+                dreadOwner?.dreadnoughts?.control?.some(entry => entry.space === key) ??
+                players.some(pl => pl.dreadnoughts?.control?.some(entry => entry.space === key))
+              if (!dreadnoughtOnControl) return null
+              const dreadPlayer =
+                dreadOwner ??
+                players.find(pl => pl.dreadnoughts?.control?.some(entry => entry.space === key))
+              const dreadPt = dreadnoughtControlPoints[key]
+              if (!dreadPlayer || !dreadPt) return null
+              const dreadSt = stagePoint(dreadPt.x, dreadPt.y)
+              return (
+                <div
+                  key={`dread-ctl-${key}`}
+                  className="image-board__dreadnought-control-marker"
+                  data-marker="dreadnought-control"
+                  data-control={key}
+                  data-player-id={dreadPlayer.id}
+                  style={{
+                    left: `${dreadSt.x}%`,
+                    top: `${dreadSt.y}%`,
+                  }}
+                  title={`Dreadnought on ${key} (${dreadPlayer.leader.name})`}
+                >
+                  <DreadnoughtIcon
+                    playerId={dreadPlayer.id}
+                    appearance="control"
+                    className="image-board__dreadnought-control-icon"
+                  />
+                </div>
+              )
+            })}
 
           {riseOfIx && shippingTrackAnchors && (
             <>

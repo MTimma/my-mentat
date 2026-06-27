@@ -3,6 +3,7 @@ import type { TechTileId } from '../../data/techTiles'
 import { getTechTile } from '../../data/techTiles'
 import type { PlayerTechTile } from '../../data/techTiles'
 import type { Player } from '../../types/GameTypes'
+import TechTileFlipBadge from '../TechTileFlipBadge/TechTileFlipBadge'
 import './PlayerTechTiles.css'
 
 export interface PlayerTechTilesProps {
@@ -38,16 +39,19 @@ const PlayerTechTiles: React.FC<PlayerTechTilesProps> = ({
         const tile = getTechTile(owned.id)
         const activatable = activatableTileIds?.has(owned.id) ?? false
         const title = tile
-          ? `${tile.name}${owned.faceUp ? '' : ' (face-down)'}${activatable ? ' — click to activate' : ''}`
+          ? `${tile.name}${owned.faceUp ? '' : ' (used — flipped face-down)'}${activatable ? ' — click to activate' : ''}`
           : owned.id
 
-        const content = owned.faceUp && tile ? (
-          <img src={tile.image} alt="" className="player-tech-tiles__img" draggable={false} />
-        ) : (
-          <span className="player-tech-tiles__face-down" aria-hidden="true">
-            ?
-          </span>
-        )
+        const content =
+          owned.faceUp && tile ? (
+            <img src={tile.image} alt="" className="player-tech-tiles__img" draggable={false} />
+          ) : (
+            <TechTileFlipBadge
+              image={tile?.image}
+              alt={tile?.name ?? owned.id}
+              size={variant}
+            />
+          )
 
         if (onTileClick && (activatable || variant === 'inline')) {
           return (

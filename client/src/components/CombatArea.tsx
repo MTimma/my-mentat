@@ -31,7 +31,7 @@ const CombatArea: React.FC<CombatAreaProps> = ({
     return (
       <div className="combat-strength">
         <span className="strength-value">
-          <img src="/icon/dagger.png" alt="" className="combat-area-strength-icon" aria-hidden="true" />
+          <img src="/icon/sword.png" alt="" className="combat-area-strength-icon" aria-hidden="true" />
           {strength}
         </span>
       </div>

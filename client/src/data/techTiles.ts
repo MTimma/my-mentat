@@ -239,3 +239,7 @@ export const TECH_TILES: TechTile[] = [
 export function getTechTile(id: TechTileId): TechTile | undefined {
   return TECH_TILES.find(tile => tile.id === id)
 }
+
+export function getTechTileByName(name: string): TechTile | undefined {
+  return TECH_TILES.find(tile => tile.name === name)
+}

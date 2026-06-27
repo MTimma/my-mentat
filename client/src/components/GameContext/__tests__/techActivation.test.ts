@@ -8,7 +8,7 @@ import {
   handleActivateTech,
 } from '../riseOfIxReducer'
 import { tilesActivatableNow } from '../../../utils/techTiles'
-import { ChoiceType, GamePhase, NO_EXPANSIONS, TurnType } from '../../../types/GameTypes'
+import { ChoiceType, GamePhase, GainSource, NO_EXPANSIONS, RewardType, TurnType, type CardSelectChoice } from '../../../types/GameTypes'
 import { makePlayer, stubDeckCard } from './_helpers'
 import { RISE_OF_IX_INTRIGUE_CARDS } from '../../../data/intrigueCardsRiseOfIx'
 
@@ -148,6 +148,62 @@ describe('tech tile activation', () => {
     expect(p.handCount).toBe(2)
     expect(p.deck.map(c => c.id)).toEqual([hand2.id, drawTop.id])
     expect(p.discardPile.map(c => c.id)).toEqual([hand1.id])
+    const discardGain = after.gains.find(g => g.type === RewardType.DISCARD)
+    expect(discardGain).toMatchObject({
+      sourceId: hand1.id,
+      name: 'Holoprojectors',
+      amount: -1,
+      source: GainSource.TECH,
+    })
+    expect(after.gains.some(g => g.type === RewardType.DRAW && g.amount === 1)).toBe(true)
+  })
+
+  it('Holoprojectors rejects discarding a draw-pile card', () => {
+    const hand1 = stubDeckCard(111)
+    const drawTop = stubDeckCard(112)
+    const before = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.HOLOPROJECTORS, faceUp: true }],
+          deck: [hand1, drawTop],
+          handCount: 1,
+          discardPile: [],
+        }),
+        makePlayer(1),
+      ],
+    })
+    const after = applyHoloprojectorsDiscard(before, 0, [drawTop.id])
+    expect(after).toBe(before)
+  })
+
+  it('Holoprojectors enqueue adds hand-only discard picker constraints', () => {
+    const hand1 = stubDeckCard(121)
+    const drawTop = stubDeckCard(122)
+    let s = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.HOLOPROJECTORS, faceUp: true }],
+          deck: [hand1, drawTop],
+          handCount: 1,
+        }),
+        makePlayer(1),
+      ],
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        gainsStartIndex: 0,
+        pendingChoices: [],
+      },
+    })
+    s = handleActivateTech(s, {
+      type: 'ACTIVATE_TECH',
+      playerId: 0,
+      tileId: TechTileId.HOLOPROJECTORS,
+    })
+    const choice = s.currTurn?.pendingChoices?.[0] as CardSelectChoice | undefined
+    expect(choice?.discardCost).toBe(1)
+    expect(choice?.filter?.(hand1)).toBe(true)
+    expect(choice?.filter?.(drawTop)).toBe(false)
   })
 
   it('Sonic Snoopers activation enqueues intrigue deck choice and trashes tile', () => {
@@ -224,5 +280,26 @@ describe('tech tile activation', () => {
     expect(s.players[0].handCount).toBe(1)
     expect(s.players[0].discardPile.map(c => c.id)).toEqual([hand1.id])
     expect(s.players[0].deck.map(c => c.id)).toEqual([drawTop.id])
+  })
+
+  it('Training Drones activation grants +1 troop and flips face-down', () => {
+    const before = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.TRAINING_DRONES, faceUp: true }],
+          troops: 3,
+          troopSupply: 5,
+        }),
+        makePlayer(1),
+      ],
+    })
+    const after = handleActivateTech(before, {
+      type: 'ACTIVATE_TECH',
+      playerId: 0,
+      tileId: TechTileId.TRAINING_DRONES,
+    })
+    expect(after.players[0].troops).toBe(4)
+    expect(after.players[0].tech?.[0]?.faceUp).toBe(false)
+    expect(after.players[0].activatedTechThisRound).toContain(TechTileId.TRAINING_DRONES)
   })
 })

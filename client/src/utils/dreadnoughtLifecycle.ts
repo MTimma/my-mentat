@@ -14,6 +14,7 @@ import {
 
 type GainAttribution = { type: import('../types/GameTypes').GainSource; id: number; name: string }
 import {
+  DEFAULT_DREADNOUGHTS,
   getCommissionableCount,
   type PlayerDreadnoughts,
 } from './dreadnoughts'
@@ -166,6 +167,75 @@ export function queueDreadnoughtCommissionChoices(
     })
   }
   return choices
+}
+
+/** Sandbox setup — place or clear a temporary dreadnought on a control space. */
+export function applySandboxDreadnoughtControl(
+  state: GameState,
+  space: ControlMarkerType,
+  playerId: number | null
+): GameState {
+  if (state.expansions?.riseOfIx !== true) return state
+  if (playerId !== null && !state.players.some(p => p.id === playerId)) return state
+
+  const placedRound = state.sandboxSetupPosition?.round ?? state.currentRound
+  let next: GameState = {
+    ...state,
+    dreadnoughtCover: ensureDreadnoughtCover(state),
+    players: state.players.map(p =>
+      p.dreadnoughts
+        ? {
+            ...p,
+            dreadnoughts: {
+              ...p.dreadnoughts,
+              control: p.dreadnoughts.control.map(entry => ({ ...entry })),
+            },
+          }
+        : p
+    ),
+  }
+
+  const clearSpace = (ownerId: number) => {
+    next = withPlayerDreadnoughts(next, ownerId, d => {
+      const updated = cloneDreadnoughts(d)
+      const removed = updated.control.filter(entry => entry.space === space).length
+      updated.control = updated.control.filter(entry => entry.space !== space)
+      updated.garrison += removed
+      return updated
+    })
+    const cover = ensureDreadnoughtCover(next)
+    next = { ...next, dreadnoughtCover: { ...cover, [space]: null } }
+  }
+
+  const previousOwnerId = next.dreadnoughtCover?.[space] ?? null
+  if (previousOwnerId != null) {
+    clearSpace(previousOwnerId)
+  }
+
+  if (playerId === null) return next
+
+  if (!next.players.find(p => p.id === playerId)?.dreadnoughts) {
+    next = {
+      ...next,
+      players: next.players.map(p =>
+        p.id === playerId ? { ...p, dreadnoughts: { ...DEFAULT_DREADNOUGHTS, control: [] } } : p
+      ),
+    }
+  }
+
+  next = withPlayerDreadnoughts(next, playerId, d => {
+    const updated = cloneDreadnoughts(d)
+    if (updated.garrison > 0) {
+      updated.garrison -= 1
+    } else if (updated.supply > 0) {
+      updated.supply -= 1
+    }
+    updated.control.push({ space, placedRound })
+    return updated
+  })
+
+  const cover = ensureDreadnoughtCover(next)
+  return { ...next, dreadnoughtCover: { ...cover, [space]: playerId } }
 }
 
 export function returnExpiredDreadnoughtControls(state: GameState): GameState {

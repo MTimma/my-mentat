@@ -8,7 +8,7 @@ import ImperiumRow from './components/ImperiumRow/ImperiumRow'
 import TurnHistory from './components/TurnHistory'
 import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
-import { TimeTravelProvider, useTimeTravel } from './components/TimeTravel'
+import { useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
 import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
@@ -62,7 +62,7 @@ import { buildSetupBlockFromConfiguration } from './save/buildSetupBlock'
 import { createGameInputDoc } from './save/createGameInput'
 import type { SaveDoc } from './save/types'
 import { GAME_PACK_STORAGE_KEY } from './gamePacks/constants'
-import { loadStoredGamePackId } from './gamePacks/inferGamePack'
+import { resolveStoredGamePackId } from './gamePacks/inferGamePack'
 import { expansionsForGamePack } from './gamePacks/resolveGamePack'
 import {
   getInfluenceBoardChoiceMeta,
@@ -1634,6 +1634,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
             spiceMustFlowCards={gameState.spiceMustFlowDeck}
             foldspaceCards={gameState.foldspaceDeck}
             controlMarkers={gameState.controlMarkers}
+            dreadnoughtCover={gameState.dreadnoughtCover}
             mentatOwner={gameState.mentatOwner}
             playerInfluence={{
               [FactionType.EMPEROR]:
@@ -1658,6 +1659,9 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
             }
             onSetControl={(space, playerId) =>
               dispatch({ type: 'SANDBOX_SET_CONTROL_MARKER', space, playerId })
+            }
+            onSetDreadnoughtControl={(space, playerId) =>
+              dispatch({ type: 'SANDBOX_SET_DREADNOUGHT_CONTROL', space, playerId })
             }
             onSetMentatOwner={playerId =>
               dispatch({ type: 'SANDBOX_SET_MENTAT_OWNER', playerId })
@@ -2026,29 +2030,6 @@ function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
   return base
 }
 
-// Wrapper component that provides TimeTravel context to GameContent
-interface GameContentWithTimeTravelProps {
-  autoApplyMandatoryRewards: boolean
-  onLoadSave?: (doc: SaveDoc) => void
-}
-
-const GameContentWithTimeTravel = ({
-  autoApplyMandatoryRewards,
-  onLoadSave,
-}: GameContentWithTimeTravelProps) => {
-  const { gameState, dispatch } = useGame()
-  
-  const handleUndoToTurn = (turnIndex: number) => {
-    dispatch({ type: 'UNDO_TO_TURN', turnIndex })
-  }
-  
-  return (
-    <TimeTravelProvider gameState={gameState} onUndoToTurn={handleUndoToTurn}>
-      <GameContent autoApplyMandatoryRewards={autoApplyMandatoryRewards} onLoadSave={onLoadSave} />
-    </TimeTravelProvider>
-  )
-}
-
 function resolveFirstPlayer(setups: PlayerSetup[]): number {
   const baronIndex = setups.findIndex(p => p.leader.name === LEADER_NAMES.BARON_VLADIMIR)
   return baronIndex >= 0 ? baronIndex : 0
@@ -2086,7 +2067,7 @@ function App() {
   const [autoApplyMandatoryRewards, setAutoApplyMandatoryRewards] = useState(() => {
     return localStorage.getItem('myMentat.autoApplyMandatoryRewards') !== 'false'
   })
-  const [gamePackId, setGamePackId] = useState<string>(() => loadStoredGamePackId())
+  const [gamePackId, setGamePackId] = useState<string>(() => resolveStoredGamePackId())
   const expansions = useMemo(() => expansionsForGamePack(gamePackId), [gamePackId])
   const [creatorReturnScreen, setCreatorReturnScreen] = useState<ScreenState>(ScreenState.SETUP)
   const [playerSetups, setPlayerSetups] = useState<PlayerSetup[]>([])
@@ -2296,7 +2277,7 @@ function App() {
 
       {screenState === ScreenState.GAME && gameInput && (
         <GameProvider key={gameSessionKey} gameInput={gameInput}>
-          <GameContentWithTimeTravel
+          <GameContent
             autoApplyMandatoryRewards={autoApplyMandatoryRewards}
             onLoadSave={handleLoadSaveDoc}
           />

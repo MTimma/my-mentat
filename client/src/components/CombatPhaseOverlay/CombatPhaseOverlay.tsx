@@ -104,7 +104,7 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
                 <span className="combat-phase-rank-place">{rank}.</span>
                 <AgentIcon playerId={playerId} />
                 <span className="combat-phase-rank-strength" title={`${strength} strength`}>
-                  <img src="/icon/dagger.png" alt="" className="combat-phase-strength-icon" aria-hidden="true" />
+                  <img src="/icon/sword.png" alt="" className="combat-phase-strength-icon" aria-hidden="true" />
                   {strength}
                 </span>
                 {player && <span className="combat-phase-rank-name">{player.leader.name}</span>}

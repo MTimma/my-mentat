@@ -3,6 +3,7 @@ import { ChoiceType } from '../../../../types/GameTypes'
 import {
   filterAcquireTechFromChoices,
   filterAcquireTechOptionalEffects,
+  findOriginalOptionIndex,
   isAcquireTechOnlyChoiceOption,
   isAcquireTechOnlyOptional,
 } from '../techTurnControlsUi'
@@ -44,5 +45,20 @@ describe('techTurnControlsUi', () => {
     expect(filtered).toHaveLength(1)
     expect(filtered[0].options).toHaveLength(1)
     expect(filtered[0].options[0].reward.techNegotiator).toBe(2)
+  })
+
+  it('maps filtered negotiator option back to original OR index', () => {
+    const choice = {
+      id: 'tech-neg',
+      type: ChoiceType.FIXED_OPTIONS,
+      prompt: 'Tech Negotiation',
+      options: [
+        { reward: { acquireTech: { discount: 1 } } },
+        { reward: { techNegotiator: 1 } },
+      ],
+      source: { type: 'BOARD', id: 24, name: 'Tech Negotiation' },
+    }
+    const filtered = filterAcquireTechFromChoices([choice])[0] as typeof choice
+    expect(findOriginalOptionIndex(choice.options, filtered.options[0])).toBe(1)
   })
 })

@@ -10,7 +10,7 @@ import {
   applyTroopTransportsToFreighterReward,
   handleAcquireTech,
 } from '../riseOfIxReducer'
-import { GamePhase, NO_EXPANSIONS, TurnType } from '../../../types/GameTypes'
+import { GamePhase, FactionType, NO_EXPANSIONS, TurnType } from '../../../types/GameTypes'
 import { makePlayer, stubDeckCard } from './_helpers'
 import { DEFAULT_DREADNOUGHTS } from '../../../utils/dreadnoughts'
 
@@ -360,5 +360,72 @@ describe('tech tiles reducer', () => {
       nextFaceUpTileId: TechTileId.ARTILLERY,
     })
     expect(s.players[0].tech?.length).toBe(1)
+  })
+
+  it('Disposal Facility: optional trash when persuasion ≥ 6 on reveal', () => {
+    const before = roiState({
+      players: [makePlayer(0, { tech: [{ id: TechTileId.DISPOSAL_FACILITY, faceUp: true }] })],
+    })
+    const withEnough = applyRevealTechEffects(before, 0, [], 6, 0)
+    expect(withEnough.state.pendingRewards).toContainEqual(
+      expect.objectContaining({ reward: { trash: 1 }, isTrash: true })
+    )
+
+    const withTooLittle = applyRevealTechEffects(before, 0, [], 5, 0)
+    expect(withTooLittle.state.pendingRewards ?? []).toHaveLength(0)
+  })
+
+  it('Memocorders endgame: +1 VP when influence ≥ 3 on all four tracks', () => {
+    const before = roiState({
+      phase: GamePhase.END_GAME,
+      players: [makePlayer(0, { tech: [{ id: TechTileId.MEMOCORDERS, faceUp: true }], victoryPoints: 4 })],
+      factionInfluence: {
+        [FactionType.EMPEROR]: { 0: 3 },
+        [FactionType.SPACING_GUILD]: { 0: 4 },
+        [FactionType.BENE_GESSERIT]: { 0: 3 },
+        [FactionType.FREMEN]: { 0: 3 },
+      },
+    })
+    const after = applyEndgameTechScoring(before)
+    expect(after.players[0].victoryPoints).toBe(5)
+  })
+
+  it('Memocorders endgame: no VP when any track below 3', () => {
+    const before = roiState({
+      phase: GamePhase.END_GAME,
+      players: [makePlayer(0, { tech: [{ id: TechTileId.MEMOCORDERS, faceUp: true }], victoryPoints: 4 })],
+      factionInfluence: {
+        [FactionType.EMPEROR]: { 0: 3 },
+        [FactionType.SPACING_GUILD]: { 0: 2 },
+        [FactionType.BENE_GESSERIT]: { 0: 3 },
+        [FactionType.FREMEN]: { 0: 3 },
+      },
+    })
+    const after = applyEndgameTechScoring(before)
+    expect(after.players[0].victoryPoints).toBe(4)
+  })
+
+  it('Chaumurky endgame: boosts tiebreaker spice for owner', () => {
+    const before = roiState({
+      phase: GamePhase.END_GAME,
+      players: [makePlayer(0, { tech: [{ id: TechTileId.CHAUMURKY, faceUp: true }] })],
+    })
+    const after = applyEndgameTechScoring(before)
+    expect(after.endgameTiebreakerSpice?.[0]).toBeGreaterThanOrEqual(10_000)
+  })
+
+  it('Spy Satellites endgame: +1 VP per faction with ≤1 influence', () => {
+    const before = roiState({
+      phase: GamePhase.END_GAME,
+      players: [makePlayer(0, { tech: [{ id: TechTileId.SPY_SATELLITES, faceUp: true }], victoryPoints: 2 })],
+      factionInfluence: {
+        [FactionType.EMPEROR]: { 0: 0 },
+        [FactionType.SPACING_GUILD]: { 0: 1 },
+        [FactionType.BENE_GESSERIT]: { 0: 4 },
+        [FactionType.FREMEN]: { 0: 0 },
+      },
+    })
+    const after = applyEndgameTechScoring(before)
+    expect(after.players[0].victoryPoints).toBe(5) // 2 + 3 low-influence factions
   })
 })

@@ -16,6 +16,7 @@ import {
   getRepeatedIconDisplay,
   getAcquireEffectGainsForCard,
   excludeAcquireEffectGains,
+  getGainGroupIcon,
 } from '../turnGainsDisplay'
 
 describe('turnGainsDisplay', () => {
@@ -91,6 +92,30 @@ describe('turnGainsDisplay', () => {
     const { costs, rewards } = splitGainsByCostAndReward(groups[0].gains)
     expect(aggregateResourceGains(costs)[0]).toMatchObject({ type: RewardType.SOLARI, amount: 1 })
     expect(aggregateResourceGains(rewards)[0]).toMatchObject({ type: RewardType.INTRIGUE, amount: 1 })
+  })
+
+  it('maps gain group titles to history icons', () => {
+    expect(
+      getGainGroupIcon({
+        key: 'shipping',
+        title: 'Shipping track',
+        gains: [{ playerId: 0, source: GainSource.SHIPPING_TRACK, sourceId: 0, round: 1, name: 'Recall', amount: 1, type: RewardType.SPICE }],
+      })
+    ).toBe('/icon/shipping.png')
+    expect(
+      getGainGroupIcon({
+        key: 'signet',
+        title: 'Signet Ring',
+        gains: [{ playerId: 0, source: GainSource.CARD, sourceId: 10, round: 1, name: 'Signet Ring', amount: 1, type: RewardType.WATER }],
+      })
+    ).toBe('/icon/ring.png')
+    expect(
+      getGainGroupIcon({
+        key: 'unload',
+        title: 'Water Peddler (Unload)',
+        gains: [{ playerId: 0, source: GainSource.CARD, sourceId: 1, round: 1, name: 'Water Peddler (Unload)', amount: 1, type: RewardType.WATER }],
+      })
+    ).toBe('/icon/unload.png')
   })
 
   it('groups RoI gain sources with readable titles', () => {
@@ -549,6 +574,34 @@ describe('turnGainsDisplay', () => {
     expect(groups).toHaveLength(1)
     expect(groups[0].key).toBe(INLINE_DISCARDS_GROUP_KEY)
     expect(groups[0].title).toBe('')
+    expect(groups[0].gains).toHaveLength(2)
+  })
+
+  it('groupGainsBySource groups tech discard and draw under the tile name', () => {
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: 101,
+        round: 1,
+        name: 'Holoprojectors',
+        amount: -1,
+        type: RewardType.DISCARD,
+      },
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: 0,
+        round: 1,
+        name: 'Holoprojectors',
+        amount: 1,
+        type: RewardType.DRAW,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0]
+
+    const groups = groupGainsBySource(gains)
+    expect(groups).toHaveLength(1)
+    expect(groups[0].title).toBe('Tech: Holoprojectors')
     expect(groups[0].gains).toHaveLength(2)
   })
 

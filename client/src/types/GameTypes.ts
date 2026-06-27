@@ -612,6 +612,8 @@ export enum RewardType {
   INFLUENCE = 'Influence',
   CONTROL = 'Control',
   AGENT = 'Agent',
+  /** Weirding Way — may take another Agent/Reveal turn before rotation. */
+  EXTRA_TURN = 'Extra turn',
   COMBAT = 'Combat',
   TROOPS = 'Troops',
   /** Rise of Ix — troop piece in supply (not garrison). */

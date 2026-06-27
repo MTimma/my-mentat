@@ -1,35 +1,33 @@
 .agent {
+  display: inline-block;
+  position: relative;
   width: 24px;
   height: 36px;
-  display: inline-block;
+  flex-shrink: 0;
+}
+
+.agent::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: #d32f2f;
+  -webkit-mask-image: url(/icon/agent.png);
+  mask-image: url(/icon/agent.png);
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
 }
 
-/* Flat meeple: player color + thin ink outline (common in digital board games) */
-.agent-fill {
-  stroke: #1a1a1a;
-  stroke-width: 1.35;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-  paint-order: stroke fill;
-}
-
-.agent.player-0 .agent-fill { fill: #d32f2f; }
-.agent.player-1 .agent-fill { fill: #388e3c; }
-.agent.player-2 .agent-fill { fill: #fbc02d; }
-.agent.player-3 .agent-fill { fill: #1976d2; }
-
-.agent--dreadnought {
-  width: clamp(18px, 3.6cqw, 26px);
-  height: clamp(11px, 2.2cqw, 16px);
-  object-fit: contain;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
-}
-
-.agent--dreadnought.player-0 { filter: drop-shadow(0 0 2px #d32f2f); }
-.agent--dreadnought.player-1 { filter: drop-shadow(0 0 2px #388e3c); }
-.agent--dreadnought.player-2 { filter: drop-shadow(0 0 2px #fbc02d); }
-.agent--dreadnought.player-3 { filter: drop-shadow(0 0 2px #1976d2); }
+.agent.player-0::before { background-color: #d32f2f; }
+.agent.player-1::before { background-color: #388e3c; }
+.agent.player-2::before { background-color: #fbc02d; }
+.agent.player-3::before { background-color: #1976d2; }
 
 @media (max-width: 900px) {
   .agent {
@@ -43,10 +41,6 @@
     width: 12px;
     height: 18px;
   }
-
-  .agent-fill {
-    stroke-width: 1.1;
-  }
 }
 
 @media (max-width: 400px) {
@@ -55,4 +49,3 @@
     height: 15px;
   }
 }
-

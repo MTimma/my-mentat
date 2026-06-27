@@ -284,55 +284,13 @@ describe('Rise of Ix intrigue cards', () => {
     expect(s.players[0].deck.map(c => c.id)).toEqual([3, 4, 5])
   })
 
-  it('Ixian Probe: with empty hand discards from draw pile and draws 2', () => {
+  it('Ixian Probe: cannot play with fewer than 2 cards in hand', () => {
     const card = cardByName('Ixian Probe')
     const deck: Card[] = [stubDeckCard(1), stubDeckCard(2), stubDeckCard(3), stubDeckCard(4)]
-    let s = roiPlotState([makePlayer(0, { intrigueCount: 1, deck, handCount: 0 })])
-    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
-    const choice = s.currTurn?.pendingChoices?.[0]
-    expect(choice?.type).toBe(ChoiceType.CARD_SELECT)
-    expect(choice?.disabled).toBeFalsy()
-    s = applyGameAction(s, {
-      type: 'RESOLVE_CARD_SELECT',
-      playerId: 0,
-      choiceId: choice!.id,
-      cardIds: [1, 2],
-    })
-    expect(s.players[0].handCount).toBe(2)
-    expect(s.players[0].deck.map(c => c.id)).toEqual([3, 4])
-    expect(s.players[0].discardPile.map(c => c.id)).toEqual([1, 2])
-  })
-
-  it('Ixian Probe: with 1 hand card discards hand then draw pile', () => {
-    const card = cardByName('Ixian Probe')
-    const deck: Card[] = [stubDeckCard(1), stubDeckCard(2), stubDeckCard(3), stubDeckCard(4)]
-    let s = roiPlotState([makePlayer(0, { intrigueCount: 1, deck, handCount: 1 })])
-    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
-    const choice = s.currTurn?.pendingChoices?.[0]
-    s = applyGameAction(s, {
-      type: 'RESOLVE_CARD_SELECT',
-      playerId: 0,
-      choiceId: choice!.id,
-      cardIds: [1, 2],
-    })
-    expect(s.players[0].handCount).toBe(2)
-    expect(s.players[0].deck.map(c => c.id)).toEqual([3, 4])
-    expect(s.players[0].discardPile.map(c => c.id)).toEqual([1, 2])
-  })
-
-  it('Ixian Probe: rejects draw-pile discard before hand is exhausted', () => {
-    const deck: Card[] = [stubDeckCard(1), stubDeckCard(2), stubDeckCard(3)]
-    let s = roiPlotState([makePlayer(0, { intrigueCount: 1, deck, handCount: 1 })])
-    const before = s.players[0]
-    s = applyGameAction(s, {
-      type: 'CUSTOM_EFFECT',
-      playerId: 0,
-      customEffect: CustomEffect.IXIAN_PROBE,
-      data: { cardIds: [2, 3], drawCards: 2, sourceCardId: 42, discardCount: 2 },
-    })
-    expect(s.players[0].deck.map(c => c.id)).toEqual(before.deck.map(c => c.id))
-    expect(s.players[0].handCount).toBe(before.handCount)
-    expect(s.players[0].discardPile).toHaveLength(0)
+    const before = roiPlotState([makePlayer(0, { intrigueCount: 1, deck, handCount: 1 })])
+    const after = applyGameAction(before, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
+    expect(after).toBe(before)
+    expect(after.currTurn?.pendingChoices ?? []).toHaveLength(0)
   })
 
   it('Cull: solari cost and trash', () => {

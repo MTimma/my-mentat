@@ -1,6 +1,7 @@
 import React from 'react'
 import { PlayerColor, type Player } from '../../types/GameTypes'
 import { getDreadnoughtsInConflict } from '../../utils/dreadnoughts'
+import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 /** Same seat order as the 2×2 combat grid: red, green, blue, yellow. */
 const COMBAT_STATUS_ORDER: PlayerColor[] = [
   PlayerColor.RED,
@@ -48,17 +49,15 @@ export function PlayerCombatSlot({
         </span>
         {riseOfIx ? (
           <span className="combat-status-strip__stat">
-            <img
-              src="/icon/dreadnought.svg"
-              alt=""
+            <DreadnoughtIcon
+              playerId={player.id}
               className="combat-status-strip__icon combat-status-strip__icon--dreadnought"
-              aria-hidden="true"
             />
             <span className="combat-status-strip__value">{dreadnoughts}</span>
           </span>
         ) : null}
         <span className="combat-status-strip__stat combat-status-strip__stat--strength">
-          <img src="/icon/dagger.png" alt="" className="combat-status-strip__icon" aria-hidden="true" />
+          <img src="/icon/sword.png" alt="" className="combat-status-strip__icon" aria-hidden="true" />
           <span className="combat-status-strip__value">{strength}</span>
         </span>
       </span>

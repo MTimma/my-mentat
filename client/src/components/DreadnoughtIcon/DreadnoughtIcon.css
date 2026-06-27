@@ -1,0 +1,44 @@
+.dreadnought-icon {
+  flex-shrink: 0;
+}
+
+/* Card art — original colors, no player tint. */
+.dreadnought-icon--card {
+  display: inline-block;
+  width: clamp(14px, 2.8cqw, 20px);
+  height: clamp(14px, 2.8cqw, 20px);
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
+}
+
+/* Physical dreadnought on a control bonus space (board overlay only). */
+.dreadnought-icon--control {
+  display: inline-block;
+  position: relative;
+  width: clamp(11px, 2.2cqw, 16px);
+  height: clamp(18px, 3.6cqw, 26px);
+}
+
+.dreadnought-icon--control::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: #e5b13a;
+  -webkit-mask-image: url(/icon/dreadnought.png);
+  mask-image: url(/icon/dreadnought.png);
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
+}
+
+.dreadnought-icon--control.player-0::before { background-color: #d32f2f; }
+.dreadnought-icon--control.player-1::before { background-color: #388e3c; }
+.dreadnought-icon--control.player-2::before { background-color: #fbc02d; }
+.dreadnought-icon--control.player-3::before { background-color: #1976d2; }

@@ -3,6 +3,7 @@ import { GameState, PlayerColor, type Player } from '../../types/GameTypes'
 import { getLeaderImage } from '../../data/leaders'
 import { isTessiaLeader } from '../../data/leaderAbilities/tessiaSnoopers'
 import AgentIcon from '../AgentIcon/AgentIcon'
+import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import TessiaLeaderOverlays from '../TessiaLeaderOverlays/TessiaLeaderOverlays'
 import CombatPlayerDetailModal from './CombatPlayerDetailModal'
 import { PlayerCombatSlot } from './CombatStatusStrip'
@@ -40,7 +41,12 @@ function resourceCellsFor(riseOfIx: boolean): ResourceDef[] {
     {
       key: 'dreadnoughts',
       title: 'Dreadnoughts in garrison',
-      icon: '/icon/dreadnought.svg',
+      renderIcon: player => (
+        <DreadnoughtIcon
+          playerId={player.id}
+          className="combat-area-cluster__icon combat-area-cluster__icon--dreadnought"
+        />
+      ),
       getValue: player => (riseOfIx ? player.dreadnoughts?.garrison ?? 0 : 0),
     },
   ]
@@ -132,9 +138,13 @@ function LeaderPortrait({
       />
       <TessiaLeaderOverlays leader={player.leader} />
       {isFirstPlayer ? (
-        <span className="combat-area-cluster__first-player-badge" title="First player">
-          FP
-        </span>
+        <img
+          src="/icon/first_player.png"
+          alt=""
+          className="combat-area-cluster__first-player-badge"
+          title="First player"
+          draggable={false}
+        />
       ) : null}
     </div>
   )
@@ -176,9 +186,13 @@ function PlayerQuadrant({
       <LeaderPortrait player={player} isFirstPlayer={isFirstPlayer} />
       <div className="combat-area-cluster__quadrant-body">
         {hasMentat ? (
-          <span className="combat-area-cluster__mentat-badge" title="Mentat (this round)">
-            M
-          </span>
+          <img
+            src="/icon/mentat.png"
+            alt=""
+            className="combat-area-cluster__mentat-badge"
+            title="Mentat (this round)"
+            draggable={false}
+          />
         ) : null}
         <ResourceGrid player={player} riseOfIx={riseOfIx} />
       </div>
@@ -346,6 +360,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
               {dreadnoughtDeploy ? (
                 <CombatTroopControls
                   variant="dreadnought"
+                  playerId={activePlayerId}
                   canDeploy={dreadnoughtDeploy.canDeploy}
                   deployableTroops={dreadnoughtDeploy.deployableDreadnoughts}
                   deployedThisTurn={dreadnoughtDeploy.deployedThisTurn}
@@ -358,6 +373,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
               {negotiatorDeploy ? (
                 <CombatTroopControls
                   variant="negotiator"
+                  playerId={activePlayerId}
                   canDeploy={negotiatorDeploy.canDeploy}
                   deployableTroops={negotiatorDeploy.deployableNegotiators}
                   deployedThisTurn={negotiatorDeploy.deployedThisTurn}

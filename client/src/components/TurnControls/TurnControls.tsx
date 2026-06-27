@@ -13,8 +13,11 @@ import type { TechTileId } from '../../data/techTiles'
 import {
   filterAcquireTechFromChoices,
   filterAcquireTechOptionalEffects,
+  findOriginalOptionIndex,
 } from '../GameContext/riseOfIx/techTurnControlsUi'
 import TurnControlsTechRow from '../TurnControlsTechRow/TurnControlsTechRow'
+import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
+import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import {
   getPlayAreaCardsForTurnView,
   getOpponentDiscardableCards,
@@ -1007,14 +1010,19 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         </span>
       )
     }
-    if(reward.combat) right.push(<React.Fragment key="combat">{renderIconValue('dagger', reward.combat, 'Combat', '+')}</React.Fragment>)
+    if(reward.combat) right.push(<React.Fragment key="combat">{renderIconValue('sword', reward.combat, 'Combat', '+')}</React.Fragment>)
     right.push(renderRepeatedIconReward('draw', 'draw', reward.drawCards, 'Draw'))
     if(reward.troops) right.push(<React.Fragment key="troops">{renderIconValue('troop', reward.troops, 'Troops')}</React.Fragment>)
     if(reward.techNegotiator) {
       right.push(
         <span key="tech-negotiator" className="effect-icon-token" title={`Tech Negotiator +${reward.techNegotiator}`}>
           {Array.from({ length: Math.max(0, reward.techNegotiator) }, (_, index) => (
-            <img key={index} src="/icon/negotiator.svg" alt="" className="effect-token-icon" />
+            <NegotiatorIcon
+              key={index}
+              playerId={activePlayer?.id ?? 0}
+              size="lg"
+              className="effect-token-icon"
+            />
           ))}
         </span>
       )
@@ -1028,11 +1036,32 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           title={discount > 0 ? `Acquire Tech (−${discount} spice)` : 'Acquire Tech'}
         >
           <img
-            src="/technologies/rise_of_ix/holtzman_engine.png"
+            src="/icon/tech_tile.png"
             alt=""
             className="effect-token-icon effect-token-icon--tech"
           />
           {discount > 0 ? <span className="effect-token-amt">−{discount}</span> : null}
+        </span>
+      )
+    }
+    if (reward.dreadnoughts) {
+      right.push(
+        <span key="dreadnoughts" className="effect-icon-token" title={`Dreadnought +${reward.dreadnoughts}`}>
+          <DreadnoughtIcon
+            playerId={activePlayer?.id ?? 0}
+            appearance="card"
+            className="effect-token-icon"
+          />
+          {reward.dreadnoughts > 1 ? (
+            <span className="effect-token-amt">+{reward.dreadnoughts}</span>
+          ) : null}
+        </span>
+      )
+    }
+    if (reward.dividends) {
+      right.push(
+        <span key="dividends" className="effect-icon-token" title="Dividends">
+          <img src="/icon/dividends.png" alt="" className="effect-token-icon" />
         </span>
       )
     }
@@ -1062,14 +1091,16 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         
         if (eligiblePlayers.length === 0) {
           right.push(
-            <span key="custom">
-              Steal intrigue from player with 4 or more (0)
+            <span key="custom" className="effect-icon-token" title="Steal intrigue">
+              <img src="/icon/steal_intrigue.png" alt="" className="effect-token-icon" />
+              <span>(0)</span>
             </span>
           )
         } else {
           right.push(
-            <span key="custom" style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-              <span>Steal intrigue from player with 4 or more (</span>
+            <span key="custom" className="effect-steal-intrigue" style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+              <img src="/icon/steal_intrigue.png" alt="" className="effect-token-icon" title="Steal intrigue" />
+              <span>(</span>
               {eligiblePlayers.map((p, idx) => (
                 <React.Fragment key={p.id}>
                   {idx > 0 && <span> </span>}
@@ -1210,8 +1241,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     const option = fixedChoice.options[optionIndex]
     if (!option || isFixedChoiceOptionDisabled(option)) return
 
+    const originalChoice = pendingChoices.find(
+      c => c.id === fixedChoice.id && c.type === ChoiceType.FIXED_OPTIONS
+    ) as FixedOptionsChoice | undefined
+    const resolveIndex = originalChoice
+      ? findOriginalOptionIndex(originalChoice.options, option)
+      : optionIndex
+
     if (onResolveChoice) {
-      onResolveChoice(fixedChoice.id, optionIndex, fixedChoice.source)
+      onResolveChoice(fixedChoice.id, resolveIndex, fixedChoice.source)
     }
     setActiveFixedChoice(null)
     if (variant === 'compact') {
@@ -2127,7 +2165,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             alt=""
             className="selected-card-action-intrigue-icon"
             decoding="sync"
-            fetchPriority="high"
+            fetchpriority="high"
           />
           <span className="selected-card-action-count selected-card-action-count--intrigue-overlay">
             {activePlayer.intrigueCount}
@@ -2702,7 +2740,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                             }
                             aria-label={`${revealCombatTotal} total combat strength`}
                           >
-                            <Icon type="dagger" className="reveal-total-icon" alt="" />
+                            <Icon type="sword" className="reveal-total-icon" alt="" />
                             <span className="reveal-total-count">{revealCombatTotal}</span>
                           </div>
                         )}
@@ -2775,7 +2813,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                         }
                         aria-label={`${revealCombatTotal} total combat strength`}
                       >
-                        <Icon type="dagger" className="reveal-total-icon" alt="" />
+                        <Icon type="sword" className="reveal-total-icon" alt="" />
                         <span className="reveal-total-count">{revealCombatTotal}</span>
                       </div>
                     )}

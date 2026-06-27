@@ -10,6 +10,8 @@ import {
 import { getLeaderPool } from '../../data/leaders'
 import LeaderSelect from '../LeaderSelect/LeaderSelect'
 import AgentIcon from '../AgentIcon/AgentIcon'
+import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
+import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import { defaultDreadnoughtsForExpansions } from '../../utils/dreadnoughts'
 import { seedTroopSupply } from '../../utils/troops'
 import CardSearch from '../CardSearch/CardSearch'
@@ -40,6 +42,7 @@ interface SandboxPlayerEditorProps {
   spiceMustFlowCards: Card[]
   foldspaceCards: Card[]
   controlMarkers: Record<ControlMarkerType, number | null>
+  dreadnoughtCover?: Record<ControlMarkerType, number | null>
   mentatOwner: number | null
   playerInfluence: Record<FactionType, number>
   /** Tech tiles on the Ix board or other players — unavailable for this player. */
@@ -47,6 +50,7 @@ interface SandboxPlayerEditorProps {
   onUpdate: (patch: Partial<Player>) => void
   onInfluenceUpdate: (faction: FactionType, value: number) => void
   onSetControl: (space: ControlMarkerType, playerId: number | null) => void
+  onSetDreadnoughtControl: (space: ControlMarkerType, playerId: number | null) => void
   onSetMentatOwner: (playerId: number | null) => void
   onClose: () => void
 }
@@ -110,12 +114,14 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   spiceMustFlowCards,
   foldspaceCards,
   controlMarkers,
+  dreadnoughtCover,
   mentatOwner,
   playerInfluence,
   blockedTechTileIds = [],
   onUpdate,
   onInfluenceUpdate,
   onSetControl,
+  onSetDreadnoughtControl,
   onSetMentatOwner,
   onClose,
 }) => {
@@ -477,6 +483,31 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                   </label>
                 )
               })}
+              {expansions.riseOfIx
+                ? CONTROL_SPACES.map(space => {
+                    const held = dreadnoughtCover?.[space.type] === player.id
+                    return (
+                      <label
+                        key={`dread-${space.type}`}
+                        className="sandbox-player-editor__control-toggle sandbox-player-editor__control-toggle--dreadnought"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={held}
+                          onChange={() =>
+                            onSetDreadnoughtControl(space.type, held ? null : player.id)
+                          }
+                        />
+                        <DreadnoughtIcon
+                          playerId={player.id}
+                          appearance="control"
+                          className="sandbox-player-editor__dreadnought-control-icon"
+                        />
+                        <span>{space.label}</span>
+                      </label>
+                    )
+                  })
+                : null}
             </div>
           </div>
 
@@ -505,10 +536,8 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                 value={dreadnoughtGarrisonDraft}
                 onChange={adjustDreadnoughtGarrison}
                 icon={
-                  <img
-                    src="/icon/dreadnought.svg"
-                    alt=""
-                    aria-hidden="true"
+                  <DreadnoughtIcon
+                    playerId={player.id}
                     className="sandbox-player-editor__dreadnought-icon"
                   />
                 }
@@ -544,7 +573,7 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                     troopSupply: seeded.troopSupply,
                   })
                 }}
-                icon={<img src="/icon/negotiator.svg" alt="" aria-hidden="true" />}
+                icon={<NegotiatorIcon playerId={player.id} size="md" />}
                 decreaseLabel="Decrease tech negotiators on Ix"
                 increaseLabel="Increase tech negotiators on Ix"
               />

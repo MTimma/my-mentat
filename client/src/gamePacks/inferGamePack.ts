@@ -5,6 +5,7 @@ import {
   OFFICIAL_BASE_PACK,
   OFFICIAL_BASE_RISE_OF_IX_PACK,
 } from './constants'
+import { getGamePackManifest } from './registry'
 import type { GamePackRef } from './types'
 
 /** Infer game pack ref from legacy setup fields when gamePackId is absent. */
@@ -34,4 +35,10 @@ export function loadStoredGamePackId(): GamePackRef {
   const legacyRiseOfIx = localStorage.getItem('myMentat.riseOfIx')
   if (legacyRiseOfIx === 'true') return OFFICIAL_BASE_RISE_OF_IX_PACK
   return DEFAULT_GAME_PACK_ID
+}
+
+/** Like loadStoredGamePackId, but falls back when the stored ref is not registered. */
+export function resolveStoredGamePackId(): GamePackRef {
+  const stored = loadStoredGamePackId()
+  return getGamePackManifest(stored) ? stored : DEFAULT_GAME_PACK_ID
 }

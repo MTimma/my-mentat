@@ -3,6 +3,10 @@ import { BOARD_SPACES } from '../../../data/boardSpaces'
 import { TechTileId } from '../../../data/techTiles'
 import { DEFAULT_DREADNOUGHTS } from '../../../utils/dreadnoughts'
 import {
+  filterAcquireTechFromChoices,
+  findOriginalOptionIndex,
+} from '../riseOfIx/techTurnControlsUi'
+import {
   AgentIcon,
   ChoiceType,
   GamePhase,
@@ -96,6 +100,24 @@ describe('Tech Negotiation board space (OR choice)', () => {
           g.name === 'Tech Negotiator'
       )
     ).toBe(true)
+  })
+
+  it('UI filtered index 0 resolves negotiator, not acquire tech', () => {
+    let s = placeOnIxSpace(TECH_NEGOTIATION_ID)
+    const choice = techNegotiationChoice(s)!
+    const filtered = filterAcquireTechFromChoices([choice])[0]!
+    expect(filtered.options).toHaveLength(1)
+    expect(filtered.options[0].reward.techNegotiator).toBe(1)
+    const resolveIndex = findOriginalOptionIndex(choice.options, filtered.options[0])
+    expect(resolveIndex).toBe(1)
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: choice.id,
+      optionIndex: resolveIndex,
+    })
+    expect(s.players[0].negotiatorsOnIx).toBe(1)
+    expect(s.pendingAcquireTech).toBeFalsy()
   })
 
   it('acquire option sets pending purchase with −1 discount, no negotiator', () => {

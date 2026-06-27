@@ -4,6 +4,7 @@ import { getTechTile } from '../../data/techTiles'
 import type { Player } from '../../types/GameTypes'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import { effectiveTechCost } from '../../utils/techTiles'
+import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import '../ImperiumRow/ImperiumRow.css'
 import './TechAcquireModal.css'
 
@@ -191,7 +192,11 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
                 </span>
               ) : null}
               <span className="tech-acquire-modal__resource">
-                <img src="/icon/negotiator.svg" alt="" className="tech-acquire-modal__resource-icon" aria-hidden />
+                <NegotiatorIcon
+                  playerId={player.id}
+                  size="md"
+                  className="tech-acquire-modal__resource-icon"
+                />
                 {negotiatorsAvailable} negotiator{negotiatorsAvailable === 1 ? '' : 's'} on Ix
               </span>
             </div>

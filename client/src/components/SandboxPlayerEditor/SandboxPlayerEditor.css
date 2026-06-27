@@ -134,6 +134,16 @@
   accent-color: #ffd700;
 }
 
+.sandbox-player-editor__control-toggle--dreadnought {
+  opacity: 0.92;
+}
+
+.sandbox-player-editor__dreadnought-control-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
 .sandbox-player-editor__counters {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

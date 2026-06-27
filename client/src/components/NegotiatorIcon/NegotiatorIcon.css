@@ -1,0 +1,57 @@
+.negotiator-icon {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  width: var(--negotiator-icon-width, 18px);
+  height: var(--negotiator-icon-height, 22px);
+  line-height: 0;
+}
+
+.negotiator-icon--sm {
+  --negotiator-icon-width: clamp(6px, 2.8cqw, 10px);
+  --negotiator-icon-height: clamp(8px, 3.6cqw, 13px);
+}
+
+.negotiator-icon--md {
+  --negotiator-icon-width: 18px;
+  --negotiator-icon-height: 22px;
+}
+
+.negotiator-icon--lg {
+  --negotiator-icon-width: 20px;
+  --negotiator-icon-height: 24px;
+}
+
+.negotiator-icon__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+
+.negotiator-icon__player-band {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 1%;
+  height: 24%;
+  clip-path: polygon(4% 0, 96% 0, 50% 100%);
+  pointer-events: none;
+}
+
+.negotiator-icon.player-0 .negotiator-icon__player-band { background-color: #d32f2f; }
+.negotiator-icon.player-1 .negotiator-icon__player-band { background-color: #388e3c; }
+.negotiator-icon.player-2 .negotiator-icon__player-band { background-color: #fbc02d; }
+.negotiator-icon.player-3 .negotiator-icon__player-band { background-color: #1976d2; }
+
+.combat-troop-controls .negotiator-icon--md {
+  width: 18px;
+  height: 22px;
+}
+
+.effect-token-icon.negotiator-icon--lg {
+  width: 20px;
+  height: 24px;
+}

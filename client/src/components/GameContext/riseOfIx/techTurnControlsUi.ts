@@ -39,3 +39,26 @@ export function filterAcquireTechFromChoices(choices: PendingChoice[]): PendingC
     return [{ ...fixed, options }]
   })
 }
+
+/** Map a filtered choice option back to its index in the live pending choice. */
+export function findOriginalOptionIndex(
+  originalOptions: FixedOptionsChoice['options'],
+  selected: FixedOptionsChoice['options'][number]
+): number {
+  const idx = originalOptions.findIndex(o => choiceOptionsMatch(o, selected))
+  return idx >= 0 ? idx : originalOptions.indexOf(selected)
+}
+
+function choiceOptionsMatch(
+  a: FixedOptionsChoice['options'][number],
+  b: FixedOptionsChoice['options'][number]
+): boolean {
+  if (a.disabled !== b.disabled) return false
+  const ar = a.reward
+  const br = b.reward
+  if (ar.techNegotiator !== br.techNegotiator) return false
+  if (Boolean(ar.acquireTech) !== Boolean(br.acquireTech)) return false
+  if ((ar.acquireTech?.discount ?? 0) !== (br.acquireTech?.discount ?? 0)) return false
+  if (ar.custom !== br.custom) return false
+  return JSON.stringify(ar) === JSON.stringify(br)
+}

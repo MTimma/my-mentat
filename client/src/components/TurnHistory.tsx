@@ -366,6 +366,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               {renderPlayerBadge(player)}
               <TurnGainsDisplay
                 gains={playerGains}
+                playerId={playerId}
                 showSourceTitles
                 resolveCard={makeResolveCardForPlayer(turn, playerId)}
               />
@@ -389,6 +390,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               {renderPlayerBadge(otherPlayer)}
               <TurnGainsDisplay
                 gains={otherGains}
+                playerId={playerId}
                 showSourceTitles
                 inlineDiscards
                 resolveCard={makeResolveCardForPlayer(turn, playerId)}
@@ -557,6 +559,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           <>
             <TurnGainsDisplay
               gains={gainsForDisplay}
+              playerId={turn.currPlayer}
               resolveCard={makeResolveCard(turn)}
               troopsDeployedToConflict={troopsDeployed}
               troopsRetreatedFromConflict={troopsRetreated}

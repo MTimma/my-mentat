@@ -34,6 +34,7 @@ import {
   recruitTroopsToGarrison,
   returnNegotiatorsToSupply,
 } from '../../utils/troops'
+import { isCardInHand, validateDiscardCostSelection } from '../../utils/playAreaDisplay'
 
 export type AcquireTechAction = {
   type: 'ACQUIRE_TECH'
@@ -850,8 +851,23 @@ export function applyWebOfPower(state: GameState, playerId: number, cardId: numb
 }
 
 /** Weirding Way: allow one extra turn before rotation. */
-export function applyWeirdingWayExtraTurn(state: GameState): GameState {
+export function applyWeirdingWayExtraTurn(
+  state: GameState,
+  playerId: number,
+  cardId: number,
+  cardName: string,
+  /** When set (e.g. PLACE_AGENT), append the history gain here — that path commits this array, not `state.gains`. */
+  gainsOut?: Gain[]
+): GameState {
   if (!state.currTurn) return state
+  const source = cardGainSource(cardId, cardName)
+  if (gainsOut) {
+    pushGain(gainsOut, state, playerId, source, 1, RewardType.EXTRA_TURN)
+  } else {
+    const gains = [...state.gains]
+    pushGain(gains, state, playerId, source, 1, RewardType.EXTRA_TURN)
+    state = { ...state, gains }
+  }
   return {
     ...state,
     currTurn: { ...state.currTurn, extraTurnAllowed: true },
@@ -1086,6 +1102,9 @@ function enqueueDiscardChoice(
   prompt: string,
   customEffect: CustomEffect
 ): GameState {
+  const player = state.players.find(p => p.id === playerId)
+  if (!player) return state
+
   const source = techActivationSource(tileId)
   const choiceId = nextSemanticId(
     source,
@@ -1098,6 +1117,8 @@ function enqueueDiscardChoice(
     prompt,
     piles: [CardPile.HAND],
     selectionCount: 1,
+    discardCost: 1,
+    filter: c => isCardInHand(player, c.id),
     onResolve: (cardIds: number[]) => ({
       type: 'CUSTOM_EFFECT',
       playerId,
@@ -1153,22 +1174,34 @@ function discardFromHand(
 ): GameState {
   const player = state.players.find(p => p.id === playerId)
   if (!player) return state
+  if (!validateDiscardCostSelection(player, 1, [cardId])) return state
 
   const deck = [...player.deck]
   const idx = deck.findIndex(c => c.id === cardId)
-  if (idx === -1 || idx >= player.handCount) return state
+  if (idx === -1) return state
 
   const discardPile = [...player.discardPile]
   const [removed] = deck.splice(idx, 1)
   discardPile.push(removed)
 
-  let handCount = player.handCount - 1
+  let handCount = player.handCount
+  if (idx < handCount) {
+    handCount = Math.max(0, handCount - 1)
+  }
   const cardsInDrawPile = Math.max(0, deck.length - handCount)
   const drawn = Math.min(drawCards, cardsInDrawPile)
   handCount += drawn
 
   const gains = [...state.gains]
-  pushGain(gains, state, playerId, source, -1, RewardType.DISCARD)
+  gains.push({
+    round: state.currentRound,
+    playerId,
+    sourceId: removed.id,
+    name: source.name,
+    amount: -1,
+    type: RewardType.DISCARD,
+    source: source.type,
+  })
   if (drawn > 0) {
     pushGain(gains, state, playerId, source, drawn, RewardType.DRAW)
   }
@@ -1297,6 +1330,8 @@ export function applyHoloprojectorsDiscard(
   cardIds: number[]
 ): GameState {
   if (cardIds.length !== 1) return state
+  const player = state.players.find(p => p.id === playerId)
+  if (!player || !validateDiscardCostSelection(player, 1, cardIds)) return state
   return discardFromHand(
     state,
     playerId,
@@ -1312,6 +1347,8 @@ export function applyInvasionShipsDiscard(
   cardIds: number[]
 ): GameState {
   if (cardIds.length !== 1) return state
+  const player = state.players.find(p => p.id === playerId)
+  if (!player || !validateDiscardCostSelection(player, 1, cardIds)) return state
   const applied = discardFromHand(
     state,
     playerId,

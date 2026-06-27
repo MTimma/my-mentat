@@ -162,7 +162,15 @@ const PlayerOverviewModal = ({
                     </div>
                     <div className="player-badges">
                       {player.id === activePlayerId && <span className="player-badge">active</span>}
-                      {player.id === firstPlayerMarker && <span className="player-badge">1st</span>}
+                      {player.id === firstPlayerMarker && (
+                        <img
+                          src="/icon/first_player.png"
+                          alt=""
+                          className="player-badge player-badge--first-player"
+                          title="First player"
+                          aria-hidden="true"
+                        />
+                      )}
                       {player.hasSwordmaster && <span className="player-badge">SM</span>}
                       {player.hasHighCouncilSeat && <span className="player-badge">HC</span>}
                     </div>

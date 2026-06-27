@@ -1,4 +1,6 @@
 import React from 'react'
+import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
+import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import './CombatTroopControls.css'
 
 export interface CombatTroopControlsProps {
@@ -9,6 +11,7 @@ export interface CombatTroopControlsProps {
   onDeploy: () => void
   onUndeploy: () => void
   variant?: 'troop' | 'dreadnought' | 'negotiator'
+  playerId?: number
   className?: string
   style?: React.CSSProperties
 }
@@ -21,17 +24,14 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
   onDeploy,
   onUndeploy,
   variant = 'troop',
+  playerId = 0,
   className,
   style,
 }) => {
   const isDreadnought = variant === 'dreadnought'
   const isNegotiator = variant === 'negotiator'
   const unitLabel = isDreadnought ? 'dreadnought' : isNegotiator ? 'negotiator' : 'troop'
-  const iconSrc = isDreadnought
-    ? '/icon/dreadnought.svg'
-    : isNegotiator
-      ? '/icon/negotiator.svg'
-      : '/icon/troop.png'
+  const iconSrc = '/icon/troop.png'
 
   const visible =
     canDeploy &&
@@ -55,7 +55,19 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
         title={`Deploy ${unitLabel} (${deployableTroops} available)`}
       >
         <span className="troop-available-count">{deployableTroops}</span>
-        <img src={iconSrc} alt="" className="troop-action-icon" />
+        {isDreadnought ? (
+          <DreadnoughtIcon
+            playerId={playerId}
+            className="troop-action-icon troop-action-icon--dreadnought"
+          />
+        ) : isNegotiator ? (
+          <NegotiatorIcon
+            playerId={playerId}
+            className="troop-action-icon troop-action-icon--negotiator"
+          />
+        ) : (
+          <img src={iconSrc} alt="" className="troop-action-icon" />
+        )}
         <span className="troop-action-arrow" aria-hidden="true">
           ➤
         </span>

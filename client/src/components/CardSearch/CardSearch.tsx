@@ -242,10 +242,13 @@ const CardSearch: React.FC<CardSearchProps> = ({
   useEffect(() => {
     if (!isOpen) return
 
-    const slots = buildSlots(initialSelectedCards)
-    setSelectionSlots(slots)
-    onSelectionChangeRef.current?.(filledCards(slots))
-  }, [buildSlots, filledCards, initialSelectedCards, isOpen, selectionCount])
+    setSelectionSlots(buildSlots(initialSelectedCards))
+  }, [buildSlots, initialSelectedCards, isOpen, selectionCount])
+
+  useEffect(() => {
+    if (!isOpen) return
+    onSelectionChangeRef.current?.(filledCards(selectionSlots))
+  }, [filledCards, isOpen, selectionSlots])
 
   // Derive available cards from piles or use provided cards
   const availableCards = useMemo(() => {
@@ -349,7 +352,6 @@ const CardSearch: React.FC<CardSearchProps> = ({
           }
         }
       }
-      onSelectionChangeRef.current?.(filledCards(slots))
       return slots
     })
   }, [filledCards, isRevealTurn, normalizeSlots])
@@ -359,7 +361,6 @@ const CardSearch: React.FC<CardSearchProps> = ({
       const slots = normalizeSlots(prev)
       if (!slots[slotIndex]) return prev
       slots[slotIndex] = null
-      onSelectionChangeRef.current?.(filledCards(slots))
       return slots
     })
   }, [filledCards, normalizeSlots])

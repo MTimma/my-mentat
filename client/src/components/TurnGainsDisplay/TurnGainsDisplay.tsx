@@ -4,6 +4,7 @@ import {
   aggregateInfluenceGains,
   aggregateResourceGains,
   computeTurnGainTotals,
+  getGainGroupIcon,
   getRepeatedIconDisplay,
   groupGainsForDisplay,
   INLINE_DISCARDS_GROUP_KEY,
@@ -12,6 +13,7 @@ import {
   type CardTypeTotal,
   type InfluenceTypeTotal,
   type ResourceTypeTotal,
+  type TurnGainSourceGroup,
 } from '../../utils/turnGainsDisplay'
 import {
   factionFromInfluenceGainName,
@@ -20,11 +22,44 @@ import {
   getFactionBumpIcon,
 } from '../../utils/influenceDisplay'
 import { getRewardDisplayName, getRewardIcon } from '../../utils/rewardIcons'
+import { getTechTileByName } from '../../data/techTiles'
+import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
+import TechTileFlipBadge from '../TechTileFlipBadge/TechTileFlipBadge'
 import './TurnGainsDisplay.css'
+
+const TECH_GAIN_TITLE_PREFIX = 'Tech: '
+
+function renderSourceGroupTitle(group: TurnGainSourceGroup) {
+  const { title } = group
+  const groupIcon = getGainGroupIcon(group)
+
+  if (title.startsWith(TECH_GAIN_TITLE_PREFIX)) {
+    const tileName = title.slice(TECH_GAIN_TITLE_PREFIX.length)
+    const tile = getTechTileByName(tileName)
+    if (tile) {
+      return (
+        <span className="turn-gain-source-title turn-gain-source-title--tech" title={title}>
+          <TechTileFlipBadge image={tile.image} alt={tile.name} size="gain" />
+          <span className="turn-gain-source-title__tech-name">{tile.name}</span>
+        </span>
+      )
+    }
+  }
+  return (
+    <span className="turn-gain-source-title" title={title}>
+      {groupIcon ? (
+        <img src={groupIcon} alt="" className="turn-gain-source-title-icon" aria-hidden="true" />
+      ) : null}
+      {title}
+    </span>
+  )
+}
 
 export interface TurnGainsDisplayProps {
   gains: Gain[]
   className?: string
+  /** Player color for dreadnought gain icons. */
+  playerId?: number
   /** Each source group shows a short title above its cost → reward row. */
   showSourceTitles?: boolean
   /** Net summary row (turn history). */
@@ -59,6 +94,7 @@ const usesStackedRepeatIcons = (type: RewardType): boolean =>
 const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   gains,
   className = '',
+  playerId = 0,
   showSourceTitles = true,
   showTotals = false,
   totalsOnly = false,
@@ -97,7 +133,16 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   const iconSrc = (iconPath: string) =>
     iconPath.startsWith('/') ? iconPath : `/${iconPath}`
 
-  const renderGainIcon = (iconPath: string, displayName: string, className = 'gain-icon') => (
+  const renderDreadnoughtGainIcon = (className = 'gain-icon') => (
+    <DreadnoughtIcon playerId={playerId} className={className} />
+  )
+
+  const renderGainIcon = (iconPath: string, displayName: string, className = 'gain-icon') => {
+    if (iconPath.includes('dreadnought')) {
+      return renderDreadnoughtGainIcon(className)
+    }
+
+    return (
     <img
       src={iconSrc(iconPath)}
       alt=""
@@ -113,7 +158,8 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         parent.appendChild(textSpan)
       }}
     />
-  )
+    )
+  }
 
   const renderRepeatedIcons = (iconPath: string, displayName: string, amount: number) => {
     const { iconCount, showTotalMultiplier } = getRepeatedIconDisplay(amount)
@@ -505,11 +551,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
               .filter(Boolean)
               .join(' ')}
           >
-            {showSourceTitles && group.title && !isInlineDiscards ? (
-              <span className="turn-gain-source-title" title={group.title}>
-                {group.title}
-              </span>
-            ) : null}
+            {showSourceTitles && group.title && !isInlineDiscards ? renderSourceGroupTitle(group) : null}
             <div
               className={[
                 'turn-gain-source-flow',

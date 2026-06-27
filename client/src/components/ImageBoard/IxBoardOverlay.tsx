@@ -10,6 +10,7 @@ import {
 } from '../../data/ixBoardAnchors'
 import { tileById, canPlayerAffordTechTile } from '../../utils/techTiles'
 import BoardAgentFigure from '../AgentIcon/AgentIcon'
+import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import './IxBoardOverlay.css'
 
 const PLAYER_COLORS: Record<number, string> = {
@@ -148,12 +149,11 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
               style={{
                 left: `${anchor.x}%`,
                 top: `${anchor.y}%`,
-                color: playerMarkerColor(player),
               }}
               title={`${player.leader.name}: ${count} negotiator${count === 1 ? '' : 's'} on Ix`}
             >
               {Array.from({ length: Math.min(count, 6) }, (_, index) => (
-                <span key={index} className="ix-board-overlay__negotiator-square" aria-hidden="true" />
+                <NegotiatorIcon key={index} playerId={player.id} size="sm" />
               ))}
               {count > 6 ? <span className="ix-board-overlay__negotiator-overflow">+{count - 6}</span> : null}
             </div>
