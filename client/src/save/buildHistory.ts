@@ -66,7 +66,7 @@ export function buildHistoryFromEvents(setup: SetupBlock, events: EventEntry[]):
       }
       case 'END_TURN': {
         if (state.phase === GamePhase.END_GAME) break
-        if (stateBeforeAction?.currTurn) {
+        if (stateBeforeAction && state !== stateBeforeAction && stateBeforeAction.currTurn) {
           history = [...history, snapshotStateForHistory(stateBeforeAction)]
         }
         break
@@ -150,7 +150,12 @@ export function historyIndexToEventIndex(
         break
       }
       case 'END_TURN':
-        if (state.phase !== GamePhase.END_GAME && stateBeforeAction?.currTurn) {
+        if (
+          state.phase !== GamePhase.END_GAME &&
+          stateBeforeAction &&
+          state !== stateBeforeAction &&
+          stateBeforeAction.currTurn
+        ) {
           history = [...history, snapshotStateForHistory(stateBeforeAction)]
         }
         break
