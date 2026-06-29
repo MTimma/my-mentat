@@ -35,9 +35,9 @@ Data: `client/src/data/techTiles.ts`. State: `GameState.ixBoard` (3 stacks), `Pl
 | ID | Tile | Status |
 |----|------|--------|
 | TT-20 | Artillery | ✓ +1 sword per sword-producing revealed card |
-| TT-21 | Minimic Film | todo — +1 persuasion |
+| TT-21 | Minimic Film | ✓ +1 persuasion |
 | TT-22 | Restricted Ordinance | ✓ +4 combat if High Council |
-| TT-23 | Disposal Facility | todo — trash if persuasion ≥ 6 |
+| TT-23 | Disposal Facility | ✓ optional trash if persuasion ≥ 6 |
 
 ## After conflict (win)
 
@@ -53,20 +53,20 @@ Data: `client/src/data/techTiles.ts`. State: `GameState.ixBoard` (3 stacks), `Pl
 | TT-40 | Spaceport | Always | ✓ `acquireToTopThisRound` |
 | TT-41 | Troop Transports | Always | ✓ shipping step-2 troop bonus |
 | TT-42 | Flagship | Once/round activate | ✓ −4 solari → 3 troops; flips face-down |
-| TT-43 | Holoprojectors | Once/round | todo |
-| TT-44 | Training Drones | Once/round | todo |
+| TT-43 | Holoprojectors | Once/round | ✓ discard-from-hand draw flow |
+| TT-44 | Training Drones | Once/round | ✓ +1 troop; flips face-down |
 | TT-45 | Invasion Ships | Agent once/round | ✓ gated by turn type; `infiltrateIgnoreOccupancyOnce` |
-| TT-46 | Sonic Snoopers | One-time trash | todo |
-| TT-47 | Spy Satellites | One-time + endgame | todo |
+| TT-46 | Sonic Snoopers | One-time trash | ✓ intrigue draw/return flow |
+| TT-47 | Spy Satellites | One-time + endgame | ✓ activation and endgame VP |
 
 ## Endgame
 
 | ID | Tile | Status |
 |----|------|--------|
 | TT-50 | Holtzman Engine | ✓ +1 VP if ≥2 SMF |
-| TT-51 | Memocorders | todo — +1 VP if ≥3 on all tracks |
-| TT-52 | Chaumurky | todo — tiebreaker |
-| TT-53 | Spy Satellites | todo — VP per low-influence faction |
+| TT-51 | Memocorders | ✓ +1 VP if ≥3 on all tracks |
+| TT-52 | Chaumurky | ✓ tiebreaker spice |
+| TT-53 | Spy Satellites | ✓ VP per low-influence faction |
 
 ## Acquire effects (immediate on take)
 
