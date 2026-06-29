@@ -24,10 +24,10 @@
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
 }
 
-.agent.player-0::before { background-color: #d32f2f; }
-.agent.player-1::before { background-color: #388e3c; }
-.agent.player-2::before { background-color: #fbc02d; }
-.agent.player-3::before { background-color: #1976d2; }
+.agent.player-red::before { background-color: #d32f2f; }
+.agent.player-green::before { background-color: #388e3c; }
+.agent.player-yellow::before { background-color: #fbc02d; }
+.agent.player-blue::before { background-color: #1976d2; }
 
 @media (max-width: 900px) {
   .agent {

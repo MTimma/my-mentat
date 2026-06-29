@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BOARD_SPACES } from '../boardSpaces'
 import {
+  boardSpaceById,
   canPlayerVisitBoardSpaceOnce,
   isBoardSpaceAvailableForExpansions,
   isMentatAvailableOnBoard,
@@ -59,5 +60,15 @@ describe('boardSpaceAvailability', () => {
     ] as Player[]
 
     expect(playersEligibleForSwordmaster(players).map(p => p.id)).toEqual([1, 3])
+  })
+
+  it('swaps Research Station when Immortality is on', () => {
+    const base = boardSpaceById(3, NO_EXPANSIONS)
+    const immo = boardSpaceById(3, { ...NO_EXPANSIONS, immortality: true })
+    expect(base?.effects?.[0]?.reward.drawCards).toBe(3)
+    expect(base?.effects?.[0]?.reward.research).toBeUndefined()
+    expect(immo?.immortality).toBe(true)
+    expect(immo?.effects?.[0]?.reward.drawCards).toBe(2)
+    expect(immo?.effects?.[0]?.reward.research).toBe(1)
   })
 })

@@ -10,6 +10,15 @@
   background: rgba(0, 0, 0, 0.55);
 }
 
+.combat-results-overlay--influence-board-choice {
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.combat-results-overlay--influence-board-choice .combat-results {
+  pointer-events: auto;
+}
+
 .combat-results {
   position: relative;
   top: auto;
@@ -217,4 +226,42 @@
 
 .effect-btn.choice:hover {
   background: var(--chrome-accent-hover);
+}
+
+.conflict-choice-board-hint {
+  margin: 0;
+  color: var(--chrome-text-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.conflict-choice-faction-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--chrome-border-accent);
+  border-radius: 8px;
+  background: var(--chrome-accent-muted);
+  color: var(--chrome-text-strong);
+  cursor: pointer;
+  min-width: 72px;
+}
+
+.conflict-choice-faction-btn:hover {
+  background: var(--chrome-accent-hover);
+  border-color: var(--chrome-border-accent-strong);
+}
+
+.conflict-choice-faction-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.conflict-choice-faction-label {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-align: center;
 }

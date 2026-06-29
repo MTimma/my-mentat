@@ -74,6 +74,63 @@
   height: 22px;
 }
 
+.tech-acquire-modal__sources {
+  margin: 8px 0 6px;
+  text-align: center;
+}
+
+.tech-acquire-modal__sources-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  color: #a89a82;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tech-acquire-modal__source-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tech-acquire-modal__source {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 88px;
+  padding: 8px 10px;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  color: #e8dcc8;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.tech-acquire-modal__source--selected {
+  border-color: var(--chrome-accent, #ffd700);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.28);
+}
+
+.tech-acquire-modal__source-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.tech-acquire-modal__source-label {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.tech-acquire-modal__source-discount {
+  font-size: 0.7rem;
+  color: #c9b87a;
+}
+
 .tech-acquire-modal__discount {
   margin: 4px 0 8px;
   text-align: center;

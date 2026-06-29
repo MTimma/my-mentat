@@ -5,6 +5,7 @@ export enum IntrigueCardType {
 }
 
 import type { PlayerTechTile, TechTileId } from '../data/techTiles'
+import type { BoardSetId } from '../expansions/types'
 
 // Contains display values for the leader
 export class Leader {
@@ -26,8 +27,6 @@ export class Leader {
   public tessiaSnoopers?: Partial<Record<FactionType, boolean>>
   /** Tessia Vernius only — next leader-mat reward slot to grant (1–4). */
   public tessiaSnooperRewardSlot?: number
-  /** Viscount Hundro Vernius — once-per-game intrigue peek flag. */
-  public hudroPeekUsed?: boolean
 }
 
 export interface MasterStroke {
@@ -89,6 +88,17 @@ export interface Player {
   agentTurnsThisRound?: number
   /** Rise of Ix — tech tiles activated this round (once-per-round timings). */
   activatedTechThisRound?: TechTileId[]
+  /** Immortality — troop pieces placed in the Axolotl tanks (specimen currency). */
+  specimens?: number
+  /**
+   * Immortality — current research-track node id (branching hex graph).
+   * `undefined` ⇒ the leftmost start node. See `expansions/immortality/researchTrack.ts`.
+   */
+  researchNodeId?: string
+  /** Immortality — Tleilaxu (beetle) track position (0 = leftmost start). */
+  tleilaxuStep?: number
+  /** Immortality — Family Atomics token spent (once per game). */
+  familyAtomicsUsed?: boolean
 }
 
 /**
@@ -167,6 +177,8 @@ export interface SpaceProps {
   specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'highCouncil' | 'sellMelange'
   /** Rise of Ix — CHOAM-overlay board space. */
   riseOfIx?: boolean
+  /** Immortality — Bene Tleilax board replacement space (same id as a base space). */
+  immortality?: boolean
   /** Hotspot panel: main board vs Ix side panel. */
   gridSide?: 'main' | 'ix'
 }
@@ -189,6 +201,17 @@ export interface CardEffectReq {
   or?: CardEffectReq[]
   influence?: InfluenceAmount
   alliance?: FactionType
+  /**
+   * Immortality — effect is only active once the player's research token has
+   * reached the given genetic marker (1 = first/`~3 steps`, 2 = second/end).
+   * Used for both genetic-symbol card effects and "Research lvl N" text.
+   */
+  researchLevel?: 1 | 2
+  /**
+   * Immortality — effect is only active when this card is grafted with another
+   * (the "if grafted" clause on several Tleilaxu cards).
+   */
+  grafted?: boolean
 }
 
 export interface IntrigueReq extends CardEffectReq {
@@ -222,6 +245,8 @@ export interface Cost {
   negotiator?: boolean
   /** Rise of Ix — place N intrigue cards on the bottom of the intrigue deck. */
   intrigueBottom?: number
+  /** Immortality — spend N specimens from the Axolotl tanks. */
+  specimen?: number
   custom?: string
 }
 
@@ -271,6 +296,14 @@ export interface Reward {
   dividends?: true
   /** Nested reward applied to each opponent (e.g. dividends: 1 solari each). */
   forOpponents?: Reward
+  /** Immortality — generate N specimens (troop pieces into the Axolotl tanks). */
+  specimen?: number
+  /** Immortality — advance the research token N times (branch choice at resolve). */
+  research?: number
+  /** Immortality — advance the Tleilaxu (beetle) token N spaces. */
+  tleilaxu?: number
+  /** Immortality — Combat icon: may deploy troops this turn as if on a combat space. */
+  combatDeploy?: boolean
 }
 
 export enum EffectTiming {
@@ -320,6 +353,10 @@ export enum GainSource {
   SHIPPING_TRACK = 'shipping-track',
   /** Rise of Ix — Tessia Vernius snooper leader-mat reward. */
   TESSIA_SNOOPER = 'tessia-snooper',
+  /** Immortality — gain tied to the research track. */
+  RESEARCH_TRACK = 'research-track',
+  /** Immortality — gain tied to the Tleilaxu track. */
+  TLEILAXU_TRACK = 'tleilaxu-track',
 }
 
 export interface Card {
@@ -335,6 +372,12 @@ export interface Card {
   unload?: boolean
   /** Rise of Ix — source marker for UI badge and deck filtering. */
   riseOfIx?: boolean
+  /** Immortality — source marker for UI badge and deck filtering. */
+  immortality?: boolean
+  /** Immortality — this card belongs to the Tleilaxu Row (acquired with specimens). */
+  tleilaxu?: boolean
+  /** Immortality — card has a Graft agent box (must be played as a pair on an Agent turn). */
+  graft?: boolean
   trashEffect?: CardEffect[]
   playEffect?: PlayEffect[]
   revealEffect?: RevealEffect[]
@@ -366,6 +409,14 @@ export interface ScheduledIntrigueEffect {
   name: string
   image: string
   reward: Reward
+}
+
+export interface ScheduledGraftEffect {
+  type: 'chairdog-return'
+  chairdogCardId: number
+  partnerCardId: number
+  partnerName: string
+  name: string
 }
 
 export enum FactionType {
@@ -520,6 +571,14 @@ export interface CardSelectChoice extends PendingChoiceBase {
 // Unified pending choice type
 export type PendingChoice = FixedOptionsChoice | CardSelectChoice
 
+/** Minimal tech tile snapshot for turn-history acquired rows. */
+export interface AcquiredTechTileSnapshot {
+  id: TechTileId
+  name: string
+  image: string
+  cost: number
+}
+
 export interface GameTurn {
   playerId: number
   type: TurnType
@@ -562,6 +621,8 @@ export interface GameTurn {
   persuasionCount?: number
   gainedEffects?: string[]
   acquiredCards?: Card[]
+  /** Ix board tech tiles bought this turn (turn history acquired row). */
+  acquiredTechTiles?: AcquiredTechTileSnapshot[]
   revealedCardIds?: number[]
   playedIntrigueCard?: IntrigueCardPlay[]
   optionalEffects?: OptionalEffect[]
@@ -576,6 +637,8 @@ export interface GameTurn {
     sourceCardId?: number
     sourceCardName?: string
   }
+  /** Twisted Mentat (Immortality graft) — may recall the agent just placed this turn. */
+  canRecallPlacedAgent?: boolean
   /** Weirding Way — player may take another Agent/Reveal turn before rotation. */
   extraTurnAllowed?: boolean
   /** Treachery — deploy allowance must be used before ending turn. */
@@ -633,6 +696,10 @@ export enum RewardType {
   FREIGHTER = 'Freighter',
   TECH = 'Tech',
   NEGOTIATOR = 'Negotiator',
+  /** Immortality */
+  SPECIMEN = 'Specimen',
+  RESEARCH = 'Research',
+  TLEILAXU = 'Tleilaxu',
 }
 
 export interface PlayerSetup {
@@ -685,6 +752,8 @@ export interface GameState {
   pendingRewards: PendingReward[]
   // Intrigue effects that will auto-resolve when the player takes their Reveal turn this round.
   scheduledIntrigueOnReveal: Record<number, ScheduledIntrigueEffect[]>
+  /** Immortality — graft effects that resolve at the start of Reveal (e.g. Chairdog). */
+  scheduledGraftOnReveal?: Record<number, ScheduledGraftEffect[]>
   // Intrigue cards that remain “active this round” (for UI attribution near Turn Controls).
   activeIntrigueThisRound: Record<number, IntrigueCard[]>
   // Intrigue modifier: during this player's Reveal turn this round, acquisitions may go to top of deck.
@@ -745,6 +814,8 @@ export interface GameState {
   hideRoundLabel?: boolean
   /** Expansion flags — configuration, not mutated during play. */
   expansions: Expansions
+  /** Base board set (from the game pack). Missing ⇒ `'imperium'`. */
+  boardSet?: BoardSetId
   /** Rise of Ix — tech tile stacks on the Ix board (undefined when RoI is off). */
   ixBoard?: {
     stacks: TechTileId[][]
@@ -761,17 +832,65 @@ export interface GameState {
   } | null
   /** Rise of Ix — Heighliner spice discount for active player this turn (Guild Accord). */
   heighlinerDiscountThisTurn?: Record<number, number>
+  /**
+   * Immortality — the two purchasable Tleilaxu Row cards (Reclaimed Forces is a
+   * permanent reserve rendered separately and never stored here). Undefined when
+   * Immortality is off.
+   */
+  tleilaxuRow?: Card[]
+  /** Immortality — remaining Tleilaxu deck pool for manual refills (no shuffle). */
+  tleilaxuRowDeck?: Card[]
+  /** Immortality — pending Imperium Row replacement count after Family Atomics. */
+  pendingTleilaxuRowReplacement?: { cardIndex: number } | null
+  /** Immortality — the 2 setup spice on the Tleilaxu-track VP space, until claimed. */
+  tleilaxuTrackBonusSpice?: number
+  /** Immortality — true once the first player to reach the VP space took the bonus spice. */
+  tleilaxuTrackBonusClaimed?: boolean
+  /**
+   * Immortality — a player owes a research-track branch decision. The reducer
+   * sets this when a `research` reward is gained with more than one valid
+   * forward branch; the UI resolves it via ADVANCE_RESEARCH.
+   */
+  pendingResearchAdvance?: {
+    playerId: number
+    /** Remaining research advances still owed after the current decision. */
+    remaining: number
+  } | null
+  /**
+   * Immortality — active graft pairing for the current Agent turn: the two card
+   * instance ids played together. Cleared at end of turn.
+   */
+  graftPair?: { cardIds: number[] } | null
+  /**
+   * Immortality — waiting for the second graft card (or Imperium Row pick for Usurp).
+   */
+  pendingGraftPartner?: {
+    primaryCardId: number
+    primaryDeckIndex: number
+    requiresImperiumRow?: boolean
+  } | null
+  /**
+   * Immortality — Usurp borrowed an Imperium Row card for this agent turn; trashed at end of turn.
+   */
+  usurpBorrowed?: { card: Card; rowIndex: number } | null
 }
 
 export interface Expansions {
   riseOfIx: boolean
   /** Reserved — not implemented in this iteration. */
   riseOfIxEpic: boolean
+  /**
+   * Immortality (Bene Tleilax board, Tleilaxu Row, specimens, graft).
+   * Optional so legacy `Expansions` literals/saves remain valid; treat
+   * `undefined` as `false` (see `normalizeExpansions` / `NO_EXPANSIONS`).
+   */
+  immortality?: boolean
 }
 
 export const NO_EXPANSIONS: Expansions = {
   riseOfIx: false,
   riseOfIxEpic: false,
+  immortality: false,
 }
 
 /** Backwards-compatible default when loading state without `expansions`. */
@@ -882,7 +1001,6 @@ export enum CustomEffect {
   TREACHERY_DOUBLE_INFLUENCE = 'TREACHERY_DOUBLE_INFLUENCE',
   WEB_OF_POWER = 'WEB_OF_POWER',
   WEIRDING_WAY_EXTRA_TURN = 'WEIRDING_WAY_EXTRA_TURN',
-  HUDRO_INTRIGUE_PEEK = 'HUDRO_INTRIGUE_PEEK',
   YUNA_SOLARI_BONUS = 'YUNA_SOLARI_BONUS',
   ARMAND_TRASH_IN_PLAY = 'ARMAND_TRASH_IN_PLAY',
   ILESA_SET_ASIDE = 'ILESA_SET_ASIDE',
@@ -905,6 +1023,48 @@ export enum CustomEffect {
   TRAINING_DRONES = 'TRAINING_DRONES',
   TROOP_TRANSPORTS = 'TROOP_TRANSPORTS',
   WINDTRAPS = 'WINDTRAPS',
+  /**
+   * Immortality — graft and Tleilaxu specials. Most Immortality cards are
+   * declarative (specimen / research / tleilaxu / influence rewards); the
+   * members below back cards whose effects depend on grafting, the other
+   * grafted card, or research level in ways the declarative shape can't express.
+   * Handlers live in `expansions/immortality/reducer.ts`.
+   */
+  GHOLA_COPY = 'GHOLA_COPY',
+  USURP_GRAFT = 'USURP_GRAFT',
+  CHAIRDOG_RETURN = 'CHAIRDOG_RETURN',
+  BEGUILING_PHEROMONES = 'BEGUILING_PHEROMONES',
+  TWISTED_MENTAT_RECALL = 'TWISTED_MENTAT_RECALL',
+  BLANK_SLATE_ICONS = 'BLANK_SLATE_ICONS',
+  DISSECTING_KIT = 'DISSECTING_KIT',
+  REPLACEMENT_EYES_TRASH_BEETLE = 'REPLACEMENT_EYES_TRASH_BEETLE',
+  SLIG_FARMER = 'SLIG_FARMER',
+  STITCHED_HORROR = 'STITCHED_HORROR',
+  ORGAN_MERCHANTS = 'ORGAN_MERCHANTS',
+  TLEILAXU_SURGEON = 'TLEILAXU_SURGEON',
+  TLEILAXU_MASTER = 'TLEILAXU_MASTER',
+  SHADOUT_MAPES = 'SHADOUT_MAPES',
+  OCCUPATION_COMBAT = 'OCCUPATION_COMBAT',
+  CLANDESTINE_MEETING = 'CLANDESTINE_MEETING',
+  IMPERIUM_CEREMONY = 'IMPERIUM_CEREMONY',
+  SCIENTIFIC_BREAKTHROUGH = 'SCIENTIFIC_BREAKTHROUGH',
+  VICIOUS_TALENTS = 'VICIOUS_TALENTS',
+  DISGUISED_BUREAUCRAT = 'DISGUISED_BUREAUCRAT',
+  STUDY_MELANGE = 'STUDY_MELANGE',
+  TLEILAXU_PUPPET = 'TLEILAXU_PUPPET',
+  COUNTERATTACK = 'COUNTERATTACK',
+  ECONOMIC_POSITIONING_IMM = 'ECONOMIC_POSITIONING_IMM',
+  HARVEST_CELLS = 'HARVEST_CELLS',
+  GRUESOME_SACRIFICE = 'GRUESOME_SACRIFICE',
+  SHADOWY_BARGAIN = 'SHADOWY_BARGAIN',
+  SHOW_OF_STRENGTH = 'SHOW_OF_STRENGTH',
+  STILLSUIT_MANUFACTURER = 'STILLSUIT_MANUFACTURER',
+  HIGH_PRIORITY_TRAVEL = 'HIGH_PRIORITY_TRAVEL',
+  LISAN_AL_GAIB = 'LISAN_AL_GAIB',
+  LONG_REACH = 'LONG_REACH',
+  GUILD_IMPERSONATOR = 'GUILD_IMPERSONATOR',
+  RECLAIMED_FORCES = 'RECLAIMED_FORCES',
+  FAMILY_ATOMICS = 'FAMILY_ATOMICS',
 }
 
 // Custom effects that are auto-applied and don't need user input

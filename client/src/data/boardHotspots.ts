@@ -4,7 +4,7 @@ import {
   extraMarkerAnchorsForExpansions,
   mergeBoardHotspots,
 } from './expansionBoardHotspots'
-import { BOARD_SPACES } from './boardSpaces'
+import { BOARD_SPACES, FOLDSPACE_BOARD_SPACE_ID } from './boardSpaces'
 
 /**
  * Hotspot regions and marker anchors for the full-image board (`public/board/Board.jpg`).
@@ -21,6 +21,7 @@ import { BOARD_SPACES } from './boardSpaces'
  * 4. In the **Elements** panel, edit the `style` attribute on that `<button>`: change `left`, `top`, `width`, `height` until the outline matches the art.
  * 5. Copy the four percentages into the matching entry here (`spaceId` = `data-space-id` on the button).
  * 6. Agent meeple position: tune **`agentX`** / **`agentY`** (% of that hotspot’s width/height from its top-left). With `?hotspotDebug=1`, cyan dots show each anchor.
+ * 7. Foldspace deck count: tune **`foldspaceDeckCountPoint`** in this file; with `?markerDebug=1`, cyan dot on `[data-marker="foldspace-deck"]`.
  *
  * ### City (blue circle) and desert / spice (yellow triangle) ids
  * | spaceId | name              |
@@ -122,7 +123,7 @@ export const BOARD_HOTSPOTS: BoardHotspot[] = [
 
   // === SPACING GUILD ===
   hotspot(17, { left: 12, top: 29, width: 15, height: 10 }, { x: 34, y: 60}),  // Heighliner
-  hotspot(16, { left: 12, top: 40, width: 15, height: 10 }, { x: 34, y: 50}),  // Foldspace
+  hotspot(FOLDSPACE_BOARD_SPACE_ID, { left: 12, top: 40, width: 15, height: 10 }, { x: 34, y: 50}),  // Foldspace
 
   // === BENE GESSERIT ===
   hotspot(19, { left: 12, top: 53, width: 15, height: 10 }, { x: 34, y: 60}),   // Selective Breeding
@@ -213,6 +214,18 @@ export function mentatAvailabilityPoint(h: BoardHotspot): { x: number; y: number
  * Dots stack **vertically** on the agent anchor (`agentX` / `agentY`) so RoI retunes
  * stay aligned with the printed icon without spilling into the CHOAM track.
  */
+/**
+ * Remaining Foldspace deck count on the Foldspace board space (stage %).
+ * Derived from hotspot geometry so base and expansion retunes stay aligned.
+ */
+export function foldspaceDeckCountPoint(h: BoardHotspot): { x: number; y: number } {
+  const box = layoutHotspotPercent(h)
+  return {
+    x: box.left + box.width * 0.72,
+    y: box.top + box.height * 0.38,
+  }
+}
+
 export function swordmasterEligibilityPoint(
   h: BoardHotspot,
   laneIndex: number,

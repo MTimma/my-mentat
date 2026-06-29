@@ -2,90 +2,17 @@
   "schemaVersion": 1,
   "meta": {
     "counts": {
-      "effects": 255,
-      "cards": 92,
+      "effects": 358,
+      "cards": 127,
       "boardSpaces": 26,
       "conflicts": 22,
-      "intrigue": 49,
+      "intrigue": 64,
       "leaders": 14,
       "techTiles": 18,
-      "expansions": 1
+      "expansions": 2
     }
   },
   "effects": [
-    {
-      "id": "effect:card:starting/the-voice:play:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/the-voice"
-      },
-      "slot": "play",
-      "index": 0,
-      "reward": {
-        "custom": "THE_VOICE"
-      }
-    },
-    {
-      "id": "effect:card:starting/the-voice:reveal:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/the-voice"
-      },
-      "slot": "reveal",
-      "index": 0,
-      "reward": {
-        "persuasion": 2
-      }
-    },
-    {
-      "id": "effect:card:starting/reverend-mother-mohiam:play:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/reverend-mother-mohiam"
-      },
-      "slot": "play",
-      "index": 0,
-      "reward": {
-        "custom": "REVEREND_MOTHER_MOHIAM"
-      }
-    },
-    {
-      "id": "effect:card:starting/reverend-mother-mohiam:reveal:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/reverend-mother-mohiam"
-      },
-      "slot": "reveal",
-      "index": 0,
-      "reward": {
-        "persuasion": 2,
-        "spice": 2
-      }
-    },
-    {
-      "id": "effect:card:starting/power-play:play:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/power-play"
-      },
-      "slot": "play",
-      "index": 0,
-      "reward": {
-        "custom": "POWER_PLAY"
-      }
-    },
-    {
-      "id": "effect:card:starting/power-play:play:1",
-      "owner": {
-        "type": "card",
-        "id": "starting/power-play"
-      },
-      "slot": "play",
-      "index": 1,
-      "reward": {
-        "trashThisCard": true
-      }
-    },
     {
       "id": "effect:card:starting/convincing-argument:reveal:0",
       "owner": {
@@ -180,263 +107,6 @@
       "index": 0,
       "reward": {
         "persuasion": 1
-      }
-    },
-    {
-      "id": "effect:card:starting/other-memory:play:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/other-memory"
-      },
-      "slot": "play",
-      "index": 0,
-      "reward": {
-        "drawCards": 1
-      },
-      "choiceOpt": true
-    },
-    {
-      "id": "effect:card:starting/other-memory:play:1",
-      "owner": {
-        "type": "card",
-        "id": "starting/other-memory"
-      },
-      "slot": "play",
-      "index": 1,
-      "reward": {
-        "custom": "OTHER_MEMORY"
-      },
-      "choiceOpt": true
-    },
-    {
-      "id": "effect:card:starting/other-memory:reveal:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/other-memory"
-      },
-      "slot": "reveal",
-      "index": 0,
-      "reward": {
-        "persuasion": 2
-      }
-    },
-    {
-      "id": "effect:card:starting/kwisatz-haderach:play:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/kwisatz-haderach"
-      },
-      "slot": "play",
-      "index": 0,
-      "reward": {},
-      "beforePlaceAgent": {
-        "recallAgent": true
-      }
-    },
-    {
-      "id": "effect:card:starting/kwisatz-haderach:play:1",
-      "owner": {
-        "type": "card",
-        "id": "starting/kwisatz-haderach"
-      },
-      "slot": "play",
-      "index": 1,
-      "reward": {
-        "custom": "KWISATZ_HADERACH"
-      }
-    },
-    {
-      "id": "effect:card:starting/kwisatz-haderach:play:2",
-      "owner": {
-        "type": "card",
-        "id": "starting/kwisatz-haderach"
-      },
-      "slot": "play",
-      "index": 2,
-      "reward": {
-        "drawCards": 1
-      }
-    },
-    {
-      "id": "effect:card:starting/fremen-camp:play:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/fremen-camp"
-      },
-      "slot": "play",
-      "index": 0,
-      "cost": {
-        "spice": 2
-      },
-      "reward": {
-        "troops": 3
-      }
-    },
-    {
-      "id": "effect:card:starting/fremen-camp:reveal:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/fremen-camp"
-      },
-      "slot": "reveal",
-      "index": 0,
-      "reward": {
-        "persuasion": 2,
-        "combat": 1
-      }
-    },
-    {
-      "id": "effect:card:starting/gurney-halleck:play:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/gurney-halleck"
-      },
-      "slot": "play",
-      "index": 0,
-      "reward": {
-        "troops": 2,
-        "drawCards": 1
-      }
-    },
-    {
-      "id": "effect:card:starting/gurney-halleck:reveal:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/gurney-halleck"
-      },
-      "slot": "reveal",
-      "index": 0,
-      "reward": {
-        "persuasion": 2
-      }
-    },
-    {
-      "id": "effect:card:starting/gurney-halleck:reveal:1",
-      "owner": {
-        "type": "card",
-        "id": "starting/gurney-halleck"
-      },
-      "slot": "reveal",
-      "index": 1,
-      "cost": {
-        "solari": 3
-      },
-      "reward": {
-        "troops": 2,
-        "deployTroops": 2
-      }
-    },
-    {
-      "id": "effect:card:starting/liet-kynes:reveal:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/liet-kynes"
-      },
-      "slot": "reveal",
-      "index": 0,
-      "reward": {
-        "custom": "LIET_KYNES"
-      }
-    },
-    {
-      "id": "effect:card:starting/liet-kynes:acquire:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/liet-kynes"
-      },
-      "slot": "acquire",
-      "index": 0,
-      "reward": {
-        "influence": {
-          "amounts": [
-            {
-              "faction": "emperor",
-              "amount": 1
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "effect:card:starting/scout:reveal:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/scout"
-      },
-      "slot": "reveal",
-      "index": 0,
-      "reward": {
-        "persuasion": 1,
-        "combat": 1,
-        "retreatTroops": 2
-      }
-    },
-    {
-      "id": "effect:card:starting/shifting-allegiances:play:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/shifting-allegiances"
-      },
-      "slot": "play",
-      "index": 0,
-      "cost": {
-        "spice": 2,
-        "influence": {
-          "chooseOne": true,
-          "amounts": [
-            {
-              "faction": "spacing-guild",
-              "amount": 1
-            },
-            {
-              "faction": "fremen",
-              "amount": 1
-            },
-            {
-              "faction": "bene-gesserit",
-              "amount": 1
-            },
-            {
-              "faction": "emperor",
-              "amount": 1
-            }
-          ]
-        }
-      },
-      "reward": {
-        "influence": {
-          "chooseOne": true,
-          "amounts": [
-            {
-              "faction": "spacing-guild",
-              "amount": 2
-            },
-            {
-              "faction": "fremen",
-              "amount": 2
-            },
-            {
-              "faction": "bene-gesserit",
-              "amount": 2
-            },
-            {
-              "faction": "emperor",
-              "amount": 2
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "effect:card:starting/shifting-allegiances:reveal:0",
-      "owner": {
-        "type": "card",
-        "id": "starting/shifting-allegiances"
-      },
-      "slot": "reveal",
-      "index": 0,
-      "reward": {
-        "persuasion": 2
       }
     },
     {
@@ -2736,6 +2406,1436 @@
       }
     },
     {
+      "id": "effect:card:imperium/bene-tleilax-lab:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/bene-tleilax-lab"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "specimen": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/bene-tleilax-lab:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/bene-tleilax-lab"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/bene-tleilax-lab:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/bene-tleilax-lab"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "requirement": {
+        "researchLevel": 1
+      },
+      "reward": {
+        "spice": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/bene-tleilax-researcher:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/bene-tleilax-researcher"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "research": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/bene-tleilax-researcher:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/bene-tleilax-researcher"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/bene-tleilax-researcher:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/bene-tleilax-researcher"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "requirement": {
+        "researchLevel": 1
+      },
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/bene-tleilax-researcher:reveal:2",
+      "owner": {
+        "type": "card",
+        "id": "imperium/bene-tleilax-researcher"
+      },
+      "slot": "reveal",
+      "index": 2,
+      "requirement": {
+        "researchLevel": 2
+      },
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/blank-slate:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/blank-slate"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "grafted": true
+      },
+      "reward": {
+        "custom": "BLANK_SLATE_ICONS"
+      }
+    },
+    {
+      "id": "effect:card:imperium/blank-slate:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/blank-slate"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/clandestine-meeting:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/clandestine-meeting"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            }
+          ]
+        },
+        "intrigueCards": 1,
+        "custom": "CLANDESTINE_MEETING"
+      }
+    },
+    {
+      "id": "effect:card:imperium/clandestine-meeting:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/clandestine-meeting"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/corrupt-smuggler:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/corrupt-smuggler"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "grafted": true
+      },
+      "reward": {
+        "spice": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/corrupt-smuggler:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/corrupt-smuggler"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/dissecting-kit:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/dissecting-kit"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "DISSECTING_KIT"
+      }
+    },
+    {
+      "id": "effect:card:imperium/dissecting-kit:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/dissecting-kit"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/dissecting-kit:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/dissecting-kit"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "requirement": {
+        "researchLevel": 1
+      },
+      "reward": {
+        "tleilaxu": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/for-humanity:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/for-humanity"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/for-humanity:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/for-humanity"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/for-humanity:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/for-humanity"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "requirement": {
+        "alliance": "bene-gesserit"
+      },
+      "cost": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "bene-gesserit",
+              "amount": 2
+            }
+          ]
+        }
+      },
+      "reward": {
+        "victoryPoints": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/high-priority-travel:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/high-priority-travel"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "influence": {
+          "faction": "spacing-guild",
+          "amount": 2
+        }
+      },
+      "reward": {
+        "custom": "HIGH_PRIORITY_TRAVEL"
+      }
+    },
+    {
+      "id": "effect:card:imperium/high-priority-travel:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/high-priority-travel"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "solari": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/imperium-ceremony:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/imperium-ceremony"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "IMPERIUM_CEREMONY"
+      }
+    },
+    {
+      "id": "effect:card:imperium/imperium-ceremony:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/imperium-ceremony"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/interstellar-conspiracy:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/interstellar-conspiracy"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "spice": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/interstellar-conspiracy:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/interstellar-conspiracy"
+      },
+      "slot": "play",
+      "index": 1,
+      "requirement": {
+        "grafted": true
+      },
+      "reward": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/interstellar-conspiracy:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/interstellar-conspiracy"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/keys-to-power:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/keys-to-power"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "influence": {
+          "faction": "emperor",
+          "amount": 2
+        }
+      },
+      "reward": {
+        "spice": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/keys-to-power:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/keys-to-power"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/lisan-al-gaib:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/lisan-al-gaib"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "LISAN_AL_GAIB"
+      }
+    },
+    {
+      "id": "effect:card:imperium/lisan-al-gaib:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/lisan-al-gaib"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "requirement": {
+        "bond": "fremen"
+      },
+      "reward": {
+        "combat": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/lisan-al-gaib:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/lisan-al-gaib"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "spice": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/long-reach:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/long-reach"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "LONG_REACH"
+      }
+    },
+    {
+      "id": "effect:card:imperium/long-reach:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/long-reach"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "intrigueCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/occupation:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/occupation"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 1,
+        "custom": "OCCUPATION_COMBAT"
+      }
+    },
+    {
+      "id": "effect:card:imperium/occupation:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/occupation"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "water": 1,
+        "spice": 1,
+        "troops": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/occupation:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/occupation"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {
+        "troops": 3
+      }
+    },
+    {
+      "id": "effect:card:imperium/organ-merchants:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/organ-merchants"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "specimen": 1
+      },
+      "reward": {
+        "solari": 4
+      }
+    },
+    {
+      "id": "effect:card:imperium/organ-merchants:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/organ-merchants"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "solari": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/planned-coupling:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/planned-coupling"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/planned-coupling:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/planned-coupling"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/replacement-eyes:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/replacement-eyes"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "trash": 1,
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/replacement-eyes:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/replacement-eyes"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/replacement-eyes:trash:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/replacement-eyes"
+      },
+      "slot": "trash",
+      "index": 0,
+      "reward": {
+        "tleilaxu": 1,
+        "custom": "REPLACEMENT_EYES_TRASH_BEETLE"
+      }
+    },
+    {
+      "id": "effect:card:imperium/sardukar-quartermaster:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/sardukar-quartermaster"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "grafted": true
+      },
+      "reward": {
+        "troops": 1,
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/sardukar-quartermaster:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/sardukar-quartermaster"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/shadout-mapes:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/shadout-mapes"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/shadout-mapes:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/shadout-mapes"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "reward": {
+        "custom": "SHADOUT_MAPES"
+      }
+    },
+    {
+      "id": "effect:card:imperium/show-of-strength:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/show-of-strength"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 2,
+        "custom": "SHOW_OF_STRENGTH"
+      }
+    },
+    {
+      "id": "effect:card:imperium/show-of-strength:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/show-of-strength"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/spiritual-fervor:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/spiritual-fervor"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "research": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/spiritual-fervor:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/spiritual-fervor"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "specimen": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/spiritual-fervor:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/spiritual-fervor"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {}
+    },
+    {
+      "id": "effect:card:imperium/stillsuit-manufacturer:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/stillsuit-manufacturer"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "water": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/stillsuit-manufacturer:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/stillsuit-manufacturer"
+      },
+      "slot": "play",
+      "index": 1,
+      "requirement": {
+        "alliance": "fremen"
+      },
+      "reward": {
+        "custom": "STILLSUIT_MANUFACTURER"
+      }
+    },
+    {
+      "id": "effect:card:imperium/stillsuit-manufacturer:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/stillsuit-manufacturer"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "requirement": {
+        "bond": "fremen"
+      },
+      "reward": {
+        "spice": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/throne-room-politics:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/throne-room-politics"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "troops": 1,
+        "trash": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/throne-room-politics:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/throne-room-politics"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "influence": {
+          "amounts": [
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "effect:card:imperium/tleilaxu-master:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/tleilaxu-master"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "researchLevel": 1
+      },
+      "reward": {
+        "custom": "TLEILAXU_MASTER"
+      }
+    },
+    {
+      "id": "effect:card:imperium/tleilaxu-master:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/tleilaxu-master"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "research": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/tleilaxu-surgeon:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/tleilaxu-surgeon"
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "specimen": 2
+      },
+      "reward": {
+        "tleilaxu": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/tleilaxu-surgeon:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/tleilaxu-surgeon"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/tleilaxu-surgeon:reveal:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/tleilaxu-surgeon"
+      },
+      "slot": "reveal",
+      "index": 1,
+      "cost": {
+        "troops": 2
+      },
+      "reward": {
+        "specimen": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/reclaimed-forces:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/reclaimed-forces"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "RECLAIMED_FORCES"
+      }
+    },
+    {
+      "id": "effect:card:imperium/usurp:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/usurp"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "USURP_GRAFT"
+      }
+    },
+    {
+      "id": "effect:card:imperium/usurp:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/usurp"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1,
+        "specimen": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/twisted-mentat:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/twisted-mentat"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "TWISTED_MENTAT_RECALL"
+      }
+    },
+    {
+      "id": "effect:card:imperium/twisted-mentat:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/twisted-mentat"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1,
+        "specimen": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/beguiling-pheromones:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/beguiling-pheromones"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "BEGUILING_PHEROMONES"
+      }
+    },
+    {
+      "id": "effect:card:imperium/beguiling-pheromones:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/beguiling-pheromones"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/stitched-horror:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/stitched-horror"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "STITCHED_HORROR"
+      }
+    },
+    {
+      "id": "effect:card:imperium/stitched-horror:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/stitched-horror"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/unnatural-reflexes:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/unnatural-reflexes"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "researchLevel": 1
+      },
+      "reward": {
+        "drawCards": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/unnatural-reflexes:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/unnatural-reflexes"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/ghola:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/ghola"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "GHOLA_COPY"
+      }
+    },
+    {
+      "id": "effect:card:imperium/ghola:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/ghola"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1,
+        "specimen": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/scientific-breakthrough:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/scientific-breakthrough"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "research": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/scientific-breakthrough:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/scientific-breakthrough"
+      },
+      "slot": "play",
+      "index": 1,
+      "requirement": {
+        "researchLevel": 2
+      },
+      "reward": {
+        "trashThisCard": true,
+        "victoryPoints": 1,
+        "custom": "SCIENTIFIC_BREAKTHROUGH"
+      }
+    },
+    {
+      "id": "effect:card:imperium/scientific-breakthrough:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/scientific-breakthrough"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "combat": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/slig-farmer:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/slig-farmer"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "SLIG_FARMER"
+      }
+    },
+    {
+      "id": "effect:card:imperium/slig-farmer:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/slig-farmer"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/from-the-tanks:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/from-the-tanks"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "troops": 2
+      }
+    },
+    {
+      "id": "effect:card:imperium/from-the-tanks:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/from-the-tanks"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/face-dancer:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/face-dancer"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/face-dancer:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/face-dancer"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/guild-impersonator:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-impersonator"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "GUILD_IMPERSONATOR"
+      }
+    },
+    {
+      "id": "effect:card:imperium/guild-impersonator:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/guild-impersonator"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/chairdog:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/chairdog"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "CHAIRDOG_RETURN"
+      }
+    },
+    {
+      "id": "effect:card:imperium/chairdog:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/chairdog"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/tleilaxu-infiltrator:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/tleilaxu-infiltrator"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/tleilaxu-infiltrator:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/tleilaxu-infiltrator"
+      },
+      "slot": "play",
+      "index": 1,
+      "requirement": {
+        "researchLevel": 2
+      },
+      "reward": {
+        "intrigueCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/tleilaxu-infiltrator:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/tleilaxu-infiltrator"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/subject-x-137:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/subject-x-137"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "researchLevel": 1
+      },
+      "reward": {
+        "tleilaxu": 1,
+        "water": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/subject-x-137:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/subject-x-137"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/subject-x-137:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/subject-x-137"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {}
+    },
+    {
+      "id": "effect:card:imperium/corrino-genes:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/corrino-genes"
+      },
+      "slot": "play",
+      "index": 0,
+      "requirement": {
+        "grafted": true
+      },
+      "reward": {
+        "tleilaxu": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/corrino-genes:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/corrino-genes"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/corrino-genes:acquire:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/corrino-genes"
+      },
+      "slot": "acquire",
+      "index": 0,
+      "reward": {}
+    },
+    {
+      "id": "effect:card:imperium/contaminator:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/contaminator"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "tleilaxu": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/contaminator:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/contaminator"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/industrial-espionage:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/industrial-espionage"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "drawCards": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/industrial-espionage:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/industrial-espionage"
+      },
+      "slot": "play",
+      "index": 1,
+      "requirement": {
+        "grafted": true
+      },
+      "reward": {
+        "research": 1,
+        "specimen": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/industrial-espionage:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/industrial-espionage"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:imperium/face-dancer-initiate:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/face-dancer-initiate"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      }
+    },
+    {
+      "id": "effect:card:starting/experimentation:play:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/experimentation"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "research": 1
+      }
+    },
+    {
+      "id": "effect:card:starting/experimentation:reveal:0",
+      "owner": {
+        "type": "card",
+        "id": "starting/experimentation"
+      },
+      "slot": "reveal",
+      "index": 0,
+      "reward": {
+        "persuasion": 1,
+        "specimen": 1
+      }
+    },
+    {
       "id": "effect:card:arrakis-liaison/arrakis-liaison:reveal:0",
       "owner": {
         "type": "card",
@@ -3740,6 +4840,275 @@
       "phase": "end-game"
     },
     {
+      "id": "effect:intrigue:50:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 50
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "HARVEST_CELLS"
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:51:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 51
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "HARVEST_CELLS"
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:52:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 52
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "VICIOUS_TALENTS"
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:53:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 53
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "VICIOUS_TALENTS"
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:54:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 54
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "troops": 2
+      },
+      "reward": {
+        "specimen": 2,
+        "tleilaxu": 1,
+        "custom": "GRUESOME_SACRIFICE"
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:55:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 55
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "troops": 2
+      },
+      "reward": {
+        "specimen": 2,
+        "tleilaxu": 1,
+        "custom": "GRUESOME_SACRIFICE"
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:56:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 56
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "research": 1
+      }
+    },
+    {
+      "id": "effect:intrigue:57:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 57
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "tleilaxu": 1
+      }
+    },
+    {
+      "id": "effect:intrigue:58:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 58
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "tleilaxu": 1
+      }
+    },
+    {
+      "id": "effect:intrigue:59:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 59
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "DISGUISED_BUREAUCRAT"
+      }
+    },
+    {
+      "id": "effect:intrigue:60:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 60
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "specimen": 1
+      },
+      "phase": "player-turns"
+    },
+    {
+      "id": "effect:intrigue:60:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 60
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "tleilaxu": 1
+      },
+      "phase": "end-game"
+    },
+    {
+      "id": "effect:intrigue:61:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 61
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "persuasion": 1
+      },
+      "phase": "player-turns"
+    },
+    {
+      "id": "effect:intrigue:61:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 61
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "custom": "TLEILAXU_PUPPET"
+      },
+      "phase": "end-game"
+    },
+    {
+      "id": "effect:intrigue:62:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 62
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "spice": 1
+      },
+      "phase": "player-turns"
+    },
+    {
+      "id": "effect:intrigue:62:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 62
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "custom": "STUDY_MELANGE"
+      },
+      "phase": "end-game"
+    },
+    {
+      "id": "effect:intrigue:63:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 63
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "COUNTERATTACK"
+      },
+      "phase": "player-turns"
+    },
+    {
+      "id": "effect:intrigue:63:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 63
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "custom": "COUNTERATTACK"
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:64:play:0",
+      "owner": {
+        "type": "intrigue",
+        "id": 64
+      },
+      "slot": "play",
+      "index": 0,
+      "cost": {
+        "retreatTroops": 2
+      },
+      "reward": {
+        "solari": 3
+      },
+      "phase": "player-turns"
+    },
+    {
+      "id": "effect:intrigue:64:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": 64
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
+        "custom": "ECONOMIC_POSITIONING_IMM"
+      },
+      "phase": "end-game"
+    },
+    {
       "id": "effect:board-space:9:space:0",
       "owner": {
         "type": "board-space",
@@ -4064,79 +5433,6 @@
   ],
   "cards": [
     {
-      "id": "starting/the-voice",
-      "name": "The Voice",
-      "pool": "starting",
-      "cost": 2,
-      "factions": [
-        "bene-gesserit"
-      ],
-      "agentIcons": [
-        "city",
-        "spice-trade"
-      ],
-      "image": "imperium_row/the_voice.avif",
-      "effects": {
-        "play": [
-          "effect:card:starting/the-voice:play:0"
-        ],
-        "reveal": [
-          "effect:card:starting/the-voice:reveal:0"
-        ]
-      },
-      "authorIds": [
-        1061
-      ]
-    },
-    {
-      "id": "starting/reverend-mother-mohiam",
-      "name": "Reverend Mother Mohiam",
-      "pool": "starting",
-      "cost": 6,
-      "factions": [
-        "emperor",
-        "bene-gesserit"
-      ],
-      "agentIcons": [
-        "emperor",
-        "bene-gesserit"
-      ],
-      "image": "imperium_row/reverend_mother_mohiam.avif",
-      "effects": {
-        "play": [
-          "effect:card:starting/reverend-mother-mohiam:play:0"
-        ],
-        "reveal": [
-          "effect:card:starting/reverend-mother-mohiam:reveal:0"
-        ]
-      },
-      "authorIds": [
-        1043
-      ]
-    },
-    {
-      "id": "starting/power-play",
-      "name": "Power Play",
-      "pool": "starting",
-      "cost": 5,
-      "agentIcons": [
-        "emperor",
-        "spacing-guild",
-        "bene-gesserit",
-        "fremen"
-      ],
-      "image": "imperium_row/power_play.avif",
-      "effects": {
-        "play": [
-          "effect:card:starting/power-play:play:0",
-          "effect:card:starting/power-play:play:1"
-        ]
-      },
-      "authorIds": [
-        1040
-      ]
-    },
-    {
       "id": "starting/convincing-argument",
       "name": "Convincing Argument",
       "pool": "starting",
@@ -4265,173 +5561,6 @@
       },
       "authorIds": [
         10
-      ]
-    },
-    {
-      "id": "starting/other-memory",
-      "name": "Other Memory",
-      "pool": "starting",
-      "cost": 4,
-      "factions": [
-        "bene-gesserit"
-      ],
-      "agentIcons": [
-        "city",
-        "spice-trade"
-      ],
-      "image": "imperium_row/other_memory.avif",
-      "effects": {
-        "play": [
-          "effect:card:starting/other-memory:play:0",
-          "effect:card:starting/other-memory:play:1"
-        ],
-        "reveal": [
-          "effect:card:starting/other-memory:reveal:0"
-        ]
-      },
-      "authorIds": [
-        1036
-      ]
-    },
-    {
-      "id": "starting/kwisatz-haderach",
-      "name": "Kwisatz Haderach",
-      "pool": "starting",
-      "cost": 8,
-      "factions": [
-        "bene-gesserit"
-      ],
-      "agentIcons": [
-        "city",
-        "spice-trade",
-        "landsraad",
-        "emperor",
-        "fremen",
-        "spacing-guild",
-        "bene-gesserit"
-      ],
-      "infiltrate": true,
-      "image": "imperium_row/kwisatz_haderach.avif",
-      "effects": {
-        "play": [
-          "effect:card:starting/kwisatz-haderach:play:0",
-          "effect:card:starting/kwisatz-haderach:play:1",
-          "effect:card:starting/kwisatz-haderach:play:2"
-        ]
-      },
-      "authorIds": [
-        1031
-      ]
-    },
-    {
-      "id": "starting/fremen-camp",
-      "name": "Fremen Camp",
-      "pool": "starting",
-      "cost": 4,
-      "factions": [
-        "fremen"
-      ],
-      "agentIcons": [
-        "spice-trade"
-      ],
-      "image": "imperium_row/fremen_camp.avif",
-      "effects": {
-        "play": [
-          "effect:card:starting/fremen-camp:play:0"
-        ],
-        "reveal": [
-          "effect:card:starting/fremen-camp:reveal:0"
-        ]
-      },
-      "authorIds": [
-        1021
-      ]
-    },
-    {
-      "id": "starting/gurney-halleck",
-      "name": "Gurney Halleck",
-      "pool": "starting",
-      "cost": 6,
-      "agentIcons": [
-        "city"
-      ],
-      "image": "imperium_row/gurney_halleck.avif",
-      "effects": {
-        "play": [
-          "effect:card:starting/gurney-halleck:play:0"
-        ],
-        "reveal": [
-          "effect:card:starting/gurney-halleck:reveal:0",
-          "effect:card:starting/gurney-halleck:reveal:1"
-        ]
-      },
-      "authorIds": [
-        1028
-      ]
-    },
-    {
-      "id": "starting/liet-kynes",
-      "name": "Liet Kynes",
-      "pool": "starting",
-      "cost": 5,
-      "factions": [
-        "fremen",
-        "emperor"
-      ],
-      "agentIcons": [
-        "fremen",
-        "city"
-      ],
-      "image": "imperium_row/liet_kynes.avif",
-      "effects": {
-        "reveal": [
-          "effect:card:starting/liet-kynes:reveal:0"
-        ],
-        "acquire": "effect:card:starting/liet-kynes:acquire:0"
-      },
-      "authorIds": [
-        1033
-      ]
-    },
-    {
-      "id": "starting/scout",
-      "name": "Scout",
-      "pool": "starting",
-      "cost": 1,
-      "agentIcons": [
-        "city",
-        "spice-trade"
-      ],
-      "image": "imperium_row/scout.avif",
-      "effects": {
-        "reveal": [
-          "effect:card:starting/scout:reveal:0"
-        ]
-      },
-      "authorIds": [
-        1048
-      ]
-    },
-    {
-      "id": "starting/shifting-allegiances",
-      "name": "Shifting Allegiances",
-      "pool": "starting",
-      "cost": 3,
-      "agentIcons": [
-        "landsraad",
-        "spice-trade"
-      ],
-      "image": "imperium_row/shifting_allegiances.avif",
-      "effects": {
-        "play": [
-          "effect:card:starting/shifting-allegiances:play:0"
-        ],
-        "reveal": [
-          "effect:card:starting/shifting-allegiances:reveal:0"
-        ]
-      },
-      "authorIds": [
-        1051
       ]
     },
     {
@@ -6213,6 +7342,1142 @@
       ]
     },
     {
+      "id": "imperium/bene-tleilax-lab",
+      "name": "Bene Tleilax Lab",
+      "pool": "imperium",
+      "cost": 2,
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/bene_tleilax_lab.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/bene-tleilax-lab:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/bene-tleilax-lab:reveal:0",
+          "effect:card:imperium/bene-tleilax-lab:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/bene-tleilax-researcher",
+      "name": "Bene Tleilax Researcher",
+      "pool": "imperium",
+      "cost": 4,
+      "agentIcons": [
+        "landsraad"
+      ],
+      "immortality": true,
+      "graft": true,
+      "image": "imperium_row/immortality/bene_tleilax_researcher.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/bene-tleilax-researcher:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/bene-tleilax-researcher:reveal:0",
+          "effect:card:imperium/bene-tleilax-researcher:reveal:1",
+          "effect:card:imperium/bene-tleilax-researcher:reveal:2"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/blank-slate",
+      "name": "Blank Slate",
+      "pool": "imperium",
+      "cost": 1,
+      "agentIcons": [
+        "landsraad",
+        "city",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/blank_slate.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/blank-slate:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/blank-slate:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/clandestine-meeting",
+      "name": "Clandestine Meeting",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [],
+      "immortality": true,
+      "image": "imperium_row/immortality/clandestine_meeting.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/clandestine-meeting:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/clandestine-meeting:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/corrupt-smuggler",
+      "name": "Corrupt Smuggler",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "spacing-guild",
+        "fremen"
+      ],
+      "agentIcons": [
+        "spacing-guild",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/corrupt_smuggler.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/corrupt-smuggler:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/corrupt-smuggler:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/dissecting-kit",
+      "name": "Dissecting Kit",
+      "pool": "imperium",
+      "cost": 2,
+      "agentIcons": [
+        "landsraad",
+        "city"
+      ],
+      "immortality": true,
+      "graft": true,
+      "image": "imperium_row/immortality/dissecting_kit.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/dissecting-kit:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/dissecting-kit:reveal:0",
+          "effect:card:imperium/dissecting-kit:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/for-humanity",
+      "name": "For Humanity",
+      "pool": "imperium",
+      "cost": 7,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "bene-gesserit",
+        "landsraad",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/for_humanity.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/for-humanity:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/for-humanity:reveal:0",
+          "effect:card:imperium/for-humanity:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/high-priority-travel",
+      "name": "High Priority Travel",
+      "pool": "imperium",
+      "cost": 1,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "landsraad",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/high_priority_travel.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/high-priority-travel:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/high-priority-travel:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/imperium-ceremony",
+      "name": "Imperium Ceremony",
+      "pool": "imperium",
+      "cost": 6,
+      "factions": [
+        "emperor",
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "emperor",
+        "spacing-guild",
+        "landsraad"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/imperium_ceremony.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/imperium-ceremony:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/imperium-ceremony:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/interstellar-conspiracy",
+      "name": "Interstellar Conspiracy",
+      "pool": "imperium",
+      "cost": 4,
+      "agentIcons": [
+        "city"
+      ],
+      "immortality": true,
+      "graft": true,
+      "image": "imperium_row/immortality/interstellar_conspiracy.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/interstellar-conspiracy:play:0",
+          "effect:card:imperium/interstellar-conspiracy:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/interstellar-conspiracy:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/keys-to-power",
+      "name": "Keys to Power",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "spacing-guild",
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "spacing-guild",
+        "bene-gesserit",
+        "landsraad"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/keys_to_power.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/keys-to-power:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/keys-to-power:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/lisan-al-gaib",
+      "name": "Lisan Al-Gaib",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "bene-gesserit",
+        "fremen"
+      ],
+      "agentIcons": [
+        "fremen",
+        "city",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/lisan_al_gaib.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/lisan-al-gaib:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/lisan-al-gaib:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/lisan-al-gaib:acquire:0"
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/long-reach",
+      "name": "Long Reach",
+      "pool": "imperium",
+      "cost": 6,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [],
+      "immortality": true,
+      "image": "imperium_row/immortality/long_reach.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/long-reach:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/long-reach:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/occupation",
+      "name": "Occupation",
+      "pool": "imperium",
+      "cost": 8,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "emperor",
+        "spacing-guild",
+        "bene-gesserit",
+        "fremen",
+        "city",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/occupation.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/occupation:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/occupation:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/occupation:acquire:0"
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/organ-merchants",
+      "name": "Organ Merchants",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/organ_merchants.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/organ-merchants:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/organ-merchants:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/planned-coupling",
+      "name": "Planned Coupling",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "bene-gesserit"
+      ],
+      "immortality": true,
+      "graft": true,
+      "image": "imperium_row/immortality/planned_coupling.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/planned-coupling:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/planned-coupling:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/replacement-eyes",
+      "name": "Replacement Eyes",
+      "pool": "imperium",
+      "cost": 5,
+      "agentIcons": [
+        "city"
+      ],
+      "immortality": true,
+      "graft": true,
+      "image": "imperium_row/immortality/replacement_eyes.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/replacement-eyes:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/replacement-eyes:reveal:0"
+        ],
+        "trash": [
+          "effect:card:imperium/replacement-eyes:trash:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/sardukar-quartermaster",
+      "name": "Sardukar Quartermaster",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "landsraad",
+        "city"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/sarduakar_quartermaster.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/sardukar-quartermaster:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/sardukar-quartermaster:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/shadout-mapes",
+      "name": "Shadout Mapes",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "fremen",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/shadout_mapes.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/shadout-mapes:reveal:0",
+          "effect:card:imperium/shadout-mapes:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/show-of-strength",
+      "name": "Show of Strength",
+      "pool": "imperium",
+      "cost": 3,
+      "factions": [
+        "emperor",
+        "fremen"
+      ],
+      "agentIcons": [],
+      "immortality": true,
+      "image": "imperium_row/immortality/show_of_strength.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/show-of-strength:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/show-of-strength:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/spiritual-fervor",
+      "name": "Spiritual Fervor",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/spiritual_fervor.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/spiritual-fervor:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/spiritual-fervor:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/spiritual-fervor:acquire:0"
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/stillsuit-manufacturer",
+      "name": "Stillsuit Manufacturer",
+      "pool": "imperium",
+      "cost": 5,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "fremen",
+        "city"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/stillsuit_manufacturer.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/stillsuit-manufacturer:play:0",
+          "effect:card:imperium/stillsuit-manufacturer:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/stillsuit-manufacturer:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/throne-room-politics",
+      "name": "Throne Room Politics",
+      "pool": "imperium",
+      "cost": 4,
+      "factions": [
+        "emperor",
+        "bene-gesserit"
+      ],
+      "agentIcons": [
+        "emperor"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/throne_room_politics.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/throne-room-politics:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/throne-room-politics:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/tleilaxu-master",
+      "name": "Tleilaxu Master",
+      "pool": "imperium",
+      "cost": 5,
+      "agentIcons": [
+        "landsraad",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/tleilaxu_master.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/tleilaxu-master:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/tleilaxu-master:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "imperium/tleilaxu-surgeon",
+      "name": "Tleilaxu Surgeon",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [
+        "emperor",
+        "city"
+      ],
+      "immortality": true,
+      "image": "imperium_row/immortality/tleilaxu_surgeon.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/tleilaxu-surgeon:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/tleilaxu-surgeon:reveal:0",
+          "effect:card:imperium/tleilaxu-surgeon:reveal:1"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/reclaimed-forces",
+      "name": "Reclaimed Forces",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [],
+      "immortality": true,
+      "tleilaxu": true,
+      "image": "tleilaxu_row/immortality/reclaimed_forces.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/reclaimed-forces:play:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/usurp",
+      "name": "Usurp",
+      "pool": "imperium",
+      "cost": 4,
+      "agentIcons": [],
+      "immortality": true,
+      "tleilaxu": true,
+      "graft": true,
+      "image": "tleilaxu_row/immortality/usurp.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/usurp:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/usurp:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/twisted-mentat",
+      "name": "Twisted Mentat",
+      "pool": "imperium",
+      "cost": 4,
+      "agentIcons": [
+        "landsraad",
+        "city"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "graft": true,
+      "image": "tleilaxu_row/immortality/twisted_mentat.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/twisted-mentat:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/twisted-mentat:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/beguiling-pheromones",
+      "name": "Beguiling Pheromones",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [
+        "city",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "graft": true,
+      "image": "tleilaxu_row/immortality/beguiling_pheromones.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/beguiling-pheromones:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/beguiling-pheromones:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/stitched-horror",
+      "name": "Stitched Horror",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [
+        "city"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "graft": true,
+      "image": "tleilaxu_row/immortality/stitched_horror.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/stitched-horror:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/stitched-horror:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/unnatural-reflexes",
+      "name": "Unnatural Reflexes",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [
+        "spice-trade"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "graft": true,
+      "image": "tleilaxu_row/immortality/unnatural_reflexes.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/unnatural-reflexes:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/unnatural-reflexes:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/ghola",
+      "name": "Ghola",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [
+        "city"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "graft": true,
+      "image": "tleilaxu_row/immortality/ghola.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/ghola:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/ghola:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/scientific-breakthrough",
+      "name": "Scientific Breakthrough",
+      "pool": "imperium",
+      "cost": 3,
+      "agentIcons": [
+        "landsraad",
+        "city",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "image": "tleilaxu_row/immortality/scientific_breakthrough.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/scientific-breakthrough:play:0",
+          "effect:card:imperium/scientific-breakthrough:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/scientific-breakthrough:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/slig-farmer",
+      "name": "Slig Farmer",
+      "pool": "imperium",
+      "cost": 2,
+      "agentIcons": [
+        "landsraad"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "graft": true,
+      "image": "tleilaxu_row/immortality/slig_farmer.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/slig-farmer:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/slig-farmer:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/from-the-tanks",
+      "name": "From the Tanks",
+      "pool": "imperium",
+      "cost": 2,
+      "agentIcons": [
+        "landsraad"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "image": "tleilaxu_row/immortality/from_the_tanks.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/from-the-tanks:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/from-the-tanks:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/face-dancer",
+      "name": "Face Dancer",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "emperor",
+        "spacing-guild",
+        "fremen"
+      ],
+      "agentIcons": [
+        "emperor",
+        "spacing-guild",
+        "fremen"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "graft": true,
+      "image": "tleilaxu_row/immortality/face_dancer.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/face-dancer:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/face-dancer:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/guild-impersonator",
+      "name": "Guild Impersonator",
+      "pool": "imperium",
+      "cost": 2,
+      "factions": [
+        "spacing-guild"
+      ],
+      "agentIcons": [
+        "spacing-guild"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "graft": true,
+      "image": "tleilaxu_row/immortality/guild_impersonator.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/guild-impersonator:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/guild-impersonator:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/chairdog",
+      "name": "Chairdog",
+      "pool": "imperium",
+      "cost": 2,
+      "agentIcons": [
+        "city"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "graft": true,
+      "image": "tleilaxu_row/immortality/chairdog.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/chairdog:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/chairdog:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/tleilaxu-infiltrator",
+      "name": "Tleilaxu Infiltrator",
+      "pool": "imperium",
+      "cost": 2,
+      "agentIcons": [
+        "city"
+      ],
+      "infiltrate": true,
+      "immortality": true,
+      "tleilaxu": true,
+      "graft": true,
+      "image": "tleilaxu_row/immortality/tleilaxu_infiltrator.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/tleilaxu-infiltrator:play:0",
+          "effect:card:imperium/tleilaxu-infiltrator:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/tleilaxu-infiltrator:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/subject-x-137",
+      "name": "Subject X-137",
+      "pool": "imperium",
+      "cost": 2,
+      "agentIcons": [
+        "landsraad",
+        "spice-trade"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "image": "tleilaxu_row/immortality/subject_x_137.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/subject-x-137:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/subject-x-137:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/subject-x-137:acquire:0"
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/corrino-genes",
+      "name": "Corrino Genes",
+      "pool": "imperium",
+      "cost": 1,
+      "factions": [
+        "emperor"
+      ],
+      "agentIcons": [
+        "emperor"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "image": "tleilaxu_row/immortality/corrino_genes.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/corrino-genes:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/corrino-genes:reveal:0"
+        ],
+        "acquire": "effect:card:imperium/corrino-genes:acquire:0"
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/contaminator",
+      "name": "Contaminator",
+      "pool": "imperium",
+      "cost": 1,
+      "factions": [
+        "fremen"
+      ],
+      "agentIcons": [
+        "fremen"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "image": "tleilaxu_row/immortality/contaminator.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/contaminator:play:0"
+        ],
+        "reveal": [
+          "effect:card:imperium/contaminator:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/industrial-espionage",
+      "name": "Industrial Espionage",
+      "pool": "imperium",
+      "cost": 1,
+      "agentIcons": [
+        "landsraad"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "image": "tleilaxu_row/immortality/industrial_espionage.png",
+      "effects": {
+        "play": [
+          "effect:card:imperium/industrial-espionage:play:0",
+          "effect:card:imperium/industrial-espionage:play:1"
+        ],
+        "reveal": [
+          "effect:card:imperium/industrial-espionage:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "imperium/face-dancer-initiate",
+      "name": "Face Dancer Initiate",
+      "pool": "imperium",
+      "cost": 1,
+      "factions": [
+        "emperor",
+        "spacing-guild",
+        "fremen"
+      ],
+      "agentIcons": [
+        "emperor",
+        "spacing-guild",
+        "fremen"
+      ],
+      "immortality": true,
+      "tleilaxu": true,
+      "graft": true,
+      "image": "tleilaxu_row/immortality/face_dancer_initiate.png",
+      "effects": {
+        "reveal": [
+          "effect:card:imperium/face-dancer-initiate:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
+      "id": "starting/experimentation",
+      "name": "Experimentation",
+      "pool": "starting",
+      "agentIcons": [
+        "landsraad"
+      ],
+      "immortality": true,
+      "image": "starter_deck/experimentation.png",
+      "effects": {
+        "play": [
+          "effect:card:starting/experimentation:play:0"
+        ],
+        "reveal": [
+          "effect:card:starting/experimentation:reveal:0"
+        ]
+      },
+      "authorIds": [
+        0
+      ]
+    },
+    {
       "id": "arrakis-liaison/arrakis-liaison",
       "name": "Arrakis Liaison",
       "pool": "arrakis-liaison",
@@ -6292,17 +8557,12 @@
         403,
         404,
         405,
-        406,
-        407,
-        408
+        406
       ]
     }
   ],
   "decks": {
     "starting": [
-      "starting/the-voice",
-      "starting/reverend-mother-mohiam",
-      "starting/power-play",
       "starting/convincing-argument",
       "starting/convincing-argument",
       "starting/dagger",
@@ -6312,14 +8572,7 @@
       "starting/dune-the-desert-planet",
       "starting/reconnaissance",
       "starting/seek-allies",
-      "starting/signet-ring",
-      "starting/other-memory",
-      "starting/kwisatz-haderach",
-      "starting/fremen-camp",
-      "starting/gurney-halleck",
-      "starting/liet-kynes",
-      "starting/scout",
-      "starting/shifting-allegiances"
+      "starting/signet-ring"
     ],
     "imperium": [
       "imperium/arrakis-recruiter",
@@ -6413,8 +8666,6 @@
       "spice-must-flow/spice-must-flow"
     ],
     "foldspace": [
-      "foldspace/foldspace",
-      "foldspace/foldspace",
       "foldspace/foldspace",
       "foldspace/foldspace",
       "foldspace/foldspace",
@@ -8111,6 +10362,206 @@
           "effect:intrigue:49:play:1"
         ]
       }
+    },
+    {
+      "id": 50,
+      "name": "Harvest Cells",
+      "type": "combat",
+      "description": "Combat: When you lose 3+ troops at the end of a Conflict: +2 specimen. You may also acquire a Tleilaxu card (paying its normal cost).",
+      "image": "/intrigue/immortality/harvest_cells.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:50:play:0"
+        ]
+      }
+    },
+    {
+      "id": 51,
+      "name": "Harvest Cells",
+      "type": "combat",
+      "description": "Combat: When you lose 3+ troops at the end of a Conflict: +2 specimen. You may also acquire a Tleilaxu card (paying its normal cost).",
+      "image": "/intrigue/immortality/harvest_cells.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:51:play:0"
+        ]
+      }
+    },
+    {
+      "id": 52,
+      "name": "Vicious Talents",
+      "type": "combat",
+      "description": "Combat: +2 strength. If research lvl 1: +2 more. If research lvl 2: +2 more (2–6 strength).",
+      "image": "/intrigue/immortality/vicious_talents.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:52:play:0"
+        ]
+      }
+    },
+    {
+      "id": 53,
+      "name": "Vicious Talents",
+      "type": "combat",
+      "description": "Combat: +2 strength. If research lvl 1: +2 more. If research lvl 2: +2 more (2–6 strength).",
+      "image": "/intrigue/immortality/vicious_talents.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:53:play:0"
+        ]
+      }
+    },
+    {
+      "id": 54,
+      "name": "Gruesome Sacrifice",
+      "type": "combat",
+      "description": "Combat: Lose 2 of your troops in the Conflict to gain +2 specimen and +1 beetle.",
+      "image": "/intrigue/immortality/gruesome_sacrificee.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:54:play:0"
+        ]
+      }
+    },
+    {
+      "id": 55,
+      "name": "Gruesome Sacrifice",
+      "type": "combat",
+      "description": "Combat: Lose 2 of your troops in the Conflict to gain +2 specimen and +1 beetle.",
+      "image": "/intrigue/immortality/gruesome_sacrificee.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:55:play:0"
+        ]
+      }
+    },
+    {
+      "id": 56,
+      "name": "Breakthrough",
+      "type": "plot",
+      "description": "Plot: +1 research.",
+      "image": "/intrigue/immortality/breakthrough.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:56:play:0"
+        ]
+      }
+    },
+    {
+      "id": 57,
+      "name": "Illicit Dealings",
+      "type": "plot",
+      "description": "Plot: +1 beetle (advance on the Tleilaxu track).",
+      "image": "/intrigue/immortality/illicit_dealings.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:57:play:0"
+        ]
+      }
+    },
+    {
+      "id": 58,
+      "name": "Illicit Dealings",
+      "type": "plot",
+      "description": "Plot: +1 beetle (advance on the Tleilaxu track).",
+      "image": "/intrigue/immortality/illicit_dealings.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:58:play:0"
+        ]
+      }
+    },
+    {
+      "id": 59,
+      "name": "Disguised Bureaucrat",
+      "type": "plot",
+      "description": "Plot: If research lvl 1: +1 spice. If research lvl 2: +1 influence (your choice).",
+      "image": "/intrigue/immortality/disguised_beaurocrat.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:59:play:0"
+        ]
+      }
+    },
+    {
+      "id": 60,
+      "name": "Shadowy Bargain",
+      "type": "plot",
+      "description": "Plot: +1 specimen —OR— Endgame: +1 beetle (advance on the Tleilaxu track).",
+      "image": "/intrigue/immortality/shadowy_bargain.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:60:play:0",
+          "effect:intrigue:60:play:1"
+        ]
+      }
+    },
+    {
+      "id": 61,
+      "name": "Tleilaxu Puppet",
+      "type": "plot",
+      "description": "Plot: +1 persuasion this round —OR— Endgame: If you have a High Council seat and research lvl 2: +1 VP.",
+      "image": "/intrigue/immortality/tleilaxu_puppet.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:61:play:0",
+          "effect:intrigue:61:play:1"
+        ]
+      }
+    },
+    {
+      "id": 62,
+      "name": "Study Melange",
+      "type": "plot",
+      "description": "Plot: +1 spice —OR— Endgame: If you have 3 spice and research lvl 2: +1 VP.",
+      "image": "/intrigue/immortality/study_melange.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:62:play:0",
+          "effect:intrigue:62:play:1"
+        ]
+      }
+    },
+    {
+      "id": 63,
+      "name": "Counterattack",
+      "type": "combat",
+      "description": "Plot: Deploy up to 2 troops from your garrison —OR— Combat: If an opponent played a combat intrigue: +4 strength.",
+      "image": "/intrigue/immortality/counterattack.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:63:play:0",
+          "effect:intrigue:63:play:1"
+        ]
+      }
+    },
+    {
+      "id": 64,
+      "name": "Economic Positioning",
+      "type": "plot",
+      "description": "Plot: Retreat 2 troops to gain +3 Solari —OR— Endgame: If you have 10 Solari: +1 VP.",
+      "image": "/intrigue/immortality/economic_positioning.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:64:play:0",
+          "effect:intrigue:64:play:1"
+        ]
+      }
     }
   ],
   "leaders": [
@@ -8576,7 +11027,8 @@
   ],
   "expansions": {
     "available": [
-      "riseOfIx"
+      "riseOfIx",
+      "immortality"
     ],
     "byId": {
       "riseOfIx": {
@@ -8627,6 +11079,76 @@
             "imperium/water-peddler",
             "imperium/web-of-power",
             "imperium/weirding-way"
+          ]
+        }
+      },
+      "immortality": {
+        "id": "immortality",
+        "name": "Immortality",
+        "counts": {
+          "cards": 45,
+          "conflicts": 0,
+          "leaders": 0,
+          "intrigue": 15,
+          "boardSpaces": 0,
+          "techTiles": 0
+        },
+        "decks": {
+          "imperium": [
+            "imperium/bene-tleilax-lab",
+            "imperium/bene-tleilax-researcher",
+            "imperium/blank-slate",
+            "imperium/clandestine-meeting",
+            "imperium/corrupt-smuggler",
+            "imperium/dissecting-kit",
+            "imperium/dissecting-kit",
+            "imperium/for-humanity",
+            "imperium/high-priority-travel",
+            "imperium/high-priority-travel",
+            "imperium/imperium-ceremony",
+            "imperium/interstellar-conspiracy",
+            "imperium/keys-to-power",
+            "imperium/lisan-al-gaib",
+            "imperium/long-reach",
+            "imperium/occupation",
+            "imperium/organ-merchants",
+            "imperium/planned-coupling",
+            "imperium/planned-coupling",
+            "imperium/replacement-eyes",
+            "imperium/sardukar-quartermaster",
+            "imperium/shadout-mapes",
+            "imperium/show-of-strength",
+            "imperium/spiritual-fervor",
+            "imperium/spiritual-fervor",
+            "imperium/stillsuit-manufacturer",
+            "imperium/throne-room-politics",
+            "imperium/tleilaxu-master",
+            "imperium/tleilaxu-master",
+            "imperium/tleilaxu-surgeon"
+          ],
+          "tleilaxu": [
+            "imperium/reclaimed-forces",
+            "imperium/usurp",
+            "imperium/twisted-mentat",
+            "imperium/beguiling-pheromones",
+            "imperium/stitched-horror",
+            "imperium/unnatural-reflexes",
+            "imperium/ghola",
+            "imperium/scientific-breakthrough",
+            "imperium/slig-farmer",
+            "imperium/from-the-tanks",
+            "imperium/face-dancer",
+            "imperium/guild-impersonator",
+            "imperium/chairdog",
+            "imperium/tleilaxu-infiltrator",
+            "imperium/subject-x-137",
+            "imperium/corrino-genes",
+            "imperium/contaminator",
+            "imperium/industrial-espionage",
+            "imperium/face-dancer-initiate"
+          ],
+          "starting": [
+            "starting/experimentation"
           ]
         }
       }
@@ -8702,7 +11224,6 @@
     "TREACHERY_DOUBLE_INFLUENCE",
     "WEB_OF_POWER",
     "WEIRDING_WAY_EXTRA_TURN",
-    "HUDRO_INTRIGUE_PEEK",
     "YUNA_SOLARI_BONUS",
     "ARMAND_TRASH_IN_PLAY",
     "ILESA_SET_ASIDE",
@@ -8723,7 +11244,42 @@
     "SPY_SATELLITES",
     "TRAINING_DRONES",
     "TROOP_TRANSPORTS",
-    "WINDTRAPS"
+    "WINDTRAPS",
+    "GHOLA_COPY",
+    "USURP_GRAFT",
+    "CHAIRDOG_RETURN",
+    "BEGUILING_PHEROMONES",
+    "TWISTED_MENTAT_RECALL",
+    "BLANK_SLATE_ICONS",
+    "DISSECTING_KIT",
+    "REPLACEMENT_EYES_TRASH_BEETLE",
+    "SLIG_FARMER",
+    "STITCHED_HORROR",
+    "ORGAN_MERCHANTS",
+    "TLEILAXU_SURGEON",
+    "TLEILAXU_MASTER",
+    "SHADOUT_MAPES",
+    "OCCUPATION_COMBAT",
+    "CLANDESTINE_MEETING",
+    "IMPERIUM_CEREMONY",
+    "SCIENTIFIC_BREAKTHROUGH",
+    "VICIOUS_TALENTS",
+    "DISGUISED_BUREAUCRAT",
+    "STUDY_MELANGE",
+    "TLEILAXU_PUPPET",
+    "COUNTERATTACK",
+    "ECONOMIC_POSITIONING_IMM",
+    "HARVEST_CELLS",
+    "GRUESOME_SACRIFICE",
+    "SHADOWY_BARGAIN",
+    "SHOW_OF_STRENGTH",
+    "STILLSUIT_MANUFACTURER",
+    "HIGH_PRIORITY_TRAVEL",
+    "LISAN_AL_GAIB",
+    "LONG_REACH",
+    "GUILD_IMPERSONATOR",
+    "RECLAIMED_FORCES",
+    "FAMILY_ATOMICS"
   ],
   "choiceIdGrammar": {
     "format": "<sourceType>-<sourceId>-<kind>[-<occurrence>]",

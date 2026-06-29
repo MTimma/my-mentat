@@ -1,4 +1,5 @@
 import { Card, GameState, Player, TurnType } from '../types/GameTypes'
+import { resolveGraftCards } from '../expansions/immortality/graft'
 
 /** Find card objects by id across a player's in-round piles (play area, deck, discard; optionally trash). */
 export function findPlayerCardsByIds(
@@ -40,6 +41,11 @@ export function getPlayAreaCardsForTurnView(gameState: GameState, player: Player
 
   const ids = new Set(fromPlayArea.map(c => c.id))
   if (currTurn.cardId) ids.add(currTurn.cardId)
+  if (gameState.graftPair?.cardIds) {
+    for (const id of gameState.graftPair.cardIds) {
+      ids.add(id)
+    }
+  }
   if (currTurn.type === TurnType.REVEAL) {
     for (const id of currTurn.revealedCardIds ?? []) {
       ids.add(id)
@@ -54,6 +60,28 @@ export function getPlayAreaCardsForTurnView(gameState: GameState, player: Player
 
   const resolved = findPlayerCardsByIds(player, idsToResolve)
   return resolved.length > 0 ? resolved : fromPlayArea.filter(c => !trashedIds.has(c.id))
+}
+
+/**
+ * Agent-turn cards to show in the play strip: full graft pair while choosing a space or after placement.
+ */
+export function getAgentTurnCardsForDisplay(
+  gameState: GameState | undefined,
+  player: Player,
+  selectedCard: Card | null,
+  options?: { isRevealTurn?: boolean }
+): Card[] {
+  if (options?.isRevealTurn || player.revealed) {
+    return selectedCard ? [selectedCard] : []
+  }
+
+  if (gameState?.expansions?.immortality && gameState.graftPair?.cardIds?.length) {
+    const graftCards = resolveGraftCards(gameState, player)
+    if (graftCards.length > 0) return graftCards
+    return findPlayerCardsByIds(player, gameState.graftPair.cardIds)
+  }
+
+  return selectedCard ? [selectedCard] : []
 }
 
 /**

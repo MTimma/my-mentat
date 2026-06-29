@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import type { PlayerTechTile, TechTile, TechTileId } from '../../data/techTiles'
+import { filterBySearchTokens } from '../../utils/searchTokens'
 import '../ImperiumRowSelect/ImperiumRowSelect.css'
 import '../TechTileSelect/TechTileSelect.css'
 import './SandboxPlayerTechSelect.css'
@@ -32,13 +33,13 @@ const SandboxPlayerTechSelect: React.FC<SandboxPlayerTechSelectProps> = ({
     [tiles]
   )
 
-  const filteredTiles = useMemo(() => {
-    const q = filter.trim().toLowerCase()
-    if (!q) return sortedTiles
-    return sortedTiles.filter(
-      tile => tile.name.toLowerCase().includes(q) || tile.description.toLowerCase().includes(q)
-    )
-  }, [sortedTiles, filter])
+  const filteredTiles = useMemo(
+    () =>
+      filterBySearchTokens(sortedTiles, filter, tile =>
+        `${tile.name} ${tile.description} ${tile.cost}`.toLowerCase()
+      ),
+    [sortedTiles, filter]
+  )
 
   const toggleTile = (tileId: TechTileId) => {
     if (blocked.has(tileId)) return

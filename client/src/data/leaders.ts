@@ -192,7 +192,6 @@ export const RISE_OF_IX_LEADERS: Leader[] = [
     complexity: 1,
     sogChoice: false,
     riseOfIx: true,
-    hudroPeekUsed: false,
   },
   {
     name: LEADER_NAMES.PRINCESS_YUNA_MORITANI,

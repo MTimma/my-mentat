@@ -39,13 +39,15 @@ const baseSlices: BaseCatalogSlices = {
 }
 
 const expansionsCatalog = expansionsFile as {
-  expansions: { byId: Record<string, { decks: { imperium: string[] } }> }
+  expansions: { byId: Record<string, { decks: { imperium: string[]; tleilaxu?: string[] } }> }
 }
 
 export interface CatalogRuntime {
   slices: MergedCatalogSlices
   resolveCatalogCardIds(catalogIds: string[]): Card[]
   buildImperiumDeck(expansions?: Expansions): Card[]
+  /** Immortality Tleilaxu Row pool (acquired with specimens; empty when off). */
+  buildTleilaxuPool(): Card[]
   boardSpaces: SpaceProps[]
   conflicts: ConflictCard[]
   intrigueCards: IntrigueCard[]
@@ -98,6 +100,9 @@ function buildRuntimeFromSlices(slices: MergedCatalogSlices): CatalogRuntime {
       infiltrate: entry.infiltrate,
       unload: entry.unload,
       riseOfIx: entry.riseOfIx,
+      immortality: entry.immortality,
+      tleilaxu: entry.tleilaxu,
+      graft: entry.graft,
       playEffect: resolveEffectIds(entry.effects.play) as PlayEffect[] | undefined,
       revealEffect: resolveEffectIds(entry.effects.reveal) as RevealEffect[] | undefined,
       trashEffect: resolveEffectIds(entry.effects.trash),
@@ -131,11 +136,22 @@ function buildRuntimeFromSlices(slices: MergedCatalogSlices): CatalogRuntime {
     if (expansions.riseOfIx) {
       catalogIds.push(...expansionsCatalog.expansions.byId.riseOfIx.decks.imperium)
     }
+    if (expansions.immortality) {
+      catalogIds.push(...expansionsCatalog.expansions.byId.immortality.decks.imperium)
+    }
     const pool = resolveCatalogCardIds(catalogIds)
     return pool.map(card => ({
       ...card,
       id: nextId++,
     }))
+  }
+
+  /** Immortality Tleilaxu Row pool (acquired with specimens; not shuffled in). */
+  function buildTleilaxuPool(): Card[] {
+    let nextId = 3000
+    const meta = expansionsCatalog.expansions.byId.immortality
+    const catalogIds = meta?.decks.tleilaxu ?? []
+    return resolveCatalogCardIds(catalogIds).map(card => ({ ...card, id: nextId++ }))
   }
 
   type CatalogSpaceCatalogEntry = BoardSpacesCatalogFile['boardSpaces'][number]
@@ -176,12 +192,15 @@ function buildRuntimeFromSlices(slices: MergedCatalogSlices): CatalogRuntime {
   }
 
   const boardSpaces = slices.boardSpaces.map(hydrateBoardSpace)
-  const intrigueCards = slices.intrigue.filter(entry => !entry.riseOfIx).map(hydrateIntrigue)
+  const intrigueCards = slices.intrigue
+    .filter(entry => !entry.riseOfIx && !entry.immortality)
+    .map(hydrateIntrigue)
 
   return {
     slices,
     resolveCatalogCardIds,
     buildImperiumDeck,
+    buildTleilaxuPool,
     boardSpaces,
     conflicts: slices.conflicts,
     intrigueCards,

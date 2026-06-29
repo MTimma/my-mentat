@@ -40,9 +40,17 @@ export const RISE_OF_IX_BOARD_HOTSPOTS_LAYER: ExpansionBoardHotspotsLayer = {
   extraMarkerAnchors: ixBoardMarkerAnchors,
 }
 
+/** Immortality — base Research Station (id 3) is replaced when the expansion is active. */
+export const IMMORTALITY_BOARD_HOTSPOTS_LAYER: ExpansionBoardHotspotsLayer = {
+  isEnabled: expansions => Boolean(expansions.immortality),
+  removeBaseSpaceIds: [3],
+  hotspots: [],
+}
+
 /** Apply in order; later layers override hotspot geometry for the same `spaceId`. */
 export const EXPANSION_BOARD_HOTSPOTS: ExpansionBoardHotspotsLayer[] = [
   RISE_OF_IX_BOARD_HOTSPOTS_LAYER,
+  IMMORTALITY_BOARD_HOTSPOTS_LAYER,
 ]
 
 export function activeExpansionBoardHotspots(

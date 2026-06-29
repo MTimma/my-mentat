@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Card, Gain, IntrigueCard, Player, GameState, GamePhase, TurnType } from '../types/GameTypes'
+import { Card, Gain, IntrigueCard, Player, GameState, GamePhase, TurnType, AcquiredTechTileSnapshot } from '../types/GameTypes'
 import { getLeaderIconPath } from '../data/leaders'
 import {
   computeTurnGainTotals,
-  excludeAcquireEffectGains,
+  excludeAcquiredGainsFromDisplay,
   getGainsForHistoryRow,
   getGainsForTurnState,
   isCombatHistoryEntry,
@@ -31,10 +31,11 @@ import {
 } from '../utils/endgameHistoryDisplay'
 import {
   getAcquiredCardsForTurn,
+  getAcquiredTechTilesForTurn,
   getRevealTurnStats,
   resolveCardInSnapshot,
   resolveCardInSnapshotByName,
-  resolvePlayedCardForTurn,
+  resolvePlayedCardsForTurn,
   revealTurnStatsHasContent,
 } from '../utils/revealTurnStats'
 import RevealTurnStatsPanel from './RevealTurnStatsPanel/RevealTurnStatsPanel'
@@ -49,6 +50,11 @@ import TurnGainsDisplay from './TurnGainsDisplay/TurnGainsDisplay'
 import { useGame } from './GameContext/GameContext'
 import SaveDocImportPanel from './SaveDocImportPanel/SaveDocImportPanel'
 import type { SaveDoc } from '../save/types'
+import {
+  canUseSaveFilePicker,
+  saveJsonFile,
+  suggestedSaveFilenameFromTitle,
+} from '../utils/saveJsonFile'
 import './TurnHistory.css'
 
 interface TurnHistoryProps {
@@ -70,15 +76,6 @@ interface TurnHistoryProps {
   topSlot?: React.ReactNode
   /** Replace the current session with a loaded SaveDoc (in-game debug load). */
   onLoadSave?: (doc: SaveDoc) => void
-}
-
-function slugifySaveFilename(title: string): string {
-  const slug = title
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-  return slug ? `${slug}.json` : `save-${Date.now()}.json`
 }
 
 const DetailsIcon = () => (
@@ -169,6 +166,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   const [showDebugModal, setShowDebugModal] = useState(false)
   const [debugView, setDebugView] = useState<'save' | 'runtime' | 'load'>('save')
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null)
+  const [saveFeedback, setSaveFeedback] = useState<string | null>(null)
+  const [saveFilename, setSaveFilename] = useState('')
   const [playChromeTheme, setPlayChromeTheme] = useState<PlayChromeTheme>(() => getPlayChromeTheme())
   const listRef = useRef<HTMLDivElement>(null)
   const liveEntryRef = useRef<HTMLDivElement>(null)
@@ -199,17 +198,29 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     }
   }, [exportSaveDoc])
 
-  const handleDownloadSave = useCallback(() => {
-    const doc = exportSaveDoc()
-    const json = JSON.stringify(doc, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = slugifySaveFilename(doc.meta.title)
-    anchor.click()
-    URL.revokeObjectURL(url)
-  }, [exportSaveDoc])
+  const openDebugModal = useCallback(
+    (view: 'save' | 'runtime' | 'load' = 'save') => {
+      if (view === 'save') {
+        setSaveFilename(suggestedSaveFilenameFromTitle(exportSaveDoc().meta.title))
+      }
+      setDebugView(view)
+      setShowDebugModal(true)
+    },
+    [exportSaveDoc]
+  )
+
+  const handleSaveJson = useCallback(async () => {
+    const json = JSON.stringify(exportSaveDoc(), null, 2)
+    try {
+      const result = await saveJsonFile(json, saveFilename)
+      if (result === 'cancelled') return
+      setSaveFeedback(canUseSaveFilePicker() ? 'Saved' : 'Downloaded')
+      window.setTimeout(() => setSaveFeedback(null), 2000)
+    } catch {
+      setSaveFeedback('Save failed')
+      window.setTimeout(() => setSaveFeedback(null), 2000)
+    }
+  }, [exportSaveDoc, saveFilename])
 
   const handleLoadSaveFromPanel = useCallback(
     (doc: SaveDoc) => {
@@ -368,6 +379,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                 gains={playerGains}
                 playerId={playerId}
                 showSourceTitles
+                inlineTrash
                 resolveCard={makeResolveCardForPlayer(turn, playerId)}
               />
             </div>
@@ -393,6 +405,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                 playerId={playerId}
                 showSourceTitles
                 inlineDiscards
+                inlineTrash
                 resolveCard={makeResolveCardForPlayer(turn, playerId)}
               />
             </div>
@@ -516,11 +529,16 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     destinationLabel: string,
     intrigueCards: IntrigueCard[]
   ) => {
-    const playedCard = resolvePlayedCardForTurn(turn)
+    const playedCards = resolvePlayedCardsForTurn(turn)
+    const playedLabel = playedCards.map(c => c.name).join(' + ') || 'card'
     return (
       <div className="turn-history-action-band">
-        <div className="turn-history-action-flow" aria-label={`Played ${playedCard?.name ?? 'card'} at ${destinationLabel}`}>
-          {renderTurnCardThumb(playedCard, true)}
+        <div className="turn-history-action-flow" aria-label={`Played ${playedLabel} at ${destinationLabel}`}>
+          {playedCards.map(card => (
+            <React.Fragment key={`played-${card.id}`}>
+              {renderTurnCardThumb(card, true)}
+            </React.Fragment>
+          ))}
           <span className="turn-history-action-arrow" aria-hidden="true">
             →
           </span>
@@ -547,10 +565,19 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       troopsDeployed: number
       troopsRetreated: number
       acquiredCards: Card[]
+      acquiredTechTiles: AcquiredTechTileSnapshot[]
     }
   ) => {
-    const { groupGainsByPlayer, gains, gainsForDisplay, troopsDeployed, troopsRetreated, acquiredCards } =
-      options
+    const {
+      groupGainsByPlayer,
+      gains,
+      gainsForDisplay,
+      troopsDeployed,
+      troopsRetreated,
+      acquiredCards,
+      acquiredTechTiles,
+    } = options
+    const hasAcquired = acquiredCards.length > 0 || acquiredTechTiles.length > 0
     return (
       <div className="turn-history-gains">
         {groupGainsByPlayer ? (
@@ -564,12 +591,14 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               troopsDeployedToConflict={troopsDeployed}
               troopsRetreatedFromConflict={troopsRetreated}
               showSourceTitles
+              inlineTrash
             />
-            {acquiredCards.length > 0 && (
+            {hasAcquired && (
               <RevealTurnStatsPanel
                 stats={{
                   revealedCards: [],
                   acquiredCards,
+                  acquiredTechTiles,
                   totals: computeTurnGainTotals(gains),
                 }}
                 gains={gains}
@@ -602,6 +631,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     otherPlayerGains: ReturnType<typeof getOtherPlayersGainsForTurnState>
     revealStats: ReturnType<typeof getRevealTurnStats> | null
     acquiredCards: Card[]
+    acquiredTechTiles: AcquiredTechTileSnapshot[]
     showStandardGains: boolean
     showRevealGains: boolean
     troopsDeployed: number
@@ -625,6 +655,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     otherPlayerGains,
     revealStats,
     acquiredCards,
+    acquiredTechTiles,
     showStandardGains,
     showRevealGains,
     troopsDeployed,
@@ -644,6 +675,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             troopsDeployed,
             troopsRetreated,
             acquiredCards,
+            acquiredTechTiles,
           })}
         {isEndgameEntry && turn.endgameWinners && turn.endgameWinners.length > 0 ? (
           <div className="turn-history-endgame-winners">
@@ -707,7 +739,11 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         <div className="turn-history-row-header">
           <div className="turn-number">{badge}</div>
           {!isMetaEntry && renderPlayerBadge(turnPlayer)}
-          {!isMetaEntry && !isRevealTurn && renderTurnCardThumb(resolvePlayedCardForTurn(turn), true)}
+          {!isMetaEntry && !isRevealTurn && resolvePlayedCardsForTurn(turn).map(card => (
+            <React.Fragment key={`header-played-${card.id}`}>
+              {renderTurnCardThumb(card, true)}
+            </React.Fragment>
+          ))}
           {!isMetaEntry && <span className="turn-label">{title}</span>}
           {isRevealTurn && renderRevealCardsInline(turn)}
           {!isMetaEntry && renderIntrigueInline(playedIntrigue)}
@@ -914,10 +950,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         <button
           type="button"
           className="turn-history-icon-btn turn-history-icon-btn--details"
-          onClick={() => {
-            setDebugView('save')
-            setShowDebugModal(true)
-          }}
+          onClick={() => openDebugModal('save')}
           title="View save document (setup + event log) or runtime state"
           aria-label="View save document debug"
         >
@@ -986,9 +1019,17 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             isAgentTurn && displayTurn.currTurn?.playerId != null
               ? getAcquiredCardsForTurn(displayTurn, displayTurn.currTurn.playerId)
               : []
+          const acquiredTechTiles =
+            isAgentTurn && displayTurn.currTurn?.playerId != null
+              ? getAcquiredTechTilesForTurn(displayTurn, displayTurn.currTurn.playerId)
+              : []
           const gainsForDisplay =
-            acquiredCards.length > 0
-              ? excludeAcquireEffectGains(gains, acquiredCards.map(c => c.id))
+            acquiredCards.length > 0 || acquiredTechTiles.length > 0
+              ? excludeAcquiredGainsFromDisplay(
+                  gains,
+                  acquiredCards.map(c => c.id),
+                  acquiredTechTiles.map(t => t.id)
+                )
               : gains
           const showRevealSummary = revealStats != null && revealTurnStatsHasContent(revealStats)
           const troopsDeployed = getTroopsDeployedToConflict(displayTurn)
@@ -999,7 +1040,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               (gainsForDisplay.length > 0 ||
                 troopsDeployed > 0 ||
                 troopsRetreated > 0 ||
-                acquiredCards.length > 0)
+                acquiredCards.length > 0 ||
+                acquiredTechTiles.length > 0)
           const showRevealGains =
             isRevealTurn &&
             (showRevealSummary || gains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0)
@@ -1049,6 +1091,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                 otherPlayerGains,
                 revealStats,
                 acquiredCards,
+                acquiredTechTiles,
                 showStandardGains,
                 showRevealGains,
                 troopsDeployed,
@@ -1075,9 +1118,17 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             liveIsAgentTurn && currentGameState.currTurn?.playerId != null
               ? getAcquiredCardsForTurn(currentGameState, currentGameState.currTurn.playerId)
               : []
+          const liveAcquiredTechTiles =
+            liveIsAgentTurn && currentGameState.currTurn?.playerId != null
+              ? getAcquiredTechTilesForTurn(currentGameState, currentGameState.currTurn.playerId)
+              : []
           const liveGainsForDisplay =
-            liveAcquiredCards.length > 0
-              ? excludeAcquireEffectGains(liveGains, liveAcquiredCards.map(c => c.id))
+            liveAcquiredCards.length > 0 || liveAcquiredTechTiles.length > 0
+              ? excludeAcquiredGainsFromDisplay(
+                  liveGains,
+                  liveAcquiredCards.map(c => c.id),
+                  liveAcquiredTechTiles.map(t => t.id)
+                )
               : liveGains
           const liveShowRevealSummary =
             liveRevealStats != null && revealTurnStatsHasContent(liveRevealStats)
@@ -1088,7 +1139,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             (liveGainsForDisplay.length > 0 ||
               liveTroopsDeployed > 0 ||
               liveTroopsRetreated > 0 ||
-              liveAcquiredCards.length > 0)
+              liveAcquiredCards.length > 0 ||
+              liveAcquiredTechTiles.length > 0)
           const liveShowRevealGains =
             liveIsRevealTurn &&
             (liveShowRevealSummary ||
@@ -1132,6 +1184,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             otherPlayerGains: liveOtherPlayerGains,
             revealStats: liveRevealStats,
             acquiredCards: liveAcquiredCards,
+            acquiredTechTiles: liveAcquiredTechTiles,
             showStandardGains: liveShowStandardGains,
             showRevealGains: liveShowRevealGains,
             troopsDeployed: liveTroopsDeployed,
@@ -1168,7 +1221,10 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                   role="tab"
                   aria-selected={debugView === 'save'}
                   className={debugView === 'save' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
-                  onClick={() => setDebugView('save')}
+                  onClick={() => {
+                    setSaveFilename(suggestedSaveFilenameFromTitle(exportSaveDoc().meta.title))
+                    setDebugView('save')
+                  }}
                 >
                   Save
                 </button>
@@ -1199,13 +1255,31 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               ) : (
                 <>
                   {debugView === 'save' && (
-                    <div className="turn-details-export-actions">
-                      <button type="button" className="turn-details-export-btn" onClick={handleCopySave}>
-                        {copyFeedback ?? 'Copy to clipboard'}
-                      </button>
-                      <button type="button" className="turn-details-export-btn" onClick={handleDownloadSave}>
-                        Download 
-                      </button>
+                    <div className="turn-details-export">
+                      <label className="turn-details-filename-field">
+                        <span className="turn-details-filename-label">Filename</span>
+                        <div className="turn-details-filename-row">
+                          <input
+                            type="text"
+                            className="turn-details-filename-input"
+                            value={saveFilename}
+                            onChange={e => setSaveFilename(e.target.value)}
+                            spellCheck={false}
+                            autoComplete="off"
+                          />
+                          <span className="turn-details-filename-suffix" aria-hidden="true">
+                            .json
+                          </span>
+                        </div>
+                      </label>
+                      <div className="turn-details-export-actions">
+                        <button type="button" className="turn-details-export-btn" onClick={handleCopySave}>
+                          {copyFeedback ?? 'Copy to clipboard'}
+                        </button>
+                        <button type="button" className="turn-details-export-btn" onClick={handleSaveJson}>
+                          {saveFeedback ?? (canUseSaveFilePicker() ? 'Save as…' : 'Download')}
+                        </button>
+                      </div>
                     </div>
                   )}
                   <pre>{debugJson}</pre>

@@ -1,0 +1,184 @@
+.bene-tleilax-board {
+  position: relative;
+  container-type: size;
+  container-name: bene-tleilax-board;
+  pointer-events: none;
+}
+
+.bene-tleilax-board--docked {
+  width: 100%;
+  height: 100%;
+}
+
+.bene-tleilax-board--stacked {
+  width: 100%;
+  max-width: min(100%, 90vh);
+  margin-inline: auto;
+  aspect-ratio: 1676 / 1184;
+}
+
+.bene-tleilax-board--interactive {
+  pointer-events: auto;
+}
+
+.bene-tleilax-board__open {
+  display: block;
+  position: relative;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+}
+
+.bene-tleilax-board__open--docked {
+  height: 100%;
+}
+
+.bene-tleilax-board__open--stacked {
+  width: 100%;
+}
+
+.bene-tleilax-board__open:hover .bene-tleilax-board__open-hint,
+.bene-tleilax-board__open:focus-visible .bene-tleilax-board__open-hint {
+  opacity: 1;
+}
+
+.bene-tleilax-board__open-hint {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  z-index: 5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(8, 6, 14, 0.82);
+  color: #c8b8e8;
+  font-size: clamp(7px, 2cqw, 10px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.bene-tleilax-board__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.bene-tleilax-board__hotspots {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.bene-tleilax-board--interactive .bene-tleilax-board__hotspots {
+  pointer-events: auto;
+}
+
+.bene-tleilax-board__hotspot {
+  position: absolute;
+  width: clamp(14px, 4.5cqw, 28px);
+  height: clamp(14px, 4.5cqw, 28px);
+  transform: translate(-50%, -50%);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.bene-tleilax-board__hotspot:hover,
+.bene-tleilax-board__hotspot:focus-visible {
+  border-color: rgba(200, 168, 255, 0.75);
+  background: rgba(120, 80, 200, 0.22);
+}
+
+.bene-tleilax-board__markers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.bene-tleilax-board__token {
+  position: absolute;
+  width: clamp(8px, 2.8cqw, 16px);
+  height: clamp(8px, 2.8cqw, 16px);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.65);
+  z-index: 2;
+}
+
+.bene-tleilax-board__token--active {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.65),
+    0 0 6px 2px rgba(255, 220, 120, 0.65);
+  z-index: 3;
+}
+
+.bene-tleilax-board__vp-bonus {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(12, 8, 20, 0.82);
+  color: #e8c56a;
+  font-size: clamp(7px, 2cqw, 11px);
+  font-weight: 700;
+  z-index: 3;
+}
+
+.bene-tleilax-board__spice-icon {
+  width: 1.1em;
+  height: 1.1em;
+  object-fit: contain;
+}
+
+.bene-tleilax-board__debug {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.bene-tleilax-board__debug-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.85;
+}
+
+.bene-tleilax-board__debug-dot--research {
+  background: #7ec8ff;
+  box-shadow: 0 0 0 1px #0af;
+}
+
+.bene-tleilax-board__debug-dot--tleilaxu {
+  background: #c8a0ff;
+  box-shadow: 0 0 0 1px #a0f;
+}
+
+.bene-tleilax-board--marker-debug .bene-tleilax-board__debug-dot {
+  pointer-events: auto;
+}
+
+.image-board--tracker-inspect .bene-tleilax-board__token,
+.image-board--tracker-inspect .bene-tleilax-board__hotspot {
+  pointer-events: auto;
+}

@@ -47,7 +47,7 @@ export function buildGamePackTemplateFromParent(parentRef: GamePackRef): string 
       intrigue: [],
       deckPatches: {
         starting: {
-          append: ['starting/power-play', 'starting/power-play', 'starting/power-play'],
+          append: ['imperium/power-play', 'imperium/power-play', 'imperium/power-play'],
         },
         imperium: {
           append: [],

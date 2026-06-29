@@ -58,14 +58,16 @@
 }
 
 .image-board__choam-overlay,
-.image-board__landsraad-ix-overlay {
+.image-board__landsraad-ix-overlay,
+.image-board__expansion-overlay {
   position: absolute;
   object-fit: fill;
   pointer-events: none;
   z-index: 1;
 }
 
-/* Desktop: Ix panel (`riseofix2`) docked beside the board (see App.css column width). */
+/* Desktop: expansion side panels docked beside the board. */
+.image-board--with-side-dock,
 .image-board--with-ix-dock {
   max-width: none;
   width: 100%;
@@ -76,8 +78,21 @@
   display: contents;
 }
 
-.image-board__ix-dock {
+.image-board__ix-dock,
+.image-board__immortality-dock,
+.image-board__expansion-dock-column {
   display: none;
+}
+
+.image-board__expansion-dock-column {
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(6px, 0.8vh, 10px);
+}
+
+.image-board__immortality-stack {
+  width: 100%;
+  margin-top: clamp(6px, 1vh, 12px);
 }
 
 .game-container--desktop-play .image-board__desktop-shell {
@@ -89,6 +104,7 @@
   width: 100%;
 }
 
+.game-container--desktop-play .image-board--with-side-dock .image-board__stage,
 .game-container--desktop-play .image-board--with-ix-dock .image-board__stage {
   flex: 0 1 var(--play-board-max-edge, 72vh);
   max-width: var(--play-board-max-edge, 72vh);
@@ -102,6 +118,22 @@
   width: clamp(132px, 18vmin, 220px);
   aspect-ratio: 1;
   align-self: flex-start;
+  position: relative;
+}
+
+.game-container--desktop-play .image-board__expansion-dock-column {
+  display: flex;
+  flex: 0 0 auto;
+  width: clamp(132px, 22vmin, 300px);
+  align-self: flex-start;
+  position: relative;
+}
+
+.game-container--desktop-play .image-board__immortality-dock {
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  aspect-ratio: 1676 / 1184;
   position: relative;
 }
 
@@ -192,6 +224,8 @@
 .image-board--tracker-inspect .image-board__marker,
 .image-board--tracker-inspect .image-board__bonus-spice-anchor,
 .image-board--tracker-inspect .image-board__bonus-spice,
+.image-board--tracker-inspect .image-board__foldspace-deck-anchor,
+.image-board--tracker-inspect .image-board__foldspace-deck-count,
 .image-board--tracker-inspect .image-board__marker-debug-rect,
 .image-board--tracker-inspect .image-board__marker-debug-dot,
 .image-board--tracker-inspect .image-board__marker-debug-line {
@@ -434,6 +468,30 @@
   top: 0;
   transform: translate(-50%, -50%);
   font-size: clamp(14px, 2.2cqw, 22px);
+}
+
+/* Zero-size anchor; badge centered on foldspaceDeckCountPoint (same as bonus spice). */
+.image-board__foldspace-deck-anchor {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.image-board__foldspace-deck-count {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(14px, 2.2cqw, 22px);
+  line-height: 1;
+  pointer-events: none;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.9),
+    0 0 4px rgba(0, 0, 0, 0.65);
 }
 
 /* The Voice — same center as `.image-board__marker` (MARKER_ANCHORS); under agents in paint order */

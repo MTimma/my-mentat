@@ -1,8 +1,9 @@
 import { Gain } from '../../types/GameTypes'
 import { RevealTurnStats } from '../../utils/revealTurnStats'
 import {
-  excludeAcquireEffectGains,
+  excludeAcquiredGainsFromDisplay,
   getAcquireEffectGainsForCard,
+  getAcquireEffectGainsForTechTile,
 } from '../../utils/turnGainsDisplay'
 import TurnGainsDisplay from '../TurnGainsDisplay/TurnGainsDisplay'
 import './RevealTurnStatsPanel.css'
@@ -34,13 +35,17 @@ const RevealTurnStatsPanel = ({
   resolveCard,
   hideRevealedCards = false,
 }: RevealTurnStatsPanelProps) => {
-  const acquiredLabel =
-    stats.acquiredCards.length === 0
-      ? 'None'
-      : stats.acquiredCards.map(card => card.name).join(', ')
-
   const acquiredCardIds = stats.acquiredCards.map(card => card.id)
-  const totalsGains = excludeAcquireEffectGains(gains, acquiredCardIds)
+  const acquiredTechTileIds = stats.acquiredTechTiles.map(tile => tile.id)
+  const hasAcquiredCards = stats.acquiredCards.length > 0
+  const hasAcquiredTech = stats.acquiredTechTiles.length > 0
+  const hasAcquired = hasAcquiredCards || hasAcquiredTech
+
+  const acquiredLabel = !hasAcquired
+    ? 'None'
+    : [...stats.acquiredCards.map(card => card.name), ...stats.acquiredTechTiles.map(tile => tile.name)].join(', ')
+
+  const totalsGains = excludeAcquiredGainsFromDisplay(gains, acquiredCardIds, acquiredTechTileIds)
 
   const revealedCards = (
     <div className="reveal-turn-revealed-cards" aria-label="Revealed cards">
@@ -58,38 +63,68 @@ const RevealTurnStatsPanel = ({
 
   const acquiredCards = (
     <>
-      {stats.acquiredCards.length === 0 ? (
-        <span className="reveal-turn-stat-empty">None</span>
-      ) : (
-        stats.acquiredCards.map(card => {
-          const acquireGains = getAcquireEffectGainsForCard(gains, card.id)
-          return (
-            <span key={card.id} className="reveal-turn-acquired-card" title={card.name}>
-              {card.image ? (
-                <img src={card.image} alt="" className="reveal-turn-acquired-thumb" />
-              ) : null}
-              {!hideAcquiredNames ? (
-                <span className="reveal-turn-acquired-name">{card.name}</span>
-              ) : null}
-              {card.cost != null && card.cost > 0 && (
-                <span className="reveal-turn-acquired-cost">{card.cost}</span>
-              )}
-              {acquireGains.length > 0 ? (
-                <span className="reveal-turn-acquired-effects">
-                  <TurnGainsDisplay
-                    gains={acquireGains}
-                    totalsOnly
-                    showTotals
-                    omitPositiveSign
-                    resolveCard={resolveCard}
-                  />
-                </span>
-              ) : null}
-            </span>
-          )
-        })
-      )}
+      {stats.acquiredCards.map(card => {
+        const acquireGains = getAcquireEffectGainsForCard(gains, card.id)
+        return (
+          <span key={card.id} className="reveal-turn-acquired-card" title={card.name}>
+            {card.image ? (
+              <img src={card.image} alt="" className="reveal-turn-acquired-thumb" />
+            ) : null}
+            {!hideAcquiredNames ? (
+              <span className="reveal-turn-acquired-name">{card.name}</span>
+            ) : null}
+            {card.cost != null && card.cost > 0 ? (
+              <span className="reveal-turn-acquired-cost">{card.cost}</span>
+            ) : null}
+            {acquireGains.length > 0 ? (
+              <span className="reveal-turn-acquired-effects">
+                <TurnGainsDisplay
+                  gains={acquireGains}
+                  totalsOnly
+                  showTotals
+                  omitPositiveSign
+                  resolveCard={resolveCard}
+                />
+              </span>
+            ) : null}
+          </span>
+        )
+      })}
+      {stats.acquiredTechTiles.map(tile => {
+        const acquireGains = getAcquireEffectGainsForTechTile(gains, tile.id)
+        return (
+          <span key={tile.id} className="reveal-turn-acquired-card reveal-turn-acquired-tech" title={tile.name}>
+            {tile.image ? (
+              <img src={tile.image} alt="" className="reveal-turn-acquired-thumb reveal-turn-acquired-thumb--tech" />
+            ) : null}
+            {!hideAcquiredNames ? (
+              <span className="reveal-turn-acquired-name">{tile.name}</span>
+            ) : null}
+            {tile.cost > 0 ? <span className="reveal-turn-acquired-cost">{tile.cost}</span> : null}
+            {acquireGains.length > 0 ? (
+              <span className="reveal-turn-acquired-effects">
+                <TurnGainsDisplay
+                  gains={acquireGains}
+                  totalsOnly
+                  showTotals
+                  omitPositiveSign
+                  resolveCard={resolveCard}
+                />
+              </span>
+            ) : null}
+          </span>
+        )
+      })}
     </>
+  )
+
+  const acquiredSection = (
+    <div className="reveal-turn-acquired-section">
+      <span className="reveal-turn-stat-label">Acquired</span>
+      <div className="reveal-turn-stat-value reveal-turn-stat-acquired-list" title={acquiredLabel}>
+        {hasAcquired ? acquiredCards : <span className="reveal-turn-stat-empty">None</span>}
+      </div>
+    </div>
   )
 
   const totalsRow =
@@ -106,18 +141,13 @@ const RevealTurnStatsPanel = ({
     ) : null
 
   if (acquiredOnly) {
-    if (stats.acquiredCards.length === 0) return null
+    if (!hasAcquired) return null
     return (
       <div
         className="reveal-turn-stats-panel reveal-turn-stats-panel--compact reveal-turn-stats-panel--history reveal-turn-stats-panel--acquired-only"
-        aria-label="Acquired cards"
+        aria-label="Acquired cards and tech"
       >
-        <div className="reveal-turn-acquired-section">
-          <span className="reveal-turn-stat-label">Acquired</span>
-          <div className="reveal-turn-stat-value reveal-turn-stat-acquired-list" title={acquiredLabel}>
-            {acquiredCards}
-          </div>
-        </div>
+        {acquiredSection}
       </div>
     )
   }
@@ -126,14 +156,7 @@ const RevealTurnStatsPanel = ({
     const extras = (
       <div className="reveal-turn-stats-panel__extras">
         {totalsRow}
-        {stats.acquiredCards.length > 0 ? (
-          <div className="reveal-turn-acquired-section">
-            <span className="reveal-turn-stat-label">Acquired</span>
-            <div className="reveal-turn-stat-value reveal-turn-stat-acquired-list" title={acquiredLabel}>
-              {acquiredCards}
-            </div>
-          </div>
-        ) : null}
+        {hasAcquired ? acquiredSection : null}
       </div>
     )
 
@@ -165,7 +188,7 @@ const RevealTurnStatsPanel = ({
       <div className="reveal-turn-stat reveal-turn-stat--acquired">
         <span className="reveal-turn-stat-label">Acquired</span>
         <span className="reveal-turn-stat-value reveal-turn-stat-acquired-list" title={acquiredLabel}>
-          {acquiredCards}
+          {hasAcquired ? acquiredCards : <span className="reveal-turn-stat-empty">None</span>}
         </span>
       </div>
     </div>

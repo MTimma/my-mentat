@@ -6,6 +6,7 @@ import {
   normalizeSandboxStackTops,
 } from '../../utils/sandboxTechTiles'
 import type { Player } from '../../types/GameTypes'
+import { filterBySearchTokens } from '../../utils/searchTokens'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import '../ImperiumRowSelect/ImperiumRowSelect.css'
 import './TechTileSelect.css'
@@ -59,11 +60,9 @@ const TechTileSelect: React.FC<TechTileSelectProps> = ({
   )
 
   const filteredTiles = useMemo(() => {
-    const q = filter.trim().toLowerCase()
     const available = sortedTiles.filter(tile => !blocked.has(tile.id))
-    if (!q) return available
-    return available.filter(
-      tile => tile.name.toLowerCase().includes(q) || tile.description.toLowerCase().includes(q)
+    return filterBySearchTokens(available, filter, tile =>
+      `${tile.name} ${tile.description} ${tile.cost}`.toLowerCase()
     )
   }, [sortedTiles, filter, blocked])
 

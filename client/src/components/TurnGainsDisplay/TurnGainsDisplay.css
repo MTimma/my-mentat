@@ -168,6 +168,29 @@
   max-height: 26px;
 }
 
+.turn-gains-side--trash-inline {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.turn-gains-side--trash-inline .gain-item--trash-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  background: transparent;
+}
+
+.turn-gain-trash-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  flex-shrink: 0;
+  opacity: 0.92;
+}
+
 /* Horizontal row of source groups; each group = title on top, cost → reward below */
 .turn-gains-display {
   display: flex;

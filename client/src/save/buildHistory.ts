@@ -3,9 +3,7 @@
  */
 import {
   applyGameAction,
-  completeCombatTransition,
   deepCopyGameState,
-  snapshotCombatResolutionForHistory,
   snapshotEndgameForHistory,
   snapshotStateForHistory,
   type GameAction,
@@ -39,19 +37,60 @@ function roundStartSnapshot(state: GameState): GameState {
   })
 }
 
+function combatResolutionStillDeferred(state: GameState): boolean {
+  return (
+    (state.pendingConflictRewardChoices?.length ?? 0) > 0 ||
+    state.combatResolutionDeferred != null
+  )
+}
+
+/** Combat snapshot from reducer (correct gains/strength); not from post-transition state. */
+function extractCombatSnapshotFromReducer(
+  stateBeforeAction: GameState,
+  stateAfterAction: GameState
+): GameState | null {
+  if (combatResolutionStillDeferred(stateAfterAction)) return null
+  const wasCombatRewards =
+    stateBeforeAction.phase === GamePhase.COMBAT_REWARDS ||
+    stateBeforeAction.combatResolutionDeferred != null
+  if (!wasCombatRewards) return null
+
+  for (let i = stateAfterAction.history.length - 1; i >= 0; i--) {
+    const row = stateAfterAction.history[i]
+    if (row.historyEntryKind === 'combat') return row
+  }
+  return null
+}
+
+function appendCombatSnapshotToHistory(
+  history: GameState[],
+  snapshot: GameState,
+  stateAfterAction: GameState
+): GameState[] {
+  const withoutCombat = history.filter(h => h.historyEntryKind !== 'combat')
+  let next = [...withoutCombat, snapshot]
+  if (stateAfterAction.phase === GamePhase.END_GAME) {
+    next = [
+      ...next,
+      snapshotEndgameForHistory(
+        stateAfterAction,
+        stateAfterAction.gains ?? [],
+        stateAfterAction.endgameRevealedIntrigue ?? {},
+        stateAfterAction.endgameWinners ?? []
+      ),
+    ]
+  }
+  return next
+}
+
 /** Replay events and produce the history rows the UI/time-travel expect. */
 export function buildHistoryFromEvents(setup: SetupBlock, events: EventEntry[]): GameState[] {
   let state = buildInitialState(setup)
   let history: GameState[] = [setupSnapshot(state)]
-  let stateBeforeCombat: GameState | null = null
-
   for (const entry of events) {
     const action: GameAction = entry.a
     const stateBeforeAction = action.type === 'END_TURN' ? state : null
-
-    if (action.type === 'RESOLVE_COMBAT') {
-      stateBeforeCombat = state
-    }
+    const preAction = state
 
     state = applyGameAction(state, action)
 
@@ -71,21 +110,11 @@ export function buildHistoryFromEvents(setup: SetupBlock, events: EventEntry[]):
         }
         break
       }
-      case 'RESOLVE_COMBAT': {
-        if (!stateBeforeCombat) break
-        const combatRound = stateBeforeCombat.currentRound
-        const transitioned = completeCombatTransition(state, stateBeforeCombat, null)
-        const combatSnapshot = snapshotCombatResolutionForHistory(state, transitioned, combatRound)
-        history = [...stateBeforeCombat.history, combatSnapshot]
-        stateBeforeCombat = null
-        if (state.phase === GamePhase.END_GAME) {
-          const endgameSnapshot = snapshotEndgameForHistory(
-            state,
-            state.gains ?? [],
-            state.endgameRevealedIntrigue ?? {},
-            state.endgameWinners ?? []
-          )
-          history = [...history, endgameSnapshot]
+      case 'RESOLVE_COMBAT':
+      case 'RESOLVE_CONFLICT_REWARD_CHOICE': {
+        const combatSnapshot = extractCombatSnapshotFromReducer(preAction, state)
+        if (combatSnapshot) {
+          history = appendCombatSnapshotToHistory(history, combatSnapshot, state)
         }
         break
       }
@@ -124,12 +153,10 @@ export function historyIndexToEventIndex(
   if (historyIndex < 0) return -1
   let state = buildInitialState(setup)
   let history: GameState[] = [setupSnapshot(state)]
-  let stateBeforeCombat: GameState | null = null
-
   for (let eventIndex = 0; eventIndex < events.length; eventIndex++) {
     const action = events[eventIndex].a
     const stateBeforeAction = action.type === 'END_TURN' ? state : null
-    if (action.type === 'RESOLVE_COMBAT') stateBeforeCombat = state
+    const preAction = state
     state = applyGameAction(state, action)
 
     const beforeLen = history.length
@@ -155,17 +182,13 @@ export function historyIndexToEventIndex(
         }
         break
       case 'RESOLVE_COMBAT':
-        if (stateBeforeCombat) {
-          const transitioned = completeCombatTransition(state, stateBeforeCombat, null)
-          const combatSnapshot = snapshotCombatResolutionForHistory(
-            state,
-            transitioned,
-            stateBeforeCombat.currentRound
-          )
-          history = [...stateBeforeCombat.history, combatSnapshot]
-          stateBeforeCombat = null
+      case 'RESOLVE_CONFLICT_REWARD_CHOICE': {
+        const combatSnapshot = extractCombatSnapshotFromReducer(preAction, state)
+        if (combatSnapshot) {
+          history = appendCombatSnapshotToHistory(history, combatSnapshot, state)
         }
         break
+      }
       default:
         break
     }

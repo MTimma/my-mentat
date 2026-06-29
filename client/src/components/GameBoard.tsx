@@ -160,6 +160,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
               wide={idx === 0 || idx === 2}
               isVoiceSelectable={voiceSelectionActive}
               voiceBlockedBy={blockedBy}
+              players={players}
             />
           )
         })}
@@ -185,6 +186,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 makerSpace={space.makerSpace}
                 isVoiceSelectable={voiceSelectionActive}
                 voiceBlockedBy={blockedBy}
+                players={players}
               />
             )
           })}

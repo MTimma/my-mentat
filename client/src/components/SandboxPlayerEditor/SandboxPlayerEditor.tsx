@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Card, ControlMarkerType, Expansions, FactionType, Player } from '../../types/GameTypes'
+import { Card, ControlMarkerType, Expansions, FactionType, Player, PlayerColor } from '../../types/GameTypes'
 import { applyLeaderStartingResourceDelta } from '../../data/leaderAbilities/beastSetup'
 import {
   isTessiaLeader,
@@ -166,12 +166,10 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   }, [player.id, player.dreadnoughts?.garrison])
 
   const availableLeaders = useMemo(() => {
-    const pool = getLeaderPool(expansions).filter(
-      leader => !usedLeaderNames.includes(leader.name)
-    )
+    const pool = getLeaderPool(expansions)
     if (pool.some(leader => leader.name === player.leader.name)) return pool
     return [player.leader, ...pool]
-  }, [expansions, usedLeaderNames, player.leader])
+  }, [expansions, player.leader])
 
   const deckEditorCards = useMemo(
     () =>
@@ -244,13 +242,23 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
 
   if (waitForBoardTarget) return null
 
+  const handleColorChange = (color: PlayerColor) => {
+    if (color === player.color) return
+    onUpdate({ color })
+  }
+
   const handleLeaderChange = (leader: typeof player.leader) => {
     if (leader.name === player.leader.name) return
 
-    const { spice, solari } = applyLeaderStartingResourceDelta(player, leader)
-    setNumericDraft(prev => ({ ...prev, spice, solari }))
+    if (usedLeaderNames.includes(leader.name)) {
+      onUpdate({ leader })
+      return
+    }
+
+    const { spice, solari, water, intrigueCount } = applyLeaderStartingResourceDelta(player, leader)
+    setNumericDraft(prev => ({ ...prev, spice, solari, water, intrigueCount }))
     onUpdate(
-      seedTessiaSnoopers({ ...player, leader, spice, solari }, expansions.riseOfIx)
+      seedTessiaSnoopers({ ...player, leader, spice, solari, water, intrigueCount }, expansions.riseOfIx)
     )
   }
 
@@ -395,6 +403,18 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
 
         <div className="sandbox-player-editor__body">
           <div className="sandbox-player-editor__leader-row">
+            <select
+              value={player.color}
+              onChange={event => handleColorChange(event.target.value as PlayerColor)}
+              className={`sandbox-player-editor__color-select color-select ${player.color}`}
+              aria-label="Player color"
+            >
+              {Object.values(PlayerColor).map(color => (
+                <option key={color} value={color}>
+                  {color}
+                </option>
+              ))}
+            </select>
             <LeaderSelect
               leaders={availableLeaders}
               value={player.leader}
@@ -500,6 +520,7 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                         />
                         <DreadnoughtIcon
                           playerId={player.id}
+                          color={player.color}
                           appearance="control"
                           className="sandbox-player-editor__dreadnought-control-icon"
                         />
@@ -520,7 +541,11 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                 onChange={value => adjustNumeric(field.key, value)}
                 icon={
                   field.key === 'agents' ? (
-                    <AgentIcon playerId={player.id} className="sandbox-player-editor__agent-icon" />
+                    <AgentIcon
+                      playerId={player.id}
+                      color={player.color}
+                      className="sandbox-player-editor__agent-icon"
+                    />
                   ) : field.icon ? (
                     <img src={field.icon} alt="" aria-hidden="true" />
                   ) : undefined
@@ -573,7 +598,7 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                     troopSupply: seeded.troopSupply,
                   })
                 }}
-                icon={<NegotiatorIcon playerId={player.id} size="md" />}
+                icon={<NegotiatorIcon playerId={player.id} color={player.color} size="md" />}
                 decreaseLabel="Decrease tech negotiators on Ix"
                 increaseLabel="Increase tech negotiators on Ix"
               />

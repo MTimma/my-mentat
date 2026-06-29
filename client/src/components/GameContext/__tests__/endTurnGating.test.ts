@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BOARD_SPACES } from '../../../data/boardSpaces'
-import { IMPERIUM_ROW_DECK } from '../../../data/cards'
+import { IMPERIUM_ROW_DECK, STARTING_DECK } from '../../../data/cards'
+import { LEADER_NAMES, RISE_OF_IX_LEADERS } from '../../../data/leaders'
 import {
   AgentIcon,
   CardPile,
@@ -13,10 +14,11 @@ import {
   type FixedOptionsChoice,
 } from '../../../types/GameTypes'
 import { applyGameAction } from '../GameContext'
-import { getBaseTestState, stubDeckCard, withCardOnTop } from './_helpers'
+import { getBaseTestState, getRoiTestState, stubDeckCard, withCardOnTop } from './_helpers'
 import { getGainsForTurnState } from '../../../utils/turnGainsDisplay'
 
 const ARRAKEEN_ID = BOARD_SPACES.find(s => s.name === 'Arrakeen')!.id
+const CARTHAG_ID = BOARD_SPACES.find(s => s.name === 'Carthag')!.id
 
 describe('END_TURN gating — mandatory pending work blocks the turn', () => {
   it('is blocked while non-disabled pendingRewards exist (even with canEndTurn forced true)', () => {
@@ -143,6 +145,28 @@ describe('END_TURN gating — optional effects lapse silently', () => {
     // Neither cost paid nor reward gained
     expect(s.players[0].spice).toBe(10)
     expect(s.players[0].troops).toBe(8)
+  })
+
+  it('Princess Yuna signet ring is optional — END_TURN proceeds without paying 7 Solari', () => {
+    const yuna = RISE_OF_IX_LEADERS.find(l => l.name === LEADER_NAMES.PRINCESS_YUNA_MORITANI)!
+    const signet = structuredClone(STARTING_DECK.find(c => c.name === 'Signet Ring')!)
+    let s = getRoiTestState({
+      players: 2,
+      activeId: 0,
+      playerOverrides: { leader: yuna, deck: [signet], handCount: 1 },
+    })
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: signet.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: CARTHAG_ID })
+    expect(s.currTurn?.optionalEffects).toHaveLength(1)
+    expect(s.currTurn?.pendingChoices ?? []).toHaveLength(0)
+
+    s = applyGameAction(s, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+    expect(s.canEndTurn).toBe(true)
+
+    const solariBefore = s.players[0].solari
+    s = applyGameAction(s, { type: 'END_TURN', playerId: 0 })
+    expect(s.activePlayerId).toBe(1)
+    expect(s.players[0].solari).toBe(solariBefore)
   })
 })
 

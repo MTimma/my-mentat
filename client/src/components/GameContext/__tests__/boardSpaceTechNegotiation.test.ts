@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BOARD_SPACES } from '../../../data/boardSpaces'
 import { TechTileId } from '../../../data/techTiles'
+import { applyTechNegotiatorReward } from '../riseOfIxReducer'
 import { DEFAULT_DREADNOUGHTS } from '../../../utils/dreadnoughts'
 import {
   filterAcquireTechFromChoices,
@@ -10,6 +11,7 @@ import {
   AgentIcon,
   ChoiceType,
   GamePhase,
+  GainSource,
   NO_EXPANSIONS,
   RewardType,
   TurnType,
@@ -97,9 +99,11 @@ describe('Tech Negotiation board space (OR choice)', () => {
         g =>
           g.type === RewardType.POOL_TROOP &&
           g.amount === -1 &&
-          g.name === 'Tech Negotiator'
+          g.name === 'Tech Negotiation'
       )
     ).toBe(true)
+    expect(s.currTurn?.pendingChoices?.some(c => c.prompt === 'Tech Negotiation')).toBe(false)
+    expect(s.canEndTurn).toBe(true)
   })
 
   it('UI filtered index 0 resolves negotiator, not acquire tech', () => {
@@ -149,6 +153,25 @@ describe('Tech Negotiation board space (OR choice)', () => {
     expect(s.players[0].negotiatorsOnIx).toBe(1)
     expect(s.pendingAcquireTech).toBeFalsy()
     expect(s.currTurn?.pendingChoices?.some(c => c.prompt === 'Tech Negotiation')).toBe(false)
+  })
+
+  it('signet-sourced negotiator records Signet Ring as gain source', () => {
+    let s = roiState()
+    s = applyTechNegotiatorReward(s, 0, 1, {
+      type: GainSource.CARD,
+      id: 10,
+      name: 'Signet Ring',
+    })
+    expect(s.players[0].negotiatorsOnIx).toBe(1)
+    expect(
+      s.gains.some(
+        g =>
+          g.source === GainSource.CARD &&
+          g.name === 'Signet Ring' &&
+          g.type === RewardType.NEGOTIATOR &&
+          g.amount === 1
+      )
+    ).toBe(true)
   })
 
   it('acquire path: purchase with chosen negotiator return reduces spice cost', () => {

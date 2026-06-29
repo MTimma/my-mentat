@@ -24,12 +24,16 @@ import {
   FOLDSPACE_DECK,
   IMPERIUM_ROW_DECK,
   RISE_OF_IX_IMPERIUM_DECK,
+  IMMORTALITY_IMPERIUM_DECK,
+  IMMORTALITY_TLEILAXU_DECK,
+  IMMORTALITY_STARTING_DECK,
 } from '../data/cards'
 import { BOARD_SPACES } from '../data/boardSpaces'
 import { CONFLICTS, RISE_OF_IX_CONFLICTS } from '../data/conflicts'
 import { LEADERS, LEADER_ICON_SLUGS, RISE_OF_IX_LEADERS } from '../data/leaders'
 import { intrigueCards } from '../data/intrigueCards'
 import { RISE_OF_IX_INTRIGUE_CARDS } from '../data/intrigueCardsRiseOfIx'
+import { IMMORTALITY_INTRIGUE_CARDS } from '../data/intrigueCardsImmortality'
 import { TECH_TILES, type TechTile } from '../data/techTiles'
 import {
   Card,
@@ -82,6 +86,12 @@ export interface CatalogCardEntry {
   unload?: boolean
   /** Rise of Ix — source marker for deck filtering and UI. */
   riseOfIx?: boolean
+  /** Immortality — source marker for deck filtering and UI. */
+  immortality?: boolean
+  /** Immortality — belongs to the Tleilaxu Row (acquired with specimens). */
+  tleilaxu?: boolean
+  /** Immortality — has a Graft agent box. */
+  graft?: boolean
   image: string
   /** Effect ids per slot — definitions live in the `effects` registry. */
   effects: {
@@ -131,6 +141,7 @@ export interface CatalogIntrigueEntry {
   image: string
   targetPlayer?: boolean
   riseOfIx?: boolean
+  immortality?: boolean
   effects: { play?: string[] }
 }
 
@@ -174,6 +185,10 @@ export interface CatalogExpansionMeta {
   /** Deck composition rules — catalog card ids incl. duplicates. */
   decks: {
     imperium: string[]
+    /** Immortality — Tleilaxu Row pool (acquired with specimens, not shuffled in). */
+    tleilaxu?: string[]
+    /** Immortality — starter cards (e.g. Experimentation) introduced by the expansion. */
+    starting?: string[]
   }
 }
 
@@ -257,7 +272,7 @@ function buildCardEntries(
   registry: CatalogEffectEntry[],
   pool: CardPool,
   deck: Card[],
-  options?: { riseOfIx?: boolean }
+  options?: { riseOfIx?: boolean; immortality?: boolean }
 ): { entries: CatalogCardEntry[]; deckIds: string[] } {
   const byName = new Map<string, CatalogCardEntry>()
   const deckIds: string[] = []
@@ -285,6 +300,7 @@ function buildCardEntries(
       effects.acquire = id
     }
     const riseOfIx = options?.riseOfIx ?? card.riseOfIx
+    const immortality = options?.immortality ?? card.immortality
     byName.set(card.name, {
       id: catalogId,
       name: card.name,
@@ -295,6 +311,9 @@ function buildCardEntries(
       infiltrate: card.infiltrate,
       unload: card.unload,
       riseOfIx,
+      immortality,
+      tleilaxu: card.tleilaxu,
+      graft: card.graft,
       image: card.image,
       effects,
       authorIds: [card.id],
@@ -357,7 +376,7 @@ function buildTechTileEntries(tiles: TechTile[]): CatalogTechTileEntry[] {
 function buildIntrigueEntries(
   registry: CatalogEffectEntry[],
   cards: IntrigueCard[],
-  riseOfIx?: boolean
+  source?: { riseOfIx?: boolean; immortality?: boolean }
 ): CatalogIntrigueEntry[] {
   return cards.map(card => ({
     id: card.id,
@@ -366,7 +385,8 @@ function buildIntrigueEntries(
     description: card.description,
     image: card.image,
     targetPlayer: card.targetPlayer,
-    riseOfIx,
+    riseOfIx: source?.riseOfIx,
+    immortality: source?.immortality,
     effects: {
       play: registerEffects(registry, 'intrigue', card.id, 'play', card.playEffect),
     },
@@ -381,6 +401,15 @@ export function buildCatalog(): Catalog {
   const roiImperium = buildCardEntries(effects, 'imperium', RISE_OF_IX_IMPERIUM_DECK, {
     riseOfIx: true,
   })
+  const immImperium = buildCardEntries(effects, 'imperium', IMMORTALITY_IMPERIUM_DECK, {
+    immortality: true,
+  })
+  const immTleilaxu = buildCardEntries(effects, 'imperium', IMMORTALITY_TLEILAXU_DECK, {
+    immortality: true,
+  })
+  const immStarting = buildCardEntries(effects, 'starting', IMMORTALITY_STARTING_DECK, {
+    immortality: true,
+  })
   const liaison = buildCardEntries(effects, 'arrakis-liaison', ARRAKIS_LIAISON_DECK)
   const smf = buildCardEntries(effects, 'spice-must-flow', SPICE_MUST_FLOW_DECK)
   const foldspace = buildCardEntries(effects, 'foldspace', FOLDSPACE_DECK)
@@ -389,6 +418,9 @@ export function buildCatalog(): Catalog {
     ...starting.entries,
     ...imperium.entries,
     ...roiImperium.entries,
+    ...immImperium.entries,
+    ...immTleilaxu.entries,
+    ...immStarting.entries,
     ...liaison.entries,
     ...smf.entries,
     ...foldspace.entries,
@@ -396,7 +428,8 @@ export function buildCatalog(): Catalog {
 
   const intrigue: CatalogIntrigueEntry[] = [
     ...buildIntrigueEntries(effects, intrigueCards),
-    ...buildIntrigueEntries(effects, RISE_OF_IX_INTRIGUE_CARDS, true),
+    ...buildIntrigueEntries(effects, RISE_OF_IX_INTRIGUE_CARDS, { riseOfIx: true }),
+    ...buildIntrigueEntries(effects, IMMORTALITY_INTRIGUE_CARDS, { immortality: true }),
   ]
 
   const leaders: CatalogLeaderEntry[] = [
@@ -443,7 +476,7 @@ export function buildCatalog(): Catalog {
   const roiBoardSpaces = BOARD_SPACES.filter(space => space.riseOfIx)
 
   const expansions: CatalogExpansions = {
-    available: ['riseOfIx'],
+    available: ['riseOfIx', 'immortality'],
     byId: {
       riseOfIx: {
         id: 'riseOfIx',
@@ -458,6 +491,23 @@ export function buildCatalog(): Catalog {
         },
         decks: {
           imperium: roiImperium.deckIds,
+        },
+      },
+      immortality: {
+        id: 'immortality',
+        name: 'Immortality',
+        counts: {
+          cards: immImperium.entries.length + immTleilaxu.entries.length + immStarting.entries.length,
+          conflicts: 0,
+          leaders: 0,
+          intrigue: IMMORTALITY_INTRIGUE_CARDS.length,
+          boardSpaces: 0,
+          techTiles: 0,
+        },
+        decks: {
+          imperium: immImperium.deckIds,
+          tleilaxu: immTleilaxu.deckIds,
+          starting: immStarting.deckIds,
         },
       },
     },

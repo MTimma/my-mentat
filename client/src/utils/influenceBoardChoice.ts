@@ -2,11 +2,40 @@ import {
   ChoiceType,
   FactionType,
   FixedOptionsChoice,
+  GainSource,
   GameState,
 } from '../types/GameTypes'
 import { canAffordInfluenceReward } from './influenceChoices'
 
 export type InfluenceBoardMode = 'lose' | 'gain'
+
+export type ConflictRewardChoice = NonNullable<GameState['pendingConflictRewardChoices']>[number]
+
+export function conflictChoiceAsFixedOptions(choice: ConflictRewardChoice): FixedOptionsChoice {
+  return {
+    id: choice.id,
+    type: ChoiceType.FIXED_OPTIONS,
+    prompt: `${choice.conflictName} (${choice.placement})`,
+    source: {
+      type: GainSource.CONFLICT,
+      id: choice.conflictId,
+      name: `${choice.conflictName} - ${choice.placement}`,
+    },
+    options: choice.options,
+  }
+}
+
+export function findConflictInfluenceBoardChoice(
+  choices: GameState['pendingConflictRewardChoices'] | undefined
+): ConflictRewardChoice | null {
+  if (!choices?.length) return null
+  for (const choice of choices) {
+    if (isInfluenceBoardChoice(conflictChoiceAsFixedOptions(choice))) {
+      return choice
+    }
+  }
+  return null
+}
 
 /** Fixed-options influence choices resolved by tapping faction tracks on the image board. */
 export function isInfluenceBoardChoice(choice: FixedOptionsChoice): boolean {

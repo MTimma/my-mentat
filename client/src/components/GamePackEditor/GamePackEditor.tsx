@@ -73,7 +73,7 @@ const GamePackEditor: React.FC<GamePackEditorProps> = ({ parentPackId, onClose, 
             <li><code>overrides.cards</code> — imperium card acquire cost</li>
             <li><code>overrides.effects</code> — effect registry entries by id</li>
             <li><code>overrides.intrigue</code> / <code>overrides.conflicts</code> — numeric catalog ids</li>
-            <li><code>additions.deckPatches.starting</code> — extra starter-pool copies by catalog id (e.g. <code>starting/power-play</code>)</li>
+            <li><code>additions.deckPatches.starting</code> — extra starter-deck copies by catalog id (e.g. <code>imperium/power-play</code>)</li>
             <li><code>additions.deckPatches.imperium</code> — append/prepend imperium deck catalog ids</li>
           </ul>
         </div>

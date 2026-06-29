@@ -1,0 +1,17 @@
+.bene-tleilax-modal-overlay.dialog-overlay {
+  align-items: center;
+  justify-content: center;
+}
+
+.bene-tleilax-modal__panel.target-dialog {
+  width: min(96vw, 920px);
+  max-height: min(92vh, 720px);
+  overflow: auto;
+  padding: clamp(8px, 1.5vw, 16px);
+}
+
+.bene-tleilax-modal__panel .bene-tleilax-board--interactive {
+  width: 100%;
+  max-width: 880px;
+  margin-inline: auto;
+}

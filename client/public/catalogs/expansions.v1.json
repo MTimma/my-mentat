@@ -2,7 +2,8 @@
   "schemaVersion": 1,
   "expansions": {
     "available": [
-      "riseOfIx"
+      "riseOfIx",
+      "immortality"
     ],
     "byId": {
       "riseOfIx": {
@@ -53,6 +54,76 @@
             "imperium/water-peddler",
             "imperium/web-of-power",
             "imperium/weirding-way"
+          ]
+        }
+      },
+      "immortality": {
+        "id": "immortality",
+        "name": "Immortality",
+        "counts": {
+          "cards": 45,
+          "conflicts": 0,
+          "leaders": 0,
+          "intrigue": 15,
+          "boardSpaces": 0,
+          "techTiles": 0
+        },
+        "decks": {
+          "imperium": [
+            "imperium/bene-tleilax-lab",
+            "imperium/bene-tleilax-researcher",
+            "imperium/blank-slate",
+            "imperium/clandestine-meeting",
+            "imperium/corrupt-smuggler",
+            "imperium/dissecting-kit",
+            "imperium/dissecting-kit",
+            "imperium/for-humanity",
+            "imperium/high-priority-travel",
+            "imperium/high-priority-travel",
+            "imperium/imperium-ceremony",
+            "imperium/interstellar-conspiracy",
+            "imperium/keys-to-power",
+            "imperium/lisan-al-gaib",
+            "imperium/long-reach",
+            "imperium/occupation",
+            "imperium/organ-merchants",
+            "imperium/planned-coupling",
+            "imperium/planned-coupling",
+            "imperium/replacement-eyes",
+            "imperium/sardukar-quartermaster",
+            "imperium/shadout-mapes",
+            "imperium/show-of-strength",
+            "imperium/spiritual-fervor",
+            "imperium/spiritual-fervor",
+            "imperium/stillsuit-manufacturer",
+            "imperium/throne-room-politics",
+            "imperium/tleilaxu-master",
+            "imperium/tleilaxu-master",
+            "imperium/tleilaxu-surgeon"
+          ],
+          "tleilaxu": [
+            "imperium/reclaimed-forces",
+            "imperium/usurp",
+            "imperium/twisted-mentat",
+            "imperium/beguiling-pheromones",
+            "imperium/stitched-horror",
+            "imperium/unnatural-reflexes",
+            "imperium/ghola",
+            "imperium/scientific-breakthrough",
+            "imperium/slig-farmer",
+            "imperium/from-the-tanks",
+            "imperium/face-dancer",
+            "imperium/guild-impersonator",
+            "imperium/chairdog",
+            "imperium/tleilaxu-infiltrator",
+            "imperium/subject-x-137",
+            "imperium/corrino-genes",
+            "imperium/contaminator",
+            "imperium/industrial-espionage",
+            "imperium/face-dancer-initiate"
+          ],
+          "starting": [
+            "starting/experimentation"
           ]
         }
       }

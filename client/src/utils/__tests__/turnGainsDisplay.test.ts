@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FactionType, GainSource, RewardType, TurnType } from '../../types/GameTypes'
+import { TechTileId, techTileGainSourceId } from '../../data/techTiles'
 import {
   groupGainsBySource,
   groupGainsForDisplay,
@@ -15,7 +16,10 @@ import {
   getEffectRetreatRemaining,
   getRepeatedIconDisplay,
   getAcquireEffectGainsForCard,
+  getAcquireEffectGainsForTechTile,
   excludeAcquireEffectGains,
+  groupCombatHistoryGainsByPlayer,
+  excludeAcquiredGainsFromDisplay,
   getGainGroupIcon,
 } from '../turnGainsDisplay'
 
@@ -577,6 +581,71 @@ describe('turnGainsDisplay', () => {
     expect(groups[0].gains).toHaveLength(2)
   })
 
+  it('groups each Ix board tech acquisition separately by tile name', () => {
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: 0,
+        round: 1,
+        name: 'Windtraps',
+        amount: 1,
+        type: RewardType.TECH,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: 0,
+        round: 1,
+        name: 'Windtraps',
+        amount: -4,
+        type: RewardType.SOLARI,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: 0,
+        round: 1,
+        name: 'Windtraps',
+        amount: 1,
+        type: RewardType.WATER,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: 0,
+        round: 1,
+        name: 'Training Drones',
+        amount: 1,
+        type: RewardType.TECH,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: 0,
+        round: 1,
+        name: 'Training Drones',
+        amount: -3,
+        type: RewardType.SPICE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: 0,
+        round: 1,
+        name: 'Training Drones',
+        amount: 1,
+        type: RewardType.TROOPS,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0])
+
+    expect(groups).toHaveLength(2)
+    expect(groups[0].title).toBe('Tech: Windtraps')
+    expect(groups[0].gains).toHaveLength(3)
+    expect(groups[1].title).toBe('Tech: Training Drones')
+    expect(groups[1].gains).toHaveLength(3)
+  })
+
   it('groupGainsBySource groups tech discard and draw under the tile name', () => {
     const gains = [
       {
@@ -687,5 +756,113 @@ describe('turnGainsDisplay', () => {
       expect.objectContaining({ type: RewardType.TRASH, name: 'Treachery', sourceId: acquiredId })
     )
     expect(getAcquireEffectGainsForCard(gains, trashedId)).toHaveLength(0)
+  })
+
+  it('extracts tech tile acquire costs and effects for the acquired section', () => {
+    const memocordersSourceId = techTileGainSourceId(TechTileId.MEMOCORDERS)
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: memocordersSourceId,
+        round: 1,
+        name: 'Memocorders',
+        amount: 1,
+        type: RewardType.TECH,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: memocordersSourceId,
+        round: 1,
+        name: 'Memocorders',
+        amount: -1,
+        type: RewardType.NEGOTIATOR,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: memocordersSourceId,
+        round: 1,
+        name: FactionType.EMPEROR,
+        amount: 1,
+        type: RewardType.INFLUENCE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.BOARD_SPACE,
+        sourceId: 0,
+        round: 1,
+        name: 'Signet Ring',
+        amount: 1,
+        type: RewardType.NEGOTIATOR,
+      },
+    ] as Parameters<typeof excludeAcquiredGainsFromDisplay>[0]
+
+    expect(getAcquireEffectGainsForTechTile(gains, TechTileId.MEMOCORDERS)).toHaveLength(2)
+    expect(excludeAcquiredGainsFromDisplay(gains, [], [TechTileId.MEMOCORDERS])).toHaveLength(1)
+    expect(excludeAcquiredGainsFromDisplay(gains, [], [TechTileId.MEMOCORDERS])[0].name).toBe('Signet Ring')
+  })
+
+  it('groupCombatHistoryGainsByPlayer orders 1st through 3rd top to bottom', () => {
+    const gains = [
+      {
+        playerId: 2,
+        round: 1,
+        sourceId: 903,
+        name: 'Skirmish - 3rd place',
+        amount: 1,
+        type: RewardType.SPICE,
+        source: GainSource.CONFLICT,
+      },
+      {
+        playerId: 1,
+        round: 1,
+        sourceId: 903,
+        name: 'Skirmish - 2nd place',
+        amount: 2,
+        type: RewardType.SPICE,
+        source: GainSource.CONFLICT,
+      },
+      {
+        playerId: 0,
+        round: 1,
+        sourceId: 903,
+        name: 'Skirmish - 1st place',
+        amount: 1,
+        type: RewardType.SPICE,
+        source: GainSource.CONFLICT,
+      },
+    ] as Parameters<typeof groupCombatHistoryGainsByPlayer>[0]
+
+    expect(groupCombatHistoryGainsByPlayer(gains).map(g => g.playerId)).toEqual([0, 1, 2])
+  })
+
+  it('groupGainsBySource merges conflict spice and influence under placement title', () => {
+    const gains = [
+      {
+        playerId: 0,
+        round: 1,
+        sourceId: 903,
+        name: 'Skirmish - 1st place',
+        amount: 1,
+        type: RewardType.SPICE,
+        source: GainSource.CONFLICT,
+      },
+      {
+        playerId: 0,
+        round: 1,
+        sourceId: 903,
+        name: 'Skirmish - 1st place|spacing-guild',
+        amount: 1,
+        type: RewardType.INFLUENCE,
+        source: GainSource.CONFLICT,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0]
+
+    const groups = groupGainsBySource(gains)
+    expect(groups).toHaveLength(1)
+    expect(groups[0].title).toBe('Skirmish - 1st place')
+    expect(groups[0].gains.map(g => g.type)).toEqual([RewardType.SPICE, RewardType.INFLUENCE])
   })
 })

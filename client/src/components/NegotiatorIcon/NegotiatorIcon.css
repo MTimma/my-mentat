@@ -41,10 +41,10 @@
   pointer-events: none;
 }
 
-.negotiator-icon.player-0 .negotiator-icon__player-band { background-color: #d32f2f; }
-.negotiator-icon.player-1 .negotiator-icon__player-band { background-color: #388e3c; }
-.negotiator-icon.player-2 .negotiator-icon__player-band { background-color: #fbc02d; }
-.negotiator-icon.player-3 .negotiator-icon__player-band { background-color: #1976d2; }
+.negotiator-icon.player-red .negotiator-icon__player-band { background-color: #d32f2f; }
+.negotiator-icon.player-green .negotiator-icon__player-band { background-color: #388e3c; }
+.negotiator-icon.player-yellow .negotiator-icon__player-band { background-color: #fbc02d; }
+.negotiator-icon.player-blue .negotiator-icon__player-band { background-color: #1976d2; }
 
 .combat-troop-controls .negotiator-icon--md {
   width: 18px;

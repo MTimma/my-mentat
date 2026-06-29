@@ -10,6 +10,11 @@ import type { SaveDoc } from '../save/types'
 import { getSelectableGamePacks } from '../gamePacks/registry'
 import { subscribeGamePacks } from '../gamePacks/customGamePacks'
 import { expansionsForGamePack } from '../gamePacks/resolveGamePack'
+import { DEFAULT_PLAYER_COLORS } from '../utils/playerColors'
+import {
+  swapPlayerColorInSetups,
+  swapPlayerLeaderInSetups,
+} from '../utils/playerIdentitySwap'
 import './GameSetup/GameSetup.css'
 
 interface GameSetupProps {
@@ -47,10 +52,10 @@ const GameSetup: React.FC<GameSetupProps> = ({
   const selectablePacks = useMemo(() => getSelectableGamePacks(), [packListVersion])
   const expansions = useMemo(() => expansionsForGamePack(gamePackId), [gamePackId])
   const [players, setPlayers] = useState<PlayerSetup[]>([
-    createPlayerSetup(1, PlayerColor.RED, 1, gamePackId),
-    createPlayerSetup(2, PlayerColor.GREEN, 0, gamePackId),
-    createPlayerSetup(3, PlayerColor.YELLOW, 2, gamePackId),
-    createPlayerSetup(4, PlayerColor.BLUE, 3, gamePackId)
+    createPlayerSetup(1, DEFAULT_PLAYER_COLORS[0], 1, gamePackId),
+    createPlayerSetup(2, DEFAULT_PLAYER_COLORS[1], 0, gamePackId),
+    createPlayerSetup(3, DEFAULT_PLAYER_COLORS[2], 2, gamePackId),
+    createPlayerSetup(4, DEFAULT_PLAYER_COLORS[3], 3, gamePackId),
   ])
 
   useEffect(() => subscribeGamePacks(() => setPackListVersion(v => v + 1)), [])
@@ -75,30 +80,25 @@ const GameSetup: React.FC<GameSetupProps> = ({
   const handlePlayerCountChange = (count: number) => {
     setPlayerCount(count)
     const newPlayers = Array.from({ length: count }, (_, i) => ({
-      ...createPlayerSetup(i + 1, Object.values(PlayerColor)[i], i === 0 ? 1 : i - 1, gamePackId)
+      ...createPlayerSetup(
+        i + 1,
+        DEFAULT_PLAYER_COLORS[i],
+        i === 0 ? 1 : i - 1,
+        gamePackId
+      ),
     }))
     setPlayers(newPlayers)
   }
 
-  const handlePlayerChange = (index: number, field: keyof PlayerSetup, value: PlayerSetup[keyof PlayerSetup]) => {
-    const newPlayers = [...players]
-    newPlayers[index] = { ...newPlayers[index], [field]: value }
-    setPlayers(newPlayers)
+  const handleColorChange = (index: number, color: PlayerColor) => {
+    setPlayers(prev => swapPlayerColorInSetups(prev, index, color))
   }
 
-  const getAvailableColors = (currentIndex: number) => {
-    const usedColors = players
-      .filter((_, i) => i !== currentIndex)
-      .map(p => p.color)
-    return Object.values(PlayerColor).filter(color => !usedColors.includes(color))
+  const handleLeaderChange = (index: number, leader: PlayerSetup['leader']) => {
+    setPlayers(prev => swapPlayerLeaderInSetups(prev, index, leader))
   }
 
-  const getAvailableLeaders = (currentIndex: number) => {
-    const usedLeaders = players
-      .filter((_, i) => i !== currentIndex)
-      .map(p => p.leader.name)
-    return getLeaderPool(expansions).filter(leader => !usedLeaders.includes(leader.name))
-  }
+  const leaderPool = useMemo(() => getLeaderPool(expansions), [expansions])
 
   const isSetupComplete = () => {
     return gameName.trim() !== '' && 
@@ -175,20 +175,20 @@ const GameSetup: React.FC<GameSetupProps> = ({
               <span className="player-setup-label">P{index + 1}</span>
               <select
                 value={player.color}
-                onChange={(e) => handlePlayerChange(index, 'color', e.target.value as PlayerColor)}
+                onChange={(e) => handleColorChange(index, e.target.value as PlayerColor)}
                 className={`color-select ${player.color.toLowerCase()}`}
                 aria-label={`Player ${index + 1} color`}
               >
-                {getAvailableColors(index).map(color => (
+                {Object.values(PlayerColor).map(color => (
                   <option key={color} value={color}>
                     {color}
                   </option>
                 ))}
               </select>
               <LeaderSelect
-                leaders={getAvailableLeaders(index)}
+                leaders={leaderPool}
                 value={player.leader}
-                onChange={leader => handlePlayerChange(index, 'leader', leader)}
+                onChange={leader => handleLeaderChange(index, leader)}
                 ariaLabel={`Player ${index + 1} leader`}
                 variant="setup"
               />

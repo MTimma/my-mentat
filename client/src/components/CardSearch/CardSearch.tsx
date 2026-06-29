@@ -1,7 +1,13 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { Card, CustomEffect, Player, CardPile } from '../../types/GameTypes'
 import { getSelectableDeckCards } from '../../utils/playAreaDisplay'
+import { blobMatchesSearchTokens, parseSearchTokens } from '../../utils/searchTokens'
 import { PLAY_EFFECT_TEXTS, REVEAL_EFFECT_TEXTS } from '../../data/effectTexts'
+import {
+  canConfirmGraftHandSelection,
+  graftHandSelectionPreviewSlots,
+  shouldPickGraftPartnerSlot,
+} from '../../expansions/immortality/graft'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import './CardSearch.css'
@@ -57,14 +63,6 @@ function buildCardSearchBlob(card: Card): string {
   if (card.cost != null) chunks.push(String(card.cost))
   if (card.agentIcons.length) chunks.push(...card.agentIcons)
   return chunks.join(' ').toLowerCase()
-}
-
-function parseSearchTokens(search: string): string[] {
-  return search.trim().toLowerCase().split(/\s+/).filter(Boolean)
-}
-
-function cardMatchesTokens(blob: string, tokens: string[], matchAll: boolean): boolean {
-  return matchAll ? tokens.every(token => blob.includes(token)) : tokens.some(token => blob.includes(token))
 }
 
 type GridItemPlayability = { playable: boolean; reason?: string }
@@ -168,6 +166,8 @@ interface CardSearchProps {
   embedded?: boolean
   /** Allow confirming without filling every selection slot (for open-ended pile picks). */
   allowPartialSelection?: boolean
+  /** Immortality — agent turn: pick a graft card plus optional partner from hand. */
+  graftPairSelection?: boolean
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({
@@ -192,6 +192,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
   playabilityInvalidateKey,
   embedded = false,
   allowPartialSelection = false,
+  graftPairSelection = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectionSlots, setSelectionSlots] = useState<(Card | null)[]>([])
@@ -202,7 +203,11 @@ const CardSearch: React.FC<CardSearchProps> = ({
   getCardPlayabilityRef.current = getCardPlayability
 
   const showPreview =
-    showSelectionPreview ?? (selectionCount > 1 || Boolean(onSelectionChange))
+    showSelectionPreview ?? (selectionCount > 1 || Boolean(onSelectionChange) || graftPairSelection)
+  const slotCapacity = graftPairSelection ? 2 : selectionCount
+  const previewSlotCount = graftPairSelection
+    ? graftHandSelectionPreviewSlots(selectionSlots)
+    : selectionCount
   const searchAtBottom = showPreview || Boolean(slotBetweenCardsAndSearch)
   const isStandaloneModal = !embedded
   const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(
@@ -222,8 +227,8 @@ const CardSearch: React.FC<CardSearchProps> = ({
 
   const buildSlots = useCallback(
     (initial: Card[]) =>
-      Array.from({ length: selectionCount }, (_, index) => initial[index] ?? null),
-    [selectionCount]
+      Array.from({ length: slotCapacity }, (_, index) => initial[index] ?? null),
+    [slotCapacity]
   )
 
   const filledCards = useCallback(
@@ -233,17 +238,26 @@ const CardSearch: React.FC<CardSearchProps> = ({
 
   const normalizeSlots = useCallback(
     (slots: (Card | null)[]) =>
-      slots.length === selectionCount
+      slots.length === slotCapacity
         ? [...slots]
-        : Array.from({ length: selectionCount }, (_, index) => slots[index] ?? null),
-    [selectionCount]
+        : Array.from({ length: slotCapacity }, (_, index) => slots[index] ?? null),
+    [slotCapacity]
   )
+
+  const selectedCards = useMemo(() => filledCards(selectionSlots), [filledCards, selectionSlots])
+  const graftConfirmEnabled =
+    graftPairSelection && !isRevealTurn && canConfirmGraftHandSelection(selectedCards)
+  const confirmEnabled =
+    allowPartialSelection ||
+    (graftPairSelection && !isRevealTurn
+      ? graftConfirmEnabled
+      : selectedCards.length === selectionCount)
 
   useEffect(() => {
     if (!isOpen) return
 
     setSelectionSlots(buildSlots(initialSelectedCards))
-  }, [buildSlots, initialSelectedCards, isOpen, selectionCount])
+  }, [buildSlots, initialSelectedCards, isOpen, slotCapacity])
 
   useEffect(() => {
     if (!isOpen) return
@@ -305,7 +319,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
     const match = (matchAll: boolean) =>
       availableCards.filter(card => {
         const blob = searchBlobById.get(card.id)
-        return blob ? cardMatchesTokens(blob, tokens, matchAll) : false
+        return blob ? blobMatchesSearchTokens(blob, tokens, matchAll) : false
       })
 
     const andMatches = match(true)
@@ -338,6 +352,37 @@ const CardSearch: React.FC<CardSearchProps> = ({
 
     setSelectionSlots(prev => {
       const slots = normalizeSlots(prev)
+
+      if (graftPairSelection && !isRevealTurn) {
+        const existingIndex = slots.findIndex(slot => slot?.id === card.id)
+        if (existingIndex !== -1) {
+          if (existingIndex === 0) {
+            slots.fill(null)
+          } else {
+            slots[existingIndex] = null
+          }
+          return slots
+        }
+
+        const first = slots[0]
+        const second = slots[1]
+        if (!first) {
+          slots[0] = card
+        } else if (!second && shouldPickGraftPartnerSlot(first, card)) {
+          slots[1] = card
+        } else if (second) {
+          if (shouldPickGraftPartnerSlot(first, card)) {
+            slots[1] = card
+          } else {
+            slots[0] = card
+            slots[1] = null
+          }
+        } else {
+          slots[0] = card
+        }
+        return slots
+      }
+
       if (!isRevealTurn) {
         slots.fill(null)
         slots[0] = card
@@ -354,7 +399,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
       }
       return slots
     })
-  }, [filledCards, isRevealTurn, normalizeSlots])
+  }, [filledCards, graftPairSelection, isRevealTurn, normalizeSlots])
 
   const handleRemoveFromPreview = useCallback((slotIndex: number) => {
     setSelectionSlots(prev => {
@@ -367,7 +412,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
 
   const handleConfirm = () => {
     const selected = filledCards(selectionSlots)
-    if (allowPartialSelection || selected.length === selectionCount) {
+    if (confirmEnabled) {
       onSelect(selected)
       setSelectionSlots(buildSlots([]))
       setSearchTerm('')
@@ -392,7 +437,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
 
   const selectionPreview = showPreview ? (
     <div className="card-search-selection-preview" aria-label="Selected cards">
-      {Array.from({ length: selectionCount }, (_, index) => {
+      {Array.from({ length: previewSlotCount }, (_, index) => {
         const card = selectionSlots[index] ?? null
         return (
           <button
@@ -407,7 +452,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
             aria-label={
               card
                 ? `Remove ${card.name} from selection`
-                : `Empty slot ${index + 1} of ${selectionCount}`
+                : `Empty slot ${index + 1} of ${previewSlotCount}`
             }
           >
             {card?.image ? (
@@ -451,9 +496,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
         type="button"
         className="header-confirm-button"
         onClick={handleConfirm}
-        disabled={
-          !allowPartialSelection && filledCards(selectionSlots).length !== selectionCount
-        }
+        disabled={!confirmEnabled}
       >
         Select
       </button>
@@ -484,7 +527,11 @@ const CardSearch: React.FC<CardSearchProps> = ({
             key={`${card.id}-${index}`}
             card={card}
             isSelected={
-              isRevealTurn ? selectionSlots.some(slot => slot === card) : selectionSlots[0] === card
+              graftPairSelection && !isRevealTurn
+                ? selectionSlots.some(slot => slot?.id === card.id)
+                : isRevealTurn
+                  ? selectionSlots.some(slot => slot === card)
+                  : selectionSlots[0] === card
             }
             playability={
               getCardPlayability ? playabilityByCardId.get(card.id) ?? PLAYABLE_CARD : PLAYABLE_CARD

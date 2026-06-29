@@ -25,9 +25,9 @@
     "deckPatches": {
       "starting": {
         "append": [
-          "starting/power-play",
-          "starting/power-play",
-          "starting/power-play"
+          "imperium/power-play",
+          "imperium/power-play",
+          "imperium/power-play"
         ]
       }
     }

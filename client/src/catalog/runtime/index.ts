@@ -28,9 +28,9 @@ export const ARRAKIS_LIAISON_DECK: Card[] = buildPoolDeck('arrakis-liaison')
 export const SPICE_MUST_FLOW_DECK: Card[] = buildPoolDeck('spice-must-flow')
 export const FOLDSPACE_DECK: Card[] = buildPoolDeck('foldspace')
 
-/** Unique imperium templates (base game only — excludes Rise of Ix). */
+/** Unique imperium templates (base game only — excludes Rise of Ix and Immortality). */
 export const IMPERIUM_ROW_DECK: Card[] = cardsCatalog.cards
-  .filter(card => card.pool === 'imperium' && !card.riseOfIx)
+  .filter(card => card.pool === 'imperium' && !card.riseOfIx && !card.immortality)
   .map(card => runtime.resolveCatalogCardIds([card.id])[0])
 
 export const ALL_IMPERIUM_ROW_CARDS: Card[] = [...IMPERIUM_ROW_DECK]
@@ -38,6 +38,13 @@ export const ALL_IMPERIUM_ROW_CARDS: Card[] = [...IMPERIUM_ROW_DECK]
 export function buildImperiumDeck(expansions: Expansions = NO_EXPANSIONS): Card[] {
   return runtime.buildImperiumDeck(expansions)
 }
+
+/** Immortality Tleilaxu Row pool (acquired with specimens; not shuffled into the Imperium deck). */
+export function buildTleilaxuPool(): Card[] {
+  return runtime.buildTleilaxuPool()
+}
+
+export const TLEILAXU_POOL: Card[] = buildTleilaxuPool()
 
 export const BOARD_SPACES: SpaceProps[] = runtime.boardSpaces
 export const CONFLICTS = runtime.conflicts

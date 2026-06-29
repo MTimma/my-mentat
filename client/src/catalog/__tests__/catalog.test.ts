@@ -5,6 +5,7 @@ import { BOARD_SPACES } from '../../data/boardSpaces'
 import { CONFLICTS, RISE_OF_IX_CONFLICTS } from '../../data/conflicts'
 import { intrigueCards } from '../../data/intrigueCards'
 import { RISE_OF_IX_INTRIGUE_CARDS } from '../../data/intrigueCards'
+import { IMMORTALITY_INTRIGUE_CARDS } from '../../data/intrigueCardsImmortality'
 import { LEADERS, RISE_OF_IX_LEADERS } from '../../data/leaders'
 import { TECH_TILES } from '../../data/techTiles'
 
@@ -46,6 +47,15 @@ describe('published id catalog', () => {
     }
     expect(catalog.decks.starting).toHaveLength(STARTING_DECK.length)
     expect(catalog.decks.imperium).toHaveLength(IMPERIUM_ROW_DECK.length)
+  })
+
+  it('base imperium deck has official copy counts for key cards', () => {
+    const count = (name: string) => IMPERIUM_ROW_DECK.filter(c => c.name === name).length
+    expect(count('Power Play')).toBe(3)
+    expect(count('Fremen Camp')).toBe(2)
+    expect(count('The Voice')).toBe(2)
+    expect(count('Shifting Allegiances')).toBe(2)
+    expect(count('Scout')).toBe(2)
   })
 
   // NOTE: authored numeric ids in cards.ts are NOT unique across (or even
@@ -105,10 +115,10 @@ describe('published id catalog', () => {
       CONFLICTS.length + RISE_OF_IX_CONFLICTS.length
     )
 
-    expect(catalog.intrigue).toHaveLength(intrigueCards.length + RISE_OF_IX_INTRIGUE_CARDS.length)
-    expect(new Set(catalog.intrigue.map(i => i.id)).size).toBe(
-      intrigueCards.length + RISE_OF_IX_INTRIGUE_CARDS.length
-    )
+    const totalIntrigue =
+      intrigueCards.length + RISE_OF_IX_INTRIGUE_CARDS.length + IMMORTALITY_INTRIGUE_CARDS.length
+    expect(catalog.intrigue).toHaveLength(totalIntrigue)
+    expect(new Set(catalog.intrigue.map(i => i.id)).size).toBe(totalIntrigue)
 
     expect(catalog.leaders).toHaveLength(LEADERS.length + RISE_OF_IX_LEADERS.length)
     expect(new Set(catalog.leaders.map(l => l.id)).size).toBe(

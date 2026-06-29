@@ -28,7 +28,7 @@ describe('tessia turn 7 water (save replay)', () => {
   it('applies Water of Life cost on turn 7', () => {
     const initial = buildInitialState(doc.setup)
     const turn7Start = doc.events.findIndex(
-      e => e.a.type === 'PLAY_CARD' && e.a.cardId === 1040000001
+      e => e.a.type === 'PLAY_CARD' && e.a.cardId === 1042000001
     )
     const beforeIntrigue = doc.events.slice(0, turn7Start + 8)
     const afterIntrigue = [...beforeIntrigue, { a: { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 30 } }]

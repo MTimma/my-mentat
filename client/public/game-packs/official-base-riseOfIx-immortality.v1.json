@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "official/base+riseOfIx+immortality",
+  "version": 1,
+  "label": "Base + Rise of Ix + Immortality",
+  "catalogVersion": 1,
+  "extends": "official/base+riseOfIx@1",
+  "structure": {
+    "expansions": {
+      "riseOfIx": true,
+      "riseOfIxEpic": false,
+      "immortality": true
+    },
+    "boardSet": "imperium",
+    "playerMode": "standard"
+  },
+  "overrides": {
+    "effects": {},
+    "cards": {},
+    "boardSpaces": {},
+    "intrigue": {},
+    "conflicts": {}
+  },
+  "additions": {
+    "cards": [],
+    "intrigue": [],
+    "deckPatches": {
+      "starting": {
+        "replace": {
+          "starting/dune-the-desert-planet": "starting/experimentation"
+        }
+      }
+    }
+  }
+}

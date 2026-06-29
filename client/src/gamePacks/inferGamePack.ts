@@ -2,7 +2,9 @@ import type { SetupBlock } from '../save/types'
 import {
   DEFAULT_GAME_PACK_ID,
   GAME_PACK_STORAGE_KEY,
+  OFFICIAL_BASE_IMMORTALITY_PACK,
   OFFICIAL_BASE_PACK,
+  OFFICIAL_BASE_RISE_OF_IX_IMMORTALITY_PACK,
   OFFICIAL_BASE_RISE_OF_IX_PACK,
 } from './constants'
 import { getGamePackManifest } from './registry'
@@ -13,7 +15,15 @@ export function inferGamePackId(setup: Pick<SetupBlock, 'gamePackId' | 'expansio
   if (setup.gamePackId) {
     return setup.gamePackId
   }
-  if (setup.expansions?.riseOfIx) {
+  const riseOfIx = setup.expansions?.riseOfIx
+  const immortality = setup.expansions?.immortality
+  if (riseOfIx && immortality) {
+    return OFFICIAL_BASE_RISE_OF_IX_IMMORTALITY_PACK
+  }
+  if (immortality) {
+    return OFFICIAL_BASE_IMMORTALITY_PACK
+  }
+  if (riseOfIx) {
     return OFFICIAL_BASE_RISE_OF_IX_PACK
   }
   return OFFICIAL_BASE_PACK

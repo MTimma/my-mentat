@@ -28,6 +28,7 @@ export {
   TESSIA_PARKED_SNOOPER_SLOTS,
 } from './leaderAbilities/tessiaSnoopers'
 export {
+  foldspaceDeckCountPoint,
   mentatAvailabilityPoint,
   swordmasterEligibilityPoint,
 } from './boardHotspots'
@@ -113,6 +114,8 @@ export const CONFLICT_CARD_RECT = {
 /**
  * Combat conflict rings (inner %, ring center). 2×2 on crossed swords:
  * Clockwise: red TL, green TR, yellow BR, blue BL. Tune with ?markerDebug=1.
+ *
+ * Used for marker debug only. Live combat UI seats players by `COMBAT_AREA_SEATS` (player id).
  */
 export const COMBAT_RING_ANCHORS: Record<PlayerColor, { x: number; y: number }> = {
   [PlayerColor.RED]: { x: 55, y: 60 },
@@ -120,6 +123,15 @@ export const COMBAT_RING_ANCHORS: Record<PlayerColor, { x: number; y: number }> 
   [PlayerColor.YELLOW]: { x: 85, y: 80 },
   [PlayerColor.BLUE]: { x: 55, y: 80 },
 }
+
+/**
+ * Combat grid seat slots by player id (2×2). Left column top/bottom, right column top/bottom.
+ * Matches default colors at each seat: P1 red TL, P2 green TR, P3 yellow BR, P4 blue BL.
+ */
+export const COMBAT_AREA_SEATS: number[][] = [
+  [0, 3],
+  [1, 2],
+]
 
 /** Bounding box for the merged combat-area cluster (inner %). Tune with ?markerDebug=1. */
 export const COMBAT_AREA_BOUNDS = {

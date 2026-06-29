@@ -57,14 +57,14 @@ describe('mergeCatalogOverlay', () => {
         ...pack.additions,
         deckPatches: {
           starting: {
-            append: ['starting/power-play', 'starting/power-play', 'starting/power-play'],
+            append: ['imperium/power-play', 'imperium/power-play', 'imperium/power-play'],
           },
         },
       },
     }
     const merged = mergeCatalogOverlay(baseSlices, withPatch)
-    const powerPlayCount = merged.decks.starting.filter(id => id === 'starting/power-play').length
-    expect(powerPlayCount).toBe(4)
+    const powerPlayCount = merged.decks.starting.filter(id => id === 'imperium/power-play').length
+    expect(powerPlayCount).toBe(3)
   })
 
   it('applies effect reward overrides', () => {

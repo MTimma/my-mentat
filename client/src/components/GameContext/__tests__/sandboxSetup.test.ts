@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { applyGameAction, getFreshDefaultGameState } from '../GameContext'
 import { CONFLICTS } from '../../../data/conflicts'
-import { LEADERS } from '../../../data/leaders'
+import { LEADERS, LEADER_NAMES, RISE_OF_IX_LEADERS } from '../../../data/leaders'
 import { TechTileId } from '../../../data/techTiles'
 import { buildIxBoardFromFaceUpTiles, buildIxBoardFromSandboxStackTops } from '../riseOfIxReducer'
-import { ControlMarkerType, FactionType, GamePhase, NO_EXPANSIONS, type GameState } from '../../../types/GameTypes'
+import {
+  ControlMarkerType,
+  FactionType,
+  GamePhase,
+  NO_EXPANSIONS,
+  PlayerColor,
+  type GameState,
+} from '../../../types/GameTypes'
+import { buildInitialState } from '../../../save/buildInitialState'
 import { makePlayer, stubDeckCard } from './_helpers'
 
 function getSandboxSetupState(): GameState {
@@ -115,6 +123,31 @@ describe('Sandbox setup turn', () => {
     })
     expect(s.players[0].spice).toBe(1)
     expect(s.players[0].solari).toBe(1)
+  })
+
+  it('SANDBOX_UPDATE_PLAYER sets Yuna to 0 water when leader changes', () => {
+    const yuna = RISE_OF_IX_LEADERS.find(l => l.name === LEADER_NAMES.PRINCESS_YUNA_MORITANI)!
+    const other = LEADERS[0]
+    let s = getSandboxSetupState()
+    s = {
+      ...s,
+      players: [makePlayer(0, { leader: other, water: 1 })],
+    }
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 0,
+      patch: { leader: yuna },
+    })
+    expect(s.players[0].leader.name).toBe(yuna.name)
+    expect(s.players[0].water).toBe(0)
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 0,
+      patch: { leader: other },
+    })
+    expect(s.players[0].water).toBe(1)
   })
 
   it('SANDBOX_UPDATE_PLAYER leader change includes explicit spice/solari without double-adjusting', () => {
@@ -643,5 +676,72 @@ describe('Sandbox setup turn', () => {
     const allIds = board.stacks.flat()
     expect(allIds).toHaveLength(18)
     expect(new Set(allIds).size).toBe(18)
+  })
+
+  it('SANDBOX_UPDATE_PLAYER grants Hudro starting intrigue when leader changes', () => {
+    const hudro = RISE_OF_IX_LEADERS.find(l => l.name === LEADER_NAMES.VISCOUNT_HUDRO_MORITANI)!
+    let s = {
+      ...getSandboxSetupState(),
+      players: [makePlayer(0, { intrigueCount: 0 }), makePlayer(1, { intrigueCount: 0 })],
+    }
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 0,
+      patch: { leader: hudro },
+    })
+    expect(s.players[0].intrigueCount).toBe(1)
+  })
+
+  it('SANDBOX_UPDATE_PLAYER swaps colors when picking another player color', () => {
+    let s = getSandboxSetupState()
+    const p0Color = s.players[0].color
+    const p1Color = s.players[1].color
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 0,
+      patch: { color: p1Color },
+    })
+    expect(s.players[0].color).toBe(p1Color)
+    expect(s.players[1].color).toBe(p0Color)
+  })
+
+  it('SANDBOX_UPDATE_PLAYER swaps leaders when picking another player leader', () => {
+    const beast = LEADERS.find(l => l.name.includes('Beast'))!
+    const other = LEADERS.find(l => !l.name.includes('Beast'))!
+    let s = {
+      ...getSandboxSetupState(),
+      players: [
+        makePlayer(0, { leader: beast, spice: 5, solari: 10 }),
+        makePlayer(1, { leader: other, spice: 10, solari: 20 }),
+      ],
+    }
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 0,
+      patch: { leader: other },
+    })
+    expect(s.players[0].leader.name).toBe(other.name)
+    expect(s.players[1].leader.name).toBe(beast.name)
+    expect(s.players[0].spice).toBe(4)
+    expect(s.players[1].spice).toBe(11)
+  })
+
+  it('sandbox genesis gives Hudro 1 intrigue from setup block', () => {
+    const state = buildInitialState({
+      firstPlayer: 0,
+      gamePackId: 'official/base+riseOfIx@1',
+      sandbox: true,
+      expansions: { riseOfIx: true, immortality: false },
+      players: [
+        {
+          id: 0,
+          leaderId: 'viscount-hudro-moritani',
+          color: PlayerColor.RED,
+          deckCardIds: [],
+        },
+      ],
+      imperiumRowDeckCardIds: [],
+    })
+    expect(state.players[0].intrigueCount).toBe(1)
   })
 })

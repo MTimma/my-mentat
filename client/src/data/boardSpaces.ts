@@ -1,5 +1,8 @@
 import { SpaceProps, AgentIcon, FactionType, ControlMarkerType, MakerSpace, CustomEffect } from '../types/GameTypes'
 
+/** Spacing Guild board space where players acquire a Foldspace card. */
+export const FOLDSPACE_BOARD_SPACE_ID = 16
+
 export const BOARD_SPACES: SpaceProps[] = [
 
   {
@@ -83,7 +86,7 @@ export const BOARD_SPACES: SpaceProps[] = [
 
 
   {
-    id: 16,
+    id: FOLDSPACE_BOARD_SPACE_ID,
     name: "Foldspace",
     conflictMarker: false,
     agentIcon: AgentIcon.SPACING_GUILD,

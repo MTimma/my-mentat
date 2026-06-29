@@ -1,5 +1,6 @@
 import React, { useMemo, useState, type RefObject } from 'react'
-import { GameState, PlayerColor, type Player } from '../../types/GameTypes'
+import { GameState, type Player } from '../../types/GameTypes'
+import { COMBAT_AREA_SEATS } from '../../data/boardMarkerAnchors'
 import { getLeaderImage } from '../../data/leaders'
 import { isTessiaLeader } from '../../data/leaderAbilities/tessiaSnoopers'
 import AgentIcon from '../AgentIcon/AgentIcon'
@@ -26,7 +27,7 @@ function resourceCellsFor(riseOfIx: boolean): ResourceDef[] {
       key: 'agents',
       title: 'Agents remaining',
       renderIcon: player => (
-        <AgentIcon playerId={player.id} className="combat-area-cluster__agent-icon" />
+        <AgentIcon playerId={player.id} color={player.color} className="combat-area-cluster__agent-icon" />
       ),
       getValue: player => player.agents,
     },
@@ -44,6 +45,7 @@ function resourceCellsFor(riseOfIx: boolean): ResourceDef[] {
       renderIcon: player => (
         <DreadnoughtIcon
           playerId={player.id}
+          color={player.color}
           className="combat-area-cluster__icon combat-area-cluster__icon--dreadnought"
         />
       ),
@@ -52,11 +54,8 @@ function resourceCellsFor(riseOfIx: boolean): ResourceDef[] {
   ]
 }
 
-/** Left / right columns: red+blue, green+yellow — stats sit under each leader. */
-const COMBAT_AREA_COLUMNS: PlayerColor[][] = [
-  [PlayerColor.RED, PlayerColor.BLUE],
-  [PlayerColor.GREEN, PlayerColor.YELLOW],
-]
+/** Left / right columns: P1+P4, P2+P3 — stats sit under each leader. Seat order is by player id. */
+const COMBAT_AREA_COLUMNS = COMBAT_AREA_SEATS
 
 function renderResourceCell(resource: ResourceDef, player: Player) {
   return (
@@ -269,7 +268,8 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   'data-marker': dataMarker,
 }) => {
   const [detailPlayer, setDetailPlayer] = useState<Player | null>(null)
-  const playerByColor = new Map(players.map(p => [p.color, p]))
+  const playerById = new Map(players.map(p => [p.id, p]))
+  const activePlayerColor = playerById.get(activePlayerId)?.color
 
   const deployStripVisible = Boolean(
     (troopDeploy &&
@@ -307,18 +307,18 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
       >
         <div className="combat-area-cluster-stack">
           <div className="combat-area-cluster combat-area-cluster--with-status-inline">
-            {COMBAT_AREA_COLUMNS.map((columnColors, columnIndex) => (
+            {COMBAT_AREA_COLUMNS.map((columnPlayerIds, columnIndex) => (
               <div key={columnIndex} className="combat-area-cluster__column">
-                {columnColors.map(color => {
-                  const player = playerByColor.get(color)
+                {columnPlayerIds.map(playerId => {
+                  const player = playerById.get(playerId)
                   if (!player) return null
 
                   return (
                     <div
-                      key={color}
+                      key={playerId}
                       className={[
                         'combat-area-cluster__seat',
-                        `combat-area-cluster__seat--${color}`,
+                        `combat-area-cluster__seat--${player.color}`,
                       ].join(' ')}
                     >
                       <PlayerQuadrant
@@ -354,6 +354,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
               {troopDeploy ? (
                 <CombatTroopControls
                   {...troopDeploy}
+                  playerColor={activePlayerColor}
                   className="combat-deploy-dock__controls"
                 />
               ) : null}
@@ -361,6 +362,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 <CombatTroopControls
                   variant="dreadnought"
                   playerId={activePlayerId}
+                  playerColor={activePlayerColor}
                   canDeploy={dreadnoughtDeploy.canDeploy}
                   deployableTroops={dreadnoughtDeploy.deployableDreadnoughts}
                   deployedThisTurn={dreadnoughtDeploy.deployedThisTurn}
@@ -374,6 +376,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 <CombatTroopControls
                   variant="negotiator"
                   playerId={activePlayerId}
+                  playerColor={activePlayerColor}
                   canDeploy={negotiatorDeploy.canDeploy}
                   deployableTroops={negotiatorDeploy.deployableNegotiators}
                   deployedThisTurn={negotiatorDeploy.deployedThisTurn}

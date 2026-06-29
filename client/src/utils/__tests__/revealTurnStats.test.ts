@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { AgentIcon, GainSource, RewardType, TurnType, type Card, type GameState } from '../../types/GameTypes'
-import { getRevealTurnStats, resolvePlayedCardForTurn, revealTurnStatsHasContent } from '../revealTurnStats'
+import { getAcquiredTechTilesForTurn, getRevealTurnStats, resolvePlayedCardForTurn, resolvePlayedCardsForTurn, revealTurnStatsHasContent } from '../revealTurnStats'
+import { TechTileId } from '../../data/techTiles'
 
 function stubCard(id: number, name: string, image = `/cards/${id}.png`): Card {
   return { id, name, image, agentIcons: [AgentIcon.CITY], cost: 2 }
@@ -133,5 +134,72 @@ describe('revealTurnStats', () => {
     } as unknown as GameState
 
     expect(resolvePlayedCardForTurn(state)).toEqual(seekAllies)
+  })
+
+  it('resolvePlayedCardsForTurn returns both graft pair cards', () => {
+    const graftCard = stubCard(11, 'Gene Splicing')
+    const partner = stubCard(12, 'Face Dancer')
+    const state = {
+      currentRound: 1,
+      expansions: { immortality: true },
+      graftPair: { cardIds: [graftCard.id, partner.id] },
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        cardId: graftCard.id,
+        agentSpaceId: 3,
+      },
+      players: [
+        {
+          id: 0,
+          deck: [],
+          discardPile: [],
+          playArea: [graftCard, partner],
+          trash: [],
+          handCount: 3,
+        },
+      ],
+    } as unknown as GameState
+
+    expect(resolvePlayedCardsForTurn(state).map(c => c.id)).toEqual([graftCard.id, partner.id])
+  })
+
+  it('tracks acquired Ix tech tiles on agent turns', () => {
+    const state = {
+      currentRound: 1,
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        acquiredTechTiles: [
+          {
+            id: TechTileId.MEMOCORDERS,
+            name: 'Memocorders',
+            image: '/technologies/rise_of_ix/memocorders.png',
+            cost: 2,
+          },
+        ],
+      },
+      gains: [
+        {
+          playerId: 0,
+          round: 1,
+          sourceId: 0,
+          name: 'Memocorders',
+          amount: 1,
+          type: RewardType.TECH,
+          source: GainSource.IX_BOARD,
+        },
+      ],
+      players: [{ id: 0 }],
+    } as unknown as GameState
+
+    const tiles = getAcquiredTechTilesForTurn(state, 0)
+    expect(tiles).toHaveLength(1)
+    expect(tiles[0].id).toBe(TechTileId.MEMOCORDERS)
+    const stats = getRevealTurnStats({
+      ...state,
+      currTurn: { ...state.currTurn!, type: TurnType.REVEAL },
+    }, 0)
+    expect(stats?.acquiredTechTiles).toHaveLength(1)
   })
 })

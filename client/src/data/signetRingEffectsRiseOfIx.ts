@@ -1,8 +1,6 @@
 import {
-  ChoiceType,
   CustomEffect,
   FactionType,
-  FixedOptionsChoice,
   GainSource,
   OptionalEffect,
 } from '../types/GameTypes'
@@ -59,27 +57,20 @@ export const RISE_OF_IX_SIGNET_RING_EFFECTS: Record<
     ],
   }),
 
-  [LEADER_NAMES.PRINCESS_YUNA_MORITANI]: (ctx) => {
-    const choiceId = mintId(ctx.state, { type: GainSource.CARD, id: ctx.card.id }, 'SIGNET')
-    const choice: FixedOptionsChoice = {
-      id: choiceId,
-      type: ChoiceType.FIXED_OPTIONS,
-      prompt: '7 Solari → +1 influence, +1 spice, +1 troop',
-      source: SIGNET_RING_SOURCE,
-      options: [
-        {
-          cost: { solari: 7 },
-          reward: {
-            troops: 1,
-            spice: 1,
-            influence: { chooseOne: true, amounts: ALL_FACTION_AMOUNTS },
-          },
-          rewardLabel: 'Pay 7 Solari',
+  [LEADER_NAMES.PRINCESS_YUNA_MORITANI]: (ctx) => ({
+    optionalEffects: [
+      {
+        id: mintId(ctx.state, { type: GainSource.CARD, id: ctx.card.id }, 'SIGNET'),
+        cost: { solari: 7 },
+        reward: {
+          troops: 1,
+          spice: 1,
+          influence: { chooseOne: true, amounts: ALL_FACTION_AMOUNTS },
         },
-      ],
-    }
-    return { pendingChoices: [choice] }
-  },
+        source: SIGNET_RING_SOURCE,
+      },
+    ],
+  }),
 
   [LEADER_NAMES.ARCHDUKE_ARMAND_ECAZ]: (ctx) => ({
     pendingChoices: [buildArmandSignetAcquireChoice(ctx.state, ctx.playerId, ctx.card)],

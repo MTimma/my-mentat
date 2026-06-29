@@ -43,10 +43,23 @@ export function getFactionBumpIcon(faction: FactionType): string {
 
 const FACTION_VALUES = new Set<string>(Object.values(FactionType))
 
-/** Parses faction id from an influence gain name (`emperor`, `emperor Acquire`, etc.). */
+/** Parses faction id from an influence gain name (`emperor`, `emperor Acquire`, `Skirmish - 1st place|spacing-guild`, etc.). */
 export function factionFromInfluenceGainName(name: string): FactionType | null {
+  const pipe = name.indexOf('|')
+  if (pipe >= 0) {
+    const faction = name.slice(pipe + 1)
+    return FACTION_VALUES.has(faction) ? (faction as FactionType) : null
+  }
   const base = name.endsWith(' Acquire') ? name.slice(0, -' Acquire'.length) : name
   return FACTION_VALUES.has(base) ? (base as FactionType) : null
+}
+
+/** Conflict influence choice: embed placement title + faction in one gain name for history display. */
+export function conflictInfluenceGainName(
+  placementTitle: string,
+  faction: FactionType
+): string {
+  return `${placementTitle}|${faction}`
 }
 
 /** Builds influence amounts for rendering faction / any-faction bump icons from a gain row. */

@@ -2,11 +2,12 @@ import React, { useMemo, useState } from 'react'
 import type { TechTileId } from '../../data/techTiles'
 import { getTechTile } from '../../data/techTiles'
 import type { Player } from '../../types/GameTypes'
-import { effectiveTechCost } from '../../utils/techTiles'
+import { effectiveTechCost, techTilesAvailableForNextReveal } from '../../utils/techTiles'
 import './TechMarketRow.css'
 
 export interface TechMarketRowProps {
   stacks: TechTileId[][]
+  players: Player[]
   player: Player
   discount: number
   paySolariInsteadOfSpice?: boolean
@@ -20,12 +21,13 @@ export interface TechMarketRowProps {
 type AcquireStep = {
   stackIndex: number
   acquiredTileId: TechTileId
-  faceDownIds: TechTileId[]
+  availableIds: TechTileId[]
   negotiatorsReturned: number
 }
 
 const TechMarketRow: React.FC<TechMarketRowProps> = ({
   stacks,
+  players,
   player,
   discount,
   paySolariInsteadOfSpice = false,
@@ -61,16 +63,16 @@ const TechMarketRow: React.FC<TechMarketRowProps> = ({
     const cost = effectiveTechCost(tile.cost, discount, clampedReturn)
     if (currency < cost) return
 
-    const faceDownIds = stack.slice(1)
-    if (faceDownIds.length <= 1) {
-      onAcquire(stackIndex, clampedReturn, faceDownIds[0])
+    const availableIds = techTilesAvailableForNextReveal(stacks, players, faceUpId)
+    if (availableIds.length <= 1) {
+      onAcquire(stackIndex, clampedReturn, availableIds[0])
       return
     }
 
     setAcquireStep({
       stackIndex,
       acquiredTileId: faceUpId,
-      faceDownIds,
+      availableIds,
       negotiatorsReturned: clampedReturn,
     })
     setSelectedNextTileId(null)
@@ -100,7 +102,7 @@ const TechMarketRow: React.FC<TechMarketRowProps> = ({
         </div>
         <p className="tech-market-section__hint">Pick which tile to reveal on stack {acquireStep.stackIndex + 1}.</p>
         <div className="tech-market-section__stacks" role="listbox" aria-label="Next face-up tile">
-          {acquireStep.faceDownIds.map(tileId => {
+          {acquireStep.availableIds.map(tileId => {
             const tile = getTechTile(tileId)
             if (!tile) return null
             const selected = selectedNextTileId === tileId

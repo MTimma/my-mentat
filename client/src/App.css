@@ -87,6 +87,26 @@
 .imperium-row-container__main {
   flex: 1 1 auto;
   min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.imperium-row-container__main > .imperium-section:not(.immortality-row) {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: auto;
+  max-width: none;
+}
+
+.imperium-row-container__main > .immortality-row {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.imperium-row-container__main > .family-atomics-button {
+  flex: 0 0 auto;
 }
 
 /* Playing surface: keep the board at its natural image size so marker coordinates stay aligned. */
@@ -742,19 +762,19 @@ body:has(.game-container--play) {
   border-bottom: 17px solid;
 }
 
-.agent-marker.player-1 {
+.agent-marker.player-red {
   border-bottom-color: #d32f2f;
 }
 
-.agent-marker.player-2 {
+.agent-marker.player-green {
   border-bottom-color: #388e3c;
 }
 
-.agent-marker.player-3 {
+.agent-marker.player-yellow {
   border-bottom-color: #fbc02d;
 }
 
-.agent-marker.player-4 {
+.agent-marker.player-blue {
   border-bottom-color: #1976d2;
 }
 
@@ -1704,6 +1724,16 @@ body:has(.game-container--play) {
     gap: 6px;
   }
 
+  .imperium-row-container__main {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .imperium-row-container__main > .immortality-row {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .board-spaces {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     grid-auto-rows: minmax(40px, auto);
@@ -2205,6 +2235,20 @@ body:has(.game-container--play) {
     width: min(
       100%,
       calc(var(--play-board-max-edge, 72vh) + clamp(132px, 18vmin, 220px) + 12px)
+    );
+  }
+
+  .game-container--desktop-play.game-container--immortality-dock:not(.game-container--history-docked):not(.game-container--ix-dock) .play-board-column {
+    width: min(
+      100%,
+      calc(var(--play-board-max-edge, 72vh) + clamp(160px, 22vmin, 300px) + 12px)
+    );
+  }
+
+  .game-container--desktop-play.game-container--ix-dock.game-container--immortality-dock:not(.game-container--history-docked) .play-board-column {
+    width: min(
+      100%,
+      calc(var(--play-board-max-edge, 72vh) + clamp(132px, 22vmin, 300px) + 12px)
     );
   }
 

@@ -1,6 +1,6 @@
 import { IntrigueCard, CustomEffect, Expansions, NO_EXPANSIONS } from '../types/GameTypes'
 import { INTRIGUE_CARDS } from '../catalog/runtime'
-import { RISE_OF_IX_INTRIGUE_CARDS } from '../data/intrigueCards'
+import { RISE_OF_IX_INTRIGUE_CARDS, IMMORTALITY_INTRIGUE_CARDS } from '../data/intrigueCards'
 
 export { RISE_OF_IX_INTRIGUE_CARDS } from '../data/intrigueCards'
 
@@ -8,9 +8,10 @@ export { RISE_OF_IX_INTRIGUE_CARDS } from '../data/intrigueCards'
 export const intrigueCards: IntrigueCard[] = INTRIGUE_CARDS
 
 export function buildIntrigueDeck(expansions: Expansions = NO_EXPANSIONS): IntrigueCard[] {
-  return expansions.riseOfIx
-    ? [...INTRIGUE_CARDS, ...RISE_OF_IX_INTRIGUE_CARDS]
-    : [...INTRIGUE_CARDS]
+  const deck = [...INTRIGUE_CARDS]
+  if (expansions.riseOfIx) deck.push(...RISE_OF_IX_INTRIGUE_CARDS)
+  if (expansions.immortality) deck.push(...IMMORTALITY_INTRIGUE_CARDS)
+  return deck
 }
 
 export function ALL_INTRIGUE_CARDS(expansions: Expansions = NO_EXPANSIONS): IntrigueCard[] {

@@ -4,6 +4,7 @@ import { intrigueCardHasCustom, intrigueHasPhaseEffect } from '../../utils/intri
 import { isKwisatzHaderachCard, isKwisatzAgentSourceChoice } from '../../utils/kwisatzHaderach'
 import { FixedChoiceModal, useBoardScopedPortal } from '../BoardScopedModal'
 import CardSearch from '../CardSearch/CardSearch'
+import { immortalityGraftEnabled } from '../../expansions/immortality/graft'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { getLeaderIconPath } from '../../data/leaders'
 import { BOARD_SPACES } from '../../data/boardSpaces'
@@ -19,6 +20,7 @@ import TurnControlsTechRow from '../TurnControlsTechRow/TurnControlsTechRow'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import {
+  getAgentTurnCardsForDisplay,
   getPlayAreaCardsForTurnView,
   getOpponentDiscardableCards,
   getSelectableDeckCards,
@@ -57,6 +59,13 @@ import './TurnControls.css'
 interface TurnControlsProps {
   activePlayer: Player | null
   onPlayCard: (playerId: number, cardId: number, deckIndex?: number) => void
+  onCompleteGraftPair?: (
+    playerId: number,
+    primaryCardId: number,
+    primaryDeckIndex: number,
+    secondaryCardId: number,
+    secondaryDeckIndex: number,
+  ) => void
   onPlayIntrigue: (playerId: number, cardId: number, targetPlayerId?: number) => void
   onMobilizeGarrison?: (playerId: number, count: number) => void
   onPlayCombatIntrigue: (playerId: number, cardId: number) => void
@@ -112,6 +121,8 @@ interface TurnControlsProps {
   showEndTurnButton?: boolean
   showPassCombatButton?: boolean
   onEndTurn?: () => void
+  onRecallPlacedAgent?: () => void
+  onCancelGraftSelection?: () => void
   onPassCombat?: () => void
   onActivateTech?: (playerId: number, tileId: TechTileId) => void
   endTurnDisabled?: boolean
@@ -133,6 +144,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   activePlayer,
   canEndTurn,
   onPlayCard,
+  onCompleteGraftPair,
   onPlayIntrigue,
   onMobilizeGarrison,
   onPlayCombatIntrigue,
@@ -178,6 +190,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   showEndTurnButton = false,
   showPassCombatButton = false,
   onEndTurn,
+  onRecallPlacedAgent,
+  onCancelGraftSelection,
   onPassCombat,
   onActivateTech,
   endTurnDisabled = false,
@@ -392,10 +406,16 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     ? [...playedIntrigueStripCards, ...activeIntrigueThisRound]
     : playedIntrigueStripCards
   const playAreaIntriguePreviewIdsKeyEarly = playAreaIntrigueCards.map(c => c.id).join(',')
+  const pendingAgentTurnCards = getAgentTurnCardsForDisplay(
+    gameState,
+    activePlayer,
+    selectedCard ?? null,
+    { isRevealTurn }
+  )
   const playAreaPreviewIdsKeyEarly = activePlayer
     ? [
         ...activePlayer.playArea,
-        ...(selectedCard && !activePlayer.revealed && !isRevealTurn ? [selectedCard] : [])
+        ...pendingAgentTurnCards,
       ]
         .filter((card, index, cards) => cards.findIndex(c => c.id === card.id) === index)
         .map(c => c.id)
@@ -575,13 +595,60 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     setIsRevealTurn(true)
     setIsCardSelectionOpen(true)
   }
+  const graftPairSelection =
+    !isRevealTurn && immortalityGraftEnabled(gameState?.expansions)
+
+  const pendingGraftInitialCards = useMemo(() => {
+    const pending = gameState?.pendingGraftPartner
+    if (!pending || pending.requiresImperiumRow) return [] as Card[]
+    const deck = activePlayer.deck
+    const idx =
+      typeof pending.primaryDeckIndex === 'number' &&
+      deck[pending.primaryDeckIndex]?.id === pending.primaryCardId
+        ? pending.primaryDeckIndex
+        : deck.findIndex(c => c.id === pending.primaryCardId)
+    const card = idx >= 0 ? deck[idx] : deck.find(c => c.id === pending.primaryCardId)
+    return card ? [card] : []
+  }, [activePlayer.deck, gameState?.pendingGraftPartner])
+
+  useEffect(() => {
+    if (
+      gameState?.pendingGraftPartner &&
+      !gameState.pendingGraftPartner.requiresImperiumRow &&
+      !isHistoryView
+    ) {
+      setIsRevealTurn(false)
+      setIsCardSelectionOpen(true)
+    }
+  }, [gameState?.pendingGraftPartner, isHistoryView])
+
+  const deckIndexForCard = (card: Card): number => {
+    const idx = activePlayer.deck.indexOf(card)
+    return idx >= 0 ? idx : activePlayer.deck.findIndex(c => c.id === card.id)
+  }
+
   const handleCardSelection = (picked: Card[]) => {
     setIsCardSelectionOpen(false)
     if (isRevealTurn) {
       onReveal(activePlayer.id, picked.map(card => card.id))
       setIsRevealTurn(false)
+    } else if (
+      picked.length === 2 &&
+      picked.some(c => c.graft) &&
+      onCompleteGraftPair
+    ) {
+      const primaryIdx = deckIndexForCard(picked[0])
+      const secondaryIdx = deckIndexForCard(picked[1])
+      if (primaryIdx < 0 || secondaryIdx < 0) return
+      onCompleteGraftPair(
+        activePlayer.id,
+        picked[0].id,
+        primaryIdx,
+        picked[1].id,
+        secondaryIdx,
+      )
     } else if (picked.length === 1) {
-      const deckIndex = activePlayer.deck.indexOf(picked[0])
+      const deckIndex = deckIndexForCard(picked[0])
       onPlayCard(activePlayer.id, picked[0].id, deckIndex >= 0 ? deckIndex : undefined)
     }
   }
@@ -1020,6 +1087,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             <NegotiatorIcon
               key={index}
               playerId={activePlayer?.id ?? 0}
+              color={activePlayer?.color}
               size="lg"
               className="effect-token-icon"
             />
@@ -1104,7 +1172,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               {eligiblePlayers.map((p, idx) => (
                 <React.Fragment key={p.id}>
                   {idx > 0 && <span> </span>}
-                  <AgentIcon playerId={p.id} />
+                  <AgentIcon playerId={p.id} color={p.color} />
                 </React.Fragment>
               ))}
               <span>)</span>
@@ -2125,7 +2193,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         <span className="selected-card-action-label selected-card-action-label--play">{actionLabel}</span>
         <span className="selected-card-play-agent-badge" aria-hidden="true">
           <span className="selected-card-agent-badge">
-            <AgentIcon playerId={activePlayer.id} className="selected-card-agent-icon" />
+            <AgentIcon
+              playerId={activePlayer.id}
+              color={activePlayer.color}
+              className="selected-card-agent-icon"
+            />
             <span className="selected-card-agent-count">{activePlayer.agents}</span>
           </span>
         </span>
@@ -2375,9 +2447,17 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     ? getPlayAreaCardsForTurnView(gameState, activePlayer)
     : activePlayer.playArea
   ).filter(card => !trashedCardIds.has(card.id))
+  const pendingAgentTurnCardsForStrip = getAgentTurnCardsForDisplay(
+    gameState,
+    activePlayer,
+    selectedCard ?? null,
+    { isRevealTurn }
+  )
   const playAreaCards = [
     ...basePlayAreaCards,
-    ...(selectedCard && !activePlayer.revealed && !isRevealTurn ? [selectedCard] : [])
+    ...pendingAgentTurnCardsForStrip.filter(
+      card => !basePlayAreaCards.some(existing => existing.id === card.id)
+    ),
   ].filter((card, index, cards) => cards.findIndex(c => c.id === card.id) === index)
 
   const historicalRevealedCardIds =
@@ -2536,6 +2616,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       {!influenceBoardSelectionActive && placementPrompt ? (
         <div className="placement-prompt-banner" role="status" aria-live="polite">
           <span className="placement-prompt-banner__text">{placementPrompt}</span>
+          {onCancelGraftSelection ? (
+            <button type="button" className="placement-prompt-banner__action" onClick={onCancelGraftSelection}>
+              Cancel graft
+            </button>
+          ) : null}
         </div>
       ) : null}
       {
@@ -2767,6 +2852,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 )}
               </div>
               <div className="turn-controls-play-bar__actions">
+                {!isHistoryView && onRecallPlacedAgent && (
+                  <button
+                    type="button"
+                    className="end-turn-button play-bar-end-turn-button"
+                    onClick={onRecallPlacedAgent}
+                  >
+                    Recall Agent
+                  </button>
+                )}
                 {!isHistoryView && showEndTurnButton && onEndTurn && (
                   <button
                     type="button"
@@ -3013,9 +3107,17 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           setIsRevealTurn(false)
         }}
         isRevealTurn={isRevealTurn}
-        text={isRevealTurn ? 'Select Cards to Reveal' : 'Select a Card to Play'}
+        text={
+          isRevealTurn
+            ? 'Select Cards to Reveal'
+            : graftPairSelection
+              ? 'Select a card to play (graft cards need a partner)'
+              : 'Select a Card to Play'
+        }
         getCardPlayability={isRevealTurn ? undefined : checkPlayCardPlayability}
         playabilityInvalidateKey={isRevealTurn ? undefined : playCardPickerPlayabilityKey}
+        graftPairSelection={graftPairSelection}
+        initialSelectedCards={pendingGraftInitialCards}
       />
 
       <CardSearch

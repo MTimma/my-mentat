@@ -14,17 +14,17 @@ import {
 import type { SaveDoc, SetupBlock } from '../types'
 import { OFFICIAL_BASE_PACK } from '../../gamePacks/constants'
 
-const STARTING_DECK_IDS = [
-  'starting/the-voice',
-  'starting/reverend-mother-mohiam',
-  'starting/power-play',
-  'starting/other-memory',
-  'starting/kwisatz-haderach',
-  'starting/fremen-camp',
-  'starting/gurney-halleck',
-  'starting/liet-kynes',
-  'starting/scout',
-  'starting/shifting-allegiances',
+const OFFICIAL_STARTING_DECK_IDS = [
+  'starting/convincing-argument',
+  'starting/convincing-argument',
+  'starting/dagger',
+  'starting/dagger',
+  'starting/diplomacy',
+  'starting/dune-the-desert-planet',
+  'starting/dune-the-desert-planet',
+  'starting/reconnaissance',
+  'starting/seek-allies',
+  'starting/signet-ring',
 ]
 
 function makeSetup(overrides: Partial<SetupBlock> = {}): SetupBlock {
@@ -32,8 +32,8 @@ function makeSetup(overrides: Partial<SetupBlock> = {}): SetupBlock {
     firstPlayer: 0,
     gamePackId: OFFICIAL_BASE_PACK,
     players: [
-      { id: 0, leaderId: 'paul', color: PlayerColor.RED, deckCardIds: STARTING_DECK_IDS },
-      { id: 1, leaderId: 'ilban', color: PlayerColor.BLUE, deckCardIds: STARTING_DECK_IDS },
+      { id: 0, leaderId: 'paul', color: PlayerColor.RED, deckCardIds: OFFICIAL_STARTING_DECK_IDS },
+      { id: 1, leaderId: 'ilban', color: PlayerColor.BLUE, deckCardIds: OFFICIAL_STARTING_DECK_IDS },
     ],
     initialConflictId: 901,
     ...overrides,

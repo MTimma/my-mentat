@@ -4,6 +4,7 @@ import {
   TechTileTiming,
   type PlayerTechTile,
   getTechTile,
+  techTileGainSourceId,
 } from '../../data/techTiles'
 import {
   AgentIcon,
@@ -25,7 +26,7 @@ import { countSpiceMustFlowCards } from '../../utils/spiceMustFlow'
 import { getDreadnoughtsInConflict } from '../../utils/dreadnoughts'
 import { createGainInfluenceChoice } from '../../utils/influenceChoices'
 import { nextSemanticId } from '../../utils/semanticIds'
-import { effectiveTechCost, playerOwnsTile, tileById, tilesActivatableNow } from '../../utils/techTiles'
+import { effectiveTechCost, playerOwnsTile, techTilesAvailableForNextReveal, tileById, tilesActivatableNow } from '../../utils/techTiles'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { updateFactionInfluence } from '../../utils/influenceVictoryPoints'
 import { playerHasUnitsInCombat } from '../../utils/dreadnoughts'
@@ -48,10 +49,17 @@ export type AcquireTechAction = {
   nextFaceUpTileId?: TechTileId
 }
 
+export type TechNegotiatorSource = {
+  type: GainSource
+  id: number
+  name: string
+}
+
 export type TechNegotiatorAction = {
   type: 'TECH_NEGOTIATOR'
   playerId: number
   amount: number
+  source?: TechNegotiatorSource
 }
 
 export type ActivateTechAction = {
@@ -160,7 +168,7 @@ function techGainSource(tileId: TechTileId): { type: GainSource; id: number; nam
   const tile = getTechTile(tileId)
   return {
     type: GainSource.IX_BOARD,
-    id: 0,
+    id: techTileGainSourceId(tileId),
     name: tile?.name ?? tileId,
   }
 }
@@ -329,12 +337,14 @@ export function handleAcquireTech(state: GameState, action: AcquireTechAction): 
     return state
   }
 
+  const tileSourceId = techTileGainSourceId(tileId)
+
   const gains: Gain[] = [
     ...state.gains,
     {
       round: state.currentRound,
       playerId,
-      sourceId: 0,
+      sourceId: tileSourceId,
       name: tile.name,
       amount: 1,
       type: RewardType.TECH,
@@ -345,7 +355,7 @@ export function handleAcquireTech(state: GameState, action: AcquireTechAction): 
     gains.push({
       round: state.currentRound,
       playerId,
-      sourceId: 0,
+      sourceId: tileSourceId,
       name: tile.name,
       amount: -cost,
       type: paySolariInsteadOfSpice ? RewardType.SOLARI : RewardType.SPICE,
@@ -356,8 +366,8 @@ export function handleAcquireTech(state: GameState, action: AcquireTechAction): 
     gains.push({
       round: state.currentRound,
       playerId,
-      sourceId: 0,
-      name: 'Negotiators returned',
+      sourceId: tileSourceId,
+      name: tile.name,
       amount: negotiatorsReturned,
       type: RewardType.TROOPS,
       source: GainSource.IX_BOARD,
@@ -365,8 +375,8 @@ export function handleAcquireTech(state: GameState, action: AcquireTechAction): 
     gains.push({
       round: state.currentRound,
       playerId,
-      sourceId: 0,
-      name: 'Negotiators returned',
+      sourceId: tileSourceId,
+      name: tile.name,
       amount: -negotiatorsReturned,
       type: RewardType.NEGOTIATOR,
       source: GainSource.IX_BOARD,
@@ -374,17 +384,14 @@ export function handleAcquireTech(state: GameState, action: AcquireTechAction): 
   }
 
   const ownedTile: PlayerTechTile = { id: tileId, faceUp: true }
-  const faceDownRemainder = stack.slice(1)
+  const availableForReveal = techTilesAvailableForNextReveal(ixBoard.stacks, state.players, tileId)
   let newStackForIndex: TechTileId[] = []
-  if (faceDownRemainder.length === 1) {
-    newStackForIndex = [faceDownRemainder[0]!]
-  } else if (faceDownRemainder.length > 1) {
+  if (availableForReveal.length === 1) {
+    newStackForIndex = [availableForReveal[0]!]
+  } else if (availableForReveal.length > 1) {
     const nextFaceUpTileId = action.nextFaceUpTileId
-    if (!nextFaceUpTileId || !faceDownRemainder.includes(nextFaceUpTileId)) return state
-    newStackForIndex = [
-      nextFaceUpTileId,
-      ...faceDownRemainder.filter(id => id !== nextFaceUpTileId),
-    ]
+    if (!nextFaceUpTileId || !availableForReveal.includes(nextFaceUpTileId)) return state
+    newStackForIndex = [nextFaceUpTileId]
   }
   const newStacks = ixBoard.stacks.map((s, i) => (i === stackIndex ? newStackForIndex : [...s]))
   const nextFaceUpRevealed = { ...ixBoard.nextFaceUpRevealed }
@@ -399,6 +406,16 @@ export function handleAcquireTech(state: GameState, action: AcquireTechAction): 
     gains,
     ixBoard: { ...ixBoard, stacks: newStacks, nextFaceUpRevealed },
     pendingAcquireTech: null,
+    currTurn:
+      state.currTurn?.playerId === playerId
+        ? {
+            ...state.currTurn,
+            acquiredTechTiles: [
+              ...(state.currTurn.acquiredTechTiles ?? []),
+              { id: tileId, name: tile.name, image: tile.image, cost: tile.cost },
+            ],
+          }
+        : state.currTurn,
     players: state.players.map(p => {
       if (p.id !== playerId) return p
       const returned = returnNegotiatorsToSupply(p, negotiatorsReturned)
@@ -426,25 +443,30 @@ export function handleTechNegotiator(state: GameState, action: TechNegotiatorAct
   const { player: updated, placed } = placeNegotiatorsFromSupply(player, amount)
   if (placed <= 0) return state
 
+  const attribution = action.source ?? {
+    type: GainSource.BOARD_SPACE,
+    id: 0,
+    name: 'Tech Negotiator',
+  }
   const gains: Gain[] = [
     ...state.gains,
     {
       round: state.currentRound,
       playerId,
-      sourceId: 0,
-      name: 'Tech Negotiator',
+      sourceId: attribution.id,
+      name: attribution.name,
       amount: placed,
       type: RewardType.NEGOTIATOR,
-      source: GainSource.BOARD_SPACE,
+      source: attribution.type,
     },
     {
       round: state.currentRound,
       playerId,
-      sourceId: 0,
-      name: 'Tech Negotiator',
+      sourceId: attribution.id,
+      name: attribution.name,
       amount: -placed,
       type: RewardType.POOL_TROOP,
-      source: GainSource.BOARD_SPACE,
+      source: attribution.type,
     },
   ]
 
@@ -458,14 +480,15 @@ export function handleTechNegotiator(state: GameState, action: TechNegotiatorAct
 export function applyTechNegotiatorReward(
   state: GameState,
   playerId: number,
-  amount: number
+  amount: number,
+  source?: TechNegotiatorSource
 ): GameState {
   if (!state.expansions.riseOfIx || amount <= 0) return state
   const player = state.players.find(p => p.id === playerId)
   if (!player) return state
   const { placed } = placeNegotiatorsFromSupply(player, amount)
   if (placed <= 0) return state
-  return handleTechNegotiator(state, { type: 'TECH_NEGOTIATOR', playerId, amount: placed })
+  return handleTechNegotiator(state, { type: 'TECH_NEGOTIATOR', playerId, amount: placed, source })
 }
 
 export function setPendingAcquireTech(

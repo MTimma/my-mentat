@@ -1,4 +1,5 @@
 import React from 'react'
+import { PlayerColor } from '../../types/GameTypes'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import './CombatTroopControls.css'
@@ -12,6 +13,7 @@ export interface CombatTroopControlsProps {
   onUndeploy: () => void
   variant?: 'troop' | 'dreadnought' | 'negotiator'
   playerId?: number
+  playerColor?: PlayerColor
   className?: string
   style?: React.CSSProperties
 }
@@ -25,6 +27,7 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
   onUndeploy,
   variant = 'troop',
   playerId = 0,
+  playerColor,
   className,
   style,
 }) => {
@@ -58,11 +61,13 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
         {isDreadnought ? (
           <DreadnoughtIcon
             playerId={playerId}
+            color={playerColor}
             className="troop-action-icon troop-action-icon--dreadnought"
           />
         ) : isNegotiator ? (
           <NegotiatorIcon
             playerId={playerId}
+            color={playerColor}
             className="troop-action-icon troop-action-icon--negotiator"
           />
         ) : (

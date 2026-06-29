@@ -1,7 +1,8 @@
 import React from 'react'
-import { SpaceProps } from '../../types/GameTypes'
+import { Player, SpaceProps } from '../../types/GameTypes'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { SpiceAmountBadge } from '../SpiceAmountBadge/SpiceAmountBadge'
+import { playerColorHex } from '../../utils/playerColors'
 import './BoardSpace.css'
 
 interface BoardSpaceProps extends SpaceProps {
@@ -13,33 +14,42 @@ interface BoardSpaceProps extends SpaceProps {
   wide?: boolean
   isVoiceSelectable?: boolean
   voiceBlockedBy?: number | null
+  /** When set, agent tints and occupancy borders use assigned seat colors. */
+  players?: Pick<Player, 'id' | 'color'>[]
 }
 
-// Helper function to get player color matching AgentIcon.css
-const getPlayerColor = (playerId: number): string => {
+const getPlayerColor = (
+  playerId: number,
+  players?: Pick<Player, 'id' | 'color'>[]
+): string => {
+  const player = players?.find(p => p.id === playerId)
+  if (player) return playerColorHex(player.color)
   const colors: Record<number, string> = {
-    0: '#d32f2f', // red
-    1: '#388e3c', // green
-    2: '#fbc02d', // yellow
-    3: '#1976d2', // blue
+    0: '#d32f2f',
+    1: '#388e3c',
+    2: '#fbc02d',
+    3: '#1976d2',
   }
-  return colors[playerId] || '#8b4513' // fallback to default brown
+  return colors[playerId] || '#8b4513'
 }
 
 // Generate border styles based on occupied players
-const generateBorderStyles = (occupiedBy: number[]): React.CSSProperties => {
+const generateBorderStyles = (
+  occupiedBy: number[],
+  players?: Pick<Player, 'id' | 'color'>[]
+): React.CSSProperties => {
   if (occupiedBy.length === 0) {
     return {}
   }
 
   // Background color from first player (semi-transparent)
-  const firstPlayerColor = getPlayerColor(occupiedBy[0])
+  const firstPlayerColor = getPlayerColor(occupiedBy[0], players)
   const backgroundColor = `${firstPlayerColor}80` // 50% opacity (less transparent)
 
   // Generate concentric borders using box-shadow
   const boxShadow = occupiedBy
     .map((playerId, index) => {
-      const color = getPlayerColor(playerId)
+      const color = getPlayerColor(playerId, players)
       const offset = (index + 1) * 4 // 4px per border layer
       return `0 0 0 ${offset}px ${color}`
     })
@@ -69,7 +79,8 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
   image,
   wide = false,
   isVoiceSelectable = false,
-  voiceBlockedBy = null
+  voiceBlockedBy = null,
+  players,
 }) => {
   const renderCost = () => {
     if (!cost) return null
@@ -142,7 +153,8 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
     )
   }
 
-  const playerBorderStyles = generateBorderStyles(occupiedBy)
+  const playerBorderStyles = generateBorderStyles(occupiedBy, players)
+  const playerColorById = new Map(players?.map(p => [p.id, p.color]) ?? [])
 
   return (
     <>
@@ -179,9 +191,10 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
       )}
       <div className="agents-container">
         {occupiedBy.map((playerId) => (
-          <AgentIcon 
-            key={playerId} 
+          <AgentIcon
+            key={playerId}
             playerId={playerId}
+            color={playerColorById.get(playerId)}
           />
         ))}
       </div>
@@ -220,9 +233,10 @@ const BoardSpace: React.FC<BoardSpaceProps> = ({
       </div>
       <div className="agents-container">
         {occupiedBy.map((playerId) => (
-          <AgentIcon 
-            key={playerId} 
+          <AgentIcon
+            key={playerId}
             playerId={playerId}
+            color={playerColorById.get(playerId)}
           />
         ))}
       </div>

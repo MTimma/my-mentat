@@ -15,7 +15,7 @@ import {
 } from '../utils/turnHistoryDisplay'
 import {
   getRevealTurnStats,
-  resolvePlayedCardForTurn,
+  resolvePlayedCardsForTurn,
 } from '../utils/revealTurnStats'
 
 export interface TurnHistoryRowProjection {
@@ -121,8 +121,10 @@ export function projectTurnHistory(history: GameState[]): TurnHistoryRowProjecti
 
     if (!isMeta) {
       projection.actionLabel = getTurnActionLabel(turn)
-      const played = resolvePlayedCardForTurn(turn)
-      if (played) projection.playedCardName = played.name
+      const played = resolvePlayedCardsForTurn(turn)
+      if (played.length > 0) {
+        projection.playedCardName = played.map(c => c.name).join(' + ')
+      }
 
       if (turn.currTurn?.type === TurnType.REVEAL && playerId != null) {
         const stats = getRevealTurnStats(turn, playerId)

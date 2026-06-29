@@ -7,17 +7,17 @@ import {
   OFFICIAL_BASE_RISE_OF_IX_PACK,
 } from '../../gamePacks/constants'
 
-const STARTING_DECK_IDS = [
-  'starting/the-voice',
-  'starting/reverend-mother-mohiam',
-  'starting/power-play',
-  'starting/other-memory',
-  'starting/kwisatz-haderach',
-  'starting/fremen-camp',
-  'starting/gurney-halleck',
-  'starting/liet-kynes',
-  'starting/scout',
-  'starting/shifting-allegiances',
+const OFFICIAL_STARTING_DECK_IDS = [
+  'starting/convincing-argument',
+  'starting/convincing-argument',
+  'starting/dagger',
+  'starting/dagger',
+  'starting/diplomacy',
+  'starting/dune-the-desert-planet',
+  'starting/dune-the-desert-planet',
+  'starting/reconnaissance',
+  'starting/seek-allies',
+  'starting/signet-ring',
 ]
 
 function makeSetup(overrides: Partial<SetupBlock> = {}): SetupBlock {
@@ -25,8 +25,8 @@ function makeSetup(overrides: Partial<SetupBlock> = {}): SetupBlock {
     firstPlayer: 0,
     gamePackId: OFFICIAL_BASE_PACK,
     players: [
-      { id: 0, leaderId: 'paul', color: PlayerColor.RED, deckCardIds: STARTING_DECK_IDS },
-      { id: 1, leaderId: 'ilban', color: PlayerColor.BLUE, deckCardIds: STARTING_DECK_IDS },
+      { id: 0, leaderId: 'paul', color: PlayerColor.RED, deckCardIds: OFFICIAL_STARTING_DECK_IDS },
+      { id: 1, leaderId: 'ilban', color: PlayerColor.BLUE, deckCardIds: OFFICIAL_STARTING_DECK_IDS },
     ],
     initialConflictId: 901,
     ...overrides,
@@ -55,5 +55,34 @@ describe('buildInitialState game packs', () => {
     const state = buildInitialState(legacy)
     expect(state.expansions.riseOfIx).toBe(true)
     expect(state.ixBoard).toBeDefined()
+  })
+
+  it('Princess Yuna Moritani starts with 0 water even if setup saved water: 1', () => {
+    const state = buildInitialState(
+      makeSetup({
+        gamePackId: OFFICIAL_BASE_RISE_OF_IX_PACK,
+        players: [
+          {
+            id: 0,
+            leaderId: 'princess-yuna-moritani',
+            color: PlayerColor.RED,
+            deckCardIds: OFFICIAL_STARTING_DECK_IDS,
+            startingResources: { water: 1, spice: 0, solari: 0, troops: 3, victoryPoints: 1 },
+          },
+        ],
+      })
+    )
+    expect(state.players[0].water).toBe(0)
+  })
+
+  it('other leaders default to 1 water when startingResources omitted', () => {
+    const state = buildInitialState(
+      makeSetup({
+        players: [
+          { id: 0, leaderId: 'paul', color: PlayerColor.RED, deckCardIds: OFFICIAL_STARTING_DECK_IDS },
+        ],
+      })
+    )
+    expect(state.players[0].water).toBe(1)
   })
 })

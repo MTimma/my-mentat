@@ -1,10 +1,13 @@
 import React from 'react'
+import { PlayerColor } from '../../types/GameTypes'
+import { playerColorClass } from '../../utils/playerColors'
 import './DreadnoughtIcon.css'
 
 export type DreadnoughtIconAppearance = 'card' | 'control'
 
 export interface DreadnoughtIconProps {
   playerId: number
+  color?: PlayerColor
   className?: string
   /** `card` — art as-is (default). `control` — player-tinted piece on area control only. */
   appearance?: DreadnoughtIconAppearance
@@ -12,6 +15,7 @@ export interface DreadnoughtIconProps {
 
 const DreadnoughtIcon: React.FC<DreadnoughtIconProps> = ({
   playerId,
+  color,
   className = '',
   appearance = 'card',
 }) => {
@@ -32,7 +36,7 @@ const DreadnoughtIcon: React.FC<DreadnoughtIconProps> = ({
       className={[
         'dreadnought-icon',
         'dreadnought-icon--control',
-        `player-${playerId}`,
+        playerColorClass(playerId, color),
         className,
       ]
         .filter(Boolean)

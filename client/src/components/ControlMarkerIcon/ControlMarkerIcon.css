@@ -24,7 +24,7 @@
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.28));
 }
 
-.control-marker-icon.player-0::before { background-color: #d32f2f; }
-.control-marker-icon.player-1::before { background-color: #388e3c; }
-.control-marker-icon.player-2::before { background-color: #fbc02d; }
-.control-marker-icon.player-3::before { background-color: #1976d2; }
+.control-marker-icon.player-red::before { background-color: #d32f2f; }
+.control-marker-icon.player-green::before { background-color: #388e3c; }
+.control-marker-icon.player-yellow::before { background-color: #fbc02d; }
+.control-marker-icon.player-blue::before { background-color: #1976d2; }

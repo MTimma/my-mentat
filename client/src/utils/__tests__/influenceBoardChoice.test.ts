@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  conflictChoiceAsFixedOptions,
+  findConflictInfluenceBoardChoice,
   getInfluenceBoardChoiceMeta,
   getInfluenceBoardPrompt,
   isInfluenceBoardChoice,
@@ -56,5 +58,23 @@ describe('influenceBoardChoice', () => {
     expect(meta?.selectableFactions).toEqual([FactionType.EMPEROR])
     expect(meta?.disabledFactions).toEqual([FactionType.FREMEN])
     expect(meta?.optionIndexByFaction[FactionType.EMPEROR]).toBe(0)
+  })
+
+  it('detects conflict reward influence choices for board selection', () => {
+    const conflictChoice = {
+      id: 'conflict-903',
+      playerId: 0,
+      placement: '1st place',
+      conflictId: 903,
+      conflictName: 'Skirmish',
+      options: [
+        { reward: { influence: { amounts: [{ faction: FactionType.EMPEROR, amount: 1 }] } } },
+        { reward: { influence: { amounts: [{ faction: FactionType.SPACING_GUILD, amount: 1 }] } } },
+        { reward: { influence: { amounts: [{ faction: FactionType.BENE_GESSERIT, amount: 1 }] } } },
+        { reward: { influence: { amounts: [{ faction: FactionType.FREMEN, amount: 1 }] } } },
+      ],
+    }
+    expect(isInfluenceBoardChoice(conflictChoiceAsFixedOptions(conflictChoice))).toBe(true)
+    expect(findConflictInfluenceBoardChoice([conflictChoice])?.id).toBe('conflict-903')
   })
 })

@@ -70,7 +70,8 @@ export const CONFLICTS: ConflictCard[] = [
     rewards: {
       first: [{
         type: RewardType.INFLUENCE,
-        amount: 1
+        amount: 1,
+        chooseFaction: true,
       }, {
         type: RewardType.SPICE,
           amount: 1
@@ -91,7 +92,8 @@ export const CONFLICTS: ConflictCard[] = [
     rewards: {
       first: [{
         type: RewardType.INFLUENCE,
-        amount: 1
+        amount: 1,
+        chooseFaction: true,
       }, {
         type: RewardType.SOLARI,
           amount: 2
@@ -221,7 +223,7 @@ export const CONFLICTS: ConflictCard[] = [
     tier: 2,
     name: "Political Maneuvering",
     rewards: {
-      first: [{ type: RewardType.INFLUENCE, amount: 2 }, { type: RewardType.SOLARI, amount: 2 }],
+      first: [{ type: RewardType.INFLUENCE, amount: 2, chooseFaction: true }, { type: RewardType.SOLARI, amount: 2 }],
       second: [{ type: RewardType.INTRIGUE, amount: 1 }],
       third: [{ type: RewardType.SPICE, amount: 1 }]
     }

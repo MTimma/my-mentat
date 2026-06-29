@@ -1,6 +1,8 @@
 import indexFile from '../../public/game-packs/index.json'
 import officialBase from '../../public/game-packs/official-base.v1.json'
 import officialBaseRiseOfIx from '../../public/game-packs/official-base-riseOfIx.v1.json'
+import officialBaseImmortality from '../../public/game-packs/official-base-immortality.v1.json'
+import officialBaseRiseOfIxImmortality from '../../public/game-packs/official-base-riseOfIx-immortality.v1.json'
 import type { GamePackIndex, GamePackManifest, GamePackRef, SelectableGamePackEntry } from './types'
 import { customSelectableEntries } from './customGamePacks'
 
@@ -9,6 +11,8 @@ const index = indexFile as GamePackIndex
 const bundledManifests = new Map<GamePackRef, GamePackManifest>([
   ['official/base@1', officialBase as GamePackManifest],
   ['official/base+riseOfIx@1', officialBaseRiseOfIx as GamePackManifest],
+  ['official/base+immortality@1', officialBaseImmortality as GamePackManifest],
+  ['official/base+riseOfIx+immortality@1', officialBaseRiseOfIxImmortality as GamePackManifest],
 ])
 
 const customManifests = new Map<GamePackRef, GamePackManifest>()

@@ -243,3 +243,16 @@ export function getTechTile(id: TechTileId): TechTile | undefined {
 export function getTechTileByName(name: string): TechTile | undefined {
   return TECH_TILES.find(tile => tile.name === name)
 }
+
+/** Stable numeric `Gain.sourceId` for Ix-board tech acquisitions (distinct from imperium card ids). */
+const TECH_TILE_GAIN_SOURCE_ID_BASE = 900_000
+
+export function techTileGainSourceId(tileId: TechTileId): number {
+  const index = TECH_TILES.findIndex(tile => tile.id === tileId)
+  return index >= 0 ? TECH_TILE_GAIN_SOURCE_ID_BASE + index : 0
+}
+
+export function techTileFromGainSourceId(sourceId: number): TechTileId | undefined {
+  if (sourceId < TECH_TILE_GAIN_SOURCE_ID_BASE) return undefined
+  return TECH_TILES[sourceId - TECH_TILE_GAIN_SOURCE_ID_BASE]?.id
+}

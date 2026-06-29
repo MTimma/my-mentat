@@ -70,7 +70,7 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
         </h2>
         {!readOnly && activePlayer && (
           <p className="combat-phase-active-player">
-            <AgentIcon playerId={activePlayer.id} />
+            <AgentIcon playerId={activePlayer.id} color={activePlayer.color} />
             <span>
               {activePlayer.leader.name}
               <span className="combat-phase-active-label">
@@ -102,7 +102,7 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
                   .join(' ')}
               >
                 <span className="combat-phase-rank-place">{rank}.</span>
-                <AgentIcon playerId={playerId} />
+                <AgentIcon playerId={playerId} color={player?.color} />
                 <span className="combat-phase-rank-strength" title={`${strength} strength`}>
                   <img src="/icon/sword.png" alt="" className="combat-phase-strength-icon" aria-hidden="true" />
                   {strength}

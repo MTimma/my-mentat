@@ -36,13 +36,25 @@ describe('buildCatalog Rise of Ix', () => {
   it('reports expansion counts in meta and byId', () => {
     const counts = catalog.expansions.byId.riseOfIx.counts
     expect(counts.boardSpaces).toBe(4)
-    expect(catalog.meta.counts.expansions).toBe(1)
+    // Rise of Ix + Immortality are both published.
+    expect(catalog.meta.counts.expansions).toBe(2)
     expect(catalog.meta.counts.techTiles).toBe(18)
+  })
+
+  it('publishes the Immortality card and intrigue pools', () => {
+    const meta = catalog.expansions.byId.immortality
+    expect(catalog.expansions.available).toContain('immortality')
+    expect(meta.decks.imperium).toHaveLength(30)
+    expect(meta.decks.tleilaxu).toHaveLength(19)
+    expect(meta.decks.starting).toEqual(['starting/experimentation'])
+    expect(meta.counts.intrigue).toBe(15)
+    expect(catalog.intrigue.filter(i => i.immortality)).toHaveLength(15)
+    expect(catalog.cards.some(c => c.id === 'starting/experimentation')).toBe(true)
   })
 
   it('preserves Kwisatz Haderach beforePlaceAgent recall in the effects registry', () => {
     const effect = catalog.effects.find(
-      entry => entry.id === 'effect:card:starting/kwisatz-haderach:play:0'
+      entry => entry.id === 'effect:card:imperium/kwisatz-haderach:play:0'
     )
     expect(effect?.beforePlaceAgent).toEqual({ recallAgent: true })
   })

@@ -1,14 +1,7 @@
 import React from 'react'
-import { PlayerColor, type Player } from '../../types/GameTypes'
+import { type Player } from '../../types/GameTypes'
 import { getDreadnoughtsInConflict } from '../../utils/dreadnoughts'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
-/** Same seat order as the 2×2 combat grid: red, green, blue, yellow. */
-const COMBAT_STATUS_ORDER: PlayerColor[] = [
-  PlayerColor.RED,
-  PlayerColor.GREEN,
-  PlayerColor.BLUE,
-  PlayerColor.YELLOW,
-]
 
 export function PlayerCombatSlot({
   player,
@@ -78,24 +71,19 @@ const CombatStatusStrip: React.FC<CombatStatusStripProps> = ({
   strength,
   activePlayerId,
 }) => {
-  const playerByColor = new Map(players.map(p => [p.color, p]))
+  const playersSorted = [...players].sort((a, b) => a.id - b.id)
 
   return (
     <div className="combat-status-strip" data-marker="combat-status">
-      {COMBAT_STATUS_ORDER.map(color => {
-        const player = playerByColor.get(color)
-        if (!player) return null
-
-        return (
-          <PlayerCombatSlot
-            key={color}
-            player={player}
-            troops={troops[player.id] ?? 0}
-            strength={strength[player.id] ?? 0}
-            isActive={player.id === activePlayerId}
-          />
-        )
-      })}
+      {playersSorted.map(player => (
+        <PlayerCombatSlot
+          key={player.id}
+          player={player}
+          troops={troops[player.id] ?? 0}
+          strength={strength[player.id] ?? 0}
+          isActive={player.id === activePlayerId}
+        />
+      ))}
     </div>
   )
 }

@@ -75,8 +75,11 @@ function applyDeckPatches(
   for (const [pool, patch] of Object.entries(deckPatches)) {
     const key = pool as keyof CardsCatalogFile['decks']
     if (!next[key]) continue
-    const base = [...next[key]]
-  next[key] = [...(patch.prepend ?? []), ...base, ...(patch.append ?? [])]
+    let base = [...next[key]]
+    if (patch.replace) {
+      base = base.map(id => patch.replace?.[id] ?? id)
+    }
+    next[key] = [...(patch.prepend ?? []), ...base, ...(patch.append ?? [])]
   }
   return next
 }

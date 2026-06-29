@@ -1,5 +1,13 @@
 import { Gain, GainSource, GameState, GameTurn, RewardType } from '../types/GameTypes'
 import { BOARD_SPACES } from '../data/boardSpaces'
+import { factionFromInfluenceGainName } from './influenceDisplay'
+import {
+  TechTileId,
+  getTechTile,
+  getTechTileByName,
+  techTileFromGainSourceId,
+  techTileGainSourceId,
+} from '../data/techTiles'
 
 export interface AggregatedResourceGain {
   type: RewardType | string
@@ -117,7 +125,31 @@ export function isEndgameHistoryEntry(turn: GameState): boolean {
   return turn.historyEntryKind === 'endgame'
 }
 
-/** Combat history row: group conflict/intrigue gains by recipient player. */
+const COMBAT_PLACEMENT_RANK: Record<string, number> = {
+  '1st place': 1,
+  '2nd place': 2,
+  '3rd place': 3,
+}
+
+/** Best (lowest) placement rank from conflict gain names like "Skirmish - 1st place". */
+export function combatPlacementRankFromGainName(name: string): number | null {
+  const base = name.includes('|') ? name.slice(0, name.indexOf('|')) : name
+  for (const [placement, rank] of Object.entries(COMBAT_PLACEMENT_RANK)) {
+    if (base.endsWith(placement)) return rank
+  }
+  return null
+}
+
+function combatPlacementRankForPlayerGains(gains: Gain[]): number {
+  let best = Number.POSITIVE_INFINITY
+  for (const gain of gains) {
+    const rank = combatPlacementRankFromGainName(gain.name)
+    if (rank != null && rank < best) best = rank
+  }
+  return Number.isFinite(best) ? best : 999
+}
+
+/** Combat history row: group conflict/intrigue gains by recipient player (1st → 3rd). */
 export function groupCombatHistoryGainsByPlayer(gains: Gain[]): OtherPlayerTurnGains[] {
   const byPlayer = new Map<number, Gain[]>()
   for (const gain of gains) {
@@ -127,7 +159,11 @@ export function groupCombatHistoryGainsByPlayer(gains: Gain[]): OtherPlayerTurnG
     byPlayer.set(gain.playerId, list)
   }
   return Array.from(byPlayer.entries())
-    .sort(([a], [b]) => a - b)
+    .sort(([playerIdA, gainsA], [playerIdB, gainsB]) => {
+      const rankDiff =
+        combatPlacementRankForPlayerGains(gainsA) - combatPlacementRankForPlayerGains(gainsB)
+      return rankDiff !== 0 ? rankDiff : playerIdA - playerIdB
+    })
     .map(([playerId, playerGains]) => ({ playerId, gains: playerGains }))
 }
 
@@ -243,8 +279,11 @@ function abilityTitleForGain(gain: Gain): string | undefined {
       return gain.name ? `Tech: ${gain.name}` : 'Tech'
     case GainSource.SHIPPING_TRACK:
       return 'Shipping track'
-    case GainSource.IX_BOARD:
-      return 'Ix board'
+    case GainSource.IX_BOARD: {
+      const tileId = techTileFromGainSourceId(gain.sourceId)
+      const tileName = tileId ? getTechTile(tileId)?.name : getTechTileByName(gain.name)?.name
+      return tileName ? `Tech: ${tileName}` : 'Ix board'
+    }
     default:
       return undefined
   }
@@ -254,18 +293,62 @@ function titleForGainGroup(gain: Gain): string {
   return abilityTitleForGain(gain) ?? boardSpaceTitleForGain(gain) ?? gain.name
 }
 
+function conflictPlayerKey(sourceId: number, playerId: number): string {
+  return `${sourceId}:${playerId}`
+}
+
+/** Map conflict id + player → placement title ("Skirmish - 1st place"). */
+function buildConflictPlacementTitlesByPlayer(gains: Gain[]): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const gain of gains) {
+    if (gain.source !== GainSource.CONFLICT) continue
+    if (combatPlacementRankFromGainName(gain.name) == null) continue
+    map.set(conflictPlayerKey(gain.sourceId, gain.playerId), gain.name)
+  }
+  return map
+}
+
+function conflictGainDisplayTitle(
+  gain: Gain,
+  placementTitles: Map<string, string>
+): string {
+  const pipe = gain.name.indexOf('|')
+  if (pipe >= 0) return gain.name.slice(0, pipe)
+  if (combatPlacementRankFromGainName(gain.name) != null) return gain.name
+  if (
+    gain.type === RewardType.INFLUENCE &&
+    factionFromInfluenceGainName(gain.name) &&
+    gain.source === GainSource.CONFLICT
+  ) {
+    return placementTitles.get(conflictPlayerKey(gain.sourceId, gain.playerId)) ?? gain.name
+  }
+  return gain.name
+}
+
+function conflictGainGroupKey(gain: Gain, placementTitles: Map<string, string>): string {
+  const title = conflictGainDisplayTitle(gain, placementTitles)
+  return `${gain.source}:${gain.sourceId}:${title}:${gain.playerId}`
+}
+
 /** Group gains by effect source so costs and rewards stay together. */
 export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
   const order: string[] = []
   const map = new Map<string, TurnGainSourceGroup>()
+  const conflictPlacements = buildConflictPlacementTitlesByPlayer(gains)
 
   for (const gain of gains) {
     const key =
       gain.source === GainSource.CONFLICT
-        ? `${gain.source}:${gain.sourceId}:${gain.name}:${gain.playerId}`
+        ? conflictGainGroupKey(gain, conflictPlacements)
         : gain.source === GainSource.TECH
           ? `${gain.source}:${gain.name}:${gain.playerId}`
-          : `${gain.source}:${gain.sourceId}`
+          : gain.source === GainSource.IX_BOARD
+            ? `${gain.source}:${gain.sourceId}:${gain.name}:${gain.playerId}`
+            : `${gain.source}:${gain.sourceId}`
+    const groupTitle =
+      gain.source === GainSource.CONFLICT
+        ? conflictGainDisplayTitle(gain, conflictPlacements)
+        : titleForGainGroup(gain)
     const existing = map.get(key)
     if (existing) {
       existing.gains.push(gain)
@@ -275,7 +358,7 @@ export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
       else if (spaceTitle) existing.title = spaceTitle
     } else {
       order.push(key)
-      map.set(key, { key, title: titleForGainGroup(gain), gains: [gain] })
+      map.set(key, { key, title: groupTitle, gains: [gain] })
     }
   }
 
@@ -401,12 +484,50 @@ export function getAcquireEffectGainsForCard(gains: Gain[], cardId: number): Gai
   )
 }
 
+/** Gains from an Ix tech tile purchase (costs + acquire effect), excluding the TECH acquisition row. */
+export function getAcquireEffectGainsForTechTile(gains: Gain[], tileId: TechTileId): Gain[] {
+  const sourceId = techTileGainSourceId(tileId)
+  const tileName = getTechTile(tileId)?.name
+  return gains.filter(gain => {
+    if (gain.source !== GainSource.IX_BOARD || gain.type === RewardType.TECH || gain.amount === 0) {
+      return false
+    }
+    if (gain.sourceId === sourceId) return true
+    return tileName != null && gain.name === tileName
+  })
+}
+
 /** Remove all acquired-card gains from totals (card row + acquire effects — shown in Acquired box). */
 export function excludeAcquireEffectGains(gains: Gain[], acquiredCardIds: number[]): Gain[] {
   const acquired = new Set(acquiredCardIds)
   return gains.filter(
     gain => !(gain.source === GainSource.CARD && acquired.has(gain.sourceId))
   )
+}
+
+/** Remove Ix tech purchase gains (tile row + costs + acquire effects — shown in Acquired box). */
+export function excludeTechAcquireGains(gains: Gain[], acquiredTileIds: TechTileId[]): Gain[] {
+  const sourceIds = new Set(acquiredTileIds.map(techTileGainSourceId))
+  const names = new Set(
+    acquiredTileIds
+      .map(id => getTechTile(id)?.name)
+      .filter((name): name is string => name != null)
+  )
+  return gains.filter(gain => {
+    if (gain.source !== GainSource.IX_BOARD) return true
+    if (sourceIds.has(gain.sourceId)) return false
+    if (names.has(gain.name)) return false
+    return true
+  })
+}
+
+/** Hide imperium-card and Ix-tech acquisition rows from the per-source gains list. */
+export function excludeAcquiredGainsFromDisplay(
+  gains: Gain[],
+  acquiredCardIds: number[],
+  acquiredTechTileIds: TechTileId[] = []
+): Gain[] {
+  return excludeTechAcquireGains(excludeAcquireEffectGains(gains, acquiredCardIds), acquiredTechTileIds)
 }
 
 export function aggregateInfluenceGains(gains: Gain[]): Array<{ name: string; amount: number }> {

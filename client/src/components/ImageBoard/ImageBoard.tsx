@@ -12,7 +12,7 @@ import {
   ControlMarkerType,
   PlayerColor,
 } from '../../types/GameTypes'
-import { BOARD_SPACES } from '../../data/boardSpaces'
+import { BOARD_SPACES, FOLDSPACE_BOARD_SPACE_ID } from '../../data/boardSpaces'
 import {
   BOARD_HOTSPOTS_FOR_EXPANSIONS,
   layoutAgentAnchorPercent,
@@ -47,6 +47,7 @@ import {
   snooperTokenHeightPercent,
   mentatAvailabilityPoint,
   swordmasterEligibilityPoint,
+  foldspaceDeckCountPoint,
   stagePoint,
   stageRect,
 } from '../../data/boardMarkerAnchors'
@@ -72,6 +73,9 @@ import CombatAreaCluster, {
   type CombatTroopDeployProps,
 } from './CombatAreaCluster'
 import IxBoardOverlay, { type IxBoardPlacement } from './IxBoardOverlay'
+import BeneTleilaxBoardOverlay, { type BeneTleilaxBoardPlacement } from './BeneTleilaxBoardOverlay'
+import { expansionOverlaysFor } from '../../expansions/registry'
+import { DEFAULT_PLAYER_COLORS, playerColorHex, playerMarkerHex } from '../../utils/playerColors'
 import './ImageBoard.css'
 
 interface SellMelangeData {
@@ -133,16 +137,11 @@ interface ImageBoardProps {
   }
   /** Desktop: Ix panel docked beside board; mobile: embedded on board art. */
   ixBoardPlacement?: IxBoardPlacement
+  /** Desktop: Bene Tleilax panel docked beside board; mobile: stacked below. */
+  immortalityBoardPlacement?: BeneTleilaxBoardPlacement
   /** Rise of Ix — player may click a face-up tech tile on the Ix board to acquire. */
   pendingAcquireTech?: GameState['pendingAcquireTech']
   onTechTileAcquire?: (stackIndex: number) => void
-}
-
-const PLAYER_COLORS: Record<number, string> = {
-  0: '#d32f2f',
-  1: '#388e3c',
-  2: '#fbc02d',
-  3: '#1976d2',
 }
 
 const FACTIONS: FactionType[] = [
@@ -166,18 +165,14 @@ function percentToStyle(rect: { left: number; top: number; width: number; height
 }
 
 function playerMarkerColor(player: Player): string {
-  switch (player.color) {
-    case PlayerColor.RED:
-      return '#d32f2f'
-    case PlayerColor.GREEN:
-      return '#388e3c'
-    case PlayerColor.YELLOW:
-      return '#e6b800'
-    case PlayerColor.BLUE:
-      return '#1976d2'
-    default:
-      return '#888'
-  }
+  return playerMarkerHex(player)
+}
+
+function playerIdMarkerHex(playerId: number, playersById: Map<number, Player>): string {
+  const player = playersById.get(playerId)
+  if (player) return playerMarkerHex(player)
+  const fallback = DEFAULT_PLAYER_COLORS[playerId]
+  return fallback ? playerColorHex(fallback) : '#888'
 }
 
 const ImageBoard: React.FC<ImageBoardProps> = ({
@@ -209,6 +204,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   sandboxSetup,
   influenceSelection,
   ixBoardPlacement = 'embedded',
+  immortalityBoardPlacement = 'stacked',
   pendingAcquireTech,
   onTechTileAcquire,
 }) => {
@@ -226,11 +222,16 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   blockedSpaces.forEach(entry => blockedSpaceMap.set(entry.spaceId, entry.playerId))
 
   const riseOfIx = Boolean(gameStateForMarkers.expansions?.riseOfIx)
+  const immortality = Boolean(gameStateForMarkers.expansions?.immortality)
   const expansions = gameStateForMarkers.expansions
+  const boardSet = gameStateForMarkers.boardSet ?? 'imperium'
+  const expansionOverlays = expansions ? expansionOverlaysFor(expansions, boardSet) : []
   const choamOverlayRect = choamOverlayRectFor(expansions)
   const shippingTrackAnchors = shippingTrackAnchorsFor(expansions)
   const dreadnoughtControlPoints = dreadnoughtControlPointsFor(expansions)
   const ixBoardDocked = riseOfIx && ixBoardPlacement === 'docked'
+  const immortalityBoardDocked = immortality && immortalityBoardPlacement === 'docked'
+  const sidePanelDocked = ixBoardDocked || immortalityBoardDocked
   const boardHotspots = BOARD_HOTSPOTS_FOR_EXPANSIONS(gameStateForMarkers.expansions)
   const markerAnchors = markerAnchorsForExpansions(gameStateForMarkers.expansions).filter(
     anchor => !ixBoardDocked || (anchor.spaceId !== 23 && anchor.spaceId !== 24)
@@ -363,7 +364,9 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
   const rootClass = [
     'image-board',
+    sidePanelDocked ? 'image-board--with-side-dock' : '',
     ixBoardDocked ? 'image-board--with-ix-dock' : '',
+    immortalityBoardDocked ? 'image-board--with-immortality-dock' : '',
     hotspotDebug ? 'image-board--hotspot-debug' : '',
     markerDebug ? 'image-board--marker-debug' : '',
     trackerInspectMode ? 'image-board--tracker-inspect' : '',
@@ -411,6 +414,14 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
       />
     ) : null
 
+  const beneTleilaxBoardOverlay = immortality ? (
+    <BeneTleilaxBoardOverlay
+      currentPlayerId={currentPlayer}
+      placement={immortalityBoardDocked ? 'docked' : 'stacked'}
+      markerDebug={markerDebug}
+    />
+  ) : null
+
   const boardStage = (
     <div className="image-board__stage">
       <div className="image-board__media" ref={boardMediaRef}>
@@ -442,6 +453,17 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
           {riseOfIx && !ixBoardDocked && ixBoardOverlay}
 
+          {expansionOverlays.map(overlay => (
+            <img
+              key={overlay.id}
+              className="image-board__expansion-overlay"
+              src={`/${overlay.src}`}
+              alt=""
+              draggable={false}
+              style={percentToStyle(layoutInnerRectPercent(overlay.rect))}
+            />
+          ))}
+
           <div className="image-board__overlay">
           {boardHotspots.map(hotspot => {
             const space = spaceMap.get(hotspot.spaceId)
@@ -467,9 +489,10 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
               isVoiceBlocked ? 'voice-blocked' : '',
             ].filter(Boolean).join(' ')
 
-            const occupiedBg = occupied.length > 0
-              ? PLAYER_COLORS[occupied[occupied.length - 1]] || '#888'
-              : undefined
+            const occupiedBg =
+              occupied.length > 0
+                ? playerIdMarkerHex(occupied[occupied.length - 1], playerById)
+                : undefined
 
             const box = layoutHotspotPercent(hotspot)
 
@@ -527,7 +550,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           {[...blockedSpaceMap.entries()].map(([spaceId, blockerPlayerId]) => {
             const anchor = markerAnchors.find(a => a.spaceId === spaceId)
             if (!anchor) return null
-            const ring = PLAYER_COLORS[blockerPlayerId] || '#ffa726'
+            const ring = playerIdMarkerHex(blockerPlayerId, playerById)
             return (
               <div
                 key={`voice-thumb-${spaceId}`}
@@ -563,6 +586,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 >
                   <BoardAgentFigure
                     playerId={playerId}
+                    color={playerById.get(playerId)?.color}
                     variant={anchor.spaceId === 23 ? 'dreadnought' : 'troop'}
                     className="image-board__agent-figure"
                   />
@@ -596,6 +620,31 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
               </div>
             )
           })}
+
+          {(() => {
+            const foldspaceCount = gameStateForMarkers.foldspaceDeck.length
+            if (foldspaceCount <= 0) return null
+            const foldspaceHotspot = boardHotspots.find(h => h.spaceId === FOLDSPACE_BOARD_SPACE_ID)
+            if (!foldspaceHotspot) return null
+            const pt = foldspaceDeckCountPoint(foldspaceHotspot)
+            return (
+              <div
+                className="image-board__foldspace-deck-anchor"
+                data-marker="foldspace-deck"
+                style={{
+                  left: `${pt.x}%`,
+                  top: `${pt.y}%`,
+                }}
+              >
+                <span
+                  className="image-board__foldspace-deck-count"
+                  title={`Foldspace cards remaining: ${foldspaceCount}`}
+                >
+                  {foldspaceCount}
+                </span>
+              </div>
+            )
+          })()}
 
           {/* Faction influence — four player columns per faction */}
           {FACTIONS.map(faction => {
@@ -768,7 +817,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 }}
                 title={`Control ${key} (${p.leader.name})`}
               >
-                <ControlMarkerIcon playerId={pid} className="image-board__control-marker-icon" />
+                <ControlMarkerIcon
+                  playerId={pid}
+                  color={p.color}
+                  className="image-board__control-marker-icon"
+                />
               </div>
             )
           })}
@@ -805,6 +858,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 >
                   <DreadnoughtIcon
                     playerId={dreadPlayer.id}
+                    color={dreadPlayer.color}
                     appearance="control"
                     className="image-board__dreadnought-control-icon"
                   />
@@ -1176,6 +1230,19 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   />
                 )
               })}
+              {(() => {
+                const foldspaceHotspot = boardHotspots.find(h => h.spaceId === FOLDSPACE_BOARD_SPACE_ID)
+                if (!foldspaceHotspot) return null
+                const pt = foldspaceDeckCountPoint(foldspaceHotspot)
+                return (
+                  <div
+                    key="db-foldspace-deck"
+                    className="image-board__marker-debug-dot image-board__marker-debug-dot--foldspace-deck"
+                    data-marker="foldspace-deck"
+                    style={{ left: `${pt.x}%`, top: `${pt.y}%` }}
+                  />
+                )
+              })()}
             </div>
           )}
           </div>
@@ -1190,15 +1257,31 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           {placementPrompt}
         </div>
       ) : null}
-      {ixBoardDocked ? (
+      {sidePanelDocked ? (
         <div className="image-board__desktop-shell">
           {boardStage}
-          <aside className="image-board__ix-dock" aria-label="Ix board">
-            {ixBoardOverlay}
-          </aside>
+          {ixBoardDocked || immortalityBoardDocked ? (
+            <aside className="image-board__expansion-dock-column" aria-label="Expansion boards">
+              {ixBoardDocked ? (
+                <div className="image-board__ix-dock" aria-label="Ix board">
+                  {ixBoardOverlay}
+                </div>
+              ) : null}
+              {immortalityBoardDocked ? (
+                <div className="image-board__immortality-dock" aria-label="Bene Tleilax board">
+                  {beneTleilaxBoardOverlay}
+                </div>
+              ) : null}
+            </aside>
+          ) : null}
         </div>
       ) : (
-        boardStage
+        <>
+          {boardStage}
+          {immortality && !immortalityBoardDocked ? (
+            <div className="image-board__immortality-stack">{beneTleilaxBoardOverlay}</div>
+          ) : null}
+        </>
       )}
 
       {showSellMelangePopup && !riseOfIx && (

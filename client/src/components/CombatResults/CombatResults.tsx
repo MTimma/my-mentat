@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
-import { Player, GameState, GainSource } from '../../types/GameTypes';
+import { FactionType, Player, GameState, GainSource } from '../../types/GameTypes';
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal';
+import {
+  conflictChoiceAsFixedOptions,
+  isInfluenceBoardChoice,
+} from '../../utils/influenceBoardChoice';
+import { getFactionBumpIcon } from '../../utils/influenceDisplay';
 import './CombatResults.css';
 
 interface PlayerResult {
@@ -15,8 +20,16 @@ interface CombatResultsProps {
   history: GameState[];
   onConfirm: () => void;
   pendingConflictRewardChoices?: GameState['pendingConflictRewardChoices'];
+  influenceBoardChoiceActive?: boolean;
   onResolveConflictChoice?: (choiceId: string, optionIndex: number) => void;
 }
+
+const FACTION_LABELS: Record<FactionType, string> = {
+  [FactionType.EMPEROR]: 'Emperor',
+  [FactionType.SPACING_GUILD]: 'Spacing Guild',
+  [FactionType.BENE_GESSERIT]: 'Bene Gesserit',
+  [FactionType.FREMEN]: 'Fremen',
+};
 
 function formatRewardLabel(reward: import('../../types/GameTypes').Reward): string {
   if (reward.spice) return `${reward.spice} Spice`
@@ -29,12 +42,19 @@ function formatRewardLabel(reward: import('../../types/GameTypes').Reward): stri
   return 'Choose'
 }
 
+function isConflictInfluenceChoice(
+  choice: NonNullable<GameState['pendingConflictRewardChoices']>[number]
+): boolean {
+  return isInfluenceBoardChoice(conflictChoiceAsFixedOptions(choice))
+}
+
 const CombatResults: React.FC<CombatResultsProps> = ({
   players,
   combatStrength,
   history,
   onConfirm,
   pendingConflictRewardChoices = [],
+  influenceBoardChoiceActive = false,
   onResolveConflictChoice
 }) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
@@ -104,8 +124,16 @@ const CombatResults: React.FC<CombatResultsProps> = ({
     return history.map(state => state.gains).flatMap(gain => gain?.filter(g => g.playerId === playerId && g.source === GainSource.CONFLICT) || []) || [];
   };
 
+  const overlayClassName = [
+    'combat-results-overlay',
+    scopedClass,
+    influenceBoardChoiceActive ? 'combat-results-overlay--influence-board-choice' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return portalNode(
-    <div className={['combat-results-overlay', scopedClass].filter(Boolean).join(' ')}>
+    <div className={overlayClassName}>
     <div className="combat-results">
       <h2>Combat Results</h2>
       {!hasParticipants ? (
@@ -152,24 +180,57 @@ const CombatResults: React.FC<CombatResultsProps> = ({
       {pendingConflictRewardChoices && pendingConflictRewardChoices.length > 0 ? (
         <div className="conflict-reward-choices">
           <h3>Choose your conflict rewards</h3>
-          {pendingConflictRewardChoices.map((choice) => (
-            <div key={choice.id} className="conflict-choice-block">
-              <span className="choice-player">
-                {players[choice.playerId]?.leader.name || `Player ${choice.playerId + 1}`} ({choice.placement}):
-              </span>
-              <div className="choice-options">
-                {choice.options.map((opt, oidx) => (
-                  <button
-                    key={oidx}
-                    className="effect-btn choice"
-                    onClick={() => onResolveConflictChoice?.(choice.id, oidx)}
-                  >
-                    {opt.rewardLabel ?? formatRewardLabel(opt.reward)}
-                  </button>
-                ))}
+          {pendingConflictRewardChoices.map((choice) => {
+            const influenceChoice = isConflictInfluenceChoice(choice)
+            const useBoardForChoice = influenceChoice && influenceBoardChoiceActive
+            return (
+              <div key={choice.id} className="conflict-choice-block">
+                <span className="choice-player">
+                  {players[choice.playerId]?.leader.name || `Player ${choice.playerId + 1}`} ({choice.placement}):
+                </span>
+                {useBoardForChoice ? (
+                  <p className="conflict-choice-board-hint">
+                    Click a highlighted influence track on the board.
+                  </p>
+                ) : (
+                  <div className="choice-options">
+                    {choice.options.map((opt, oidx) => {
+                      const faction = opt.reward.influence?.amounts?.[0]?.faction
+                      const amount = opt.reward.influence?.amounts?.[0]?.amount
+                      if (influenceChoice && faction && amount != null && amount > 0) {
+                        return (
+                          <button
+                            key={oidx}
+                            type="button"
+                            className="conflict-choice-faction-btn"
+                            title={`${FACTION_LABELS[faction]} +${amount} influence`}
+                            onClick={() => onResolveConflictChoice?.(choice.id, oidx)}
+                          >
+                            <img
+                              src={getFactionBumpIcon(faction)}
+                              alt=""
+                              className="conflict-choice-faction-icon"
+                              aria-hidden="true"
+                            />
+                            <span className="conflict-choice-faction-label">{FACTION_LABELS[faction]}</span>
+                          </button>
+                        )
+                      }
+                      return (
+                        <button
+                          key={oidx}
+                          className="effect-btn choice"
+                          onClick={() => onResolveConflictChoice?.(choice.id, oidx)}
+                        >
+                          {opt.rewardLabel ?? formatRewardLabel(opt.reward)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       ) : (
         <button className="confirm-button" onClick={onConfirm}>
@@ -210,4 +271,4 @@ const CombatResults: React.FC<CombatResultsProps> = ({
   );
 };
 
-export default CombatResults; 
+export default CombatResults;

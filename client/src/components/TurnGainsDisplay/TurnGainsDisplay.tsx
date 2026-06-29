@@ -74,6 +74,8 @@ export interface TurnGainsDisplayProps {
   troopsRetreatedFromConflict?: number
   /** Opponent discards: one thumbnail row, no card-name titles. */
   inlineDiscards?: boolean
+  /** Trashed cards: trash icon + card thumb, no red cost background (turn history). */
+  inlineTrash?: boolean
   /** Totals row: show plain amounts for gains (e.g. 2 spice) without a leading +. */
   omitPositiveSign?: boolean
 }
@@ -102,6 +104,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   troopsDeployedToConflict = 0,
   troopsRetreatedFromConflict = 0,
   inlineDiscards = false,
+  inlineTrash = false,
   omitPositiveSign = false,
 }) => {
   const deployedCount = Math.max(0, troopsDeployedToConflict)
@@ -243,6 +246,21 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     )
   }
 
+  const renderInlineTrashGain = (gain: AggregatedResourceGain, index: number) => {
+    const iconPath = getRewardIcon(RewardType.TRASH)
+    const label = gain.name ?? 'Trash'
+    return (
+      <div
+        key={`trash-inline-${index}`}
+        className="gain-item gain-item--trash-inline"
+        aria-label={`Trashed ${label}`}
+      >
+        {iconPath ? renderGainIcon(iconPath, 'Trash', 'turn-gain-trash-icon') : null}
+        {renderCardGains(gain.cardId, gain.name, gain.amount, `trash-inline-card-${index}`)}
+      </div>
+    )
+  }
+
   const renderResourceGain = (
     gain: AggregatedResourceGain,
     index: number,
@@ -338,13 +356,35 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   const renderGainSide = (sideGains: Gain[], side: 'cost' | 'reward') => {
     const resourceGains = sortResourceGainsForDisplay(aggregateResourceGains(sideGains))
     const influenceGains = aggregateInfluenceGains(sideGains)
-    if (resourceGains.length === 0 && influenceGains.length === 0) return null
+    const trashGains =
+      inlineTrash && side === 'cost' ? resourceGains.filter(g => g.type === RewardType.TRASH) : []
+    const nonTrashResourceGains =
+      inlineTrash && side === 'cost'
+        ? resourceGains.filter(g => g.type !== RewardType.TRASH)
+        : resourceGains
+
+    if (
+      nonTrashResourceGains.length === 0 &&
+      influenceGains.length === 0 &&
+      trashGains.length === 0
+    ) {
+      return null
+    }
 
     return (
-      <div className={`turn-gains-side turn-gains-side--${side}`}>
-        {resourceGains.map((gain, idx) => renderResourceGain(gain, idx, side))}
-        {influenceGains.map((gain, idx) => renderInfluenceGain(gain.name, gain.amount, idx, side))}
-      </div>
+      <>
+        {trashGains.length > 0 ? (
+          <div className="turn-gains-side turn-gains-side--trash-inline">
+            {trashGains.map((gain, idx) => renderInlineTrashGain(gain, idx))}
+          </div>
+        ) : null}
+        {nonTrashResourceGains.length > 0 || influenceGains.length > 0 ? (
+          <div className={`turn-gains-side turn-gains-side--${side}`}>
+            {nonTrashResourceGains.map((gain, idx) => renderResourceGain(gain, idx, side))}
+            {influenceGains.map((gain, idx) => renderInfluenceGain(gain.name, gain.amount, idx, side))}
+          </div>
+        ) : null}
+      </>
     )
   }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyGameAction, getFreshDefaultGameState } from '../GameContext'
 import { CONFLICTS } from '../../../data/conflicts'
-import { TechTileId } from '../../../data/techTiles'
+import { TECH_TILES, TechTileId } from '../../../data/techTiles'
 import {
   applyAfterConflictTechEffects,
   applyEndgameTechScoring,
@@ -63,10 +63,21 @@ describe('tech tiles reducer', () => {
     expect(after.ixBoard?.stacks[0]).toEqual([TechTileId.ARTILLERY])
   })
 
-  it('ACQUIRE_TECH with one face-down tile auto-reveals it without nextFaceUpTileId', () => {
+  it('ACQUIRE_TECH auto-reveals when only one tile remains in the pool', () => {
+    const remainingId = TechTileId.WINDTRAPS
+    const ownedIds = TECH_TILES.map(tile => tile.id).filter(
+      id => id !== TechTileId.MINIMIC_FILM && id !== remainingId
+    )
     const before = roiState({
+      players: [
+        makePlayer(0, {
+          spice: 10,
+          tech: ownedIds.map(id => ({ id, faceUp: true })),
+        }),
+        makePlayer(1),
+      ],
       ixBoard: {
-        stacks: [[TechTileId.MINIMIC_FILM, TechTileId.WINDTRAPS]],
+        stacks: [[TechTileId.MINIMIC_FILM], [], []],
         nextFaceUpRevealed: {},
       },
     })
@@ -77,12 +88,11 @@ describe('tech tiles reducer', () => {
       stackIndex: 0,
       negotiatorsReturned: 0,
       discount: 0,
-      nextFaceUpTileId: TechTileId.ARTILLERY,
     })
-    expect(after.ixBoard?.stacks[0]).toEqual([TechTileId.WINDTRAPS])
+    expect(after.ixBoard?.stacks[0]).toEqual([remainingId])
   })
 
-  it('ACQUIRE_TECH rejected when multiple face-down and no nextFaceUpTileId', () => {
+  it('ACQUIRE_TECH rejected when multiple tiles available and no nextFaceUpTileId', () => {
     const before = roiState({
       ixBoard: {
         stacks: [
@@ -134,6 +144,7 @@ describe('tech tiles reducer', () => {
       stackIndex: 0,
       negotiatorsReturned: 0,
       discount: 2,
+      nextFaceUpTileId: TechTileId.ARTILLERY,
     })
     expect(after.players[0].spice).toBe(5 - 4)
     expect(after.players[0].tech?.[0]?.id).toBe(TechTileId.HOLTZMAN_ENGINE)
@@ -154,6 +165,7 @@ describe('tech tiles reducer', () => {
       stackIndex: 0,
       negotiatorsReturned: 2,
       discount: 0,
+      nextFaceUpTileId: TechTileId.ARTILLERY,
     })
     expect(after.players[0].spice).toBe(2)
     expect(after.players[0].negotiatorsOnIx).toBe(0)

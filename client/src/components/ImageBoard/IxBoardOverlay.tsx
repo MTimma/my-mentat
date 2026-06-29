@@ -9,27 +9,19 @@ import {
   layoutIxBoardOnStage,
 } from '../../data/ixBoardAnchors'
 import { tileById, canPlayerAffordTechTile } from '../../utils/techTiles'
+import { DEFAULT_PLAYER_COLORS, playerColorHex, playerMarkerHex } from '../../utils/playerColors'
 import BoardAgentFigure from '../AgentIcon/AgentIcon'
-import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import './IxBoardOverlay.css'
 
-const PLAYER_COLORS: Record<number, string> = {
-  0: '#d32f2f',
-  1: '#388e3c',
-  2: '#fbc02d',
-  3: '#1976d2',
+function playerMarkerColor(player: Player): string {
+  return playerMarkerHex(player)
 }
 
-function playerMarkerColor(player: Player): string {
-  const byId = PLAYER_COLORS[player.id]
-  if (byId) return byId
-  const map: Record<string, string> = {
-    red: '#d32f2f',
-    green: '#388e3c',
-    yellow: '#fbc02d',
-    blue: '#1976d2',
-  }
-  return map[player.color] ?? '#888'
+function playerIdMarkerHex(playerId: number, playersById: Map<number, Player>): string {
+  const player = playersById.get(playerId)
+  if (player) return playerMarkerHex(player)
+  const fallback = DEFAULT_PLAYER_COLORS[playerId]
+  return fallback ? playerColorHex(fallback) : '#888'
 }
 
 export type IxBoardPlacement = 'embedded' | 'docked'
@@ -88,6 +80,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
   BOARD_SPACES.forEach(s => spaceMap.set(s.id, s))
 
   const playersSorted = [...players].sort((a, b) => a.id - b.id)
+  const playersById = new Map(players.map(p => [p.id, p]))
 
   const faceUpCount = stacks.filter(stack => stack[0]).length
   const requiredFilledStacks = sandboxTechSetup?.requiredFilledStacks ?? 3
@@ -110,6 +103,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
     return canPlayerAffordTechTile(affordPlayer, tile.cost, {
       discount: techAcquire?.discount ?? 0,
       paySolariInsteadOfSpice: techAcquire?.paySolariInsteadOfSpice,
+      ignoreNegotiators: !techAcquire,
     })
   }
 
@@ -153,7 +147,12 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
               title={`${player.leader.name}: ${count} negotiator${count === 1 ? '' : 's'} on Ix`}
             >
               {Array.from({ length: Math.min(count, 6) }, (_, index) => (
-                <NegotiatorIcon key={index} playerId={player.id} size="sm" />
+                <span
+                  key={index}
+                  className="ix-board-overlay__negotiator-square"
+                  style={{ backgroundColor: playerMarkerHex(player) }}
+                  aria-hidden="true"
+                />
               ))}
               {count > 6 ? <span className="ix-board-overlay__negotiator-overflow">+{count - 6}</span> : null}
             </div>
@@ -214,65 +213,46 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
             )
           }
 
-          if (!onTechTileAcquire) {
-            return (
-              <div
-                key={`tech-slot-${slot.stackIndex}`}
-                className="ix-board-overlay__tech-slot"
-                data-marker="tech-tile"
-                data-stack-index={slot.stackIndex}
-                style={slotStyle}
-                title={`${tile.name} (${tile.cost} spice)`}
-              >
-                <img
-                  className="ix-board-overlay__tech-img"
-                  src={tile.image}
-                  alt={tile.name}
-                  draggable={false}
-                />
-              </div>
-            )
-          }
-
+          const showAffordPreview = Boolean(affordPlayer)
           const hasAcquireReward = Boolean(techAcquire)
-          const affordable = canAffordStack(slot.stackIndex)
-          const tileDimmed = !affordable
+          const affordable = showAffordPreview ? canAffordStack(slot.stackIndex) : false
+          const tileDimmed = showAffordPreview && !affordable
+
+          const slotClasses = [
+            'ix-board-overlay__tech-slot',
+            'ix-board-overlay__tech-slot--interactive',
+            hasAcquireReward && affordable ? 'ix-board-overlay__tech-slot--affordable' : '',
+            showAffordPreview && !affordable ? 'ix-board-overlay__tech-slot--unaffordable' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')
+
+          const title = hasAcquireReward
+            ? affordable
+              ? `Acquire ${tile.name} (${tile.cost} spice)`
+              : `View ${tile.name} — acquire reward active`
+            : affordable
+              ? `View ${tile.name} (${tile.cost} spice) — you can afford this`
+              : `View ${tile.name} (${tile.cost} spice) — need more spice`
+
+          const ariaLabel = hasAcquireReward
+            ? affordable
+              ? `Acquire ${tile.name}`
+              : `View ${tile.name}`
+            : affordable
+              ? `View ${tile.name}, affordable`
+              : `View ${tile.name}, unaffordable`
 
           return (
             <button
               key={`tech-slot-${slot.stackIndex}`}
               type="button"
-              className={[
-                'ix-board-overlay__tech-slot',
-                'ix-board-overlay__tech-slot--interactive',
-                hasAcquireReward && affordable
-                  ? 'ix-board-overlay__tech-slot--affordable'
-                  : '',
-                !affordable ? 'ix-board-overlay__tech-slot--unaffordable' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
+              className={slotClasses}
               data-marker="tech-tile"
               data-stack-index={slot.stackIndex}
               style={slotStyle}
-              title={
-                hasAcquireReward
-                  ? affordable
-                    ? `Acquire ${tile.name} (${tile.cost} spice)`
-                    : `View ${tile.name} — acquire reward active`
-                  : affordable
-                    ? `View ${tile.name} (${tile.cost} spice) — you can afford this`
-                    : `View ${tile.name} (${tile.cost} spice) — need more spice`
-              }
-              aria-label={
-                hasAcquireReward
-                  ? affordable
-                    ? `Acquire ${tile.name}`
-                    : `View ${tile.name}`
-                  : affordable
-                    ? `View ${tile.name}, affordable`
-                    : `View ${tile.name}, unaffordable`
-              }
+              title={title}
+              aria-label={ariaLabel}
               onClick={() => onTechTileAcquire?.(slot.stackIndex)}
             >
               <img
@@ -313,7 +293,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
             .join(' ')
 
           const occupiedBg = isOccupied
-            ? PLAYER_COLORS[occupied[occupied.length - 1]] || '#888'
+            ? playerIdMarkerHex(occupied[occupied.length - 1], playersById)
             : undefined
 
           return (
@@ -355,7 +335,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
         {[...blockedSpaceMap.entries()].map(([spaceId, blockerPlayerId]) => {
           const hotspot = IX_BOARD_HOTSPOTS.find(h => h.spaceId === spaceId)
           if (!hotspot) return null
-          const ring = PLAYER_COLORS[blockerPlayerId] || '#ffa726'
+          const ring = playerIdMarkerHex(blockerPlayerId, playersById)
           const x = hotspot.left + hotspot.width * (hotspot.agentX / 100)
           const y = hotspot.top + hotspot.height * (hotspot.agentY / 100)
           return (
@@ -407,7 +387,11 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
                 top: `${hotspot.top + hotspot.height * (hotspot.agentY / 100)}%`,
               }}
             >
-              <BoardAgentFigure playerId={playerId} className="image-board__agent-figure" />
+              <BoardAgentFigure
+                playerId={playerId}
+                color={playersById.get(playerId)?.color}
+                className="image-board__agent-figure"
+              />
             </div>
           ))
         })}

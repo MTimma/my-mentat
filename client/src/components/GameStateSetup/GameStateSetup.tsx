@@ -3,7 +3,7 @@ import { PlayerSetup, Player, Card } from '../../types/GameTypes'
 import { motion } from 'framer-motion'
 import { getStartingSpice, getStartingSolari } from '../../data/leaderAbilities/beastSetup'
 import { getStartingWater } from '../../data/leaderAbilities/yunaSolariBonus'
-import { applyHudroStartingIntrigue } from '../../data/leaderAbilities/hudroIntriguePeek'
+import { getStartingIntrigue } from '../../data/leaderAbilities/hudroSetup'
 import { seedTessiaSnoopers } from '../../data/leaderAbilities/tessiaSnoopers'
 import StarterDeckEditor from '../StarterDeckEditor/StarterDeckEditor'
 import ImperiumRowDeckCreator from '../ImperiumRowDeckCreator/ImperiumRowDeckCreator'
@@ -73,7 +73,7 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
   )
   const [playerStates, setPlayerStates] = useState<Player[]>(
     playerSetups.map((setup, index) => {
-      const base = applyHudroStartingIntrigue({
+      const base: Player = {
         id: index,
         leader: setup.leader,
         color: setup.color,
@@ -84,7 +84,7 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
         combatValue: 0,
         agents: 2,
         handCount: 5,
-        intrigueCount: 0,
+        intrigueCount: getStartingIntrigue(setup.leader),
         deck: [...setup.deck],
         discardPile: [],
         trash: [],
@@ -100,8 +100,8 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
         ...(expansions.riseOfIx
           ? { freighterStep: 0 as const, negotiatorsOnIx: 0, tech: [] as const }
           : {}),
-      })
-      return seedTessiaSnoopers(seedTroopSupply(applyHudroStartingIntrigue(base)), expansions.riseOfIx)
+      }
+      return seedTessiaSnoopers(seedTroopSupply(base), expansions.riseOfIx)
     })
   )
 

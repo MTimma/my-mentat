@@ -90,9 +90,10 @@ import {
   normalizeExpansions,
   type SandboxSetupPosition,
 } from '../../types/GameTypes'
-import { BOARD_SPACES, ARRAKIS_LIAISON_DECK, buildImperiumDeck, SPICE_MUST_FLOW_DECK, FOLDSPACE_DECK } from '../../catalog/runtime'
+import { BOARD_SPACES, ARRAKIS_LIAISON_DECK, buildImperiumDeck, buildTleilaxuPool, SPICE_MUST_FLOW_DECK, FOLDSPACE_DECK } from '../../catalog/runtime'
 import {
   canPlayerVisitBoardSpaceOnce,
+  boardSpaceById,
   isBoardSpaceAvailableForExpansions,
 } from '../../data/boardSpaceAvailability'
 import { getConflictPool } from '../../data/conflicts'
@@ -129,6 +130,7 @@ import {
   createLoseInfluenceChoice,
   requiresInfluenceChoices,
 } from '../../utils/influenceChoices'
+import { conflictInfluenceGainName } from '../../utils/influenceDisplay'
 import { dreadnoughtStrengthEach } from '../../data/leaderAbilities/rhomburDreadnoughtStrength'
 import {
   applyDreadnoughtControlPlacement,
@@ -223,6 +225,26 @@ import {
 } from './riseOfIx/intrigue'
 import { fireUnloadIfApplicable, withUnloadForNewlyTrashedCards } from './riseOfIx/unload'
 import { isMandatoryRecruitAndDeployEffect, applyImmediateTroopRecruit } from './riseOfIx/mandatoryDeploy'
+import {
+  advanceResearch,
+  advanceTleilaxuTrack,
+  resolveResearchBranch,
+  setResearchNode,
+  setTleilaxuStep,
+} from '../../expansions/immortality/reducer'
+import {
+  getGraftPartner,
+  graftPairHasInfiltrate,
+  isGholaCard,
+  isUsurpCard,
+  resolveGraftCards,
+} from '../../expansions/immortality/graft'
+import {
+  applyImmortalityAutoCustom,
+  gholaCopyPartnerPlayEffects,
+  queueImmortalityPendingCustom,
+  type ImmortalityPlayContext,
+} from '../../expansions/immortality/customEffects'
 
 /** Merge RoI unit fields without clobbering resources already adjusted this placement. */
 function mergeRoiUnitFieldsFromRefreshed(target: Player, refreshed: Player): void {
@@ -345,6 +367,26 @@ export type GameAction =
       }
     | { type: 'TECH_NEGOTIATOR'; playerId: number; amount: number }
     | { type: 'ACTIVATE_TECH'; playerId: number; tileId: TechTileId }
+    // Immortality
+    | { type: 'ADVANCE_RESEARCH'; playerId: number; nodeId: string }
+    | { type: 'SET_RESEARCH_NODE'; playerId: number; nodeId: string }
+    | { type: 'SET_TLEILAXU_STEP'; playerId: number; step: number }
+    | { type: 'ACQUIRE_TLEILAXU'; playerId: number; cardId: number; freeAcquire?: boolean }
+    | { type: 'SET_TLEILAXU_ROW'; cardIds: number[] }
+    | { type: 'USE_FAMILY_ATOMICS'; playerId: number }
+    | { type: 'SET_GRAFT_PAIR'; cardIds: number[] }
+    | { type: 'CLEAR_GRAFT_PAIR' }
+    | {
+        type: 'COMPLETE_GRAFT_PAIR'
+        playerId: number
+        primaryCardId: number
+        primaryDeckIndex: number
+        secondaryCardId?: number
+        secondaryDeckIndex?: number
+        imperiumRowCardId?: number
+      }
+    | { type: 'CANCEL_GRAFT_SELECTION' }
+    | { type: 'RECALL_PLACED_AGENT'; playerId: number }
 
 export { useGame } from './gameContextState'
 
@@ -412,6 +454,7 @@ const initialGameState: GameState = {
   gains: [],
   pendingRewards: [],
   scheduledIntrigueOnReveal: {},
+  scheduledGraftOnReveal: {},
   activeIntrigueThisRound: {},
   acquireToTopThisRound: {},
   endgameTiebreakerSpice: {},
@@ -908,7 +951,8 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
       break
 
     case RewardType.INFLUENCE: {
-      // chooseFaction rewards are handled via pendingConflictRewardChoices
+      // chooseFaction rewards are deferred to pendingConflictRewardChoices
+      if (reward.chooseFaction) break
       const faction = FactionType.EMPEROR
       const player = newState.players.find(p => p.id === recipientIds[0])
       if (player) {
@@ -1286,14 +1330,14 @@ function applyConflictChoiceReward(
     return { ...newState, pendingRewards }
   }
 
-  const pushGain = (amount: number | undefined, type: RewardType) => {
+  const pushGain = (amount: number | undefined, type: RewardType, gainName?: string) => {
     if (!amount) return
     newState.gains.push({
       playerId,
       round: newState.currentRound,
       source: GainSource.CONFLICT,
       sourceId: source.id,
-      name: source.name,
+      name: gainName ?? source.name,
       amount,
       type
     })
@@ -1323,7 +1367,7 @@ function applyConflictChoiceReward(
       newState = applied.state
       player = applied.player
       tessiaChoices.push(...applied.tessiaChoices)
-      pushGain(amount, RewardType.INFLUENCE)
+      pushGain(amount, RewardType.INFLUENCE, conflictInfluenceGainName(source.name, faction))
     })
     if (milestoneMeta.troopsRecruited > 0) {
       newState = withRecruitedTroopsDeployLimit(newState, milestoneMeta.troopsRecruited)
@@ -1440,6 +1484,27 @@ function applyChoiceReward(
       }
     }
   }
+  if (newState.expansions?.immortality) {
+    if (reward.specimen) {
+      player.specimens = (player.specimens ?? 0) + reward.specimen
+      pushGain(reward.specimen, RewardType.SPECIMEN)
+    }
+    if (reward.combatDeploy && newState.currTurn) {
+      newState = { ...newState, currTurn: { ...newState.currTurn, canDeployTroops: true } }
+    }
+    if (reward.research || reward.tleilaxu) {
+      // Flush the working player copy so the track helpers (which apply nested
+      // space-bonus rewards) operate on current state, then re-read it.
+      newState.players = newState.players.map(p => (p.id === playerId ? player : p))
+      if (reward.tleilaxu) {
+        newState = advanceTleilaxuTrack(newState, playerId, reward.tleilaxu, applyChoiceReward)
+      }
+      if (reward.research) {
+        newState = advanceResearch(newState, playerId, reward.research, applyChoiceReward)
+      }
+      player = newState.players.find(p => p.id === playerId) ?? player
+    }
+  }
   if (reward.victoryPoints) {
     player.victoryPoints += reward.victoryPoints
     pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS)
@@ -1461,7 +1526,7 @@ function applyChoiceReward(
   }
 
   if (reward.techNegotiator && isRiseOfIxEnabled(newState)) {
-    newState = applyTechNegotiatorReward(newState, playerId, reward.techNegotiator)
+    newState = applyTechNegotiatorReward(newState, playerId, reward.techNegotiator, gainSource)
     player = newState.players.find(p => p.id === playerId) ?? player
     pushGain(reward.techNegotiator, RewardType.NEGOTIATOR)
   }
@@ -1861,7 +1926,8 @@ function handleIntrigueEffect(
         (c.spice && updatedPlayer.spice < c.spice) ||
         (c.water && updatedPlayer.water < c.water) ||
         (c.solari && updatedPlayer.solari < c.solari) ||
-        (c.troops && updatedPlayer.troops < c.troops)
+        (c.troops && updatedPlayer.troops < c.troops) ||
+        (c.specimen && (updatedPlayer.specimens ?? 0) < c.specimen)
       ) {
         return
       }
@@ -1880,6 +1946,10 @@ function handleIntrigueEffect(
       if (c.troops) {
         updatedPlayer.troops -= c.troops
         pushGain(-c.troops, RewardType.TROOPS)
+      }
+      if (c.specimen && newState.expansions?.immortality) {
+        updatedPlayer.specimens = Math.max(0, (updatedPlayer.specimens ?? 0) - c.specimen)
+        pushGain(-c.specimen, RewardType.SPECIMEN)
       }
       if (effect.reward.custom === CustomEffect.QUID_PRO_QUO && state.expansions?.riseOfIx) {
         updatedPlayers[playerIndex] = updatedPlayer
@@ -2846,6 +2916,51 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const player = state.players.find(p => p.id === action.playerId)
       if (!player) return state
 
+      // Swap leaders with another player when picking an already-assigned leader.
+      if (
+        action.patch.leader !== undefined &&
+        action.patch.leader.name !== player.leader.name
+      ) {
+        const other = state.players.find(
+          p => p.id !== action.playerId && p.leader.name === action.patch.leader!.name
+        )
+        if (other) {
+          const updatedPlayers = state.players.map(p => {
+            if (p.id === player.id) {
+              const resources = applyLeaderStartingResourceDelta(p, other.leader)
+              return seedTessiaSnoopers(
+                { ...p, leader: other.leader, ...resources },
+                state.expansions.riseOfIx
+              )
+            }
+            if (p.id === other.id) {
+              const resources = applyLeaderStartingResourceDelta(p, player.leader)
+              return seedTessiaSnoopers(
+                { ...p, leader: player.leader, ...resources },
+                state.expansions.riseOfIx
+              )
+            }
+            return p
+          })
+          return withSandboxSetupHistory({ ...state, players: updatedPlayers })
+        }
+      }
+
+      // Swap colors with another player when picking an already-assigned color.
+      if (action.patch.color !== undefined && action.patch.color !== player.color) {
+        const other = state.players.find(
+          p => p.id !== action.playerId && p.color === action.patch.color
+        )
+        if (other) {
+          const updatedPlayers = state.players.map(p => {
+            if (p.id === player.id) return { ...p, color: action.patch.color! }
+            if (p.id === other.id) return { ...p, color: player.color }
+            return p
+          })
+          return withSandboxSetupHistory({ ...state, players: updatedPlayers })
+        }
+      }
+
       // Card pile edits swap with imperium + reserve pools only when cards enter/leave the player.
       const touchesCardPiles =
         action.patch.deck !== undefined ||
@@ -2979,7 +3094,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const { playerId } = action
       if (playerId !== state.activePlayerId) return state
 
-      const newState = { ...state, pendingAcquireTech: null }
+      let newState = { ...state, pendingAcquireTech: null }
       const player = newState.players[playerId]
       if (!player) return state
 
@@ -3157,12 +3272,41 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           : p
       )
 
+      let playersAfterGraft = updatedPlayers
+      if (state.usurpBorrowed && currentTurn.type === TurnType.ACTION) {
+        const borrowed = state.usurpBorrowed.card
+        playersAfterGraft = updatedPlayers.map(p =>
+          p.id === playerId
+            ? {
+                ...p,
+                playArea: p.playArea.filter(c => c.id !== borrowed.id),
+                trash: [...p.trash, borrowed],
+              }
+            : p
+        )
+        newState = {
+          ...newState,
+          gains: [
+            ...newState.gains,
+            {
+              round: newState.currentRound,
+              playerId,
+              sourceId: borrowed.id,
+              name: borrowed.name,
+              amount: -1,
+              type: RewardType.CARD,
+              source: GainSource.CARD,
+            },
+          ],
+        }
+      }
+
       const afterAdvance = {
         ...newState,
         blockedSpaces: clearedBlockedSpaces,
         dispatchEnvoyActive: clearDispatch,
         infiltrateIgnoreOccupancyOnce: clearInfiltrate,
-        players: updatedPlayers,
+        players: playersAfterGraft,
         activePlayerId: nextPlayer.id,
         history: [...state.history, snapshotStateForHistory(state)],
         currTurn: null,
@@ -3172,6 +3316,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         canAcquireIR: false,
         gains: [],
         pendingRewards: [],
+        graftPair: null,
+        pendingGraftPartner: null,
+        usurpBorrowed: null,
       }
       return activatePlayerForTurn(afterAdvance, nextPlayer.id)
     }
@@ -4227,6 +4374,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return kwisatzBase
       }
 
+      if (
+        state.expansions?.immortality &&
+        card.graft &&
+        !state.pendingGraftPartner &&
+        !state.graftPair
+      ) {
+        return {
+          ...state,
+          pendingGraftPartner: {
+            primaryCardId: cardId,
+            primaryDeckIndex: resolvedDeckIndex,
+            requiresImperiumRow: isUsurpCard(card),
+          },
+          selectedCard: cardId,
+          selectedCardDeckIndex: resolvedDeckIndex,
+          currTurn: currentTurn,
+          canEndTurn: false,
+        }
+      }
+
       return {
         ...state,
         selectedCard: cardId,
@@ -4263,7 +4430,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ? newState.selectedCardDeckIndex
           : currPlayer.deck.findIndex(c => c.id === newState.selectedCard)
       const card = selectedDeckIndex >= 0 ? currPlayer.deck[selectedDeckIndex] : undefined
-      const space = BOARD_SPACES.find((s: SpaceProps) => s.id === spaceId)
+      const space = boardSpaceById(spaceId, newState.expansions)
       if (
         !space ||
         !isBoardSpaceAvailableForExpansions(space, newState.expansions) ||
@@ -4316,25 +4483,58 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         pendingRewards.push(pendingReward)
       }
       
-      function applyCardPlayEffect(effect: CardEffect, card: Card, space: SpaceProps) {
+      function applyCardPlayEffect(
+        effect: CardEffect,
+        card: Card,
+        space: SpaceProps,
+        gainSourceCard?: Card
+      ) {
+        const gainCard = gainSourceCard ?? card
+        const gainSource = { type: GainSource.CARD, id: gainCard.id, name: gainCard.name }
         // Add to pendingRewards: spice, water, solari, troops, drawCards, intrigueCards
         if (effect.reward.spice) {
-          addPendingReward({ spice: effect.reward.spice }, { type: GainSource.CARD, id: card.id, name: card.name })
+          addPendingReward({ spice: effect.reward.spice }, gainSource)
         }
         if (effect.reward.water) {
-          addPendingReward({ water: effect.reward.water }, { type: GainSource.CARD, id: card.id, name: card.name })
+          addPendingReward({ water: effect.reward.water }, gainSource)
         }
         if (effect.reward.solari) {
-          addPendingReward({ solari: effect.reward.solari }, { type: GainSource.CARD, id: card.id, name: card.name })
+          addPendingReward({ solari: effect.reward.solari }, gainSource)
         }
         if (effect.reward.troops) {
-          addPendingReward({ troops: effect.reward.troops }, { type: GainSource.CARD, id: card.id, name: card.name })
+          addPendingReward({ troops: effect.reward.troops }, gainSource)
         }
         if (effect.reward.drawCards) {
-          addPendingReward({ drawCards: effect.reward.drawCards }, { type: GainSource.CARD, id: card.id, name: card.name })
+          addPendingReward({ drawCards: effect.reward.drawCards }, gainSource)
         }
         if (effect.reward.intrigueCards) {
-          addPendingReward({ intrigueCards: effect.reward.intrigueCards }, { type: GainSource.CARD, id: card.id, name: card.name })
+          addPendingReward({ intrigueCards: effect.reward.intrigueCards }, gainSource)
+        }
+        if (effect.reward.influence) {
+          if (effect.reward.influence.chooseOne) {
+            tempCurrTurn.pendingChoices = [
+              ...(tempCurrTurn.pendingChoices ?? []),
+              createGainInfluenceChoice(
+                effect.reward.influence,
+                gainSource,
+                undefined,
+                collectLiveIds(newState, (tempCurrTurn.pendingChoices ?? []).map(c => c.id))
+              ),
+            ]
+          } else {
+            addPendingReward({ influence: effect.reward.influence }, gainSource)
+          }
+        }
+        if (newState.expansions?.immortality) {
+          if (effect.reward.research) {
+            addPendingReward({ research: effect.reward.research }, gainSource)
+          }
+          if (effect.reward.specimen) {
+            addPendingReward({ specimen: effect.reward.specimen }, gainSource)
+          }
+          if (effect.reward.tleilaxu) {
+            addPendingReward({ tleilaxu: effect.reward.tleilaxu }, gainSource)
+          }
         }
         if (effect.reward.acquireTech !== undefined && isRiseOfIxEnabled(newState)) {
           if (!effectIsOptional(effect)) {
@@ -4345,7 +4545,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
         }
         if (effect.reward.techNegotiator && isRiseOfIxEnabled(newState) && !effectIsOptional(effect)) {
-          newState = applyTechNegotiatorReward(newState, playerId, effect.reward.techNegotiator)
+          newState = applyTechNegotiatorReward(
+            newState,
+            playerId,
+            effect.reward.techNegotiator,
+            gainSource
+          )
           const refreshed = newState.players.find(p => p.id === playerId)
           if (refreshed) mergeRoiUnitFieldsFromRefreshed(currPlayer, refreshed)
         }
@@ -4467,16 +4672,41 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               }
               break
             }
-            default:
-              if (!AUTO_APPLIED_CUSTOM_EFFECTS.includes(effect.reward.custom)) {
-                addPendingReward({ custom: effect.reward.custom }, { type: GainSource.CARD, id: card.id, name: card.name })
+            default: {
+              if (newState.expansions?.immortality && effect.reward.custom) {
+                const immCtx: ImmortalityPlayContext = {
+                  state: newState,
+                  playerId,
+                  card,
+                  space,
+                  currPlayer,
+                  pendingRewards,
+                  pendingChoices: tempCurrTurn.pendingChoices ?? [],
+                  updatedGains,
+                  addPendingReward,
+                }
+                const autoState = applyImmortalityAutoCustom(effect.reward.custom, immCtx)
+                if (autoState) {
+                  newState = autoState
+                  break
+                }
+                queueImmortalityPendingCustom(effect.reward.custom, immCtx)
+                break
               }
+              if (!AUTO_APPLIED_CUSTOM_EFFECTS.includes(effect.reward.custom)) {
+                addPendingReward({ custom: effect.reward.custom }, gainSource)
+              }
+            }
           }
         }
         
         // Handle trash rewards
         if (effect.reward.trash || effect.reward.trashThisCard) {
-          addPendingReward({ trash: effect.reward.trash, trashThisCard: effect.reward.trashThisCard }, { type: GainSource.CARD, id: card.id, name: card.name }, true)
+          addPendingReward(
+            { trash: effect.reward.trash, trashThisCard: effect.reward.trashThisCard },
+            gainSource,
+            true
+          )
         }
       }
 
@@ -4509,6 +4739,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (effect.reward.intrigueCards) {
           addPendingReward({ intrigueCards: effect.reward.intrigueCards }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
         }
+        if (newState.expansions?.immortality) {
+          if (effect.reward.research) {
+            addPendingReward({ research: effect.reward.research }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
+          }
+          if (effect.reward.specimen) {
+            addPendingReward({ specimen: effect.reward.specimen }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
+          }
+          if (effect.reward.tleilaxu) {
+            addPendingReward({ tleilaxu: effect.reward.tleilaxu }, { type: GainSource.BOARD_SPACE, id: space.id, name: space.name })
+          }
+        }
         if (effect.reward.acquireTech !== undefined && isRiseOfIxEnabled(newState)) {
           if (!effectIsOptional(effect)) {
             addPendingReward(
@@ -4518,7 +4759,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
         }
         if (effect.reward.techNegotiator && isRiseOfIxEnabled(newState) && !effectIsOptional(effect)) {
-          newState = applyTechNegotiatorReward(newState, playerId, effect.reward.techNegotiator)
+          newState = applyTechNegotiatorReward(
+            newState,
+            playerId,
+            effect.reward.techNegotiator,
+            { type: GainSource.BOARD_SPACE, id: space.id, name: space.name }
+          )
           const refreshed = newState.players.find(p => p.id === playerId)
           if (refreshed) mergeRoiUnitFieldsFromRefreshed(currPlayer, refreshed)
         }
@@ -4635,11 +4881,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return state
       }
 
+      const graftCardsForTurn = newState.graftPair
+        ? resolveGraftCards(newState, currPlayer)
+        : card
+          ? [card]
+          : []
+      const cardHasInfiltrate =
+        graftPairHasInfiltrate(graftCardsForTurn) || Boolean(card?.infiltrate)
+
       // Check if space is already occupied or card has infiltrate (Helena can ignore occupancy on Landsraad/City)
       const allowInfiltrateIntrigue = Boolean(newState.infiltrateIgnoreOccupancyOnce?.[playerId])
       if (
         newState.occupiedSpaces[spaceId]?.length > 0 &&
-        !card.infiltrate &&
+        !cardHasInfiltrate &&
         !canPlaceDespiteOccupancy(space, currPlayer) &&
         !allowInfiltrateIntrigue
       ) {
@@ -4672,7 +4926,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
 
-      const updatedPlayArea = (selectiveBreedingData && card.id === selectiveBreedingData.trashedCardId) ? currPlayer.playArea : [...currPlayer.playArea, card]
+      const cardsToAddToPlay = graftCardsForTurn.filter(
+        gc => !currPlayer.playArea.some(p => p.id === gc.id)
+      )
+      const updatedPlayArea =
+        selectiveBreedingData && card && card.id === selectiveBreedingData.trashedCardId
+          ? currPlayer.playArea
+          : [...currPlayer.playArea, ...cardsToAddToPlay]
 
       const recordBoardSpaceCost = (type: RewardType, amount: number) => {
         if (amount <= 0) return
@@ -4790,47 +5050,71 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       // Build optional effects list (play effects with cost or "may" icons)
-      const choiceEffects: PlayEffect[] = [];
-      if(card.playEffect) {
-        card.playEffect?.filter((effect:PlayEffect) => {
-            if(effect.choiceOpt) {
-              // Check if this is an auto-applied custom effect
-              if(effect.reward.custom && AUTO_APPLIED_CUSTOM_EFFECTS.includes(effect.reward.custom)) {
-                // Don't add to choices, will be applied immediately
-                return true;
+      const choiceEffects: PlayEffect[] = []
+
+      function runPlayEffectsForCard(playCard: Card) {
+        if (isGholaCard(playCard)) return
+        if (!playCard.playEffect) return
+        playCard.playEffect
+          ?.filter((effect: PlayEffect) => {
+            if (effect.choiceOpt) {
+              if (effect.reward.custom && AUTO_APPLIED_CUSTOM_EFFECTS.includes(effect.reward.custom)) {
+                return true
               }
               choiceEffects.push(effect)
-              return false;
+              return false
             }
-            if(effect.cost) {
+            if (effect.cost) {
               const effectId = nextSemanticId(
-                { type: GainSource.CARD, id: card.id },
+                { type: GainSource.CARD, id: playCard.id },
                 'EFFECT',
                 [...optionalEffects.map(e => e.id), ...(tempCurrTurn.optionalEffects ?? []).map(e => e.id)]
               )
-              optionalEffects.push({ id: effectId, cost: effect.cost as Cost, reward: effect.reward, source:{ type: GainSource.CARD, id: card.id, name: card.name } })
-              return false;
+              optionalEffects.push({
+                id: effectId,
+                cost: effect.cost as Cost,
+                reward: effect.reward,
+                source: { type: GainSource.CARD, id: playCard.id, name: playCard.name },
+              })
+              return false
             }
             if (effectIsOptional(effect)) {
-              if (!playRequirementSatisfied(effect, card, state, playerId)) return false
+              if (!playRequirementSatisfied(effect, playCard, state, playerId)) return false
               const optional = buildMayOptionalEffect(
                 newState,
                 playerId,
-                { type: GainSource.CARD, id: card.id, name: card.name },
+                { type: GainSource.CARD, id: playCard.id, name: playCard.name },
                 effect,
                 [...optionalEffects.map(e => e.id), ...(tempCurrTurn.optionalEffects ?? []).map(e => e.id)]
               )
               if (optional) optionalEffects.push(optional)
               return false
             }
-            return playRequirementSatisfied(effect, card, state, playerId)
-           }).forEach(effect => {
-          if(effect.reward) {
-              applyCardPlayEffect(effect, card, space)
+            return playRequirementSatisfied(effect, playCard, state, playerId)
+          })
+          .forEach(effect => {
+            if (effect.reward) {
+              applyCardPlayEffect(effect, playCard, space)
             }
+          })
+      }
 
-        });
-        if(choiceEffects.length > 0) {
+      for (const playCard of graftCardsForTurn) {
+        runPlayEffectsForCard(playCard)
+      }
+
+      const gholaCard = graftCardsForTurn.find(isGholaCard)
+      if (gholaCard && space) {
+        const partner = getGraftPartner(graftCardsForTurn, gholaCard)
+        if (partner) {
+          gholaCopyPartnerPlayEffects(partner, gholaCard, (effect, sourceCard) => {
+            if (!playRequirementSatisfied(effect, partner, state, playerId)) return
+            applyCardPlayEffect(effect, partner, space, sourceCard)
+          })
+        }
+      }
+
+      if (choiceEffects.length > 0 && card) {
           // Group all choice effects into a single FixedOptionsChoice
           const choiceId = nextSemanticId(
             { type: GainSource.CARD, id: card.id },
@@ -4872,7 +5156,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             tempCurrTurn.pendingChoices = [...(tempCurrTurn.pendingChoices||[]), fixedOptionsChoice];
           }
         }
-      }
       
       // Add influence to pending rewards (single bumps)
       if (space.influence && !kwisatzFromBoard) {
@@ -4896,9 +5179,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         [spaceId]: [...(newState.occupiedSpaces[spaceId] || []), playerId]
       }
 
-      const updatedDeck = [...currPlayer.deck]
-      if (selectedDeckIndex >= 0) {
+      let updatedDeck = [...currPlayer.deck]
+      let deckCardsRemoved = 0
+      if (newState.graftPair) {
+        for (const gc of graftCardsForTurn) {
+          const idx = updatedDeck.findIndex(c => c.id === gc.id)
+          if (idx >= 0) {
+            updatedDeck.splice(idx, 1)
+            deckCardsRemoved++
+          }
+        }
+      } else if (selectedDeckIndex >= 0) {
         updatedDeck.splice(selectedDeckIndex, 1)
+        deckCardsRemoved = 1
       }
 
       const canDeployTroops = kwisatzFromBoard ? false : (tempCurrTurn?.canDeployTroops || false)
@@ -4997,7 +5290,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       currPlayer.agents -= 1
-      currPlayer.handCount -= 1
+      currPlayer.handCount -= deckCardsRemoved
 
       const nextDispatch = { ...(newState.dispatchEnvoyActive || {}) }
       delete nextDispatch[playerId]
@@ -5057,12 +5350,38 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ]
       }
 
+      // Immortality — scheduled graft effects at Reveal start (e.g. Chairdog).
+      let chairdogPlayArea = [...player.playArea]
+      let chairdogDeck = [...player.deck]
+      const chairdogGains: Gain[] = []
+      for (const graftEffect of state.scheduledGraftOnReveal?.[playerId] ?? []) {
+        if (graftEffect.type !== 'chairdog-return') continue
+        const partnerIdx = chairdogPlayArea.findIndex(c => c.id === graftEffect.partnerCardId)
+        if (partnerIdx < 0) continue
+        const [partner] = chairdogPlayArea.splice(partnerIdx, 1)
+        chairdogDeck = [partner, ...chairdogDeck.filter(c => c.id !== partner.id)]
+        chairdogGains.push({
+          round: state.currentRound,
+          playerId,
+          sourceId: graftEffect.chairdogCardId,
+          name: graftEffect.name,
+          amount: 1,
+          type: RewardType.DRAW,
+          source: GainSource.CARD,
+        })
+      }
+      const playerAfterChairdog: Player = {
+        ...player,
+        playArea: chairdogPlayArea,
+        deck: chairdogDeck,
+      }
+
       // Move selected cards to play area
       let revealedCards = cardIds
-        .map(id => player.deck.find(card => card.id === id))
+        .map(id => playerAfterChairdog.deck.find(card => card.id === id))
         .filter((card): card is Card => card !== undefined)
 
-      let ilesaPlayer = player
+      let ilesaPlayer = playerAfterChairdog
       if (
         player.setAsideCard &&
         (player.agentTurnsThisRound ?? 0) === 0 &&
@@ -5080,7 +5399,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       let persuasionCount = 0
       let swordCount = 0
 
-      const updatedGains: Gain[] = [...state.gains]
+      const updatedGains: Gain[] = [...state.gains, ...chairdogGains]
       const pendingRewards: PendingReward[] = [...state.pendingRewards]
 
       // Helper to add pending reward from card
@@ -5224,6 +5543,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             }
             if(effect.reward?.drawCards) {
               addPendingReward({ drawCards: effect.reward.drawCards }, { type: GainSource.CARD, id: card.id, name: card.name })
+            }
+            if (effect.reward?.influence) {
+              if (effect.reward.influence.chooseOne) {
+                pendingChoices.push(
+                  createGainInfluenceChoice(
+                    effect.reward.influence,
+                    { type: GainSource.CARD, id: card.id, name: card.name },
+                    undefined,
+                    collectLiveIds(state, pendingChoices.map(c => c.id))
+                  )
+                )
+              } else {
+                addPendingReward(
+                  { influence: effect.reward.influence },
+                  { type: GainSource.CARD, id: card.id, name: card.name }
+                )
+              }
             }
             if (effect.reward?.troops) {
               if (isMandatoryRecruitAndDeployEffect(card, effect.reward)) {
@@ -5474,6 +5810,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           canEndTurn: (pendingChoices.length > 0 || tempCurrTurn.pendingChoices?.length || pendingRewards.filter(r => !r.disabled).length > 0) ? false : true,
           canAcquireIR: true,
           scheduledIntrigueOnReveal: { ...(state.scheduledIntrigueOnReveal || {}), [playerId]: [] },
+          scheduledGraftOnReveal: { ...(state.scheduledGraftOnReveal || {}), [playerId]: [] },
           dispatchEnvoyActive: dispatchEnvoyActiveAfterReveal,
         },
         playerId
@@ -5806,6 +6143,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if(cost.water && player.water < cost.water) return false;
         if(cost.solari && player.solari < cost.solari) return false;
         if(cost.troops && player.troops < cost.troops) return false;
+        if(cost.specimen && (player.specimens ?? 0) < cost.specimen) return false;
         if(cost.intrigueBottom && player.intrigueCount < cost.intrigueBottom) return false;
         if(cost.trash && !data?.trashedCardId) return false;
         if (reward.techNegotiator && (player.troopSupply ?? 0) < reward.techNegotiator) return false;
@@ -5873,6 +6211,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if(cost.water) { player.water -= cost.water; pushCostGain(cost.water, RewardType.WATER); }
       if(cost.solari) { player.solari -= cost.solari; pushCostGain(cost.solari, RewardType.SOLARI); }
       if(cost.troops) { player.troops -= cost.troops; pushCostGain(cost.troops, RewardType.TROOPS); }
+      if(cost.specimen) { player.specimens = Math.max(0, (player.specimens ?? 0) - cost.specimen); pushCostGain(cost.specimen, RewardType.SPECIMEN); }
       if(cost.intrigueBottom) {
         player.intrigueCount -= cost.intrigueBottom
         pushCostGain(cost.intrigueBottom, RewardType.INTRIGUE)
@@ -6032,7 +6371,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             currTurn: tempCurrTurn,
           },
           playerId,
-          reward.techNegotiator
+          reward.techNegotiator,
+          effect.source
         )
         return unloadAfterPayCost
           ? withUnloadAfterCardRemoved(afterNegotiator, playerId, unloadAfterPayCost, 'trash')
@@ -6251,11 +6591,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const resolved = applyTechNegotiatorReward(
           { ...state, currTurn: { ...state.currTurn, pendingChoices: newPending } },
           playerId,
-          reward.techNegotiator
+          reward.techNegotiator,
+          gainAttribution
         )
+        const after = {
+          ...resolved,
+          canEndTurn:
+            newPending.length === 0 &&
+            resolved.pendingRewards.filter(r => !r.disabled).length === 0,
+        }
         return state.phase === GamePhase.END_GAME
-          ? afterEndgamePlayerAction(resolved)
-          : resolved
+          ? afterEndgamePlayerAction(after)
+          : after
       }
 
       if (reward.custom === CustomEffect.TESSIA_SNOOPER_DISCARD_SPICE && state.currTurn) {
@@ -7084,6 +7431,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (reward.reward.trash && !reward.reward.trashThisCard && typeof customData?.trashedCardId !== 'number') {
         return state
       }
+
+      if (reward.reward.influence?.chooseOne) {
+        const influenceChoice = createGainInfluenceChoice(
+          reward.reward.influence,
+          reward.source,
+          undefined,
+          collectLiveIds(state)
+        )
+        const newTurn = {
+          ...state.currTurn,
+          pendingChoices: [...(state.currTurn?.pendingChoices ?? []), influenceChoice],
+        }
+        return {
+          ...state,
+          pendingRewards: state.pendingRewards.filter(r => r.id !== rewardId),
+          currTurn: newTurn,
+          canEndTurn: false,
+        }
+      }
+
       // Resolved factions for Masterstroke / Memnon influence rewards
       let resolvedInfluenceFactions: FactionType[] | null = null
       if (reward.source.type === GainSource.MASTERSTROKE) {
@@ -7305,6 +7672,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         !sourcesWithTrash.has(`${r.source.type}-${r.source.id}`) &&
         !r.disabled &&
         !r.reward.custom &&
+        !r.reward.influence?.chooseOne &&
         !(
           hasUnclaimedPowerPlay &&
           r.source.type === GainSource.BOARD_SPACE &&
@@ -7759,8 +8127,263 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return handleActivateTech(state, action)
     case 'TECH_NEGOTIATOR':
       return handleTechNegotiator(state, action)
+    case 'ADVANCE_RESEARCH':
+      return resolveResearchBranch(state, action.playerId, action.nodeId, applyChoiceReward)
+    case 'SET_RESEARCH_NODE':
+      if (!state.expansions?.immortality) return state
+      return setResearchNode(state, action.playerId, action.nodeId)
+    case 'SET_TLEILAXU_STEP':
+      if (!state.expansions?.immortality) return state
+      return setTleilaxuStep(state, action.playerId, action.step)
+    case 'ACQUIRE_TLEILAXU':
+      return handleAcquireTleilaxu(state, action.playerId, action.cardId, action.freeAcquire)
+    case 'SET_TLEILAXU_ROW':
+      return handleSetTleilaxuRow(state, action.cardIds)
+    case 'USE_FAMILY_ATOMICS':
+      return handleUseFamilyAtomics(state, action.playerId)
+    case 'COMPLETE_GRAFT_PAIR': {
+      if (!state.expansions?.immortality) return state
+      const {
+        playerId,
+        primaryCardId,
+        primaryDeckIndex,
+        secondaryCardId,
+        secondaryDeckIndex,
+        imperiumRowCardId,
+      } = action
+      if (playerId !== state.activePlayerId) return state
+      const pending = state.pendingGraftPartner
+      if (pending && pending.primaryCardId !== primaryCardId) return state
+
+      const player = state.players.find(p => p.id === playerId)
+      if (!player) return state
+
+      const primary =
+        player.deck[primaryDeckIndex]?.id === primaryCardId
+          ? player.deck[primaryDeckIndex]
+          : player.deck.find(c => c.id === primaryCardId)
+      if (!primary) return state
+
+      let secondary: Card | undefined
+      let usurpBorrowed: GameState['usurpBorrowed'] = null
+      let imperiumRow = [...state.imperiumRow]
+
+      if (imperiumRowCardId != null) {
+        if (!isUsurpCard(primary)) return state
+        const rowIndex = imperiumRow.findIndex(c => c.id === imperiumRowCardId)
+        if (rowIndex < 0) return state
+        const rowCard = imperiumRow[rowIndex]
+        const borrowedId = rowCard.id
+        secondary = { ...rowCard, id: borrowedId }
+        imperiumRow = imperiumRow.filter((_, i) => i !== rowIndex)
+        usurpBorrowed = { card: secondary, rowIndex }
+      } else if (secondaryCardId != null) {
+        const secIdx =
+          typeof secondaryDeckIndex === 'number' &&
+          player.deck[secondaryDeckIndex]?.id === secondaryCardId
+            ? secondaryDeckIndex
+            : player.deck.findIndex(c => c.id === secondaryCardId)
+        if (secIdx < 0) return state
+        secondary = player.deck[secIdx]
+      }
+
+      if (!secondary) return state
+      if (!primary.graft && !secondary.graft) return state
+
+      const graftPair = { cardIds: [primary.id, secondary.id] }
+      const isContinuingTurn = state.currTurn?.playerId === playerId
+      const currentTurn: GameTurn = isContinuingTurn
+        ? { ...state.currTurn!, cardId: primary.id }
+        : {
+            playerId,
+            type: TurnType.ACTION,
+            cardId: primary.id,
+            gainsStartIndex: state.gains.length,
+            persuasionCount: 0,
+            gainedEffects: [],
+            acquiredCards: [],
+            pendingChoices: [],
+          }
+
+      if (secondary.infiltrate || primary.infiltrate) {
+        return {
+          ...state,
+          infiltrateIgnoreOccupancyOnce: {
+            ...(state.infiltrateIgnoreOccupancyOnce ?? {}),
+            [playerId]: true,
+          },
+          imperiumRow,
+          graftPair,
+          usurpBorrowed,
+          pendingGraftPartner: null,
+          selectedCard: primary.id,
+          selectedCardDeckIndex: primaryDeckIndex,
+          currTurn: currentTurn,
+          canEndTurn: false,
+        }
+      }
+
+      return {
+        ...state,
+        imperiumRow,
+        graftPair,
+        usurpBorrowed,
+        pendingGraftPartner: null,
+        selectedCard: primary.id,
+        selectedCardDeckIndex: primaryDeckIndex,
+        currTurn: currentTurn,
+        canEndTurn: false,
+      }
+    }
+    case 'CANCEL_GRAFT_SELECTION':
+      return state.pendingGraftPartner
+        ? {
+            ...state,
+            pendingGraftPartner: null,
+            selectedCard: null,
+            selectedCardDeckIndex: null,
+            currTurn: null,
+          }
+        : state
+    case 'RECALL_PLACED_AGENT': {
+      const { playerId } = action
+      if (playerId !== state.activePlayerId || !state.currTurn?.canRecallPlacedAgent) return state
+      const spaceId = state.currTurn.agentSpaceId
+      if (spaceId == null) return state
+      const occupants = state.occupiedSpaces[spaceId] || []
+      if (!occupants.includes(playerId)) return state
+
+      const updatedOccupied = {
+        ...state.occupiedSpaces,
+        [spaceId]: occupants.filter(id => id !== playerId),
+      }
+      const updatedPlayers = state.players.map(p =>
+        p.id === playerId ? { ...p, agents: p.agents + 1 } : p
+      )
+
+      return {
+        ...state,
+        occupiedSpaces: updatedOccupied,
+        players: updatedPlayers,
+        currTurn: {
+          ...state.currTurn,
+          agentSpace: undefined,
+          agentSpaceId: undefined,
+          canRecallPlacedAgent: false,
+          canDeployTroops: false,
+          troopLimit: 0,
+        },
+      }
+    }
+    case 'SET_GRAFT_PAIR':
+      return state.expansions?.immortality
+        ? { ...state, graftPair: action.cardIds.length ? { cardIds: action.cardIds } : null }
+        : state
+    case 'CLEAR_GRAFT_PAIR':
+      return state.expansions?.immortality ? { ...state, graftPair: null } : state
     default:
       return state
+  }
+}
+
+const RECLAIMED_FORCES_NAME = 'Reclaimed Forces'
+
+/**
+ * Immortality — acquire a card from the Tleilaxu Row using specimens. Reclaimed
+ * Forces is a permanent reserve (acquiring it copies it to the discard pile but
+ * never empties a row slot); other cards leave a slot that the user refills via
+ * SET_TLEILAXU_ROW (no shuffle).
+ */
+function handleAcquireTleilaxu(
+  state: GameState,
+  playerId: number,
+  cardId: number,
+  freeAcquire?: boolean
+): GameState {
+  if (!state.expansions?.immortality) return state
+  const player = state.players.find(p => p.id === playerId)
+  if (!player) return state
+
+  const row = state.tleilaxuRow ?? []
+  let rowIndex = row.findIndex(c => c.id === cardId)
+  let card = rowIndex >= 0 ? row[rowIndex] : undefined
+  if (!card) {
+    const reserve = buildTleilaxuPool().find(
+      c => c.id === cardId && c.name === RECLAIMED_FORCES_NAME
+    )
+    if (reserve) {
+      card = reserve
+      rowIndex = -1
+    }
+  }
+  if (!card) return state
+
+  const cost = freeAcquire ? 0 : card.cost ?? 0
+  if (!freeAcquire && (player.specimens ?? 0) < cost) return state
+
+  const isReclaimedForces = card.name === RECLAIMED_FORCES_NAME
+  const gains: Gain[] = [
+    ...state.gains,
+    { round: state.currentRound, playerId, sourceId: card.id, name: card.name, amount: 1, type: RewardType.CARD, source: GainSource.CARD },
+  ]
+  if (cost) {
+    gains.push({ round: state.currentRound, playerId, sourceId: card.id, name: `${card.name} Acquire`, amount: -cost, type: RewardType.SPECIMEN, source: GainSource.CARD })
+  }
+
+  const updatedPlayer: Player = {
+    ...player,
+    specimens: Math.max(0, (player.specimens ?? 0) - cost),
+    discardPile: [...player.discardPile, { ...card }],
+  }
+
+  let nextRow = row
+  let pendingTleilaxuRowReplacement = state.pendingTleilaxuRowReplacement ?? null
+  if (!isReclaimedForces) {
+    nextRow = row.filter((_, i) => i !== rowIndex)
+    pendingTleilaxuRowReplacement = { cardIndex: rowIndex }
+  }
+
+  return {
+    ...state,
+    gains,
+    players: state.players.map(p => (p.id === playerId ? updatedPlayer : p)),
+    tleilaxuRow: nextRow,
+    pendingTleilaxuRowReplacement,
+  }
+}
+
+/** Immortality — set the purchasable Tleilaxu Row (setup pick or post-acquire refill). */
+function handleSetTleilaxuRow(state: GameState, cardIds: number[]): GameState {
+  if (!state.expansions?.immortality) return state
+  const pool = [...(state.tleilaxuRow ?? []), ...(state.tleilaxuRowDeck ?? [])]
+  const chosen = cardIds
+    .map(id => pool.find(c => c.id === id))
+    .filter((c): c is Card => Boolean(c))
+  const chosenIds = new Set(chosen.map(c => c.id))
+  return {
+    ...state,
+    tleilaxuRow: chosen,
+    tleilaxuRowDeck: pool.filter(c => !chosenIds.has(c.id)),
+    pendingTleilaxuRowReplacement: null,
+  }
+}
+
+/**
+ * Immortality — Family Atomics (once per game): refresh the Imperium Row only.
+ * Current row cards return to the deck pool and the user re-picks 5 via the
+ * existing Imperium Row selection flow.
+ */
+function handleUseFamilyAtomics(state: GameState, playerId: number): GameState {
+  if (!state.expansions?.immortality) return state
+  const player = state.players.find(p => p.id === playerId)
+  if (!player || player.familyAtomicsUsed) return state
+
+  return {
+    ...state,
+    players: state.players.map(p => (p.id === playerId ? { ...p, familyAtomicsUsed: true } : p)),
+    imperiumRowDeck: [...state.imperiumRow, ...state.imperiumRowDeck],
+    imperiumRow: [],
+    pendingImperiumRowReplacement: null,
   }
 }
 
@@ -7799,6 +8422,9 @@ function copyCurrTurnForHistory(currTurn: GameTurn | null | undefined): GameTurn
     ...currTurn,
     gainedEffects: currTurn.gainedEffects ? [...currTurn.gainedEffects] : undefined,
     acquiredCards: currTurn.acquiredCards ? currTurn.acquiredCards.map(c => ({ ...c })) : undefined,
+    acquiredTechTiles: currTurn.acquiredTechTiles
+      ? currTurn.acquiredTechTiles.map(t => ({ ...t }))
+      : undefined,
     revealedCardIds: currTurn.revealedCardIds ? [...currTurn.revealedCardIds] : undefined,
     playedIntrigueCard: currTurn.playedIntrigueCard
       ? currTurn.playedIntrigueCard.map(p => ({ ...p }))
@@ -8028,6 +8654,28 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
             kind !== 'endgame'
           if (isPlayerTurnRow) {
             history = [...history.slice(0, -1), snapshotStateForHistory(prev)]
+          }
+        }
+        // Prefer reducer-built combat snapshot (has strengths/gains before transition cleared them).
+        if (
+          (action.type === 'RESOLVE_COMBAT' || action.type === 'RESOLVE_CONFLICT_REWARD_CHOICE') &&
+          next !== prev
+        ) {
+          const wasCombatRewards =
+            prev.phase === GamePhase.COMBAT_REWARDS || prev.combatResolutionDeferred != null
+          const stillDeferred =
+            (next.pendingConflictRewardChoices?.length ?? 0) > 0 || next.combatResolutionDeferred != null
+          if (wasCombatRewards && !stillDeferred) {
+            let liveCombat: GameState | undefined
+            for (let i = next.history.length - 1; i >= 0; i--) {
+              if (next.history[i].historyEntryKind === 'combat') {
+                liveCombat = next.history[i]
+                break
+              }
+            }
+            if (liveCombat) {
+              history = [...history.filter(h => h.historyEntryKind !== 'combat'), liveCombat]
+            }
           }
         }
         return { ...next, history }

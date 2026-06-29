@@ -40,10 +40,11 @@ export function isAgentPlacementPending(
 }
 
 export function canPlaceAgentOnBoard(
-  state: Pick<GameState, 'selectedCard' | 'currTurn'>
+  state: Pick<GameState, 'selectedCard' | 'currTurn' | 'pendingGraftPartner'>
 ): boolean {
   if (!isAgentPlacementPending(state)) return false
   if (isKwisatzSourceChoicePending(state)) return false
+  if (state.pendingGraftPartner) return false
   return true
 }
 

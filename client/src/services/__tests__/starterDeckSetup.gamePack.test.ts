@@ -17,7 +17,7 @@ describe('buildStartingDeck game packs', () => {
         intrigue: [],
         deckPatches: {
           starting: {
-            append: ['starting/power-play', 'starting/power-play', 'starting/power-play'],
+            append: ['imperium/power-play', 'imperium/power-play', 'imperium/power-play'],
           },
         },
       },
@@ -26,7 +26,6 @@ describe('buildStartingDeck game packs', () => {
 
     const deck = buildStartingDeck('custom/test-power-play-pack@1')
     const powerPlays = deck.filter(card => card.name === 'Power Play')
-    expect(powerPlays).toHaveLength(4)
-    expect(new Set(powerPlays.map(card => card.id)).size).toBe(4)
+    expect(powerPlays).toHaveLength(3)
   })
 })

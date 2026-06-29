@@ -63,7 +63,8 @@
         "first": [
           {
             "type": "Influence",
-            "amount": 1
+            "amount": 1,
+            "chooseFaction": true
           },
           {
             "type": "Spice",
@@ -92,7 +93,8 @@
         "first": [
           {
             "type": "Influence",
-            "amount": 1
+            "amount": 1,
+            "chooseFaction": true
           },
           {
             "type": "Solari",
@@ -376,7 +378,8 @@
         "first": [
           {
             "type": "Influence",
-            "amount": 2
+            "amount": 2,
+            "chooseFaction": true
           },
           {
             "type": "Solari",

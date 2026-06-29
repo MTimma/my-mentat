@@ -22,11 +22,12 @@ import {
 import { getConflictPool } from '../data/conflicts'
 import { getLeaderPool, LEADER_ICON_SLUGS } from '../data/leaders'
 import { getStartingSpice, getStartingSolari } from '../data/leaderAbilities/beastSetup'
-import { getStartingWater } from '../data/leaderAbilities/yunaSolariBonus'
-import { applyHudroStartingIntrigue } from '../data/leaderAbilities/hudroIntriguePeek'
+import { getStartingWater, isYunaLeader } from '../data/leaderAbilities/yunaSolariBonus'
+import { getStartingIntrigue } from '../data/leaderAbilities/hudroSetup'
 import { seedTessiaSnoopers } from '../data/leaderAbilities/tessiaSnoopers'
 import { applyStarterDeckReservationToImperium } from '../services/starterDeckSetup'
 import { buildIntrigueDeck } from '../services/IntrigueDeckService'
+import { seedImmortalitySetup } from '../expansions/immortality/setup'
 import { defaultDreadnoughtsForExpansions } from '../utils/dreadnoughts'
 import { seedTroopSupply } from '../utils/troops'
 import { buildInitialIxBoard } from '../components/GameContext/riseOfIxReducer'
@@ -93,6 +94,7 @@ export function buildInitialState(setup: SetupBlock): GameState {
 
   const runtime = createCatalogRuntime(resolvedPack)
   const expansions = resolvedPack.structure.expansions
+  const boardSet = resolvedPack.structure.boardSet ?? 'imperium'
 
   const players: Player[] = setup.players.map(playerSetup => {
     const leader = resolveLeader(playerSetup.leaderId, expansions)
@@ -103,13 +105,14 @@ export function buildInitialState(setup: SetupBlock): GameState {
       leader,
       color: playerSetup.color,
       spice: res?.spice ?? getStartingSpice(leader),
-      water: res?.water ?? getStartingWater(leader),
+      // Yuna always starts with 0 water (leader ability); ignore a mistaken saved default of 1.
+      water: isYunaLeader(leader) ? 0 : (res?.water ?? getStartingWater(leader)),
       solari: res?.solari ?? getStartingSolari(leader),
       troops: res?.troops ?? 3,
       combatValue: 0,
       agents: 2,
       handCount: 5,
-      intrigueCount: 0,
+      intrigueCount: getStartingIntrigue(leader),
       deck,
       discardPile: [],
       trash: [],
@@ -126,7 +129,7 @@ export function buildInitialState(setup: SetupBlock): GameState {
         ? { freighterStep: 0 as const, negotiatorsOnIx: 0, tech: [] as const }
         : {}),
     }
-    return seedTessiaSnoopers(applyHudroStartingIntrigue(seedTroopSupply(basePlayer)), expansions.riseOfIx)
+    return seedTessiaSnoopers(seedTroopSupply(basePlayer), expansions.riseOfIx)
   })
 
   let imperiumRowDeck = resolveImperiumDeck(runtime, setup.imperiumRowDeckCardIds, expansions)
@@ -151,6 +154,7 @@ export function buildInitialState(setup: SetupBlock): GameState {
   const state: GameState = {
     ...base,
     expansions,
+    boardSet,
     intrigueDeck: [...buildIntrigueDeck(expansions)],
     players,
     currentRound: setup.currentRound ?? 1,
@@ -181,6 +185,10 @@ export function buildInitialState(setup: SetupBlock): GameState {
 
   if (expansions.riseOfIx && !setup.sandbox) {
     state.ixBoard = buildInitialIxBoard()
+  }
+
+  if (expansions.immortality) {
+    seedImmortalitySetup(state)
   }
 
   return state

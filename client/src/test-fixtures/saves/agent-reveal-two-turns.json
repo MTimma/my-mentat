@@ -14,16 +14,16 @@
         "leaderId": "paul",
         "color": "red",
         "deckCardIds": [
-          "starting/the-voice",
-          "starting/reverend-mother-mohiam",
-          "starting/power-play",
-          "starting/other-memory",
-          "starting/kwisatz-haderach",
-          "starting/fremen-camp",
-          "starting/gurney-halleck",
-          "starting/liet-kynes",
-          "starting/scout",
-          "starting/shifting-allegiances"
+          "starting/convincing-argument",
+          "starting/convincing-argument",
+          "starting/dagger",
+          "starting/dagger",
+          "starting/diplomacy",
+          "starting/dune-the-desert-planet",
+          "starting/dune-the-desert-planet",
+          "starting/reconnaissance",
+          "starting/seek-allies",
+          "starting/signet-ring"
         ]
       },
       {
@@ -31,16 +31,16 @@
         "leaderId": "ilban",
         "color": "blue",
         "deckCardIds": [
-          "starting/the-voice",
-          "starting/reverend-mother-mohiam",
-          "starting/power-play",
-          "starting/other-memory",
-          "starting/kwisatz-haderach",
-          "starting/fremen-camp",
-          "starting/gurney-halleck",
-          "starting/liet-kynes",
-          "starting/scout",
-          "starting/shifting-allegiances"
+          "starting/convincing-argument",
+          "starting/convincing-argument",
+          "starting/dagger",
+          "starting/dagger",
+          "starting/diplomacy",
+          "starting/dune-the-desert-planet",
+          "starting/dune-the-desert-planet",
+          "starting/reconnaissance",
+          "starting/seek-allies",
+          "starting/signet-ring"
         ]
       }
     ],
@@ -51,7 +51,7 @@
       "a": {
         "type": "PLAY_CARD",
         "playerId": 0,
-        "cardId": 1021
+        "cardId": 3
       }
     },
     {
@@ -71,22 +71,13 @@
       "a": {
         "type": "END_TURN",
         "playerId": 0
-      },
-      "ck": {
-        "p0": [
-          0,
-          0,
-          1,
-          4,
-          1
-        ]
       }
     },
     {
       "a": {
         "type": "PLAY_CARD",
         "playerId": 1,
-        "cardId": 1061
+        "cardId": 5
       }
     },
     {
@@ -106,15 +97,6 @@
       "a": {
         "type": "END_TURN",
         "playerId": 1
-      },
-      "ck": {
-        "p1": [
-          0,
-          2,
-          1,
-          3,
-          1
-        ]
       }
     }
   ],

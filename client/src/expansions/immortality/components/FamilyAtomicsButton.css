@@ -1,0 +1,44 @@
+.family-atomics-button {
+  flex: 0 0 auto;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-width: 34px;
+  padding: 2px;
+  margin: 0;
+  border: 1px dashed rgba(196, 120, 72, 0.55);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(139, 69, 19, 0.18), rgba(255, 255, 255, 0.04)),
+    rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, opacity 120ms ease;
+}
+
+.family-atomics-button:hover:not(:disabled) {
+  border-color: rgba(244, 180, 120, 0.86);
+  background:
+    linear-gradient(180deg, rgba(139, 69, 19, 0.28), rgba(255, 255, 255, 0.07)),
+    rgba(0, 0, 0, 0.24);
+}
+
+.family-atomics-button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(0.35) brightness(0.85);
+}
+
+.family-atomics-button__icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  object-position: center;
+}
+
+@media (min-width: 601px) {
+  .family-atomics-button__icon {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+  }
+}

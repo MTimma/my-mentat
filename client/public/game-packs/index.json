@@ -10,6 +10,16 @@
       "ref": "official/base+riseOfIx@1",
       "label": "Base + Rise of Ix",
       "file": "official-base-riseOfIx.v1.json"
+    },
+    {
+      "ref": "official/base+immortality@1",
+      "label": "Base + Immortality",
+      "file": "official-base-immortality.v1.json"
+    },
+    {
+      "ref": "official/base+riseOfIx+immortality@1",
+      "label": "Base + Rise of Ix + Immortality",
+      "file": "official-base-riseOfIx-immortality.v1.json"
     }
   ],
   "reserved": [

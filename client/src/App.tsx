@@ -31,6 +31,9 @@ import { getConflictPool } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
 import GameStateSetup from './components/GameStateSetup/GameStateSetup'
 import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
+import ImmortalityRow from './expansions/immortality/components/ImmortalityRow'
+import FamilyAtomicsButton from './expansions/immortality/components/FamilyAtomicsButton'
+import { computeGraftAgentIcons, resolveGraftCards } from './expansions/immortality/graft'
 import TechMarketRow from './components/TechMarketRow/TechMarketRow'
 import TechAcquireModal from './components/TechAcquireModal/TechAcquireModal'
 import TechTileSelect from './components/TechTileSelect/TechTileSelect'
@@ -43,7 +46,7 @@ import {
   sandboxStackTopsFromIxBoard,
   sandboxTechSetupSummary,
 } from './utils/sandboxTechTiles'
-import { getTechAcquireOffer } from './components/GameContext/riseOfIx/techAcquireOffer'
+import { findTechAcquireSourceOption, getTechAcquireSourceOptions } from './components/GameContext/riseOfIx/techAcquireOffer'
 import CardCreator from './components/CardCreator/CardCreator'
 import SandboxPlayerEditor from './components/SandboxPlayerEditor/SandboxPlayerEditor'
 import SandboxSetupControls from './components/SandboxSetupControls/SandboxSetupControls'
@@ -51,7 +54,7 @@ import { buildImperiumDeck } from './catalog/runtime'
 import { applyStarterDeckReservationToImperium } from './services/starterDeckSetup'
 import { getStartingSpice, getStartingSolari } from './data/leaderAbilities/beastSetup'
 import { getStartingWater } from './data/leaderAbilities/yunaSolariBonus'
-import { applyHudroStartingIntrigue } from './data/leaderAbilities/hudroIntriguePeek'
+import { getStartingIntrigue } from './data/leaderAbilities/hudroSetup'
 import { seedTessiaSnoopers } from './data/leaderAbilities/tessiaSnoopers'
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
@@ -65,6 +68,8 @@ import { GAME_PACK_STORAGE_KEY } from './gamePacks/constants'
 import { resolveStoredGamePackId } from './gamePacks/inferGamePack'
 import { expansionsForGamePack } from './gamePacks/resolveGamePack'
 import {
+  conflictChoiceAsFixedOptions,
+  findConflictInfluenceBoardChoice,
   getInfluenceBoardChoiceMeta,
   getInfluenceBoardPrompt,
   isInfluenceBoardChoice,
@@ -295,8 +300,52 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
     onOpenPlayerOverview: isDesktopPlayView ? () => setIsPlayerOverviewOpen(true) : undefined,
   }
 
+  const handleCompleteGraftPair = (
+    playerId: number,
+    primaryCardId: number,
+    primaryDeckIndex: number,
+    secondaryCardId: number,
+    secondaryDeckIndex: number,
+  ) => {
+    dispatch({
+      type: 'COMPLETE_GRAFT_PAIR',
+      playerId,
+      primaryCardId,
+      primaryDeckIndex,
+      secondaryCardId,
+      secondaryDeckIndex,
+    })
+  }
+
   const handleCardSelect = (playerId: number, cardId: number, deckIndex?: number) => {
+    if (
+      gameState.pendingGraftPartner &&
+      gameState.activePlayerId === playerId &&
+      !gameState.pendingGraftPartner.requiresImperiumRow
+    ) {
+      dispatch({
+        type: 'COMPLETE_GRAFT_PAIR',
+        playerId,
+        primaryCardId: gameState.pendingGraftPartner.primaryCardId,
+        primaryDeckIndex: gameState.pendingGraftPartner.primaryDeckIndex,
+        secondaryCardId: cardId,
+        secondaryDeckIndex: deckIndex,
+      })
+      return
+    }
     dispatch({ type: 'PLAY_CARD', playerId, cardId, deckIndex })
+  }
+
+  const handleRecallPlacedAgent = () => {
+    dispatch({ type: 'RECALL_PLACED_AGENT', playerId: gameState.activePlayerId })
+  }
+
+  const handleCancelGraftSelection = () => {
+    dispatch({ type: 'CANCEL_GRAFT_SELECTION' })
+  }
+
+  const handleUseFamilyAtomics = (playerId: number) => {
+    dispatch({ type: 'USE_FAMILY_ATOMICS', playerId })
   }
 
   const handlePlayIntrigue = (playerId: number, cardId: number, targetPlayerId?: number) => {
@@ -392,6 +441,18 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
   }
 
   const handleAcquireCard = (cardId: number, acquireToTop?: boolean) => {
+    if (gameState.pendingGraftPartner?.requiresImperiumRow) {
+      const pending = gameState.pendingGraftPartner
+      const playerId = gameState.activePlayerId
+      dispatch({
+        type: 'COMPLETE_GRAFT_PAIR',
+        playerId,
+        primaryCardId: pending.primaryCardId,
+        primaryDeckIndex: pending.primaryDeckIndex,
+        imperiumRowCardId: cardId,
+      })
+      return
+    }
     dispatch({ type: 'ACQUIRE_CARD', playerId: activePlayer?.id || 0, cardId, acquireToTop })
   }
 
@@ -411,12 +472,17 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
   )
 
   const handleAcquireTechTile = useCallback(
-    (stackIndex: number, negotiatorsReturned: number, nextFaceUpTileId?: TechTileId) => {
+    (
+      stackIndex: number,
+      negotiatorsReturned: number,
+      sourceId: string,
+      nextFaceUpTileId?: TechTileId
+    ) => {
       const player = activePlayer
       if (!player) return
 
-      const offer = getTechAcquireOffer(gameState, player.id)
-      if (!offer) return
+      const source = findTechAcquireSourceOption(gameState, player.id, sourceId)
+      if (!source) return
 
       const tileId = gameState.ixBoard?.stacks[stackIndex]?.[0]
       if (!tileId) return
@@ -424,25 +490,25 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
       if (!tile) return
 
       if (negotiatorsReturned < 0 || negotiatorsReturned > (player.negotiatorsOnIx ?? 0)) return
-      const cost = effectiveTechCost(tile.cost, offer.discount, negotiatorsReturned)
-      const canAfford = offer.paySolariInsteadOfSpice
+      const cost = effectiveTechCost(tile.cost, source.discount, negotiatorsReturned)
+      const canAfford = source.paySolariInsteadOfSpice
         ? player.solari >= cost
         : player.spice >= cost
       if (!canAfford) return
 
-      if (offer.pendingOptionalEffectId) {
+      if (source.pendingOptionalEffectId) {
         dispatch({
           type: 'PAY_COST',
           playerId: player.id,
-          effectId: offer.pendingOptionalEffectId,
+          effectId: source.pendingOptionalEffectId,
         })
-      } else if (offer.pendingChoice) {
+      } else if (source.pendingChoice) {
         dispatch({
           type: 'RESOLVE_CHOICE',
           playerId: player.id,
-          choiceId: offer.pendingChoice.choiceId,
-          optionIndex: offer.pendingChoice.optionIndex,
-          source: offer.pendingChoice.source,
+          choiceId: source.pendingChoice.choiceId,
+          optionIndex: source.pendingChoice.optionIndex,
+          source: source.pendingChoice.source,
         })
       }
 
@@ -460,16 +526,27 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
     [activePlayer, dispatch, gameState]
   )
 
-  const techAcquireOffer = useMemo(() => {
-    if (isViewingHistory || gameState.sandboxSetup || !activePlayer) return null
-    return getTechAcquireOffer(gameState, activePlayer.id)
+  const techAcquireSources = useMemo(() => {
+    if (isViewingHistory || gameState.sandboxSetup || !activePlayer) return []
+    return getTechAcquireSourceOptions(gameState, activePlayer.id)
   }, [isViewingHistory, gameState, gameState.sandboxSetup, activePlayer])
 
-  useEffect(() => {
-    if (isViewingHistory) {
-      setTechAcquireStackIndex(null)
+  const techAcquireOffer = useMemo(() => {
+    if (techAcquireSources.length !== 1) return null
+    const only = techAcquireSources[0]!
+    return {
+      discount: only.discount,
+      paySolariInsteadOfSpice: only.paySolariInsteadOfSpice,
+      ready: only.ready,
+      pendingOptionalEffectId: only.pendingOptionalEffectId,
+      pendingChoice: only.pendingChoice,
     }
-  }, [isViewingHistory])
+  }, [techAcquireSources])
+
+  useEffect(() => {
+    if (!isViewingHistory) return
+    setTechAcquireStackIndex(null)
+  }, [viewingTurnIndex, isViewingHistory])
 
   const handleTechTileAcquireClick = useCallback((stackIndex: number) => {
     setTechAcquireStackIndex(stackIndex)
@@ -606,6 +683,9 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
 
       // Skip Masterstroke (requires faction selection when claimed)
       if (reward.source.type === GainSource.MASTERSTROKE) return false
+
+      // Choose-one influence must be resolved via board/choice UI, not auto-claim.
+      if (reward.reward.influence?.chooseOne) return false
 
       // Skip rewards that are part of OR choices (pending choices)
       const isPartOfChoice = state.currTurn?.pendingChoices?.some(choice =>
@@ -754,6 +834,26 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
     return (choice as FixedOptionsChoice | undefined) ?? null
   }, [gameState.currTurn?.pendingChoices, gameState.sandboxSetup, isViewingHistory, useImageBoard])
 
+  const activeConflictInfluenceChoice = useMemo(() => {
+    if (isViewingHistory || !useImageBoard) return null
+    if (gameState.phase !== GamePhase.COMBAT_REWARDS) return null
+    return findConflictInfluenceBoardChoice(gameState.pendingConflictRewardChoices)
+  }, [
+    gameState.pendingConflictRewardChoices,
+    gameState.phase,
+    isViewingHistory,
+    useImageBoard,
+  ])
+
+  const conflictInfluenceBoardMeta =
+    activeConflictInfluenceChoice
+      ? getInfluenceBoardChoiceMeta(
+          conflictChoiceAsFixedOptions(activeConflictInfluenceChoice),
+          gameState,
+          activeConflictInfluenceChoice.playerId
+        )
+      : null
+
   const influenceBoardMeta =
     activeInfluenceBoardChoice && activePlayer
       ? getInfluenceBoardChoiceMeta(
@@ -761,9 +861,12 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
           gameState,
           activePlayer.id
         )
-      : null
+      : conflictInfluenceBoardMeta
 
-  const influenceBoardSelectionActive = Boolean(activeInfluenceBoardChoice && influenceBoardMeta)
+  const influenceBoardSelectionActive = Boolean(
+    (activeInfluenceBoardChoice && activePlayer && influenceBoardMeta) ||
+      (activeConflictInfluenceChoice && conflictInfluenceBoardMeta)
+  )
 
   const influenceBoardPrompt = influenceBoardMeta
     ? getInfluenceBoardPrompt(influenceBoardMeta.mode, influenceBoardMeta.amount)
@@ -776,23 +879,40 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
   const agentPlacementPending =
     !isViewingHistory && isAgentPlacementPending(gameState)
 
-  const boardPlacementPrompt = kwisatzSourceChoiceActive
+  const boardPlacementPrompt = gameState.pendingGraftPartner?.requiresImperiumRow
+    ? 'Usurp: select a card from the Imperium Row to graft (not acquired).'
+    : gameState.pendingGraftPartner
+      ? 'Graft: select a second card from your deck to play with the graft card.'
+      : gameState.currTurn?.canRecallPlacedAgent
+        ? 'Twisted Mentat: you may recall your Agent before ending the turn.'
+        : kwisatzSourceChoiceActive
     ? 'Kwisatz Haderach: choose whether to use an Agent from your supply or recall one from the board.'
     : kwisatzRecallActive
       ? 'Recall one of your Agents — click a space where you already have an Agent.'
       : null
 
   const handleInfluenceBoardFactionSelect = (faction: FactionType) => {
-    if (!activePlayer || !activeInfluenceBoardChoice || !influenceBoardMeta) return
-    const optionIndex = influenceBoardMeta.optionIndexByFaction[faction]
-    if (optionIndex == null) return
-    dispatch({
-      type: 'RESOLVE_CHOICE',
-      playerId: activePlayer.id,
-      choiceId: activeInfluenceBoardChoice.id,
-      optionIndex,
-      source: activeInfluenceBoardChoice.source,
-    })
+    if (activeInfluenceBoardChoice && activePlayer && influenceBoardMeta) {
+      const optionIndex = influenceBoardMeta.optionIndexByFaction[faction]
+      if (optionIndex == null) return
+      dispatch({
+        type: 'RESOLVE_CHOICE',
+        playerId: activePlayer.id,
+        choiceId: activeInfluenceBoardChoice.id,
+        optionIndex,
+        source: activeInfluenceBoardChoice.source,
+      })
+      return
+    }
+    if (activeConflictInfluenceChoice && conflictInfluenceBoardMeta) {
+      const optionIndex = conflictInfluenceBoardMeta.optionIndexByFaction[faction]
+      if (optionIndex == null) return
+      dispatch({
+        type: 'RESOLVE_CONFLICT_REWARD_CHOICE',
+        choiceId: activeConflictInfluenceChoice.id,
+        optionIndex,
+      })
+    }
   }
 
   const endTurnButtonState = getEndTurnButtonState({
@@ -1196,7 +1316,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
     () =>
       useImageBoard ? (
         <ImageBoard
-          currentPlayer={displayState.activePlayerId}
+          currentPlayer={displayState.currTurn?.playerId ?? displayState.activePlayerId}
           highlightedAreas={isViewingHistory ? [] : getSelectedCardAgentIcons(gameState)}
           infiltrate={isViewingHistory ? false : getInfiltrate(gameState)}
           onSpaceClick={isViewingHistory ? () => {} : handlePlaceAgent}
@@ -1289,7 +1409,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
               : undefined
           }
           influenceSelection={
-            !isViewingHistory && influenceBoardMeta && activeInfluenceBoardChoice
+            !isViewingHistory && influenceBoardMeta
               ? {
                   mode: influenceBoardMeta.mode,
                   amount: influenceBoardMeta.amount,
@@ -1302,16 +1422,21 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
           ixBoardPlacement={
             isDesktopPlayView && gameState.expansions?.riseOfIx ? 'docked' : 'embedded'
           }
+          immortalityBoardPlacement={
+            isDesktopPlayView && gameState.expansions?.immortality ? 'docked' : 'stacked'
+          }
           pendingAcquireTech={
-            techAcquireOffer && activePlayer
+            activePlayer && techAcquireSources.length > 0
               ? {
                   playerId: activePlayer.id,
-                  discount: techAcquireOffer.discount,
-                  paySolariInsteadOfSpice: techAcquireOffer.paySolariInsteadOfSpice,
+                  discount:
+                    techAcquireSources.find(s => s.kind === 'board-space')?.discount ??
+                    techAcquireSources[0]!.discount,
+                  paySolariInsteadOfSpice: techAcquireSources[0]!.paySolariInsteadOfSpice,
                 }
               : undefined
           }
-          onTechTileAcquire={!isViewingHistory ? handleTechTileAcquireClick : undefined}
+          onTechTileAcquire={handleTechTileAcquireClick}
         />
       ) : null,
     [
@@ -1332,7 +1457,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
       handleDeployNegotiator,
       handleUndeployNegotiator,
       handleAcquireTechTile,
-      techAcquireOffer,
+      techAcquireSources,
       handleTechTileAcquireClick,
       inSandboxSetup,
       riseOfIx,
@@ -1387,6 +1512,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
         'game-container--play',
         isDesktopPlayView ? 'game-container--desktop-play' : '',
         isDesktopPlayView && gameState.expansions?.riseOfIx ? 'game-container--ix-dock' : '',
+        isDesktopPlayView && gameState.expansions?.immortality ? 'game-container--immortality-dock' : '',
         isDockedHistoryLayout ? 'game-container--history-docked' : '',
         isViewingHistory ? 'viewing-history' : '',
         isPlayChromeHeld ? 'play-chrome-held' : '',
@@ -1413,6 +1539,13 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
             .join(' ')}
         >
           <div className="imperium-row-container__main">
+            {!isViewingHistory && gameState.expansions?.immortality && activePlayer ? (
+              <FamilyAtomicsButton
+                used={Boolean(activePlayer.familyAtomicsUsed)}
+                disabled={Boolean(inSandboxSetup || activePlayer.familyAtomicsUsed)}
+                onClick={() => handleUseFamilyAtomics(activePlayer.id)}
+              />
+            ) : null}
             <ImperiumRow
               canAcquire={isViewingHistory ? false : gameState.canAcquireIR}
               canAcquireToTop={
@@ -1437,11 +1570,13 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
                   : undefined
               }
             />
+            {gameState.expansions?.immortality ? <ImmortalityRow /> : null}
           </div>
           {techAcquireOffer && activePlayer && gameState.ixBoard?.stacks && !useImageBoard ? (
             <TechMarketRow
               key={`tech-acquire-${techAcquireOffer.playerId}-${techAcquireOffer.discount}`}
               stacks={gameState.ixBoard.stacks}
+              players={gameState.players}
               player={activePlayer}
               discount={techAcquireOffer.discount}
               paySolariInsteadOfSpice={techAcquireOffer.paySolariInsteadOfSpice}
@@ -1594,18 +1729,20 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
             onCancel={() => setSandboxTechOpen(false)}
           />
         )}
-        {activePlayer &&
-          gameState.ixBoard?.stacks &&
+        {(isViewingHistory ? turnControlsActivePlayer : activePlayer) &&
+          (isViewingHistory ? displayState.ixBoard?.stacks : gameState.ixBoard?.stacks) &&
           techAcquireStackIndex != null &&
           useImageBoard && (
             <TechAcquireModal
               isOpen
               stackIndex={techAcquireStackIndex}
-              stacks={gameState.ixBoard.stacks}
-              player={activePlayer}
-              canAcquire={Boolean(techAcquireOffer)}
-              discount={techAcquireOffer?.discount ?? 0}
-              paySolariInsteadOfSpice={techAcquireOffer?.paySolariInsteadOfSpice}
+              stacks={
+                (isViewingHistory ? displayState.ixBoard?.stacks : gameState.ixBoard?.stacks) ?? [[], [], []]
+              }
+              players={isViewingHistory ? displayState.players : gameState.players}
+              player={(isViewingHistory ? turnControlsActivePlayer : activePlayer)!}
+              canAcquire={!isViewingHistory && techAcquireSources.length > 0}
+              acquireSources={techAcquireSources}
               onAcquire={handleAcquireTechTile}
               onClose={() => setTechAcquireStackIndex(null)}
             />
@@ -1709,6 +1846,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
             activePlayer={turnControlsActivePlayer}
             canEndTurn={isViewingHistory ? false : gameState.canEndTurn}
             onPlayCard={handleCardSelect}
+            onCompleteGraftPair={handleCompleteGraftPair}
             onPlayIntrigue={handlePlayIntrigue}
             onMobilizeGarrison={handleMobilizeGarrison}
             onPlayCombatIntrigue={handlePlayCombatIntrigue}
@@ -1764,6 +1902,16 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
             showPassCombatButton={showFooterPassCombat && !isViewingHistory}
             onEndTurn={
               activePlayer ? () => handleEndTurn(activePlayer.id) : undefined
+            }
+            onRecallPlacedAgent={
+              !isViewingHistory && gameState.currTurn?.canRecallPlacedAgent
+                ? handleRecallPlacedAgent
+                : undefined
+            }
+            onCancelGraftSelection={
+              !isViewingHistory && gameState.pendingGraftPartner
+                ? handleCancelGraftSelection
+                : undefined
             }
             onPassCombat={
               activePlayer ? () => handlePassCombat(activePlayer.id) : undefined
@@ -1942,6 +2090,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
             history={gameState.history}
             onConfirm={handleConfirmCombat}
             pendingConflictRewardChoices={gameState.pendingConflictRewardChoices}
+            influenceBoardChoiceActive={Boolean(activeConflictInfluenceChoice && conflictInfluenceBoardMeta)}
             onResolveConflictChoice={(choiceId, optionIndex) =>
               dispatch({ type: 'RESOLVE_CONFLICT_REWARD_CHOICE', choiceId, optionIndex })
             }
@@ -2021,6 +2170,19 @@ function getSelectedCard(gameState: GameState): Card | null {
 function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
   if (gameState.currTurn?.agentSpace) return []
   if (isKwisatzSourceChoicePending(gameState)) return []
+  if (gameState.expansions?.immortality && gameState.graftPair) {
+    const player = gameState.players[gameState.activePlayerId]
+    if (player) {
+      const cards = resolveGraftCards(gameState, player)
+      if (cards.length >= 2) {
+        const base = computeGraftAgentIcons(cards)
+        if (gameState.dispatchEnvoyActive?.[gameState.activePlayerId]) {
+          return mergeDispatchEnvoyIcons(base)
+        }
+        return base
+      }
+    }
+  }
   const card = getSelectedCard(gameState)
   if (!card) return []
   const base = [...card.agentIcons]
@@ -2152,7 +2314,7 @@ function App() {
     )
     const players: Player[] = setups.map((setup, index) =>
       seedTessiaSnoopers(
-        applyHudroStartingIntrigue({
+        {
           id: index,
           leader: setup.leader,
           color: setup.color,
@@ -2163,7 +2325,7 @@ function App() {
           combatValue: 0,
           agents: 2,
           handCount: 5,
-          intrigueCount: 0,
+          intrigueCount: getStartingIntrigue(setup.leader),
           deck: [...setup.deck],
           discardPile: [],
           trash: [],
@@ -2174,7 +2336,7 @@ function App() {
           victoryPoints: 1,
           revealed: false,
           ...(setupExpansions.riseOfIx ? { freighterStep: 0 as const } : {}),
-        }),
+        },
         setupExpansions.riseOfIx
       )
     )

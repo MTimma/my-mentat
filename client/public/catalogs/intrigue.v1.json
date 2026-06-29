@@ -618,6 +618,206 @@
           "effect:intrigue:49:play:1"
         ]
       }
+    },
+    {
+      "id": 50,
+      "name": "Harvest Cells",
+      "type": "combat",
+      "description": "Combat: When you lose 3+ troops at the end of a Conflict: +2 specimen. You may also acquire a Tleilaxu card (paying its normal cost).",
+      "image": "/intrigue/immortality/harvest_cells.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:50:play:0"
+        ]
+      }
+    },
+    {
+      "id": 51,
+      "name": "Harvest Cells",
+      "type": "combat",
+      "description": "Combat: When you lose 3+ troops at the end of a Conflict: +2 specimen. You may also acquire a Tleilaxu card (paying its normal cost).",
+      "image": "/intrigue/immortality/harvest_cells.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:51:play:0"
+        ]
+      }
+    },
+    {
+      "id": 52,
+      "name": "Vicious Talents",
+      "type": "combat",
+      "description": "Combat: +2 strength. If research lvl 1: +2 more. If research lvl 2: +2 more (2–6 strength).",
+      "image": "/intrigue/immortality/vicious_talents.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:52:play:0"
+        ]
+      }
+    },
+    {
+      "id": 53,
+      "name": "Vicious Talents",
+      "type": "combat",
+      "description": "Combat: +2 strength. If research lvl 1: +2 more. If research lvl 2: +2 more (2–6 strength).",
+      "image": "/intrigue/immortality/vicious_talents.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:53:play:0"
+        ]
+      }
+    },
+    {
+      "id": 54,
+      "name": "Gruesome Sacrifice",
+      "type": "combat",
+      "description": "Combat: Lose 2 of your troops in the Conflict to gain +2 specimen and +1 beetle.",
+      "image": "/intrigue/immortality/gruesome_sacrificee.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:54:play:0"
+        ]
+      }
+    },
+    {
+      "id": 55,
+      "name": "Gruesome Sacrifice",
+      "type": "combat",
+      "description": "Combat: Lose 2 of your troops in the Conflict to gain +2 specimen and +1 beetle.",
+      "image": "/intrigue/immortality/gruesome_sacrificee.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:55:play:0"
+        ]
+      }
+    },
+    {
+      "id": 56,
+      "name": "Breakthrough",
+      "type": "plot",
+      "description": "Plot: +1 research.",
+      "image": "/intrigue/immortality/breakthrough.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:56:play:0"
+        ]
+      }
+    },
+    {
+      "id": 57,
+      "name": "Illicit Dealings",
+      "type": "plot",
+      "description": "Plot: +1 beetle (advance on the Tleilaxu track).",
+      "image": "/intrigue/immortality/illicit_dealings.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:57:play:0"
+        ]
+      }
+    },
+    {
+      "id": 58,
+      "name": "Illicit Dealings",
+      "type": "plot",
+      "description": "Plot: +1 beetle (advance on the Tleilaxu track).",
+      "image": "/intrigue/immortality/illicit_dealings.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:58:play:0"
+        ]
+      }
+    },
+    {
+      "id": 59,
+      "name": "Disguised Bureaucrat",
+      "type": "plot",
+      "description": "Plot: If research lvl 1: +1 spice. If research lvl 2: +1 influence (your choice).",
+      "image": "/intrigue/immortality/disguised_beaurocrat.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:59:play:0"
+        ]
+      }
+    },
+    {
+      "id": 60,
+      "name": "Shadowy Bargain",
+      "type": "plot",
+      "description": "Plot: +1 specimen —OR— Endgame: +1 beetle (advance on the Tleilaxu track).",
+      "image": "/intrigue/immortality/shadowy_bargain.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:60:play:0",
+          "effect:intrigue:60:play:1"
+        ]
+      }
+    },
+    {
+      "id": 61,
+      "name": "Tleilaxu Puppet",
+      "type": "plot",
+      "description": "Plot: +1 persuasion this round —OR— Endgame: If you have a High Council seat and research lvl 2: +1 VP.",
+      "image": "/intrigue/immortality/tleilaxu_puppet.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:61:play:0",
+          "effect:intrigue:61:play:1"
+        ]
+      }
+    },
+    {
+      "id": 62,
+      "name": "Study Melange",
+      "type": "plot",
+      "description": "Plot: +1 spice —OR— Endgame: If you have 3 spice and research lvl 2: +1 VP.",
+      "image": "/intrigue/immortality/study_melange.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:62:play:0",
+          "effect:intrigue:62:play:1"
+        ]
+      }
+    },
+    {
+      "id": 63,
+      "name": "Counterattack",
+      "type": "combat",
+      "description": "Plot: Deploy up to 2 troops from your garrison —OR— Combat: If an opponent played a combat intrigue: +4 strength.",
+      "image": "/intrigue/immortality/counterattack.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:63:play:0",
+          "effect:intrigue:63:play:1"
+        ]
+      }
+    },
+    {
+      "id": 64,
+      "name": "Economic Positioning",
+      "type": "plot",
+      "description": "Plot: Retreat 2 troops to gain +3 Solari —OR— Endgame: If you have 10 Solari: +1 VP.",
+      "image": "/intrigue/immortality/economic_positioning.png",
+      "immortality": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:64:play:0",
+          "effect:intrigue:64:play:1"
+        ]
+      }
     }
   ]
 }

@@ -1,6 +1,7 @@
 import type { Expansions } from '../types/GameTypes'
 import type { CatalogCardEntry, CatalogEffectEntry, CatalogIntrigueEntry, CatalogSpaceEntry } from '../catalog/buildCatalog'
 import type { ConflictCard } from '../types/GameTypes'
+import type { BoardSetId } from '../expansions/types'
 
 export const GAME_PACK_SCHEMA_VERSION = 1
 
@@ -11,6 +12,11 @@ export type PlayerMode = 'standard' | 'uprising-3v3'
 export interface GamePackStructure {
   expansions: Expansions
   playerMode: PlayerMode
+  /**
+   * Base board the pack uses. Missing ⇒ `'imperium'` (backwards compatible).
+   * Expansions read this to pick the correct anchor table.
+   */
+  boardSet?: BoardSetId
 }
 
 export interface GamePackOverrides {
@@ -24,7 +30,15 @@ export interface GamePackOverrides {
 export interface GamePackAdditions {
   cards: CatalogCardEntry[]
   intrigue: CatalogIntrigueEntry[]
-  deckPatches: Record<string, { append?: string[]; prepend?: string[] }>
+  deckPatches: Record<
+    string,
+    {
+      append?: string[]
+      prepend?: string[]
+      /** Replace every occurrence of a catalog id with another (e.g. Immortality swaps Dune → Experimentation). */
+      replace?: Record<string, string>
+    }
+  >
 }
 
 export interface GamePackManifest {

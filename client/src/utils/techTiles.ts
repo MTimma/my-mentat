@@ -5,7 +5,8 @@ import {
   type TechTile,
   type TechTileId as TechTileIdType,
 } from '../data/techTiles'
-import { GamePhase, TurnType, type GameState } from '../types/GameTypes'
+import { GamePhase, TurnType, type GameState, type Player } from '../types/GameTypes'
+import { playerTechTileIds } from './sandboxTechTiles'
 
 export function tileById(id: TechTileIdType): TechTile | undefined {
   return TECH_TILES.find(tile => tile.id === id)
@@ -21,6 +22,24 @@ export function firstStackTops(state: GameState): Array<TechTileIdType | undefin
   return stacks.map(stack => stack[0])
 }
 
+/**
+ * Tiles eligible to reveal face-up after acquiring from a stack.
+ * Face-down stack placeholders are ignored — only player-owned tiles and current face-ups are excluded.
+ */
+export function techTilesAvailableForNextReveal(
+  stacks: TechTileIdType[][],
+  players: Player[],
+  acquiredTileId: TechTileIdType
+): TechTileIdType[] {
+  const blocked = new Set<TechTileIdType>(playerTechTileIds(players))
+  blocked.add(acquiredTileId)
+  for (const stack of stacks) {
+    const faceUp = stack[0]
+    if (faceUp) blocked.add(faceUp)
+  }
+  return TECH_TILES.map(tile => tile.id).filter(id => !blocked.has(id))
+}
+
 export function effectiveTechCost(
   baseCost: number,
   discount: number,
@@ -32,6 +51,8 @@ export function effectiveTechCost(
 export interface TechAcquireAffordability {
   discount?: number
   paySolariInsteadOfSpice?: boolean
+  /** When true, compare only spice/solari to the discounted cost (no negotiator reduction). */
+  ignoreNegotiators?: boolean
 }
 
 /** Whether the player can pay the effective spice (or solari) cost for a face-up tech tile. */
@@ -44,7 +65,9 @@ export function canPlayerAffordTechTile(
   const paySolariInsteadOfSpice = options.paySolariInsteadOfSpice ?? false
   const negotiatorsAvailable = player.negotiatorsOnIx ?? 0
   const afterDiscount = Math.max(0, baseCost - discount)
-  const negotiatorsReturned = Math.min(negotiatorsAvailable, afterDiscount)
+  const negotiatorsReturned = options.ignoreNegotiators
+    ? 0
+    : Math.min(negotiatorsAvailable, afterDiscount)
   const cost = effectiveTechCost(baseCost, discount, negotiatorsReturned)
   return paySolariInsteadOfSpice ? player.solari >= cost : player.spice >= cost
 }

@@ -9,6 +9,7 @@ import type {
   ResolvedGamePack,
 } from './types'
 import { getGamePackManifest, parseGamePackRef, toGamePackRef } from './registry'
+import { DEFAULT_BOARD_SET } from '../expansions/types'
 
 export class GamePackResolutionError extends Error {}
 
@@ -56,6 +57,7 @@ function mergeAdditions(parent: GamePackAdditions, child: GamePackAdditions): Ga
     deckPatches[pool] = {
       append: [...(existing.append ?? []), ...(patch.append ?? [])],
       prepend: [...(patch.prepend ?? []), ...(existing.prepend ?? [])],
+      replace: { ...(existing.replace ?? {}), ...(patch.replace ?? {}) },
     }
   }
   return {
@@ -68,6 +70,7 @@ function mergeAdditions(parent: GamePackAdditions, child: GamePackAdditions): Ga
 function mergeStructure(parent: GamePackStructure, child: GamePackStructure): GamePackStructure {
   return {
     playerMode: child.playerMode ?? parent.playerMode,
+    boardSet: child.boardSet ?? parent.boardSet ?? DEFAULT_BOARD_SET,
     expansions: normalizeExpansions({
       ...parent.expansions,
       ...child.expansions,
@@ -97,7 +100,11 @@ function foldManifests(chain: GamePackManifest[]): ResolvedGamePack {
   const root = chain[0]
   const rootOverrides = root.overrides ?? EMPTY_OVERRIDES
   const rootAdditions = root.additions ?? EMPTY_ADDITIONS
-  let structure = { ...root.structure, expansions: normalizeExpansions(root.structure.expansions) }
+  let structure = {
+    ...root.structure,
+    boardSet: root.structure.boardSet ?? DEFAULT_BOARD_SET,
+    expansions: normalizeExpansions(root.structure.expansions),
+  }
   let overrides: GamePackOverrides = {
     effects: { ...(rootOverrides.effects ?? {}) },
     cards: { ...(rootOverrides.cards ?? {}) },

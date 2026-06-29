@@ -38,7 +38,7 @@
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
 }
 
-.dreadnought-icon--control.player-0::before { background-color: #d32f2f; }
-.dreadnought-icon--control.player-1::before { background-color: #388e3c; }
-.dreadnought-icon--control.player-2::before { background-color: #fbc02d; }
-.dreadnought-icon--control.player-3::before { background-color: #1976d2; }
+.dreadnought-icon--control.player-red::before { background-color: #d32f2f; }
+.dreadnought-icon--control.player-green::before { background-color: #388e3c; }
+.dreadnought-icon--control.player-yellow::before { background-color: #fbc02d; }
+.dreadnought-icon--control.player-blue::before { background-color: #1976d2; }

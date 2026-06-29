@@ -1,4 +1,28 @@
 import { Card, FactionType, GameState, PlayEffect, RevealEffect, IntriguePlayEffect, IntrigueCard } from '../../types/GameTypes'
+import { geneLevelForNode } from '../../expansions/immortality/researchTrack'
+
+/**
+ * Immortality requirement gates shared by play/reveal/intrigue effects:
+ * - `researchLevel` ⇒ the player must have reached that genetic-marker level.
+ * - `grafted` ⇒ the card must be one of the two cards in the current graft pair.
+ * Both no-op when the expansion is off so base behaviour is unchanged.
+ */
+function immortalityRequirementSatisfied(
+  req: { researchLevel?: number; grafted?: boolean },
+  currCard: Card | IntrigueCard,
+  state: GameState,
+  playerId: number
+): boolean {
+  if (!state.expansions?.immortality) return true
+  if (req.researchLevel) {
+    const player = state.players.find(p => p.id === playerId)
+    if (geneLevelForNode(player?.researchNodeId) < req.researchLevel) return false
+  }
+  if (req.grafted) {
+    if (!state.graftPair?.cardIds.includes(currCard.id)) return false
+  }
+  return true
+}
 
 export function playRequirementSatisfied(
   effect: PlayEffect,
@@ -25,6 +49,7 @@ export function playRequirementSatisfied(
       )
       if (!hasFactionInPlay) return false
     }
+    if (!immortalityRequirementSatisfied(req, currCard, state, playerId)) return false
     return true
   }
 
@@ -70,6 +95,7 @@ export function revealRequirementSatisfied(
         Boolean(revealedCards.find(card => currCard.id !== card.id && card.faction?.includes(faction)))
       if (!hasBond) return false
     }
+    if (!immortalityRequirementSatisfied(req, currCard, state, playerId)) return false
     return true
   }
 
@@ -121,6 +147,7 @@ export function intrigueRequirementSatisfied(
       if (req.highCouncil && !player.hasHighCouncilSeat) return false
       if (!req.highCouncil && player.hasHighCouncilSeat) return false
     }
+    if (!immortalityRequirementSatisfied(req, currCard, state, playerId)) return false
     return true
   }
 

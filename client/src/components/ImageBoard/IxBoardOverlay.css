@@ -155,7 +155,8 @@
 }
 
 .ix-board-overlay__tech-img--dimmed {
-  opacity: 0.75;
+  filter: grayscale(0.82) brightness(0.62);
+  opacity: 0.9;
 }
 
 .ix-board-overlay__tech-img {
@@ -187,6 +188,15 @@
   max-width: clamp(18px, 12cqw, 36px);
   line-height: 1;
   font-weight: 700;
+}
+
+.ix-board-overlay__negotiator-square {
+  display: inline-block;
+  flex-shrink: 0;
+  width: clamp(6px, 2.8cqw, 10px);
+  height: clamp(6px, 2.8cqw, 10px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
 }
 
 .ix-board-overlay__negotiator-overflow {

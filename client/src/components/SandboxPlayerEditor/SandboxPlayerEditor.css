@@ -78,6 +78,13 @@
   gap: 12px;
 }
 
+.sandbox-player-editor__color-select {
+  flex: 0 0 auto;
+  width: 5.5rem;
+  min-height: 2.25rem;
+  margin-top: 2px;
+}
+
 .sandbox-player-editor__leader-row--menu-open {
   position: relative;
   z-index: 3;
