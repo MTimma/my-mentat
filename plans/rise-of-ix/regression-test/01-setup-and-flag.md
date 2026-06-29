@@ -36,7 +36,6 @@ Rise of Ix is gated by `GameState.expansions.riseOfIx` (optional `riseOfIxEpic` 
 | ID | Rule | Suggested test |
 |----|------|----------------|
 | SF-20 | `riseOfIxEpic` changes conflict tier mix | `getConflictPool({ riseOfIxEpic: true })` |
-| SF-21 | Leader pool includes 6 RoI leaders when flag on | extend `leaderPool.test.ts` |
 | SF-22 | Save file `setup.expansions.riseOfIx` round-trips | `saveRoundTrip.test.ts` with RoI fixture |
 | SF-23 | `getFreshDefaultGameState()` intrigue deck respects flag | integration test |
 
