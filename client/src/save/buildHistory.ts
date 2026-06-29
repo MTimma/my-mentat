@@ -48,12 +48,15 @@ export function buildHistoryFromEvents(setup: SetupBlock, events: EventEntry[]):
   for (const entry of events) {
     const action: GameAction = entry.a
     const stateBeforeAction = action.type === 'END_TURN' ? state : null
+    const reducerHistoryLengthBefore = state.history?.length ?? 0
 
     if (action.type === 'RESOLVE_COMBAT') {
       stateBeforeCombat = state
     }
 
     state = applyGameAction(state, action)
+    const endTurnWasAccepted =
+      action.type === 'END_TURN' && (state.history?.length ?? 0) > reducerHistoryLengthBefore
 
     switch (action.type) {
       case 'SELECT_CONFLICT': {
@@ -66,7 +69,7 @@ export function buildHistoryFromEvents(setup: SetupBlock, events: EventEntry[]):
       }
       case 'END_TURN': {
         if (state.phase === GamePhase.END_GAME) break
-        if (stateBeforeAction && state !== stateBeforeAction && stateBeforeAction.currTurn) {
+        if (endTurnWasAccepted && stateBeforeAction?.currTurn) {
           history = [...history, snapshotStateForHistory(stateBeforeAction)]
         }
         break
@@ -129,8 +132,11 @@ export function historyIndexToEventIndex(
   for (let eventIndex = 0; eventIndex < events.length; eventIndex++) {
     const action = events[eventIndex].a
     const stateBeforeAction = action.type === 'END_TURN' ? state : null
+    const reducerHistoryLengthBefore = state.history?.length ?? 0
     if (action.type === 'RESOLVE_COMBAT') stateBeforeCombat = state
     state = applyGameAction(state, action)
+    const endTurnWasAccepted =
+      action.type === 'END_TURN' && (state.history?.length ?? 0) > reducerHistoryLengthBefore
 
     const beforeLen = history.length
     let index0Replaced = false
@@ -150,12 +156,7 @@ export function historyIndexToEventIndex(
         break
       }
       case 'END_TURN':
-        if (
-          state.phase !== GamePhase.END_GAME &&
-          stateBeforeAction &&
-          state !== stateBeforeAction &&
-          stateBeforeAction.currTurn
-        ) {
+        if (state.phase !== GamePhase.END_GAME && endTurnWasAccepted && stateBeforeAction?.currTurn) {
           history = [...history, snapshotStateForHistory(stateBeforeAction)]
         }
         break
