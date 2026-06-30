@@ -104,18 +104,28 @@ describe('computeStrength', () => {
     expect(computeStrength(state, 0)).toBe(0)
   })
 
-  it('troops=2, dreads=0, swords=1 -> 5', () => {
+  it('troops=2, dreads=0, swords=1 -> 5 when revealed', () => {
     const state = stubState(
-      [stubPlayer(0, { combatValue: 5 })],
+      [stubPlayer(0, { combatValue: 5, revealed: true })],
       { 0: 2 }
     )
     expect(computeStrength(state, 0)).toBe(5)
   })
 
-  it('troops=0, dreads=1, swords=2 -> 5 (no zero rule)', () => {
+  it('agent turn ignores stale combatValue and uses units only', () => {
+    const state = stubState(
+      [stubPlayer(0, { combatValue: 8 })],
+      { 0: 2 },
+      false
+    )
+    expect(computeStrength(state, 0)).toBe(4)
+  })
+
+  it('troops=0, dreads=1, swords=2 -> 5 when revealed (no zero rule)', () => {
     const state = stubState([
       stubPlayer(0, {
         combatValue: 5,
+        revealed: true,
         dreadnoughts: { supply: 0, garrison: 0, conflict: 1, control: [] },
       }),
     ])

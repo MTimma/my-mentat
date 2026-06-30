@@ -120,7 +120,7 @@ export const CONFLICTS: ConflictCard[] = [
         { type: RewardType.CONTROL, amount: 1 }
       ],
       second: [{ type: RewardType.SOLARI, amount: 4 }],
-      third: [{ type: RewardType.SPICE, amount: 2 }]
+      third: [{ type: RewardType.SOLARI, amount: 2 }]
     }
   },
   {
@@ -133,22 +133,22 @@ export const CONFLICTS: ConflictCard[] = [
         { type: RewardType.VICTORY_POINTS, amount: 1 },
         { type: RewardType.CONTROL, amount: 1 }
       ],
-      second: [{ type: RewardType.SOLARI, amount: 4 }],
-      third: [{ type: RewardType.SPICE, amount: 2 }]
+      second: [{ type: RewardType.SPICE, amount: 1 }, { type: RewardType.INTRIGUE, amount: 1 }],
+      third: [{ type: RewardType.SPICE, amount: 1 }]
     }
   },
   {
     id: 907,
     tier: 2,
-    name: "Siege of Imperial Basin",
+    name: "Secure Imperial Basin",
     controlSpace: ControlMarkerType.IMPERIAL_BASIN,
     rewards: {
       first: [
         { type: RewardType.VICTORY_POINTS, amount: 1 },
         { type: RewardType.CONTROL, amount: 1 }
       ],
-      second: [{ type: RewardType.SPICE, amount: 4 }],
-      third: [{ type: RewardType.SPICE, amount: 2 }]
+      second: [{ type: RewardType.WATER, amount: 2 }],
+      third: [{ type: RewardType.WATER, amount: 1 }]
     }
   },
   {
@@ -156,10 +156,10 @@ export const CONFLICTS: ConflictCard[] = [
     tier: 2,
     name: "Cloak and Dagger",
     rewards: {
-      first: [{ type: RewardType.INTRIGUE, amount: 2 }],
-      second: [{ type: RewardType.SOLARI, amount: 3 }],
+      first: [{ type: RewardType.INFLUENCE, amount: 1, chooseFaction: true },{ type: RewardType.INTRIGUE, amount: 2 }],
+      second: [{ type: RewardType.INTRIGUE, amount: 1 }, { type: RewardType.SPICE, amount: 1 }],
       third: [{
-        type: RewardType.INTRIGUE,
+        type: RewardType.INTRIGUE,//todo why this
         amount: 0,
         choiceOptions: [
           { type: RewardType.INTRIGUE, amount: 1 },
@@ -172,8 +172,9 @@ export const CONFLICTS: ConflictCard[] = [
     id: 909,
     tier: 2,
     name: "Machinations",
+    distinctInfluenceFactions: true,
     rewards: {
-      first: [{ type: RewardType.INFLUENCE, amount: 2, chooseFaction: true }],
+      first: [{ type: RewardType.INFLUENCE, amount: 1, chooseFaction: true }, { type: RewardType.INFLUENCE, amount: 1, chooseFaction: true }],
       second: [{ type: RewardType.SOLARI, amount: 3 }],
       third: [{ type: RewardType.SPICE, amount: 1 }]
     }
@@ -181,54 +182,55 @@ export const CONFLICTS: ConflictCard[] = [
   {
     id: 910,
     tier: 2,
-    name: "Desert Raid",
+    name: "Desert Power",
     rewards: {
-      first: [{ type: RewardType.SPICE, amount: 4 }],
-      second: [{ type: RewardType.SPICE, amount: 2 }],
+      first: [{ type: RewardType.VICTORY_POINTS, amount: 1 }, { type: RewardType.WATER, amount: 1 }],
+      second: [{ type: RewardType.SPICE, amount: 1 },{ type: RewardType.WATER, amount: 1 }],
       third: [{ type: RewardType.SPICE, amount: 1 }]
     }
   },
   {
     id: 911,
     tier: 2,
-    name: "Spice Harvest",
+    name: "Raid Stockpiles",
     rewards: {
-      first: [{ type: RewardType.SPICE, amount: 3 }, { type: RewardType.SOLARI, amount: 2 }],
+      first: [{ type: RewardType.SPICE, amount: 3 }, { type: RewardType.INTRIGUE, amount: 1 }],
       second: [{ type: RewardType.SPICE, amount: 2 }],
-      third: [{ type: RewardType.SOLARI, amount: 2 }]
+      third: [{ type: RewardType.SPICE, amount: 1 }]
     }
   },
   {
     id: 912,
     tier: 2,
-    name: "Supply Lines",
+    name: "Sort Through The Chaos",
     rewards: {
-      first: [{ type: RewardType.SOLARI, amount: 6 }],
-      second: [{ type: RewardType.SOLARI, amount: 3 }],
-      third: [{ type: RewardType.SPICE, amount: 1 }]
+      first: [{type: RewardType.MENTAT, amount: 1}, {type: RewardType.INTRIGUE, amount: 1}, { type: RewardType.SOLARI, amount: 2 }],
+      second: [{type: RewardType.INTRIGUE, amount: 1}, { type: RewardType.SOLARI, amount: 2 }],
+      third: [{ type: RewardType.SOLARI, amount: 2 }]
     }
   },
   {
     id: 913,
     tier: 2,
-    name: "Rally the Troops",
+    name: "Guild Bank Raid",
     rewards: {
-      first: [{ type: RewardType.TROOPS, amount: 3 }],
-      second: [{ type: RewardType.TROOPS, amount: 2 }],
-      third: [{ type: RewardType.SPICE, amount: 1 }]
+      first: [{ type: RewardType.SOLARI, amount: 6 }],
+      second: [{ type: RewardType.SOLARI, amount: 4 }],
+      third: [{ type: RewardType.SOLARI, amount: 2 }]
     }
   },
   {
     id: 914,
     tier: 2,
-    name: "Political Maneuvering",
+    name: "Terrible Purpose",
     rewards: {
-      first: [{ type: RewardType.INFLUENCE, amount: 2, chooseFaction: true }, { type: RewardType.SOLARI, amount: 2 }],
-      second: [{ type: RewardType.INTRIGUE, amount: 1 }],
+      first: [{ type: RewardType.VICTORY_POINTS, amount: 1 }, { type: RewardType.TRASH, amount: 1 }],
+      second: [{ type: RewardType.SPICE, amount: 1 },{ type: RewardType.WATER, amount: 1 }],
       third: [{ type: RewardType.SPICE, amount: 1 }]
     }
   },
   // Tier 3 conflicts (rounds 7+)
+  //todo check
   {
     id: 915,
     tier: 3,
@@ -291,7 +293,7 @@ export const CONFLICTS: ConflictCard[] = [
     name: "Grand Vision",
     rewards: {
       first: [
-        { type: RewardType.INFLUENCE, amount: 1, chooseFaction: true },
+        { type: RewardType.INFLUENCE, amount: 2, chooseFaction: true },
         { type: RewardType.INTRIGUE, amount: 1 },
       ],
       second: [

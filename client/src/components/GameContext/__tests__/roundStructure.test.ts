@@ -178,6 +178,33 @@ describe('Round structure (base rules)', () => {
     expect(s.players[1].agents).toBe(2)
   })
 
+  it('recall clears combatValue after combat resolves', () => {
+    let s = getBaseTestState(undefined, { players: 2 })
+    s = {
+      ...s,
+      phase: GamePhase.COMBAT_REWARDS,
+      players: s.players.map(p => ({ ...p, combatValue: 8 })),
+      combatStrength: { 0: 8, 1: 4 },
+      combatTroops: { 0: 2, 1: 1 },
+    }
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(s.players[0].combatValue).toBe(0)
+    expect(s.players[1].combatValue).toBe(0)
+  })
+
+  it('agent turn deploy ignores stale combatValue carried on the player', () => {
+    const cityCard = stubDeckCard(901)
+    cityCard.agentIcons = ['city']
+    let s = getBaseTestState({ deck: [cityCard], handCount: 1, troops: 10, combatValue: 8 })
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: cityCard.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 2 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(s.combatTroops[0]).toBe(2)
+    expect(s.combatStrength[0]).toBe(4)
+    expect(s.players[0].combatValue).toBe(4)
+  })
+
   it.todo('recall: agents return to leader; first player marker passes clockwise')
   it.todo('makers: +1 bonus spice on each unoccupied maker space')
   it.todo('endgame at 10 VP or empty conflict deck')

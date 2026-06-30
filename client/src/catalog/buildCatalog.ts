@@ -129,6 +129,7 @@ export interface CatalogConflictEntry {
   tier: 1 | 2 | 3
   name: string
   controlSpace?: string
+  distinctInfluenceFactions?: boolean
   rewards: ConflictCard['rewards']
   riseOfIx?: boolean
 }
@@ -460,6 +461,7 @@ export function buildCatalog(): Catalog {
       tier: conflict.tier,
       name: conflict.name,
       controlSpace: conflict.controlSpace,
+      distinctInfluenceFactions: conflict.distinctInfluenceFactions,
       rewards: conflict.rewards,
     })),
     ...RISE_OF_IX_CONFLICTS.map(conflict => ({

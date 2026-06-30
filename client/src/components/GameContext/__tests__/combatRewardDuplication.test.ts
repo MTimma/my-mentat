@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CONFLICTS } from '../../../data/conflicts'
-import { ControlMarkerType, GainSource, RewardType, GamePhase } from '../../../types/GameTypes'
+import { ControlMarkerType, GainSource, RewardType, GamePhase, FactionType } from '../../../types/GameTypes'
 import { applyGameAction } from '../GameContext'
 import { getBaseTestState } from './_helpers'
 
@@ -147,5 +147,50 @@ describe('combat reward duplication', () => {
     expect(conflictGainKeys(conflictGains)).toEqual([...new Set(conflictGainKeys(conflictGains))])
     expect(s.players[1].solari).toBe(3)
     expect(conflictGains.filter(g => g.playerId === 1 && g.type === RewardType.SOLARI)).toHaveLength(1)
+  })
+
+  it('Machinations first place requires two different faction influence picks', () => {
+    const machinations909 = CONFLICTS.find(c => c.id === 909)!
+    expect(machinations909.distinctInfluenceFactions).toBe(true)
+
+    let s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, machinations909)
+    const firstChoices = (s.pendingConflictRewardChoices ?? []).filter(
+      c => c.placement === '1st place' && c.playerId === 0
+    )
+    expect(firstChoices).toHaveLength(2)
+    expect(firstChoices.every(c => c.distinctFactionGroup === '909:1st place:p0')).toBe(true)
+
+    const first = firstChoices[0]!
+    const emperorIndex = first.options.findIndex(
+      opt => opt.reward.influence?.amounts[0].faction === FactionType.EMPEROR
+    )
+    expect(emperorIndex).toBeGreaterThanOrEqual(0)
+
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CONFLICT_REWARD_CHOICE',
+      choiceId: first.id,
+      optionIndex: emperorIndex,
+    })
+
+    const second = (s.pendingConflictRewardChoices ?? []).find(
+      c => c.placement === '1st place' && c.playerId === 0
+    )
+    expect(second).toBeDefined()
+    expect(
+      second!.options.some(opt => opt.reward.influence?.amounts[0].faction === FactionType.EMPEROR)
+    ).toBe(false)
+
+    const fremenIndex = second!.options.findIndex(
+      opt => opt.reward.influence?.amounts[0].faction === FactionType.FREMEN
+    )
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CONFLICT_REWARD_CHOICE',
+      choiceId: second!.id,
+      optionIndex: fremenIndex,
+    })
+
+    expect(s.pendingConflictRewardChoices).toBeUndefined()
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(1)
+    expect(s.factionInfluence[FactionType.FREMEN][0]).toBe(1)
   })
 })

@@ -847,10 +847,10 @@
     },
     {
       "excelName": "Sort Through The Chaos",
-      "codeName": "Cloak and Dagger",
+      "codeName": "Sort Through The Chaos",
       "stage": 2,
       "firstPrize": "mentat, intrigue, 2 solari",
-      "testId": "conflict/Cloak and Dagger"
+      "testId": "conflict/Sort Through The Chaos"
     },
     {
       "excelName": "Terrible Purpose",

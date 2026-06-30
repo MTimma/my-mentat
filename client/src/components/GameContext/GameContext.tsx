@@ -131,6 +131,12 @@ import {
   requiresInfluenceChoices,
 } from '../../utils/influenceChoices'
 import { conflictInfluenceGainName } from '../../utils/influenceDisplay'
+import {
+  applyDistinctFactionExclusion,
+  distinctFactionGroupKey,
+  factionFromConflictChoiceReward,
+  isBlockedDistinctFactionChoice,
+} from '../../utils/conflictDistinctFactions'
 import { dreadnoughtStrengthEach } from '../../data/leaderAbilities/rhomburDreadnoughtStrength'
 import {
   applyDreadnoughtControlPlacement,
@@ -141,6 +147,7 @@ import {
   resolveNonWinnerDreadnoughts,
   returnExpiredDreadnoughtControls,
   getRemainingDeploySlots,
+  syncCombatStrengthForPlayer,
 } from '../../utils/dreadnoughtLifecycle'
 import { controlBonusOwner, playerHasUnitsInCombat } from '../../utils/dreadnoughts'
 import {
@@ -834,8 +841,9 @@ function completeCombatTransition(
     players: newState.players.map(p => {
       const troopCount = newState.combatTroops[p.id] ?? 0
       const negotiatorCount = newState.combatNegotiators?.[p.id] ?? 0
-      if (troopCount === 0 && negotiatorCount === 0) return p
-      return returnConflictUnitsToSupply(p, troopCount, negotiatorCount)
+      const resetCombatValue = { ...p, combatValue: 0 }
+      if (troopCount === 0 && negotiatorCount === 0) return resetCombatValue
+      return { ...returnConflictUnitsToSupply(p, troopCount, negotiatorCount), combatValue: 0 }
     }),
   }
   return {
@@ -905,7 +913,10 @@ function conflictRewardToReward(r: ConflictReward): Reward {
 }
 
 /** Build ChoiceOptions for a conflict reward that requires choice */
-function buildConflictChoiceOptions(reward: ConflictReward): ChoiceOption[] {
+function buildConflictChoiceOptions(
+  reward: ConflictReward,
+  excludedFactions: FactionType[] = []
+): ChoiceOption[] {
   if (reward.choiceOptions && reward.choiceOptions.length > 0) {
     return reward.choiceOptions.map(opt => ({
       reward: conflictRewardToReward(opt),
@@ -916,7 +927,13 @@ function buildConflictChoiceOptions(reward: ConflictReward): ChoiceOption[] {
     }))
   }
   if (reward.chooseFaction && reward.type === RewardType.INFLUENCE) {
-    const factions = [FactionType.EMPEROR, FactionType.SPACING_GUILD, FactionType.BENE_GESSERIT, FactionType.FREMEN]
+    const excluded = new Set(excludedFactions)
+    const factions = [
+      FactionType.EMPEROR,
+      FactionType.SPACING_GUILD,
+      FactionType.BENE_GESSERIT,
+      FactionType.FREMEN,
+    ].filter(f => !excluded.has(f))
     return factions.map(f => ({
       reward: { influence: { amounts: [{ faction: f, amount: reward.amount }] } },
       rewardLabel: `${reward.amount} Influence (${f})`
@@ -3331,7 +3348,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (exclusiveRemaining <= 0 && generalRemaining <= 0) return state
 
       const currentTroops = state.combatTroops[action.playerId] || 0
-      const updatedCombat = player.combatValue ? player.combatValue + 2 : 2;
       let currentTurn = state.currTurn
       if (state.activePlayerId === action.playerId && state.currTurn) {
         const removable = (state.currTurn.removableTroops ?? 0) + 1
@@ -3357,21 +3373,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ...state.combatTroops,
           [action.playerId]: currentTroops + 1
         },
-        combatStrength: {
-          ...state.combatStrength,
-          [action.playerId]: updatedCombat
-        },
         players: state.players.map(p =>
-          p.id === action.playerId
-            ? { ...p, 
-              combatValue: updatedCombat, 
-              troops: p.troops - 1 }
-            : p
+          p.id === action.playerId ? { ...p, troops: p.troops - 1 } : p
         ),
         currTurn: currentTurn
       }
 
-      return checkAndApplyDiversion(checkAndApplyMasterstroke(newState, action.playerId), action.playerId)
+      return syncCombatStrengthForPlayer(
+        checkAndApplyDiversion(checkAndApplyMasterstroke(newState, action.playerId), action.playerId),
+        action.playerId
+      )
     }
     case 'UNDEPLOY_TROOP': {
       const currentTroops = state.combatTroops[action.playerId] || 0
@@ -3397,35 +3408,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         )
       }
 
-      const newCombatStrength = { ...state.combatStrength }
-      if (!newCombatStrength[action.playerId]) return state
-      const newPlayerCombatStrength = newCombatStrength[action.playerId] - 2
-      if (newPlayerCombatStrength <= 0) {
-        delete newCombatStrength[action.playerId]
-      } else {
-        newCombatStrength[action.playerId] = newPlayerCombatStrength
-      }
-
       const newState = {
         ...state,
         currTurn: currentTurn,
-        combatStrength: newCombatStrength,
         combatTroops: {
           ...state.combatTroops,
           [action.playerId]: currentTroops - 1,
         },
         players: state.players.map(p =>
-          p.id === action.playerId
-            ? {
-                ...p,
-                combatValue: p.combatValue ? p.combatValue - 2 : 0,
-                troops: p.troops + 1,
-              }
-            : p
+          p.id === action.playerId ? { ...p, troops: p.troops + 1 } : p
         ),
       }
 
-      return checkAndApplyDiversion(revertMasterstrokeIfNeeded(newState, action.playerId), action.playerId)
+      return syncCombatStrengthForPlayer(
+        checkAndApplyDiversion(revertMasterstrokeIfNeeded(newState, action.playerId), action.playerId),
+        action.playerId
+      )
     }
     case 'DEPLOY_DREADNOUGHT': {
       if (state.expansions?.riseOfIx !== true) return state
@@ -3992,6 +3990,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const deferConflictChoice = (reward: ConflictReward, placement: string, playerIds: number[]) => {
         const options = buildConflictChoiceOptions(reward)
         if (options.length === 0) return
+        const useDistinctFactions =
+          state.currentConflict.distinctInfluenceFactions === true &&
+          reward.chooseFaction &&
+          reward.type === RewardType.INFLUENCE
         pendingChoices.push({
           id: nextSemanticId(
             { type: 'conflict', id: state.currentConflict.id },
@@ -4003,6 +4005,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           conflictId: state.currentConflict.id,
           conflictName: state.currentConflict.name,
           options,
+          distinctFactionGroup: useDistinctFactions
+            ? distinctFactionGroupKey(state.currentConflict.id, placement, playerIds[0])
+            : undefined,
+          excludedFactions: [],
         })
       }
 
@@ -4114,6 +4120,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       const choice = pending.find(c => c.id === choiceId)
       if (!choice) return state
+      if (isBlockedDistinctFactionChoice(choice, pending)) return state
 
       // Decision events: optionIndex selects from the live choice's options.
       let reward = action.reward
@@ -4124,12 +4131,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       if (!reward) return state
 
+      const chosenFaction = factionFromConflictChoiceReward(reward)
+      if (chosenFaction && choice.excludedFactions?.includes(chosenFaction)) return state
+
       let newState = applyConflictChoiceReward(state, reward, choice.playerId, {
         id: choice.conflictId,
         name: choice.conflictName + ' - ' + choice.placement
       })
 
-      const remaining = pending.filter(c => c.id !== choiceId)
+      let remaining = pending.filter(c => c.id !== choiceId)
+      if (chosenFaction) {
+        remaining = applyDistinctFactionExclusion(remaining, choice, chosenFaction)
+      }
       newState = { ...newState, pendingConflictRewardChoices: remaining.length > 0 ? remaining : undefined }
 
       if (remaining.length > 0) {
@@ -8561,6 +8574,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
   const [gameState, setGameState] = useState<GameState>(initialStateWithHistory)
 
   const recordedEventsRef = useRef<EventEntry[]>(initialEvents)
+  /** React Strict Mode runs setState updaters twice with the same prev; record once per dispatch. */
+  const strictModeRecordCommittedRef = useRef(false)
   const setupRef = useRef<{ setup: SetupBlock; unmapped: string[] }>({
     setup: gameInput.setup,
     unmapped: gameInput.meta.notes?.includes('Unmapped')
@@ -8571,6 +8586,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
 
   const recordingDispatch = useCallback(
     (action: GameAction) => {
+      strictModeRecordCommittedRef.current = false
       setGameState(prev => {
         if (action.type === 'UNDO_TO_TURN') {
           const eventIndex = historyIndexToEventIndex(
@@ -8618,7 +8634,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
         }
 
         const lastEvent = recordedEventsRef.current[recordedEventsRef.current.length - 1]
-        if (isReplayable(action) && shouldRecordEvent(prev, next, action, lastEvent)) {
+        if (
+          !strictModeRecordCommittedRef.current &&
+          isReplayable(action) &&
+          shouldRecordEvent(prev, next, action, lastEvent)
+        ) {
           assertJsonSerializable(action, action.type)
           const entry: EventEntry = {
             a: JSON.parse(JSON.stringify(action)) as GameAction,
@@ -8627,6 +8647,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
             entry.ck = { [`p${action.playerId}`]: computeChecksum(next, action.playerId) }
           }
           recordedEventsRef.current = [...recordedEventsRef.current, entry]
+          strictModeRecordCommittedRef.current = true
         }
 
         // Sandbox setup rows are maintained by the reducer (withSandboxSetupHistory);

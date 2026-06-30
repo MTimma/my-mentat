@@ -1,5 +1,5 @@
 import { ConflictCard, RewardType } from '../types/GameTypes'
-
+//todo check
 /** Rise of Ix conflict cards (ids 919–922). */
 export const RISE_OF_IX_CONFLICTS: ConflictCard[] = [
   {
@@ -41,7 +41,6 @@ export const RISE_OF_IX_CONFLICTS: ConflictCard[] = [
           choiceOptions: [
             { type: RewardType.VICTORY_POINTS, amount: 1, cost: { solari: 6 } },
             { type: RewardType.VICTORY_POINTS, amount: 1, cost: { spice: 4 } },
-            { type: RewardType.TECH, amount: 1 },
           ],
         },
       ],

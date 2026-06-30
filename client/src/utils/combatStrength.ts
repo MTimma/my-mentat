@@ -1,5 +1,17 @@
 import { dreadnoughtStrengthEach } from '../data/leaderAbilities/rhomburDreadnoughtStrength'
-import type { GameState } from '../types/GameTypes'
+import { GamePhase, TurnType, type GameState } from '../types/GameTypes'
+
+/** Reveal/combat phases track swords on combatValue; agent-turn deploy uses units only. */
+function shouldUseCachedCombatValue(state: GameState, playerId: number): boolean {
+  const player = state.players.find(p => p.id === playerId)
+  if (!player) return false
+  if (player.revealed || state.currTurn?.type === TurnType.REVEAL) return true
+  return (
+    state.phase === GamePhase.COMBAT ||
+    state.phase === GamePhase.COMBAT_REWARDS ||
+    state.phase === GamePhase.END_GAME
+  )
+}
 
 /** Total combat strength for a player (troops×2 + dreadnoughts×N + swords). */
 export function computeStrength(state: GameState, playerId: number): number {
@@ -17,8 +29,12 @@ export function computeStrength(state: GameState, playerId: number): number {
     return 0
   }
 
-  if (player.combatValue) return player.combatValue
-  if (state.combatStrength[playerId]) return state.combatStrength[playerId]
+  if (shouldUseCachedCombatValue(state, playerId) && player.combatValue) {
+    return player.combatValue
+  }
+  if (shouldUseCachedCombatValue(state, playerId) && state.combatStrength[playerId]) {
+    return state.combatStrength[playerId]
+  }
 
   let total = (troops + negotiators) * 2
   if (riseOfIx && dCount > 0) {

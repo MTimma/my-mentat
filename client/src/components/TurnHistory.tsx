@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { createPortal } from 'react-dom'
 import { Card, Gain, IntrigueCard, Player, GameState, GamePhase, TurnType, AcquiredTechTileSnapshot } from '../types/GameTypes'
 import { getLeaderIconPath } from '../data/leaders'
+import { conflictCardImageSrc } from '../data/conflictCardImages'
 import {
   computeTurnGainTotals,
   excludeAcquiredGainsFromDisplay,
@@ -747,7 +748,15 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           {!isMetaEntry && <span className="turn-label">{title}</span>}
           {isRevealTurn && renderRevealCardsInline(turn)}
           {!isMetaEntry && renderIntrigueInline(playedIntrigue)}
-          {isCombatEntry && <span className="turn-label turn-label--combat">Combat resolution</span>}
+          
+          {isCombatEntry && <span className="turn-label turn-label--combat">{
+          conflictCardImageSrc(turn.currentConflict.id) && <img style={{ width: '30px', height: '42px' }}
+          src={conflictCardImageSrc(turn.currentConflict.id)?? undefined}
+          alt={turn.currentConflict.name}
+          className="conflict-card-image"
+          draggable={false}
+        />
+          }</span>}
           {isEndgameEntry && (
             <span className="turn-label turn-label--endgame">
               {turn.endgameWinners?.length ? 'Endgame' : 'Endgame intrigue reveal'}

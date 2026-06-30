@@ -484,6 +484,11 @@ export interface ConflictCard {
   tier: 1 | 2 | 3
   name: string
   controlSpace?: ControlMarkerType
+  /**
+   * When true, multiple chooseFaction influence rewards in the same placement must
+   * target different factions (e.g. Machinations first place).
+   */
+  distinctInfluenceFactions?: boolean
   rewards: {
     first: ConflictReward[]
     second: ConflictReward[]
@@ -777,6 +782,10 @@ export interface GameState {
     conflictId: number
     conflictName: string
     options: ChoiceOption[]
+    /** Links sequential influence picks that must use different factions. */
+    distinctFactionGroup?: string
+    /** Factions already chosen earlier in this group; excluded from options. */
+    excludedFactions?: FactionType[]
   }>
   // Stored when combat resolution is deferred for choices; used when completing the transition
   combatResolutionDeferred?: {
