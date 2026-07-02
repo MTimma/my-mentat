@@ -33,6 +33,8 @@ interface GameStateSetupProps {
   onOpenCardCreator: () => void
   autoApplyMandatoryRewards: boolean
   onAutoApplyMandatoryRewardsChange: (enabled: boolean) => void
+  showBoardInfoTips: boolean
+  onShowBoardInfoTipsChange: (enabled: boolean) => void
 }
 
 const GameStateSetup: React.FC<GameStateSetupProps> = ({
@@ -43,6 +45,8 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
   onOpenCardCreator,
   autoApplyMandatoryRewards,
   onAutoApplyMandatoryRewardsChange,
+  showBoardInfoTips,
+  onShowBoardInfoTipsChange,
 }) => {
   const catalogRuntime = useMemo(
     () => createCatalogRuntime(resolveGamePack(gamePackId)),
@@ -224,6 +228,21 @@ const GameStateSetup: React.FC<GameStateSetupProps> = ({
               aria-pressed={autoApplyMandatoryRewards}
             >
               {autoApplyMandatoryRewards ? 'On' : 'Off'}
+            </button>
+          </div>
+
+          <div className="setup-section setup-option-row">
+            <div>
+              <strong>Board info tips</strong>
+              <p>Small hints on the board during influence choices and sandbox setup.</p>
+            </div>
+            <button
+              type="button"
+              className={`setup-toggle-button ${showBoardInfoTips ? 'setup-toggle-button-on' : ''}`}
+              onClick={() => onShowBoardInfoTipsChange(!showBoardInfoTips)}
+              aria-pressed={showBoardInfoTips}
+            >
+              {showBoardInfoTips ? 'On' : 'Off'}
             </button>
           </div>
 

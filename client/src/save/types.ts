@@ -14,11 +14,23 @@ export const SAVE_SCHEMA_VERSION = 1
 /** Per-player resource checksum recorded on END_TURN: [spice, solari, water, troops, vp]. */
 export type PlayerChecksum = [number, number, number, number, number]
 
+/** Optional debug context stamped at record time (ignored by replay). */
+export interface EventRecordContext {
+  /** Round number when the action was recorded (1-based). */
+  round: number
+  /** Active player when the action was recorded. */
+  activePlayerId: number
+  /** Player-turn sequence: 1 + completed END_TURN events before this one. */
+  turn: number
+}
+
 export interface EventEntry {
   /** The recorded action (decision), exactly as dispatched. */
   a: GameAction
   /** Optional divergence checksums, keyed `p<playerId>`, written on END_TURN. */
   ck?: Record<string, PlayerChecksum>
+  /** Debug context (round / turn / active player); not used by replay. */
+  ctx?: EventRecordContext
 }
 
 export interface PlayerSetupBlock {

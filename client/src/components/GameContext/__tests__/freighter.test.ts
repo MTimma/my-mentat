@@ -14,7 +14,7 @@ import {
 } from '../../../types/GameTypes'
 import { assertJsonSerializable } from '../../../save/recording'
 import { applyGameAction } from '../GameContext'
-import { getBaseTestState, makePlayer, stubDeckCard } from './_helpers'
+import { getBaseTestState, makePlayer, stubDeckCard, defaultRoiIxBoard } from './_helpers'
 
 const ROI_EXPANSIONS = { riseOfIx: true, riseOfIxEpic: false }
 const SMUGGLING_ID = BOARD_SPACES.find(s => s.name === 'Smuggling')!.id
@@ -24,6 +24,7 @@ function roiState(overrides?: Partial<GameState>): GameState {
   return {
     ...getBaseTestState(undefined, { players: 3 }),
     expansions: ROI_EXPANSIONS,
+    ixBoard: defaultRoiIxBoard(),
     players: [
       makePlayer(0, { freighterStep: 0 }),
       makePlayer(1, { freighterStep: 0 }),
@@ -53,6 +54,15 @@ function shippingPendingChoices(state: GameState) {
   return (state.currTurn?.pendingChoices ?? []).filter(
     c => c.source.type === GainSource.SHIPPING_TRACK || c.prompt.includes('Recall reward')
   )
+}
+
+function freighterChoices(state: GameState): FixedOptionsChoice[] {
+  return (state.currTurn?.pendingChoices?.filter(c => c.prompt.startsWith('Freighter')) ??
+    []) as FixedOptionsChoice[]
+}
+
+function hasAdvanceOption(choice: FixedOptionsChoice): boolean {
+  return choice.options.some(opt => opt.reward.custom === CustomEffect.FREIGHTER_ADVANCE)
 }
 
 function resolveFreighter(
@@ -104,15 +114,19 @@ describe('freighter shipping track', () => {
     )
   })
 
-  it('Advance from 3 stays at 3', () => {
+  it('Advance is not offered at step 3', () => {
     const card = spiceTradeCard(8802)
     let s = roiState({
       players: [makePlayer(0, { freighterStep: 3, deck: [card] })],
     })
     s = placeOnSpace(s, 0, card.id, SMUGGLING_ID)
     const choice = freighterChoice(s)
-    s = resolveFreighter(s, 0, choice.id, 'advance')
-    expect(s.players[0].freighterStep).toBe(3)
+    expect(
+      choice.options.some(opt => opt.reward.custom === CustomEffect.FREIGHTER_ADVANCE)
+    ).toBe(false)
+    expect(
+      choice.options.some(opt => opt.reward.custom === CustomEffect.FREIGHTER_RECALL)
+    ).toBe(true)
   })
 
   it('Recall from 0 yields no rewards', () => {
@@ -219,6 +233,19 @@ describe('freighter shipping track', () => {
     expect(shippingPendingChoices(s).length).toBe(2)
   })
 
+  it('CLAIM_ALL_REWARDS after recall from 3 grants pending acquire tech', () => {
+    const card = spiceTradeCard(8808)
+    let s = roiState({
+      players: [makePlayer(0, { freighterStep: 3, spice: 3, deck: [card] })],
+    })
+    s = placeOnSpace(s, 0, card.id, SMUGGLING_ID)
+    const choice = freighterChoice(s)
+    s = resolveFreighter(s, 0, choice.id, 'recall')
+    s = applyGameAction(s, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+    expect(s.pendingAcquireTech).toMatchObject({ playerId: 0, discount: 2 })
+    expect(shippingPendingRewards(s).some(r => r.reward.acquireTech !== undefined)).toBe(false)
+  })
+
   it('Dividends pays +5 to active and +1 to each other player', () => {
     let s = roiState()
     const dividendsChoice: FixedOptionsChoice = {
@@ -259,9 +286,50 @@ describe('freighter shipping track', () => {
       },
     })
     s = placeOnSpace(s, 0, card.id, INTERSTELLAR_SHIPPING_ID)
-    const freighterChoices =
-      s.currTurn?.pendingChoices?.filter(c => c.prompt.startsWith('Freighter')) ?? []
-    expect(freighterChoices).toHaveLength(2)
+    const choices = freighterChoices(s)
+    expect(choices).toHaveLength(2)
+    expect(hasAdvanceOption(choices[0])).toBe(true)
+    expect(hasAdvanceOption(choices[1])).toBe(true)
+  })
+
+  it('at step 2, Interstellar Shipping second choice cannot advance past step 3', () => {
+    const card = spiceTradeCard(8808)
+    let s = roiState({
+      players: [makePlayer(0, { freighterStep: 2, deck: [card] })],
+      factionInfluence: {
+        [FactionType.EMPEROR]: { 0: 0 },
+        [FactionType.SPACING_GUILD]: { 0: 2 },
+        [FactionType.BENE_GESSERIT]: { 0: 0 },
+        [FactionType.FREMEN]: { 0: 0 },
+      },
+    })
+    s = placeOnSpace(s, 0, card.id, INTERSTELLAR_SHIPPING_ID)
+    const [first, second] = freighterChoices(s)
+    expect(first.prompt).toBe('Freighter (now at 2/3)')
+    expect(hasAdvanceOption(first)).toBe(true)
+    expect(second.prompt).toBe('Freighter (now at 3/3)')
+    expect(hasAdvanceOption(second)).toBe(false)
+  })
+
+  it('after advancing from step 2, remaining freighter choice drops Advance', () => {
+    const card = spiceTradeCard(8809)
+    let s = roiState({
+      players: [makePlayer(0, { freighterStep: 2, deck: [card] })],
+      factionInfluence: {
+        [FactionType.EMPEROR]: { 0: 0 },
+        [FactionType.SPACING_GUILD]: { 0: 2 },
+        [FactionType.BENE_GESSERIT]: { 0: 0 },
+        [FactionType.FREMEN]: { 0: 0 },
+      },
+    })
+    s = placeOnSpace(s, 0, card.id, INTERSTELLAR_SHIPPING_ID)
+    const [first] = freighterChoices(s)
+    s = resolveFreighter(s, 0, first.id, 'advance')
+    expect(s.players[0].freighterStep).toBe(3)
+    const remaining = freighterChoices(s)
+    expect(remaining).toHaveLength(1)
+    expect(remaining[0].prompt).toBe('Freighter (now at 3/3)')
+    expect(hasAdvanceOption(remaining[0])).toBe(false)
   })
 
   it('freighterStep persists across END_TURN', () => {

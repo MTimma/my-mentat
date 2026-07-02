@@ -89,8 +89,9 @@ describe('event-sourced save round trip', () => {
       { type: 'END_TURN', playerId: 0 },
     ]
     for (const action of script) {
+      const before = live
       live = applyGameAction(live, action)
-      recorder.record(action, live)
+      recorder.record(action, before, live)
     }
 
     const doc = recorder.toSaveDoc()
@@ -119,8 +120,9 @@ describe('event-sourced save round trip', () => {
       { type: 'END_TURN', playerId: 0 },
     ]
     for (const action of actions) {
+      const before = live
       live = applyGameAction(live, action)
-      recorder.record(action, live)
+      recorder.record(action, before, live)
     }
     const doc = recorder.toSaveDoc()
     // Tamper: claim the player ended the turn with different spice
@@ -151,8 +153,9 @@ describe('event-sourced save round trip', () => {
       { type: 'END_TURN', playerId: 0 },
     ]
     for (const action of trunkActions) {
+      const before = live
       live = applyGameAction(live, action)
-      recorder.record(action, live)
+      recorder.record(action, before, live)
     }
     const doc = recorder.toSaveDoc()
     const trunkJson = JSON.stringify(doc.events)
@@ -192,7 +195,8 @@ describe('event-sourced save round trip', () => {
       cardIds: [1],
       onResolve: () => undefined,
     } as unknown as GameAction
-    expect(() => recorder.record(bad)).toThrow(/Non-serializable/)
+    const live = buildInitialState(makeSetup())
+    expect(() => recorder.record(bad, live)).toThrow(/Non-serializable/)
   })
 
   it('computeChecksum reads the right player fields', () => {

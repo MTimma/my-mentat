@@ -1,23 +1,30 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import type { TechAcquireSourceOption } from '../../components/GameContext/riseOfIx/techAcquireOffer'
 import type { TechTileId } from '../../data/techTiles'
 import { getTechTile } from '../../data/techTiles'
 import type { Player } from '../../types/GameTypes'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
-import { effectiveTechCost, techTilesAvailableForNextReveal } from '../../utils/techTiles'
+import {
+  canPlayerAffordTechTile,
+  effectiveTechCost,
+  techTilesAvailableForNextReveal,
+} from '../../utils/techTiles'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import '../ImperiumRow/ImperiumRow.css'
 import './TechAcquireModal.css'
 
 export interface TechAcquireModalProps {
   isOpen: boolean
-  stackIndex: number
+  /** When null, show all three face-up stacks to pick from first. */
+  stackIndex: number | null
   stacks: TechTileId[][]
   players: Player[]
   player: Player
   /** When false, modal is view-only (tile info + resources). */
   canAcquire: boolean
   acquireSources: TechAcquireSourceOption[]
+  /** Pre-select acquire source (e.g. play-area button tied to one reward). */
+  initialSourceId?: string | null
   onAcquire: (
     stackIndex: number,
     negotiatorsReturned: number,
@@ -41,17 +48,28 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
   player,
   canAcquire,
   acquireSources,
+  initialSourceId = null,
   onAcquire,
   onClose,
 }) => {
+  const [activeStackIndex, setActiveStackIndex] = useState<number | null>(stackIndex)
   const [negotiatorsReturned, setNegotiatorsReturned] = useState(0)
   const [acquireStep, setAcquireStep] = useState<AcquireStep | null>(null)
   const [selectedNextTileId, setSelectedNextTileId] = useState<TechTileId | null>(null)
-  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null)
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(initialSourceId)
   const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(isOpen)
 
+  useEffect(() => {
+    if (!isOpen) return
+    setActiveStackIndex(stackIndex)
+    setNegotiatorsReturned(0)
+    setAcquireStep(null)
+    setSelectedNextTileId(null)
+    setSelectedSourceId(initialSourceId)
+  }, [isOpen, stackIndex, initialSourceId])
+
   const activeSource =
-    acquireSources.find(s => s.id === selectedSourceId) ??
+    acquireSources.find(source => source.id === selectedSourceId) ??
     (acquireSources.length === 1 ? acquireSources[0] : undefined)
 
   const discount = activeSource?.discount ?? 0
@@ -61,7 +79,8 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
   const currency = paySolariInsteadOfSpice ? player.solari : player.spice
   const currencyLabel = paySolariInsteadOfSpice ? 'solari' : 'spice'
 
-  const faceUpId = stacks[stackIndex]?.[0]
+  const faceUpId =
+    activeStackIndex != null ? stacks[activeStackIndex]?.[0] : undefined
   const tile = faceUpId ? getTechTile(faceUpId) : undefined
 
   const maxReturnable = useMemo(() => {
@@ -75,27 +94,47 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
   const canAfford = tile ? currency >= effectiveCost : false
   const sourceReady = canAcquire && acquireSources.length > 0 && activeSource != null
   const acquireEnabled = sourceReady && canAfford
+  const showStackPicker = activeStackIndex == null
 
-  if (!isOpen || !tile || waitForBoardTarget) return null
+  const stackPickerEntries = useMemo(
+    () =>
+      stacks.map((stack, index) => {
+        const tileId = stack[0]
+        const stackTile = tileId ? getTechTile(tileId) : undefined
+        const affordable =
+          stackTile && activeSource
+            ? canPlayerAffordTechTile(player, stackTile.cost, {
+                discount: activeSource.discount,
+                paySolariInsteadOfSpice: activeSource.paySolariInsteadOfSpice,
+              })
+            : false
+        return { index, tileId, stackTile, affordable }
+      }),
+    [stacks, player, activeSource]
+  )
+
+  if (!isOpen || waitForBoardTarget) return null
+  if (!showStackPicker && !tile) return null
 
   const resetAndClose = () => {
+    setActiveStackIndex(stackIndex)
     setNegotiatorsReturned(0)
     setAcquireStep(null)
     setSelectedNextTileId(null)
-    setSelectedSourceId(null)
+    setSelectedSourceId(initialSourceId)
     onClose()
   }
 
   const confirmAcquire = (nextFaceUpTileId?: TechTileId) => {
-    if (!activeSource) return
-    onAcquire(stackIndex, clampedReturn, activeSource.id, nextFaceUpTileId)
+    if (!activeSource || activeStackIndex == null) return
+    onAcquire(activeStackIndex, clampedReturn, activeSource.id, nextFaceUpTileId)
     setNegotiatorsReturned(0)
     setAcquireStep(null)
     setSelectedNextTileId(null)
   }
 
   const handleAcquire = () => {
-    if (!acquireEnabled) return
+    if (!acquireEnabled || !tile) return
     const availableIds = techTilesAvailableForNextReveal(stacks, players, tile.id)
     if (availableIds.length <= 1) {
       confirmAcquire(availableIds[0])
@@ -110,12 +149,58 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
   }
 
   const handleConfirmNextTile = () => {
-    if (!acquireStep || !selectedNextTileId || !activeSource) return
-    onAcquire(stackIndex, acquireStep.negotiatorsReturned, activeSource.id, selectedNextTileId)
+    if (!acquireStep || !selectedNextTileId || !activeSource || activeStackIndex == null) return
+    onAcquire(
+      activeStackIndex,
+      acquireStep.negotiatorsReturned,
+      activeSource.id,
+      selectedNextTileId
+    )
     setNegotiatorsReturned(0)
     setAcquireStep(null)
     setSelectedNextTileId(null)
   }
+
+  const renderSourcePicker = () =>
+    acquireSources.length > 1 ? (
+      <div className="tech-acquire-modal__sources" aria-label="Acquire tech using">
+        <span className="tech-acquire-modal__sources-label">Acquire using</span>
+        <div className="tech-acquire-modal__source-list" role="radiogroup" aria-label="Acquire source">
+          {acquireSources.map(source => {
+            const selected = activeSource?.id === source.id
+            return (
+              <button
+                key={source.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                className={[
+                  'tech-acquire-modal__source',
+                  selected ? 'tech-acquire-modal__source--selected' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => {
+                  setSelectedSourceId(source.id)
+                  setNegotiatorsReturned(0)
+                }}
+              >
+                <img
+                  src={source.icon}
+                  alt=""
+                  className="tech-acquire-modal__source-icon"
+                  aria-hidden
+                />
+                <span className="tech-acquire-modal__source-label">{source.label}</span>
+                {source.discount > 0 ? (
+                  <span className="tech-acquire-modal__source-discount">−{source.discount} spice</span>
+                ) : null}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    ) : null
 
   const overlay = (
     <div
@@ -128,14 +213,95 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
         className="imperium-preview-modal tech-acquire-modal"
         role="dialog"
         aria-modal="true"
-        aria-label={canAcquire ? `Acquire ${tile.name}` : `View ${tile.name}`}
+        aria-label={
+          showStackPicker
+            ? 'Choose tech to acquire'
+            : canAcquire && tile
+              ? `Acquire ${tile.name}`
+              : tile
+                ? `View ${tile.name}`
+                : 'Acquire tech'
+        }
         onClick={event => event.stopPropagation()}
       >
-        {acquireStep ? (
+        {showStackPicker ? (
+          <>
+            <h3 className="tech-acquire-modal__title">Buy tech</h3>
+            <p className="tech-acquire-modal__subtitle">Choose a face-up tech tile to acquire.</p>
+            {renderSourcePicker()}
+            {!sourceReady ? (
+              <p className="tech-acquire-modal__view-only-hint">
+                {acquireSources.length > 1
+                  ? 'Choose whether to acquire with your board space discount or Signet Ring.'
+                  : 'Acquire an Acquire Tech reward to purchase from the market.'}
+              </p>
+            ) : null}
+            <div
+              className="tech-acquire-modal__stack-picker"
+              role="listbox"
+              aria-label="Face-up tech tiles"
+            >
+              {stackPickerEntries.map(entry => {
+                if (!entry.stackTile || !entry.tileId) {
+                  return (
+                    <div
+                      key={`empty-${entry.index}`}
+                      className="tech-acquire-modal__stack-slot tech-acquire-modal__stack-slot--empty"
+                      aria-hidden
+                    />
+                  )
+                }
+                const entryCost = effectiveTechCost(entry.stackTile.cost, discount, 0)
+                const disabled = !sourceReady || !entry.affordable
+                return (
+                  <button
+                    key={entry.tileId}
+                    type="button"
+                    role="option"
+                    aria-disabled={disabled}
+                    disabled={disabled}
+                    className={[
+                      'tech-acquire-modal__stack-slot',
+                      disabled ? 'tech-acquire-modal__stack-slot--disabled' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    title={
+                      disabled
+                        ? `Need ${entryCost} ${currencyLabel} (you have ${currency})`
+                        : `${entry.stackTile.name} — ${entryCost} ${currencyLabel}`
+                    }
+                    onClick={() => {
+                      if (disabled) return
+                      setActiveStackIndex(entry.index)
+                      setNegotiatorsReturned(0)
+                    }}
+                  >
+                    <img
+                      src={entry.stackTile.image}
+                      alt={entry.stackTile.name}
+                      className="tech-acquire-modal__stack-slot-img"
+                      draggable={false}
+                    />
+                    <span className="tech-acquire-modal__stack-slot-name">{entry.stackTile.name}</span>
+                    <span className="tech-acquire-modal__stack-slot-cost">
+                      {entryCost} {currencyLabel}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="imperium-preview-actions tech-acquire-modal__actions">
+              <button type="button" className="imperium-preview-cancel" onClick={resetAndClose}>
+                Cancel
+              </button>
+            </div>
+          </>
+        ) : acquireStep ? (
           <>
             <h3 className="tech-acquire-modal__title">Choose next face-up tile</h3>
             <p className="tech-acquire-modal__subtitle">
-              Acquiring {tile.name} — pick which tile to reveal on stack {stackIndex + 1}.
+              Acquiring {tile!.name} — pick which tile to reveal on stack {activeStackIndex! + 1}.
             </p>
             <div className="tech-acquire-modal__pick-grid" role="listbox" aria-label="Next face-up tile">
               {acquireStep.availableIds.map(tileId => {
@@ -179,17 +345,17 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
         ) : (
           <>
             <img
-              src={tile.image}
-              alt={tile.name}
+              src={tile!.image}
+              alt={tile!.name}
               className="imperium-preview-image tech-acquire-modal__tile-img"
               draggable={false}
             />
             <div className="tech-acquire-modal__meta">
-              <span className="tech-acquire-modal__tile-name">{tile.name}</span>
+              <span className="tech-acquire-modal__tile-name">{tile!.name}</span>
               <span className="tech-acquire-modal__cost">
                 {effectiveCost} {currencyLabel}
-                {effectiveCost !== tile.cost ? (
-                  <span className="tech-acquire-modal__cost-base"> (base {tile.cost})</span>
+                {effectiveCost !== tile!.cost ? (
+                  <span className="tech-acquire-modal__cost-base"> (base {tile!.cost})</span>
                 ) : null}
               </span>
             </div>
@@ -292,11 +458,23 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
               </p>
             ) : null}
 
-            <p className="tech-acquire-modal__description">{tile.description}</p>
+            <p className="tech-acquire-modal__description">{tile!.description}</p>
 
             <div className="imperium-preview-actions tech-acquire-modal__actions">
-              <button type="button" className="imperium-preview-cancel" onClick={resetAndClose}>
-                {acquireSources.length > 0 ? 'Cancel' : 'Close'}
+              <button
+                type="button"
+                className="imperium-preview-cancel"
+                onClick={() => {
+                  if (stackIndex == null) {
+                    setActiveStackIndex(null)
+                    setAcquireStep(null)
+                    setNegotiatorsReturned(0)
+                    return
+                  }
+                  resetAndClose()
+                }}
+              >
+                {stackIndex == null ? 'Back' : acquireSources.length > 0 ? 'Cancel' : 'Close'}
               </button>
               {sourceReady ? (
                 <button

@@ -9,7 +9,8 @@ import { mintId } from '../utils/semanticIds'
 import type { SignetRingContext, SignetRingResult } from './signetRingEffects'
 import { buildArmandSignetAcquireChoice } from './leaderAbilities/armandTrashInPlay'
 import { factionsWithSnooper } from './leaderAbilities/tessiaSnoopers'
-import { buildMayOptionalEffect } from '../components/GameContext/riseOfIx/optionalMayEffects'
+import { canFreighterAdvance } from '../components/GameContext/riseOfIx/freighter'
+import { buildRhomburSignetChoice } from '../components/GameContext/riseOfIx/boardSpaceChoices'
 
 const SIGNET_RING_SOURCE = { type: GainSource.CARD, id: 10, name: 'Signet Ring' }
 
@@ -25,37 +26,29 @@ export const RISE_OF_IX_SIGNET_RING_EFFECTS: Record<
   (ctx: SignetRingContext) => SignetRingResult
 > = {
   [LEADER_NAMES.PRINCE_RHOMBUR_VERNIUS]: (ctx) => {
-    const source = SIGNET_RING_SOURCE
-    const optionalEffects: OptionalEffect[] = []
-    const acquire = buildMayOptionalEffect(
+    const choice = buildRhomburSignetChoice(
       ctx.state,
       ctx.playerId,
-      source,
-      { reward: { acquireTech: {} } },
-      optionalEffects.map(e => e.id)
+      ctx.card.id,
+      ctx.state.currTurn?.pendingChoices?.map(c => c.id) ?? []
     )
-    if (acquire) optionalEffects.push(acquire)
-    const negotiator = buildMayOptionalEffect(
-      ctx.state,
-      ctx.playerId,
-      source,
-      { reward: { techNegotiator: 1 } },
-      optionalEffects.map(e => e.id)
-    )
-    if (negotiator) optionalEffects.push(negotiator)
-    return optionalEffects.length > 0 ? { optionalEffects } : {}
+    if (choice.options.every(option => option.disabled)) return {}
+    return { pendingChoices: [choice] }
   },
 
-  [LEADER_NAMES.VISCOUNT_HUDRO_MORITANI]: (ctx) => ({
-    optionalEffects: [
-      {
-        id: mintId(ctx.state, { type: GainSource.CARD, id: ctx.card.id }, 'SIGNET'),
-        cost: { spice: 1 },
-        reward: { custom: CustomEffect.FREIGHTER_ADVANCE },
-        source: SIGNET_RING_SOURCE,
-      },
-    ],
-  }),
+  [LEADER_NAMES.VISCOUNT_HUDRO_MORITANI]: (ctx) => {
+    if (!canFreighterAdvance(ctx.state, ctx.playerId)) return {}
+    return {
+      optionalEffects: [
+        {
+          id: mintId(ctx.state, { type: GainSource.CARD, id: ctx.card.id }, 'SIGNET'),
+          cost: { spice: 1 },
+          reward: { custom: CustomEffect.FREIGHTER_ADVANCE },
+          source: SIGNET_RING_SOURCE,
+        },
+      ],
+    }
+  },
 
   [LEADER_NAMES.PRINCESS_YUNA_MORITANI]: (ctx) => ({
     optionalEffects: [

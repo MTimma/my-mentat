@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { defineConfig, type Plugin } from 'vitest/config'
+import { loadEnv } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 // should only be used during decelopment
 function gamePackDevSavePlugin(): Plugin {
@@ -57,12 +58,22 @@ function gamePackDevSavePlugin(): Plugin {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const gamesApiTarget = env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:3000'
+
+  return {
   plugins: [react(), gamePackDevSavePlugin()],
+  server: {
+    proxy: {
+      '/games': gamesApiTarget,
+    },
+  },
   test: {
     environment: 'node',
     globals: true,
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     exclude: ['src/__tests__/deferred/**'],
   },
+  }
 })

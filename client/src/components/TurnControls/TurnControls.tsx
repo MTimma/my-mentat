@@ -15,6 +15,9 @@ import {
   filterAcquireTechFromChoices,
   filterAcquireTechOptionalEffects,
   findOriginalOptionIndex,
+  findTechAcquireOptionForEffectSource,
+  canAffordAnyFaceUpTech,
+  isPlayAreaInlineTechOrSignetChoice,
 } from '../GameContext/riseOfIx/techTurnControlsUi'
 import TurnControlsTechRow from '../TurnControlsTechRow/TurnControlsTechRow'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
@@ -40,6 +43,7 @@ import {
   requiresInfluenceChoices,
 } from '../../utils/influenceChoices'
 import { isInfluenceBoardChoice } from '../../utils/influenceBoardChoice'
+import { isSoleTrashThisCardReward } from '../../utils/pendingRewardAutoApply'
 import {
   CardEffectRect,
   CARD_EFFECT_REGIONS,
@@ -104,7 +108,6 @@ interface TurnControlsProps {
   onMemnonHighCouncilSelectionStart?: (rewardId: string) => void
   memnonHighCouncilSelectionActive?: boolean
   influenceBoardSelectionActive?: boolean
-  influenceBoardPrompt?: string | null
   onOpponentNoCardAck?: (opponentId: number) => void
   intrigueDeck: IntrigueCard[]
   gamePhase: GamePhase
@@ -125,6 +128,7 @@ interface TurnControlsProps {
   onCancelGraftSelection?: () => void
   onPassCombat?: () => void
   onActivateTech?: (playerId: number, tileId: TechTileId) => void
+  onOpenTechAcquire?: (sourceId: string) => void
   endTurnDisabled?: boolean
   endTurnTitle?: string
   passCombatLabel?: string
@@ -179,7 +183,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onMemnonHighCouncilSelectionStart,
   memnonHighCouncilSelectionActive = false,
   influenceBoardSelectionActive = false,
-  influenceBoardPrompt = null,
   onOpponentNoCardAck,
   intrigueDeck,
   gamePhase,
@@ -194,6 +197,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   onCancelGraftSelection,
   onPassCombat,
   onActivateTech,
+  onOpenTechAcquire,
   endTurnDisabled = false,
   endTurnTitle,
   passCombatLabel = 'Pass Combat',
@@ -1517,13 +1521,22 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const optionalEffectNeedsPlayerInput = (effect: OptionalEffect): boolean =>
     isAffordable(effect.cost, effect.reward)
 
-  const effectCardHasPendingInput = (effectCard: EffectCard | undefined): boolean =>
-    Boolean(
-      effectCard &&
-        (effectCard.rewards.some(pendingRewardNeedsPlayerInput) ||
-          effectCard.optional.some(optionalEffectNeedsPlayerInput) ||
-          effectCard.choices.some(c => !c.disabled))
+  const effectCardHasPendingInput = (effectCard: EffectCard | undefined): boolean => {
+    if (!effectCard) return false
+    if (riseOfIx && activePlayer && gameState && !isHistoryView) {
+      const techAcquire = findTechAcquireOptionForEffectSource(
+        gameState,
+        activePlayer.id,
+        effectCard.source
+      )
+      if (techAcquire) return true
+    }
+    return (
+      effectCard.rewards.some(pendingRewardNeedsPlayerInput) ||
+      effectCard.optional.some(optionalEffectNeedsPlayerInput) ||
+      effectCard.choices.some(c => !c.disabled)
     )
+  }
 
   const buildEffectCards = () => {
     const sourceMap = new Map<string, EffectCard>()
@@ -1556,8 +1569,13 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       sourceMap.get(key)!.optional.push(effect)
     })
     
-    // Add pending choices
-    turnControlPendingChoices.forEach(choice => {
+    // Pending OR choices (full list — acquire-tech branches filtered at render time)
+    pendingChoices
+      .filter(
+        choice =>
+          !(choice.type === ChoiceType.FIXED_OPTIONS && isKwisatzAgentSourceChoice(choice.id))
+      )
+      .forEach(choice => {
       const key = `${choice.source.type}-${choice.source.id}`
       if (!sourceMap.has(key)) {
         sourceMap.set(key, {
@@ -1722,12 +1740,22 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     const choices =
       filter === 'overlay-only'
         ? []
-        : card.choices.filter(
-            choice =>
-              !influenceBoardSelectionActive ||
-              choice.type !== ChoiceType.FIXED_OPTIONS ||
-              !isInfluenceBoardChoice(choice as FixedOptionsChoice)
+        : filterAcquireTechFromChoices(
+            card.choices.filter(
+              choice =>
+                !influenceBoardSelectionActive ||
+                choice.type !== ChoiceType.FIXED_OPTIONS ||
+                !isInfluenceBoardChoice(choice as FixedOptionsChoice)
+            )
           )
+    const techAcquireOption =
+      riseOfIx && activePlayer && gameState && !isHistoryView
+        ? findTechAcquireOptionForEffectSource(gameState, activePlayer.id, card.source)
+        : undefined
+    const canAffordAnyTech =
+      techAcquireOption && activePlayer && gameState
+        ? canAffordAnyFaceUpTech(gameState, activePlayer, techAcquireOption)
+        : false
     return (
       <>
         {rewards.map(reward => {
@@ -1870,7 +1898,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           }
 
           const fixedChoice = choice as FixedOptionsChoice
-          if (variant === 'compact') {
+          const useInlineFixedChoice =
+            variant === 'compact' || isPlayAreaInlineTechOrSignetChoice(fixedChoice)
+          if (useInlineFixedChoice) {
             const isInlineOrChoice = fixedChoice.options.length > 1
             const defaultOrPrompt =
               fixedChoice.prompt === 'Choose one reward' || fixedChoice.prompt === 'Choose one option'
@@ -1915,6 +1945,37 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             </button>
           )
         })}
+
+        {techAcquireOption && onOpenTechAcquire ? (
+          <button
+            key={`tech-acquire-${techAcquireOption.id}`}
+            type="button"
+            className={[
+              `effect-btn effect-btn--${variant} tech-acquire-btn`,
+              canAffordAnyTech ? 'effect-btn--needs-input' : 'effect-btn--unaffordable',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            disabled={selectionActive || !canAffordAnyTech}
+            onClick={() => onOpenTechAcquire(techAcquireOption.id)}
+            title={
+              canAffordAnyTech
+                ? 'Buy tech from the market'
+                : 'Cannot afford any face-up tech tile'
+            }
+          >
+            <img
+              src={techAcquireOption.icon}
+              alt=""
+              className="effect-token-icon effect-token-icon--tech"
+              aria-hidden
+            />
+            <span>Buy tech</span>
+            {techAcquireOption.discount > 0 ? (
+              <span className="effect-token-amt">−{techAcquireOption.discount}</span>
+            ) : null}
+          </button>
+        ) : null}
       </>
     )
   }
@@ -2002,13 +2063,28 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         reward => !reward.isTrash && !shouldOverlayCardReward(reward)
       ),
     }
-    const modalChoices = nonOverlayCard.choices.filter(
+    const modalChoices = filterAcquireTechFromChoices(
+      nonOverlayCard.choices.filter(
+        choice =>
+          !influenceBoardSelectionActive ||
+          choice.type !== ChoiceType.FIXED_OPTIONS ||
+          !isInfluenceBoardChoice(choice as FixedOptionsChoice)
+      )
+    ).filter(
       choice =>
         !influenceBoardSelectionActive ||
         choice.type !== ChoiceType.FIXED_OPTIONS ||
         !isInfluenceBoardChoice(choice as FixedOptionsChoice)
     )
-    const hasBelowActions = nonOverlayCard.rewards.length > 0 || modalChoices.length > 0
+    const hasBelowActions =
+      nonOverlayCard.rewards.length > 0 ||
+      modalChoices.length > 0 ||
+      (riseOfIx &&
+        activePlayer &&
+        gameState &&
+        !isHistoryView &&
+        findTechAcquireOptionForEffectSource(gameState, activePlayer.id, nonOverlayCard.source) !=
+          undefined)
 
     const rectBoxStyle = (rect: CardEffectRect) => {
       const box = layoutCardRegionPercent(rect)
@@ -2128,7 +2204,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         </div>
         {hasBelowActions && (
           <div className="card-effects-dialog-actions">
-            {renderEffectActions(nonOverlayCard, 'compact', 'non-overlay')}
+            {renderEffectActions(
+              { ...nonOverlayCard, choices: modalChoices },
+              'compact',
+              'non-overlay'
+            )}
           </div>
         )}
       </div>
@@ -2172,6 +2252,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         ) : (
           <span className="selected-card-inline-name">{card.name}</span>
         )}
+        {shouldHighlightPending && effectCard ? (
+          <div
+            className="turn-card-frame__pending-effects"
+            onClick={event => event.stopPropagation()}
+          >
+            {renderEffectActions(effectCard, 'compact')}
+          </div>
+        ) : null}
       </button>
     )
   }
@@ -2522,18 +2610,13 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     CustomEffect.REVEREND_MOTHER_MOHIAM,
     CustomEffect.TEST_OF_HUMANITY
   ]
-  const trashThisCardSourceKeys = new Set(
-    pendingRewards
-      .filter(reward => !reward.disabled && reward.source.type === GainSource.CARD && reward.reward.trashThisCard)
-      .map(reward => `${reward.source.type}:${reward.source.id}`)
-  )
   const simpleAutoApplyCount = pendingRewards.filter(
     reward =>
       !reward.disabled &&
-      !reward.isTrash &&
-      !trashThisCardSourceKeys.has(`${reward.source.type}:${reward.source.id}`) &&
-      reward.source.type !== GainSource.MASTERSTROKE &&
-      (!reward.reward.custom || !autoApplySkipsCustom.includes(reward.reward.custom))
+      (reward.isTrash
+        ? isSoleTrashThisCardReward(pendingRewards, reward)
+        : reward.source.type !== GainSource.MASTERSTROKE &&
+          (!reward.reward.custom || !autoApplySkipsCustom.includes(reward.reward.custom)))
   ).length
   const showAutoApplyRewardsButton =
     !isHistoryView && !autoApplyMandatoryRewards && !isCombatPhase && simpleAutoApplyCount > 0
@@ -2605,14 +2688,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   return (
     <>
       {renderOpponentDiscardPanel()}
-      {influenceBoardSelectionActive && influenceBoardPrompt ? (
-        <div className="influence-selection-banner" role="status" aria-live="polite">
-          <span className="influence-selection-banner__text">{influenceBoardPrompt}</span>
-          <span className="influence-selection-banner__hint">
-            Tap a highlighted influence track on the board
-          </span>
-        </div>
-      ) : null}
       {!influenceBoardSelectionActive && placementPrompt ? (
         <div className="placement-prompt-banner" role="status" aria-live="polite">
           <span className="placement-prompt-banner__text">{placementPrompt}</span>
@@ -2628,10 +2703,16 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         
       }
       <FixedChoiceModal
-        choice={activeFixedChoice}
+        choice={
+          activeFixedChoice && isPlayAreaInlineTechOrSignetChoice(activeFixedChoice)
+            ? null
+            : activeFixedChoice
+        }
         onClose={() => setActiveFixedChoice(null)}
       >
-        {activeFixedChoice ? renderFixedChoiceOptions(activeFixedChoice, 'dialog') : null}
+        {activeFixedChoice && !isPlayAreaInlineTechOrSignetChoice(activeFixedChoice)
+          ? renderFixedChoiceOptions(activeFixedChoice, 'dialog')
+          : null}
       </FixedChoiceModal>
       {activeCardPreviewCard &&
         portalOverlay(

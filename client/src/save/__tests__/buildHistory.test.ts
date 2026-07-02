@@ -13,7 +13,11 @@ import { getBaseTestState, withCardOnTop } from '../../components/GameContext/__
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { getGainsForHistoryRow } from '../../utils/turnGainsDisplay'
 import { buildInitialState } from '../buildInitialState'
-import { buildHistoryFromEvents, historyIndexToEventIndex } from '../buildHistory'
+import {
+  buildHistoryFromEvents,
+  historyIndexToEventIndex,
+  upsertCombatHistoryEntry,
+} from '../buildHistory'
 import type { EventEntry, SetupBlock } from '../types'
 
 const SHIFTING_ALLEGIANCES: Card = {
@@ -91,6 +95,27 @@ function makeSetup(): SetupBlock {
   }
 }
 
+describe('upsertCombatHistoryEntry', () => {
+  const combatRow = (round: number): GameState =>
+    ({
+      currentRound: round,
+      historyEntryKind: 'combat',
+    }) as GameState
+
+  it('dedupes combat rows for the same round but keeps earlier rounds', () => {
+    const setup = { historyEntryKind: 'setup' } as GameState
+    let history = upsertCombatHistoryEntry([setup], combatRow(1))
+    history = upsertCombatHistoryEntry(history, combatRow(1))
+    expect(history.filter(h => h.historyEntryKind === 'combat')).toHaveLength(1)
+    expect(history.filter(h => h.historyEntryKind === 'combat')[0].currentRound).toBe(1)
+
+    history = upsertCombatHistoryEntry(history, combatRow(2))
+    const combats = history.filter(h => h.historyEntryKind === 'combat')
+    expect(combats).toHaveLength(2)
+    expect(combats.map(c => c.currentRound)).toEqual([1, 2])
+  })
+})
+
 describe('buildHistoryFromEvents', () => {
   it('END_TURN snapshot keeps currTurn and turn gains (not post-cleared state)', () => {
     let live = buildInitialState(makeSetup())
@@ -146,6 +171,38 @@ describe('buildHistoryFromEvents', () => {
     const playerTurns = history.filter(h => h.historyEntryKind !== 'setup' && h.historyEntryKind !== 'round-start')
     expect(playerTurns).toHaveLength(1)
     expect(playerTurns[0].currTurn?.playerId).toBe(0)
+  })
+
+  it('keeps combat rows from multiple rounds after event replay', () => {
+    const setup = makeSetup()
+    let live = buildInitialState(setup)
+    const events: EventEntry[] = []
+
+    const record = (action: GameAction) => {
+      const prev = live
+      live = applyGameAction(live, action)
+      if (live !== prev) events.push({ a: JSON.parse(JSON.stringify(action)) as GameAction })
+    }
+
+    const finishPlayerTurnsAndCombat = () => {
+      for (const playerId of [0, 1]) {
+        const hand = live.players[playerId].deck.slice(0, live.players[playerId].handCount)
+        record({ type: 'REVEAL_CARDS', playerId, cardIds: hand.map(c => c.id) })
+        record({ type: 'END_TURN', playerId })
+      }
+      record({ type: 'START_COMBAT_PHASE' })
+      record({ type: 'RESOLVE_COMBAT' })
+    }
+
+    record({ type: 'SELECT_CONFLICT', conflictId: 901 })
+    finishPlayerTurnsAndCombat()
+    record({ type: 'SELECT_CONFLICT', conflictId: 902 })
+    finishPlayerTurnsAndCombat()
+
+    const history = buildHistoryFromEvents(setup, events)
+    const combats = history.filter(h => h.historyEntryKind === 'combat')
+    expect(combats).toHaveLength(2)
+    expect(combats.map(c => c.currentRound)).toEqual([1, 2])
   })
 
   it('keeps 2nd-influence VP in reducer snapshot and event-rebuilt history', () => {

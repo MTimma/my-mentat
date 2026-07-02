@@ -9,7 +9,7 @@ import {
   RewardType,
   TurnType,
 } from '../../../../types/GameTypes'
-import { TECH_NEGOTIATION_SPACE_ID, buildTechNegotiationChoice } from '../boardSpaceChoices'
+import { TECH_NEGOTIATION_SPACE_ID, buildRhomburSignetChoice, buildTechNegotiationChoice } from '../boardSpaceChoices'
 import { getTechAcquireOffer, getTechAcquireSourceOptions } from '../techAcquireOffer'
 import { applyGameAction, getFreshDefaultGameState } from '../../GameContext'
 import { makePlayer, stubDeckCard, withCardOnTop } from '../../__tests__/_helpers'
@@ -33,25 +33,14 @@ function roiState() {
 }
 
 function bothSignetAndTechNegPending(s: ReturnType<typeof roiState>) {
-  const choice = buildTechNegotiationChoice(s, 'Tech Negotiation', 0, [])
+  const techNegChoice = buildTechNegotiationChoice(s, 'Tech Negotiation', 0, [])
+  const signetChoice = buildRhomburSignetChoice(s, 0, 9301, [techNegChoice.id])
   return {
     ...s,
     currTurn: {
       playerId: 0,
       type: TurnType.ACTION,
-      optionalEffects: [
-        {
-          id: 'signet-acquire',
-          reward: { acquireTech: {} },
-          source: { type: GainSource.CARD, id: 10, name: 'Signet Ring' },
-        },
-        {
-          id: 'signet-negotiator',
-          reward: { techNegotiator: 1 },
-          source: { type: GainSource.CARD, id: 10, name: 'Signet Ring' },
-        },
-      ],
-      pendingChoices: [choice],
+      pendingChoices: [techNegChoice, signetChoice],
     },
   }
 }
@@ -163,7 +152,7 @@ describe('getTechAcquireOffer', () => {
       ...s,
       currTurn: {
         ...s.currTurn!,
-        pendingChoices: [],
+        pendingChoices: s.currTurn!.pendingChoices!.filter(c => c.prompt !== 'Tech Negotiation'),
       },
       gains: [
         {
@@ -182,8 +171,30 @@ describe('getTechAcquireOffer', () => {
     expect(offer).toMatchObject({
       ready: false,
       discount: 0,
-      pendingOptionalEffectId: 'signet-acquire',
+      pendingChoice: expect.objectContaining({ optionIndex: 0 }),
     })
-    expect(offer?.pendingChoice).toBeUndefined()
+    expect(offer?.pendingOptionalEffectId).toBeUndefined()
+  })
+
+  it('offers unclaimed acquire-tech pending reward from shipping track recall', () => {
+    const s = {
+      ...roiState(),
+      pendingRewards: [
+        {
+          id: 'shipping-recall-tech',
+          source: { type: GainSource.SHIPPING_TRACK, id: 0, name: 'Shipping track' },
+          reward: { acquireTech: { discount: 2 } },
+          isTrash: false,
+        },
+      ],
+    }
+    const options = getTechAcquireSourceOptions(s, 0)
+    expect(options).toHaveLength(1)
+    expect(options[0]).toMatchObject({
+      discount: 2,
+      ready: false,
+      pendingRewardId: 'shipping-recall-tech',
+      label: 'Shipping track',
+    })
   })
 })

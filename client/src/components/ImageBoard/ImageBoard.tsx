@@ -74,6 +74,7 @@ import CombatAreaCluster, {
 } from './CombatAreaCluster'
 import IxBoardOverlay, { type IxBoardPlacement } from './IxBoardOverlay'
 import BeneTleilaxBoardOverlay, { type BeneTleilaxBoardPlacement } from './BeneTleilaxBoardOverlay'
+import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
 import { expansionOverlaysFor } from '../../expansions/registry'
 import { DEFAULT_PLAYER_COLORS, playerColorHex, playerMarkerHex } from '../../utils/playerColors'
 import './ImageBoard.css'
@@ -133,8 +134,11 @@ interface ImageBoardProps {
     amount: number
     selectableFactions: FactionType[]
     disabledFactions: FactionType[]
+    prompt?: string | null
     onFactionSelect: (faction: FactionType) => void
   }
+  /** Board info tips (influence selection, sandbox setup hints). */
+  showBoardInfoTips?: boolean
   /** Desktop: Ix panel docked beside board; mobile: embedded on board art. */
   ixBoardPlacement?: IxBoardPlacement
   /** Desktop: Bene Tleilax panel docked beside board; mobile: stacked below. */
@@ -203,6 +207,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   negotiatorDeploy,
   sandboxSetup,
   influenceSelection,
+  showBoardInfoTips = true,
   ixBoardPlacement = 'embedded',
   immortalityBoardPlacement = 'stacked',
   pendingAcquireTech,
@@ -937,15 +942,17 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                     >
                       {conflictContent}
                     </button>
-                    {/* <SandboxSetupHint
-                      anchor="center"
-                      placement="above"
-                      label="Pick this round's conflict card"
-                      style={{
-                        left: `${conflictBox.left + conflictBox.width / 2}%`,
-                        top: `${conflictBox.top}%`,
-                      }}
-                    /> */}
+                    {showBoardInfoTips ? (
+                      <SandboxSetupHint
+                        anchor="center"
+                        placement="above"
+                        label="Pick this round's conflict card"
+                        style={{
+                          left: `${conflictBox.left + conflictBox.width / 2}%`,
+                          top: `${conflictBox.top}%`,
+                        }}
+                      />
+                    ) : null}
                   </>
                 ) : (
                   <div
@@ -996,6 +1003,18 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
           {influenceSelection ? (
             <div className="image-board__influence-selection-layer" aria-hidden={false}>
+              {showBoardInfoTips && influenceSelection.prompt ? (
+                <div role="status" aria-live="polite">
+                  <SandboxSetupHint
+                    label={`${influenceSelection.prompt}. Tap a highlighted track.`}
+                    style={{
+                      left: `${INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].left}%`,
+                      top: `${INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].top + 6}%`,
+                    }}
+                    className="sandbox-setup-hint--influence"
+                  />
+                </div>
+              ) : null}
               {FACTIONS.map(faction => {
                 const isSelectable = influenceSelection.selectableFactions.includes(faction)
                 const isDisabled = influenceSelection.disabledFactions.includes(faction)

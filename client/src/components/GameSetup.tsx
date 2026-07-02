@@ -5,6 +5,7 @@ import LeaderSelect from './LeaderSelect/LeaderSelect'
 import { motion } from 'framer-motion'
 import { buildStartingDeck } from '../services/starterDeckSetup'
 import SaveDocImportPanel from './SaveDocImportPanel/SaveDocImportPanel'
+import GamesList from './GamesList/GamesList'
 import GamePackEditor from './GamePackEditor/GamePackEditor'
 import type { SaveDoc } from '../save/types'
 import { getSelectableGamePacks } from '../gamePacks/registry'
@@ -24,6 +25,8 @@ interface GameSetupProps {
   /** Start sandbox mode: straight to the board with default state, configure everything there. */
   onSandbox: (playerSetups: PlayerSetup[], gamePackId: string) => void
   onLoadSave?: (doc: SaveDoc) => void
+  showBoardInfoTips: boolean
+  onShowBoardInfoTipsChange: (enabled: boolean) => void
 }
 
 const createPlayerSetup = (playerNumber: number, color: PlayerColor, leaderIndex: number, gamePackId: string): PlayerSetup => {
@@ -44,6 +47,8 @@ const GameSetup: React.FC<GameSetupProps> = ({
   onComplete,
   onSandbox,
   onLoadSave,
+  showBoardInfoTips,
+  onShowBoardInfoTipsChange,
 }) => {
   const [gameName, setGameName] = useState('Test Game')
   const [playerCount, setPlayerCount] = useState<number>(4)
@@ -169,6 +174,21 @@ const GameSetup: React.FC<GameSetupProps> = ({
           </button>
         </div>
 
+        <div className="setup-section setup-option-row">
+          <div>
+            <strong>Board info tips</strong>
+            <p>Small hints on the board during influence choices and sandbox setup.</p>
+          </div>
+          <button
+            type="button"
+            className={`setup-toggle-button ${showBoardInfoTips ? 'setup-toggle-button-on' : ''}`}
+            onClick={() => onShowBoardInfoTipsChange(!showBoardInfoTips)}
+            aria-pressed={showBoardInfoTips}
+          >
+            {showBoardInfoTips ? 'On' : 'Off'}
+          </button>
+        </div>
+
         <div className="players-setup">
           {players.map((player, index) => (
             <div key={index} className="player-setup-row">
@@ -198,12 +218,15 @@ const GameSetup: React.FC<GameSetupProps> = ({
         </div>
 
         {onLoadSave && (
-          <SaveDocImportPanel
-            className="setup-load-save"
-            variant="file"
-            buttonLabel="Load saved game…"
-            onLoad={onLoadSave}
-          />
+          <>
+            <GamesList className="setup-games-list" onLoad={onLoadSave} />
+            <SaveDocImportPanel
+              className="setup-load-save"
+              variant="file"
+              buttonLabel="Load saved game…"
+              onLoad={onLoadSave}
+            />
+          </>
         )}
 
         <button

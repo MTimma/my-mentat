@@ -10,6 +10,7 @@ import {
   GamePhase,
   NO_EXPANSIONS,
   PlayerColor,
+  TurnType,
   type GameState,
 } from '../../../types/GameTypes'
 import { buildInitialState } from '../../../save/buildInitialState'
@@ -324,6 +325,37 @@ describe('Sandbox setup turn', () => {
     })
 
     expect(s.factionInfluence[FactionType.FREMEN][0]).toBe(6)
+  })
+
+  it('UNDO_TO_TURN after gameplay preserves sandbox-configured faction influence', () => {
+    const card = stubDeckCard(9101, { agentIcons: [] })
+    let s = getSandboxSetupState()
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_IMPERIUM_ROW',
+      cardIds: [9001, 9002, 9003, 9004, 9005],
+    })
+    s = applyGameAction(s, { type: 'SANDBOX_SET_CONFLICT', conflictId: CONFLICTS[0].id })
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_PLAYER_INFLUENCE',
+      playerId: 0,
+      faction: FactionType.SPACING_GUILD,
+      value: 2,
+    })
+    s = applyGameAction(s, { type: 'SANDBOX_COMMIT_SETUP' })
+    expect(s.history[0].factionInfluence[FactionType.SPACING_GUILD][0]).toBe(2)
+
+    s = {
+      ...s,
+      players: [makePlayer(0, { deck: [card] })],
+      phase: GamePhase.PLAYER_TURNS,
+      activePlayerId: 0,
+      currTurn: { playerId: 0, type: TurnType.ACTION },
+    }
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+
+    s = applyGameAction(s, { type: 'UNDO_TO_TURN', turnIndex: 0 })
+    expect(s.factionInfluence[FactionType.SPACING_GUILD][0]).toBe(2)
+    expect(s.factionInfluence[FactionType.EMPEROR][0] ?? 0).toBe(0)
   })
 
   it('SANDBOX_SET_CONTROL_MARKER assigns conquerable space control', () => {

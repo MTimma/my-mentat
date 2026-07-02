@@ -5,7 +5,7 @@
  */
 import type { GameAction } from '../components/GameContext/GameContext'
 import type { GameState } from '../types/GameTypes'
-import type { EventEntry, PlayerChecksum } from './types'
+import type { EventEntry, EventRecordContext, PlayerChecksum } from './types'
 
 /** Decision events that must not appear twice in a row (Strict Mode / double-click). */
 const CONSECUTIVE_DEDUP_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
@@ -21,6 +21,22 @@ function decisionEventFingerprint(action: GameAction): string | null {
 }
 
 /** Whether to append `action` after `prev → next` (reference equality + consecutive dedup). */
+export function turnNumberFromRecordedEvents(events: readonly EventEntry[]): number {
+  return events.filter(entry => entry.a.type === 'END_TURN').length + 1
+}
+
+/** Stamp round / active player / turn onto a new event entry (replay ignores `ctx`). */
+export function buildEventRecordContext(
+  state: GameState,
+  recordedEvents: readonly EventEntry[]
+): EventRecordContext {
+  return {
+    round: state.currentRound,
+    activePlayerId: state.activePlayerId,
+    turn: turnNumberFromRecordedEvents(recordedEvents),
+  }
+}
+
 export function shouldRecordEvent(
   prev: GameState,
   next: GameState,
@@ -87,6 +103,7 @@ export const REPLAYABLE_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
   'SANDBOX_SET_DREADNOUGHT_CONTROL',
   'SANDBOX_SET_MENTAT_OWNER',
   'SANDBOX_SET_POSITION',
+  'SANDBOX_SET_PLAYER_INFLUENCE',
   'ACQUIRE_TECH',
   'ACTIVATE_TECH',
   'TECH_NEGOTIATOR',
@@ -104,6 +121,7 @@ export const SANDBOX_SETUP_HISTORY_ACTIONS: ReadonlySet<GameAction['type']> = ne
   'SANDBOX_SET_DREADNOUGHT_CONTROL',
   'SANDBOX_SET_MENTAT_OWNER',
   'SANDBOX_SET_POSITION',
+  'SANDBOX_SET_PLAYER_INFLUENCE',
   'SANDBOX_UPDATE_PLAYER',
   'SANDBOX_SET_IX_BOARD_TOP',
   'SANDBOX_COMMIT_SETUP',

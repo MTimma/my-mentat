@@ -2,7 +2,11 @@
 import React, { useCallback, useRef, useState } from 'react'
 import { TimeTravelProvider } from '../TimeTravel'
 import { GameContext } from './gameContextState'
-import { buildHistoryFromEvents, historyIndexToEventIndex } from '../../save/buildHistory'
+import {
+  buildHistoryFromEvents,
+  historyIndexToEventIndex,
+  upsertCombatHistoryEntry,
+} from '../../save/buildHistory'
 import { buildInitialStateFromSaveDoc } from '../../save/buildInitialStateFromSaveDoc'
 import { replayEvents } from '../../save/replay'
 import {
@@ -11,6 +15,7 @@ import {
   isReplayable,
   SANDBOX_SETUP_HISTORY_ACTIONS,
   shouldRecordEvent,
+  buildEventRecordContext,
   truncateSandboxEventsForSetupReedit,
 } from '../../save/recording'
 import { buildInitialState } from '../../save/buildInitialState'
@@ -130,6 +135,7 @@ import {
   createLoseInfluenceChoice,
   requiresInfluenceChoices,
 } from '../../utils/influenceChoices'
+import { isSoleTrashThisCardReward } from '../../utils/pendingRewardAutoApply'
 import { conflictInfluenceGainName } from '../../utils/influenceDisplay'
 import {
   applyDistinctFactionExclusion,
@@ -206,6 +212,7 @@ import {
   hasAvailableTechTile,
   isRiseOfIxEnabled,
   pushFreighterChoicesFromReward,
+  refreshPendingFreighterChoices,
   stripFreighterFromReward,
   rewardHasFreighter,
 } from './riseOfIx/freighter'
@@ -221,6 +228,7 @@ import {
   buildTechNegotiationChoice,
   TECH_NEGOTIATION_SPACE_ID,
 } from './riseOfIx/boardSpaceChoices'
+import { findRhomburSignetLegacyResolveChoice } from './riseOfIx/legacySignetPayCost'
 import {
   applyRiseOfIxIntrigueCustomInEffect,
   applyQuidProQuo,
@@ -6131,9 +6139,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Decision events: effectId resolves against the live optional effects;
       // the embedded `effect` payload is the legacy path. `action.data` carries
       // per-decision inputs (e.g. trashedCardId) on top of the stored effect.
-      const storedEffect = action.effectId != null
+      let storedEffect = action.effectId != null
         ? state.currTurn?.optionalEffects?.find(e => e.id === action.effectId)
         : action.effect
+      if (!storedEffect && action.effectId != null) {
+        const legacySignet = findRhomburSignetLegacyResolveChoice(
+          state,
+          playerId,
+          action.effectId
+        )
+        if (legacySignet) {
+          return gameReducer(state, {
+            type: 'RESOLVE_CHOICE',
+            playerId,
+            choiceId: legacySignet.choiceId,
+            optionIndex: legacySignet.optionIndex,
+            source: legacySignet.source,
+          })
+        }
+        if (action.effect) {
+          storedEffect = action.effect
+        }
+      }
       if (!storedEffect) return state
       const effect: OptionalEffect = action.data
         ? { ...storedEffect, data: { ...storedEffect.data, ...action.data } }
@@ -6324,12 +6351,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         isRiseOfIxEnabled(state)
       ) {
         const { players, gains } = applyFreighterAdvance(state, playerId, source)
-        const afterFreighter = {
+        const afterAdvance = {
           ...state,
           gains: [...newGains, ...gains],
           players: players.map(p => (p.id === playerId ? p : state.players.find(x => x.id === p.id)!)),
+        }
+        const refreshedPending = refreshPendingFreighterChoices(
+          afterAdvance,
+          playerId,
+          tempCurrTurn.pendingChoices ?? []
+        )
+        const afterFreighter = {
+          ...afterAdvance,
           currTurn: {
             ...tempCurrTurn,
+            pendingChoices: refreshedPending,
             optionalEffects: tempCurrTurn.optionalEffects?.filter(e => e.id !== effect.id),
           },
         }
@@ -6533,12 +6569,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         isRiseOfIxEnabled(state)
       ) {
         const { players, gains } = applyFreighterAdvance(state, playerId, gainAttribution)
-        const newPending = (state.currTurn.pendingChoices || []).filter(c => c.id !== action.choiceId)
+        const afterAdvance = { ...state, players, gains }
+        const newPending = refreshPendingFreighterChoices(
+          afterAdvance,
+          playerId,
+          (state.currTurn.pendingChoices || []).filter(c => c.id !== action.choiceId)
+        )
         const newTurn = { ...state.currTurn, pendingChoices: newPending }
         const after = {
-          ...state,
-          players,
-          gains,
+          ...afterAdvance,
           currTurn: newTurn,
           canEndTurn:
             newPending.length === 0 && state.pendingRewards.filter(r => !r.disabled).length === 0,
@@ -6563,9 +6602,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           remainingChoices,
           [...state.pendingRewards]
         )
+        const refreshedPending = refreshPendingFreighterChoices(
+          { ...state, players: recall.players },
+          playerId,
+          recall.pendingChoices
+        )
         const newTurn = {
           ...state.currTurn,
-          pendingChoices: recall.pendingChoices,
+          pendingChoices: refreshedPending,
         }
         const after = {
           ...state,
@@ -6574,7 +6618,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           pendingRewards: recall.pendingRewards,
           currTurn: newTurn,
           canEndTurn:
-            recall.pendingChoices.length === 0 &&
+            refreshedPending.length === 0 &&
             recall.pendingRewards.filter(r => !r.disabled).length === 0,
         }
         return state.phase === GamePhase.END_GAME
@@ -7673,25 +7717,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         r => !r.disabled && r.reward.custom === CustomEffect.POWER_PLAY
       )
 
-      // Group rewards by source to identify sources with trash
-      const sourcesWithTrash = new Set<string>()
-      state.pendingRewards.forEach(r => {
-        if (r.isTrash) {
-          sourcesWithTrash.add(`${r.source.type}-${r.source.id}`)
-        }
-      })
-
-      const rewardsToApply = state.pendingRewards.filter(r =>
-        !sourcesWithTrash.has(`${r.source.type}-${r.source.id}`) &&
-        !r.disabled &&
-        !r.reward.custom &&
-        !r.reward.influence?.chooseOne &&
-        !(
+      const rewardsToApply = state.pendingRewards.filter(r => {
+        if (r.disabled) return false
+        if (r.reward.custom) return false
+        if (r.reward.influence?.chooseOne) return false
+        if (
           hasUnclaimedPowerPlay &&
           r.source.type === GainSource.BOARD_SPACE &&
           r.reward.influence
-        )
-      )
+        ) {
+          return false
+        }
+        if (r.isTrash) {
+          return isSoleTrashThisCardReward(state.pendingRewards, r)
+        }
+        return true
+      })
 
       if (rewardsToApply.length === 0) return state
 
@@ -7727,6 +7768,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             newPlayer = applied.player
             tessiaChoices.push(...applied.tessiaChoices)
             newGains.push({ round: newState.currentRound, playerId: playerId, sourceId: reward.source.id, name: inf.faction, amount: influenceAmount, type: RewardType.INFLUENCE, source: reward.source.type })
+          })
+        }
+
+        if (reward.reward.acquireTech !== undefined && isRiseOfIxEnabled(newState)) {
+          const discount = reward.reward.acquireTech.discount ?? 0
+          const paySolari = reward.reward.acquireTech.paySolariInsteadOfSpice ?? false
+          const techAvailable = hasAvailableTechTile(newState)
+          if (techAvailable) {
+            newState = claimAcquireTechReward(newState, playerId, discount, paySolari)
+          }
+          newGains.push({
+            round: newState.currentRound,
+            playerId,
+            sourceId: reward.source.id,
+            name: techAvailable ? `Acquire Tech (−${discount})` : 'No tech tile available',
+            amount: techAvailable ? 1 : 0,
+            type: RewardType.TECH,
+            source: reward.source.type,
           })
         }
       })
@@ -8642,6 +8701,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
           assertJsonSerializable(action, action.type)
           const entry: EventEntry = {
             a: JSON.parse(JSON.stringify(action)) as GameAction,
+            ctx: buildEventRecordContext(prev, recordedEventsRef.current),
           }
           if (action.type === 'END_TURN') {
             entry.ck = { [`p${action.playerId}`]: computeChecksum(next, action.playerId) }
@@ -8695,7 +8755,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
               }
             }
             if (liveCombat) {
-              history = [...history.filter(h => h.historyEntryKind !== 'combat'), liveCombat]
+              history = upsertCombatHistoryEntry(history, liveCombat)
             }
           }
         }

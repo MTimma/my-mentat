@@ -312,6 +312,11 @@
   pointer-events: none;
 }
 
+.sandbox-setup-hint--influence {
+  z-index: 2;
+  max-width: min(24ch, 42%);
+}
+
 .image-board__influence-track-highlight {
   position: absolute;
   pointer-events: none;

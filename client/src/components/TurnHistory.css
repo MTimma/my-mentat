@@ -1081,14 +1081,14 @@
 
   .turn-history-overlay--docked .turn-history-gains .turn-gains-display {
     display: flex;
-    flex-direction: column;
+    /* flex-direction: column; */
     gap: 3px;
     width: 100%;
   }
 
   .turn-history-overlay--docked .turn-history-gains .turn-gain-source-group,
   .turn-history-overlay--docked .turn-history-gains .turn-gain-combat-group {
-    display: grid;
+    /* display: grid; */
     grid-template-columns: minmax(52px, 34%) minmax(0, 1fr);
     align-items: center;
     gap: 6px 8px;

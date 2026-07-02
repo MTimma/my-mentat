@@ -9,6 +9,7 @@ import type { GameState } from '../types/GameTypes'
 import { buildInitialState } from './buildInitialState'
 import {
   assertJsonSerializable,
+  buildEventRecordContext,
   computeChecksum,
   isReplayable,
   REPLAYABLE_ACTIONS,
@@ -98,11 +99,16 @@ export class GameRecorder {
   ) {}
 
   /** Record `action` (if replayable). `stateAfter` adds END_TURN checksums. */
-  record(action: GameAction, stateAfter?: GameState): void {
+  record(action: GameAction, stateBefore?: GameState, stateAfter?: GameState): void {
     if (!isReplayable(action)) return
     // Non-serializable payloads must fail at introduction, not at load time.
     assertJsonSerializable(action, action.type)
-    const entry: EventEntry = { a: JSON.parse(JSON.stringify(action)) }
+    const entry: EventEntry = {
+      a: JSON.parse(JSON.stringify(action)),
+      ...(stateBefore
+        ? { ctx: buildEventRecordContext(stateBefore, this.events) }
+        : {}),
+    }
     if (action.type === 'END_TURN' && stateAfter) {
       entry.ck = { [`p${action.playerId}`]: computeChecksum(stateAfter, action.playerId) }
     }

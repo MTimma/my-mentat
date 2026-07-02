@@ -909,6 +909,7 @@ describe('Imperium Row card effects — Power Play', () => {
     expect(s.factionInfluence[FactionType.EMPEROR]?.[0] ?? 0).toBe(0)
     expect(s.pendingRewards.some(r => r.reward.custom === CustomEffect.POWER_PLAY)).toBe(true)
     expect(s.pendingRewards.some(r => r.reward.influence)).toBe(true)
+    expect(s.pendingRewards.some(r => r.isTrash && r.source.name === 'Power Play')).toBe(true)
 
     const powerPlayReward = s.pendingRewards.find(r => r.reward.custom === CustomEffect.POWER_PLAY)
     s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: powerPlayReward!.id })
@@ -956,7 +957,23 @@ describe('Imperium Row card effects — Power Play', () => {
 })
 
 describe('Starter deck — Seek Allies', () => {
-  it.todo('trashThisCard on agent play: card moves to trash after PLAY_CARD + PLACE_AGENT')
+  it('CLAIM_ALL auto-trashes when trashThisCard is the only card reward', () => {
+    const seekAllies = startingCard('Seek Allies')
+    let s = basePlotState([makePlayer(0, { deck: [seekAllies], handCount: 1 })])
+
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: seekAllies.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 15 })
+
+    expect(s.pendingRewards.some(r => r.isTrash && r.source.id === seekAllies.id)).toBe(true)
+
+    s = applyGameAction(s, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+
+    expect(s.players[0].trash.some(card => card.id === seekAllies.id)).toBe(true)
+    expect(s.players[0].playArea.some(card => card.id === seekAllies.id)).toBe(false)
+    expect(s.pendingRewards.some(r => r.isTrash && r.source.id === seekAllies.id)).toBe(false)
+    expect(s.gains.some(g => g.type === RewardType.TRASH && g.name === 'Seek Allies' && g.amount === -1)).toBe(true)
+  })
+
   it.todo('printed rules: reveal trash + persuasion — align card data if different from playEffect')
 })
 

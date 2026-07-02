@@ -1,0 +1,159 @@
+/* Matches .setup-container palette in App.css (light parchment card, dark earth text). */
+.games-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: left;
+  color: var(--color-arrakis-earth);
+}
+
+/* Override index.css global `button { background: #1a1a1a }` on the setup card. */
+.games-list button {
+  font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.games-list button:hover {
+  border-color: var(--color-arrakis-earth);
+}
+
+.games-list-tabs {
+  display: flex;
+  gap: 0.35rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-arrakis-earth) 25%, transparent);
+  padding-bottom: 0.35rem;
+}
+
+.games-list-tab {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--color-arrakis-earth) 72%, #5c5348);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.games-list-tab:hover {
+  color: var(--color-arrakis-earth);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.games-list-tab--active {
+  color: var(--color-arrakis-earth);
+  border-color: color-mix(in srgb, var(--color-arrakis-earth) 30%, transparent);
+  border-bottom-color: transparent;
+  background: #fff;
+}
+
+.games-list-panel {
+  min-height: 4.5rem;
+}
+
+.games-list-empty,
+.games-list-status {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #5c5348;
+}
+
+.games-list-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #b91c1c;
+}
+
+.games-list-retry {
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 1px solid var(--color-arrakis-earth);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--color-arrakis-earth);
+}
+
+.games-list-retry:hover {
+  background: color-mix(in srgb, var(--color-arrakis-earth) 8%, #fff);
+}
+
+.games-list-table-wrap {
+  max-height: 14rem;
+  overflow: auto;
+  border: 2px solid var(--color-arrakis-earth);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.games-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  color: #1a1a1a;
+}
+
+.games-list-table th,
+.games-list-table td {
+  padding: 0.45rem 0.55rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-arrakis-earth) 18%, transparent);
+  text-align: left;
+}
+
+.games-list-table th {
+  position: sticky;
+  top: 0;
+  background: color-mix(in srgb, var(--color-arrakis-earth) 12%, var(--color-arrakis-parchment));
+  font-weight: 700;
+  color: var(--color-arrakis-earth);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.games-list-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--color-arrakis-parchment) 55%, #fff);
+}
+
+.games-list-table tr:last-child td {
+  border-bottom: none;
+}
+
+.games-list-name {
+  font-weight: 600;
+  color: var(--color-arrakis-earth);
+}
+
+.games-list-meta {
+  color: #5c5348;
+  white-space: nowrap;
+}
+
+.games-list-load-btn {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--color-arrakis-earth);
+  border-radius: 4px;
+  background: var(--color-arrakis-earth);
+  color: #fff;
+  white-space: nowrap;
+}
+
+.games-list-load-btn:hover:not(:disabled) {
+  background: var(--color-arrakis-earth-hover, color-mix(in srgb, var(--color-arrakis-earth) 88%, #000));
+}
+
+.games-list-load-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.games-list-load-error {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: #b91c1c;
+}

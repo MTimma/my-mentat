@@ -6,7 +6,10 @@ import {
   type GameState,
   type OptionalEffect,
 } from '../../../types/GameTypes'
-import { TECH_NEGOTIATION_SPACE_ID } from './boardSpaceChoices'
+import {
+  SIGNET_RING_PROMPT,
+  TECH_NEGOTIATION_SPACE_ID,
+} from './boardSpaceChoices'
 import { hasAvailableTechTile, isRiseOfIxEnabled } from './freighter'
 
 export type TechAcquireOffer = {
@@ -18,6 +21,8 @@ export type TechAcquireOffer = {
   pendingOptionalEffectId?: string
   /** OR choice not yet resolved (e.g. Tech Negotiation acquire branch). */
   pendingChoice?: { choiceId: string; optionIndex: number; source: FixedOptionsChoice['source'] }
+  /** Pending reward not yet claimed (e.g. Shipping track recall). */
+  pendingRewardId?: string
 }
 
 export type TechAcquireSourceKind = 'board-space' | 'signet-ring' | 'other'
@@ -32,6 +37,7 @@ export type TechAcquireSourceOption = {
   ready: boolean
   pendingOptionalEffectId?: string
   pendingChoice?: TechAcquireOffer['pendingChoice']
+  pendingRewardId?: string
 }
 
 export const TECH_ACQUIRE_ICON = '/icon/tech.png'
@@ -71,6 +77,7 @@ function sourceOptionFromOffer(
     ready: offer.ready,
     pendingOptionalEffectId: offer.pendingOptionalEffectId,
     pendingChoice: offer.pendingChoice,
+    pendingRewardId: offer.pendingRewardId,
   }
 }
 
@@ -83,10 +90,22 @@ function isSignetRingSource(source: { type: GainSource; name: string }): boolean
   return source.type === GainSource.CARD && source.name === SIGNET_RING_NAME
 }
 
-function findSignetAcquireOptional(state: GameState): OptionalEffect | undefined {
-  return state.currTurn?.optionalEffects?.find(
-    e => e.reward.acquireTech !== undefined && isSignetRingSource(e.source)
+function findSignetAcquireChoice(state: GameState): FixedOptionsChoice | undefined {
+  const choice = state.currTurn?.pendingChoices?.find(
+    c =>
+      c.type === ChoiceType.FIXED_OPTIONS &&
+      c.prompt === SIGNET_RING_PROMPT &&
+      isSignetRingSource((c as FixedOptionsChoice).source)
   )
+  return choice as FixedOptionsChoice | undefined
+}
+
+function signetAcquireBranch(choice: FixedOptionsChoice) {
+  const optionIndex = choice.options.findIndex(
+    o => o.reward.acquireTech !== undefined && !o.disabled
+  )
+  if (optionIndex < 0) return null
+  return { choice, optionIndex, option: choice.options[optionIndex]! }
 }
 
 function findTechNegotiationChoice(state: GameState): FixedOptionsChoice | undefined {
@@ -138,11 +157,26 @@ function offerFromTechNegotiationBranch(
   })
 }
 
-function offerFromSignetAcquireOptional(optional: OptionalEffect): TechAcquireOffer {
-  return offerFromAcquireReward(optional.reward.acquireTech ?? {}, {
+function offerFromSignetAcquireBranch(
+  choice: FixedOptionsChoice,
+  branch: NonNullable<ReturnType<typeof signetAcquireBranch>>
+): TechAcquireOffer {
+  return offerFromAcquireReward(branch.option.reward.acquireTech ?? {}, {
     ready: false,
-    pendingOptionalEffectId: optional.id,
+    pendingChoice: {
+      choiceId: choice.id,
+      optionIndex: branch.optionIndex,
+      source: choice.source,
+    },
   })
+}
+
+function signetRingSourceOptionFromChoice(
+  choice: FixedOptionsChoice,
+  branch: NonNullable<ReturnType<typeof signetAcquireBranch>>
+): TechAcquireSourceOption {
+  const offer = offerFromSignetAcquireBranch(choice, branch)
+  return sourceOptionFromOffer('signet-ring', 'signet-ring', SIGNET_RING_NAME, offer)
 }
 
 function boardSpaceSourceOption(
@@ -159,7 +193,10 @@ function boardSpaceSourceOption(
 }
 
 function signetRingSourceOption(optional: OptionalEffect): TechAcquireSourceOption {
-  const offer = offerFromSignetAcquireOptional(optional)
+  const offer = offerFromAcquireReward(optional.reward.acquireTech ?? {}, {
+    ready: false,
+    pendingOptionalEffectId: optional.id,
+  })
   return sourceOptionFromOffer('signet-ring', 'signet-ring', SIGNET_RING_NAME, offer)
 }
 
@@ -167,7 +204,8 @@ function resolveSignetAndTechNegotiationSourceOptions(
   state: GameState,
   playerId: number
 ): TechAcquireSourceOption[] | undefined {
-  const signetAcquire = findSignetAcquireOptional(state)
+  const signetChoice = findSignetAcquireChoice(state)
+  const signetAcquire = signetChoice ? signetAcquireBranch(signetChoice) : null
   const techNegChoice = findTechNegotiationChoice(state)
   const techNegAcquire = techNegChoice ? techNegotiationAcquireBranch(techNegChoice) : null
 
@@ -183,11 +221,11 @@ function resolveSignetAndTechNegotiationSourceOptions(
       return [boardSpaceSourceOption(techNegChoice!, techNegAcquire!)]
     }
     if (boardNegotiatorUsedThisTurn(state, playerId)) {
-      return [signetRingSourceOption(signetAcquire!)]
+      return [signetRingSourceOptionFromChoice(signetChoice!, signetAcquire!)]
     }
     return [
       boardSpaceSourceOption(techNegChoice!, techNegAcquire!),
-      signetRingSourceOption(signetAcquire!),
+      signetRingSourceOptionFromChoice(signetChoice!, signetAcquire!),
     ]
   }
 
@@ -195,7 +233,7 @@ function resolveSignetAndTechNegotiationSourceOptions(
     return [boardSpaceSourceOption(techNegChoice!, techNegAcquire!)]
   }
 
-  return [signetRingSourceOption(signetAcquire!)]
+  return [signetRingSourceOptionFromChoice(signetChoice!, signetAcquire!)]
 }
 
 /** All acquire sources the player may use in the tech shop this turn. */
@@ -222,6 +260,23 @@ export function getTechAcquireSourceOptions(
   }
 
   const options: TechAcquireSourceOption[] = []
+
+  for (const reward of state.pendingRewards ?? []) {
+    if (reward.disabled || reward.reward.acquireTech === undefined) continue
+    const offer = offerFromAcquireReward(reward.reward.acquireTech ?? {}, {
+      ready: false,
+      pendingRewardId: reward.id,
+    })
+    const discount = offer.discount
+    options.push(
+      sourceOptionFromOffer(
+        `reward-${reward.id}`,
+        discount > 0 ? 'board-space' : 'other',
+        reward.source.name || 'Acquire tech',
+        offer
+      )
+    )
+  }
 
   for (const choice of state.currTurn?.pendingChoices ?? []) {
     if (choice.type !== ChoiceType.FIXED_OPTIONS) continue
@@ -295,5 +350,6 @@ export function getTechAcquireOffer(
     ready: only.ready,
     pendingOptionalEffectId: only.pendingOptionalEffectId,
     pendingChoice: only.pendingChoice,
+    pendingRewardId: only.pendingRewardId,
   }
 }

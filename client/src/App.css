@@ -1766,8 +1766,7 @@ body:has(.game-container--play) {
     margin-bottom: 6px !important;
   }
 
-  .game-container--play .turn-controls-container > .voice-selection-banner,
-  .game-container--play .turn-controls-container > .influence-selection-banner {
+  .game-container--play .turn-controls-container > .voice-selection-banner {
     margin-bottom: 4px;
   }
 

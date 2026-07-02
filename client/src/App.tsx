@@ -13,6 +13,7 @@ import GameSetup from './components/GameSetup'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
 import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
 import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
+import { isSoleTrashThisCardReward } from './utils/pendingRewardAutoApply'
 import { isKwisatzHaderachCard, canPlaceAgentOnBoard, isKwisatzSourceChoicePending, isKwisatzRecallMode, isAgentPlacementPending } from './utils/kwisatzHaderach'
 import TurnControls from './components/TurnControls/TurnControls'
 import PlayFooterToolbar from './components/PlayFooterToolbar/PlayFooterToolbar'
@@ -86,13 +87,18 @@ import {
   getLivePlayerTurnNumber,
   getPlayerTurnNumber,
 } from './utils/turnHistoryDisplay'
+import {
+  getPlayBoardInfoTipsEnabled,
+  setPlayBoardInfoTipsEnabled,
+} from './utils/playBoardInfoTips'
 
 interface GameContentProps {
   autoApplyMandatoryRewards: boolean
+  showBoardInfoTips: boolean
   onLoadSave?: (doc: SaveDoc) => void
 }
 
-const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps) => {
+const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave }: GameContentProps) => {
   const {
     gameState,
     dispatch,
@@ -142,6 +148,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
   const [sandboxConflictOpen, setSandboxConflictOpen] = useState(false)
   const [sandboxEditPlayerId, setSandboxEditPlayerId] = useState<number | null>(null)
   const [techAcquireStackIndex, setTechAcquireStackIndex] = useState<number | null>(null)
+  const [techAcquireSourceId, setTechAcquireSourceId] = useState<string | null>(null)
 
   useEffect(() => {
     setVoiceSelectionRewardId(null)
@@ -510,6 +517,12 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
           optionIndex: source.pendingChoice.optionIndex,
           source: source.pendingChoice.source,
         })
+      } else if (source.pendingRewardId) {
+        dispatch({
+          type: 'CLAIM_REWARD',
+          playerId: player.id,
+          rewardId: source.pendingRewardId,
+        })
       }
 
       dispatch({
@@ -522,6 +535,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
         nextFaceUpTileId,
       })
       setTechAcquireStackIndex(null)
+      setTechAcquireSourceId(null)
     },
     [activePlayer, dispatch, gameState]
   )
@@ -546,9 +560,16 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
   useEffect(() => {
     if (!isViewingHistory) return
     setTechAcquireStackIndex(null)
+    setTechAcquireSourceId(null)
   }, [viewingTurnIndex, isViewingHistory])
 
+  const handleOpenTechAcquire = useCallback((sourceId: string) => {
+    setTechAcquireSourceId(sourceId)
+    setTechAcquireStackIndex(null)
+  }, [])
+
   const handleTechTileAcquireClick = useCallback((stackIndex: number) => {
+    setTechAcquireSourceId(null)
     setTechAcquireStackIndex(stackIndex)
   }, [])
 
@@ -657,24 +678,18 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
       CustomEffect.REVEREND_MOTHER_MOHIAM,
       CustomEffect.TEST_OF_HUMANITY
     ]
-    const trashThisCardSourceKeys = new Set(
-      state.pendingRewards
-        .filter(reward => !reward.disabled && reward.source.type === GainSource.CARD && reward.reward.trashThisCard)
-        .map(reward => `${reward.source.type}:${reward.source.id}`)
-    )
     // Filter rewards to only include non-interactive ones
     return state.pendingRewards.filter(reward => {
       // Skip disabled rewards
       if (reward.disabled) return false
 
-      // Skip trash rewards (require user selection)
-      if (reward.isTrash) return false
+      // Generic trash (pick a card) stays manual; sole trashThisCard is mandatory and auto-applies.
+      if (reward.isTrash) {
+        return isSoleTrashThisCardReward(state.pendingRewards, reward)
+      }
 
-      // Power Play (+1 bonus) and trash-this-card stay manual on the card after board +1 auto-applies.
+      // Power Play (+1 bonus) stays manual on the card after board +1 auto-applies.
       if (reward.reward.custom === CustomEffect.POWER_PLAY) return false
-
-      // If a card can trash itself, the player must choose the resolution order.
-      if (trashThisCardSourceKeys.has(`${reward.source.type}:${reward.source.id}`)) return false
 
       // Skip rewards with interactive custom effects
       if (reward.reward.custom && interactiveEffects.includes(reward.reward.custom)) {
@@ -1415,10 +1430,12 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
                   amount: influenceBoardMeta.amount,
                   selectableFactions: influenceBoardMeta.selectableFactions,
                   disabledFactions: influenceBoardMeta.disabledFactions,
+                  prompt: influenceBoardPrompt,
                   onFactionSelect: handleInfluenceBoardFactionSelect,
                 }
               : undefined
           }
+          showBoardInfoTips={showBoardInfoTips}
           ixBoardPlacement={
             isDesktopPlayView && gameState.expansions?.riseOfIx ? 'docked' : 'embedded'
           }
@@ -1468,6 +1485,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
       activeInfluenceBoardChoice,
       handleInfluenceBoardFactionSelect,
       isDesktopPlayView,
+      showBoardInfoTips,
     ]
   )
 
@@ -1731,11 +1749,12 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
         )}
         {(isViewingHistory ? turnControlsActivePlayer : activePlayer) &&
           (isViewingHistory ? displayState.ixBoard?.stacks : gameState.ixBoard?.stacks) &&
-          techAcquireStackIndex != null &&
+          (techAcquireStackIndex != null || techAcquireSourceId != null) &&
           useImageBoard && (
             <TechAcquireModal
               isOpen
               stackIndex={techAcquireStackIndex}
+              initialSourceId={techAcquireSourceId}
               stacks={
                 (isViewingHistory ? displayState.ixBoard?.stacks : gameState.ixBoard?.stacks) ?? [[], [], []]
               }
@@ -1744,7 +1763,10 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
               canAcquire={!isViewingHistory && techAcquireSources.length > 0}
               acquireSources={techAcquireSources}
               onAcquire={handleAcquireTechTile}
-              onClose={() => setTechAcquireStackIndex(null)}
+              onClose={() => {
+                setTechAcquireStackIndex(null)
+                setTechAcquireSourceId(null)
+              }}
             />
           )}
         {inSandboxSetup && sandboxConflictOpen && (
@@ -1890,7 +1912,6 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
             onMemnonHighCouncilSelectionStart={handleMemnonHighCouncilSelectionStart}
             memnonHighCouncilSelectionActive={!isViewingHistory && Boolean(memnonHighCouncilRewardId)}
             influenceBoardSelectionActive={!isViewingHistory && influenceBoardSelectionActive}
-            influenceBoardPrompt={influenceBoardPrompt}
             onOpponentNoCardAck={handleOpponentNoCardAck}
             intrigueDeck={turnControlsState.intrigueDeck}
             gamePhase={turnControlsState.phase}
@@ -1920,6 +1941,7 @@ const GameContent = ({ autoApplyMandatoryRewards, onLoadSave }: GameContentProps
             endTurnTitle={endTurnButtonState.title}
             passCombatLabel={combatFooterActionLabel}
             onActivateTech={isViewingHistory ? undefined : handleActivateTech}
+            onOpenTechAcquire={isViewingHistory ? undefined : handleOpenTechAcquire}
           />
         </div>
       {sandboxSetupMobileBar}
@@ -2229,6 +2251,7 @@ function App() {
   const [autoApplyMandatoryRewards, setAutoApplyMandatoryRewards] = useState(() => {
     return localStorage.getItem('myMentat.autoApplyMandatoryRewards') !== 'false'
   })
+  const [showBoardInfoTips, setShowBoardInfoTips] = useState(() => getPlayBoardInfoTipsEnabled())
   const [gamePackId, setGamePackId] = useState<string>(() => resolveStoredGamePackId())
   const expansions = useMemo(() => expansionsForGamePack(gamePackId), [gamePackId])
   const [creatorReturnScreen, setCreatorReturnScreen] = useState<ScreenState>(ScreenState.SETUP)
@@ -2251,6 +2274,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('myMentat.autoApplyMandatoryRewards', autoApplyMandatoryRewards ? 'true' : 'false')
   }, [autoApplyMandatoryRewards])
+
+  useEffect(() => {
+    setPlayBoardInfoTipsEnabled(showBoardInfoTips)
+  }, [showBoardInfoTips])
 
   useEffect(() => {
     localStorage.setItem(GAME_PACK_STORAGE_KEY, gamePackId)
@@ -2416,6 +2443,8 @@ function App() {
           onComplete={handleSetupComplete}
           onSandbox={handleSandboxStart}
           onLoadSave={handleLoadSaveDoc}
+          showBoardInfoTips={showBoardInfoTips}
+          onShowBoardInfoTipsChange={setShowBoardInfoTips}
         />
       )}
 
@@ -2434,6 +2463,8 @@ function App() {
           onOpenCardCreator={handleOpenCardCreator}
           autoApplyMandatoryRewards={autoApplyMandatoryRewards}
           onAutoApplyMandatoryRewardsChange={setAutoApplyMandatoryRewards}
+          showBoardInfoTips={showBoardInfoTips}
+          onShowBoardInfoTipsChange={setShowBoardInfoTips}
         />
       )}
 
@@ -2441,6 +2472,7 @@ function App() {
         <GameProvider key={gameSessionKey} gameInput={gameInput}>
           <GameContent
             autoApplyMandatoryRewards={autoApplyMandatoryRewards}
+            showBoardInfoTips={showBoardInfoTips}
             onLoadSave={handleLoadSaveDoc}
           />
         </GameProvider>

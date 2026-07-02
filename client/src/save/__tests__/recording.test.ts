@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyGameAction } from '../../components/GameContext/GameContext'
 import { buildInitialState } from '../buildInitialState'
-import { shouldRecordEvent } from '../recording'
+import { shouldRecordEvent, buildEventRecordContext, turnNumberFromRecordedEvents } from '../recording'
 import { GamePhase, PlayerColor } from '../../types/GameTypes'
 import type { EventEntry } from '../types'
 
@@ -38,6 +38,30 @@ describe('shouldRecordEvent', () => {
     expect(shouldRecordEvent(state, changed, action, { a: { type: 'END_TURN', playerId: 0 } })).toBe(
       true
     )
+  })
+})
+
+describe('buildEventRecordContext', () => {
+  it('stamps round, active player, and turn sequence', () => {
+    const state = {
+      ...buildInitialState({
+        firstPlayer: 0,
+        players: [{ id: 0, leaderId: 'paul', color: PlayerColor.RED, deckCardIds: ['starting/diplomacy'] }],
+        currentRound: 3,
+      }),
+      activePlayerId: 2,
+      phase: GamePhase.PLAYER_TURNS,
+    }
+    const prior: EventEntry[] = [
+      { a: { type: 'END_TURN', playerId: 0 } },
+      { a: { type: 'END_TURN', playerId: 1 } },
+    ]
+    expect(buildEventRecordContext(state, prior)).toEqual({
+      round: 3,
+      activePlayerId: 2,
+      turn: 3,
+    })
+    expect(turnNumberFromRecordedEvents([])).toBe(1)
   })
 })
 

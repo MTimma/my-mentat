@@ -66,6 +66,7 @@ describe('Wealth solari claim', () => {
       expect.arrayContaining([expect.objectContaining({ amount: 2 })])
     )
     expect(s.players[0].solari).toBe(2)
-    expect(s.pendingRewards.some(r => r.isTrash && r.source.id === 9)).toBe(true)
+    expect(s.players[0].trash.some(c => c.id === 9)).toBe(true)
+    expect(s.pendingRewards.some(r => r.isTrash && r.source.id === 9)).toBe(false)
   })
 })

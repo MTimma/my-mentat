@@ -62,13 +62,24 @@ function extractCombatSnapshotFromReducer(
   return null
 }
 
+/** Replace at most one combat row for this round (dedupe within a single resolution). */
+export function upsertCombatHistoryEntry(
+  history: GameState[],
+  snapshot: GameState
+): GameState[] {
+  const combatRound = snapshot.currentRound
+  const withoutSameRoundCombat = history.filter(
+    h => h.historyEntryKind !== 'combat' || h.currentRound !== combatRound
+  )
+  return [...withoutSameRoundCombat, snapshot]
+}
+
 function appendCombatSnapshotToHistory(
   history: GameState[],
   snapshot: GameState,
   stateAfterAction: GameState
 ): GameState[] {
-  const withoutCombat = history.filter(h => h.historyEntryKind !== 'combat')
-  let next = [...withoutCombat, snapshot]
+  let next = upsertCombatHistoryEntry(history, snapshot)
   if (stateAfterAction.phase === GamePhase.END_GAME) {
     next = [
       ...next,

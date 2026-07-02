@@ -43,31 +43,81 @@ export function shippingTrackSource(name = 'Shipping track'): GainAttribution {
   return { type: GainSource.SHIPPING_TRACK, id: 0, name }
 }
 
+export function canFreighterAdvance(state: GameState, playerId: number): boolean {
+  const player = state.players.find(p => p.id === playerId)
+  return (player?.freighterStep ?? 0) < 3
+}
+
+export function isFreighterPendingChoice(choice: PendingChoice): choice is FixedOptionsChoice {
+  return choice.type === ChoiceType.FIXED_OPTIONS && choice.prompt.startsWith('Freighter (now at ')
+}
+
+export function buildFreighterChoiceOptions(
+  state: GameState,
+  playerId: number
+): FixedOptionsChoice['options'] {
+  const options: FixedOptionsChoice['options'] = []
+  if (canFreighterAdvance(state, playerId)) {
+    options.push({
+      reward: { custom: CustomEffect.FREIGHTER_ADVANCE },
+      rewardLabel: 'Advance',
+    })
+  }
+  options.push({
+    reward: { custom: CustomEffect.FREIGHTER_RECALL },
+    rewardLabel: 'Recall',
+  })
+  return options
+}
+
+/** Rebuild Advance/Recall options on unresolved freighter choices after step changes. */
+export function refreshPendingFreighterChoices(
+  state: GameState,
+  playerId: number,
+  pendingChoices: PendingChoice[]
+): PendingChoice[] {
+  const player = state.players.find(p => p.id === playerId)
+  const step = player?.freighterStep ?? 0
+  return pendingChoices.map(choice => {
+    if (!isFreighterPendingChoice(choice)) return choice
+    return {
+      ...choice,
+      prompt: `Freighter (now at ${step}/3)`,
+      options: buildFreighterChoiceOptions(state, playerId),
+    }
+  })
+}
+
 export function pushFreighterChoice(
   state: GameState,
   playerId: number,
   source: GainAttribution,
   pendingChoices: PendingChoice[],
-  existingChoiceIds: Iterable<string>
+  existingChoiceIds: Iterable<string>,
+  /** When enqueueing multiple icons in one batch, assume prior choices advanced. */
+  effectiveStep?: number
 ): void {
   const player = state.players.find(p => p.id === playerId)
-  const step = player?.freighterStep ?? 0
+  const step = effectiveStep ?? player?.freighterStep ?? 0
+  const canAdvance = step < 3
   const choiceId = nextSemanticId(source, 'FREIGHTER', existingChoiceIds)
+  const options: FixedOptionsChoice['options'] = []
+  if (canAdvance) {
+    options.push({
+      reward: { custom: CustomEffect.FREIGHTER_ADVANCE },
+      rewardLabel: 'Advance',
+    })
+  }
+  options.push({
+    reward: { custom: CustomEffect.FREIGHTER_RECALL },
+    rewardLabel: 'Recall',
+  })
   const choice: FixedOptionsChoice = {
     id: choiceId,
     type: ChoiceType.FIXED_OPTIONS,
     prompt: `Freighter (now at ${step}/3)`,
     source,
-    options: [
-      {
-        reward: { custom: CustomEffect.FREIGHTER_ADVANCE },
-        rewardLabel: 'Advance',
-      },
-      {
-        reward: { custom: CustomEffect.FREIGHTER_RECALL },
-        rewardLabel: 'Recall',
-      },
-    ],
+    options,
   }
   pendingChoices.push(choice)
 }
@@ -81,8 +131,18 @@ export function pushFreighterChoicesFromReward(
   pendingChoices: PendingChoice[]
 ): void {
   if (!isRiseOfIxEnabled(state) || count <= 0) return
+  const player = state.players.find(p => p.id === playerId)
+  let simulatedStep = player?.freighterStep ?? 0
   for (let i = 0; i < count; i++) {
-    pushFreighterChoice(state, playerId, source, pendingChoices, pendingChoices.map(c => c.id))
+    pushFreighterChoice(
+      state,
+      playerId,
+      source,
+      pendingChoices,
+      pendingChoices.map(c => c.id),
+      simulatedStep
+    )
+    if (simulatedStep < 3) simulatedStep = Math.min(3, simulatedStep + 1) as 0 | 1 | 2 | 3
   }
 }
 
@@ -98,8 +158,8 @@ export function enqueueRecallStep1Choice(
     prompt: 'Recall reward (step 1): Dividends or +2 spice?',
     source: shippingSource,
     options: [
-      { reward: { dividends: true }, rewardLabel: 'Dividends' },
-      { reward: { spice: 2 }, rewardLabel: '+2 spice' },
+      { reward: { dividends: true } },
+      { reward: { spice: 2 } },
     ],
   }
   pendingChoices.push(choice)
@@ -153,6 +213,9 @@ export function applyFreighterAdvance(
   playerId: number,
   source: GainAttribution
 ): { players: GameState['players']; gains: Gain[] } {
+  if (!canFreighterAdvance(state, playerId)) {
+    return { players: state.players, gains: state.gains }
+  }
   const gains = [...state.gains]
   const players = state.players.map(p => {
     if (p.id !== playerId) return p

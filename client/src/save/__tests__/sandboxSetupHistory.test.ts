@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CONFLICTS } from '../../data/conflicts'
-import { PlayerColor } from '../../types/GameTypes'
+import { FactionType, PlayerColor } from '../../types/GameTypes'
 import { buildHistoryFromEvents } from '../buildHistory'
 import { truncateSandboxEventsForSetupReedit } from '../recording'
 import type { EventEntry, SetupBlock } from '../types'
@@ -55,6 +55,26 @@ describe('sandbox setup history after load + re-edit', () => {
     expect(history).toHaveLength(1)
     expect(history[0].imperiumRow).toHaveLength(5)
     expect(history[0].currentConflict.id).toBe(CONFLICTS[2].id)
+  })
+
+  it('buildHistoryFromEvents preserves sandbox player influence on setup row', () => {
+    const events: EventEntry[] = [
+      { a: { type: 'SANDBOX_SET_IMPERIUM_ROW', cardIds: [2000, 2001, 2002, 2003, 2004] } },
+      { a: { type: 'SANDBOX_SET_CONFLICT', conflictId: CONFLICTS[0].id } },
+      {
+        a: {
+          type: 'SANDBOX_SET_PLAYER_INFLUENCE',
+          playerId: 0,
+          faction: FactionType.SPACING_GUILD,
+          value: 2,
+        },
+      },
+      { a: { type: 'SANDBOX_COMMIT_SETUP' } },
+    ]
+
+    const history = buildHistoryFromEvents(sandboxSetup(), events)
+    expect(history).toHaveLength(1)
+    expect(history[0].factionInfluence[FactionType.SPACING_GUILD][0]).toBe(2)
   })
 
   it('wiping all events on undo loses imperium row on re-commit (regression guard)', () => {
