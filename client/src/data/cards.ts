@@ -561,10 +561,14 @@ export const FOLDSPACE_DECK: Card[] = [
     playEffect: [
       {
         reward: {
-          drawCards: 1,
-          trashThisCard: true
-        }
-      }
+          custom: CustomEffect.FOLDSPACE_DRAW,
+        },
+      },
+      {
+        reward: {
+          trashThisCard: true,
+        },
+      },
     ],
   },
   {
@@ -583,10 +587,14 @@ export const FOLDSPACE_DECK: Card[] = [
     playEffect: [
       {
         reward: {
-          drawCards: 1,
-          trashThisCard: true
-        }
-      }
+          custom: CustomEffect.FOLDSPACE_DRAW,
+        },
+      },
+      {
+        reward: {
+          trashThisCard: true,
+        },
+      },
     ],
   },
   {
@@ -605,10 +613,14 @@ export const FOLDSPACE_DECK: Card[] = [
     playEffect: [
       {
         reward: {
-          drawCards: 1,
-          trashThisCard: true
-        }
-      }
+          custom: CustomEffect.FOLDSPACE_DRAW,
+        },
+      },
+      {
+        reward: {
+          trashThisCard: true,
+        },
+      },
     ],
   },
   {
@@ -627,10 +639,14 @@ export const FOLDSPACE_DECK: Card[] = [
     playEffect: [
       {
         reward: {
-          drawCards: 1,
-          trashThisCard: true
-        }
-      }
+          custom: CustomEffect.FOLDSPACE_DRAW,
+        },
+      },
+      {
+        reward: {
+          trashThisCard: true,
+        },
+      },
     ],
   },
   {
@@ -649,10 +665,14 @@ export const FOLDSPACE_DECK: Card[] = [
     playEffect: [
       {
         reward: {
-          drawCards: 1,
-          trashThisCard: true
-        }
-      }
+          custom: CustomEffect.FOLDSPACE_DRAW,
+        },
+      },
+      {
+        reward: {
+          trashThisCard: true,
+        },
+      },
     ],
   },
   {
@@ -671,10 +691,14 @@ export const FOLDSPACE_DECK: Card[] = [
     playEffect: [
       {
         reward: {
-          drawCards: 1,
-          trashThisCard: true
-        }
-      }
+          custom: CustomEffect.FOLDSPACE_DRAW,
+        },
+      },
+      {
+        reward: {
+          trashThisCard: true,
+        },
+      },
     ],
   },
 ]

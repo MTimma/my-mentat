@@ -3868,7 +3868,18 @@
       "slot": "play",
       "index": 0,
       "reward": {
-        "drawCards": 1,
+        "custom": "FOLDSPACE_DRAW"
+      }
+    },
+    {
+      "id": "effect:card:foldspace/foldspace:play:1",
+      "owner": {
+        "type": "card",
+        "id": "foldspace/foldspace"
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
         "trashThisCard": true
       }
     },

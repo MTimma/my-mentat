@@ -5,7 +5,7 @@ import {
   conflictChoiceAsFixedOptions,
   isInfluenceBoardChoice,
 } from '../../utils/influenceBoardChoice';
-import { isBlockedDistinctFactionChoice } from '../../utils/conflictDistinctFactions';
+import { isBlockedSequentialConflictChoice } from '../../utils/conflictDistinctFactions';
 import { getFactionBumpIcon } from '../../utils/influenceDisplay';
 import './CombatResults.css';
 
@@ -182,7 +182,7 @@ const CombatResults: React.FC<CombatResultsProps> = ({
         <div className="conflict-reward-choices">
           <h3>Choose your conflict rewards</h3>
           {pendingConflictRewardChoices.map((choice) => {
-            const blockedByDistinctFaction = isBlockedDistinctFactionChoice(
+            const blockedByDistinctFaction = isBlockedSequentialConflictChoice(
               choice,
               pendingConflictRewardChoices
             )

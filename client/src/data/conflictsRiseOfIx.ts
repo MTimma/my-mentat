@@ -31,7 +31,7 @@ export const RISE_OF_IX_CONFLICTS: ConflictCard[] = [
   {
     id: 921,
     tier: 3,
-    name: 'Economy Supremacy',
+    name: 'Economic Supremacy',
     rewards: {
       first: [
         { type: RewardType.VICTORY_POINTS, amount: 1 },
@@ -66,7 +66,7 @@ export const RISE_OF_IX_CONFLICTS: ConflictCard[] = [
       ],
       third: [
         {
-          type: RewardType.INTRIGUE,
+          type: RewardType.CHOICE,
           amount: 0,
           choiceOptions: [
             { type: RewardType.INTRIGUE, amount: 1 },

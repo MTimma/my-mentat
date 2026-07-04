@@ -98,6 +98,35 @@ describe('turnGainsDisplay', () => {
     expect(aggregateResourceGains(rewards)[0]).toMatchObject({ type: RewardType.INTRIGUE, amount: 1 })
   })
 
+  it('treats Foldspace trash-this-card as an effect, not a cost to draw', () => {
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 401,
+        round: 1,
+        name: 'Foldspace',
+        amount: 1,
+        type: RewardType.DRAW,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 401,
+        round: 1,
+        name: 'Foldspace',
+        amount: -1,
+        type: RewardType.TRASH,
+      },
+    ]
+
+    const { costs, rewards } = splitGainsByCostAndReward(gains)
+    expect(costs).toHaveLength(0)
+    expect(aggregateResourceGains(rewards).map(g => g.type)).toEqual(
+      expect.arrayContaining([RewardType.DRAW, RewardType.TRASH])
+    )
+  })
+
   it('maps gain group titles to history icons', () => {
     expect(
       getGainGroupIcon({

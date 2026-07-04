@@ -544,10 +544,29 @@ export function aggregateInfluenceGains(gains: Gain[]): Array<{ name: string; am
 export function splitGainsByCostAndReward(gains: Gain[]): { costs: Gain[]; rewards: Gain[] } {
   const costs: Gain[] = []
   const rewards: Gain[] = []
+
+  const isTrashThisCardWithDraw = (gain: Gain): boolean => {
+    if (gain.type !== RewardType.TRASH || gain.amount >= 0 || gain.source !== GainSource.CARD) {
+      return false
+    }
+    return gains.some(
+      g =>
+        g.source === GainSource.CARD &&
+        g.sourceId === gain.sourceId &&
+        g.type === RewardType.DRAW &&
+        g.amount > 0
+    )
+  }
+
   for (const gain of gains) {
+    if (gain.amount === 0) continue
+    if (isTrashThisCardWithDraw(gain)) {
+      rewards.push({ ...gain, amount: Math.abs(gain.amount) })
+      continue
+    }
     if (gain.amount < 0) {
       costs.push({ ...gain, amount: Math.abs(gain.amount) })
-    } else if (gain.amount > 0) {
+    } else {
       rewards.push(gain)
     }
   }

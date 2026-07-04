@@ -55,6 +55,7 @@ const PENDING_PLAY_CUSTOMS = new Set<CustomEffect>([
   CustomEffect.THE_VOICE,
   CustomEffect.REVEREND_MOTHER_MOHIAM,
   CustomEffect.POWER_PLAY,
+  CustomEffect.FOLDSPACE_DRAW,
   CustomEffect.TEST_OF_HUMANITY,
 ])
 

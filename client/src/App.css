@@ -1864,6 +1864,7 @@ body:has(.game-container--play) {
 /* Mobile: hold eye button to temporarily hide footer chrome and reveal the board. */
 .game-container--play.play-chrome-held .history-viewing-banner,
 .game-container--play.play-chrome-held .turn-controls-container,
+.game-container--play.play-chrome-held .image-board__combat-deploy-dock,
 .game-container--play.play-chrome-held .combat-deploy-dock {
   display: none !important;
 }

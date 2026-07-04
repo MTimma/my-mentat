@@ -35,7 +35,7 @@ import {
   recruitTroopsToGarrison,
   returnNegotiatorsToSupply,
 } from '../../utils/troops'
-import { isCardInHand, validateDiscardCostSelection } from '../../utils/playAreaDisplay'
+import { validateDiscardCostSelection } from '../../utils/playAreaDisplay'
 
 export type AcquireTechAction = {
   type: 'ACQUIRE_TECH'
@@ -1118,50 +1118,6 @@ function markTileActivated(
   })
 }
 
-function enqueueDiscardChoice(
-  state: GameState,
-  playerId: number,
-  tileId: TechTileId,
-  prompt: string,
-  customEffect: CustomEffect
-): GameState {
-  const player = state.players.find(p => p.id === playerId)
-  if (!player) return state
-
-  const source = techActivationSource(tileId)
-  const choiceId = nextSemanticId(
-    source,
-    'TECH-DISCARD',
-    (state.currTurn?.pendingChoices ?? []).map(c => c.id)
-  )
-  const choice: CardSelectChoice = {
-    id: choiceId,
-    type: ChoiceType.CARD_SELECT,
-    prompt,
-    piles: [CardPile.HAND],
-    selectionCount: 1,
-    discardCost: 1,
-    filter: c => isCardInHand(player, c.id),
-    onResolve: (cardIds: number[]) => ({
-      type: 'CUSTOM_EFFECT',
-      playerId,
-      customEffect,
-      data: { cardIds, tileId },
-    }),
-    source,
-  }
-  const currTurn = state.currTurn
-  if (!currTurn) return state
-  return {
-    ...state,
-    canEndTurn: false,
-    currTurn: {
-      ...currTurn,
-      pendingChoices: [...(currTurn.pendingChoices ?? []), choice],
-    },
-  }
-}
-
 function applyFlagshipActivation(
   state: GameState,
   playerId: number,
@@ -1347,21 +1303,31 @@ function applySpySatellitesActivation(
   }))
 }
 
+export type ActivateTechDiscardAction = {
+  type: 'ACTIVATE_TECH_DISCARD'
+  playerId: number
+  tileId: TechTileId
+  cardIds: number[]
+}
+
 export function applyHoloprojectorsDiscard(
   state: GameState,
   playerId: number,
   cardIds: number[]
 ): GameState {
   if (cardIds.length !== 1) return state
+  if (!tilesActivatableNow(state, playerId).some(t => t.id === TechTileId.HOLOPROJECTORS)) return state
   const player = state.players.find(p => p.id === playerId)
   if (!player || !validateDiscardCostSelection(player, 1, cardIds)) return state
-  return discardFromHand(
+  const applied = discardFromHand(
     state,
     playerId,
     cardIds[0],
     techActivationSource(TechTileId.HOLOPROJECTORS),
     1
   )
+  if (applied === state) return state
+  return markTileActivated(applied, playerId, TechTileId.HOLOPROJECTORS)
 }
 
 export function applyInvasionShipsDiscard(
@@ -1370,6 +1336,7 @@ export function applyInvasionShipsDiscard(
   cardIds: number[]
 ): GameState {
   if (cardIds.length !== 1) return state
+  if (!tilesActivatableNow(state, playerId).some(t => t.id === TechTileId.INVASION_SHIPS)) return state
   const player = state.players.find(p => p.id === playerId)
   if (!player || !validateDiscardCostSelection(player, 1, cardIds)) return state
   const applied = discardFromHand(
@@ -1380,12 +1347,28 @@ export function applyInvasionShipsDiscard(
     0
   )
   if (applied === state) return state
-  return {
+  const withInfiltrate = {
     ...applied,
     infiltrateIgnoreOccupancyOnce: {
       ...(applied.infiltrateIgnoreOccupancyOnce ?? {}),
       [playerId]: true,
     },
+  }
+  return markTileActivated(withInfiltrate, playerId, TechTileId.INVASION_SHIPS)
+}
+
+export function handleActivateTechDiscard(
+  state: GameState,
+  action: ActivateTechDiscardAction
+): GameState {
+  if (!state.expansions.riseOfIx) return state
+  switch (action.tileId) {
+    case TechTileId.HOLOPROJECTORS:
+      return applyHoloprojectorsDiscard(state, action.playerId, action.cardIds)
+    case TechTileId.INVASION_SHIPS:
+      return applyInvasionShipsDiscard(state, action.playerId, action.cardIds)
+    default:
+      return state
   }
 }
 
@@ -1406,26 +1389,10 @@ export function handleActivateTech(state: GameState, action: ActivateTechAction)
       const applied = applyTrainingDronesActivation(state, playerId, source)
       return markTileActivated(applied, playerId, tileId)
     }
-    case TechTileId.HOLOPROJECTORS: {
-      const marked = markTileActivated(state, playerId, tileId)
-      return enqueueDiscardChoice(
-        marked,
-        playerId,
-        tileId,
-        'Holoprojectors: discard 1 card to draw 1',
-        CustomEffect.HOLOPROJECTORS
-      )
-    }
-    case TechTileId.INVASION_SHIPS: {
-      const marked = markTileActivated(state, playerId, tileId)
-      return enqueueDiscardChoice(
-        marked,
-        playerId,
-        tileId,
-        'Invasion Ships: discard 1 card to ignore enemy agents this turn',
-        CustomEffect.INVASION_SHIPS
-      )
-    }
+    case TechTileId.HOLOPROJECTORS:
+    case TechTileId.INVASION_SHIPS:
+      // Discard-cost tech tiles commit in ACTIVATE_TECH_DISCARD after the player picks a card.
+      return state
     case TechTileId.SPY_SATELLITES: {
       const applied = applySpySatellitesActivation(state, playerId, source)
       if (applied === state) return state

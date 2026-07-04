@@ -54,6 +54,14 @@ export const CARD_EFFECT_LAYOUT_OVERRIDES: Record<string, CardEffectLayoutOverri
       { left: 5, top: 75, width: 91, height: 7 },
     ],
   },
+  Foldspace: {
+    playEffects: [
+      // playEffect[0] — FOLDSPACE_DRAW
+      { left: 5, top: 67, width: 91, height: 8 },
+      // playEffect[1] — trash this card
+      { left: 5, top: 75, width: 91, height: 7 },
+    ],
+  },
   'Gurney Halleck': {
     revealEffects: [
       // revealEffect[0] — persuasion

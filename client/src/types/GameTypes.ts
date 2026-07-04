@@ -469,6 +469,8 @@ export interface ConflictReward {
   cost?: Cost
   /** When set, player chooses one of these options instead of receiving this reward directly */
   choiceOptions?: ConflictReward[]
+  /** With choiceOptions: how many distinct options to pick (default 1). */
+  choicePickCount?: number
   /** When true for INFLUENCE, player chooses which faction to gain influence with */
   chooseFaction?: boolean
 }
@@ -672,6 +674,7 @@ export enum ScreenState {
 }
 
 export enum RewardType {
+  CHOICE = 'multi-choice', //dummmy placeholder
   VICTORY_POINTS = 'VP',
   INTRIGUE = 'Intrigue',
   SOLARI = 'Solari',
@@ -786,6 +789,12 @@ export interface GameState {
     distinctFactionGroup?: string
     /** Factions already chosen earlier in this group; excluded from options. */
     excludedFactions?: FactionType[]
+    /** Links sequential picks from the same choiceOptions reward (e.g. pick 2 unique). */
+    distinctChoiceGroup?: string
+    /** Indices into fullOptions already chosen earlier in this group. */
+    excludedChoiceIndices?: number[]
+    /** Unfiltered options for distinctChoiceGroup picks. */
+    fullOptions?: ChoiceOption[]
   }>
   // Stored when combat resolution is deferred for choices; used when completing the transition
   combatResolutionDeferred?: {
@@ -934,7 +943,9 @@ export enum CustomEffect {
   KWISATZ_RECALL_AGENT = 'KWISATZ_RECALL_AGENT',
   LIET_KYNES = 'LIET_KYNES',
   SECRETS_STEAL = 'SECRETS_STEAL',
-  POWER_PLAY = 'POWER_PLAY', 
+  POWER_PLAY = 'POWER_PLAY',
+  /** Foldspace card — draw 1; order vs trash this card is player choice (like Power Play). */
+  FOLDSPACE_DRAW = 'FOLDSPACE_DRAW',
   REVEREND_MOTHER_MOHIAM = 'REVEREND_MOTHER_MOHIAM', 
   TEST_OF_HUMANITY = 'TEST_OF_HUMANITY',
   THE_VOICE = 'THE_VOICE',

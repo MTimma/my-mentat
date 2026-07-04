@@ -106,6 +106,7 @@ export const REPLAYABLE_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
   'SANDBOX_SET_PLAYER_INFLUENCE',
   'ACQUIRE_TECH',
   'ACTIVATE_TECH',
+  'ACTIVATE_TECH_DISCARD',
   'TECH_NEGOTIATOR',
 ] satisfies Array<GameAction['type']>)
 

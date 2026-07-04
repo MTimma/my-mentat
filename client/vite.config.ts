@@ -3,6 +3,7 @@ import path from 'node:path'
 import { defineConfig, type Plugin } from 'vitest/config'
 import { loadEnv } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import { VitePWA } from 'vite-plugin-pwa'
 // should only be used during decelopment
 function gamePackDevSavePlugin(): Plugin {
   return {
@@ -63,7 +64,70 @@ export default defineConfig(({ mode }) => {
   const gamesApiTarget = env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:3000'
 
   return {
-  plugins: [react(), gamePackDevSavePlugin()],
+  plugins: [
+    react(),
+    gamePackDevSavePlugin(),
+    VitePWA({
+      registerType: 'prompt',
+      includeAssets: ['pwa-icon.svg', 'apple-touch-icon.png', 'favicon-32x32.png'],
+      manifest: {
+        name: 'My Mentat',
+        short_name: 'Mentat',
+        description: 'Dune: Imperium board game companion',
+        theme_color: '#14110f',
+        background_color: '#14110f',
+        display: 'standalone',
+        orientation: 'any',
+        start_url: '/',
+        scope: '/',
+        icons: [
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,woff2}', '**/pwa-*', '**/apple-touch-icon*', '**/favicon*'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/games/, /^\/api\//],
+        runtimeCaching: [
+          {
+            urlPattern: ({ request, url }) =>
+              request.destination === 'image' ||
+              /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/i.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'game-images',
+              expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\.json$/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'game-data',
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+    }),
+  ],
   server: {
     proxy: {
       '/games': gamesApiTarget,

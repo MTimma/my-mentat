@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="My Mentat">
+  <rect width="512" height="512" rx="96" fill="#14110f"/>
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#9c784e" stroke-width="20"/>
+  <circle cx="256" cy="256" r="108" fill="#1e1c1a" stroke="#b8956a" stroke-width="12"/>
+  <ellipse cx="256" cy="256" rx="52" ry="72" fill="#c9a050"/>
+  <circle cx="256" cy="256" r="22" fill="#14110f"/>
+  <path d="M128 168c28-36 76-56 128-56s100 20 128 56" fill="none" stroke="#9c784e" stroke-width="14" stroke-linecap="round" opacity="0.55"/>
+</svg>

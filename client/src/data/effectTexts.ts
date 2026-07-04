@@ -7,6 +7,7 @@ export const PLAY_EFFECT_TEXTS: Partial<Record<CustomEffect, string>> = {
     [CustomEffect.GUN_THOPTER]: "Each opponent loses 1 garrisoned troop.",
     [CustomEffect.SECRETS_STEAL]: "Steal intrigue from player with 4 or more",
     [CustomEffect.POWER_PLAY]: "Gain Two influence instead of one.",
+    [CustomEffect.FOLDSPACE_DRAW]: "Draw 1 card.",
     [CustomEffect.BOUNTY_INFILTRATION_BONUS]: "+2 Solari when infiltrating onto an occupied space.",
     [CustomEffect.GUILD_ACCORD_HEIGHTLINER_DISCOUNT]: "Heighliner costs 2 spice less this turn.",
     [CustomEffect.WEB_OF_POWER]: "Gain rewards for each faction you have 2+ influence with.",

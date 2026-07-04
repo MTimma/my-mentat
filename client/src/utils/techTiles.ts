@@ -98,6 +98,22 @@ function isActivatedThisRound(state: GameState, playerId: number, tileId: TechTi
   return (player?.activatedTechThisRound ?? []).includes(tileId)
 }
 
+/** Tech tiles that open a discard picker in the UI; effect commits only after a card is chosen. */
+export function techActivationRequiresDiscard(tileId: TechTileIdType): boolean {
+  return tileId === TechTileId.HOLOPROJECTORS || tileId === TechTileId.INVASION_SHIPS
+}
+
+export function techDiscardActivationPrompt(tileId: TechTileIdType): string | undefined {
+  switch (tileId) {
+    case TechTileId.HOLOPROJECTORS:
+      return 'Holoprojectors: discard 1 card to draw 1'
+    case TechTileId.INVASION_SHIPS:
+      return 'Invasion Ships: discard 1 card to ignore enemy agents this turn'
+    default:
+      return undefined
+  }
+}
+
 function canAffordActivation(state: GameState, playerId: number, tileId: TechTileIdType): boolean {
   const player = state.players.find(p => p.id === playerId)
   if (!player) return false

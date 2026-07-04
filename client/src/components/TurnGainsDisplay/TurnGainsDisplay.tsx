@@ -357,11 +357,9 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     const resourceGains = sortResourceGainsForDisplay(aggregateResourceGains(sideGains))
     const influenceGains = aggregateInfluenceGains(sideGains)
     const trashGains =
-      inlineTrash && side === 'cost' ? resourceGains.filter(g => g.type === RewardType.TRASH) : []
+      inlineTrash ? resourceGains.filter(g => g.type === RewardType.TRASH) : []
     const nonTrashResourceGains =
-      inlineTrash && side === 'cost'
-        ? resourceGains.filter(g => g.type !== RewardType.TRASH)
-        : resourceGains
+      inlineTrash ? resourceGains.filter(g => g.type !== RewardType.TRASH) : resourceGains
 
     if (
       nonTrashResourceGains.length === 0 &&

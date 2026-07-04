@@ -8,7 +8,6 @@ import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import TessiaLeaderOverlays from '../TessiaLeaderOverlays/TessiaLeaderOverlays'
 import CombatPlayerDetailModal from './CombatPlayerDetailModal'
 import { PlayerCombatSlot } from './CombatStatusStrip'
-import CombatTroopControls from '../CombatTroopControls/CombatTroopControls'
 
 type ResourceDef = {
   key: string
@@ -233,9 +232,6 @@ export interface CombatAreaClusterProps {
   activePlayerId: number
   gameState?: GameState
   modalContainerRef?: RefObject<HTMLElement | null>
-  troopDeploy?: CombatTroopDeployProps
-  dreadnoughtDeploy?: CombatDreadnoughtDeployProps
-  negotiatorDeploy?: CombatNegotiatorDeployProps
   /** Inner-board % height of leader grid; status rows are included inside the cluster. */
   gridHeightPercent?: number
   /** Overrides quadrant click (sandbox setup opens the player editor instead of the detail modal). */
@@ -255,9 +251,6 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   activePlayerId,
   gameState,
   modalContainerRef,
-  troopDeploy,
-  dreadnoughtDeploy,
-  negotiatorDeploy,
   gridHeightPercent,
   onPlayerSelect,
   riseOfIx = false,
@@ -269,34 +262,14 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
 }) => {
   const [detailPlayer, setDetailPlayer] = useState<Player | null>(null)
   const playerById = new Map(players.map(p => [p.id, p]))
-  const activePlayerColor = playerById.get(activePlayerId)?.color
-
-  const deployStripVisible = Boolean(
-    (troopDeploy &&
-      troopDeploy.canDeploy &&
-      ((troopDeploy.deployableTroops > 0 && troopDeploy.garrisonTroops > 0) ||
-        troopDeploy.deployedThisTurn > 0)) ||
-    (dreadnoughtDeploy &&
-      dreadnoughtDeploy.canDeploy &&
-      ((dreadnoughtDeploy.deployableDreadnoughts > 0 &&
-        dreadnoughtDeploy.garrisonDreadnoughts > 0) ||
-        dreadnoughtDeploy.deployedThisTurn > 0)) ||
-    (negotiatorDeploy &&
-      negotiatorDeploy.canDeploy &&
-      ((negotiatorDeploy.deployableNegotiators > 0 && negotiatorDeploy.negotiatorsOnIx > 0) ||
-        negotiatorDeploy.deployedThisTurn > 0))
-  )
 
   const outerStyle = useMemo(() => {
     if (gridHeightPercent == null) return style
-    const deployExtra = deployStripVisible
-      ? ' + var(--combat-deploy-dock-height, 3.5em)'
-      : ''
     return {
       ...style,
-      height: `calc(${gridHeightPercent}% + var(--combat-status-strip-height, 4.3em)${deployExtra})`,
+      height: `calc(${gridHeightPercent}% + var(--combat-status-strip-height, 4.3em))`,
     }
-  }, [deployStripVisible, gridHeightPercent, style])
+  }, [gridHeightPercent, style])
 
   return (
     <>
@@ -344,50 +317,6 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
               </div>
             ))}
           </div>
-
-          {(troopDeploy || dreadnoughtDeploy) ? (
-            <div
-              className="combat-deploy-dock"
-              data-marker="combat-troop-controls"
-              hidden={!deployStripVisible}
-            >
-              {troopDeploy ? (
-                <CombatTroopControls
-                  {...troopDeploy}
-                  playerColor={activePlayerColor}
-                  className="combat-deploy-dock__controls"
-                />
-              ) : null}
-              {dreadnoughtDeploy ? (
-                <CombatTroopControls
-                  variant="dreadnought"
-                  playerId={activePlayerId}
-                  playerColor={activePlayerColor}
-                  canDeploy={dreadnoughtDeploy.canDeploy}
-                  deployableTroops={dreadnoughtDeploy.deployableDreadnoughts}
-                  deployedThisTurn={dreadnoughtDeploy.deployedThisTurn}
-                  garrisonTroops={dreadnoughtDeploy.garrisonDreadnoughts}
-                  onDeploy={dreadnoughtDeploy.onDeploy}
-                  onUndeploy={dreadnoughtDeploy.onUndeploy}
-                  className="combat-deploy-dock__controls combat-deploy-dock__controls--dreadnought"
-                />
-              ) : null}
-              {negotiatorDeploy ? (
-                <CombatTroopControls
-                  variant="negotiator"
-                  playerId={activePlayerId}
-                  playerColor={activePlayerColor}
-                  canDeploy={negotiatorDeploy.canDeploy}
-                  deployableTroops={negotiatorDeploy.deployableNegotiators}
-                  deployedThisTurn={negotiatorDeploy.deployedThisTurn}
-                  garrisonTroops={negotiatorDeploy.negotiatorsOnIx}
-                  onDeploy={negotiatorDeploy.onDeploy}
-                  onUndeploy={negotiatorDeploy.onUndeploy}
-                  className="combat-deploy-dock__controls combat-deploy-dock__controls--negotiator"
-                />
-              ) : null}
-            </div>
-          ) : null}
         </div>
       </div>
 

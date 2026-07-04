@@ -10,6 +10,7 @@ import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
 import { useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
+import PwaPrompt from './components/PwaPrompt/PwaPrompt'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
 import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
 import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
@@ -478,6 +479,13 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     [dispatch]
   )
 
+  const handleActivateTechDiscard = useCallback(
+    (playerId: number, tileId: TechTileId, cardIds: number[]) => {
+      dispatch({ type: 'ACTIVATE_TECH_DISCARD', playerId, tileId, cardIds })
+    },
+    [dispatch]
+  )
+
   const handleAcquireTechTile = useCallback(
     (
       stackIndex: number,
@@ -690,6 +698,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
 
       // Power Play (+1 bonus) stays manual on the card after board +1 auto-applies.
       if (reward.reward.custom === CustomEffect.POWER_PLAY) return false
+
+      // Foldspace draw stays manual until the player chooses order vs trash this card.
+      if (reward.reward.custom === CustomEffect.FOLDSPACE_DRAW) return false
 
       // Skip rewards with interactive custom effects
       if (reward.reward.custom && interactiveEffects.includes(reward.reward.custom)) {
@@ -1884,6 +1895,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
             pendingChoices={isViewingHistory ? [] : gameState.currTurn?.pendingChoices || []}
             onResolveChoice={handleResolveChoice}
             onResolveCardSelect={handleResolveCardSelect}
+            onActivateTechDiscard={handleActivateTechDiscard}
             onPayCost={handlePayCost}
             showSelectiveBreeding={showSelectiveBreeding}
             selectedCard={isViewingHistory ? null : getSelectedCard(gameState)}
@@ -2436,6 +2448,7 @@ function App() {
 
   return (
     <div className="app">
+      <PwaPrompt />
       {screenState === ScreenState.SETUP && (
         <GameSetup
           gamePackId={gamePackId}

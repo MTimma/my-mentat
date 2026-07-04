@@ -75,9 +75,51 @@ describe('combat reward duplication', () => {
     const s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, battle916)
     expect(s.players[0].victoryPoints).toBe(2)
     expect(s.controlMarkers[ControlMarkerType.ARRAKIN]).toBe(0)
-    expect(s.pendingConflictRewardChoices?.some(c => c.placement === '2nd place' && c.playerId === 1)).toBe(true)
+    const secondChoices = (s.pendingConflictRewardChoices ?? []).filter(
+      c => c.placement === '2nd place' && c.playerId === 1
+    )
+    expect(secondChoices).toHaveLength(2)
+    expect(secondChoices.every(c => c.distinctChoiceGroup === '916:2nd place:p1')).toBe(true)
     expect(s.players[2].intrigueCount).toBe(1)
     expect(s.players[2].solari).toBe(2)
+  })
+
+  it('916 Battle for Arrakeen: 2nd place picks two unique rewards from three options', () => {
+    let s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, battle916)
+    const [first] = (s.pendingConflictRewardChoices ?? []).filter(
+      c => c.placement === '2nd place' && c.playerId === 1
+    )
+    expect(first).toBeDefined()
+
+    const spiceIndex = first!.options.findIndex(opt => opt.reward.spice === 2)
+    const solariIndex = first!.options.findIndex(opt => opt.reward.solari === 3)
+    expect(spiceIndex).toBeGreaterThanOrEqual(0)
+    expect(solariIndex).toBeGreaterThanOrEqual(0)
+
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CONFLICT_REWARD_CHOICE',
+      choiceId: first!.id,
+      optionIndex: spiceIndex,
+    })
+    expect(s.players[1].spice).toBe(2)
+
+    const remaining = (s.pendingConflictRewardChoices ?? []).find(
+      c => c.placement === '2nd place' && c.playerId === 1
+    )
+    expect(remaining).toBeDefined()
+    expect(remaining!.options.some(opt => opt.reward.spice === 2)).toBe(false)
+
+    const intrigueIndex = remaining!.options.findIndex(opt => opt.reward.intrigueCards === 1)
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CONFLICT_REWARD_CHOICE',
+      choiceId: remaining!.id,
+      optionIndex: intrigueIndex,
+    })
+
+    expect(s.pendingConflictRewardChoices).toBeUndefined()
+    expect(s.players[1].spice).toBe(2)
+    expect(s.players[1].intrigueCount).toBe(1)
+    expect(s.players[1].solari).toBe(0)
   })
 
   it('double RESOLVE_COMBAT does not re-apply solari after immediate rewards were applied', () => {

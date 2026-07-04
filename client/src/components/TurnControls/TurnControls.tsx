@@ -11,6 +11,7 @@ import { BOARD_SPACES } from '../../data/boardSpaces'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS, REVEAL_EFFECT_TEXTS } from '../../data/effectTexts'
 import { intrigueRequirementSatisfied } from '../GameContext/requirements'
 import type { TechTileId } from '../../data/techTiles'
+import { techActivationRequiresDiscard, techDiscardActivationPrompt } from '../../utils/techTiles'
 import {
   filterAcquireTechFromChoices,
   filterAcquireTechOptionalEffects,
@@ -28,6 +29,7 @@ import {
   getOpponentDiscardableCards,
   getSelectableDeckCards,
   getDiscardCostPlayability,
+  isCardInHand,
 } from '../../utils/playAreaDisplay'
 import {
   getAnyFactionInfluenceGainIcon,
@@ -86,6 +88,7 @@ interface TurnControlsProps {
   pendingChoices?: PendingChoice[]
   onResolveChoice?: (choiceId: string, optionIndex: number, source?: { type: string; id: number; name: string }) => void
   onResolveCardSelect?: (choiceId: string, cardIds: number[]) => void
+  onActivateTechDiscard?: (playerId: number, tileId: TechTileId, cardIds: number[]) => void
   selectedCard?: Card | null
   recallMode?: boolean
   placementPrompt?: string | null
@@ -163,6 +166,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   pendingChoices = [],
   onResolveChoice,
   onResolveCardSelect,
+  onActivateTechDiscard,
   selectedCard = null,
   recallMode = false,
   placementPrompt = null,
@@ -222,6 +226,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
   const [pendingTrashReward, setPendingTrashReward] = useState<PendingReward | null>(null)
   const [activeCardSelect, setActiveCardSelect] = useState<CardSelectChoice | null>(null)
+  const [pendingTechDiscard, setPendingTechDiscard] = useState<{ tileId: TechTileId; prompt: string } | null>(null)
   const [discardCostSelection, setDiscardCostSelection] = useState<Card[]>([])
   const [opponentCardSelect, setOpponentCardSelect] = useState<{
     player: Player
@@ -350,7 +355,18 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       <TurnControlsTechRow
         gameState={gameState}
         player={activePlayer}
-        onActivateTech={isHistoryView ? undefined : onActivateTech}
+        onActivateTech={
+          isHistoryView
+            ? undefined
+            : (playerId, tileId) => {
+                if (techActivationRequiresDiscard(tileId)) {
+                  const prompt = techDiscardActivationPrompt(tileId)
+                  if (prompt) setPendingTechDiscard({ tileId, prompt })
+                  return
+                }
+                onActivateTech?.(playerId, tileId)
+              }
+        }
         isHistoryView={isHistoryView}
       />
     ) : null
@@ -370,6 +386,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     setActiveCardPreviewId(null)
     setActiveCardEffectSource(null)
     setActiveCardSelect(null)
+    setPendingTechDiscard(null)
     setOpponentCardSelect(null)
     setActiveFixedChoice(null)
     setPendingEffect(null)
@@ -1224,6 +1241,35 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }
 
   const ChoiceDialog = () => {
+    if (pendingTechDiscard && activePlayer && onActivateTechDiscard) {
+      return (
+        <CardSearch
+          isOpen={true}
+          player={activePlayer}
+          piles={[CardPile.HAND]}
+          customFilter={card => isCardInHand(activePlayer, card.id)}
+          selectionCount={1}
+          text={pendingTechDiscard.prompt}
+          onSelectionChange={setDiscardCostSelection}
+          getCardPlayability={getDiscardCostPlayability(activePlayer, 1, discardCostSelection)}
+          playabilityInvalidateKey={`${activePlayer.handCount}|${discardCostSelection.map(c => c.id).join(',')}`}
+          onSelect={selectedCards => {
+            onActivateTechDiscard(
+              activePlayer.id,
+              pendingTechDiscard.tileId,
+              selectedCards.map(card => card.id)
+            )
+            setPendingTechDiscard(null)
+            setDiscardCostSelection([])
+          }}
+          onCancel={() => {
+            setPendingTechDiscard(null)
+            setDiscardCostSelection([])
+          }}
+        />
+      )
+    }
+
     if (activeCardSelect) {
       const usesDeckPiles = activeCardSelect.piles?.some(
         pile => pile === CardPile.DECK || pile === CardPile.HAND
@@ -1231,13 +1277,17 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       const cardSelectCards =
         activeCardSelect.cards ?? (usesDeckPiles ? selectableDeckCards : undefined)
       const discardCost = activeCardSelect.discardCost
+      const cardSelectFilter =
+        discardCost && activePlayer
+          ? (card: Card) => isCardInHand(activePlayer, card.id)
+          : activeCardSelect.filter
       return (
         <CardSearch
           isOpen={true}
           player={activePlayer!}
           cards={cardSelectCards}
           piles={cardSelectCards ? undefined : activeCardSelect.piles}
-          customFilter={activeCardSelect.filter}
+          customFilter={cardSelectFilter}
           selectionCount={activeCardSelect.selectionCount}
           text={activeCardSelect.prompt}
           isRevealTurn={activeCardSelect.selectionCount > 1}
@@ -1793,6 +1843,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 `effect-btn effect-btn--${variant}`,
                 reward.isTrash ? 'trash-reward' : '',
                 reward.reward.custom === CustomEffect.POWER_PLAY ? 'effect-btn--power-play' : '',
+                reward.reward.custom === CustomEffect.FOLDSPACE_DRAW ? 'effect-btn--foldspace-draw' : '',
                 needsInputHighlight ? 'effect-btn--needs-input' : '',
                 frameOnly ? 'effect-btn--overlay-frame' : '',
               ]
@@ -2837,6 +2888,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           .join(' ')}
         hidden={
           Boolean(activeCardSelect) ||
+          Boolean(pendingTechDiscard) ||
           Boolean(opponentCardSelect) ||
           isCardSelectionOpen ||
           isIntrigueSelectionOpen ||

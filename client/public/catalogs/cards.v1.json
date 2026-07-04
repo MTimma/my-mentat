@@ -3117,7 +3117,8 @@
       "image": "imperium_row/foldspace.avif",
       "effects": {
         "play": [
-          "effect:card:foldspace/foldspace:play:0"
+          "effect:card:foldspace/foldspace:play:0",
+          "effect:card:foldspace/foldspace:play:1"
         ]
       },
       "authorIds": [

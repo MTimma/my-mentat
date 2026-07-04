@@ -141,6 +141,17 @@ export const COMBAT_AREA_BOUNDS = {
   height: 34,
 } as const
 
+/** Troop deploy controls — below conflict card, left of leader grid. Tune with ?markerDebug=1. */
+export const COMBAT_DEPLOY_DOCK_RECT = {
+  left: CONFLICT_CARD_RECT.left,
+  top: CONFLICT_CARD_RECT.top + CONFLICT_CARD_RECT.height,
+  width: COMBAT_AREA_BOUNDS.left - CONFLICT_CARD_RECT.left,
+  height:
+    COMBAT_AREA_BOUNDS.top +
+    COMBAT_AREA_BOUNDS.height -
+    (CONFLICT_CARD_RECT.top + CONFLICT_CARD_RECT.height),
+} as const
+
 /** Effect-retreat dock vertical anchor (inner % Y); X is in App.css `.effect-retreat-troop-dock__anchor`. */
 export const COMBAT_STRENGTH_ORIGIN = { x: 58, y: 72 }
 

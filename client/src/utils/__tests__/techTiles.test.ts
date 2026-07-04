@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { TECH_TILES, TechTileId } from '../../data/techTiles'
-import { canPlayerAffordTechTile, techTilesAvailableForNextReveal } from '../techTiles'
+import { canPlayerAffordTechTile, techActivationRequiresDiscard, techDiscardActivationPrompt, techTilesAvailableForNextReveal } from '../techTiles'
 import { makePlayer } from '../../components/GameContext/__tests__/_helpers'
 
 describe('canPlayerAffordTechTile', () => {
@@ -39,6 +39,20 @@ describe('canPlayerAffordTechTile', () => {
     const player = { spice: 0, solari: 4, negotiatorsOnIx: 0 }
     expect(canPlayerAffordTechTile(player, 3, { paySolariInsteadOfSpice: true })).toBe(true)
     expect(canPlayerAffordTechTile(player, 5, { paySolariInsteadOfSpice: true })).toBe(false)
+  })
+})
+
+describe('tech discard activation helpers', () => {
+  it('flags Holoprojectors and Invasion Ships as discard-first activations', () => {
+    expect(techActivationRequiresDiscard(TechTileId.HOLOPROJECTORS)).toBe(true)
+    expect(techActivationRequiresDiscard(TechTileId.INVASION_SHIPS)).toBe(true)
+    expect(techActivationRequiresDiscard(TechTileId.FLAGSHIP)).toBe(false)
+  })
+
+  it('returns discard picker prompts for discard-first tech tiles', () => {
+    expect(techDiscardActivationPrompt(TechTileId.HOLOPROJECTORS)).toContain('Holoprojectors')
+    expect(techDiscardActivationPrompt(TechTileId.INVASION_SHIPS)).toContain('Invasion Ships')
+    expect(techDiscardActivationPrompt(TechTileId.FLAGSHIP)).toBeUndefined()
   })
 })
 

@@ -33,6 +33,7 @@ import {
   BOARD_MARKER_VP_MAX_STEPS,
   HIGH_COUNCIL_SLOTS,
   CONFLICT_CARD_RECT,
+  COMBAT_DEPLOY_DOCK_RECT,
   COMBAT_RING_ANCHORS,
   COMBAT_AREA_BOUNDS,
   CONTROL_MARKER_POINTS,
@@ -72,6 +73,7 @@ import CombatAreaCluster, {
   type CombatNegotiatorDeployProps,
   type CombatTroopDeployProps,
 } from './CombatAreaCluster'
+import CombatDeployDock from './CombatDeployDock'
 import IxBoardOverlay, { type IxBoardPlacement } from './IxBoardOverlay'
 import BeneTleilaxBoardOverlay, { type BeneTleilaxBoardPlacement } from './BeneTleilaxBoardOverlay'
 import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
@@ -117,7 +119,7 @@ interface ImageBoardProps {
   controlMarkers: Record<ControlMarkerType, number | null>
   /** When viewing turn history, outline the board space where this turn's agent was placed. */
   historyHighlightSpaceId?: number | null
-  /** Active-player troop deploy controls; rendered below the combat area cluster. */
+  /** Active-player troop deploy controls; rendered below conflict card, left of leader area. */
   troopDeploy?: CombatTroopDeployProps
   dreadnoughtDeploy?: CombatDreadnoughtDeployProps
   negotiatorDeploy?: CombatNegotiatorDeployProps
@@ -337,6 +339,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   )
 
   const conflictBox = stageRect(CONFLICT_CARD_RECT)
+  const deployDockBox = stageRect(COMBAT_DEPLOY_DOCK_RECT)
   const conflictImgSrc =
     currentConflict && currentConflict.id > 0 ? conflictCardImageSrc(currentConflict.id) : null
   const hasConflict = Boolean(currentConflict && currentConflict.id > 0)
@@ -967,6 +970,18 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             </>
           )}
 
+          {showCombatArea && (troopDeploy || dreadnoughtDeploy || negotiatorDeploy) ? (
+            <CombatDeployDock
+              troopDeploy={troopDeploy}
+              dreadnoughtDeploy={dreadnoughtDeploy}
+              negotiatorDeploy={negotiatorDeploy}
+              activePlayerId={currentPlayer}
+              activePlayerColor={players.find(p => p.id === currentPlayer)?.color}
+              className="image-board__combat-deploy-dock"
+              style={percentToStyle(deployDockBox)}
+            />
+          ) : null}
+
           {showCombatArea && (
             (() => {
               const area = stageRect(COMBAT_AREA_BOUNDS)
@@ -978,9 +993,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   activePlayerId={currentPlayer}
                   gameState={gameStateForMarkers}
                   modalContainerRef={boardMediaRef}
-                  troopDeploy={troopDeploy}
-                  dreadnoughtDeploy={dreadnoughtDeploy}
-                  negotiatorDeploy={negotiatorDeploy}
                   riseOfIx={riseOfIx}
                   firstPlayerMarker={gameStateForMarkers.firstPlayerMarker}
                   mentatOwner={gameStateForMarkers.mentatOwner}
@@ -1088,6 +1100,10 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   width: `${conflictBox.width}%`,
                   height: `${conflictBox.height}%`,
                 }}
+              />
+              <div
+                className="image-board__marker-debug-rect image-board__marker-debug-rect--deploy-dock"
+                style={percentToStyle(deployDockBox)}
               />
               {HIGH_COUNCIL_SLOTS.map((s, i) => {
                 const st = stagePoint(s.x, s.y)

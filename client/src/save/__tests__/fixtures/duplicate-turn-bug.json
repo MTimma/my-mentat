@@ -1,0 +1,3110 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "id": "game-2026-06-29T05:21:21.968Z",
+    "title": "Sandbox game",
+    "createdAt": "2026-06-29T05:21:21.968Z",
+    "updatedAt": "2026-07-02T19:55:07.551Z"
+  },
+  "setup": {
+    "expansions": {
+      "immortality": false,
+      "riseOfIx": true,
+      "riseOfIxEpic": false
+    },
+    "firstPlayer": 0,
+    "gamePackId": "official/base+riseOfIx@1",
+    "imperiumRowDeckCardIds": [
+      "imperium/arrakis-recruiter",
+      "imperium/arrakis-recruiter",
+      "imperium/assassination-mission",
+      "imperium/assassination-mission",
+      "imperium/bene-gesserit-initiate",
+      "imperium/bene-gesserit-initiate",
+      "imperium/bene-gesserit-sister",
+      "imperium/bene-gesserit-sister",
+      "imperium/bene-gesserit-sister",
+      "imperium/carryall",
+      "imperium/chani",
+      "imperium/choam-directorship",
+      "imperium/crysknife",
+      "imperium/dr-yueh",
+      "imperium/duncan-idaho",
+      "imperium/fedaykin-death-commando",
+      "imperium/fedaykin-death-commando",
+      "imperium/firm-grip",
+      "imperium/fremen-camp",
+      "imperium/fremen-camp",
+      "imperium/gene-manipulation",
+      "imperium/gene-manipulation",
+      "imperium/guild-administrator",
+      "imperium/guild-administrator",
+      "imperium/guild-ambassador",
+      "imperium/guild-bankers",
+      "imperium/gun-thopter",
+      "imperium/gun-thopter",
+      "imperium/gurney-halleck",
+      "imperium/imperial-spy",
+      "imperium/imperial-spy",
+      "imperium/kwisatz-haderach",
+      "imperium/lady-jessica",
+      "imperium/liet-kynes",
+      "imperium/missionaria-protectiva",
+      "imperium/missionaria-protectiva",
+      "imperium/other-memory",
+      "imperium/opulence",
+      "imperium/piter-de-vries",
+      "imperium/power-play",
+      "imperium/power-play",
+      "imperium/power-play",
+      "imperium/reverend-mother-mohiam",
+      "imperium/sardaukar-infantry",
+      "imperium/sardaukar-infantry",
+      "imperium/sardaukar-legion",
+      "imperium/sardaukar-legion",
+      "imperium/scout",
+      "imperium/scout",
+      "imperium/shifting-allegiances",
+      "imperium/shifting-allegiances",
+      "imperium/sietch-reverend-mother",
+      "imperium/smuggler-s-thopter",
+      "imperium/smuggler-s-thopter",
+      "imperium/space-travel",
+      "imperium/space-travel",
+      "imperium/spice-hunter",
+      "imperium/spice-hunter",
+      "imperium/spice-smugglers",
+      "imperium/spice-smugglers",
+      "imperium/stilgar",
+      "imperium/test-of-humanity",
+      "imperium/the-voice",
+      "imperium/the-voice",
+      "imperium/thufir-hawat",
+      "imperium/worm-riders",
+      "imperium/worm-riders",
+      "imperium/appropriate",
+      "imperium/bounty-hunter",
+      "imperium/choam-delegate",
+      "imperium/court-intrigue",
+      "imperium/desert-ambush",
+      "imperium/embedded-agent",
+      "imperium/esmar-tuek",
+      "imperium/freighter-fleet",
+      "imperium/freighter-fleet",
+      "imperium/full-scale-assault",
+      "imperium/guild-accord",
+      "imperium/guild-chief-administrator",
+      "imperium/imperial-bashar",
+      "imperium/imperial-shock-trooper",
+      "imperium/in-the-shadows",
+      "imperium/in-the-shadows",
+      "imperium/ix-guild-compact",
+      "imperium/ixian-engineer",
+      "imperium/ixian-engineer",
+      "imperium/jamis",
+      "imperium/landing-rights",
+      "imperium/local-fence",
+      "imperium/negotiated-withdrawel",
+      "imperium/negotiated-withdrawel",
+      "imperium/satellite-ban",
+      "imperium/sayyadina",
+      "imperium/shai-hulud",
+      "imperium/spice-trader",
+      "imperium/treachery",
+      "imperium/treachery",
+      "imperium/truthsayer",
+      "imperium/truthsayer",
+      "imperium/water-peddler",
+      "imperium/web-of-power",
+      "imperium/weirding-way"
+    ],
+    "initialConflictId": 910,
+    "players": [
+      {
+        "color": "red",
+        "deckCardIds": [
+          "starting/convincing-argument",
+          "starting/convincing-argument",
+          "starting/dagger",
+          "starting/dagger",
+          "starting/diplomacy",
+          "starting/dune-the-desert-planet",
+          "starting/dune-the-desert-planet",
+          "starting/reconnaissance",
+          "starting/seek-allies",
+          "starting/signet-ring"
+        ],
+        "id": 0,
+        "leaderId": "baron",
+        "startingResources": {
+          "solari": 0,
+          "spice": 0,
+          "troops": 3,
+          "victoryPoints": 1,
+          "water": 1
+        }
+      },
+      {
+        "color": "green",
+        "deckCardIds": [
+          "starting/convincing-argument",
+          "starting/convincing-argument",
+          "starting/dagger",
+          "starting/dagger",
+          "starting/diplomacy",
+          "starting/dune-the-desert-planet",
+          "starting/dune-the-desert-planet",
+          "starting/reconnaissance",
+          "starting/seek-allies",
+          "starting/signet-ring"
+        ],
+        "id": 1,
+        "leaderId": "ariana",
+        "startingResources": {
+          "solari": 0,
+          "spice": 0,
+          "troops": 3,
+          "victoryPoints": 1,
+          "water": 1
+        }
+      },
+      {
+        "color": "yellow",
+        "deckCardIds": [
+          "starting/convincing-argument",
+          "starting/convincing-argument",
+          "starting/dagger",
+          "starting/dagger",
+          "starting/diplomacy",
+          "starting/dune-the-desert-planet",
+          "starting/dune-the-desert-planet",
+          "starting/reconnaissance",
+          "starting/seek-allies",
+          "starting/signet-ring"
+        ],
+        "id": 2,
+        "leaderId": "beast",
+        "startingResources": {
+          "solari": 1,
+          "spice": 1,
+          "troops": 3,
+          "victoryPoints": 1,
+          "water": 1
+        }
+      },
+      {
+        "color": "blue",
+        "deckCardIds": [
+          "starting/convincing-argument",
+          "starting/convincing-argument",
+          "starting/dagger",
+          "starting/dagger",
+          "starting/diplomacy",
+          "starting/dune-the-desert-planet",
+          "starting/dune-the-desert-planet",
+          "starting/reconnaissance",
+          "starting/seek-allies",
+          "starting/signet-ring"
+        ],
+        "id": 3,
+        "leaderId": "ilban",
+        "startingResources": {
+          "solari": 0,
+          "spice": 0,
+          "troops": 3,
+          "victoryPoints": 1,
+          "water": 1
+        }
+      }
+    ],
+    "sandbox": true
+  },
+  "events": [
+    {
+      "a": {
+        "cardIds": [
+          2084,
+          2054,
+          2035,
+          2074,
+          2048
+        ],
+        "type": "SANDBOX_SET_IMPERIUM_ROW"
+      }
+    },
+    {
+      "a": {
+        "stackTops": [
+          "memocorders",
+          "restricted_ordinance",
+          "holoprojectors"
+        ],
+        "type": "SANDBOX_SET_IX_BOARD_TOP"
+      }
+    },
+    {
+      "a": {
+        "conflictId": 903,
+        "type": "SANDBOX_SET_CONFLICT"
+      }
+    },
+    {
+      "a": {
+        "patch": {
+          "color": "blue"
+        },
+        "playerId": 0,
+        "type": "SANDBOX_UPDATE_PLAYER"
+      }
+    },
+    {
+      "a": {
+        "patch": {
+          "leader": {
+            "ability": {
+              "description": "Whenever you pay Solari for the cost of a board space: Draw 1 card.",
+              "name": "Ruthless Negotiator"
+            },
+            "complexity": 1,
+            "name": "Count Ilban Richese",
+            "signetRingText": "Gain 1 Solari.",
+            "signetRingTitle": "Manufacturing",
+            "sogChoice": false
+          }
+        },
+        "playerId": 0,
+        "type": "SANDBOX_UPDATE_PLAYER"
+      }
+    },
+    {
+      "a": {
+        "patch": {
+          "agents": 2,
+          "color": "blue",
+          "combatValue": 0,
+          "deck": [
+            {
+              "agentIcons": [],
+              "id": 1,
+              "image": "starter_deck/convincing_argument.avif",
+              "name": "Convincing Argument",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 2
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [],
+              "id": 2,
+              "image": "starter_deck/convincing_argument.avif",
+              "name": "Convincing Argument",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 2
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "landsraad"
+              ],
+              "id": 3,
+              "image": "starter_deck/dagger.avif",
+              "name": "Dagger",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "combat": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "landsraad"
+              ],
+              "id": 4,
+              "image": "starter_deck/dagger.avif",
+              "name": "Dagger",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "combat": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "fremen",
+                "bene-gesserit",
+                "spacing-guild",
+                "emperor"
+              ],
+              "id": 5,
+              "image": "starter_deck/diplomacy.avif",
+              "name": "Diplomacy",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "spice-trade"
+              ],
+              "id": 6,
+              "image": "starter_deck/dune_the_desert_planet.avif",
+              "name": "Dune, the Desert Planet",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "spice-trade"
+              ],
+              "id": 7,
+              "image": "starter_deck/dune_the_desert_planet.avif",
+              "name": "Dune, the Desert Planet",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "city"
+              ],
+              "id": 8,
+              "image": "starter_deck/reconnaissance.avif",
+              "name": "Reconnaissance",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "fremen",
+                "bene-gesserit",
+                "spacing-guild",
+                "emperor"
+              ],
+              "id": 9,
+              "image": "starter_deck/seek_allies.avif",
+              "name": "Seek Allies",
+              "playEffect": [
+                {
+                  "reward": {
+                    "trashThisCard": true
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "landsraad",
+                "city",
+                "spice-trade"
+              ],
+              "id": 10,
+              "image": "starter_deck/signet_ring.avif",
+              "name": "Signet Ring",
+              "playEffect": [
+                {
+                  "reward": {
+                    "custom": "SIGNET_RING"
+                  }
+                }
+              ],
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "discardPile": [],
+          "dreadnoughts": {
+            "conflict": 0,
+            "control": [],
+            "garrison": 0,
+            "supply": 2
+          },
+          "freighterStep": 0,
+          "handCount": 5,
+          "hasHighCouncilSeat": false,
+          "hasSwordmaster": false,
+          "id": 0,
+          "intrigueCount": 0,
+          "leader": {
+            "ability": {
+              "description": "Your dreadnoughts have a strength of 4 instead of 3.",
+              "name": "Ixian Royalty"
+            },
+            "complexity": 1,
+            "name": "Prince Rhombur Vernius",
+            "riseOfIx": true,
+            "signetRingText": "Buy 1 tech, or add 1 tech negotiator.",
+            "signetRingTitle": "Tech Negotiation",
+            "sogChoice": false
+          },
+          "negotiatorsOnIx": 0,
+          "persuasion": 0,
+          "playArea": [],
+          "revealed": false,
+          "solari": 0,
+          "spice": 0,
+          "tech": [],
+          "trash": [],
+          "troopSupply": 9,
+          "troops": 3,
+          "victoryPoints": 1,
+          "water": 1
+        },
+        "playerId": 0,
+        "type": "SANDBOX_UPDATE_PLAYER"
+      }
+    },
+    {
+      "a": {
+        "patch": {
+          "agents": 2,
+          "color": "green",
+          "combatValue": 0,
+          "deck": [
+            {
+              "agentIcons": [],
+              "id": 1,
+              "image": "starter_deck/convincing_argument.avif",
+              "name": "Convincing Argument",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 2
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [],
+              "id": 2,
+              "image": "starter_deck/convincing_argument.avif",
+              "name": "Convincing Argument",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 2
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "landsraad"
+              ],
+              "id": 3,
+              "image": "starter_deck/dagger.avif",
+              "name": "Dagger",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "combat": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "landsraad"
+              ],
+              "id": 4,
+              "image": "starter_deck/dagger.avif",
+              "name": "Dagger",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "combat": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "fremen",
+                "bene-gesserit",
+                "spacing-guild",
+                "emperor"
+              ],
+              "id": 5,
+              "image": "starter_deck/diplomacy.avif",
+              "name": "Diplomacy",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "spice-trade"
+              ],
+              "id": 6,
+              "image": "starter_deck/dune_the_desert_planet.avif",
+              "name": "Dune, the Desert Planet",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "spice-trade"
+              ],
+              "id": 7,
+              "image": "starter_deck/dune_the_desert_planet.avif",
+              "name": "Dune, the Desert Planet",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "city"
+              ],
+              "id": 8,
+              "image": "starter_deck/reconnaissance.avif",
+              "name": "Reconnaissance",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "fremen",
+                "bene-gesserit",
+                "spacing-guild",
+                "emperor"
+              ],
+              "id": 9,
+              "image": "starter_deck/seek_allies.avif",
+              "name": "Seek Allies",
+              "playEffect": [
+                {
+                  "reward": {
+                    "trashThisCard": true
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "landsraad",
+                "city",
+                "spice-trade"
+              ],
+              "id": 10,
+              "image": "starter_deck/signet_ring.avif",
+              "name": "Signet Ring",
+              "playEffect": [
+                {
+                  "reward": {
+                    "custom": "SIGNET_RING"
+                  }
+                }
+              ],
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "discardPile": [],
+          "dreadnoughts": {
+            "conflict": 0,
+            "control": [],
+            "garrison": 0,
+            "supply": 2
+          },
+          "freighterStep": 0,
+          "handCount": 5,
+          "hasHighCouncilSeat": false,
+          "hasSwordmaster": false,
+          "id": 1,
+          "intrigueCount": 0,
+          "leader": {
+            "ability": {
+              "description": "You start with no water. When you gain Solari on your turn, increase the amount by 1.",
+              "name": "Spice Royalty"
+            },
+            "complexity": 2,
+            "name": "\"Princess\" Yuna Moritani",
+            "riseOfIx": true,
+            "signetRingText": "7 Solari → +1 influence (choose), +1 spice, +1 troop.",
+            "signetRingTitle": "7 Solari",
+            "sogChoice": false
+          },
+          "negotiatorsOnIx": 0,
+          "persuasion": 0,
+          "playArea": [],
+          "revealed": false,
+          "solari": 0,
+          "spice": 0,
+          "tech": [],
+          "trash": [],
+          "troopSupply": 9,
+          "troops": 3,
+          "victoryPoints": 1,
+          "water": 0
+        },
+        "playerId": 1,
+        "type": "SANDBOX_UPDATE_PLAYER"
+      }
+    },
+    {
+      "a": {
+        "patch": {
+          "agents": 2,
+          "color": "yellow",
+          "combatValue": 0,
+          "deck": [
+            {
+              "agentIcons": [],
+              "id": 1,
+              "image": "starter_deck/convincing_argument.avif",
+              "name": "Convincing Argument",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 2
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [],
+              "id": 2,
+              "image": "starter_deck/convincing_argument.avif",
+              "name": "Convincing Argument",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 2
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "landsraad"
+              ],
+              "id": 3,
+              "image": "starter_deck/dagger.avif",
+              "name": "Dagger",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "combat": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "landsraad"
+              ],
+              "id": 4,
+              "image": "starter_deck/dagger.avif",
+              "name": "Dagger",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "combat": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "fremen",
+                "bene-gesserit",
+                "spacing-guild",
+                "emperor"
+              ],
+              "id": 5,
+              "image": "starter_deck/diplomacy.avif",
+              "name": "Diplomacy",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "spice-trade"
+              ],
+              "id": 6,
+              "image": "starter_deck/dune_the_desert_planet.avif",
+              "name": "Dune, the Desert Planet",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "spice-trade"
+              ],
+              "id": 7,
+              "image": "starter_deck/dune_the_desert_planet.avif",
+              "name": "Dune, the Desert Planet",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "city"
+              ],
+              "id": 8,
+              "image": "starter_deck/reconnaissance.avif",
+              "name": "Reconnaissance",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "fremen",
+                "bene-gesserit",
+                "spacing-guild",
+                "emperor"
+              ],
+              "id": 9,
+              "image": "starter_deck/seek_allies.avif",
+              "name": "Seek Allies",
+              "playEffect": [
+                {
+                  "reward": {
+                    "trashThisCard": true
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "landsraad",
+                "city",
+                "spice-trade"
+              ],
+              "id": 10,
+              "image": "starter_deck/signet_ring.avif",
+              "name": "Signet Ring",
+              "playEffect": [
+                {
+                  "reward": {
+                    "custom": "SIGNET_RING"
+                  }
+                }
+              ],
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "discardPile": [],
+          "dreadnoughts": {
+            "conflict": 0,
+            "control": [],
+            "garrison": 0,
+            "supply": 2
+          },
+          "freighterStep": 0,
+          "handCount": 5,
+          "hasHighCouncilSeat": false,
+          "hasSwordmaster": false,
+          "id": 2,
+          "intrigueCount": 0,
+          "leader": {
+            "ability": {
+              "description": "Whenever you pay Solari for the cost of a board space: Draw 1 card.",
+              "name": "Ruthless Negotiator"
+            },
+            "complexity": 1,
+            "name": "Count Ilban Richese",
+            "signetRingText": "Gain 1 Solari.",
+            "signetRingTitle": "Manufacturing",
+            "sogChoice": false
+          },
+          "negotiatorsOnIx": 0,
+          "persuasion": 0,
+          "playArea": [],
+          "revealed": false,
+          "solari": 0,
+          "spice": 0,
+          "tech": [],
+          "trash": [],
+          "troopSupply": 9,
+          "troops": 3,
+          "victoryPoints": 1,
+          "water": 1
+        },
+        "playerId": 2,
+        "type": "SANDBOX_UPDATE_PLAYER"
+      }
+    },
+    {
+      "a": {
+        "patch": {
+          "agents": 2,
+          "color": "red",
+          "combatValue": 0,
+          "deck": [
+            {
+              "agentIcons": [],
+              "id": 1,
+              "image": "starter_deck/convincing_argument.avif",
+              "name": "Convincing Argument",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 2
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [],
+              "id": 2,
+              "image": "starter_deck/convincing_argument.avif",
+              "name": "Convincing Argument",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 2
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "landsraad"
+              ],
+              "id": 3,
+              "image": "starter_deck/dagger.avif",
+              "name": "Dagger",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "combat": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "landsraad"
+              ],
+              "id": 4,
+              "image": "starter_deck/dagger.avif",
+              "name": "Dagger",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "combat": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "fremen",
+                "bene-gesserit",
+                "spacing-guild",
+                "emperor"
+              ],
+              "id": 5,
+              "image": "starter_deck/diplomacy.avif",
+              "name": "Diplomacy",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "spice-trade"
+              ],
+              "id": 6,
+              "image": "starter_deck/dune_the_desert_planet.avif",
+              "name": "Dune, the Desert Planet",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "spice-trade"
+              ],
+              "id": 7,
+              "image": "starter_deck/dune_the_desert_planet.avif",
+              "name": "Dune, the Desert Planet",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "city"
+              ],
+              "id": 8,
+              "image": "starter_deck/reconnaissance.avif",
+              "name": "Reconnaissance",
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "fremen",
+                "bene-gesserit",
+                "spacing-guild",
+                "emperor"
+              ],
+              "id": 9,
+              "image": "starter_deck/seek_allies.avif",
+              "name": "Seek Allies",
+              "playEffect": [
+                {
+                  "reward": {
+                    "trashThisCard": true
+                  }
+                }
+              ]
+            },
+            {
+              "agentIcons": [
+                "landsraad",
+                "city",
+                "spice-trade"
+              ],
+              "id": 10,
+              "image": "starter_deck/signet_ring.avif",
+              "name": "Signet Ring",
+              "playEffect": [
+                {
+                  "reward": {
+                    "custom": "SIGNET_RING"
+                  }
+                }
+              ],
+              "revealEffect": [
+                {
+                  "reward": {
+                    "persuasion": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "discardPile": [],
+          "dreadnoughts": {
+            "conflict": 0,
+            "control": [],
+            "garrison": 0,
+            "supply": 2
+          },
+          "freighterStep": 0,
+          "handCount": 5,
+          "hasHighCouncilSeat": false,
+          "hasSwordmaster": false,
+          "id": 3,
+          "intrigueCount": 0,
+          "leader": {
+            "ability": {
+              "description": "You may look at the top card of your deck at any time.",
+              "name": "Prescience"
+            },
+            "complexity": 1,
+            "name": "Paul Atreides",
+            "signetRingText": "Draw 1 card.",
+            "signetRingTitle": "Discipline",
+            "sogChoice": false
+          },
+          "negotiatorsOnIx": 0,
+          "persuasion": 0,
+          "playArea": [],
+          "revealed": false,
+          "solari": 0,
+          "spice": 0,
+          "tech": [],
+          "trash": [],
+          "troopSupply": 9,
+          "troops": 3,
+          "victoryPoints": 1,
+          "water": 1
+        },
+        "playerId": 3,
+        "type": "SANDBOX_UPDATE_PLAYER"
+      }
+    },
+    {
+      "a": {
+        "type": "SANDBOX_COMMIT_SETUP"
+      }
+    },
+    {
+      "a": {
+        "cardId": 7,
+        "deckIndex": 6,
+        "playerId": 0,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "spaceId": 25,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "board-space-25-FREIGHTER",
+        "optionIndex": 0,
+        "playerId": 0,
+        "source": {
+          "id": 25,
+          "name": "Smuggling",
+          "type": "board-space"
+        },
+        "type": "RESOLVE_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p0": [
+          0,
+          1,
+          1,
+          3,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 5,
+        "deckIndex": 4,
+        "playerId": 1,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "spaceId": 15,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p1": [
+          0,
+          3,
+          0,
+          3,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 9,
+        "deckIndex": 8,
+        "playerId": 2,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "cardId": 5,
+        "deckIndex": 4,
+        "playerId": 2,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "spaceId": 16,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p2": [
+          0,
+          0,
+          1,
+          3,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 8,
+        "deckIndex": 7,
+        "playerId": 3,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "spaceId": 1,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p3": [
+          0,
+          0,
+          1,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 10,
+        "deckIndex": 8,
+        "playerId": 0,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "spaceId": 24,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "effectId": "card-10-EFFECT-1",
+        "playerId": 0,
+        "type": "PAY_COST"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "board-space-24-OR",
+        "optionIndex": 0,
+        "playerId": 0,
+        "source": {
+          "id": 24,
+          "name": "Tech Negotiation",
+          "type": "board-space"
+        },
+        "type": "RESOLVE_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "discount": 0,
+        "negotiatorsReturned": 1,
+        "nextFaceUpTileId": "spaceport",
+        "playerId": 0,
+        "stackIndex": 0,
+        "tileId": "memocorders",
+        "type": "ACQUIRE_TECH"
+      }
+    },
+    {
+      "a": {
+        "discount": 0,
+        "negotiatorsReturned": 1,
+        "nextFaceUpTileId": "spaceport",
+        "playerId": 0,
+        "stackIndex": 0,
+        "tileId": "memocorders",
+        "type": "ACQUIRE_TECH"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "ix-board-900008-INFLUENCE-GAIN",
+        "optionIndex": 1,
+        "playerId": 0,
+        "source": {
+          "id": 900008,
+          "name": "Memocorders",
+          "type": "ix-board"
+        },
+        "type": "RESOLVE_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p0": [
+          0,
+          1,
+          1,
+          3,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 10,
+        "deckIndex": 8,
+        "playerId": 1,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "spaceId": 2,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p1": [
+          0,
+          3,
+          0,
+          3,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 10,
+        "deckIndex": 8,
+        "playerId": 2,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "spaceId": 4,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p2": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 9,
+        "deckIndex": 7,
+        "playerId": 3,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "spaceId": 22,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "rewardId": "card-9-REWARD",
+        "type": "CLAIM_REWARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p3": [
+          0,
+          0,
+          2,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardIds": [
+          4,
+          2,
+          6
+        ],
+        "playerId": 0,
+        "type": "REVEAL_CARDS"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2054,
+        "playerId": 0,
+        "type": "ACQUIRE_CARD"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2051,
+        "type": "SELECT_IMPERIUM_REPLACEMENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p0": [
+          0,
+          1,
+          1,
+          3,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardIds": [
+          2,
+          6,
+          7
+        ],
+        "playerId": 1,
+        "type": "REVEAL_CARDS"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2051,
+        "playerId": 1,
+        "type": "ACQUIRE_CARD"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2080,
+        "type": "SELECT_IMPERIUM_REPLACEMENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p1": [
+          0,
+          3,
+          0,
+          3,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardIds": [
+          4,
+          6,
+          2
+        ],
+        "playerId": 2,
+        "type": "REVEAL_CARDS"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2074,
+        "playerId": 2,
+        "type": "ACQUIRE_CARD"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2082,
+        "type": "SELECT_IMPERIUM_REPLACEMENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p2": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardIds": [
+          3,
+          4,
+          2,
+          6
+        ],
+        "playerId": 3,
+        "type": "REVEAL_CARDS"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2082,
+        "playerId": 3,
+        "type": "ACQUIRE_CARD"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2058,
+        "type": "SELECT_IMPERIUM_REPLACEMENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p3": [
+          0,
+          0,
+          2,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "PASS_COMBAT"
+      }
+    },
+    {
+      "a": {
+        "type": "RESOLVE_COMBAT"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "conflict-903-CONFLICT-REWARD-1st place-p3",
+        "optionIndex": 1,
+        "type": "RESOLVE_CONFLICT_REWARD_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "conflictId": 909,
+        "type": "SELECT_CONFLICT"
+      }
+    },
+    {
+      "a": {
+        "cardId": 9,
+        "deckIndex": 4,
+        "playerId": 1,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "spaceId": 15,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "rewardId": "card-9-REWARD",
+        "type": "CLAIM_REWARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p1": [
+          1,
+          6,
+          0,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 9,
+        "deckIndex": 4,
+        "playerId": 2,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "spaceId": 16,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "rewardId": "card-9-REWARD",
+        "type": "CLAIM_REWARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p2": [
+          3,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 10,
+        "deckIndex": 3,
+        "playerId": 3,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "spaceId": 25,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "board-space-25-FREIGHTER",
+        "optionIndex": 0,
+        "playerId": 3,
+        "source": {
+          "id": 25,
+          "name": "Smuggling",
+          "type": "board-space"
+        },
+        "type": "RESOLVE_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p3": [
+          1,
+          1,
+          2,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 5,
+        "deckIndex": 2,
+        "playerId": 0,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "spaceId": 20,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p0": [
+          0,
+          1,
+          0,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 8,
+        "deckIndex": 3,
+        "playerId": 1,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "spaceId": 2,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "DEPLOY_TROOP"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p1": [
+          1,
+          6,
+          0,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 7,
+        "deckIndex": 2,
+        "playerId": 2,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "spaceId": 26,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "board-space-26-FREIGHTER",
+        "optionIndex": 0,
+        "playerId": 2,
+        "source": {
+          "id": 26,
+          "name": "Interstellar Shipping",
+          "type": "board-space"
+        },
+        "type": "RESOLVE_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "board-space-26-FREIGHTER-1",
+        "optionIndex": 0,
+        "playerId": 2,
+        "source": {
+          "id": 26,
+          "name": "Interstellar Shipping",
+          "type": "board-space"
+        },
+        "type": "RESOLVE_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p2": [
+          3,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 5,
+        "deckIndex": 1,
+        "playerId": 3,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "spaceId": 22,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p3": [
+          1,
+          1,
+          3,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 9,
+        "deckIndex": 3,
+        "playerId": 0,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "spaceId": 18,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "rewardId": "card-9-REWARD",
+        "type": "CLAIM_REWARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p0": [
+          0,
+          1,
+          0,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardIds": [
+          1,
+          3,
+          4
+        ],
+        "playerId": 1,
+        "type": "REVEAL_CARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "ACQUIRE_AL"
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p1": [
+          1,
+          6,
+          0,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardIds": [
+          8,
+          3,
+          1
+        ],
+        "playerId": 2,
+        "type": "REVEAL_CARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "ACQUIRE_AL"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p2": [
+          3,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardIds": [
+          1,
+          7,
+          2082,
+          8
+        ],
+        "playerId": 3,
+        "type": "REVEAL_CARDS"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2035,
+        "playerId": 3,
+        "type": "ACQUIRE_CARD"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2069,
+        "type": "SELECT_IMPERIUM_REPLACEMENT"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2069,
+        "playerId": 3,
+        "type": "ACQUIRE_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p3": [
+          1,
+          1,
+          3,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardIds": [
+          8,
+          3,
+          1
+        ],
+        "playerId": 0,
+        "type": "REVEAL_CARDS"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2006,
+        "type": "SELECT_IMPERIUM_REPLACEMENT"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2006,
+        "playerId": 0,
+        "type": "ACQUIRE_CARD"
+      }
+    },
+    {
+      "a": {
+        "cardId": 2036,
+        "type": "SELECT_IMPERIUM_REPLACEMENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p0": [
+          0,
+          1,
+          0,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "type": "PASS_COMBAT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "PASS_COMBAT"
+      }
+    },
+    {
+      "a": {
+        "type": "RESOLVE_COMBAT"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "conflict-909-CONFLICT-REWARD-1st place-p0",
+        "optionIndex": 1,
+        "type": "RESOLVE_CONFLICT_REWARD_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "conflict-909-CONFLICT-REWARD-1st place-p0-1",
+        "optionIndex": 2,
+        "type": "RESOLVE_CONFLICT_REWARD_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "conflictId": 910,
+        "type": "SELECT_CONFLICT"
+      }
+    },
+    {
+      "a": {
+        "cardId": 6,
+        "deckIndex": 5,
+        "playerId": 2,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "spaceId": 26,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "board-space-26-FREIGHTER",
+        "optionIndex": 0,
+        "playerId": 2,
+        "source": {
+          "id": 26,
+          "name": "Interstellar Shipping",
+          "type": "board-space"
+        },
+        "type": "RESOLVE_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "board-space-26-FREIGHTER-1",
+        "optionIndex": 0,
+        "playerId": 2,
+        "source": {
+          "id": 26,
+          "name": "Interstellar Shipping",
+          "type": "board-space"
+        },
+        "type": "RESOLVE_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "shipping-track-0-INFLUENCE-GAIN",
+        "optionIndex": 3,
+        "playerId": 2,
+        "source": {
+          "id": 0,
+          "name": "Shipping track",
+          "type": "shipping-track"
+        },
+        "type": "RESOLVE_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "shipping-track-0-RECALL-STEP1",
+        "optionIndex": 0,
+        "playerId": 2,
+        "source": {
+          "id": 0,
+          "name": "Recall step 1",
+          "type": "shipping-track"
+        },
+        "type": "RESOLVE_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "discount": 0,
+        "negotiatorsReturned": 0,
+        "nextFaceUpTileId": "windtraps",
+        "playerId": 2,
+        "stackIndex": 2,
+        "tileId": "holoprojectors",
+        "type": "ACQUIRE_TECH"
+      }
+    },
+    {
+      "a": {
+        "playerId": 2,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p2": [
+          2,
+          6,
+          1,
+          3,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 6,
+        "deckIndex": 3,
+        "playerId": 3,
+        "type": "PLAY_CARD"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "spaceId": 25,
+        "type": "PLACE_AGENT"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "CLAIM_ALL_REWARDS"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "board-space-25-FREIGHTER",
+        "optionIndex": 1,
+        "playerId": 3,
+        "source": {
+          "id": 25,
+          "name": "Smuggling",
+          "type": "board-space"
+        },
+        "type": "RESOLVE_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "choiceId": "shipping-track-0-RECALL-STEP1",
+        "optionIndex": 0,
+        "playerId": 3,
+        "source": {
+          "id": 0,
+          "name": "Recall step 1",
+          "type": "shipping-track"
+        },
+        "type": "RESOLVE_CHOICE"
+      }
+    },
+    {
+      "a": {
+        "playerId": 3,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p3": [
+          1,
+          8,
+          3,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "cardId": 10,
+        "deckIndex": 2,
+        "playerId": 0,
+        "type": "PLAY_CARD"
+      },
+      "ctx": {
+        "activePlayerId": 0,
+        "round": 3,
+        "turn": 27
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "spaceId": 4,
+        "type": "PLACE_AGENT"
+      },
+      "ctx": {
+        "activePlayerId": 0,
+        "round": 3,
+        "turn": 27
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "CLAIM_ALL_REWARDS"
+      },
+      "ctx": {
+        "activePlayerId": 0,
+        "round": 3,
+        "turn": 27
+      }
+    },
+    {
+      "a": {
+        "choiceId": "card-10-OR",
+        "optionIndex": 0,
+        "playerId": 0,
+        "source": {
+          "id": 10,
+          "name": "Signet Ring",
+          "type": "card"
+        },
+        "type": "RESOLVE_CHOICE"
+      },
+      "ctx": {
+        "activePlayerId": 0,
+        "round": 3,
+        "turn": 27
+      }
+    },
+    {
+      "a": {
+        "discount": 0,
+        "negotiatorsReturned": 0,
+        "nextFaceUpTileId": "detonation_devices",
+        "playerId": 0,
+        "stackIndex": 2,
+        "tileId": "windtraps",
+        "type": "ACQUIRE_TECH"
+      },
+      "ctx": {
+        "activePlayerId": 0,
+        "round": 3,
+        "turn": 27
+      }
+    },
+    {
+      "a": {
+        "playerId": 0,
+        "type": "END_TURN"
+      },
+      "ck": {
+        "p0": [
+          0,
+          3,
+          1,
+          1,
+          1
+        ]
+      },
+      "ctx": {
+        "activePlayerId": 0,
+        "round": 3,
+        "turn": 27
+      }
+    },
+    {
+      "a": {
+        "cardId": 4,
+        "deckIndex": 10,
+        "playerId": 1,
+        "type": "PLAY_CARD"
+      },
+      "ctx": {
+        "activePlayerId": 1,
+        "round": 3,
+        "turn": 28
+      }
+    },
+    {
+      "a": {
+        "playerId": 1,
+        "spaceId": 13,
+        "type": "PLACE_AGENT"
+      },
+      "ctx": {
+        "activePlayerId": 1,
+        "round": 3,
+        "turn": 28
+      }
+    },
+    {
+      "a": {
+        "type": "END_TURN",
+        "playerId": 1
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 1,
+        "turn": 28
+      },
+      "ck": {
+        "p1": [
+          1,
+          2,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "type": "PLAY_CARD",
+        "playerId": 2,
+        "cardId": 406,
+        "deckIndex": 0
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 2,
+        "turn": 29
+      }
+    },
+    {
+      "a": {
+        "type": "PLACE_AGENT",
+        "playerId": 2,
+        "spaceId": 20
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 2,
+        "turn": 29
+      }
+    },
+    {
+      "a": {
+        "type": "CLAIM_ALL_REWARDS",
+        "playerId": 2
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 2,
+        "turn": 29
+      }
+    },
+    {
+      "a": {
+        "type": "DEPLOY_TROOP",
+        "playerId": 2
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 2,
+        "turn": 29
+      }
+    },
+    {
+      "a": {
+        "type": "DEPLOY_TROOP",
+        "playerId": 2
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 2,
+        "turn": 29
+      }
+    },
+    {
+      "a": {
+        "type": "DEPLOY_TROOP",
+        "playerId": 2
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 2,
+        "turn": 29
+      }
+    },
+    {
+      "a": {
+        "type": "DEPLOY_TROOP",
+        "playerId": 2
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 2,
+        "turn": 29
+      }
+    },
+    {
+      "a": {
+        "type": "END_TURN",
+        "playerId": 2
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 2,
+        "turn": 29
+      },
+      "ck": {
+        "p2": [
+          2,
+          7,
+          0,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "type": "PLAY_CARD",
+        "playerId": 3,
+        "cardId": 4,
+        "deckIndex": 1
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 3,
+        "turn": 30
+      }
+    },
+    {
+      "a": {
+        "type": "PLACE_AGENT",
+        "playerId": 3,
+        "spaceId": 24
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 3,
+        "turn": 30
+      }
+    },
+    {
+      "a": {
+        "type": "RESOLVE_CHOICE",
+        "playerId": 3,
+        "choiceId": "board-space-24-OR",
+        "optionIndex": 1,
+        "source": {
+          "type": "board-space",
+          "id": 24,
+          "name": "Tech Negotiation"
+        }
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 3,
+        "turn": 30
+      }
+    },
+    {
+      "a": {
+        "type": "END_TURN",
+        "playerId": 3
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 3,
+        "turn": 30
+      },
+      "ck": {
+        "p3": [
+          1,
+          8,
+          3,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "type": "PLAY_CARD",
+        "playerId": 0,
+        "cardId": 6,
+        "deckIndex": 4
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 0,
+        "turn": 31
+      }
+    },
+    {
+      "a": {
+        "type": "PLACE_AGENT",
+        "playerId": 0,
+        "spaceId": 6
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 0,
+        "turn": 31
+      }
+    },
+    {
+      "a": {
+        "type": "CLAIM_ALL_REWARDS",
+        "playerId": 0
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 0,
+        "turn": 31
+      }
+    },
+    {
+      "a": {
+        "type": "DEPLOY_TROOP",
+        "playerId": 0
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 0,
+        "turn": 31
+      }
+    },
+    {
+      "a": {
+        "type": "END_TURN",
+        "playerId": 0
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 0,
+        "turn": 31
+      },
+      "ck": {
+        "p0": [
+          4,
+          3,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "type": "PLAY_CARD",
+        "playerId": 1,
+        "cardId": 5,
+        "deckIndex": 1
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 1,
+        "turn": 32
+      }
+    },
+    {
+      "a": {
+        "type": "PLACE_AGENT",
+        "playerId": 1,
+        "spaceId": 22
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 1,
+        "turn": 32
+      }
+    },
+    {
+      "a": {
+        "type": "CLAIM_ALL_REWARDS",
+        "playerId": 1
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 1,
+        "turn": 32
+      }
+    },
+    {
+      "a": {
+        "type": "END_TURN",
+        "playerId": 1
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 1,
+        "turn": 32
+      },
+      "ck": {
+        "p1": [
+          1,
+          2,
+          2,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "type": "REVEAL_CARDS",
+        "playerId": 2,
+        "cardIds": [
+          207,
+          1,
+          2,
+          7
+        ]
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 2,
+        "turn": 33
+      }
+    },
+    {
+      "a": {
+        "type": "ACQUIRE_CARD",
+        "playerId": 2,
+        "cardId": 2036
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 2,
+        "turn": 33
+      }
+    },
+    {
+      "a": {
+        "type": "SELECT_IMPERIUM_REPLACEMENT",
+        "cardId": 2001
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 2,
+        "turn": 33
+      }
+    },
+    {
+      "a": {
+        "type": "END_TURN",
+        "playerId": 2
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 2,
+        "turn": 33
+      },
+      "ck": {
+        "p2": [
+          2,
+          7,
+          0,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "type": "REVEAL_CARDS",
+        "playerId": 3,
+        "cardIds": [
+          2,
+          1,
+          3
+        ]
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 3,
+        "turn": 34
+      }
+    },
+    {
+      "a": {
+        "type": "ACQUIRE_AL",
+        "playerId": 3
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 3,
+        "turn": 34
+      }
+    },
+    {
+      "a": {
+        "type": "END_TURN",
+        "playerId": 3
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 3,
+        "turn": 34
+      },
+      "ck": {
+        "p3": [
+          1,
+          8,
+          3,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "type": "REVEAL_CARDS",
+        "playerId": 0,
+        "cardIds": [
+          2,
+          7,
+          4
+        ]
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 0,
+        "turn": 35
+      }
+    },
+    {
+      "a": {
+        "type": "ACQUIRE_AL",
+        "playerId": 0
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 0,
+        "turn": 35
+      }
+    },
+    {
+      "a": {
+        "type": "END_TURN",
+        "playerId": 0
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 0,
+        "turn": 35
+      },
+      "ck": {
+        "p0": [
+          4,
+          3,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "a": {
+        "type": "PLAY_CARD",
+        "playerId": 1,
+        "cardId": 7,
+        "deckIndex": 4
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 1,
+        "turn": 36
+      }
+    },
+    {
+      "a": {
+        "type": "PLACE_AGENT",
+        "playerId": 1,
+        "spaceId": 5
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 1,
+        "turn": 36
+      }
+    },
+    {
+      "a": {
+        "type": "CLAIM_ALL_REWARDS",
+        "playerId": 1
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 1,
+        "turn": 36
+      }
+    },
+    {
+      "a": {
+        "type": "DEPLOY_TROOP",
+        "playerId": 1
+      },
+      "ctx": {
+        "round": 3,
+        "activePlayerId": 1,
+        "turn": 36
+      }
+    }
+  ],
+  "branches": [],
+  "cursor": {
+    "branch": "trunk",
+    "event": 206
+  }
+}

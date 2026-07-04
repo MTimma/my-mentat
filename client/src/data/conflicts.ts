@@ -175,8 +175,8 @@ export const CONFLICTS: ConflictCard[] = [
     distinctInfluenceFactions: true,
     rewards: {
       first: [{ type: RewardType.INFLUENCE, amount: 1, chooseFaction: true }, { type: RewardType.INFLUENCE, amount: 1, chooseFaction: true }],
-      second: [{ type: RewardType.SOLARI, amount: 3 }],
-      third: [{ type: RewardType.SPICE, amount: 1 }]
+      second: [{ type: RewardType.SOLARI, amount: 2 }, { type: RewardType.WATER, amount: 1 }],
+      third: [{ type: RewardType.WATER, amount: 1 }]
     }
   },
   {
@@ -230,7 +230,6 @@ export const CONFLICTS: ConflictCard[] = [
     }
   },
   // Tier 3 conflicts (rounds 7+)
-  //todo check
   {
     id: 915,
     tier: 3,
@@ -258,6 +257,7 @@ export const CONFLICTS: ConflictCard[] = [
       second: [{
         type: RewardType.INTRIGUE,
         amount: 0,
+        choicePickCount: 2,
         choiceOptions: [
           { type: RewardType.INTRIGUE, amount: 1 },
           { type: RewardType.SPICE, amount: 2 },
@@ -298,9 +298,9 @@ export const CONFLICTS: ConflictCard[] = [
       ],
       second: [
         { type: RewardType.INTRIGUE, amount: 1 },
-        { type: RewardType.SOLARI, amount: 3 },
+        { type: RewardType.SPICE, amount: 3 },
       ],
-      third: [{ type: RewardType.SOLARI, amount: 3 }],
+      third: [{ type: RewardType.SPICE, amount: 1 }],
     },
   },
 ]

@@ -6,7 +6,7 @@ import {
   GameState,
 } from '../types/GameTypes'
 import { canAffordInfluenceReward } from './influenceChoices'
-import { isBlockedDistinctFactionChoice } from './conflictDistinctFactions'
+import { isBlockedSequentialConflictChoice } from './conflictDistinctFactions'
 
 export type InfluenceBoardMode = 'lose' | 'gain'
 
@@ -31,7 +31,7 @@ export function findConflictInfluenceBoardChoice(
 ): ConflictRewardChoice | null {
   if (!choices?.length) return null
   for (const choice of choices) {
-    if (isBlockedDistinctFactionChoice(choice, choices)) continue
+    if (isBlockedSequentialConflictChoice(choice, choices)) continue
     if (isInfluenceBoardChoice(conflictChoiceAsFixedOptions(choice))) {
       return choice
     }

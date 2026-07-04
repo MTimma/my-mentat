@@ -219,6 +219,7 @@
  */
 .image-board--tracker-inspect .image-board__tracker-circle,
 .image-board--tracker-inspect .image-board__conflict-panel,
+.image-board--tracker-inspect .image-board__combat-deploy-dock,
 .image-board--tracker-inspect .image-board__combat-stat,
 .image-board--tracker-inspect .image-board__combat-area-cluster,
 .image-board--tracker-inspect .image-board__marker,
@@ -1223,73 +1224,90 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
 }
 
-/* Combat status slot — rendered under each leader in combat-area-cluster__seat */
-
-/* Deploy dock — own row below status strip; scales with board font-size */
-.combat-deploy-dock {
-  flex: 0 0 var(--combat-deploy-dock-height, 3.5em);
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0.2em 0.35em 0.28em;
-  min-width: 0;
-  pointer-events: auto;
-  border-top: 1px solid rgba(255, 248, 232, 0.1);
-  background: rgba(2, 3, 5, 0.96);
+/* Deploy dock — below conflict card, left of leader grid */
+.image-board__combat-deploy-dock {
+  position: absolute;
+  pointer-events: none;
+  z-index: 3;
+  box-sizing: border-box;
+  font-size: clamp(9px, 1.55cqw, 14px);
+  line-height: 1.1;
 }
 
-.combat-deploy-dock[hidden] {
+.image-board__combat-deploy-dock .combat-deploy-dock {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.22em;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0.18em 0.22em;
+  pointer-events: auto;
+  border: 1px solid rgba(255, 248, 232, 0.12);
+  border-radius: 0.35em;
+  background: rgba(2, 3, 5, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+}
+
+.image-board__combat-deploy-dock .combat-deploy-dock[hidden] {
   display: none;
 }
 
-.combat-deploy-dock__controls.combat-troop-controls {
-  gap: 0.4em;
-  padding: 0.35em 0.55em;
-  border-radius: 0.55em;
+.image-board__combat-deploy-dock .combat-deploy-dock__controls.combat-troop-controls {
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.28em;
+  padding: 0.28em 0.4em;
+  border-radius: 0.45em;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(8, 7, 6, 0.88);
-  box-shadow: 0 0.25em 0.85em rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0.2em 0.65em rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
+  box-sizing: border-box;
 }
 
-.combat-deploy-dock__controls .troop-action-button {
-  gap: 0.25em;
-  min-height: 1.85em;
-  padding: 0.15em 0.45em;
-  border-radius: 1.25em;
+.image-board__combat-deploy-dock .combat-deploy-dock__controls .troop-action-button {
+  gap: 0.2em;
+  min-height: 3.3em;
+  padding: 0.35em 0.38em;
+  border-radius: 1.15em;
+  font-size: 0.95em;
+}
+
+.image-board__combat-deploy-dock .combat-deploy-dock__controls .troop-action-icon {
+  width: 1.05em;
+  height: 1.05em;
+}
+
+.image-board__combat-deploy-dock .combat-deploy-dock__controls .troop-action-arrow {
   font-size: 1em;
 }
 
-.combat-deploy-dock__controls .troop-action-icon {
-  width: 1.15em;
-  height: 1.15em;
+.image-board__combat-deploy-dock .combat-deploy-dock__controls .troop-available-count,
+.image-board__combat-deploy-dock .combat-deploy-dock__controls .troop-deployed-count {
+  min-width: 1.05em;
+  height: 1.05em;
+  padding: 0 0.2em;
+  font-size: 0.68em;
 }
 
-.combat-deploy-dock__controls .troop-action-arrow {
-  font-size: 1.1em;
+.image-board__combat-deploy-dock .combat-deploy-dock__controls .troop-action-status {
+  gap: 0.25em;
+  min-height: 3.3em;
+  padding: 0.35em 0.3em;
+  border-radius: 1.15em;
 }
 
-.combat-deploy-dock__controls .troop-available-count,
-.combat-deploy-dock__controls .troop-deployed-count {
-  min-width: 1.15em;
-  height: 1.15em;
-  padding: 0 0.25em;
-  font-size: 0.72em;
+.image-board__combat-deploy-dock .combat-deploy-dock__controls .troop-undeploy-button {
+  min-width: 1.65em;
+  padding-inline: 0.38em;
 }
 
-.combat-deploy-dock__controls .troop-action-status {
-  gap: 0.3em;
-  min-height: 1.85em;
-  padding: 0.15em 0.35em;
-  border-radius: 1.25em;
-}
-
-.combat-deploy-dock__controls .troop-undeploy-button {
-  min-width: 1.85em;
-  padding-inline: 0.45em;
-}
-
-.combat-status-strip__slot {
+/* Combat status slot — rendered under each leader in combat-area-cluster__seat */
   display: flex;
   flex-direction: row;
   align-items: center;

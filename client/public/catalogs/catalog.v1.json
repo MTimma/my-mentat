@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "meta": {
     "counts": {
-      "effects": 358,
+      "effects": 359,
       "cards": 127,
       "boardSpaces": 26,
       "conflicts": 22,
@@ -3880,7 +3880,18 @@
       "slot": "play",
       "index": 0,
       "reward": {
-        "drawCards": 1,
+        "custom": "FOLDSPACE_DRAW"
+      }
+    },
+    {
+      "id": "effect:card:foldspace/foldspace:play:1",
+      "owner": {
+        "type": "card",
+        "id": "foldspace/foldspace"
+      },
+      "slot": "play",
+      "index": 1,
+      "reward": {
         "trashThisCard": true
       }
     },
@@ -8548,7 +8559,8 @@
       "image": "imperium_row/foldspace.avif",
       "effects": {
         "play": [
-          "effect:card:foldspace/foldspace:play:0"
+          "effect:card:foldspace/foldspace:play:0",
+          "effect:card:foldspace/foldspace:play:1"
         ]
       },
       "authorIds": [
@@ -9105,7 +9117,8 @@
         "first": [
           {
             "type": "Influence",
-            "amount": 1
+            "amount": 1,
+            "chooseFaction": true
           },
           {
             "type": "Spice",
@@ -9134,7 +9147,8 @@
         "first": [
           {
             "type": "Influence",
-            "amount": 1
+            "amount": 1,
+            "chooseFaction": true
           },
           {
             "type": "Solari",
@@ -9179,7 +9193,7 @@
         ],
         "third": [
           {
-            "type": "Spice",
+            "type": "Solari",
             "amount": 2
           }
         ]
@@ -9203,14 +9217,18 @@
         ],
         "second": [
           {
-            "type": "Solari",
-            "amount": 4
+            "type": "Spice",
+            "amount": 1
+          },
+          {
+            "type": "Intrigue",
+            "amount": 1
           }
         ],
         "third": [
           {
             "type": "Spice",
-            "amount": 2
+            "amount": 1
           }
         ]
       }
@@ -9218,7 +9236,7 @@
     {
       "id": 907,
       "tier": 2,
-      "name": "Siege of Imperial Basin",
+      "name": "Secure Imperial Basin",
       "controlSpace": "imperial-basin",
       "rewards": {
         "first": [
@@ -9233,14 +9251,14 @@
         ],
         "second": [
           {
-            "type": "Spice",
-            "amount": 4
+            "type": "Water",
+            "amount": 2
           }
         ],
         "third": [
           {
-            "type": "Spice",
-            "amount": 2
+            "type": "Water",
+            "amount": 1
           }
         ]
       }
@@ -9252,14 +9270,23 @@
       "rewards": {
         "first": [
           {
+            "type": "Influence",
+            "amount": 1,
+            "chooseFaction": true
+          },
+          {
             "type": "Intrigue",
             "amount": 2
           }
         ],
         "second": [
           {
-            "type": "Solari",
-            "amount": 3
+            "type": "Intrigue",
+            "amount": 1
+          },
+          {
+            "type": "Spice",
+            "amount": 1
           }
         ],
         "third": [
@@ -9284,23 +9311,33 @@
       "id": 909,
       "tier": 2,
       "name": "Machinations",
+      "distinctInfluenceFactions": true,
       "rewards": {
         "first": [
           {
             "type": "Influence",
-            "amount": 2,
+            "amount": 1,
+            "chooseFaction": true
+          },
+          {
+            "type": "Influence",
+            "amount": 1,
             "chooseFaction": true
           }
         ],
         "second": [
           {
             "type": "Solari",
-            "amount": 3
+            "amount": 2
+          },
+          {
+            "type": "Water",
+            "amount": 1
           }
         ],
         "third": [
           {
-            "type": "Spice",
+            "type": "Water",
             "amount": 1
           }
         ]
@@ -9309,18 +9346,26 @@
     {
       "id": 910,
       "tier": 2,
-      "name": "Desert Raid",
+      "name": "Desert Power",
       "rewards": {
         "first": [
           {
-            "type": "Spice",
-            "amount": 4
+            "type": "VP",
+            "amount": 1
+          },
+          {
+            "type": "Water",
+            "amount": 1
           }
         ],
         "second": [
           {
             "type": "Spice",
-            "amount": 2
+            "amount": 1
+          },
+          {
+            "type": "Water",
+            "amount": 1
           }
         ],
         "third": [
@@ -9334,12 +9379,45 @@
     {
       "id": 911,
       "tier": 2,
-      "name": "Spice Harvest",
+      "name": "Raid Stockpiles",
       "rewards": {
         "first": [
           {
             "type": "Spice",
             "amount": 3
+          },
+          {
+            "type": "Intrigue",
+            "amount": 1
+          }
+        ],
+        "second": [
+          {
+            "type": "Spice",
+            "amount": 2
+          }
+        ],
+        "third": [
+          {
+            "type": "Spice",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 912,
+      "tier": 2,
+      "name": "Sort Through The Chaos",
+      "rewards": {
+        "first": [
+          {
+            "type": "Mentat",
+            "amount": 1
+          },
+          {
+            "type": "Intrigue",
+            "amount": 1
           },
           {
             "type": "Solari",
@@ -9348,7 +9426,11 @@
         ],
         "second": [
           {
-            "type": "Spice",
+            "type": "Intrigue",
+            "amount": 1
+          },
+          {
+            "type": "Solari",
             "amount": 2
           }
         ],
@@ -9361,9 +9443,9 @@
       }
     },
     {
-      "id": 912,
+      "id": 913,
       "tier": 2,
-      "name": "Supply Lines",
+      "name": "Guild Bank Raid",
       "rewards": {
         "first": [
           {
@@ -9374,38 +9456,13 @@
         "second": [
           {
             "type": "Solari",
-            "amount": 3
+            "amount": 4
           }
         ],
         "third": [
           {
-            "type": "Spice",
-            "amount": 1
-          }
-        ]
-      }
-    },
-    {
-      "id": 913,
-      "tier": 2,
-      "name": "Rally the Troops",
-      "rewards": {
-        "first": [
-          {
-            "type": "Troops",
-            "amount": 3
-          }
-        ],
-        "second": [
-          {
-            "type": "Troops",
+            "type": "Solari",
             "amount": 2
-          }
-        ],
-        "third": [
-          {
-            "type": "Spice",
-            "amount": 1
           }
         ]
       }
@@ -9413,21 +9470,25 @@
     {
       "id": 914,
       "tier": 2,
-      "name": "Political Maneuvering",
+      "name": "Terrible Purpose",
       "rewards": {
         "first": [
           {
-            "type": "Influence",
-            "amount": 2
+            "type": "VP",
+            "amount": 1
           },
           {
-            "type": "Solari",
-            "amount": 2
+            "type": "Trash",
+            "amount": 1
           }
         ],
         "second": [
           {
-            "type": "Intrigue",
+            "type": "Spice",
+            "amount": 1
+          },
+          {
+            "type": "Water",
             "amount": 1
           }
         ],
@@ -9489,6 +9550,7 @@
           {
             "type": "Intrigue",
             "amount": 0,
+            "choicePickCount": 2,
             "choiceOptions": [
               {
                 "type": "Intrigue",
@@ -9559,7 +9621,7 @@
         "first": [
           {
             "type": "Influence",
-            "amount": 1,
+            "amount": 2,
             "chooseFaction": true
           },
           {
@@ -9573,14 +9635,14 @@
             "amount": 1
           },
           {
-            "type": "Solari",
+            "type": "Spice",
             "amount": 3
           }
         ],
         "third": [
           {
-            "type": "Solari",
-            "amount": 3
+            "type": "Spice",
+            "amount": 1
           }
         ]
       }
@@ -9648,7 +9710,7 @@
     {
       "id": 921,
       "tier": 3,
-      "name": "Economy Supremacy",
+      "name": "Economic Supremacy",
       "rewards": {
         "first": [
           {
@@ -9672,10 +9734,6 @@
                 "cost": {
                   "spice": 4
                 }
-              },
-              {
-                "type": "Tech",
-                "amount": 1
               }
             ]
           }
@@ -9726,7 +9784,7 @@
         ],
         "third": [
           {
-            "type": "Intrigue",
+            "type": "multi-choice",
             "amount": 0,
             "choiceOptions": [
               {
@@ -11164,6 +11222,7 @@
     "LIET_KYNES",
     "SECRETS_STEAL",
     "POWER_PLAY",
+    "FOLDSPACE_DRAW",
     "REVEREND_MOTHER_MOHIAM",
     "TEST_OF_HUMANITY",
     "THE_VOICE",

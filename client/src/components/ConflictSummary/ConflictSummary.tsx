@@ -10,9 +10,11 @@ function formatRewards(rewards: ConflictReward[] = []) {
   if (!rewards.length) return <span className="no-reward">-</span>
   return rewards.map((r, i) => {
     if (r.choiceOptions && r.choiceOptions.length > 0) {
+      const pickCount = r.choicePickCount ?? 1
+      const pickLabel = pickCount === 1 ? 'Choose one' : `Choose ${pickCount} unique`
       return (
         <span key={i} className="reward reward-choice">
-          Choose one: {r.choiceOptions.map((opt, j) => (
+          {pickLabel}: {r.choiceOptions.map((opt, j) => (
             <React.Fragment key={j}>
               {j > 0 && ' or '}
               {opt.amount} {opt.type}

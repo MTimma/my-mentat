@@ -27,14 +27,86 @@ export function filterConflictInfluenceOptions(
   })
 }
 
+function isBlockedDistinctGroupChoice(
+  choice: ConflictRewardChoice,
+  pending: ConflictRewardChoice[],
+  groupKey: 'distinctFactionGroup' | 'distinctChoiceGroup'
+): boolean {
+  const groupId = choice[groupKey]
+  if (!groupId) return false
+  const group = pending.filter(c => c[groupKey] === groupId)
+  return group[0]?.id !== choice.id
+}
+
 /** Only the first pending choice in a distinct-faction group may be resolved. */
 export function isBlockedDistinctFactionChoice(
   choice: ConflictRewardChoice,
   pending: ConflictRewardChoice[]
 ): boolean {
-  if (!choice.distinctFactionGroup) return false
-  const group = pending.filter(c => c.distinctFactionGroup === choice.distinctFactionGroup)
-  return group[0]?.id !== choice.id
+  return isBlockedDistinctGroupChoice(choice, pending, 'distinctFactionGroup')
+}
+
+/** Only the first pending choice in a distinct-choice group may be resolved. */
+export function isBlockedDistinctChoiceGroup(
+  choice: ConflictRewardChoice,
+  pending: ConflictRewardChoice[]
+): boolean {
+  return isBlockedDistinctGroupChoice(choice, pending, 'distinctChoiceGroup')
+}
+
+/** Block later sequential picks in linked faction or choice-option groups. */
+export function isBlockedSequentialConflictChoice(
+  choice: ConflictRewardChoice,
+  pending: ConflictRewardChoice[]
+): boolean {
+  return (
+    isBlockedDistinctFactionChoice(choice, pending) ||
+    isBlockedDistinctChoiceGroup(choice, pending)
+  )
+}
+
+export function filterConflictChoiceOptions(
+  options: ChoiceOption[],
+  excludedIndices: number[]
+): ChoiceOption[] {
+  if (excludedIndices.length === 0) return options
+  const excluded = new Set(excludedIndices)
+  return options.filter((_, index) => !excluded.has(index))
+}
+
+/** Map a visible option index to its index in fullOptions. */
+export function originalChoiceOptionIndex(
+  choice: ConflictRewardChoice,
+  visibleOptionIndex: number
+): number | undefined {
+  const full = choice.fullOptions ?? choice.options
+  const excluded = new Set(choice.excludedChoiceIndices ?? [])
+  let visible = 0
+  for (let i = 0; i < full.length; i++) {
+    if (excluded.has(i)) continue
+    if (visible === visibleOptionIndex) return i
+    visible++
+  }
+  return undefined
+}
+
+export function applyDistinctChoiceExclusion(
+  pending: ConflictRewardChoice[],
+  resolvedChoice: ConflictRewardChoice,
+  pickedOriginalIndex: number
+): ConflictRewardChoice[] {
+  if (!resolvedChoice.distinctChoiceGroup) return pending
+
+  return pending.map(choice => {
+    if (choice.distinctChoiceGroup !== resolvedChoice.distinctChoiceGroup) return choice
+    const excludedChoiceIndices = [...(choice.excludedChoiceIndices ?? []), pickedOriginalIndex]
+    const fullOptions = choice.fullOptions ?? choice.options
+    return {
+      ...choice,
+      excludedChoiceIndices,
+      options: filterConflictChoiceOptions(fullOptions, excludedChoiceIndices),
+    }
+  })
 }
 
 export function applyDistinctFactionExclusion(

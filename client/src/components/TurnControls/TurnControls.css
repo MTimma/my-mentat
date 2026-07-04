@@ -2451,8 +2451,9 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
     inset 0 0 16px rgba(255, 240, 200, 0.18);
 }
 
-/* Power Play — static blue frame + fill (no animated gradient) */
-.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.effect-btn--power-play::before {
+/* Power Play / Foldspace draw — static blue frame + fill (no animated gradient) */
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.effect-btn--power-play::before,
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.effect-btn--foldspace-draw::before {
   inset: 0;
   padding: 3px;
   animation: none;
@@ -2460,13 +2461,15 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   background-size: 100% 100%;
 }
 
-.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.effect-btn--power-play::after {
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.effect-btn--power-play::after,
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.effect-btn--foldspace-draw::after {
   animation: none;
   background: rgba(80, 165, 255, 0.38);
   box-shadow: none;
 }
 
-.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.effect-btn--power-play:hover:not(:disabled)::after {
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.effect-btn--power-play:hover:not(:disabled)::after,
+.card-effects-dialog .effect-btn--overlay.effect-btn--overlay-frame.effect-btn--foldspace-draw:hover:not(:disabled)::after {
   background: rgba(80, 165, 255, 0.44);
   box-shadow: none;
 }

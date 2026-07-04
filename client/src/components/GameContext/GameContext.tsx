@@ -44,6 +44,7 @@ import {
   consumeExtraTurn,
   handleAcquireTech,
   handleActivateTech,
+  handleActivateTechDiscard,
   handleTechNegotiator,
   applyHoloprojectorsDiscard,
   applyInvasionShipsDiscard,
@@ -138,10 +139,12 @@ import {
 import { isSoleTrashThisCardReward } from '../../utils/pendingRewardAutoApply'
 import { conflictInfluenceGainName } from '../../utils/influenceDisplay'
 import {
+  applyDistinctChoiceExclusion,
   applyDistinctFactionExclusion,
   distinctFactionGroupKey,
   factionFromConflictChoiceReward,
-  isBlockedDistinctFactionChoice,
+  isBlockedSequentialConflictChoice,
+  originalChoiceOptionIndex,
 } from '../../utils/conflictDistinctFactions'
 import { dreadnoughtStrengthEach } from '../../data/leaderAbilities/rhomburDreadnoughtStrength'
 import {
@@ -382,6 +385,8 @@ export type GameAction =
       }
     | { type: 'TECH_NEGOTIATOR'; playerId: number; amount: number }
     | { type: 'ACTIVATE_TECH'; playerId: number; tileId: TechTileId }
+    | { type: 'ACTIVATE_TECH_DISCARD'; playerId: number; tileId: TechTileId; cardIds: number[] }
+    | { type: 'ACTIVATE_TECH_DISCARD'; playerId: number; tileId: TechTileId; cardIds: number[] }
     // Immortality
     | { type: 'ADVANCE_RESEARCH'; playerId: number; nodeId: string }
     | { type: 'SET_RESEARCH_NODE'; playerId: number; nodeId: string }
@@ -4002,22 +4007,34 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           state.currentConflict.distinctInfluenceFactions === true &&
           reward.chooseFaction &&
           reward.type === RewardType.INFLUENCE
-        pendingChoices.push({
-          id: nextSemanticId(
-            { type: 'conflict', id: state.currentConflict.id },
-            `CONFLICT-REWARD-${placement}-p${playerIds[0]}`,
-            [...(state.pendingConflictRewardChoices ?? []).map(c => c.id), ...pendingChoices.map(c => c.id)]
-          ),
-          playerId: playerIds[0],
-          placement,
-          conflictId: state.currentConflict.id,
-          conflictName: state.currentConflict.name,
-          options,
-          distinctFactionGroup: useDistinctFactions
-            ? distinctFactionGroupKey(state.currentConflict.id, placement, playerIds[0])
-            : undefined,
-          excludedFactions: [],
-        })
+        const pickCount = Math.max(1, reward.choicePickCount ?? 1)
+        const useDistinctChoices =
+          pickCount > 1 && reward.choiceOptions != null && reward.choiceOptions.length > 0
+        const distinctChoiceGroup = useDistinctChoices
+          ? distinctFactionGroupKey(state.currentConflict.id, placement, playerIds[0])
+          : undefined
+
+        for (let pick = 0; pick < pickCount; pick++) {
+          pendingChoices.push({
+            id: nextSemanticId(
+              { type: 'conflict', id: state.currentConflict.id },
+              `CONFLICT-REWARD-${placement}-p${playerIds[0]}`,
+              [...(state.pendingConflictRewardChoices ?? []).map(c => c.id), ...pendingChoices.map(c => c.id)]
+            ),
+            playerId: playerIds[0],
+            placement,
+            conflictId: state.currentConflict.id,
+            conflictName: state.currentConflict.name,
+            options,
+            distinctFactionGroup: useDistinctFactions
+              ? distinctFactionGroupKey(state.currentConflict.id, placement, playerIds[0])
+              : undefined,
+            excludedFactions: [],
+            distinctChoiceGroup,
+            excludedChoiceIndices: [],
+            fullOptions: useDistinctChoices ? options : undefined,
+          })
+        }
       }
 
       const applyPlacementRewards = (
@@ -4128,14 +4145,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       const choice = pending.find(c => c.id === choiceId)
       if (!choice) return state
-      if (isBlockedDistinctFactionChoice(choice, pending)) return state
+      if (isBlockedSequentialConflictChoice(choice, pending)) return state
 
       // Decision events: optionIndex selects from the live choice's options.
       let reward = action.reward
+      let pickedOriginalIndex: number | undefined
       if (action.optionIndex != null) {
         const selected = choice.options[action.optionIndex]
         if (!selected) return state
         reward = selected.reward
+        if (choice.distinctChoiceGroup) {
+          pickedOriginalIndex = originalChoiceOptionIndex(choice, action.optionIndex)
+          if (pickedOriginalIndex == null) return state
+        }
       }
       if (!reward) return state
 
@@ -4150,6 +4172,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       let remaining = pending.filter(c => c.id !== choiceId)
       if (chosenFaction) {
         remaining = applyDistinctFactionExclusion(remaining, choice, chosenFaction)
+      }
+      if (pickedOriginalIndex != null) {
+        remaining = applyDistinctChoiceExclusion(remaining, choice, pickedOriginalIndex)
       }
       newState = { ...newState, pendingConflictRewardChoices: remaining.length > 0 ? remaining : undefined }
 
@@ -7302,6 +7327,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           const powerPlayBonus = applyPowerPlayBonusAfterInfluenceClaimed(state, playerId)
           return appendTessiaPendingChoices(powerPlayBonus.state, powerPlayBonus.pendingChoices)
         }
+        case CustomEffect.FOLDSPACE_DRAW: {
+          const player = state.players.find(p => p.id === playerId)
+          if (!player) return state
+          const cardId = typeof data?.cardId === 'number' ? data.cardId : undefined
+          const sourceCard = cardId != null ? player.playArea.find(c => c.id === cardId) : undefined
+          const source = {
+            type: GainSource.CARD,
+            id: cardId ?? 0,
+            name: sourceCard?.name ?? 'Foldspace',
+          }
+          const newGains = [...state.gains]
+          const newPlayer = applyRewardToPlayer({ drawCards: 1 }, { ...player }, newGains, state, source)
+          return {
+            ...state,
+            players: state.players.map(p => (p.id === playerId ? newPlayer : p)),
+            gains: newGains,
+          }
+        }
         case CustomEffect.REVEREND_MOTHER_MOHIAM: {
           const player = state.players.find(p => p.id === playerId)
           if (!player) return state
@@ -8197,6 +8240,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return handleAcquireTech(state, action)
     case 'ACTIVATE_TECH':
       return handleActivateTech(state, action)
+    case 'ACTIVATE_TECH_DISCARD':
+      return handleActivateTechDiscard(state, action)
     case 'TECH_NEGOTIATOR':
       return handleTechNegotiator(state, action)
     case 'ADVANCE_RESEARCH':
