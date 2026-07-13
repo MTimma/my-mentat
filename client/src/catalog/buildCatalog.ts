@@ -379,19 +379,26 @@ function buildIntrigueEntries(
   cards: IntrigueCard[],
   source?: { riseOfIx?: boolean; immortality?: boolean }
 ): CatalogIntrigueEntry[] {
-  return cards.map(card => ({
-    id: card.id,
-    name: card.name,
-    type: card.type,
-    description: card.description,
-    image: card.image,
-    targetPlayer: card.targetPlayer,
-    riseOfIx: source?.riseOfIx,
-    immortality: source?.immortality,
-    effects: {
-      play: registerEffects(registry, 'intrigue', card.id, 'play', card.playEffect),
-    },
-  }))
+  return cards.map(card => {
+    const effectOwnerId = source?.riseOfIx
+      ? `roi-${card.id}`
+      : source?.immortality
+        ? `imm-${card.id}`
+        : card.id
+    return {
+      id: card.id,
+      name: card.name,
+      type: card.type,
+      description: card.description,
+      image: card.image,
+      targetPlayer: card.targetPlayer,
+      riseOfIx: source?.riseOfIx,
+      immortality: source?.immortality,
+      effects: {
+        play: registerEffects(registry, 'intrigue', effectOwnerId, 'play', card.playEffect),
+      },
+    }
+  })
 }
 
 export function buildCatalog(): Catalog {

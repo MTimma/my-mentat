@@ -14,7 +14,7 @@ function placeAgent(
   playerId: number,
   cardId: number,
   spaceId: number,
-  extra?: { sellMelangeData?: { spiceCost: number; solariReward: number }; selectiveBreedingData?: { trashedCardId: number } }
+  extra?: { sellMelangeData?: { spiceCost: number; solariReward: number } }
 ) {
   let s = getBaseTestState({ solari: 20, spice: 10, water: 3 })
   s = withCardOnTop(s, playerId, stubDeckCard(cardId, { agentIcons: [AgentIcon.LANDSRAAD] }))
@@ -97,7 +97,6 @@ describe('Board space access costs in turn history', () => {
       type: 'PLACE_AGENT',
       playerId: 0,
       spaceId: SELECTIVE_BREEDING_ID,
-      selectiveBreedingData: { trashedCardId: trashed.id },
     })
 
     const gains = getGainsForTurnState(s)

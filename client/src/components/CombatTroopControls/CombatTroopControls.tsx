@@ -1,7 +1,6 @@
 import React from 'react'
 import { PlayerColor } from '../../types/GameTypes'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
-import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import './CombatTroopControls.css'
 
 export interface CombatTroopControlsProps {
@@ -11,7 +10,7 @@ export interface CombatTroopControlsProps {
   garrisonTroops: number
   onDeploy: () => void
   onUndeploy: () => void
-  variant?: 'troop' | 'dreadnought' | 'negotiator'
+  variant?: 'troop' | 'dreadnought' | 'specimen'
   playerId?: number
   playerColor?: PlayerColor
   className?: string
@@ -32,8 +31,8 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
   style,
 }) => {
   const isDreadnought = variant === 'dreadnought'
-  const isNegotiator = variant === 'negotiator'
-  const unitLabel = isDreadnought ? 'dreadnought' : isNegotiator ? 'negotiator' : 'troop'
+  const isSpecimen = variant === 'specimen'
+  const unitLabel = isDreadnought ? 'dreadnought' : isSpecimen ? 'specimen' : 'troop'
   const iconSrc = '/icon/troop.png'
 
   const visible =
@@ -64,12 +63,8 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
             color={playerColor}
             className="troop-action-icon troop-action-icon--dreadnought"
           />
-        ) : isNegotiator ? (
-          <NegotiatorIcon
-            playerId={playerId}
-            color={playerColor}
-            className="troop-action-icon troop-action-icon--negotiator"
-          />
+        ) : isSpecimen ? (
+          <img src="icon/specimen.png" alt="" className="troop-action-icon troop-action-icon--specimen" />
         ) : (
           <img src={iconSrc} alt="" className="troop-action-icon" />
         )}

@@ -80,7 +80,7 @@ describe('END_TURN gating — mandatory pending work blocks the turn', () => {
       id: 'test-card-select',
       type: ChoiceType.CARD_SELECT,
       prompt: 'Choose a card to trash',
-      piles: [CardPile.HAND, CardPile.DISCARD],
+      piles: [CardPile.DECK, CardPile.DISCARD],
       selectionCount: 1,
       onResolve: (cardIds: number[]) => ({ type: 'TRASH_CARD', playerId: 0, cardId: cardIds[0] }),
       source: { type: GainSource.CARD, id: 8103, name: 'stub-8103' },

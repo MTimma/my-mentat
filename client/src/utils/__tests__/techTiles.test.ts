@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { TECH_TILES, TechTileId } from '../../data/techTiles'
-import { canPlayerAffordTechTile, techActivationRequiresDiscard, techDiscardActivationPrompt, techTilesAvailableForNextReveal } from '../techTiles'
+import { canPlayerAffordTechTile, techActivationRequiresDiscard, techDiscardActivationPrompt, techTileIdFromDiscardPrompt, techTilesAvailableForNextReveal } from '../techTiles'
 import { makePlayer } from '../../components/GameContext/__tests__/_helpers'
 
 describe('canPlayerAffordTechTile', () => {
@@ -53,6 +53,16 @@ describe('tech discard activation helpers', () => {
     expect(techDiscardActivationPrompt(TechTileId.HOLOPROJECTORS)).toContain('Holoprojectors')
     expect(techDiscardActivationPrompt(TechTileId.INVASION_SHIPS)).toContain('Invasion Ships')
     expect(techDiscardActivationPrompt(TechTileId.FLAGSHIP)).toBeUndefined()
+  })
+
+  it('maps legacy discard prompts back to tech tile ids', () => {
+    expect(techTileIdFromDiscardPrompt('Holoprojectors: discard 1 card to draw 1')).toBe(
+      TechTileId.HOLOPROJECTORS
+    )
+    expect(techTileIdFromDiscardPrompt('Invasion Ships: discard 1 card to ignore enemy agents this turn')).toBe(
+      TechTileId.INVASION_SHIPS
+    )
+    expect(techTileIdFromDiscardPrompt('Choose one reward')).toBeUndefined()
   })
 })
 

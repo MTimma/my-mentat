@@ -72,27 +72,6 @@ export function canPlayerAffordTechTile(
   return paySolariInsteadOfSpice ? player.solari >= cost : player.spice >= cost
 }
 
-const PLAYER_ACTIVATABLE_TIMINGS = new Set([
-  TechTileTiming.AGENT,
-  TechTileTiming.AGENT_REVEAL_ONCE_PER_ROUND,
-  TechTileTiming.AGENT_REVEAL_ONE_TIME,
-])
-
-function turnMatchesTiming(turnType: TurnType | undefined, timing: TechTileTiming): boolean {
-  if (timing === TechTileTiming.AGENT) return turnType === TurnType.ACTION
-  if (
-    timing === TechTileTiming.AGENT_REVEAL_ONCE_PER_ROUND ||
-    timing === TechTileTiming.AGENT_REVEAL_ONE_TIME
-  ) {
-    return turnType === TurnType.ACTION || turnType === TurnType.REVEAL
-  }
-  return false
-}
-
-function hasActivatableTiming(tile: TechTile, turnType: TurnType | undefined): boolean {
-  return tile.timing.some(t => PLAYER_ACTIVATABLE_TIMINGS.has(t) && turnMatchesTiming(turnType, t))
-}
-
 function isActivatedThisRound(state: GameState, playerId: number, tileId: TechTileIdType): boolean {
   const player = state.players.find(p => p.id === playerId)
   return (player?.activatedTechThisRound ?? []).includes(tileId)
@@ -112,6 +91,13 @@ export function techDiscardActivationPrompt(tileId: TechTileIdType): string | un
     default:
       return undefined
   }
+}
+
+/** Legacy saves enqueued tech discard as CARD_SELECT pending choices — map prompt back to tile id. */
+export function techTileIdFromDiscardPrompt(prompt: string): TechTileIdType | undefined {
+  if (prompt.startsWith('Holoprojectors:')) return TechTileId.HOLOPROJECTORS
+  if (prompt.startsWith('Invasion Ships:')) return TechTileId.INVASION_SHIPS
+  return undefined
 }
 
 function canAffordActivation(state: GameState, playerId: number, tileId: TechTileIdType): boolean {
@@ -137,18 +123,14 @@ function canAffordActivation(state: GameState, playerId: number, tileId: TechTil
 export function tilesActivatableNow(state: GameState, playerId: number): TechTile[] {
   if (!state.expansions.riseOfIx) return []
   if (state.phase !== GamePhase.PLAYER_TURNS) return []
-  if (state.currTurn?.playerId !== playerId) return []
 
   const player = state.players.find(p => p.id === playerId)
   if (!player) return []
-
-  const turnType = state.currTurn.type
 
   return (player.tech ?? [])
     .filter(t => t.faceUp)
     .map(t => tileById(t.id))
     .filter((tile): tile is TechTile => tile != null)
-    .filter(tile => hasActivatableTiming(tile, turnType))
     .filter(tile => !isActivatedThisRound(state, playerId, tile.id))
     .filter(tile => canAffordActivation(state, playerId, tile.id))
 }

@@ -144,6 +144,61 @@
   pointer-events: none;
 }
 
+.card-search-pile-tabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+  width: 100%;
+  padding-top: 8px;
+  border-top: 1px solid #333;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.card-search-pile-tab {
+  flex: 1 1 0;
+  min-width: max-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: #bbb;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.card-search-pile-tab:hover {
+  background: #333;
+  color: #fff;
+}
+
+.card-search-pile-tab--active {
+  background: #3d3420;
+  border-color: #c9a227;
+  color: #f5e6b8;
+}
+
+.card-search-pile-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.card-search-pile-tab--active .card-search-pile-tab-count {
+  background: rgba(201, 162, 39, 0.25);
+}
+
 .dialog-title {
   grid-area: dialog-title;
   display: flex;
@@ -305,7 +360,7 @@
   aspect-ratio: 2.5/3.5;
   display: flex;
   flex-direction: column;
-  width: 150px;
+  width: 200px;
   margin: 0;
   transform: scale(0.7);
   z-index: 1;
@@ -521,7 +576,7 @@
 
   /* Smaller cards so more fit in viewport */
   .card-selection-dialog-overlay-standalone > .card-selection-dialog .cards-grid .card {
-    width: 110px;
+    width: 150px;
     transform: scale(0.75);
   }
 
@@ -559,6 +614,12 @@
     padding-top: 16px;
     padding-bottom: 0;
   }
+
+  .card-selection-dialog-overlay-standalone > .card-selection-dialog .card-search-pile-tabs {
+    flex-shrink: 0;
+    width: 100%;
+    padding-top: 12px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -588,7 +649,7 @@
   }
 
   .dialog-actions {
-    order: 2;
+    order: 3;
     flex: 0 0 auto;
     flex-shrink: 0;
     flex-wrap: wrap;
@@ -611,6 +672,12 @@
     overflow-x: hidden;
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .card-search-selection-preview,
+  .card-search-pile-tabs {
+    order: 2;
+    flex-shrink: 0;
   }
 
   /* Compact card sizing on mobile - same as Imperium Row Select */
@@ -746,7 +813,7 @@
 }
 
 .card-selection-dialog--board-compact .cards-grid .card {
-  width: 56px;
+  width: 150px;
   min-width: 56px;
   transform: none;
   padding: 2px;
@@ -771,6 +838,16 @@
 .card-selection-dialog--board-compact .card-search-selection-preview-slot {
   width: 40px;
   height: 56px;
+}
+
+.card-selection-dialog--board-compact .card-search-pile-tabs {
+  gap: 4px;
+  padding-top: 4px;
+}
+
+.card-selection-dialog--board-compact .card-search-pile-tab {
+  padding: 5px 8px;
+  font-size: 0.75rem;
 }
 
 .card-selection-dialog--board-compact .dialog-actions {
@@ -807,7 +884,7 @@
   > .card-selection-dialog:not(.card-selection-dialog--board-compact)
   .cards-grid
   .card {
-  width: 56px;
+  width: 150px;
   min-width: 56px;
   transform: none;
   padding: 2px;

@@ -3,24 +3,25 @@ import type { GameState, GameTurn, Player, Reward } from '../types/GameTypes'
 /** Each player has 12 troop pieces total (supply + garrison + conflict [+ Ix negotiators in RoI]). */
 export const MAX_TROOPS_PER_PLAYER = 12
 
-/** Pieces across supply, garrison, conflict troops, and (RoI) negotiators on Ix / in conflict. */
+/** Pieces across supply, garrison, conflict troops, negotiators on Ix, and specimens in tanks. */
 export function totalTroopPieces(
   player: Player,
   combatTroops = 0,
-  combatNegotiators = 0
+  combatSpecimens = 0
 ): number {
   return (
     (player.troopSupply ?? 0) +
     player.troops +
     combatTroops +
     (player.negotiatorsOnIx ?? 0) +
-    combatNegotiators
+    (player.specimens ?? 0) +
+    combatSpecimens
   )
 }
 
 /** Seed supply so in-play pieces + supply = 12. */
 export function seedTroopSupply(player: Player): Player {
-  const inPlay = player.troops + (player.negotiatorsOnIx ?? 0)
+  const inPlay = player.troops + (player.negotiatorsOnIx ?? 0) + (player.specimens ?? 0)
   const supply = Math.max(0, MAX_TROOPS_PER_PLAYER - inPlay)
   return { ...player, troopSupply: supply }
 }
@@ -74,7 +75,7 @@ export function returnNegotiatorsToSupply(player: Player, amount: number): Playe
   }
 }
 
-/** Reward recruits troops and allows deploying only those new units (not garrison/dreadnought/negotiator). */
+/** Reward recruits troops and allows deploying only those new units (not garrison or dreadnought). */
 export function isDeployTheseRecruitedTroops(
   reward: Pick<Reward, 'troops' | 'deployTroops'>
 ): boolean {
@@ -101,7 +102,7 @@ export function applyDeployTroopsAllowance(
   }
 }
 
-/** Shared deploy pool for garrison troops, dreadnoughts, and negotiators. */
+/** Shared deploy pool for garrison troops, dreadnoughts, and specimens. */
 export function getRemainingGeneralDeploySlots(state: GameState): number {
   const ct = state.currTurn
   if (!ct) return 0
@@ -110,8 +111,8 @@ export function getRemainingGeneralDeploySlots(state: GameState): number {
   const theseTroops = ct.removableTheseTroops ?? 0
   const generalTroops = Math.max(0, troops - theseTroops)
   const dreads = ct.removableDreadnoughts ?? 0
-  const negotiators = ct.removableNegotiators ?? 0
-  return Math.max(0, limit - generalTroops - dreads - negotiators)
+  const specimens = ct.removableSpecimens ?? 0
+  return Math.max(0, limit - generalTroops - dreads - specimens)
 }
 
 /** Exclusive pool for troops recruited by a "deploy these troops" effect. */
@@ -125,13 +126,13 @@ export function getRemainingTroopDeploySlots(state: GameState): number {
   return getRemainingGeneralDeploySlots(state) + getRemainingTheseTroopsDeploySlots(state)
 }
 
-/** After combat: conflict troops and negotiators return to supply. */
+/** After combat: conflict troops and specimens return to supply. */
 export function returnConflictUnitsToSupply(
   player: Player,
   troopCount: number,
-  negotiatorCount: number
+  specimenCount = 0
 ): Player {
-  const returned = troopCount + negotiatorCount
+  const returned = troopCount + specimenCount
   if (returned <= 0) return player
   return {
     ...player,

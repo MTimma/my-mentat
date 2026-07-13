@@ -27,10 +27,10 @@ const GAIN_ONE_INFLUENCE_CHOOSE: InfluenceAmounts = {
   ],
 }
 
-/** Rise of Ix — 17 intrigue cards (ids 33–49). */
+/** Rise of Ix — 17 intrigue cards (ids 100–116; base game uses 1–34). */
 export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
   {
-    id: 33,
+    id: 100,
     name: 'Blackmail',
     type: IntrigueCardType.COMBAT,
     description: 'Combat: Lose 1 influence (your choice) to gain +5 strength.',
@@ -45,7 +45,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     ],
   },
   {
-    id: 34,
+    id: 101,
     name: 'Cannon Turrets',
     type: IntrigueCardType.COMBAT,
     description: 'Combat: +2 strength. Each opponent retreats 1 dreadnought from the Conflict.',
@@ -57,7 +57,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     ],
   },
   {
-    id: 35,
+    id: 102,
     name: 'Strategic Push',
     type: IntrigueCardType.COMBAT,
     description: 'Combat: +2 strength. If you win this Conflict: +2 Solari.',
@@ -69,7 +69,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     ],
   },
   {
-    id: 36,
+    id: 103,
     name: 'Second Wave',
     type: IntrigueCardType.COMBAT,
     description: 'Combat: +2 strength. Deploy up to 2 units from your garrison to the Conflict.',
@@ -81,7 +81,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     ],
   },
   {
-    id: 37,
+    id: 104,
     name: 'War Chest',
     type: IntrigueCardType.COMBAT,
     description:
@@ -94,7 +94,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     ],
   },
   {
-    id: 38,
+    id: 105,
     name: 'Finesse',
     type: IntrigueCardType.COMBAT,
     description:
@@ -111,7 +111,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     ],
   },
   {
-    id: 39,
+    id: 106,
     name: 'Advanced Weaponry',
     type: IntrigueCardType.COMBAT,
     description:
@@ -124,7 +124,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     ],
   },
   {
-    id: 40,
+    id: 107,
     name: 'Grand Conspiracy',
     type: IntrigueCardType.ENDGAME,
     description:
@@ -134,7 +134,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     playEffect: [{ phase: GamePhase.END_GAME, reward: { custom: CustomEffect.GRAND_CONSPIRACY } }],
   },
   {
-    id: 41,
+    id: 108,
     name: 'Strongarm',
     type: IntrigueCardType.PLOT,
     description: 'Lose a troop to gain 1 influence on the faction track where you placed an Agent this turn.',
@@ -143,7 +143,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     playEffect: [{ cost: { troops: 1 }, reward: { custom: CustomEffect.STRONGARM } }],
   },
   {
-    id: 42,
+    id: 109,
     name: 'Ixian Probe',
     type: IntrigueCardType.PLOT,
     description: 'Discard 2 cards to draw 2 cards.',
@@ -152,7 +152,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     playEffect: [{ cost: { discard: 2 }, reward: { drawCards: 2 } }],
   },
   {
-    id: 43,
+    id: 110,
     name: 'Cull',
     type: IntrigueCardType.PLOT,
     description: 'Pay 1 Solari to trash 1 card.',
@@ -161,7 +161,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     playEffect: [{ cost: { solari: 1 }, reward: { trash: 1 } }],
   },
   {
-    id: 44,
+    id: 111,
     name: 'Secret Forces',
     type: IntrigueCardType.PLOT,
     description: 'Gain 2 troops if you have a seat on the High Council.',
@@ -170,7 +170,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     playEffect: [{ requirement: { highCouncil: true }, reward: { troops: 2 } }],
   },
   {
-    id: 45,
+    id: 112,
     name: 'Quid Pro Quo',
     type: IntrigueCardType.PLOT,
     description:
@@ -180,7 +180,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     playEffect: [{ cost: { spice: 2 }, reward: { custom: CustomEffect.QUID_PRO_QUO } }],
   },
   {
-    id: 46,
+    id: 113,
     name: 'Glimpse the Path',
     type: IntrigueCardType.PLOT,
     description: 'Pay 1 spice to gain 1 water and draw 1 card.',
@@ -189,7 +189,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     playEffect: [{ cost: { spice: 1 }, reward: { water: 1, drawCards: 1 } }],
   },
   {
-    id: 47,
+    id: 114,
     name: 'Diversion',
     type: IntrigueCardType.PLOT,
     description: 'When you deploy 4 units to the Conflict in one turn, gain +1 on the Shipping track.',
@@ -198,7 +198,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     playEffect: [{ reward: { custom: CustomEffect.DIVERSION } }],
   },
   {
-    id: 48,
+    id: 115,
     name: 'Expedite',
     type: IntrigueCardType.PLOT,
     description: 'Pay 1 spice to advance 1 space on the Shipping track.',
@@ -207,7 +207,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     playEffect: [{ cost: { spice: 1 }, reward: { freighter: 1 } }],
   },
   {
-    id: 49,
+    id: 116,
     name: 'Machine Culture',
     type: IntrigueCardType.PLOT,
     description: 'Plot: Acquire 1 tech tile —OR— Endgame: If you have 3 tech: gain 1 VP.',

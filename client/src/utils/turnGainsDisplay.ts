@@ -1,5 +1,6 @@
 import { Gain, GainSource, GameState, GameTurn, RewardType } from '../types/GameTypes'
 import { BOARD_SPACES } from '../data/boardSpaces'
+import { catalogDeckCardNameById, catalogIntrigueNameById } from './cardCatalogLookup'
 import { factionFromInfluenceGainName } from './influenceDisplay'
 import {
   TechTileId,
@@ -261,6 +262,23 @@ export function getRepeatedIconDisplay(
   return { iconCount: maxIcons, showTotalMultiplier: true }
 }
 
+function trashedCardIdFromGain(gain: Gain): number | undefined {
+  if (gain.type !== RewardType.TRASH && gain.type !== RewardType.DISCARD) return undefined
+  return gain.cardId ?? gain.sourceId
+}
+
+function trashDiscardSourceTitleForGain(gain: Gain): string | undefined {
+  if (gain.type !== RewardType.TRASH && gain.type !== RewardType.DISCARD) return undefined
+  switch (gain.source) {
+    case GainSource.CARD:
+      return catalogDeckCardNameById(gain.sourceId)
+    case GainSource.INTRIGUE:
+      return catalogIntrigueNameById(gain.sourceId)
+    default:
+      return undefined
+  }
+}
+
 /** Board-space title for grouping mandatory rewards from the same space (e.g. Foldspace card + influence). */
 function boardSpaceTitleForGain(gain: Gain): string | undefined {
   if (gain.source !== GainSource.BOARD_SPACE) return undefined
@@ -290,7 +308,12 @@ function abilityTitleForGain(gain: Gain): string | undefined {
 }
 
 function titleForGainGroup(gain: Gain): string {
-  return abilityTitleForGain(gain) ?? boardSpaceTitleForGain(gain) ?? gain.name
+  return (
+    abilityTitleForGain(gain) ??
+    boardSpaceTitleForGain(gain) ??
+    trashDiscardSourceTitleForGain(gain) ??
+    gain.name
+  )
 }
 
 function conflictPlayerKey(sourceId: number, playerId: number): string {
@@ -370,11 +393,18 @@ export function aggregateResourceGains(gains: Gain[]): AggregatedResourceGain[] 
 
   gains.forEach(gain => {
     if (gain.type === RewardType.INFLUENCE || gain.amount === 0) return
-    const isCardLike =
-      gain.type === RewardType.CARD ||
-      gain.type === RewardType.TRASH ||
-      gain.type === RewardType.DISCARD
-    const key = isCardLike ? `${gain.type}:${gain.sourceId}` : gain.type
+    const isTrashOrDiscard =
+      gain.type === RewardType.TRASH || gain.type === RewardType.DISCARD
+    const isCardLike = gain.type === RewardType.CARD || isTrashOrDiscard
+    const trashedCardId = isTrashOrDiscard ? trashedCardIdFromGain(gain) : undefined
+    const cardIdForAggregate = isTrashOrDiscard
+      ? trashedCardId
+      : gain.type === RewardType.CARD
+        ? gain.sourceId
+        : undefined
+    const key = isCardLike
+      ? `${gain.type}:${cardIdForAggregate ?? gain.sourceId}`
+      : gain.type
     const existing = aggregated.get(key)
     if (existing) {
       existing.amount += gain.amount
@@ -383,7 +413,7 @@ export function aggregateResourceGains(gains: Gain[]): AggregatedResourceGain[] 
         type: gain.type,
         amount: gain.amount,
         name: isCardLike ? gain.name : gain.type === RewardType.CARD ? gain.name : undefined,
-        cardId: isCardLike ? gain.sourceId : gain.type === RewardType.CARD ? gain.sourceId : undefined,
+        cardId: cardIdForAggregate,
       })
     }
   })
@@ -438,13 +468,14 @@ export function computeTurnGainTotals(gains: Gain[]): TurnGainTotals {
     }
 
     if (gain.type === RewardType.TRASH || gain.type === RewardType.DISCARD) {
-      const existing = cardMap.get(gain.sourceId)
+      const trashedCardId = trashedCardIdFromGain(gain) ?? gain.sourceId
+      const existing = cardMap.get(trashedCardId)
       const delta = Math.abs(gain.amount)
       if (existing) {
         existing.count += delta
       } else {
-        cardMap.set(gain.sourceId, {
-          cardId: gain.sourceId,
+        cardMap.set(trashedCardId, {
+          cardId: trashedCardId,
           name: gain.name,
           count: delta,
         })
@@ -545,22 +576,10 @@ export function splitGainsByCostAndReward(gains: Gain[]): { costs: Gain[]; rewar
   const costs: Gain[] = []
   const rewards: Gain[] = []
 
-  const isTrashThisCardWithDraw = (gain: Gain): boolean => {
-    if (gain.type !== RewardType.TRASH || gain.amount >= 0 || gain.source !== GainSource.CARD) {
-      return false
-    }
-    return gains.some(
-      g =>
-        g.source === GainSource.CARD &&
-        g.sourceId === gain.sourceId &&
-        g.type === RewardType.DRAW &&
-        g.amount > 0
-    )
-  }
-
   for (const gain of gains) {
     if (gain.amount === 0) continue
-    if (isTrashThisCardWithDraw(gain)) {
+    // Trashing a card is an effect (reward side), even though the gain amount is negative.
+    if (gain.type === RewardType.TRASH && gain.amount < 0) {
       rewards.push({ ...gain, amount: Math.abs(gain.amount) })
       continue
     }

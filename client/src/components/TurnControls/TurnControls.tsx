@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, Fragment } from 'react'
-import { Player, Card, Leader, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, InfluenceAmounts, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS } from '../../types/GameTypes'
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, Fragment } from 'react'
+import { Player, Card, Leader, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, InfluenceAmounts, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS, CounterChoice } from '../../types/GameTypes'
 import { intrigueCardHasCustom, intrigueHasPhaseEffect } from '../../utils/intrigueCardCustom'
 import { isKwisatzHaderachCard, isKwisatzAgentSourceChoice } from '../../utils/kwisatzHaderach'
-import { FixedChoiceModal, useBoardScopedPortal } from '../BoardScopedModal'
+import { FixedChoiceModal, BoardScopedModal, BoardDialogPanel, useBoardScopedPortal } from '../BoardScopedModal'
 import CardSearch from '../CardSearch/CardSearch'
+import ValueStepper from '../ValueStepper/ValueStepper'
 import { immortalityGraftEnabled } from '../../expansions/immortality/graft'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import { getLeaderIconPath } from '../../data/leaders'
@@ -20,6 +21,7 @@ import {
   canAffordAnyFaceUpTech,
   isPlayAreaInlineTechOrSignetChoice,
 } from '../GameContext/riseOfIx/techTurnControlsUi'
+import { canPlayStrongarm } from '../GameContext/riseOfIx/intrigue'
 import TurnControlsTechRow from '../TurnControlsTechRow/TurnControlsTechRow'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
@@ -29,7 +31,6 @@ import {
   getOpponentDiscardableCards,
   getSelectableDeckCards,
   getDiscardCostPlayability,
-  isCardInHand,
 } from '../../utils/playAreaDisplay'
 import {
   getAnyFactionInfluenceGainIcon,
@@ -50,6 +51,7 @@ import {
   CardEffectRect,
   CARD_EFFECT_REGIONS,
   getCardEffectDebugRects,
+  getChoiceOptionOverlayPlacements,
   getOptionalEffectOverlayRect,
   getRewardOverlayRect,
   isSignetRingCard,
@@ -81,13 +83,10 @@ interface TurnControlsProps {
   players?: Player[]
   optionalEffects?: OptionalEffect[]
   onPayCost?: (effectId: string, data?: { trashedCardId?: number }) => void
-  showSelectiveBreeding?: boolean
-  selectiveBreedingCards?: Card[]
-  onSelectiveBreedingSelect?: (card: Card) => void
-  onSelectiveBreedingCancel?: () => void
   pendingChoices?: PendingChoice[]
   onResolveChoice?: (choiceId: string, optionIndex: number, source?: { type: string; id: number; name: string }) => void
   onResolveCardSelect?: (choiceId: string, cardIds: number[]) => void
+  onResolveCounterChoice?: (choiceId: string, count: number) => void
   onActivateTechDiscard?: (playerId: number, tileId: TechTileId, cardIds: number[]) => void
   selectedCard?: Card | null
   recallMode?: boolean
@@ -160,12 +159,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   players = [],
   optionalEffects = [],
   onPayCost,
-  showSelectiveBreeding = false,
-  onSelectiveBreedingSelect,
-  onSelectiveBreedingCancel,
   pendingChoices = [],
   onResolveChoice,
   onResolveCardSelect,
+  onResolveCounterChoice,
   onActivateTechDiscard,
   selectedCard = null,
   recallMode = false,
@@ -226,8 +223,12 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
   const [pendingTrashReward, setPendingTrashReward] = useState<PendingReward | null>(null)
   const [activeCardSelect, setActiveCardSelect] = useState<CardSelectChoice | null>(null)
+  const [activeCountChoice, setActiveCountChoice] = useState<CounterChoice | null>(null)
+  const [counterValue, setCounterValue] = useState(0)
+  const [counterDrafts, setCounterDrafts] = useState<Record<string, number>>({})
   const [pendingTechDiscard, setPendingTechDiscard] = useState<{ tileId: TechTileId; prompt: string } | null>(null)
   const [discardCostSelection, setDiscardCostSelection] = useState<Card[]>([])
+  const suppressedCardSelectIdsRef = useRef<Set<string>>(new Set())
   const [opponentCardSelect, setOpponentCardSelect] = useState<{
     player: Player
     selectionCount: number
@@ -297,13 +298,36 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   // Automatically open CardSelectChoice if it's the only pending choice and not already open
   useEffect(() => {
     const cardSelectChoices = pendingChoices.filter(c => c.type === ChoiceType.CARD_SELECT) as CardSelectChoice[]
-    if (!isHistoryView && cardSelectChoices.length === 1 && !activeCardSelect && !voiceSelectionActive && !masterstrokeSelectionActive && !hasOpponentDiscard) {
-      setActiveCardSelect(cardSelectChoices[0])
+    const choiceIds = new Set(cardSelectChoices.map(c => c.id))
+    for (const id of suppressedCardSelectIdsRef.current) {
+      if (!choiceIds.has(id)) suppressedCardSelectIdsRef.current.delete(id)
+    }
+    if (
+      !isHistoryView &&
+      cardSelectChoices.length === 1 &&
+      !activeCardSelect &&
+      !pendingTechDiscard &&
+      !voiceSelectionActive &&
+      !masterstrokeSelectionActive &&
+      !hasOpponentDiscard
+    ) {
+      const choice = cardSelectChoices[0]
+      if (!suppressedCardSelectIdsRef.current.has(choice.id)) {
+        setActiveCardSelect(choice)
+      }
     } else if (cardSelectChoices.length === 0 && activeCardSelect) {
       // Clear activeCardSelect if there are no more card select choices
       setActiveCardSelect(null)
     }
-  }, [pendingChoices, activeCardSelect, voiceSelectionActive, masterstrokeSelectionActive, hasOpponentDiscard])
+  }, [
+    pendingChoices,
+    activeCardSelect,
+    pendingTechDiscard,
+    voiceSelectionActive,
+    masterstrokeSelectionActive,
+    hasOpponentDiscard,
+    isHistoryView,
+  ])
 
   useEffect(() => {
     const kwisatzChoices = pendingChoices.filter(
@@ -325,6 +349,18 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       setActiveFixedChoice(null)
     }
   }, [activeFixedChoice, pendingChoices])
+
+  useEffect(() => {
+    if (activeCountChoice && !pendingChoices.some(choice => choice.id === activeCountChoice.id)) {
+      setActiveCountChoice(null)
+    }
+  }, [activeCountChoice, pendingChoices])
+
+  useEffect(() => {
+    if (activeCountChoice) {
+      setCounterValue(activeCountChoice.initial)
+    }
+  }, [activeCountChoice])
 
   const riseOfIx = gameState?.expansions?.riseOfIx === true
   const turnControlOptionalEffects = useMemo(
@@ -774,6 +810,16 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         if (!hasAgent) return { playable: false, reason: 'No Agent on the board to recall' }
       }
 
+      if (intrigueCardHasCustom(card, CustomEffect.STRONGARM) && !canPlayStrongarm(gameState, activePlayer.id)) {
+        return { playable: false, reason: 'Place an Agent on a faction board space first' }
+      }
+
+      if (intrigueCardHasCustom(card, CustomEffect.POISON_SNOOPER)) {
+        if (activePlayer.handCount >= activePlayer.deck.length) {
+          return { playable: false, reason: 'No cards left in your draw pile' }
+        }
+      }
+
       const effects = card.playEffect || []
       if (effects.length === 0) {
         return { playable: false, reason: "Coming soon" } 
@@ -905,6 +951,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           .join(';')
       : ''
     const pl = players?.map(p => `${p.id}i${p.intrigueCount}`).join(',') ?? ''
+    const drawPileCards = Math.max(0, activePlayer.deck.length - activePlayer.handCount)
     return [
       gamePhase,
       gameState?.mentatOwner,
@@ -915,8 +962,12 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       activePlayer.water,
       activePlayer.solari,
       activePlayer.troops,
+      activePlayer.handCount,
+      drawPileCards,
+      handCardSearchIdsKey,
       JSON.stringify(gameState?.occupiedSpaces ?? {}),
       JSON.stringify(combatTroops ?? {}),
+      gameState?.currTurn?.agentSpaceId ?? '',
       infSig,
       pl,
     ].join('|')
@@ -924,6 +975,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     gamePhase,
     gameState?.mentatOwner,
     gameState?.occupiedSpaces,
+    gameState?.currTurn?.agentSpaceId,
     gameState?.factionInfluence,
     selectedCard?.id,
     agentPlaced,
@@ -932,6 +984,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     activePlayer.water,
     activePlayer.solari,
     activePlayer.troops,
+    activePlayer.handCount,
+    handCardSearchIdsKey,
     combatTroops,
     players,
   ])
@@ -1240,14 +1294,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     setPendingTrashReward(null)
   }
 
-  const ChoiceDialog = () => {
+  const renderChoiceDialog = (): React.ReactNode => {
     if (pendingTechDiscard && activePlayer && onActivateTechDiscard) {
       return (
         <CardSearch
+          key="tech-discard-modal"
           isOpen={true}
           player={activePlayer}
-          piles={[CardPile.HAND]}
-          customFilter={card => isCardInHand(activePlayer, card.id)}
+          piles={[CardPile.DECK]}
           selectionCount={1}
           text={pendingTechDiscard.prompt}
           onSelectionChange={setDiscardCostSelection}
@@ -1272,17 +1326,15 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
     if (activeCardSelect) {
       const usesDeckPiles = activeCardSelect.piles?.some(
-        pile => pile === CardPile.DECK || pile === CardPile.HAND
+        pile => pile === CardPile.DECK
       )
       const cardSelectCards =
         activeCardSelect.cards ?? (usesDeckPiles ? selectableDeckCards : undefined)
       const discardCost = activeCardSelect.discardCost
-      const cardSelectFilter =
-        discardCost && activePlayer
-          ? (card: Card) => isCardInHand(activePlayer, card.id)
-          : activeCardSelect.filter
+      const cardSelectFilter = activeCardSelect.filter
       return (
         <CardSearch
+          key={`card-select-${activeCardSelect.id}`}
           isOpen={true}
           player={activePlayer!}
           cards={cardSelectCards}
@@ -1306,14 +1358,52 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             if (onResolveCardSelect) {
               onResolveCardSelect(activeCardSelect.id, selectedCards.map(card => card.id))
             }
+            suppressedCardSelectIdsRef.current.delete(activeCardSelect.id)
             setActiveCardSelect(null)
             setDiscardCostSelection([])
           }}
           onCancel={() => {
+            suppressedCardSelectIdsRef.current.add(activeCardSelect.id)
             setActiveCardSelect(null)
             setDiscardCostSelection([])
           }}
         />
+      )
+    }
+
+    if (activeCountChoice) {
+      return (
+        <BoardScopedModal
+          isOpen
+          closeOnOverlayClick
+          onClose={() => setActiveCountChoice(null)}
+        >
+          <BoardDialogPanel
+            className="counter-choice-dialog"
+            title={activeCountChoice.prompt}
+            titleId={`counter-choice-title-${activeCountChoice.id}`}
+            onClose={() => setActiveCountChoice(null)}
+            showCancel
+          >
+            <ValueStepper
+              value={counterValue}
+              onChange={setCounterValue}
+              min={activeCountChoice.min}
+              max={activeCountChoice.max}
+            />
+            <button
+              type="button"
+              className="primary-btn counter-choice-dialog__confirm"
+              disabled={activeCountChoice.disabled}
+              onClick={() => {
+                onResolveCounterChoice?.(activeCountChoice.id, counterValue)
+                setActiveCountChoice(null)
+              }}
+            >
+              Confirm
+            </button>
+          </BoardDialogPanel>
+        </BoardScopedModal>
       )
     }
 
@@ -1324,6 +1414,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       const discardableCards = getOpponentDiscardableCards(player)
       return (
         <CardSearch
+          key={`opponent-discard-${player.id}`}
           isOpen={true}
           player={player}
           cards={discardableCards}
@@ -1469,6 +1560,18 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         )}
       </div>
     )
+  }
+
+  const resolveCounterChoice = (counterChoice: CounterChoice, count: number) => {
+    onResolveCounterChoice?.(counterChoice.id, count)
+    setActiveCountChoice(null)
+  }
+
+  const getCounterDraft = (counterChoice: CounterChoice) =>
+    counterDrafts[counterChoice.id] ?? counterChoice.initial
+
+  const setCounterDraft = (choiceId: string, value: number) => {
+    setCounterDrafts(prev => ({ ...prev, [choiceId]: value }))
   }
 
   const renderFixedChoiceOptions = (
@@ -1928,7 +2031,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               <button
                 key={choice.id}
                 className={`effect-btn effect-btn--${variant} choice`}
-                onClick={() => setActiveCardSelect(cardSelectChoice)}
+                onClick={() => {
+                  suppressedCardSelectIdsRef.current.delete(cardSelectChoice.id)
+                  setActiveCardSelect(cardSelectChoice)
+                }}
                 disabled={
                   cardSelectChoice.disabled ||
                   voiceSelectionActive ||
@@ -1944,6 +2050,61 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 }
               >
                 {cardSelectChoice.prompt}
+              </button>
+            )
+          }
+
+          if (choice.type === ChoiceType.COUNTER) {
+            const counterChoice = choice as CounterChoice
+            const selectionBlocked =
+              voiceSelectionActive ||
+              masterstrokeSelectionActive ||
+              influenceBoardSelectionActive
+            if (variant === 'compact') {
+              const draft = getCounterDraft(counterChoice)
+              return (
+                <div
+                  key={choice.id}
+                  className="card-effects-inline-choice card-effects-inline-choice--counter"
+                >
+                  <div className="card-effects-inline-choice-title">{counterChoice.prompt}</div>
+                  <ValueStepper
+                    value={draft}
+                    onChange={value => setCounterDraft(counterChoice.id, value)}
+                    min={counterChoice.min}
+                    max={counterChoice.max}
+                    compact
+                    cluster
+                  />
+                  <button
+                    type="button"
+                    className="effect-btn effect-btn--compact choice counter-choice-confirm"
+                    disabled={counterChoice.disabled || selectionBlocked}
+                    onClick={() => resolveCounterChoice(counterChoice, draft)}
+                    title={
+                      selectionBlocked
+                        ? 'Finish the current selection before resolving other choices.'
+                        : undefined
+                    }
+                  >
+                    Confirm
+                  </button>
+                </div>
+              )
+            }
+            return (
+              <button
+                key={choice.id}
+                className={`effect-btn effect-btn--${variant} choice`}
+                onClick={() => setActiveCountChoice(counterChoice)}
+                disabled={counterChoice.disabled || selectionBlocked}
+                title={
+                  selectionBlocked
+                    ? 'Finish the current selection before resolving other choices.'
+                    : undefined
+                }
+              >
+                {counterChoice.prompt}
               </button>
             )
           }
@@ -2106,7 +2267,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     }
 
     const overlayPlacements = [...placementMap.values()]
-    const hasOverlays = overlayPlacements.length > 0 || cardEffectDebug
     const nonOverlayCard: EffectCard = {
       ...effectCard,
       optional: [],
@@ -2127,9 +2287,28 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         choice.type !== ChoiceType.FIXED_OPTIONS ||
         !isInfluenceBoardChoice(choice as FixedOptionsChoice)
     )
+    const overlayChoicePlacements = isRevealed
+      ? modalChoices.flatMap(choice => {
+          if (choice.type !== ChoiceType.FIXED_OPTIONS) return []
+          const fixedChoice = choice as FixedOptionsChoice
+          const optionPlacements = getChoiceOptionOverlayPlacements(previewCard, fixedChoice, isRevealed)
+          if (!optionPlacements) return []
+          return optionPlacements.map(placement => ({
+            choice: fixedChoice,
+            optionIndex: placement.optionIndex,
+            rect: placement.rect,
+          }))
+        })
+      : []
+    const modalChoicesBelowCard = modalChoices.filter(choice => {
+      if (choice.type !== ChoiceType.FIXED_OPTIONS) return true
+      return getChoiceOptionOverlayPlacements(previewCard, choice as FixedOptionsChoice, isRevealed) == null
+    })
+    const hasOverlays =
+      overlayPlacements.length > 0 || overlayChoicePlacements.length > 0 || cardEffectDebug
     const hasBelowActions =
       nonOverlayCard.rewards.length > 0 ||
-      modalChoices.length > 0 ||
+      modalChoicesBelowCard.length > 0 ||
       (riseOfIx &&
         activePlayer &&
         gameState &&
@@ -2250,13 +2429,42 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   />
                 ))}
               {overlayPlacements.map(placement => renderOverlayPlacement(placement))}
+              {overlayChoicePlacements.map(({ choice, optionIndex, rect }) => {
+                const option = choice.options[optionIndex]
+                if (!option) return null
+                const cannotAfford = !isAffordable(option.cost, option.reward)
+                const optionDisabled =
+                  isFixedChoiceOptionDisabled(option) ||
+                  cannotAfford ||
+                  voiceSelectionActive ||
+                  masterstrokeSelectionActive
+                return (
+                  <div
+                    key={`${choice.id}-${optionIndex}`}
+                    className="card-effect-overlay-zone"
+                    style={rectBoxStyle(rect)}
+                  >
+                    <div className="card-effect-overlay-slot card-effect-overlay-slot--frame">
+                      <button
+                        type="button"
+                        className="effect-btn effect-btn--overlay effect-btn--overlay-frame fixed-choice-option fixed-choice-option--overlay"
+                        disabled={optionDisabled}
+                        onClick={() => resolveFixedChoiceOption(choice, optionIndex, 'dialog')}
+                        title={cannotAfford ? 'Cannot afford this option.' : undefined}
+                      >
+                        {renderLabel(option)}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
         {hasBelowActions && (
           <div className="card-effects-dialog-actions">
             {renderEffectActions(
-              { ...nonOverlayCard, choices: modalChoices },
+              { ...nonOverlayCard, choices: modalChoicesBelowCard },
               'compact',
               'non-overlay'
             )}
@@ -2269,6 +2477,41 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const renderTurnCard = (card: Card, mode: 'played' | 'revealed', effectCards: EffectCard[]) => {
     const effectCard = effectCards.find(entry => entry.source.type === GainSource.CARD && entry.source.id === card.id)
     const shouldHighlightPending = effectCardHasPendingInput(effectCard)
+    const isRevealed = mode === 'revealed'
+    const overlayChoicePlacements =
+      effectCard && isRevealed
+        ? effectCard.choices.flatMap(choice => {
+            if (choice.type !== ChoiceType.FIXED_OPTIONS) return []
+            const fixedChoice = choice as FixedOptionsChoice
+            const optionPlacements = getChoiceOptionOverlayPlacements(card, fixedChoice, isRevealed)
+            if (!optionPlacements) return []
+            return optionPlacements.map(placement => ({
+              choice: fixedChoice,
+              optionIndex: placement.optionIndex,
+              rect: placement.rect,
+            }))
+          })
+        : []
+    const effectCardForBelowActions = effectCard
+      ? {
+          ...effectCard,
+          choices: effectCard.choices.filter(choice => {
+            if (choice.type !== ChoiceType.FIXED_OPTIONS) return true
+            return getChoiceOptionOverlayPlacements(card, choice as FixedOptionsChoice, isRevealed) == null
+          }),
+        }
+      : undefined
+    const showBelowEffects =
+      effectCardForBelowActions != null && effectCardHasPendingInput(effectCardForBelowActions)
+    const rectBoxStyle = (rect: CardEffectRect) => {
+      const box = layoutCardRegionPercent(rect)
+      return {
+        left: `${box.left}%`,
+        top: `${box.top}%`,
+        width: `${box.width}%`,
+        height: `${box.height}%`,
+      }
+    }
     return (
       <button
         key={card.id}
@@ -2303,12 +2546,48 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         ) : (
           <span className="selected-card-inline-name">{card.name}</span>
         )}
-        {shouldHighlightPending && effectCard ? (
+        {overlayChoicePlacements.length > 0 ? (
+          <div
+            className="turn-card-frame__effect-overlays"
+            onClick={event => event.stopPropagation()}
+          >
+            {overlayChoicePlacements.map(({ choice, optionIndex, rect }) => {
+              const option = choice.options[optionIndex]
+              if (!option) return null
+              const cannotAfford = !isAffordable(option.cost, option.reward)
+              const optionDisabled =
+                isFixedChoiceOptionDisabled(option) ||
+                cannotAfford ||
+                voiceSelectionActive ||
+                masterstrokeSelectionActive
+              return (
+                <div
+                  key={`${choice.id}-${optionIndex}`}
+                  className="card-effect-overlay-zone"
+                  style={rectBoxStyle(rect)}
+                >
+                  <div className="card-effect-overlay-slot card-effect-overlay-slot--frame">
+                    <button
+                      type="button"
+                      className="effect-btn effect-btn--overlay effect-btn--overlay-frame fixed-choice-option fixed-choice-option--overlay"
+                      disabled={optionDisabled}
+                      onClick={() => resolveFixedChoiceOption(choice, optionIndex, 'compact')}
+                      title={cannotAfford ? 'Cannot afford this option.' : undefined}
+                    >
+                      {renderLabel(option)}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : null}
+        {showBelowEffects && effectCardForBelowActions ? (
           <div
             className="turn-card-frame__pending-effects"
             onClick={event => event.stopPropagation()}
           >
-            {renderEffectActions(effectCard, 'compact')}
+            {renderEffectActions(effectCardForBelowActions, 'compact')}
           </div>
         ) : null}
       </button>
@@ -2749,10 +3028,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           ) : null}
         </div>
       ) : null}
-      {
-        <ChoiceDialog />
-        
-      }
+      {renderChoiceDialog()}
       <FixedChoiceModal
         choice={
           activeFixedChoice && isPlayAreaInlineTechOrSignetChoice(activeFixedChoice)
@@ -2888,11 +3164,11 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           .join(' ')}
         hidden={
           Boolean(activeCardSelect) ||
+          Boolean(activeCountChoice) ||
           Boolean(pendingTechDiscard) ||
           Boolean(opponentCardSelect) ||
           isCardSelectionOpen ||
           isIntrigueSelectionOpen ||
-          showSelectiveBreeding ||
           showTrashPopup
         }
       >
@@ -3266,20 +3542,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       />
 
       <CardSearch
-        isOpen={showSelectiveBreeding}
-        player={activePlayer}
-        piles={[CardPile.HAND, CardPile.DISCARD, CardPile.PLAY_AREA]}
-        selectionCount={1}
-        onSelect={selected => selected[0] && onSelectiveBreedingSelect && onSelectiveBreedingSelect(selected[0])}
-        onCancel={onSelectiveBreedingCancel || (() => {})}
-        isRevealTurn={false}
-        text="Selective Breeding: select a card to trash"
-      />
-
-      <CardSearch
         isOpen={showTrashPopup}
         player={activePlayer}
-        piles={[CardPile.HAND, CardPile.DISCARD, CardPile.PLAY_AREA]}
+        piles={[CardPile.DECK, CardPile.DISCARD, CardPile.PLAY_AREA]}
         selectionCount={1}
         onSelect={selected => selected[0] && handleTrashSelect(selected[0])}
         onCancel={() => { setShowTrashPopup(false); setPendingEffect(null); setPendingTrashReward(null) }}

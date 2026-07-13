@@ -3,13 +3,13 @@ import { getFreshDefaultGameState, applyGameAction } from '../GameContext'
 import { TechTileId } from '../../../data/techTiles'
 import {
   applyHoloprojectorsDiscard,
-  applySonicSnoopersDraw,
-  applySonicSnoopersReturn,
+  applySonicSnoopers,
   handleActivateTech,
   handleActivateTechDiscard,
+  repairLegacyTechDiscardState,
 } from '../riseOfIxReducer'
 import { tilesActivatableNow } from '../../../utils/techTiles'
-import { ChoiceType, GamePhase, GainSource, NO_EXPANSIONS, RewardType, TurnType, type CardSelectChoice } from '../../../types/GameTypes'
+import { ChoiceType, CardPile, GamePhase, GainSource, NO_EXPANSIONS, RewardType, TurnType, type CardSelectChoice } from '../../../types/GameTypes'
 import { makePlayer, stubDeckCard } from './_helpers'
 import { RISE_OF_IX_INTRIGUE_CARDS } from '../../../data/intrigueCardsRiseOfIx'
 
@@ -179,6 +179,43 @@ describe('tech tile activation', () => {
     expect(after).toBe(before)
   })
 
+  it('repairLegacyTechDiscardState clears old pending choices and restores face-up tile', () => {
+    const hand1 = stubDeckCard(161)
+    const before = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.HOLOPROJECTORS, faceUp: false }],
+          activatedTechThisRound: [TechTileId.HOLOPROJECTORS],
+          deck: [hand1],
+          handCount: 1,
+        }),
+        makePlayer(1),
+      ],
+      canEndTurn: false,
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        pendingChoices: [
+          {
+            id: 'legacy-holo',
+            type: ChoiceType.CARD_SELECT,
+            prompt: 'Holoprojectors: discard 1 card to draw 1',
+            piles: [CardPile.DECK],
+            selectionCount: 1,
+            discardCost: 1,
+            onResolve: () => ({ type: 'CUSTOM_EFFECT' }),
+            source: { type: GainSource.TECH, id: 0, name: 'Holoprojectors' },
+          },
+        ],
+      },
+    })
+    const after = repairLegacyTechDiscardState(before)
+    expect(after.currTurn?.pendingChoices).toEqual([])
+    expect(after.canEndTurn).toBe(true)
+    expect(after.players[0].tech[0]?.faceUp).toBe(true)
+    expect(after.players[0].activatedTechThisRound ?? []).not.toContain(TechTileId.HOLOPROJECTORS)
+  })
+
   it('Holoprojectors ACTIVATE_TECH is a no-op until a discard card is chosen', () => {
     const hand1 = stubDeckCard(121)
     const drawTop = stubDeckCard(122)
@@ -259,25 +296,34 @@ describe('tech tile activation', () => {
   })
 
   it('Sonic Snoopers draw then return swaps intrigue deck and discard', () => {
-    const deckCard = RISE_OF_IX_INTRIGUE_CARDS[0]
-    const discardCard = RISE_OF_IX_INTRIGUE_CARDS[1]
+    const discCard = RISE_OF_IX_INTRIGUE_CARDS[0]
     const before = roiState({
-      intrigueDeck: [deckCard, ...RISE_OF_IX_INTRIGUE_CARDS.slice(2)],
-      intrigueDiscard: [discardCard],
+      intrigueDeck: [RISE_OF_IX_INTRIGUE_CARDS.slice(1)],
+      intrigueDiscard: [discCard],
       players: [
-        makePlayer(0, { intrigueCount: 0 }),
+        makePlayer(0, { intrigueCount: 2 }),
         makePlayer(1),
       ],
     })
-    const afterDraw = applySonicSnoopersDraw(before, 0, deckCard.id)
-    expect(afterDraw.players[0].intrigueCount).toBe(1)
-    expect(afterDraw.intrigueDeck.some(c => c.id === deckCard.id)).toBe(false)
-    expect(afterDraw.currTurn?.pendingChoices?.[0]?.prompt).toContain('return')
+    const pendingCount = applySonicSnoopers(before, 0)
+    expect(pendingCount.currTurn?.pendingChoices?.[0]?.type).toBe(ChoiceType.COUNTER)
 
-    const afterReturn = applySonicSnoopersReturn(afterDraw, 0, discardCard.id)
-    expect(afterReturn.players[0].intrigueCount).toBe(0)
-    expect(afterReturn.intrigueDeck.some(c => c.id === discardCard.id)).toBe(true)
-    expect(afterReturn.intrigueDiscard.some(c => c.id === discardCard.id)).toBe(false)
+    const after = applySonicSnoopers(before, 0, 1)
+    expect(after.gains.find(g => g.type === RewardType.INTRIGUE)?.amount).toBe(-1)
+    expect(after.gains.find(g => g.type === RewardType.DRAW)?.amount).toBe(1)
+
+    const afterMany = applySonicSnoopers(before, 0, 2)
+    expect(afterMany.gains.find(g => g.type === RewardType.INTRIGUE)?.amount).toBe(-2)
+    expect(afterMany.gains.find(g => g.type === RewardType.DRAW)?.amount).toBe(2)
+
+    const afterIllegal = applySonicSnoopers(before, 0, 99)
+    expect(afterIllegal).toBe(before)
+
+    const afterIllegal2 = applySonicSnoopers(before, 0, -1)
+    expect(afterIllegal2).toBe(before)
+
+    const afterIllegal3 = applySonicSnoopers(before, 0, 0)
+    expect(afterIllegal3).toBe(before)
   })
 
   it('Holoprojectors end-to-end via ACTIVATE_TECH_DISCARD action', () => {

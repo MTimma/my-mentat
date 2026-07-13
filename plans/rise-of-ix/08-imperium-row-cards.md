@@ -29,7 +29,7 @@ card to:
 >    (it counts deploys to the conflict; extend it if garrison deploys
 >    must count too).
 > 3. **No `DISCARD_FROM_HAND` action exists.** Discard-as-cost flows in
->    the base game use `CardSelectChoice` with `CardPile.HAND` /
+>    the base game use `CardSelectChoice` with `CardPile.DECK' /
 >    `CardPile.DISCARD` — reuse that pattern (§5.3 updated).
 > 4. **`currTurn.extraTurnAllowed` is a new field** (Weirding Way) —
 >    coordinate with `canEndTurn`, turn-count bookkeeping and
@@ -218,7 +218,7 @@ every place where a card is moved:
 
 - ✦ Discard-as-cost resolutions — there is **no** `DISCARD_FROM_HAND`
   action; the base game resolves discards through `CardSelectChoice`
-  (`CardPile.HAND` / `CardPile.DISCARD`). Hook the helper into the
+  (`CardPile.DECK` / `CardPile.DISCARD`). Hook the helper into the
   `RESOLVE_CHOICE`/card-select resolution path where the chosen card
   lands in `discardPile`.
 - `TRASH_CARD` (and any trash-as-cost card-select resolution).

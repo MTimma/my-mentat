@@ -3,14 +3,14 @@ import { PlayerColor } from '../../types/GameTypes'
 import CombatTroopControls from '../CombatTroopControls/CombatTroopControls'
 import type {
   CombatDreadnoughtDeployProps,
-  CombatNegotiatorDeployProps,
+  CombatSpecimenDeployProps,
   CombatTroopDeployProps,
 } from './CombatAreaCluster'
 
 export interface CombatDeployDockProps {
   troopDeploy?: CombatTroopDeployProps
   dreadnoughtDeploy?: CombatDreadnoughtDeployProps
-  negotiatorDeploy?: CombatNegotiatorDeployProps
+  specimenDeploy?: CombatSpecimenDeployProps
   activePlayerId: number
   activePlayerColor?: PlayerColor
   className?: string
@@ -20,7 +20,7 @@ export interface CombatDeployDockProps {
 const CombatDeployDock: React.FC<CombatDeployDockProps> = ({
   troopDeploy,
   dreadnoughtDeploy,
-  negotiatorDeploy,
+  specimenDeploy,
   activePlayerId,
   activePlayerColor,
   className,
@@ -36,13 +36,13 @@ const CombatDeployDock: React.FC<CombatDeployDockProps> = ({
       ((dreadnoughtDeploy.deployableDreadnoughts > 0 &&
         dreadnoughtDeploy.garrisonDreadnoughts > 0) ||
         dreadnoughtDeploy.deployedThisTurn > 0)) ||
-    (negotiatorDeploy &&
-      negotiatorDeploy.canDeploy &&
-      ((negotiatorDeploy.deployableNegotiators > 0 && negotiatorDeploy.negotiatorsOnIx > 0) ||
-        negotiatorDeploy.deployedThisTurn > 0))
+    (specimenDeploy &&
+      specimenDeploy.canDeploy &&
+      ((specimenDeploy.deployableSpecimens > 0 && specimenDeploy.specimensInTanks > 0) ||
+        specimenDeploy.deployedThisTurn > 0))
   )
 
-  if (!troopDeploy && !dreadnoughtDeploy && !negotiatorDeploy) return null
+  if (!troopDeploy && !dreadnoughtDeploy && !specimenDeploy) return null
 
   return (
     <div
@@ -72,18 +72,18 @@ const CombatDeployDock: React.FC<CombatDeployDockProps> = ({
             className="combat-deploy-dock__controls combat-deploy-dock__controls--dreadnought"
           />
         ) : null}
-        {negotiatorDeploy ? (
+        {specimenDeploy ? (
           <CombatTroopControls
-            variant="negotiator"
+            variant="specimen"
             playerId={activePlayerId}
             playerColor={activePlayerColor}
-            canDeploy={negotiatorDeploy.canDeploy}
-            deployableTroops={negotiatorDeploy.deployableNegotiators}
-            deployedThisTurn={negotiatorDeploy.deployedThisTurn}
-            garrisonTroops={negotiatorDeploy.negotiatorsOnIx}
-            onDeploy={negotiatorDeploy.onDeploy}
-            onUndeploy={negotiatorDeploy.onUndeploy}
-            className="combat-deploy-dock__controls combat-deploy-dock__controls--negotiator"
+            canDeploy={specimenDeploy.canDeploy}
+            deployableTroops={specimenDeploy.deployableSpecimens}
+            deployedThisTurn={specimenDeploy.deployedThisTurn}
+            garrisonTroops={specimenDeploy.specimensInTanks}
+            onDeploy={specimenDeploy.onDeploy}
+            onUndeploy={specimenDeploy.onUndeploy}
+            className="combat-deploy-dock__controls combat-deploy-dock__controls--specimen"
           />
         ) : null}
       </div>

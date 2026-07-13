@@ -15,11 +15,7 @@ interface SellMelangeData {
   solariReward: number;
 }
 
-interface SelectiveBreedingData {
-  trashedCardId: number;
-}
-
-type ExtraSpaceData = SellMelangeData | SelectiveBreedingData | undefined;
+type ExtraSpaceData = SellMelangeData | undefined;
 
 interface GameBoardProps {
   currentPlayer: number;
@@ -33,7 +29,6 @@ interface GameBoardProps {
   factionInfluence: { [key: string]: { [key: number]: number } };
   currentConflict?: ConflictCard;
   bonusSpice: { [key: string]: number };
-  onSelectiveBreedingRequested: (cards: Card[], onSelect: (card: Card) => void) => void;
   recallMode?: boolean;
   ignoreSpaceRequirements?: boolean;
   voiceSelectionActive?: boolean;
@@ -54,7 +49,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
   factionInfluence,
   bonusSpice,
   currentConflict,
-  onSelectiveBreedingRequested,
   recallMode = false,
   ignoreSpaceRequirements = false,
   voiceSelectionActive = false,
@@ -107,18 +101,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
     if (space?.specialEffect === 'sellMelange') {
       setSelectedSpaceId(spaceId)
       setShowSellMelangePopup(true)
-    } else {
-      onSpaceClick(spaceId)
-    }
-    if (space?.name === "Selective Breeding") {
-      const player = players.find(p => p.id === currentPlayer)
-      if (!player) return
-      onSelectiveBreedingRequested(
-        [...player.deck, ...player.discardPile, ...player.playArea],
-        (card) => onSpaceClick(spaceId, { trashedCardId: card.id })
-      )
       return
     }
+    onSpaceClick(spaceId)
   }
 
   const handleSellMelangeOptionSelect = (option: { spiceCost: number; solariReward: number }) => {

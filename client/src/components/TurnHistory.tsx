@@ -350,7 +350,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     (cardId: number, name: string): Card | undefined => {
       const byName = name ? resolveCardInSnapshotByName(turn, playerId, name) : undefined
       const byId = resolveCardInSnapshot(turn, playerId, cardId)
-      if (byName && byId && byName.id !== byId.id) return byName
       return byId ?? byName
     }
 
@@ -550,9 +549,11 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       <div className="turn-history-action-band">
         <div className="turn-history-action-flow" aria-label={`Played ${playedLabel} at ${destinationLabel}`}>
           {playedCards.map(card => (
-            <React.Fragment key={`played-${card.id}`}>
-              {renderTurnCardThumb(card, true)}
-            </React.Fragment>
+            // <React.Fragment key={`played-${card.id}`}>
+            //   {/* {renderTurnCardThumb(card, true)} */}
+              
+            // </React.Fragment>
+            <span className="turn-history-action-destination">{card.name}</span>
           ))}
           <span className="turn-history-action-arrow" aria-hidden="true">
             →

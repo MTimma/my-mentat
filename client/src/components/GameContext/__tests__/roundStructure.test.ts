@@ -136,6 +136,35 @@ describe('Round structure (base rules)', () => {
 
   it.todo('round flow: ROUND_START → draw 5 → PLAYER_TURNS → COMBAT → MAKERS → RECALL')
   it.todo('after Reveal turn, player skips remaining agent turns until all have revealed')
+  it('recall: draws five cards by moving discard into deck when needed', () => {
+    const c1 = stubDeckCard(9011)
+    const c2 = stubDeckCard(9012)
+    const c3 = stubDeckCard(9013)
+    const d1 = stubDeckCard(9014)
+    const d2 = stubDeckCard(9015)
+    const d3 = stubDeckCard(9016)
+    let s = getBaseTestState(undefined, { players: 2 })
+    s = {
+      ...s,
+      phase: GamePhase.COMBAT_REWARDS,
+      combatTroops: { 0: 2, 1: 1 },
+      combatStrength: { 0: 4, 1: 2 },
+      players: s.players.map((p, i) =>
+        i === 0
+          ? { ...p, deck: [c1, c2, c3], discardPile: [d1, d2, d3], handCount: 2, revealed: true }
+          : p
+      ),
+    }
+
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+
+    const p = s.players[0]
+    expect(p.handCount).toBe(5)
+    expect(p.deck.map(c => c.id)).toEqual([9011, 9012, 9013, 9014, 9015, 9016])
+    expect(p.discardPile).toEqual([])
+    expect(p.revealed).toBe(false)
+  })
+
   it('recall: clears mentatOwner and occupied spaces after combat', () => {
     let s = getBaseTestState(undefined, { players: 2 })
     s = {

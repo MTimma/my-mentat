@@ -5,6 +5,7 @@
  */
 import type { GameAction } from '../components/GameContext/GameContext'
 import { applyGameAction } from '../components/GameContext/GameContext'
+import { repairLegacyTechDiscardState } from '../components/GameContext/riseOfIxReducer'
 import type { GameState } from '../types/GameTypes'
 import { buildInitialState } from './buildInitialState'
 import {
@@ -46,7 +47,7 @@ export function replayEvents(initial: GameState, events: EventEntry[]): ReplayRe
       }
     }
   })
-  return { state, divergences }
+  return { state: repairLegacyTechDiscardState(state), divergences }
 }
 
 /** Events of the line `branchId` ('trunk' or branch id), resolved through parents. */

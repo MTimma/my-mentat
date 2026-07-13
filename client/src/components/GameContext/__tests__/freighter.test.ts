@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BOARD_SPACES } from '../../../data/boardSpaces'
+import { RISE_OF_IX_IMPERIUM_DECK } from '../../../data/cardsRiseOfIx'
 import {
   AgentIcon,
   ChoiceType,
@@ -375,5 +376,61 @@ describe('freighter shipping track', () => {
     s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
     s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: SMUGGLING_ID })
     expect(s.currTurn?.pendingChoices?.filter(c => c.prompt.startsWith('Freighter')) ?? []).toEqual([])
+  })
+
+  it('Freighter Fleet reveal enqueues freighter choice', () => {
+    const freighterFleet = structuredClone(
+      RISE_OF_IX_IMPERIUM_DECK.find(c => c.name === 'Freighter Fleet')!
+    )
+    freighterFleet.id = 8810
+    let s = roiState({
+      players: [makePlayer(0, { freighterStep: 0, deck: [freighterFleet], handCount: 1 })],
+      phase: GamePhase.PLAYER_TURNS,
+      activePlayerId: 0,
+    })
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [freighterFleet.id] })
+
+    const choice = freighterChoice(s)
+    expect(choice.source).toEqual(expect.objectContaining({ name: 'Freighter Fleet' }))
+    expect(hasAdvanceOption(choice)).toBe(true)
+  })
+
+  it('Freighter Fleet reveal at step 3 offers Recall only', () => {
+    const freighterFleet = structuredClone(
+      RISE_OF_IX_IMPERIUM_DECK.find(c => c.name === 'Freighter Fleet')!
+    )
+    freighterFleet.id = 8811
+    let s = roiState({
+      players: [makePlayer(0, { freighterStep: 3, deck: [freighterFleet], handCount: 1 })],
+      phase: GamePhase.PLAYER_TURNS,
+      activePlayerId: 0,
+    })
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [freighterFleet.id] })
+
+    const choice = freighterChoice(s)
+    expect(hasAdvanceOption(choice)).toBe(false)
+    expect(choice.options.some(opt => opt.reward.custom === CustomEffect.FREIGHTER_RECALL)).toBe(true)
+  })
+
+  it('Freighter Fleet reveal at step 3 recall yields shipping track rewards', () => {
+    const freighterFleet = structuredClone(
+      RISE_OF_IX_IMPERIUM_DECK.find(c => c.name === 'Freighter Fleet')!
+    )
+    freighterFleet.id = 8812
+    let s = roiState({
+      players: [makePlayer(0, { freighterStep: 3, deck: [freighterFleet], handCount: 1 })],
+      phase: GamePhase.PLAYER_TURNS,
+      activePlayerId: 0,
+    })
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [freighterFleet.id] })
+    const choice = freighterChoice(s)
+    s = resolveFreighter(s, 0, choice.id, 'recall')
+
+    expect(s.players[0].freighterStep).toBe(0)
+    expect(shippingPendingRewards(s).map(r => r.reward)).toEqual([
+      { troops: 2 },
+      { acquireTech: { discount: 2 } },
+    ])
+    expect(shippingPendingChoices(s).length).toBe(2)
   })
 })

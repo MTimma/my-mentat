@@ -75,7 +75,9 @@ export function resolveCardInSnapshotByName(
 ): Card | undefined {
   const byId = state.gains
     ?.filter(g => g.playerId === playerId && g.name === cardName)
-    .map(g => resolveCardInSnapshot(state, playerId, g.sourceId))
+    .map(g =>
+      resolveCardInSnapshot(state, playerId, g.cardId ?? g.sourceId)
+    )
     .find(Boolean)
   if (byId) return byId
 

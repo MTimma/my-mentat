@@ -551,6 +551,21 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   margin: 0;
 }
 
+.turn-card-frame__effect-overlays {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.turn-card-frame__effect-overlays .card-effect-overlay-zone {
+  pointer-events: none;
+}
+
+.turn-card-frame__effect-overlays .card-effect-overlay-slot--frame .effect-btn--overlay {
+  pointer-events: auto;
+}
+
 .turn-card-frame--has-effects:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow:
@@ -3018,6 +3033,17 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   font-size: 0.82rem;
   font-weight: 800;
   text-align: left;
+}
+
+.card-effects-inline-choice--counter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.counter-choice-dialog__confirm {
+  margin-top: 12px;
 }
 
 .placement-prompt-banner {

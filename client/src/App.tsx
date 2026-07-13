@@ -139,8 +139,6 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
   )
   const [isPlayerOverviewOpen, setIsPlayerOverviewOpen] = useState(false)
-  const [showSelectiveBreeding, setShowSelectiveBreeding] = useState(false)
-  const [onSelectiveBreedingSelect, setOnSelectiveBreedingSelect] = useState<((card: Card) => void) | null>(null)
   const [voiceSelectionRewardId, setVoiceSelectionRewardId] = useState<string | null>(null)
   const [masterstrokeSelectionRewardId, setMasterstrokeSelectionRewardId] = useState<string | null>(null)
   const [memnonHighCouncilRewardId, setMemnonHighCouncilRewardId] = useState<string | null>(null)
@@ -376,14 +374,13 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     dispatch({ type: 'REVEAL_ENDGAME_INTRIGUE', playerId, cardIds })
   }
 
-  const handlePlaceAgent = (spaceId: number, extraData?: { trashedCardId: number } | { spiceCost: number; solariReward: number }) => {
+  const handlePlaceAgent = (spaceId: number, extraData?: { spiceCost: number; solariReward: number }) => {
     if (!activePlayer) return;
     dispatch({
       type: 'PLACE_AGENT',
       playerId: activePlayer.id,
       spaceId,
-      ...(extraData && 'trashedCardId' in extraData ? { selectiveBreedingData: extraData } : {}),
-      ...(extraData && 'spiceCost' in extraData ? { sellMelangeData: extraData } : {}),
+      ...(extraData ? { sellMelangeData: extraData } : {}),
     });
   }
 
@@ -419,6 +416,11 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     dispatch({ type: 'RESOLVE_CARD_SELECT', playerId: activePlayer.id, choiceId, cardIds })
   }
 
+  const handleResolveCounterChoice = (choiceId: string, count: number) => {
+    if (!activePlayer) return
+    dispatch({ type: 'RESOLVE_COUNTER', playerId: activePlayer.id, choiceId, count })
+  }
+
   const handlePayCost = (effectId: string, data?: { trashedCardId?: number }) => {
     if(!activePlayer) return;
     dispatch({ type: 'PAY_COST', playerId: activePlayer.id, effectId, data })
@@ -436,12 +438,12 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     dispatch({ type: 'UNDEPLOY_DREADNOUGHT', playerId })
   }
 
-  const handleDeployNegotiator = (playerId: number) => {
-    dispatch({ type: 'DEPLOY_NEGOTIATOR', playerId })
+  const handleDeploySpecimen = (playerId: number) => {
+    dispatch({ type: 'DEPLOY_SPECIMEN', playerId })
   }
 
-  const handleUndeployNegotiator = (playerId: number) => {
-    dispatch({ type: 'UNDEPLOY_NEGOTIATOR', playerId })
+  const handleUndeploySpecimen = (playerId: number) => {
+    dispatch({ type: 'UNDEPLOY_SPECIMEN', playerId })
   }
 
   const handleEffectRetreatTroop = (playerId: number) => {
@@ -589,11 +591,6 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     if (cardIds.length === 1) {
       dispatch({ type: 'SELECT_IMPERIUM_REPLACEMENT', cardId: cardIds[0] })
     }
-  }
-
-  const handleSelectiveBreedingRequested = (_cards: Card[], onSelect: (card: Card) => void) => {
-    setOnSelectiveBreedingSelect(() => onSelect)
-    setShowSelectiveBreeding(true)
   }
 
   const handleClaimReward = (rewardId: string, customData?: { [key: string]: unknown }) => {
@@ -774,6 +771,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   // Sandbox setup turn: blocking round-start modals are replaced by on-board click targets.
   const inSandboxSetup = Boolean(gameState.sandboxSetup) && !isViewingHistory
   const riseOfIx = Boolean(gameState.expansions?.riseOfIx)
+  const immortality = Boolean(gameState.expansions?.immortality)
   const sandboxTechSummary = sandboxTechSetupSummary(gameState.players)
   const ixBoardReady =
     !riseOfIx || isSandboxIxBoardReady(gameState.players, gameState.ixBoard)
@@ -1355,7 +1353,6 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           factionInfluence={displayState.factionInfluence}
           currentConflict={displayState.currentConflict}
           bonusSpice={displayState.bonusSpice}
-          onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
           recallMode={isViewingHistory ? false : kwisatzRecallActive}
           placementPrompt={isViewingHistory ? null : boardPlacementPrompt}
           ignoreSpaceRequirements={
@@ -1403,22 +1400,22 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
                   onUndeploy: () => handleUndeployDreadnought(activePlayer.id),
                 }
           }
-          negotiatorDeploy={
+          specimenDeploy={
             isViewingHistory ||
             gameState.sandboxSetup ||
             !activePlayer ||
-            !gameState.expansions?.riseOfIx
+            !gameState.expansions?.immortality
               ? undefined
               : {
                   canDeploy: Boolean(gameState.currTurn?.canDeployTroops),
-                  deployableNegotiators: Math.min(
+                  deployableSpecimens: Math.min(
                     getRemainingDeploySlots(gameState),
-                    activePlayer.negotiatorsOnIx ?? 0
+                    activePlayer.specimens ?? 0
                   ),
-                  deployedThisTurn: gameState.currTurn?.removableNegotiators || 0,
-                  negotiatorsOnIx: activePlayer.negotiatorsOnIx ?? 0,
-                  onDeploy: () => handleDeployNegotiator(activePlayer.id),
-                  onUndeploy: () => handleUndeployNegotiator(activePlayer.id),
+                  deployedThisTurn: gameState.currTurn?.removableSpecimens || 0,
+                  specimensInTanks: activePlayer.specimens ?? 0,
+                  onDeploy: () => handleDeploySpecimen(activePlayer.id),
+                  onUndeploy: () => handleUndeploySpecimen(activePlayer.id),
                 }
           }
           sandboxSetup={
@@ -1475,20 +1472,20 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       voiceSelectionRewardId,
       activePlayer,
       handlePlaceAgent,
-      handleSelectiveBreedingRequested,
       handleVoiceSpaceSelect,
       historyHighlightSpaceId,
       handleAddTroop,
       handleUndeployTroop,
       handleAddDreadnought,
       handleUndeployDreadnought,
-      handleDeployNegotiator,
-      handleUndeployNegotiator,
+      handleDeploySpecimen,
+      handleUndeploySpecimen,
       handleAcquireTechTile,
       techAcquireSources,
       handleTechTileAcquireClick,
       inSandboxSetup,
       riseOfIx,
+      immortality,
       sandboxTechSummary,
       kwisatzRecallActive,
       boardPlacementPrompt,
@@ -1670,7 +1667,6 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
               factionInfluence={displayState.factionInfluence}
               currentConflict={displayState.currentConflict}
               bonusSpice={displayState.bonusSpice}
-              onSelectiveBreedingRequested={handleSelectiveBreedingRequested}
               recallMode={isViewingHistory ? false : kwisatzRecallActive}
               ignoreSpaceRequirements={
                 isViewingHistory
@@ -1895,17 +1891,12 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
             pendingChoices={isViewingHistory ? [] : gameState.currTurn?.pendingChoices || []}
             onResolveChoice={handleResolveChoice}
             onResolveCardSelect={handleResolveCardSelect}
+            onResolveCounterChoice={handleResolveCounterChoice}
             onActivateTechDiscard={handleActivateTechDiscard}
             onPayCost={handlePayCost}
-            showSelectiveBreeding={showSelectiveBreeding}
             selectedCard={isViewingHistory ? null : getSelectedCard(gameState)}
             recallMode={!isViewingHistory && kwisatzRecallActive}
             placementPrompt={!isViewingHistory ? boardPlacementPrompt : null}
-            onSelectiveBreedingSelect={card => {
-              if (onSelectiveBreedingSelect) onSelectiveBreedingSelect(card)
-              setShowSelectiveBreeding(false)
-            }}
-            onSelectiveBreedingCancel={() => setShowSelectiveBreeding(false)}
             pendingRewards={isViewingHistory ? [] : gameState.pendingRewards}
             onClaimReward={handleClaimReward}
             onClaimAllRewards={handleClaimAllRewards}

@@ -65,6 +65,25 @@ function buildCardSearchBlob(card: Card): string {
   return chunks.join(' ').toLowerCase()
 }
 
+const PILE_TAB_LABELS: Record<CardPile, string> = {
+  [CardPile.DECK]: 'Hand',
+  [CardPile.DISCARD]: 'Discard',
+  [CardPile.PLAY_AREA]: 'Play Area',
+}
+
+function getCardsFromPile(player: Player, pile: CardPile): Card[] {
+  switch (pile) {
+    case CardPile.DECK:
+      return getSelectableDeckCards(player)
+    case CardPile.DISCARD:
+      return player.discardPile
+    case CardPile.PLAY_AREA:
+      return player.playArea
+    default:
+      return []
+  }
+}
+
 type GridItemPlayability = { playable: boolean; reason?: string }
 
 const PLAYABLE_CARD: GridItemPlayability = { playable: true }
@@ -196,6 +215,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectionSlots, setSelectionSlots] = useState<(Card | null)[]>([])
+  const [activePile, setActivePile] = useState<CardPile | null>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const cardsGridRef = useRef<HTMLDivElement>(null)
   const onSelectionChangeRef = useRef(onSelectionChange)
@@ -264,44 +284,51 @@ const CardSearch: React.FC<CardSearchProps> = ({
     onSelectionChangeRef.current?.(filledCards(selectionSlots))
   }, [filledCards, isOpen, selectionSlots])
 
+  const pileTabs = useMemo(() => {
+    if (!player || !piles?.length || cards) return []
+    return [...new Set(piles)]
+  }, [cards, piles, player])
+
+  const usePileTabs = pileTabs.length > 1
+
+  useEffect(() => {
+    if (!isOpen || !usePileTabs) {
+      setActivePile(null)
+      return
+    }
+    setActivePile(prev => (prev && pileTabs.includes(prev) ? prev : pileTabs[0]))
+  }, [isOpen, pileTabs, usePileTabs])
+
+  const cardsByPile = useMemo(() => {
+    if (!player || pileTabs.length === 0) return new Map<CardPile, Card[]>()
+    const map = new Map<CardPile, Card[]>()
+    for (const pile of pileTabs) {
+      let pileCards = getCardsFromPile(player, pile)
+      if (customFilter) {
+        pileCards = pileCards.filter(customFilter)
+      }
+      map.set(pile, pileCards)
+    }
+    return map
+  }, [customFilter, pileTabs, player])
+
   // Derive available cards from piles or use provided cards
   const availableCards = useMemo(() => {
-    // Helper function to get cards from a specific pile
-    const getCardsFromPile = (pile: CardPile): Card[] => {
-      if (!player) return []
-      switch (pile) {
-        case 'HAND':
-        case 'DECK':
-          // “From hand” in rules → full deck in UI (see getSelectableDeckCards).
-          return getSelectableDeckCards(player)
-        case 'DISCARD':
-          return player.discardPile
-        case 'PLAY_AREA':
-          return player.playArea
-        default:
-          return []
-      }
-    }
-
-    let baseCards: Card[]
-
     if (cards) {
-      // Use provided cards directly
-      baseCards = cards
-    } else if (player && piles) {
-      // Derive cards from piles
-      baseCards = piles.flatMap(pile => getCardsFromPile(pile))
-    } else {
-      baseCards = []
+      return customFilter ? cards.filter(customFilter) : cards
     }
 
-    // Apply custom filter if provided
-    if (customFilter) {
-      return baseCards.filter(customFilter)
+    if (usePileTabs && activePile) {
+      return cardsByPile.get(activePile) ?? []
     }
 
-    return baseCards
-  }, [cards, player, piles, customFilter])
+    if (player && piles) {
+      const baseCards = piles.flatMap(pile => getCardsFromPile(player, pile))
+      return customFilter ? baseCards.filter(customFilter) : baseCards
+    }
+
+    return []
+  }, [activePile, cards, cardsByPile, customFilter, piles, player, usePileTabs])
 
   const searchBlobById = useMemo(() => {
     const m = new Map<number, string>()
@@ -330,7 +357,12 @@ const CardSearch: React.FC<CardSearchProps> = ({
   useEffect(() => {
     if (!isOpen) return
     scrollCardsGridToTop(cardsGridRef.current)
-  }, [deferredSearch, isOpen, filteredCards.length])
+  }, [activePile, deferredSearch, isOpen, filteredCards.length])
+
+  const handlePileTabSelect = useCallback((pile: CardPile) => {
+    setActivePile(pile)
+    setSearchTerm('')
+  }, [])
 
   /** Playability does not depend on search. Callback identity from parents is often unstable — use a ref + explicit bust key. */
   const playabilityByCardId = useMemo(() => {
@@ -464,6 +496,30 @@ const CardSearch: React.FC<CardSearchProps> = ({
     </div>
   ) : null
 
+  const pileTabBar = usePileTabs ? (
+    <div className="card-search-pile-tabs" role="tablist" aria-label="Card piles">
+      {pileTabs.map(pile => {
+        const count = cardsByPile.get(pile)?.length ?? 0
+        const isActive = pile === activePile
+        return (
+          <button
+            key={pile}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            className={`card-search-pile-tab${isActive ? ' card-search-pile-tab--active' : ''}`}
+            onClick={() => handlePileTabSelect(pile)}
+          >
+            {PILE_TAB_LABELS[pile]}
+            <span className="card-search-pile-tab-count" aria-hidden="true">
+              {count}
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  ) : null
+
   const searchInput = (
     <div className="search-input-wrapper">
       <input
@@ -542,6 +598,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
       </div>
       {selectionPreview}
       {slotBetweenCardsAndSearch}
+      {pileTabBar}
       <div
         className={`dialog-actions${
           useCompactBoardLayout ? ' dialog-actions--buttons-only' : ''

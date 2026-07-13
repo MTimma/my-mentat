@@ -295,7 +295,6 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
         stateOverrides: {
           combatTroops: { 0: 0 },
           combatStrength: { 0: 6 },
-          combatNegotiators: { 0: 0 },
         },
       })
       s = applyFullScaleDreadSwords(s, 0, 1, 'Full-Scale Assault')

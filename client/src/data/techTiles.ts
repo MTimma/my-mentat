@@ -25,7 +25,6 @@ export enum TechTileId {
 export enum TechTileTiming {
   REVEAL = 'reveal',
   ROUND_START = 'round-start',
-  AGENT = 'agent',
   AGENT_REVEAL_ONCE_PER_ROUND = 'agent-reveal-once-per-round',
   AGENT_REVEAL_ALWAYS = 'agent-reveal-always',
   AGENT_REVEAL_ONE_TIME = 'agent-reveal-one-time',
@@ -53,7 +52,7 @@ function techTileImage(id: TechTileId): string {
   return `/technologies/rise_of_ix/${id}.png`
 }
 
-const ALL_FOUR_INFLUENCE = {
+const ANY_BUMP = {
   chooseOne: true,
   amounts: [
     { faction: FactionType.EMPEROR, amount: 1 },
@@ -136,7 +135,7 @@ export const TECH_TILES: TechTile[] = [
     name: 'Invasion Ships',
     cost: 5,
     image: techTileImage(TechTileId.INVASION_SHIPS),
-    timing: [TechTileTiming.AGENT],
+    timing: [TechTileTiming.AGENT_REVEAL_ONE_TIME],
     acquireEffect: { troops: 4 },
     description: 'Agent (once per round): discard 1 → enemy agents do not block your agent this turn.',
     customEffect: CE.INVASION_SHIPS,
@@ -147,7 +146,7 @@ export const TECH_TILES: TechTile[] = [
     cost: 2,
     image: techTileImage(TechTileId.MEMOCORDERS),
     timing: [TechTileTiming.ENDGAME],
-    acquireEffect: { influence: ALL_FOUR_INFLUENCE },
+    acquireEffect: { influence: ANY_BUMP },
     description: 'Endgame: +1 VP if you have ≥3 influence on all four tracks.',
     customEffect: CE.MEMOCORDERS,
   },
@@ -174,7 +173,7 @@ export const TECH_TILES: TechTile[] = [
     cost: 6,
     image: techTileImage(TechTileId.SHUTTLE_FLEET),
     timing: [TechTileTiming.ROUND_START],
-    acquireEffect: { influence: ALL_FOUR_INFLUENCE },
+    acquireEffect: { influence: ANY_BUMP }, //todo should be choose two
     description: 'Round Start: +2 solari.',
   },
   {

@@ -101,7 +101,7 @@
       "cost": 5,
       "image": "/technologies/rise_of_ix/invasion_ships.png",
       "timing": [
-        "agent"
+        "agent-reveal-one-time"
       ],
       "description": "Agent (once per round): discard 1 → enemy agents do not block your agent this turn.",
       "customEffect": "INVASION_SHIPS",

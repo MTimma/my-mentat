@@ -15,18 +15,20 @@ import {
   GainSource,
   RewardType,
   type CardSelectChoice,
+  type CounterChoice,
   type Card,
   type Gain,
   type GameState,
   type PendingReward,
   type Player,
   type Reward,
+  GameTurn,
 } from '../../types/GameTypes'
 import { countSpiceMustFlowCards } from '../../utils/spiceMustFlow'
 import { getDreadnoughtsInConflict } from '../../utils/dreadnoughts'
 import { createGainInfluenceChoice } from '../../utils/influenceChoices'
-import { nextSemanticId } from '../../utils/semanticIds'
-import { effectiveTechCost, playerOwnsTile, techTilesAvailableForNextReveal, tileById, tilesActivatableNow } from '../../utils/techTiles'
+import { collectLiveIds, nextSemanticId } from '../../utils/semanticIds'
+import { effectiveTechCost, playerOwnsTile, techTilesAvailableForNextReveal, tileById, tilesActivatableNow, techTileIdFromDiscardPrompt } from '../../utils/techTiles'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { updateFactionInfluence } from '../../utils/influenceVictoryPoints'
 import { playerHasUnitsInCombat } from '../../utils/dreadnoughts'
@@ -36,6 +38,8 @@ import {
   returnNegotiatorsToSupply,
 } from '../../utils/troops'
 import { validateDiscardCostSelection } from '../../utils/playAreaDisplay'
+import { applyDrawCardsToPlayer } from '../../utils/deckDraw'
+import { createCountChoice } from '../../utils/choices'
 
 export type AcquireTechAction = {
   type: 'ACQUIRE_TECH'
@@ -145,10 +149,6 @@ export function buildIxBoardFromSandboxStackTops(
   }
 
   const pool = TECH_TILES.map(tile => tile.id).filter(id => !excluded.has(id) && !unique.has(id))
-  const tilesNeededFaceDown = faceUpIds.length * (stackSize - 1)
-  if (pool.length < tilesNeededFaceDown) {
-    throw new Error('buildIxBoardFromSandboxStackTops does not have enough remaining tiles')
-  }
 
   const shuffled = [...pool]
   shuffleInPlace(shuffled, random)
@@ -246,8 +246,13 @@ export function applyTechTileAcquireEffect(
     pushGain(next.gains, next, playerId, source, effect.troops, RewardType.TROOPS)
   }
   if (effect.drawCards) {
-    next = updatePlayer(next, playerId, p => ({ ...p, handCount: p.handCount + effect.drawCards! }))
-    pushGain(next.gains, next, playerId, source, effect.drawCards, RewardType.DRAW)
+    next = updatePlayer(next, playerId, p => {
+      const drawn = applyDrawCardsToPlayer(p, effect.drawCards!)
+      if (drawn.drawn > 0) {
+        pushGain(next.gains, next, playerId, source, drawn.drawn, RewardType.DRAW)
+      }
+      return drawn
+    })
   }
   if (effect.victoryPoints) {
     next = updatePlayer(next, playerId, p => ({
@@ -1105,9 +1110,13 @@ function markTileActivated(
 ): GameState {
   return updatePlayer(state, playerId, p => {
     if (opts.remove) {
+      const tech = (p.tech ?? []).filter(t => t.id !== tileId)
+      const techTrash = [...(p.techTrash ?? []), { id: tileId, faceUp: true }]
       return {
         ...p,
-        tech: (p.tech ?? []).filter(t => t.id !== tileId),
+        tech,
+        techTrash,
+        activatedTechThisRound: [...(p.activatedTechThisRound ?? []), tileId],
       }
     }
     return {
@@ -1116,6 +1125,43 @@ function markTileActivated(
       activatedTechThisRound: [...(p.activatedTechThisRound ?? []), tileId],
     }
   })
+}
+
+function revertTileActivated(state: GameState, playerId: number, tileId: TechTileId): GameState {
+  return updatePlayer(state, playerId, p => ({
+    ...p,
+    tech: (p.tech ?? []).map(t => (t.id === tileId ? { ...t, faceUp: true } : t)),
+    techTrash: (p.techTrash ?? []).filter(t => t.id !== tileId),
+    activatedTechThisRound: (p.activatedTechThisRound ?? []).filter(id => id !== tileId),
+  }))
+}
+
+export function repairLegacyTechDiscardState(state: GameState): GameState {
+  const currTurn = state.currTurn
+  if (!currTurn) return state
+
+  const pending = currTurn.pendingChoices ?? []
+  const legacyChoices = pending.filter(
+    (choice): choice is CardSelectChoice =>
+      choice.type === ChoiceType.CARD_SELECT && techTileIdFromDiscardPrompt(choice.prompt) != null
+  )
+  if (legacyChoices.length === 0) return state
+
+  const remaining = pending.filter(choice => !legacyChoices.includes(choice as CardSelectChoice))
+  let next: GameState = {
+    ...state,
+    currTurn: { ...currTurn, pendingChoices: remaining },
+    canEndTurn:
+      remaining.length === 0 && state.pendingRewards.filter(r => !r.disabled).length === 0,
+  }
+
+  for (const choice of legacyChoices) {
+    const tileId = techTileIdFromDiscardPrompt(choice.prompt)
+    if (tileId) {
+      next = revertTileActivated(next, currTurn.playerId, tileId)
+    }
+  }
+  return next
 }
 
 function applyFlagshipActivation(
@@ -1167,15 +1213,18 @@ function discardFromHand(
   if (idx < handCount) {
     handCount = Math.max(0, handCount - 1)
   }
-  const cardsInDrawPile = Math.max(0, deck.length - handCount)
-  const drawn = Math.min(drawCards, cardsInDrawPile)
-  handCount += drawn
+  const drawResult = applyDrawCardsToPlayer({ deck, discardPile, handCount }, drawCards)
+  deck.splice(0, deck.length, ...drawResult.deck)
+  discardPile.splice(0, discardPile.length, ...drawResult.discardPile)
+  handCount = drawResult.handCount
+  const drawn = drawResult.drawn
 
   const gains = [...state.gains]
   gains.push({
     round: state.currentRound,
     playerId,
     sourceId: removed.id,
+    cardId: removed.id,
     name: source.name,
     amount: -1,
     type: RewardType.DISCARD,
@@ -1234,57 +1283,55 @@ function enqueueIntrigueCardChoice(
   }
 }
 
-export function applySonicSnoopersDraw(
+export function applySonicSnoopers(
   state: GameState,
   playerId: number,
-  cardId: number
+  count?: number
 ): GameState {
-  const card = state.intrigueDeck.find(c => c.id === cardId)
-  if (!card) return state
   const source = techActivationSource(TechTileId.SONIC_SNOOPERS)
+  if (count === undefined) {
+    const intrCount = state.players.find(p => p.id === playerId)?.intrigueCount ?? 0
+    const countChoice: CounterChoice = {
+      ...createCountChoice(
+        nextSemanticId(source, 'SONIC-SNOOPERS-COUNT', collectLiveIds(state)),
+        source,
+        0,
+        0,
+        intrCount,
+        'Number of Intrigue cards to put at the bottom of the deck',
+      ),
+      onResolve: (count: number) => ({
+        type: 'CUSTOM_EFFECT',
+        playerId,
+        customEffect: CustomEffect.SONIC_SNOOPERS,
+        data: { count },
+      }),
+    }
+    const turn = state.currTurn
+    if(!turn) return state
+    return {
+      ...state,
+      currTurn: {
+        ...turn,
+        pendingChoices: [...(turn?.pendingChoices ?? []), countChoice],
+      },
+    }
+  }
+
+  const intrigueCount = count
+  if (intrigueCount <= 0) return state
+  const player = state.players.find(p => p.id === playerId)
+  if (!player || player.intrigueCount < intrigueCount) return state
   const gains = [...state.gains]
-  pushGain(gains, state, playerId, source, 1, RewardType.INTRIGUE)
+  pushGain(gains, state, playerId, source, -intrigueCount, RewardType.INTRIGUE)
+  pushGain(gains, state, playerId, source, intrigueCount, RewardType.DRAW)
   const next: GameState = {
     ...state,
     gains,
-    intrigueDeck: state.intrigueDeck.filter(c => c.id !== cardId),
-    players: state.players.map(p =>
-      p.id === playerId ? { ...p, intrigueCount: p.intrigueCount + 1 } : p
-    ),
-  }
-  if (next.intrigueDiscard.length > 0) {
-    return enqueueIntrigueCardChoice(
-      next,
-      playerId,
-      'Sonic Snoopers: choose an intrigue card to return to the deck',
-      next.intrigueDiscard,
-      CustomEffect.SONIC_SNOOPERS,
-      { step: 'return' }
-    )
   }
   return next
 }
 
-export function applySonicSnoopersReturn(
-  state: GameState,
-  playerId: number,
-  cardId: number
-): GameState {
-  const card = state.intrigueDiscard.find(c => c.id === cardId)
-  if (!card) return state
-  const source = techActivationSource(TechTileId.SONIC_SNOOPERS)
-  const gains = [...state.gains]
-  pushGain(gains, state, playerId, source, -1, RewardType.INTRIGUE)
-  return {
-    ...state,
-    gains,
-    intrigueDiscard: state.intrigueDiscard.filter(c => c.id !== cardId),
-    intrigueDeck: [...state.intrigueDeck, card],
-    players: state.players.map(p =>
-      p.id === playerId ? { ...p, intrigueCount: Math.max(0, p.intrigueCount - 1) } : p
-    ),
-  }
-}
 
 function applySpySatellitesActivation(
   state: GameState,
@@ -1398,6 +1445,7 @@ export function handleActivateTech(state: GameState, action: ActivateTechAction)
       if (applied === state) return state
       return markTileActivated(applied, playerId, tileId, { remove: true })
     }
+    //TODO should ask for how many intrigues to discard
     case TechTileId.SONIC_SNOOPERS: {
       const marked = markTileActivated(state, playerId, tileId, { remove: true })
       if (marked.intrigueDeck.length === 0) return marked
@@ -1407,7 +1455,7 @@ export function handleActivateTech(state: GameState, action: ActivateTechAction)
         'Sonic Snoopers: choose an intrigue card from the deck',
         marked.intrigueDeck,
         CustomEffect.SONIC_SNOOPERS,
-        { step: 'draw' }
+        {}
       )
     }
     default:

@@ -216,7 +216,8 @@
       "image": "imperium_row/bene_gesserit_sister.png",
       "effects": {
         "reveal": [
-          "effect:card:imperium/bene-gesserit-sister:reveal:0"
+          "effect:card:imperium/bene-gesserit-sister:reveal:0",
+          "effect:card:imperium/bene-gesserit-sister:reveal:1"
         ]
       },
       "authorIds": [

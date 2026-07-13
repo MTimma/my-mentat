@@ -11,7 +11,7 @@
  * Tune with **`?cardEffectDebug=1`**, then copy values here.
  */
 
-import { Card, Cost, CustomEffect, PlayEffect, Reward, RevealEffect } from '../types/GameTypes'
+import { Card, Cost, CustomEffect, FixedOptionsChoice, PlayEffect, Reward, RevealEffect } from '../types/GameTypes'
 
 export type CardEffectRegionId = 'agent' | 'reveal'
 
@@ -70,6 +70,30 @@ export const CARD_EFFECT_LAYOUT_OVERRIDES: Record<string, CardEffectLayoutOverri
       { left: 41, top: 79, width: 55, height: 18 },
     ],
   },
+  'Bene Gesserit Sister': {
+    revealEffects: [
+      // revealEffect[0] — persuasion OR option (left)
+      { left: 6, top: 58, width: 40, height: 12 },
+      // revealEffect[1] — combat OR option (right)
+      { left: 48, top: 58, width: 45, height: 12 },
+    ],
+  },
+}
+
+export function getChoiceOptionOverlayPlacements(
+  card: Card,
+  choice: FixedOptionsChoice,
+  isRevealed: boolean
+): Array<{ optionIndex: number; rect: CardEffectRect }> | null {
+  if (!isRevealed || choice.options.length <= 1) return null
+  const override = CARD_EFFECT_LAYOUT_OVERRIDES[card.name]
+  if (!override?.revealEffects?.length || override.revealEffects.length < choice.options.length) {
+    return null
+  }
+  return choice.options.map((_, index) => ({
+    optionIndex: index,
+    rect: override.revealEffects![index],
+  }))
 }
 
 export function layoutCardRegionPercent(rect: CardEffectRect): {

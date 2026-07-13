@@ -248,7 +248,7 @@
       "id": 21,
       "name": "Recruitment Mission",
       "type": "plot",
-      "description": "Gain 1 water during your Reveal turn this round. You may put cards you acquire on top of your deck.",
+      "description": "Gain 1 persuasion during your Reveal turn this round. You may put cards you acquire on top of your deck.",
       "image": "/intrigue/base/recruitment_mission.png",
       "effects": {
         "play": [
@@ -393,11 +393,10 @@
     },
     {
       "id": 33,
-      "name": "Blackmail",
+      "name": "Demand Respect",
       "type": "combat",
-      "description": "Combat: Lose 1 influence (your choice) to gain +5 strength.",
-      "image": "/intrigue/rise_of_ix/blackmail.png",
-      "riseOfIx": true,
+      "description": "When you win a Conflict: gain 1 influence with a faction of your choice —OR— pay 2 spice to gain 2 influence with one faction.",
+      "image": "/intrigue/base/demand_respect.webp",
       "effects": {
         "play": [
           "effect:intrigue:33:play:0"
@@ -406,6 +405,31 @@
     },
     {
       "id": 34,
+      "name": "Poison Snooper",
+      "type": "plot",
+      "description": "Look at the top card of your deck. Draw it —OR— trash it.",
+      "image": "/intrigue/base/poison_snooper.webp",
+      "effects": {
+        "play": [
+          "effect:intrigue:34:play:0"
+        ]
+      }
+    },
+    {
+      "id": 100,
+      "name": "Blackmail",
+      "type": "combat",
+      "description": "Combat: Lose 1 influence (your choice) to gain +5 strength.",
+      "image": "/intrigue/rise_of_ix/blackmail.png",
+      "riseOfIx": true,
+      "effects": {
+        "play": [
+          "effect:intrigue:roi-100:play:0"
+        ]
+      }
+    },
+    {
+      "id": 101,
       "name": "Cannon Turrets",
       "type": "combat",
       "description": "Combat: +2 strength. Each opponent retreats 1 dreadnought from the Conflict.",
@@ -413,13 +437,13 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:34:play:0",
-          "effect:intrigue:34:play:1"
+          "effect:intrigue:roi-101:play:0",
+          "effect:intrigue:roi-101:play:1"
         ]
       }
     },
     {
-      "id": 35,
+      "id": 102,
       "name": "Strategic Push",
       "type": "combat",
       "description": "Combat: +2 strength. If you win this Conflict: +2 Solari.",
@@ -427,13 +451,13 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:35:play:0",
-          "effect:intrigue:35:play:1"
+          "effect:intrigue:roi-102:play:0",
+          "effect:intrigue:roi-102:play:1"
         ]
       }
     },
     {
-      "id": 36,
+      "id": 103,
       "name": "Second Wave",
       "type": "combat",
       "description": "Combat: +2 strength. Deploy up to 2 units from your garrison to the Conflict.",
@@ -441,13 +465,13 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:36:play:0",
-          "effect:intrigue:36:play:1"
+          "effect:intrigue:roi-103:play:0",
+          "effect:intrigue:roi-103:play:1"
         ]
       }
     },
     {
-      "id": 37,
+      "id": 104,
       "name": "War Chest",
       "type": "combat",
       "description": "Combat: Pay 2 Solari to gain +4 strength —OR— Endgame: If you have 10+ Solari, gain 1 VP.",
@@ -455,13 +479,13 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:37:play:0",
-          "effect:intrigue:37:play:1"
+          "effect:intrigue:roi-104:play:0",
+          "effect:intrigue:roi-104:play:1"
         ]
       }
     },
     {
-      "id": 38,
+      "id": 105,
       "name": "Finesse",
       "type": "combat",
       "description": "Combat: +2 strength —OR— Plot: Lose 1 influence (your choice) to gain 1 influence (your choice).",
@@ -469,13 +493,13 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:38:play:0",
-          "effect:intrigue:38:play:1"
+          "effect:intrigue:roi-105:play:0",
+          "effect:intrigue:roi-105:play:1"
         ]
       }
     },
     {
-      "id": 39,
+      "id": 106,
       "name": "Advanced Weaponry",
       "type": "combat",
       "description": "Combat: If you have 3 tech: +4 strength —OR— Plot: Pay 3 Solari to commission 1 dreadnought.",
@@ -483,13 +507,13 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:39:play:0",
-          "effect:intrigue:39:play:1"
+          "effect:intrigue:roi-106:play:0",
+          "effect:intrigue:roi-106:play:1"
         ]
       }
     },
     {
-      "id": 40,
+      "id": 107,
       "name": "Grand Conspiracy",
       "type": "endgame",
       "description": "Endgame: If you meet 3 of 4 conditions (2 dreadnoughts, 1 SMF, 4+ influence on 2 tracks, High Council): 1 VP. All 4: 2 VP.",
@@ -497,12 +521,12 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:40:play:0"
+          "effect:intrigue:roi-107:play:0"
         ]
       }
     },
     {
-      "id": 41,
+      "id": 108,
       "name": "Strongarm",
       "type": "plot",
       "description": "Lose a troop to gain 1 influence on the faction track where you placed an Agent this turn.",
@@ -510,12 +534,12 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:41:play:0"
+          "effect:intrigue:roi-108:play:0"
         ]
       }
     },
     {
-      "id": 42,
+      "id": 109,
       "name": "Ixian Probe",
       "type": "plot",
       "description": "Discard 2 cards to draw 2 cards.",
@@ -523,12 +547,12 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:42:play:0"
+          "effect:intrigue:roi-109:play:0"
         ]
       }
     },
     {
-      "id": 43,
+      "id": 110,
       "name": "Cull",
       "type": "plot",
       "description": "Pay 1 Solari to trash 1 card.",
@@ -536,12 +560,12 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:43:play:0"
+          "effect:intrigue:roi-110:play:0"
         ]
       }
     },
     {
-      "id": 44,
+      "id": 111,
       "name": "Secret Forces",
       "type": "plot",
       "description": "Gain 2 troops if you have a seat on the High Council.",
@@ -549,12 +573,12 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:44:play:0"
+          "effect:intrigue:roi-111:play:0"
         ]
       }
     },
     {
-      "id": 45,
+      "id": 112,
       "name": "Quid Pro Quo",
       "type": "plot",
       "description": "Pay 2 spice to gain 1 influence on each faction track where you currently have an Agent.",
@@ -562,12 +586,12 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:45:play:0"
+          "effect:intrigue:roi-112:play:0"
         ]
       }
     },
     {
-      "id": 46,
+      "id": 113,
       "name": "Glimpse the Path",
       "type": "plot",
       "description": "Pay 1 spice to gain 1 water and draw 1 card.",
@@ -575,12 +599,12 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:46:play:0"
+          "effect:intrigue:roi-113:play:0"
         ]
       }
     },
     {
-      "id": 47,
+      "id": 114,
       "name": "Diversion",
       "type": "plot",
       "description": "When you deploy 4 units to the Conflict in one turn, gain +1 on the Shipping track.",
@@ -588,12 +612,12 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:47:play:0"
+          "effect:intrigue:roi-114:play:0"
         ]
       }
     },
     {
-      "id": 48,
+      "id": 115,
       "name": "Expedite",
       "type": "plot",
       "description": "Pay 1 spice to advance 1 space on the Shipping track.",
@@ -601,12 +625,12 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:48:play:0"
+          "effect:intrigue:roi-115:play:0"
         ]
       }
     },
     {
-      "id": 49,
+      "id": 116,
       "name": "Machine Culture",
       "type": "plot",
       "description": "Plot: Acquire 1 tech tile —OR— Endgame: If you have 3 tech: gain 1 VP.",
@@ -614,8 +638,8 @@
       "riseOfIx": true,
       "effects": {
         "play": [
-          "effect:intrigue:49:play:0",
-          "effect:intrigue:49:play:1"
+          "effect:intrigue:roi-116:play:0",
+          "effect:intrigue:roi-116:play:1"
         ]
       }
     },
@@ -628,7 +652,7 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:50:play:0"
+          "effect:intrigue:imm-50:play:0"
         ]
       }
     },
@@ -641,7 +665,7 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:51:play:0"
+          "effect:intrigue:imm-51:play:0"
         ]
       }
     },
@@ -654,7 +678,7 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:52:play:0"
+          "effect:intrigue:imm-52:play:0"
         ]
       }
     },
@@ -667,7 +691,7 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:53:play:0"
+          "effect:intrigue:imm-53:play:0"
         ]
       }
     },
@@ -680,7 +704,7 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:54:play:0"
+          "effect:intrigue:imm-54:play:0"
         ]
       }
     },
@@ -693,7 +717,7 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:55:play:0"
+          "effect:intrigue:imm-55:play:0"
         ]
       }
     },
@@ -706,7 +730,7 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:56:play:0"
+          "effect:intrigue:imm-56:play:0"
         ]
       }
     },
@@ -719,7 +743,7 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:57:play:0"
+          "effect:intrigue:imm-57:play:0"
         ]
       }
     },
@@ -732,7 +756,7 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:58:play:0"
+          "effect:intrigue:imm-58:play:0"
         ]
       }
     },
@@ -745,7 +769,7 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:59:play:0"
+          "effect:intrigue:imm-59:play:0"
         ]
       }
     },
@@ -758,8 +782,8 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:60:play:0",
-          "effect:intrigue:60:play:1"
+          "effect:intrigue:imm-60:play:0",
+          "effect:intrigue:imm-60:play:1"
         ]
       }
     },
@@ -772,8 +796,8 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:61:play:0",
-          "effect:intrigue:61:play:1"
+          "effect:intrigue:imm-61:play:0",
+          "effect:intrigue:imm-61:play:1"
         ]
       }
     },
@@ -786,8 +810,8 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:62:play:0",
-          "effect:intrigue:62:play:1"
+          "effect:intrigue:imm-62:play:0",
+          "effect:intrigue:imm-62:play:1"
         ]
       }
     },
@@ -800,8 +824,8 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:63:play:0",
-          "effect:intrigue:63:play:1"
+          "effect:intrigue:imm-63:play:0",
+          "effect:intrigue:imm-63:play:1"
         ]
       }
     },
@@ -814,8 +838,8 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:64:play:0",
-          "effect:intrigue:64:play:1"
+          "effect:intrigue:imm-64:play:0",
+          "effect:intrigue:imm-64:play:1"
         ]
       }
     }

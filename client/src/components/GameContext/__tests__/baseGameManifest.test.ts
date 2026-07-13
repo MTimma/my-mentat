@@ -35,14 +35,13 @@ describe('Base game manifest — data integrity', () => {
 
   it('maps base intrigue entries to intrigueCards (known gaps tracked)', () => {
     const byName = new Map(intrigueCards.map(c => [c.name, c]))
-    const knownNotImplemented = new Set(['Demand Respect', 'Poison Snooper'])
+    const knownNotImplemented = new Set<string>()
     const missing: string[] = []
     for (const entry of baseGameManifest.intrigue) {
       if (knownNotImplemented.has(entry.codeName)) continue
       if (!byName.has(entry.codeName)) missing.push(entry.codeName)
     }
     expect(missing, `Missing intrigue: ${missing.join(', ')}`).toEqual([])
-    expect(knownNotImplemented.size).toBeGreaterThan(0)
   })
 
   it('includes all starting-deck cards from code', () => {

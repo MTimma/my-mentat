@@ -42,10 +42,10 @@ export function controlBonusOwner(
   return state.controlMarkers[space] ?? null
 }
 
-/** True when the player has troops or (RoI) dreadnoughts/negotiators in the Conflict. */
+/** True when the player has troops, specimens, or (RoI) dreadnoughts in the Conflict. */
 export function playerHasUnitsInCombat(state: GameState, playerId: number): boolean {
   if ((state.combatTroops[playerId] || 0) > 0) return true
-  if ((state.combatNegotiators?.[playerId] || 0) > 0) return true
+  if ((state.combatSpecimens?.[playerId] || 0) > 0) return true
   if (state.expansions?.riseOfIx !== true) return false
   const player = state.players.find(p => p.id === playerId)
   return (player?.dreadnoughts?.conflict ?? 0) > 0
@@ -55,13 +55,13 @@ export function getDreadnoughtsInConflict(player: Player): number {
   return player.dreadnoughts?.conflict ?? 0
 }
 
-/** Troops + dreadnoughts + negotiators currently in the Conflict for this player. */
+/** Troops + specimens + dreadnoughts currently in the Conflict for this player. */
 export function unitsInConflictForPlayer(state: GameState, playerId: number): number {
   const player = state.players.find(p => p.id === playerId)
   if (!player) return 0
   return (
     (state.combatTroops?.[playerId] ?? 0) +
-    (state.combatNegotiators?.[playerId] ?? 0) +
+    (state.combatSpecimens?.[playerId] ?? 0) +
     (player.dreadnoughts?.conflict ?? 0)
   )
 }

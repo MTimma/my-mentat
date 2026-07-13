@@ -102,7 +102,14 @@ describe('published id catalog', () => {
       expect(effect.reward).toBeDefined()
       if (effect.owner.type === 'card') expect(cardIds.has(effect.owner.id as string)).toBe(true)
       if (effect.owner.type === 'board-space') expect(spaceIds.has(effect.owner.id as number)).toBe(true)
-      if (effect.owner.type === 'intrigue') expect(intrigueIds.has(effect.owner.id as number)).toBe(true)
+      if (effect.owner.type === 'intrigue') {
+        const ownerId = effect.owner.id
+        const numericId =
+          typeof ownerId === 'string' && ownerId.includes('-')
+            ? Number(ownerId.split('-').pop())
+            : ownerId
+        expect(intrigueIds.has(numericId as number)).toBe(true)
+      }
     }
   })
 

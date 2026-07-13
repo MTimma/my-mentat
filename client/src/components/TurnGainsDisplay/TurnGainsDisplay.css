@@ -191,6 +191,29 @@
   opacity: 0.92;
 }
 
+.turn-gains-side--discard-inline {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.turn-gains-side--discard-inline .gain-item--discard-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  background: transparent;
+}
+
+.turn-gain-discard-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  flex-shrink: 0;
+  opacity: 0.92;
+}
+
 /* Horizontal row of source groups; each group = title on top, cost → reward below */
 .turn-gains-display {
   display: flex;
@@ -325,7 +348,6 @@
 .turn-gain-combat-token--deployed .turn-gain-combat-count {
   color: rgba(255, 205, 210, 0.95);
 }
-
 .turn-gain-combat-token--retreated .turn-gain-combat-count {
   color: rgba(207, 216, 220, 0.95);
 }

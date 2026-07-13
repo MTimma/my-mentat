@@ -246,7 +246,7 @@ describe('Dreadnought board space (mandatory commission + optional acquire)', ()
     expect(optionalEffectsForBoardSpace(s, DREADNOUGHT_SPACE_ID)).toHaveLength(1)
   })
 
-  it('records solari cost for dreadnought space visit', () => {
+  it('records solari cost and drednought reward for dreadnought space visit', () => {
     const s = placeOnIxSpace(DREADNOUGHT_SPACE_ID)
     expect(s.players[0].dreadnoughts?.garrison).toBe(1)
     expect(s.players[0].solari).toBe(7)
@@ -258,7 +258,17 @@ describe('Dreadnought board space (mandatory commission + optional acquire)', ()
           g.name === 'Dreadnought'
       )
     ).toBe(true)
+    expect(
+      s.gains.some(
+        g =>
+          g.type === RewardType.DREADNOUGHT &&
+          g.amount === 1 &&
+          g.name === 'Dreadnought'
+      )
+    ).toBe(true)
   })
+
+  
 })
 
 describe('optional may icons on cards', () => {

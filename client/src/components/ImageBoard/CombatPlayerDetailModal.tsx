@@ -11,7 +11,7 @@ import './CombatPlayerDetailModal.css'
 type CardPileKind = 'deck' | 'discard' | 'trash'
 
 const PILE_LABELS: Record<CardPileKind, string> = {
-  deck: 'Deck',
+  deck: 'Hand & Deck',
   discard: 'Discard',
   trash: 'Trash',
 }

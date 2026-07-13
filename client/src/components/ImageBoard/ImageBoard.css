@@ -257,11 +257,6 @@
   cursor: not-allowed;
 }
 
-/* Combat hint (desert / swords) — only when not in “valid play” gold highlight, which
-   would otherwise lose to this rule’s border-color and look reddish vs non-combat picks */
-.image-board__hotspot.combat-space:not(.highlighted) {
-  border-color: rgba(191, 54, 12, 0.5);
-}
 
 .image-board__hotspot.voice-selectable {
   box-shadow: 0 0 12px rgba(255, 167, 38, 0.8);

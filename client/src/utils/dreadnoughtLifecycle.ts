@@ -422,7 +422,9 @@ export function handleDreadnoughtReward(
   count: number,
   source: GainAttribution,
   /** When commissioning during PLACE_AGENT, the target space may not be on currTurn yet. */
-  placementSpaceId?: number
+  placementSpaceId?: number,
+  /** When set (e.g. PLACE_AGENT), append the gain here instead of replacing state.gains. */
+  appendGains?: Gain[]
 ): GameState {
   if (state.expansions?.riseOfIx !== true || count <= 0) return state
   const player = state.players.find(p => p.id === playerId)
@@ -450,9 +452,10 @@ export function handleDreadnoughtReward(
     }
   }
 
-  const gains: Gain[] = [...state.gains]
+  const gains: Gain[] = appendGains ?? [...state.gains]
   const commissioned = applyDreadnoughtCommission(state, playerId, count, false, source, gains)
   if (!commissioned) return state
+  if (appendGains) return commissioned
   return { ...commissioned, gains }
 }
 

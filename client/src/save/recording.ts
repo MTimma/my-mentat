@@ -62,8 +62,8 @@ export const REPLAYABLE_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
   'UNDEPLOY_TROOP',
   'DEPLOY_DREADNOUGHT',
   'UNDEPLOY_DREADNOUGHT',
-  'DEPLOY_NEGOTIATOR',
-  'UNDEPLOY_NEGOTIATOR',
+  'DEPLOY_SPECIMEN',
+  'UNDEPLOY_SPECIMEN',
   'RETREAT_TROOP',
   'PLAY_INTRIGUE',
   'MOBILIZE_GARRISON',
@@ -81,6 +81,7 @@ export const REPLAYABLE_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
   'PAY_COST',
   'RESOLVE_CHOICE', // Freighter Advance/Recall use this with optionIndex + CustomEffect
   'RESOLVE_CARD_SELECT',
+  'RESOLVE_COUNTER',
   'CUSTOM_EFFECT',
   'TRASH_CARD',
   'SELECT_CONFLICT',

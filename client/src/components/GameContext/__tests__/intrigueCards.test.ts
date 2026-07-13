@@ -149,7 +149,8 @@ describe('Intrigue cards — player turns (plot)', () => {
   })
 
   it('Water of Life (30): pay 1 water and 1 spice to draw 3', () => {
-    let s = basePlotState([makePlayer(0)])
+    const deck = [5001, 5002, 5003, 5004, 5005, 5006, 5007, 5008].map(id => stubDeckCard(id))
+    let s = basePlotState([makePlayer(0, { deck, handCount: 5 })])
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 30 })
     expect(s.players[0].water).toBe(2)
     expect(s.players[0].spice).toBe(9)
@@ -295,12 +296,12 @@ describe('Intrigue cards — player turns (plot)', () => {
     const d1 = stubDeckCard(601)
     const d2 = stubDeckCard(602)
     let s = basePlotState([
-      makePlayer(0, { deck: [], discardPile: [d1, d2], handCount: 5 }),
+      makePlayer(0, { deck: [], discardPile: [d1, d2], handCount: 0 }),
     ])
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 22 })
     expect(s.players[0].discardPile.length).toBe(0)
     expect(s.players[0].deck.length).toBe(2)
-    expect(s.players[0].handCount).toBe(6)
+    expect(s.players[0].handCount).toBe(1)
   })
 
   it('Dispatch an Envoy (11): sets dispatch envoy flag', () => {
@@ -428,7 +429,8 @@ describe('Intrigue cards — player turns (plot)', () => {
   })
 
   it('Bindu Suspension (3): +1 hand and advances turn to next player', () => {
-    let s = basePlotState([makePlayer(0), makePlayer(1)])
+    const deck = [5001, 5002, 5003, 5004, 5005, 5006].map(id => stubDeckCard(id))
+    let s = basePlotState([makePlayer(0, { deck, handCount: 5 }), makePlayer(1)])
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 3 })
     expect(s.players[0].handCount).toBe(6)
     expect(s.activePlayerId).toBe(1)
@@ -444,12 +446,72 @@ describe('Intrigue cards — scheduled on reveal', () => {
     expect(s.players[0].persuasion).toBe(2)
   })
 
-  it('Recruitment Mission (21): +1 water on reveal and sets acquire-to-top flag', () => {
+  it('Recruitment Mission (21): +1 persuasion on reveal and sets acquire-to-top flag', () => {
     let s = basePlotState([makePlayer(0)])
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 21 })
     expect(s.acquireToTopThisRound[0]).toBe(true)
     s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [5001] })
-    expect(s.players[0].water).toBe(4)
+    expect(s.players[0].persuasion).toBe(1)
+  })
+
+  it('Poison Snooper (34): draws the top draw-pile card', () => {
+    const drawCard = stubDeckCard(6001)
+    const handCard = stubDeckCard(6002)
+    let s = basePlotState([
+      makePlayer(0, {
+        deck: [handCard, drawCard],
+        handCount: 1,
+      }),
+    ])
+    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 34 })
+    const choice = s.currTurn?.pendingChoices?.[0]
+    expect(choice?.prompt).toContain('stub-6001')
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: choice!.id,
+      optionIndex: 0,
+      source: { type: GainSource.INTRIGUE, id: 34, name: 'Poison Snooper' },
+    })
+    expect(s.players[0].handCount).toBe(2)
+    expect(s.players[0].deck.map(c => c.id)).toEqual([handCard.id, drawCard.id])
+  })
+
+  it('Poison Snooper (34): trashes the top draw-pile card', () => {
+    const drawCard = stubDeckCard(6101)
+    const handCard = stubDeckCard(6102)
+    let s = basePlotState([
+      makePlayer(0, {
+        deck: [handCard, drawCard],
+        handCount: 1,
+      }),
+    ])
+    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 34 })
+    const choice = s.currTurn?.pendingChoices?.[0]
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: choice!.id,
+      optionIndex: 1,
+      source: { type: GainSource.INTRIGUE, id: 34, name: 'Poison Snooper' },
+    })
+    expect(s.players[0].handCount).toBe(1)
+    expect(s.players[0].deck.map(c => c.id)).toEqual([handCard.id])
+    expect(s.players[0].trash.map(c => c.id)).toEqual([drawCard.id])
+  })
+
+  it('Poison Snooper (34): cannot play with an empty draw pile', () => {
+    const handCard = stubDeckCard(6201)
+    let s = basePlotState([
+      makePlayer(0, {
+        deck: [handCard],
+        handCount: 1,
+      }),
+    ])
+    const before = s
+    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 34 })
+    expect(s).toBe(before)
+    expect(s.players[0].intrigueCount).toBe(1)
   })
 })
 
@@ -668,6 +730,82 @@ describe('Intrigue cards — combat phase', () => {
     s = { ...s, phase: GamePhase.COMBAT_REWARDS }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
     expect(s.players[0].spice).toBe(3)
+  })
+
+  it('Demand Respect (33): winner gains deferred +1 influence after combat resolution', () => {
+    let s = combatFourPlayerState()
+    s = {
+      ...s,
+      combatStrength: { 0: 20, 1: 2, 2: 2, 3: 2 },
+      combatTroops: { 0: 2, 1: 1, 2: 1, 3: 1 },
+      players: s.players.map((p, i) =>
+        i === 0 ? { ...p, intrigueCount: 1, spice: 10 } : { ...p, intrigueCount: 0 }
+      ),
+    }
+    s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 33 })
+    const orChoice = s.currTurn?.pendingChoices?.[0]
+    expect(orChoice?.prompt).toContain('Demand Respect')
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: orChoice!.id,
+      optionIndex: 0,
+      source: { type: GainSource.INTRIGUE, id: 33, name: 'Demand Respect' },
+    })
+    const factionChoice = s.currTurn?.pendingChoices?.[0]
+    expect(factionChoice?.prompt).toContain('gain 1 influence')
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: factionChoice!.id,
+      optionIndex: 0,
+      source: { type: GainSource.INTRIGUE, id: 33, name: 'Demand Respect' },
+    })
+    expect(s.pendingDemandRespectReward?.[0]).toEqual({
+      faction: FactionType.EMPEROR,
+      amount: 1,
+    })
+    expect(s.factionInfluence[FactionType.EMPEROR]?.[0] ?? 0).toBe(0)
+    s = { ...s, phase: GamePhase.COMBAT_REWARDS }
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(1)
+  })
+
+  it('Demand Respect (33): winner pays 2 spice for +2 influence in one faction', () => {
+    let s = combatFourPlayerState()
+    s = {
+      ...s,
+      combatStrength: { 0: 20, 1: 2, 2: 2, 3: 2 },
+      combatTroops: { 0: 2, 1: 1, 2: 1, 3: 1 },
+      players: s.players.map((p, i) =>
+        i === 0 ? { ...p, intrigueCount: 1, spice: 5 } : { ...p, intrigueCount: 0 }
+      ),
+    }
+    s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 33 })
+    const orChoice = s.currTurn?.pendingChoices?.[0]
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: orChoice!.id,
+      optionIndex: 1,
+      source: { type: GainSource.INTRIGUE, id: 33, name: 'Demand Respect' },
+    })
+    expect(s.players[0].spice).toBe(3)
+    const factionChoice = s.currTurn?.pendingChoices?.[0]
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: factionChoice!.id,
+      optionIndex: 2,
+      source: { type: GainSource.INTRIGUE, id: 33, name: 'Demand Respect' },
+    })
+    expect(s.pendingDemandRespectReward?.[0]).toEqual({
+      faction: FactionType.BENE_GESSERIT,
+      amount: 2,
+    })
+    s = { ...s, phase: GamePhase.COMBAT_REWARDS }
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(s.factionInfluence[FactionType.BENE_GESSERIT][0]).toBe(2)
   })
 
   it('keeps the Imperium Row intact when starting the next round', () => {

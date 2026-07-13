@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { AgentIcon, TurnType, type Card, type GameState, type Player } from '../../types/GameTypes'
-import { getOpponentDiscardableCards, getPlayAreaCardsForTurnView, getSelectableDeckCards, validateDiscardCostSelection, getDiscardCostPlayability, isCardInHand, canPayDiscardCost, getAgentTurnCardsForDisplay } from '../playAreaDisplay'
+import { getOpponentDiscardableCards, getPlayAreaCardsForTurnView, getSelectableDeckCards, validateDiscardCostSelection, getDiscardCostPlayability, canPayDiscardCost, getAgentTurnCardsForDisplay } from '../playAreaDisplay'
 
 function stubCard(id: number, name = `card-${id}`): Card {
   return { id, name, image: '', agentIcons: [AgentIcon.CITY] }
@@ -116,8 +116,6 @@ describe('playAreaDisplay', () => {
       deck: [stubCard(1), stubCard(2), stubCard(3), stubCard(4)],
       handCount: 1,
     })
-    expect(isCardInHand(player, 1)).toBe(true)
-    expect(isCardInHand(player, 2)).toBe(false)
     expect(canPayDiscardCost(player, 2)).toBe(false)
     expect(canPayDiscardCost({ ...player, handCount: 2 }, 2)).toBe(true)
     expect(validateDiscardCostSelection({ ...player, handCount: 2 }, 2, [1, 2])).toBe(true)

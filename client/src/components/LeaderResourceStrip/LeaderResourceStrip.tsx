@@ -22,7 +22,7 @@ export type LeaderResourceStripInclude =
   | 'influence'
 
 const PILE_LABELS: Record<CardPileKind, string> = {
-  deck: 'Deck',
+  deck: 'Hand & Deck',
   discard: 'Discard',
   trash: 'Trash',
 }
@@ -166,7 +166,7 @@ const LeaderResourceStrip = ({
       {showItem('deck') &&
         renderPileCounter(
           'deck',
-          'Deck',
+          'Hand & Deck',
           player.deck.length,
           <span className="leader-resource-abbr" aria-hidden="true">
             D

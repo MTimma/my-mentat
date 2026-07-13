@@ -844,13 +844,8 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.BENE_GESSERIT],
     cost: 3,
     revealEffect: [
-      {
-        reward: {
-          persuasion: 2,
-          combat: 2
-        },
-        choiceOpt: true
-      }
+      { choiceOpt: true, reward: { persuasion: 2 } },
+      { choiceOpt: true, reward: { combat: 2 } },
     ]
   },
   {
@@ -861,13 +856,8 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.BENE_GESSERIT],
     cost: 3,
     revealEffect: [
-      {
-        reward: {
-          persuasion: 2,
-          combat: 2
-        },
-        choiceOpt: true
-      }
+      { choiceOpt: true, reward: { persuasion: 2 } },
+      { choiceOpt: true, reward: { combat: 2 } },
     ]
   },
   {
@@ -878,13 +868,8 @@ export const IMPERIUM_ROW_DECK: Card[] = [
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.BENE_GESSERIT],
     cost: 3,
     revealEffect: [
-      {
-        reward: {
-          persuasion: 2,
-          combat: 2
-        },
-        choiceOpt: true
-      }
+      { choiceOpt: true, reward: { persuasion: 2 } },
+      { choiceOpt: true, reward: { combat: 2 } },
     ]
   },
   {

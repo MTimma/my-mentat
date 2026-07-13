@@ -59,6 +59,7 @@ describe('TRASH_CARD — pile semantics', () => {
       round: s.currentRound,
       playerId: 0,
       sourceId: hand1.id,
+      cardId: hand1.id,
       name: hand1.name,
       amount: -1,
       type: RewardType.TRASH,
@@ -124,7 +125,8 @@ describe('TRASH_CARD — pile semantics', () => {
     expect(after.gains).toContainEqual(
       expect.objectContaining({
         playerId: 0,
-        sourceId: hand1.id,
+        sourceId: SELECTIVE_BREEDING_ID,
+        cardId: hand1.id,
         name: hand1.name,
         amount: -1,
         type: RewardType.TRASH,
@@ -152,7 +154,7 @@ describe('TRASH_CARD — pile semantics', () => {
     )
   })
 
-  it('gainReward drawCards increments handCount even when the draw pile is empty', () => {
+  it('gainReward drawCards clamps to available cards in deck and discard', () => {
     const only = stubDeckCard(201)
     const s = getBaseTestState({ deck: [only], handCount: 1, discardPile: [], playArea: [], trash: [] })
     const after = applyGameAction(s, {
@@ -165,9 +167,7 @@ describe('TRASH_CARD — pile semantics', () => {
 
     const p = after.players[0]
     expect(p.deck).toEqual([])
-    // NOTE: current behavior — TRASH_CARD's gainReward path (applyChoiceReward) does not
-    // clamp drawCards to the draw pile size, so handCount (1) exceeds deck length (0).
-    expect(p.handCount).toBe(1)
+    expect(p.handCount).toBe(0)
     expect(p.trash.map(c => c.id)).toEqual([only.id])
   })
 })
@@ -342,7 +342,7 @@ describe('RESOLVE_CARD_SELECT — Helena signet ring (Imperium Row replacement)'
   })
 })
 
-describe('Selective Breeding — trash via PLACE_AGENT selectiveBreedingData', () => {
+describe('Selective Breeding — trash via board-space PAY_COST', () => {
   it('moves the chosen card to trash and fixes handCount when trashed from hand', () => {
     const played = stubDeckCard(401, { agentIcons: [AgentIcon.BENE_GESSERIT] })
     const trashed = stubDeckCard(402)
@@ -355,18 +355,25 @@ describe('Selective Breeding — trash via PLACE_AGENT selectiveBreedingData', (
       type: 'PLACE_AGENT',
       playerId: 0,
       spaceId: SELECTIVE_BREEDING_ID,
-      selectiveBreedingData: { trashedCardId: trashed.id },
+    })
+
+    const trashEffect = s.currTurn?.optionalEffects?.find(e => e.cost.trash)
+    expect(trashEffect).toBeTruthy()
+
+    s = applyGameAction(s, {
+      type: 'PAY_COST',
+      playerId: 0,
+      effectId: trashEffect!.id,
+      data: { trashedCardId: trashed.id },
     })
 
     const p = s.players[0]
     expect(p.trash.map(c => c.id)).toEqual([trashed.id])
     expect(p.deck.map(c => c.id)).toEqual([5000])
     expect(p.playArea.map(c => c.id)).toEqual([played.id])
-    // handCount: 5 - 1 (played card) - 1 (trashed from hand) = 3
+    // handCount: 5 - 1 (played) - 1 (trashed from hand) + 1 (only one card left to draw) = 3
     expect(p.handCount).toBe(3)
     expect(p.spice).toBe(8)
-    // NOTE: current behavior — the selective-breeding trash records no TRASH gain entry
-    // (unlike the TRASH_CARD action).
-    expect(s.gains.some(g => g.type === RewardType.TRASH)).toBe(false)
+    expect(s.gains.some(g => g.type === RewardType.TRASH && g.name === trashed.name && g.cardId === trashed.id)).toBe(true)
   })
 })

@@ -70,7 +70,7 @@ import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { highCouncilSlotAssignments } from '../../utils/highCouncilDisplay'
 import CombatAreaCluster, {
   type CombatDreadnoughtDeployProps,
-  type CombatNegotiatorDeployProps,
+  type CombatSpecimenDeployProps,
   type CombatTroopDeployProps,
 } from './CombatAreaCluster'
 import CombatDeployDock from './CombatDeployDock'
@@ -86,11 +86,7 @@ interface SellMelangeData {
   solariReward: number
 }
 
-interface SelectiveBreedingData {
-  trashedCardId: number
-}
-
-type ExtraSpaceData = SellMelangeData | SelectiveBreedingData | undefined
+type ExtraSpaceData = SellMelangeData | undefined
 
 interface ImageBoardProps {
   currentPlayer: number
@@ -104,7 +100,6 @@ interface ImageBoardProps {
   factionInfluence: { [key: string]: { [key: number]: number } }
   currentConflict?: ConflictCard
   bonusSpice: { [key: string]: number }
-  onSelectiveBreedingRequested: (cards: Card[], onSelect: (card: Card) => void) => void
   recallMode?: boolean
   /** Shown above the board during Kwisatz recall / agent-source steps. */
   placementPrompt?: string | null
@@ -122,7 +117,7 @@ interface ImageBoardProps {
   /** Active-player troop deploy controls; rendered below conflict card, left of leader area. */
   troopDeploy?: CombatTroopDeployProps
   dreadnoughtDeploy?: CombatDreadnoughtDeployProps
-  negotiatorDeploy?: CombatNegotiatorDeployProps
+  specimenDeploy?: CombatSpecimenDeployProps
   /** Sandbox setup turn: conflict slot and player quadrants become configuration targets. */
   sandboxSetup?: {
     onConflictClick: () => void
@@ -193,7 +188,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   factionInfluence,
   currentConflict,
   bonusSpice,
-  onSelectiveBreedingRequested,
   recallMode = false,
   placementPrompt = null,
   ignoreSpaceRequirements = false,
@@ -206,7 +200,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   historyHighlightSpaceId = null,
   troopDeploy,
   dreadnoughtDeploy,
-  negotiatorDeploy,
+  specimenDeploy,
   sandboxSetup,
   influenceSelection,
   showBoardInfoTips = true,
@@ -280,15 +274,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
       if (riseOfIx) return
       setSelectedSpaceId(spaceId)
       setShowSellMelangePopup(true)
-      return
-    }
-    if (space?.name === 'Selective Breeding') {
-      const player = players.find(p => p.id === currentPlayer)
-      if (!player) return
-      onSelectiveBreedingRequested(
-        [...player.deck, ...player.discardPile, ...player.playArea],
-        card => onSpaceClick(spaceId, { trashedCardId: card.id })
-      )
       return
     }
     onSpaceClick(spaceId)
@@ -970,11 +955,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             </>
           )}
 
-          {showCombatArea && (troopDeploy || dreadnoughtDeploy || negotiatorDeploy) ? (
+          {showCombatArea && (troopDeploy || dreadnoughtDeploy || specimenDeploy) ? (
             <CombatDeployDock
               troopDeploy={troopDeploy}
               dreadnoughtDeploy={dreadnoughtDeploy}
-              negotiatorDeploy={negotiatorDeploy}
+              specimenDeploy={specimenDeploy}
               activePlayerId={currentPlayer}
               activePlayerColor={players.find(p => p.id === currentPlayer)?.color}
               className="image-board__combat-deploy-dock"

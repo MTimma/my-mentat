@@ -169,6 +169,64 @@ describe('REVEAL_CARDS', () => {
     expect(s.players[0].water).toBe(3)
   })
 
+  it('Bene Gesserit Sister reveal offers persuasion OR combat, not both', () => {
+    const card = stubDeckCard(9142, {
+      name: 'Bene Gesserit Sister',
+      revealEffect: [
+        { choiceOpt: true, reward: { persuasion: 2 } },
+        { choiceOpt: true, reward: { combat: 2 } },
+      ],
+    })
+    let s = getBaseTestState({ deck: [card], handCount: 1 })
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [9142] })
+
+    const choice = s.currTurn!.pendingChoices![0] as FixedOptionsChoice
+    expect(choice.options.map(o => o.reward)).toEqual([{ persuasion: 2 }, { combat: 2 }])
+    expect(s.players[0].persuasion).toBe(0)
+    expect(s.currTurn?.persuasionCount).toBe(0)
+
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: choice.id,
+      optionIndex: 0,
+    })
+    expect(s.players[0].persuasion).toBe(2)
+    expect(s.gains.filter(g => g.type === RewardType.COMBAT && g.sourceId === 9142)).toHaveLength(0)
+
+    s = getBaseTestState({ deck: [card], handCount: 1 })
+    s = { ...s, combatTroops: { 0: 1, 1: 0, 2: 0 } }
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [9142] })
+    const combatChoice = s.currTurn!.pendingChoices![0] as FixedOptionsChoice
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: combatChoice.id,
+      optionIndex: 1,
+    })
+    expect(s.players[0].persuasion).toBe(0)
+    expect(s.gains).toContainEqual(
+      expect.objectContaining({
+        type: RewardType.COMBAT,
+        amount: 2,
+        sourceId: 9142,
+      })
+    )
+  })
+
+  it('legacy compound choiceOpt reveal effect is normalized to persuasion OR combat', () => {
+    const card = stubDeckCard(9143, {
+      name: 'Bene Gesserit Sister',
+      revealEffect: [{ choiceOpt: true, reward: { persuasion: 2, combat: 2 } }],
+    })
+    let s = getBaseTestState({ deck: [card], handCount: 1 })
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [9143] })
+
+    const choice = s.currTurn!.pendingChoices![0] as FixedOptionsChoice
+    expect(choice.options.map(o => o.reward)).toEqual([{ persuasion: 2 }, { combat: 2 }])
+    expect(s.players[0].persuasion).toBe(0)
+  })
+
   it('cost-gated reveal effects become optionalEffects and do not block canEndTurn', () => {
     const card = stubDeckCard(9151, {
       revealEffect: [{ cost: { spice: 2 }, reward: { troops: 3 } }],
@@ -234,11 +292,6 @@ describe('REVEAL_CARDS', () => {
     s = applyGameAction(s, { type: 'DEPLOY_DREADNOUGHT', playerId: 0 })
     expect(s.players[0].dreadnoughts?.conflict).toBe(0)
     expect(s.players[0].dreadnoughts?.garrison).toBe(beforeDread.players[0].dreadnoughts?.garrison)
-
-    const beforeNeg = s
-    s = applyGameAction(s, { type: 'DEPLOY_NEGOTIATOR', playerId: 0 })
-    expect(s.combatNegotiators?.[0]).toBeUndefined()
-    expect(s.players[0].negotiatorsOnIx).toBe(beforeNeg.players[0].negotiatorsOnIx)
 
     s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
     expect(s.combatTroops[0]).toBe(1)

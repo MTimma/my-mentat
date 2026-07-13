@@ -61,6 +61,9 @@ export function canAffordInfluenceOptionalEffect(
   if (cost?.water && player.water < cost.water) return false
   if (cost?.solari && player.solari < cost.solari) return false
   if (cost?.troops && player.troops < cost.troops) return false
+  if (cost?.trash && player.handCount + player.discardPile.length + player.playArea.length < cost.trash) return false
+  if (cost?.specimen && (player.specimens ?? 0) < cost.specimen) return false
+  if (cost?.discard && player.handCount < cost.discard) return false
   if (cost?.influence?.chooseOne && !canPayInfluenceCost(state, playerId, cost.influence)) {
     return false
   }

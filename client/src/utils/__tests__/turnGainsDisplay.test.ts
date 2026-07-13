@@ -98,6 +98,92 @@ describe('turnGainsDisplay', () => {
     expect(aggregateResourceGains(rewards)[0]).toMatchObject({ type: RewardType.INTRIGUE, amount: 1 })
   })
 
+  it('treats trash as an effect on the reward side (cost → trashed card)', () => {
+    const cullId = 43
+    const trashedId = 201
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.INTRIGUE,
+        sourceId: cullId,
+        round: 1,
+        name: 'Cull',
+        amount: -1,
+        type: RewardType.SOLARI,
+      },
+      {
+        playerId: 0,
+        source: GainSource.INTRIGUE,
+        sourceId: cullId,
+        cardId: trashedId,
+        round: 1,
+        name: 'Arrakis Liaison',
+        amount: -1,
+        type: RewardType.TRASH,
+      },
+    ]
+
+    const groups = groupGainsBySource(gains)
+    expect(groups[0].title).toBe('Cull')
+
+    const { costs, rewards } = splitGainsByCostAndReward(gains)
+    expect(aggregateResourceGains(costs)).toEqual([
+      { type: RewardType.SOLARI, amount: 1, name: undefined, cardId: undefined },
+    ])
+    expect(aggregateResourceGains(rewards)).toEqual([
+      { type: RewardType.TRASH, amount: 1, name: 'Arrakis Liaison', cardId: trashedId },
+    ])
+  })
+
+  it('titles card-effect trash by the played card and thumbnails the trashed card', () => {
+    const sietchId = 1052
+    const duneId = 6
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: sietchId,
+        cardId: duneId,
+        round: 1,
+        name: 'Dune, the Desert Planet',
+        amount: -1,
+        type: RewardType.TRASH,
+      },
+    ]
+
+    const groups = groupGainsBySource(gains)
+    expect(groups[0].title).toBe('Sietch Reverend Mother')
+    expect(aggregateResourceGains(gains)[0]).toMatchObject({
+      type: RewardType.TRASH,
+      name: 'Dune, the Desert Planet',
+      cardId: duneId,
+    })
+  })
+
+  it('titles board-space trash by the space and thumbnails the trashed card', () => {
+    const selectiveBreedingId = 19
+    const trashedId = 6
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.BOARD_SPACE,
+        sourceId: selectiveBreedingId,
+        cardId: trashedId,
+        round: 1,
+        name: 'Dune, the Desert Planet',
+        amount: -1,
+        type: RewardType.TRASH,
+      },
+    ]
+
+    const groups = groupGainsBySource(gains)
+    expect(groups[0].title).toBe('Selective Breeding')
+    expect(aggregateResourceGains(gains)[0]).toMatchObject({
+      type: RewardType.TRASH,
+      cardId: trashedId,
+    })
+  })
+
   it('treats Foldspace trash-this-card as an effect, not a cost to draw', () => {
     const gains = [
       {
@@ -718,7 +804,7 @@ describe('turnGainsDisplay', () => {
     expect(aggregateResourceGains(gains)[0]).toMatchObject({
       type: RewardType.CARD,
       amount: 1,
-      cardId: 42,
+      cardId: 109,
       name: 'Spy',
     })
   })

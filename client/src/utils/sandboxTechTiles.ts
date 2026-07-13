@@ -44,7 +44,7 @@ export function tilesAvailableForBoard(players: Player[]): number {
 
 export function requiredFilledStacks(tilesForBoard: number): number {
   if (tilesForBoard <= 0) return 0
-  return Math.min(TECH_STACK_COUNT, Math.floor(tilesForBoard / TECH_STACK_SIZE))
+  return Math.ceil(tilesForBoard / TECH_STACK_SIZE)
 }
 
 export function allowedEmptyStacks(tilesForBoard: number): number {
@@ -85,14 +85,6 @@ export function isSandboxStackTopsValid(
   players: Player[],
   stackTops: Array<TechTileId | null>
 ): boolean {
-  const tilesForBoard = tilesAvailableForBoard(players)
-  const requiredFilled = requiredFilledStacks(tilesForBoard)
-  const allowedEmpty = allowedEmptyStacks(tilesForBoard)
-
-  const filledCount = stackTops.filter((top): top is TechTileId => top != null).length
-  const emptyCount = stackTops.filter(top => top === null).length
-
-  if (filledCount !== requiredFilled || emptyCount !== allowedEmpty) return false
 
   const faceUpIds = stackTops.filter((top): top is TechTileId => top != null)
   if (new Set(faceUpIds).size !== faceUpIds.length) return false

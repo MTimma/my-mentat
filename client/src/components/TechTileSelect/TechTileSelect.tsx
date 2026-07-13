@@ -4,6 +4,7 @@ import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import {
   canConfirmSandboxStackTops,
   normalizeSandboxStackTops,
+  TECH_STACK_COUNT,
 } from '../../utils/sandboxTechTiles'
 import type { Player } from '../../types/GameTypes'
 import { filterBySearchTokens } from '../../utils/searchTokens'
@@ -88,9 +89,8 @@ const TechTileSelect: React.FC<TechTileSelectProps> = ({
         return next
       }
 
-      const filled = next.filter((top): top is TechTileId => Boolean(top)).length
       const targetIndex = next.findIndex(top => top === undefined)
-      if (targetIndex === -1 || filled >= requiredFilledStacks) return prev
+      if (targetIndex === -1) return prev
 
       next[targetIndex] = tileId
       return next
@@ -146,7 +146,7 @@ const TechTileSelect: React.FC<TechTileSelectProps> = ({
           <h2>Select face-up tech tiles</h2>
           <p>{poolHint}</p>
           <div className="imperium-select-count">
-            Selected {filledCount} / {requiredFilledStacks}
+            Selected {filledCount} / {TECH_STACK_COUNT}
             {allowedEmptyStacks > 0
               ? ` · ${emptyCount + unsetCount} empty slot${emptyCount + unsetCount === 1 ? '' : 's'} allowed`
               : ''}
@@ -224,7 +224,7 @@ const TechTileSelect: React.FC<TechTileSelectProps> = ({
             {filteredTiles.map(tile => {
               const selected = selectedIds.has(tile.id)
               const disabled =
-                !selected && (filledCount >= requiredFilledStacks || nextFillIndex === -1)
+                !selected && (nextFillIndex === -1)
               return (
                 <button
                   key={tile.id}

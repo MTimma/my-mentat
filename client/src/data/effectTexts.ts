@@ -22,6 +22,7 @@ export const PLAY_EFFECT_TEXTS: Partial<Record<CustomEffect, string>> = {
     [CustomEffect.SHUFFLE_DISCARD_INTO_DECK]: "Shuffle your discard pile into your deck.",
     [CustomEffect.CANNON_TURRETS]: "Each opponent retreats 1 dreadnought from the Conflict.",
     [CustomEffect.STRATEGIC_PUSH]: "If you win this Conflict: +2 Solari.",
+    [CustomEffect.DEMAND_RESPECT]: "When you win a Conflict: gain 1 influence —OR— pay 2 spice to gain 2 influence with one faction.",
     [CustomEffect.SECOND_WAVE]: "Deploy up to 2 units from your garrison to the Conflict.",
     [CustomEffect.WAR_CHEST]: "Endgame: +1 VP if you have 10+ Solari.",
     [CustomEffect.ADVANCED_WEAPONRY]: "Combat: +4 strength if you have 3 tech.",
@@ -36,6 +37,7 @@ export const PLAY_EFFECT_TEXTS: Partial<Record<CustomEffect, string>> = {
 
 export const PLAY_EFFECT_DISABLED_TEXTS: Partial<Record<CustomEffect, string>> = {
     [CustomEffect.OTHER_MEMORY]: "No Bene Gesserit cards in discard pile.",
+    [CustomEffect.POISON_SNOOPER]: "No cards left in your draw pile.",
 }
 
 export const REVEAL_EFFECT_TEXTS: Partial<Record<CustomEffect, string>> = {

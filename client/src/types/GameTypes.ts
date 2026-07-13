@@ -76,7 +76,8 @@ export interface Player {
   freighterStep?: 0 | 1 | 2 | 3
   /** Acquired tech tiles (face-up / face-down). */
   tech?: PlayerTechTile[]
-  /** Negotiators placed on the Ix board (similar to conflict-deployed troops). */
+  techTrash?: PlayerTechTile[]
+  /** Tech negotiators placed on the Ix board (used for tech purchase discounts). */
   negotiatorsOnIx?: number
   /** Tessia Vernius — per-faction snooper placement on influence tracks. */
   snoopers?: Partial<Record<FactionType, boolean>>
@@ -174,7 +175,7 @@ export interface SpaceProps {
     spice?: number
     solari?: number
   }
-  specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'selectiveBreeding' | 'highCouncil' | 'sellMelange'
+  specialEffect?: 'mentat' | 'swordmaster' | 'foldspace' | 'secrets' | 'highCouncil' | 'sellMelange'
   /** Rise of Ix — CHOAM-overlay board space. */
   riseOfIx?: boolean
   /** Immortality — Bene Tleilax board replacement space (same id as a base space). */
@@ -331,6 +332,8 @@ export interface Gain {
   name: string
   amount: number
   type: RewardType
+  /** Trashed/discarded card id when it differs from sourceId (e.g. card effect trash). */
+  cardId?: number
 }
 
 export enum GainSource {
@@ -503,7 +506,7 @@ export interface OptionalEffect {
   cost: Cost
   reward: Reward
   source: { type: GainSource; id: number; name: string }
-  data?: { trashedCardId?: number }
+  data?: { trashedCardId?: number; cardIds?: number[] }
 }
 
 export interface PendingReward {
@@ -530,8 +533,6 @@ export interface ChoiceOption {
 
 // Card pile types for card selection UI
 export enum CardPile {
-  /** Rules “from hand”: deck in this app (played cards live in playArea, not deck). */
-  HAND = 'HAND',
   DISCARD = 'DISCARD',
   /** Same as HAND — deck is the selectable draw pile. */
   DECK = 'DECK',
@@ -539,7 +540,8 @@ export enum CardPile {
 }
 export enum ChoiceType {
   FIXED_OPTIONS = 'FIXED_OPTIONS',
-  CARD_SELECT = 'CARD_SELECT'
+  CARD_SELECT = 'CARD_SELECT',
+  COUNTER = 'COUNTER'
 }
 
 // Base interface for all pending choices
@@ -561,6 +563,16 @@ export interface FixedOptionsChoice extends PendingChoiceBase {
   type: ChoiceType.FIXED_OPTIONS
   options: ChoiceOption[] // one must be chosen
   influenceResolution?: InfluenceResolutionMeta
+  /** Combat victory intrigue — store faction pick until Conflict win is confirmed. */
+  deferInfluenceUntilCombatWin?: boolean
+}
+
+export interface CounterChoice extends PendingChoiceBase {
+  type: ChoiceType.COUNTER
+  initial: number,
+  min: number,
+  max: number,
+  onResolve?: (count: number) => unknown
 }
 
 // Card selection choice
@@ -576,7 +588,7 @@ export interface CardSelectChoice extends PendingChoiceBase {
 }
 
 // Unified pending choice type
-export type PendingChoice = FixedOptionsChoice | CardSelectChoice
+export type PendingChoice = FixedOptionsChoice | CardSelectChoice | CounterChoice
 
 /** Minimal tech tile snapshot for turn-history acquired rows. */
 export interface AcquiredTechTileSnapshot {
@@ -603,8 +615,8 @@ export interface GameTurn {
   removableTroops?: number
   /** Dreadnoughts deployed to Conflict this turn (undo via UNDEPLOY_DREADNOUGHT). */
   removableDreadnoughts?: number
-  /** Negotiators deployed from Ix to Conflict this turn (undo via UNDEPLOY_NEGOTIATOR). */
-  removableNegotiators?: number
+  /** Specimens deployed from Axolotl tanks to Conflict this turn (undo via UNDEPLOY_SPECIMEN). */
+  removableSpecimens?: number
   /** Total dreadnoughts sent to Conflict this turn. */
   dreadnoughtsDeployedToConflict?: number
   /** Total troops sent to Conflict this turn (does not decrease on retreat). */
@@ -749,8 +761,8 @@ export interface GameState {
   currTurn: GameTurn | null
   combatStrength: Record<number, number>
   combatTroops: Record<number, number>
-  /** Rise of Ix — negotiators deployed from Ix to the Conflict. */
-  combatNegotiators?: Record<number, number>
+  /** Immortality — specimens deployed from Axolotl tanks to the Conflict. */
+  combatSpecimens?: Record<number, number>
   currentConflict: ConflictCard
   combatPasses: Set<number>
   occupiedSpaces: Record<number, number[]>
@@ -814,6 +826,10 @@ export interface GameState {
   pendingVictorSpiceThisCombat?: Record<number, boolean>
   /** Strategic Push: if true, grant 2 solari when this player wins the current Conflict */
   pendingVictorSolariThisCombat?: Record<number, boolean>
+  /** Demand Respect: influence granted when this player wins the current Conflict */
+  pendingDemandRespectReward?: Partial<
+    Record<number, { faction: FactionType; amount: number }>
+  >
   /** Second Wave: player must deploy up to 2 garrison units to the Conflict */
   pendingSecondWave?: number | null
   /** Labels a row in `history` (setup baseline, round start, combat resolution, endgame). */
@@ -971,6 +987,14 @@ export enum CustomEffect {
   STAGED_INCIDENT = 'STAGED_INCIDENT',
   /** Combat To the Victor: defer spice to conflict win */
   TO_THE_VICTOR = 'TO_THE_VICTOR',
+  /** Combat Demand Respect: defer influence to conflict win (OR choice at play) */
+  DEMAND_RESPECT = 'DEMAND_RESPECT',
+  /** Plot Poison Snooper: look at deck top, then draw or trash */
+  POISON_SNOOPER = 'POISON_SNOOPER',
+  /** Plot Poison Snooper: draw the revealed top-of-deck card */
+  POISON_SNOOPER_DRAW = 'POISON_SNOOPER_DRAW',
+  /** Plot Poison Snooper: trash the revealed top-of-deck card */
+  POISON_SNOOPER_TRASH = 'POISON_SNOOPER_TRASH',
   /** Plot Bindu Suspension: draw 1 to handCount then may end turn early (PLAY_INTRIGUE special-case) */
   BINDU_SUSPENSION = 'BINDU_SUSPENSION',
   /** Combat Master Tactician: marker for pending OR-choice UI (PLAY_COMBAT_INTRIGUE); choice lines use choiceOpt */

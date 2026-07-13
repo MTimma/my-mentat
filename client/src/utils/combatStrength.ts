@@ -19,12 +19,13 @@ export function computeStrength(state: GameState, playerId: number): number {
   if (!player) return 0
 
   const troops = state.combatTroops?.[playerId] ?? 0
-  const negotiators = state.combatNegotiators?.[playerId] ?? 0
   const riseOfIx = state.expansions?.riseOfIx === true
+  const immortality = state.expansions?.immortality === true
+  const specimens = immortality ? (state.combatSpecimens?.[playerId] ?? 0) : 0
   const dCount = riseOfIx ? (player.dreadnoughts?.conflict ?? 0) : 0
 
-  if (riseOfIx) {
-    if (troops + negotiators + dCount === 0) return 0
+  if (riseOfIx || immortality) {
+    if (troops + specimens + dCount === 0) return 0
   } else if (troops === 0) {
     return 0
   }
@@ -36,7 +37,7 @@ export function computeStrength(state: GameState, playerId: number): number {
     return state.combatStrength[playerId]
   }
 
-  let total = (troops + negotiators) * 2
+  let total = (troops + specimens) * 2
   if (riseOfIx && dCount > 0) {
     total += dCount * dreadnoughtStrengthEach(player.leader)
   }

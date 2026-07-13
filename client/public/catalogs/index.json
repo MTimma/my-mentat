@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "counts": {
-    "effects": 359,
+    "effects": 362,
     "cards": 127,
     "boardSpaces": 26,
     "conflicts": 22,
-    "intrigue": 64,
+    "intrigue": 66,
     "leaders": 14,
     "techTiles": 18,
     "expansions": 2

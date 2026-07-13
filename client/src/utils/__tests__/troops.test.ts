@@ -17,6 +17,7 @@ import {
 import { getRemainingDeploySlots } from '../dreadnoughtLifecycle'
 
 const RISE_OF_IX = { ...NO_EXPANSIONS, riseOfIx: true }
+const IMMORTALITY = { ...NO_EXPANSIONS, immortality: true }
 
 describe('troop supply pool', () => {
   it('seedTroopSupply keeps garrison + Ix negotiators + supply at 12', () => {
@@ -53,29 +54,29 @@ describe('troop supply pool', () => {
     expect(after).toBe(state)
   })
 
-  it('DEPLOY_NEGOTIATOR moves a negotiator from Ix into the conflict', () => {
+  it('DEPLOY_SPECIMEN moves a specimen from Axolotl tanks into the conflict', () => {
     let s = getFreshDefaultGameState()
     s = {
       ...s,
-      expansions: RISE_OF_IX,
+      expansions: IMMORTALITY,
       phase: GamePhase.PLAYER_TURNS,
-      players: [makePlayer(0, { troops: 2, troopSupply: 8, negotiatorsOnIx: 2 })],
+      players: [makePlayer(0, { troops: 2, troopSupply: 8, specimens: 2 })],
       currTurn: {
         playerId: 0,
         type: TurnType.ACTION,
         canDeployTroops: true,
         troopLimit: 2,
         removableTroops: 0,
-        removableNegotiators: 0,
+        removableSpecimens: 0,
       },
     }
-    s = applyGameAction(s, { type: 'DEPLOY_NEGOTIATOR', playerId: 0 })
-    expect(s.players[0].negotiatorsOnIx).toBe(1)
-    expect(s.combatNegotiators?.[0]).toBe(1)
+    s = applyGameAction(s, { type: 'DEPLOY_SPECIMEN', playerId: 0 })
+    expect(s.players[0].specimens).toBe(1)
+    expect(s.combatSpecimens?.[0]).toBe(1)
     expect(s.combatStrength[0]).toBe(2)
   })
 
-  it('deploy-these-troops allowance blocks dreadnought and negotiator deploy', () => {
+  it('deploy-these-troops allowance blocks dreadnought deploy', () => {
     let s = getFreshDefaultGameState()
     s = {
       ...s,
@@ -97,7 +98,6 @@ describe('troop supply pool', () => {
           troopLimit: 0,
           removableTroops: 0,
           removableDreadnoughts: 0,
-          removableNegotiators: 0,
         },
         2,
         { troops: 2, deployTroops: 2 }
@@ -111,8 +111,6 @@ describe('troop supply pool', () => {
 
     s = applyGameAction(s, { type: 'DEPLOY_DREADNOUGHT', playerId: 0 })
     expect(s.players[0].dreadnoughts?.conflict).toBe(0)
-    s = applyGameAction(s, { type: 'DEPLOY_NEGOTIATOR', playerId: 0 })
-    expect(s.combatNegotiators?.[0]).toBeUndefined()
 
     s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
     expect(s.combatTroops[0]).toBe(1)
@@ -121,7 +119,7 @@ describe('troop supply pool', () => {
     expect(getRemainingDeploySlots(s)).toBe(0)
   })
 
-  it('general deploy allowance still allows dreadnought and negotiator deploy', () => {
+  it('general deploy allowance still allows dreadnought deploy', () => {
     let s = getFreshDefaultGameState()
     s = {
       ...s,
@@ -143,7 +141,6 @@ describe('troop supply pool', () => {
           troopLimit: 0,
           removableTroops: 0,
           removableDreadnoughts: 0,
-          removableNegotiators: 0,
         },
         2,
         { deployTroops: 2 }
@@ -158,13 +155,14 @@ describe('troop supply pool', () => {
 function totalTroopPieces(
   player: ReturnType<typeof makePlayer>,
   combatTroops = 0,
-  combatNegotiators = 0
+  combatSpecimens = 0
 ): number {
   return (
     (player.troopSupply ?? 0) +
     player.troops +
     combatTroops +
     (player.negotiatorsOnIx ?? 0) +
-    combatNegotiators
+    (player.specimens ?? 0) +
+    combatSpecimens
   )
 }

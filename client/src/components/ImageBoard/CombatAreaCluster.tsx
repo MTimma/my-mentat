@@ -216,11 +216,11 @@ export interface CombatDreadnoughtDeployProps {
   onUndeploy: () => void
 }
 
-export interface CombatNegotiatorDeployProps {
+export interface CombatSpecimenDeployProps {
   canDeploy: boolean
-  deployableNegotiators: number
+  deployableSpecimens: number
   deployedThisTurn: number
-  negotiatorsOnIx: number
+  specimensInTanks: number
   onDeploy: () => void
   onUndeploy: () => void
 }

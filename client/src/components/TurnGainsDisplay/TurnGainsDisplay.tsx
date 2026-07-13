@@ -261,6 +261,21 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     )
   }
 
+  const renderInlineDiscardGain = (gain: AggregatedResourceGain, index: number) => {
+    const iconPath = getRewardIcon(RewardType.DISCARD)
+    const label = gain.name ?? 'Discard'
+    return (
+      <div
+        key={`discard-inline-${index}`}
+        className="gain-item gain-item--discard-inline"
+        aria-label={`Discarded ${label}`}
+      >
+        {iconPath ? renderGainIcon(iconPath, 'Discard', 'turn-gain-discard-icon') : null}
+        {renderCardGains(gain.cardId, gain.name, gain.amount, `discard-inline-card-${index}`)}
+      </div>
+    )
+  }
+
   const renderResourceGain = (
     gain: AggregatedResourceGain,
     index: number,
@@ -294,10 +309,12 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
               <span className="gain-text-fallback">{displayName}</span>
             )}
           </span>
-        ) : rewardType === RewardType.CARD ||
-        rewardType === RewardType.TRASH ||
-        rewardType === RewardType.DISCARD ? (
+        ) : rewardType === RewardType.CARD ? (
           renderCardGains(gain.cardId, gain.name, gain.amount, `${side}-card-${index}`)
+        ) : rewardType === RewardType.TRASH ? (
+          renderInlineTrashGain(gain, index)
+        ) : rewardType === RewardType.DISCARD ? (
+          renderInlineDiscardGain(gain, index)
         ) : rewardType === RewardType.PERSUASION ? (
           <span className="gain-persuasion-badge" title={displayName} aria-hidden="true">
             <span className="gain-persuasion-diamond" />
@@ -358,13 +375,19 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     const influenceGains = aggregateInfluenceGains(sideGains)
     const trashGains =
       inlineTrash ? resourceGains.filter(g => g.type === RewardType.TRASH) : []
-    const nonTrashResourceGains =
-      inlineTrash ? resourceGains.filter(g => g.type !== RewardType.TRASH) : resourceGains
+    const discardGains =
+      inlineDiscards ? resourceGains.filter(g => g.type === RewardType.DISCARD) : []
+    const nonSpecialResourceGains = resourceGains.filter(g => {
+      if (inlineTrash && g.type === RewardType.TRASH) return false
+      if (inlineDiscards && g.type === RewardType.DISCARD) return false
+      return true
+    })
 
     if (
-      nonTrashResourceGains.length === 0 &&
+      nonSpecialResourceGains.length === 0 &&
       influenceGains.length === 0 &&
-      trashGains.length === 0
+      trashGains.length === 0 &&
+      discardGains.length === 0
     ) {
       return null
     }
@@ -376,9 +399,14 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
             {trashGains.map((gain, idx) => renderInlineTrashGain(gain, idx))}
           </div>
         ) : null}
-        {nonTrashResourceGains.length > 0 || influenceGains.length > 0 ? (
+        {discardGains.length > 0 ? (
+          <div className="turn-gains-side turn-gains-side--discard-inline">
+            {discardGains.map((gain, idx) => renderInlineDiscardGain(gain, idx))}
+          </div>
+        ) : null}
+        {nonSpecialResourceGains.length > 0 || influenceGains.length > 0 ? (
           <div className={`turn-gains-side turn-gains-side--${side}`}>
-            {nonTrashResourceGains.map((gain, idx) => renderResourceGain(gain, idx, side))}
+            {nonSpecialResourceGains.map((gain, idx) => renderResourceGain(gain, idx, side))}
             {influenceGains.map((gain, idx) => renderInfluenceGain(gain.name, gain.amount, idx, side))}
           </div>
         ) : null}
@@ -601,10 +629,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
               aria-label={isInlineDiscards ? 'Discarded cards' : group.title}
             >
               {isInlineDiscards ? (
-                <>
-                  <span className="turn-gain-inline-discard-label">discard</span>
-                  {costContent}
-                </>
+                costContent
               ) : (
                 <>
                   {costContent}

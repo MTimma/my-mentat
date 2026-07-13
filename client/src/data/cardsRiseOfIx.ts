@@ -267,7 +267,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
       unload: true,
       playEffect: [
         {
-          requirement: { influence: { faction: FactionType.BENE_GESSERIT, amount: 2 } },
+          requirement: { influence: { faction: FactionType.BENE_GESSERIT, amount: 2 } },// cost and req not appliade, just reward
           cost: { discard: 1 },
           reward: { influence: NON_BG_INFLUENCE },
         },

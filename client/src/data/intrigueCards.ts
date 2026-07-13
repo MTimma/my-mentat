@@ -240,11 +240,11 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Recruitment Mission',
     type: IntrigueCardType.PLOT,
     description:
-      'Gain 1 water during your Reveal turn this round. You may put cards you acquire on top of your deck.',
+      'Gain 1 persuasion during your Reveal turn this round. You may put cards you acquire on top of your deck.',
     image: '/intrigue/base/recruitment_mission.png',
     agentIcons: [],
     playEffect: [
-      { timing: EffectTiming.ON_REVEAL_THIS_ROUND, reward: { water: 1 } },
+      { timing: EffectTiming.ON_REVEAL_THIS_ROUND, reward: { persuasion: 1 } },
       { reward: { acquireToTopThisRound: true } }
     ]
   },
@@ -353,6 +353,25 @@ export const intrigueCards: IntrigueCard[] = [
     image: '/intrigue/base/windfall.png',
     agentIcons: [],
     playEffect: [{ reward: { solari: 2 } }]
+  },
+  {
+    id: 33,
+    name: 'Demand Respect',
+    type: IntrigueCardType.COMBAT,
+    description:
+      'When you win a Conflict: gain 1 influence with a faction of your choice —OR— pay 2 spice to gain 2 influence with one faction.',
+    image: '/intrigue/base/demand_respect.webp',
+    agentIcons: [],
+    playEffect: [{ reward: { custom: CustomEffect.DEMAND_RESPECT } }]
+  },
+  {
+    id: 34,
+    name: 'Poison Snooper',
+    type: IntrigueCardType.PLOT,
+    description: 'Look at the top card of your deck. Draw it —OR— trash it.',
+    image: '/intrigue/base/poison_snooper.webp',
+    agentIcons: [],
+    playEffect: [{ reward: { custom: CustomEffect.POISON_SNOOPER } }]
   }
 ]
 

@@ -11,6 +11,7 @@ import {
   FixedOptionsChoice,
   GainSource,
   GamePhase,
+  RewardType,
   TurnType,
   type Card,
   type GameState,
@@ -244,6 +245,13 @@ describe('Rise of Ix intrigue cards', () => {
     expect(evaluateGrandConspiracy(s, 0)).toBe(2)
   })
 
+  it('Strongarm: cannot play before placing an Agent on a faction space', () => {
+    const card = cardByName('Strongarm')
+    const before = roiPlotState([makePlayer(0, { intrigueCount: 1, troops: 5 })])
+    const after = applyGameAction(before, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
+    expect(after).toBe(before)
+  })
+
   it('Strongarm: troop cost and agent-faction influence', () => {
     const card = cardByName('Strongarm')
     const emperorSpace = BOARD_SPACES.find(s => s.influence?.faction === FactionType.EMPEROR)!.id
@@ -306,6 +314,7 @@ describe('Rise of Ix intrigue cards', () => {
     })
     expect(s.players[0].solari).toBe(2)
     expect(s.players[0].trash).toHaveLength(1)
+    expect(s.gains.some(g => g.type === RewardType.TRASH && g.name === s.players[0].trash[0].name)).toBe(true)
   })
 
   it('Secret Forces: requires High Council for +2 troops', () => {
@@ -330,7 +339,10 @@ describe('Rise of Ix intrigue cards', () => {
 
   it('Glimpse the Path: spice, water, draw', () => {
     const card = cardByName('Glimpse the Path')
-    let s = roiPlotState([makePlayer(0, { intrigueCount: 1, spice: 2, water: 1, handCount: 5 })])
+    const deck = Array.from({ length: 6 }, (_, i) => stubDeckCard(9000 + i))
+    let s = roiPlotState([
+      makePlayer(0, { intrigueCount: 1, spice: 2, water: 1, handCount: 5, deck }),
+    ])
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
     expect(s.players[0].spice).toBe(1)
     expect(s.players[0].water).toBe(2)
