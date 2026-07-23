@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { FactionType } from '../../types/GameTypes'
-import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
+import { BoardScopedModal } from '../BoardScopedModal'
 import './MasterstrokeFactionModal.css'
 
 const FACTIONS = Object.values(FactionType)
@@ -30,9 +30,9 @@ const MasterstrokeFactionModal: React.FC<MasterstrokeFactionModalProps> = ({
     : 'Select 2 factions to gain 1 Influence with each.'
 
   const handleFactionClick = (faction: FactionType) => {
-    setSelectedFactions((prev) => {
+    setSelectedFactions(prev => {
       if (prev.includes(faction)) {
-        return prev.filter((f) => f !== faction)
+        return prev.filter(f => f !== faction)
       }
       if (prev.length < maxSelections) {
         return [...prev, faction]
@@ -53,33 +53,26 @@ const MasterstrokeFactionModal: React.FC<MasterstrokeFactionModalProps> = ({
     onCancel()
   }
 
-  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(open)
-
   if (!open) return null
-  if (waitForBoardTarget) return null
 
-  return portalNode(
-    <div
-      className={['dialog-overlay', 'masterstroke-faction-overlay', scopedClass].filter(Boolean).join(' ')}
-      onClick={handleCancel}
+  return (
+    <BoardScopedModal
+      isOpen
+      overlayClassName="masterstroke-faction-overlay"
+      onClose={handleCancel}
+      closeOnOverlayClick
     >
-      <div className="masterstroke-faction-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="masterstroke-faction-modal" onClick={event => event.stopPropagation()}>
         <div className="masterstroke-faction-header">
           <h3>{title ?? defaultTitle}</h3>
-          <button
-            className="masterstroke-faction-close"
-            onClick={handleCancel}
-            aria-label="Cancel"
-          >
+          <button className="masterstroke-faction-close" onClick={handleCancel} aria-label="Cancel">
             ×
           </button>
         </div>
         <div className="masterstroke-faction-body">
-          <p className="masterstroke-faction-prompt">
-            {prompt ?? defaultPrompt}
-          </p>
+          <p className="masterstroke-faction-prompt">{prompt ?? defaultPrompt}</p>
           <div className="masterstroke-faction-buttons">
-            {FACTIONS.map((faction) => (
+            {FACTIONS.map(faction => (
               <button
                 key={faction}
                 onClick={() => handleFactionClick(faction)}
@@ -95,7 +88,7 @@ const MasterstrokeFactionModal: React.FC<MasterstrokeFactionModalProps> = ({
                   src={`/icon/${faction}.png`}
                   alt={faction
                     .split('-')
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                     .join(' ')}
                 />
               </button>
@@ -104,18 +97,18 @@ const MasterstrokeFactionModal: React.FC<MasterstrokeFactionModalProps> = ({
         </div>
         <div className="masterstroke-faction-footer">
           <button
-            className="masterstroke-faction-confirm"
+            className="masterstroke-faction-confirm modal-btn modal-btn--primary"
             onClick={handleConfirm}
             disabled={selectedFactions.length !== maxSelections}
           >
             Confirm
           </button>
-          <button className="masterstroke-faction-cancel" onClick={handleCancel}>
+          <button className="masterstroke-faction-cancel modal-btn modal-btn--secondary" onClick={handleCancel}>
             Cancel
           </button>
         </div>
       </div>
-    </div>
+    </BoardScopedModal>
   )
 }
 

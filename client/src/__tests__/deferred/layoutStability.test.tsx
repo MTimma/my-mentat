@@ -21,7 +21,7 @@ describe('Turn controls — layout CSS contract', () => {
   })
 
   it('play mode pins footer chrome (turn-controls-container)', () => {
-    expect(appCss).toContain('.game-container--play .play-shell-footer > .turn-controls-container')
+    expect(appCss).toContain('.game-container--play .play-shell-footer .turn-controls-container')
   })
 
   it('turn-controls root uses border-box and full width', () => {

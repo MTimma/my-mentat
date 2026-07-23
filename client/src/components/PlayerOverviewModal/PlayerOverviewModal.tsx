@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { ControlMarkerType, FactionType, GameState, Player } from '../../types/GameTypes'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { getLeaderImage } from '../../data/leaders'
-import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
+import { BoardScopedModal } from '../BoardScopedModal'
 import LeaderImageModal from '../LeaderImageModal/LeaderImageModal'
 import PlayerPlayAreaModal from '../PlayerPlayAreaModal/PlayerPlayAreaModal'
 import './PlayerOverviewModal.css'
@@ -63,9 +63,6 @@ const PlayerOverviewModal = ({
 }: PlayerOverviewModalProps) => {
   const [leaderImagePlayer, setLeaderImagePlayer] = useState<Player | null>(null)
   const [playAreaPlayer, setPlayAreaPlayer] = useState<Player | null>(null)
-  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true)
-
-  if (waitForBoardTarget) return null
 
   const getBestValue = (valueSelector: (player: Player) => number): number => {
     return Math.max(...players.map(valueSelector), 0)
@@ -116,11 +113,8 @@ const PlayerOverviewModal = ({
     { key: 'intrigue', label: 'Intrigue', value: player => player.intrigueCount, highlightBest: true }
   ]
 
-  return portalNode(
-    <div
-      className={['dialog-overlay', 'player-overview-overlay', scopedClass].filter(Boolean).join(' ')}
-      onClick={onClose}
-    >
+  return (
+    <BoardScopedModal isOpen overlayClassName="player-overview-overlay" onClose={onClose} closeOnOverlayClick>
       <div className="player-overview-modal" onClick={event => event.stopPropagation()}>
         <div className="player-overview-header">
           <h3>Player Overview</h3>
@@ -294,7 +288,7 @@ const PlayerOverviewModal = ({
         isOpen={!!playAreaPlayer}
         onClose={() => setPlayAreaPlayer(null)}
       />
-    </div>
+    </BoardScopedModal>
   )
 }
 

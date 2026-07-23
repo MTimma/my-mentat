@@ -33,10 +33,13 @@ export interface IxBoardOverlayProps {
   onSpaceClick: (spaceId: number) => void
   isSpaceEnabled: (space: SpaceProps) => boolean
   highlightedAreas: SpaceProps['agentIcon'][]
+  canPlaceAgent?: boolean
   hotspotDebug?: boolean
   blockedSpaceMap: Map<number, number>
   /** `embedded` = overlay on Board.jpg; `docked` = standalone panel beside board (desktop). */
   placement?: IxBoardPlacement
+  /** Mobile embedded overlay uses `IX_BOARD_OVERLAY_RECT_MOBILE` on Board.jpg. */
+  mobileEmbeddedOverlay?: boolean
   historyHighlightSpaceId?: number | null
   /** Sandbox setup: tech stack slots become click targets to pick face-up tiles. */
   sandboxTechSetup?: {
@@ -65,9 +68,11 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
   onSpaceClick,
   isSpaceEnabled,
   highlightedAreas,
+  canPlaceAgent = false,
   hotspotDebug = false,
   blockedSpaceMap,
   placement = 'embedded',
+  mobileEmbeddedOverlay = false,
   historyHighlightSpaceId = null,
   sandboxTechSetup,
   currentPlayerId,
@@ -75,7 +80,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
   onTechTileAcquire,
 }) => {
   const isDocked = placement === 'docked'
-  const stageRect = isDocked ? null : layoutIxBoardOnStage()
+  const stageRect = isDocked ? null : layoutIxBoardOnStage(mobileEmbeddedOverlay)
   const spaceMap = new Map<number, SpaceProps>()
   BOARD_SPACES.forEach(s => spaceMap.set(s.id, s))
 
@@ -194,6 +199,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
                     src={tile.image}
                     alt={tile.name}
                     draggable={false}
+                    data-preview-src={tile.image}
                   />
                 ) : null}
               </button>
@@ -265,6 +271,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
                 src={tile.image}
                 alt={tile.name}
                 draggable={false}
+                data-preview-src={tile.image}
               />
             </button>
           )
@@ -284,17 +291,13 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
           const classes = [
             'ix-board-overlay__hotspot',
             'image-board__hotspot',
-            isHighlighted && enabled ? 'highlighted' : '',
+            canPlaceAgent && isHighlighted && enabled ? 'highlighted' : '',
             isOccupied ? 'occupied' : '',
             !enabled ? 'disabled' : '',
             isVoiceBlocked ? 'voice-blocked' : '',
           ]
             .filter(Boolean)
             .join(' ')
-
-          const occupiedBg = isOccupied
-            ? playerIdMarkerHex(occupied[occupied.length - 1], playersById)
-            : undefined
 
           return (
             <button
@@ -306,7 +309,6 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
                 top: `${hotspot.top}%`,
                 width: `${hotspot.width}%`,
                 height: `${hotspot.height}%`,
-                backgroundColor: occupiedBg ? `${occupiedBg}33` : undefined,
               }}
               title={space.name}
               data-space-id={hotspot.spaceId}

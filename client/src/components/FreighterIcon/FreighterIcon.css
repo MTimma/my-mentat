@@ -1,0 +1,48 @@
+.freighter-icon {
+  --freighter-ship-size: 18px;
+  --freighter-arrow-size: 11px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  line-height: 0;
+  vertical-align: middle;
+  flex-shrink: 0;
+  color: var(--chrome-accent, #ffd700);
+}
+
+.freighter-icon--sm {
+  --freighter-ship-size: clamp(8px, 3.2cqw, 12px);
+  --freighter-arrow-size: clamp(5px, 2.2cqw, 8px);
+}
+
+.freighter-icon--md {
+  --freighter-ship-size: 18px;
+  --freighter-arrow-size: 11px;
+}
+
+.freighter-icon--lg {
+  --freighter-ship-size: 20px;
+  --freighter-arrow-size: 12px;
+}
+
+.freighter-icon__ship {
+  display: block;
+  width: var(--freighter-ship-size);
+  height: var(--freighter-ship-size);
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+
+.freighter-icon__arrow {
+  display: block;
+  width: var(--freighter-arrow-size);
+  height: calc(var(--freighter-arrow-size) * 1.15);
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+
+.effect-token-icon.freighter-icon--lg {
+  width: auto;
+  height: auto;
+}

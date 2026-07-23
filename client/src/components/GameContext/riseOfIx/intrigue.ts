@@ -379,6 +379,10 @@ export function canPlayStrongarm(state: GameState, playerId: number): boolean {
   return agentFactionsThisTurn(state, playerId).length > 0
 }
 
+export function canPlayDiversion(state: GameState, playerId: number): boolean {
+  return unitsInConflictForPlayer(state, playerId) >= 4
+}
+
 export function playerMeetsAdvancedWeaponryPlot(player: Player): boolean {
   return player.solari >= 3
 }

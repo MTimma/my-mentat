@@ -44,7 +44,7 @@ const PlayerTechTiles: React.FC<PlayerTechTilesProps> = ({
 
         const content =
           owned.faceUp && tile ? (
-            <img src={tile.image} alt="" className="player-tech-tiles__img" draggable={false} />
+            <img src={tile.image} alt="" className="player-tech-tiles__img" draggable={false} data-preview-src={tile.image} />
           ) : (
             <TechTileFlipBadge
               image={tile?.image}

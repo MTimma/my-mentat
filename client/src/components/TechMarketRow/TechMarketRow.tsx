@@ -121,7 +121,7 @@ const TechMarketRow: React.FC<TechMarketRowProps> = ({
                 title={tile.name}
                 onClick={() => setSelectedNextTileId(tileId)}
               >
-                <img src={tile.image} alt={tile.name} className="tech-market-tile__img" draggable={false} />
+                <img src={tile.image} alt={tile.name} className="tech-market-tile__img" draggable={false} data-preview-src={tile.image} />
               </button>
             )
           })}
@@ -221,7 +221,7 @@ const TechMarketRow: React.FC<TechMarketRowProps> = ({
               disabled={!canAfford}
               onClick={() => beginAcquire(stackIndex)}
             >
-              <img src={tile.image} alt={tile.name} className="tech-market-tile__img" draggable={false} />
+              <img src={tile.image} alt={tile.name} className="tech-market-tile__img" draggable={false} data-preview-src={tile.image} />
               <span className="tech-market-tile__cost" aria-hidden="true">
                 {cost}
               </span>

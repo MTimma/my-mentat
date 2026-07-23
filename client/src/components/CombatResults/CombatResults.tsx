@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { FactionType, Player, GameState, GainSource } from '../../types/GameTypes';
-import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal';
+import { BoardScopedModal } from '../BoardScopedModal';
 import {
   conflictChoiceAsFixedOptions,
   isInfluenceBoardChoice,
 } from '../../utils/influenceBoardChoice';
 import { isBlockedSequentialConflictChoice } from '../../utils/conflictDistinctFactions';
 import { getFactionBumpIcon } from '../../utils/influenceDisplay';
+import FreighterIcon, { freighterArrowDirectionFromCustom } from '../FreighterIcon/FreighterIcon';
 import './CombatResults.css';
 
 interface PlayerResult {
@@ -59,7 +60,6 @@ const CombatResults: React.FC<CombatResultsProps> = ({
   onResolveConflictChoice
 }) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
-  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true);
 
   const calculateResults = (): PlayerResult[] => {
     const results: PlayerResult[] = [];
@@ -119,22 +119,19 @@ const CombatResults: React.FC<CombatResultsProps> = ({
   const results = calculateResults();
   const hasParticipants = results.length > 0;
 
-  if (waitForBoardTarget) return null;
-
   const getPlayerCombatGains = (playerId: number) => {
     return history.map(state => state.gains).flatMap(gain => gain?.filter(g => g.playerId === playerId && g.source === GainSource.CONFLICT) || []) || [];
   };
 
   const overlayClassName = [
     'combat-results-overlay',
-    scopedClass,
     influenceBoardChoiceActive ? 'combat-results-overlay--influence-board-choice' : '',
   ]
     .filter(Boolean)
     .join(' ');
 
-  return portalNode(
-    <div className={overlayClassName}>
+  return (
+    <BoardScopedModal isOpen overlayClassName={overlayClassName}>
     <div className="combat-results">
       <h2>Combat Results</h2>
       {!hasParticipants ? (
@@ -226,6 +223,24 @@ const CombatResults: React.FC<CombatResultsProps> = ({
                           </button>
                         )
                       }
+                      const freighterDirection = freighterArrowDirectionFromCustom(opt.reward.custom)
+                      if (freighterDirection) {
+                        return (
+                          <button
+                            key={oidx}
+                            type="button"
+                            className="effect-btn choice conflict-choice-freighter-btn"
+                            title={opt.rewardLabel ?? (freighterDirection === 'up' ? 'Advance' : 'Recall')}
+                            onClick={() => onResolveConflictChoice?.(choice.id, oidx)}
+                          >
+                            <FreighterIcon
+                              direction={freighterDirection}
+                              size="lg"
+                              title={opt.rewardLabel ?? (freighterDirection === 'up' ? 'Advance' : 'Recall')}
+                            />
+                          </button>
+                        )
+                      }
                       return (
                         <button
                           key={oidx}
@@ -277,7 +292,7 @@ const CombatResults: React.FC<CombatResultsProps> = ({
         </div>
       )}
     </div>
-    </div>
+    </BoardScopedModal>
   );
 };
 

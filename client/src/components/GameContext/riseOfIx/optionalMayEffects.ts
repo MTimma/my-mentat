@@ -51,3 +51,18 @@ export function buildMayOptionalEffect(
     source,
   }
 }
+
+/** Optional pick-a-card trash (reward.trash without trashThisCard) — same lapse rules as arrow-cost effects. */
+export function enqueueOptionalPickTrashReward(
+  optionalEffects: OptionalEffect[],
+  source: { type: GainSource; id: number; name: string },
+  trashCount: number,
+  existingIds: string[]
+): void {
+  optionalEffects.push({
+    id: nextSemanticId(source, 'EFFECT', [...existingIds, ...optionalEffects.map(e => e.id)]),
+    cost: {},
+    reward: { trash: trashCount },
+    source,
+  })
+}

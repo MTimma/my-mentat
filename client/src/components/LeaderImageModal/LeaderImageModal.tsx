@@ -1,8 +1,8 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Leader } from '../../types/GameTypes'
 import { getLeaderImage } from '../../data/leaders'
 import TessiaLeaderOverlays from '../TessiaLeaderOverlays/TessiaLeaderOverlays'
-import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
+import { BoardScopedModal } from '../BoardScopedModal'
 import './LeaderImageModal.css'
 
 interface LeaderImageModalProps {
@@ -13,28 +13,29 @@ interface LeaderImageModalProps {
 
 const LeaderImageModal: React.FC<LeaderImageModalProps> = ({ leader, isOpen, onClose }) => {
   const imagePath = getLeaderImage(leader.name)
-  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(isOpen)
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
 
   if (!isOpen || !imagePath) return null
-  if (waitForBoardTarget) return null
 
-  return portalNode(
-    <div
-      className={['dialog-overlay', 'leader-image-overlay', scopedClass].filter(Boolean).join(' ')}
-      onClick={(e) => { e.stopPropagation(); onClose() }}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === 'Escape' && onClose()}
-      aria-label="Close leader image"
+  return (
+    <BoardScopedModal
+      isOpen
+      overlayClassName="leader-image-overlay"
+      onClose={onClose}
+      closeOnOverlayClick
     >
-      <div className="leader-image-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="leader-image-modal" onClick={event => event.stopPropagation()}>
         <div className="leader-image-header">
           <h3>{leader.name}</h3>
-          <button
-            className="leader-image-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <button className="leader-image-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
@@ -44,14 +45,14 @@ const LeaderImageModal: React.FC<LeaderImageModalProps> = ({ leader, isOpen, onC
               src={imagePath}
               alt={leader.name}
               className="leader-image-img"
+              data-preview-src={imagePath}
             />
             <TessiaLeaderOverlays leader={leader} />
           </div>
         </div>
       </div>
-    </div>
+    </BoardScopedModal>
   )
 }
-
 
 export default LeaderImageModal

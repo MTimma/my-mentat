@@ -199,6 +199,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
             alt=""
             className="turn-gain-card-thumb-img"
             draggable={false}
+            data-preview-src={image}
           />
         ))}
         {showTotalMultiplier ? <span className="gain-multiplier">×{absCount}</span> : null}

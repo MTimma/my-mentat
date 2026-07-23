@@ -4841,6 +4841,9 @@
       },
       "slot": "play",
       "index": 0,
+      "requirement": {
+        "unitsInConflict": 4
+      },
       "reward": {
         "custom": "DIVERSION"
       }

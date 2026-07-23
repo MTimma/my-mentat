@@ -1,13 +1,24 @@
-import React, { cloneElement, isValidElement, type ReactNode } from 'react'
+import React, { cloneElement, isValidElement, type ReactNode, type RefObject } from 'react'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
+
+export type ModalOverlayVariant = 'default' | 'preview' | 'picker'
 
 export interface BoardScopedModalProps {
   isOpen: boolean
   children: ReactNode
   /** Extra classes on the overlay (e.g. imperium-preview-overlay). */
   overlayClassName?: string
+  overlayVariant?: ModalOverlayVariant
   onClose?: () => void
   closeOnOverlayClick?: boolean
+  overlayRef?: React.Ref<HTMLDivElement>
+  containerRef?: RefObject<HTMLElement | null>
+}
+
+const OVERLAY_VARIANT_CLASS: Record<ModalOverlayVariant, string | undefined> = {
+  default: undefined,
+  preview: 'modal-overlay--preview imperium-preview-overlay',
+  picker: 'modal-overlay--picker',
 }
 
 /**
@@ -18,10 +29,15 @@ export function BoardScopedModal({
   isOpen,
   children,
   overlayClassName,
+  overlayVariant = 'default',
   onClose,
   closeOnOverlayClick = false,
+  overlayRef,
+  containerRef,
 }: BoardScopedModalProps) {
-  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(isOpen)
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(isOpen, {
+    containerRef,
+  })
 
   if (!isOpen || waitForBoardTarget) return null
 
@@ -29,7 +45,16 @@ export function BoardScopedModal({
 
   return portalNode(
     <div
-      className={['dialog-overlay', overlayClassName, scopedClass].filter(Boolean).join(' ')}
+      ref={overlayRef}
+      className={[
+        'modal-overlay',
+        'dialog-overlay',
+        OVERLAY_VARIANT_CLASS[overlayVariant],
+        overlayClassName,
+        scopedClass,
+      ]
+        .filter(Boolean)
+        .join(' ')}
       onClick={handleOverlayClick}
     >
       {children}

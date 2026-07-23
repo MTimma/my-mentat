@@ -1,7 +1,8 @@
-import React, { useLayoutEffect, useState, type RefObject } from 'react'
-import { createPortal } from 'react-dom'
+import React, { useEffect } from 'react'
 import { Card, Player } from '../../types/GameTypes'
 import { usePlayBoardModalContext } from '../../context/PlayBoardModalContext'
+import { BoardScopedModal } from '../BoardScopedModal'
+import type { RefObject } from 'react'
 import './PlayerPlayAreaModal.css'
 
 interface PlayerPlayAreaModalProps {
@@ -27,45 +28,39 @@ const PlayerPlayAreaModal: React.FC<PlayerPlayAreaModalProps> = ({
   const { boardContainerRef, scopeModalsToBoard } = usePlayBoardModalContext()
   const effectiveContainerRef =
     containerRef ?? (scopeModalsToBoard ? boardContainerRef : undefined)
-  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
 
-  useLayoutEffect(() => {
-    if (!isOpen) {
-      setPortalTarget(null)
-      return
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
     }
-    setPortalTarget(effectiveContainerRef?.current ?? null)
-  }, [effectiveContainerRef, isOpen])
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
 
   if (!isOpen || !player) return null
-  if (effectiveContainerRef && !portalTarget) return null
 
   const cards: Card[] = cardsOverride ?? player.playArea ?? []
-  const boardScoped = Boolean(portalTarget)
 
-  const overlay = (
-    <div
-      className={[
-        'dialog-overlay',
+  return (
+    <BoardScopedModal
+      isOpen
+      overlayClassName={[
         'player-play-area-overlay',
-        boardScoped ? 'player-play-area-overlay--board-scoped' : '',
+        effectiveContainerRef ? 'player-play-area-overlay--board-scoped' : '',
       ]
         .filter(Boolean)
         .join(' ')}
-      onClick={(e) => { e.stopPropagation(); onClose() }}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === 'Escape' && onClose()}
-      aria-label={`Close ${pileLabel.toLowerCase()}`}
+      containerRef={effectiveContainerRef}
+      onClose={onClose}
+      closeOnOverlayClick
     >
-      <div className="player-play-area-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="player-play-area-modal" onClick={event => event.stopPropagation()}>
         <div className="player-play-area-header">
-          <h3>{player.leader.name} – {pileLabel} ({cards.length})</h3>
-          <button
-            className="player-play-area-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <h3>
+            {player.leader.name} – {pileLabel} ({cards.length})
+          </h3>
+          <button className="player-play-area-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
@@ -74,13 +69,14 @@ const PlayerPlayAreaModal: React.FC<PlayerPlayAreaModalProps> = ({
             <p className="player-play-area-empty">No cards in {pileLabel.toLowerCase()}</p>
           ) : (
             <div className="player-play-area-cards">
-              {cards.map((card) => (
+              {cards.map(card => (
                 <div key={card.id} className="player-play-area-card">
                   {card.image ? (
                     <img
                       src={card.image}
                       alt={card.name}
                       className="player-play-area-card-image"
+                      data-preview-src={card.image}
                     />
                   ) : (
                     <div className="player-play-area-card-fallback">
@@ -93,12 +89,8 @@ const PlayerPlayAreaModal: React.FC<PlayerPlayAreaModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </BoardScopedModal>
   )
-
-  if (typeof document === 'undefined') return overlay
-  if (boardScoped && portalTarget) return createPortal(overlay, portalTarget)
-  return overlay
 }
 
 export default PlayerPlayAreaModal

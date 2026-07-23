@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useR
 import { Player, Card, Leader, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, InfluenceAmounts, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS, CounterChoice } from '../../types/GameTypes'
 import { intrigueCardHasCustom, intrigueHasPhaseEffect } from '../../utils/intrigueCardCustom'
 import { isKwisatzHaderachCard, isKwisatzAgentSourceChoice } from '../../utils/kwisatzHaderach'
-import { FixedChoiceModal, BoardScopedModal, BoardDialogPanel, useBoardScopedPortal } from '../BoardScopedModal'
+import { FixedChoiceModal, BoardScopedModal, BoardDialogPanel } from '../BoardScopedModal'
 import CardSearch from '../CardSearch/CardSearch'
 import ValueStepper from '../ValueStepper/ValueStepper'
 import { immortalityGraftEnabled } from '../../expansions/immortality/graft'
@@ -21,10 +21,11 @@ import {
   canAffordAnyFaceUpTech,
   isPlayAreaInlineTechOrSignetChoice,
 } from '../GameContext/riseOfIx/techTurnControlsUi'
-import { canPlayStrongarm } from '../GameContext/riseOfIx/intrigue'
+import { canPlayDiversion, canPlayStrongarm } from '../GameContext/riseOfIx/intrigue'
 import TurnControlsTechRow from '../TurnControlsTechRow/TurnControlsTechRow'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
+import FreighterIcon, { freighterArrowDirectionFromCustom } from '../FreighterIcon/FreighterIcon'
 import {
   getAgentTurnCardsForDisplay,
   getPlayAreaCardsForTurnView,
@@ -814,6 +815,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         return { playable: false, reason: 'Place an Agent on a faction board space first' }
       }
 
+      if (intrigueCardHasCustom(card, CustomEffect.DIVERSION) && !canPlayDiversion(gameState, activePlayer.id)) {
+        return { playable: false, reason: 'Deploy at least 4 units in the Conflict' }
+      }
+
       if (intrigueCardHasCustom(card, CustomEffect.POISON_SNOOPER)) {
         if (activePlayer.handCount >= activePlayer.deck.length) {
           return { playable: false, reason: 'No cards left in your draw pile' }
@@ -1208,6 +1213,22 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         </span>
       )
     }
+    if (reward.freighter !== undefined) {
+      const count = typeof reward.freighter === 'number' ? Math.max(0, reward.freighter) : 1
+      if (count > 0) {
+        right.push(
+          <span
+            key="freighter"
+            className="effect-icon-token"
+            title={count > 1 ? `Freighter ×${count}` : 'Freighter'}
+          >
+            {Array.from({ length: count }, (_, index) => (
+              <FreighterIcon key={index} size="lg" className="effect-token-icon" />
+            ))}
+          </span>
+        )
+      }
+    }
     right.push(renderRepeatedIconReward('intrigue', 'intrigue', reward.intrigueCards, 'Intrigue'))
     if(reward.trash || reward.trashThisCard) {
       right.push(
@@ -1226,8 +1247,18 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       right.push(<span key="acquire">Acquire card (cost {limit} or less{toTopText})</span>)
     }
     if(reward.custom) {
-      // Special handling for SECRETS_STEAL to show player colors
-      if(reward.custom === CustomEffect.SECRETS_STEAL && players) {
+      const freighterDirection = freighterArrowDirectionFromCustom(reward.custom)
+      if (freighterDirection) {
+        right.push(
+          <FreighterIcon
+            key="freighter-choice"
+            direction={freighterDirection}
+            size="lg"
+            className="effect-token-icon"
+            title={rewardLabel ?? (freighterDirection === 'up' ? 'Advance' : 'Recall')}
+          />
+        )
+      } else if(reward.custom === CustomEffect.SECRETS_STEAL && players) {
         const eligiblePlayers = players.filter(p => 
           p.id !== activePlayer?.id && p.intrigueCount >= 4
         )
@@ -1259,7 +1290,9 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         right.push(<span key="custom">{customText}</span>)
       }
     }
-    if(rewardLabel) right.push(<span key="reward">{rewardLabel}</span>)
+    if (rewardLabel && !freighterArrowDirectionFromCustom(reward.custom)) {
+      right.push(<span key="reward">{rewardLabel}</span>)
+    }
 
     return (
       <span className="effect-label">
@@ -1271,7 +1304,10 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   }
 
   const handleEffectClick = (effect: typeof optionalEffects[0]) => {
-    if(effect.cost.trash && !effect.cost.trashThisCard) {
+    const needsTrashPopup =
+      (effect.cost.trash && !effect.cost.trashThisCard) ||
+      (effect.reward.trash && !effect.reward.trashThisCard && !effect.cost?.trash)
+    if (needsTrashPopup) {
       // need popup
       setPendingEffect(effect)
       setShowTrashPopup(true)
@@ -1648,7 +1684,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     )
   }
 
-  const { portalOverlay } = useBoardScopedPortal(true)
 
   type EffectSource = {
     type: GainSource
@@ -2394,6 +2429,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
               src={previewCard.image}
               alt={previewCard.name}
               className="imperium-preview-image card-effects-dialog-image"
+              draggable={false}
+              data-preview-src={previewCard.image}
             />
           ) : (
             <div className="card-effects-dialog-fallback" aria-hidden="true">
@@ -2542,6 +2579,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             src={card.image}
             alt={card.name}
             title={card.name}
+            draggable={false}
+            data-preview-src={card.image}
           />
         ) : (
           <span className="selected-card-inline-name">{card.name}</span>
@@ -3041,9 +3080,13 @@ const TurnControls: React.FC<TurnControlsProps> = ({
           ? renderFixedChoiceOptions(activeFixedChoice, 'dialog')
           : null}
       </FixedChoiceModal>
-      {activeCardPreviewCard &&
-        portalOverlay(
-          <div className="imperium-preview-overlay" onClick={closeCardEffectsDialog}>
+      {activeCardPreviewCard && (
+        <BoardScopedModal
+          isOpen
+          overlayVariant="preview"
+          onClose={closeCardEffectsDialog}
+          closeOnOverlayClick
+        >
             <div
               className="imperium-preview-modal card-effects-dialog"
               role="dialog"
@@ -3069,6 +3112,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                     alt={activeCardPreviewCard.name}
                     className="imperium-preview-image"
                     draggable={false}
+                    data-preview-src={activeCardPreviewCard.image}
                   />
                 ) : null}
               {activeCardLietKynesPersuasion !== null && (
@@ -3101,25 +3145,26 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 )}
                 <button
                   type="button"
-                  className="imperium-preview-close"
+                  className="imperium-preview-close modal-btn modal-btn--ghost"
                   onClick={closeCardEffectsDialog}
                 >
                   Close
                 </button>
               </div>
             </div>
-          </div>
-        )}
+        </BoardScopedModal>
+      )}
 
-      {activeIntriguePreviewCard &&
-        portalOverlay(
-          <div
-            className="imperium-preview-overlay"
-            onClick={() => {
-              setActiveIntriguePreviewCard(null)
-              setActiveCardEffectSource(null)
-            }}
-          >
+      {activeIntriguePreviewCard && (
+        <BoardScopedModal
+          isOpen
+          overlayVariant="preview"
+          onClose={() => {
+            setActiveIntriguePreviewCard(null)
+            setActiveCardEffectSource(null)
+          }}
+          closeOnOverlayClick
+        >
             <div
               className="imperium-preview-modal card-effects-dialog intrigue-preview-dialog"
               role="dialog"
@@ -3142,11 +3187,12 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                     alt={activeIntriguePreviewCard.name}
                     className="imperium-preview-image"
                     draggable={false}
+                    data-preview-src={activeIntriguePreviewCard.image}
                   />
                 ) : null}
               <button
                 type="button"
-                className="imperium-preview-close"
+                className="imperium-preview-close modal-btn modal-btn--ghost"
                 onClick={() => {
                   setActiveIntriguePreviewCard(null)
                   setActiveCardEffectSource(null)
@@ -3155,8 +3201,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 Close
               </button>
             </div>
-          </div>
-        )}
+        </BoardScopedModal>
+      )}
 
       <div
         className={['turn-controls', isSandboxSetup ? 'turn-controls--sandbox-setup' : '']
@@ -3410,6 +3456,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                         src={card.image}
                         alt=""
                         draggable={false}
+                        data-preview-src={card.image}
                       />
                     </button>
                     )
@@ -3471,6 +3518,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                               src={card.image}
                               alt=""
                               draggable={false}
+                              data-preview-src={card.image}
                             />
                           </button>
                         )
@@ -3480,7 +3528,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 </div>
               )}
             </div>
-            {(!primaryTurnActionsHidden || (!isHistoryView && !isEndGame)) && (
+            {(!primaryTurnActionsHidden || techControlsRow) && (
               <div className="selected-card-turn-actions" aria-label="Turn actions">
                 {!primaryTurnActionsHidden && renderPlayCardPlaceholder()}
                 {!primaryTurnActionsHidden && (
@@ -3565,10 +3613,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
         />
       )}
 
-      {gameState?.pendingRapidMobilization === activePlayer.id &&
-        onMobilizeGarrison &&
-        portalOverlay(
-          <div className="dialog-overlay rapid-mobilization-overlay">
+      {gameState?.pendingRapidMobilization === activePlayer.id && onMobilizeGarrison && (
+        <BoardScopedModal isOpen overlayClassName="rapid-mobilization-overlay">
             <div
               className="rapid-mobilization-dialog"
               role="dialog"
@@ -3656,8 +3702,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 )
               })()}
             </div>
-          </div>
-        )}
+        </BoardScopedModal>
+      )}
 
       {activePlayer && (
         <LeaderImageModal

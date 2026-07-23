@@ -68,6 +68,7 @@ import {
 } from '../../data/boardSpaceAvailability'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { highCouncilSlotAssignments } from '../../utils/highCouncilDisplay'
+import BoardTracker from './BoardTracker'
 import CombatAreaCluster, {
   type CombatDreadnoughtDeployProps,
   type CombatSpecimenDeployProps,
@@ -138,8 +139,12 @@ interface ImageBoardProps {
   showBoardInfoTips?: boolean
   /** Desktop: Ix panel docked beside board; mobile: embedded on board art. */
   ixBoardPlacement?: IxBoardPlacement
+  /** Mobile embedded RoI board rect on Board.jpg. */
+  ixBoardMobileEmbedded?: boolean
   /** Desktop: Bene Tleilax panel docked beside board; mobile: stacked below. */
   immortalityBoardPlacement?: BeneTleilaxBoardPlacement
+  /** Desktop: leader cluster on board; mobile: horizontal strip below the board. */
+  combatAreaPlacement?: 'overlay' | 'below'
   /** Rise of Ix — player may click a face-up tech tile on the Ix board to acquire. */
   pendingAcquireTech?: GameState['pendingAcquireTech']
   onTechTileAcquire?: (stackIndex: number) => void
@@ -205,7 +210,9 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   influenceSelection,
   showBoardInfoTips = true,
   ixBoardPlacement = 'embedded',
+  ixBoardMobileEmbedded = false,
   immortalityBoardPlacement = 'stacked',
+  combatAreaPlacement = 'overlay',
   pendingAcquireTech,
   onTechTileAcquire,
 }) => {
@@ -334,6 +341,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     gameStateForMarkers.phase !== GamePhase.ROUND_START
   const showConflictPanel = hasConflict || Boolean(sandboxSetup)
   const showCombatArea = showConflictPanel || inActivePlay
+  const combatAreaBelow = combatAreaPlacement === 'below'
 
   const historyHighlightHotspot =
     historyHighlightSpaceId != null
@@ -345,21 +353,28 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const historyHighlightBox = historyHighlightHotspot
     ? boardHotspots.some(h => h.spaceId === historyHighlightHotspot.spaceId)
       ? layoutHotspotPercent(historyHighlightHotspot)
-      : layoutIxLocalRectPercent({
-          left: historyHighlightHotspot.left,
-          top: historyHighlightHotspot.top,
-          width: historyHighlightHotspot.width,
-          height: historyHighlightHotspot.height,
-        })
+      : layoutIxLocalRectPercent(
+          {
+            left: historyHighlightHotspot.left,
+            top: historyHighlightHotspot.top,
+            width: historyHighlightHotspot.width,
+            height: historyHighlightHotspot.height,
+          },
+          ixBoardMobileEmbedded
+        )
     : null
 
   const trackerInspectMode = hotspotDebug || markerDebug
+  const agentPlacedThisTurn = Boolean(
+    gameStateForMarkers.currTurn?.agentSpaceId ?? gameStateForMarkers.currTurn?.agentSpace
+  )
 
   const rootClass = [
     'image-board',
     sidePanelDocked ? 'image-board--with-side-dock' : '',
     ixBoardDocked ? 'image-board--with-ix-dock' : '',
     immortalityBoardDocked ? 'image-board--with-immortality-dock' : '',
+    agentPlacedThisTurn ? 'image-board--agent-placed' : '',
     hotspotDebug ? 'image-board--hotspot-debug' : '',
     markerDebug ? 'image-board--marker-debug' : '',
     trackerInspectMode ? 'image-board--tracker-inspect' : '',
@@ -376,9 +391,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         onSpaceClick={handleSpaceClick}
         isSpaceEnabled={space => isSpaceEnabled(space)}
         highlightedAreas={highlightedAreas}
+        canPlaceAgent={canPlaceAgent}
         hotspotDebug={hotspotDebug}
         blockedSpaceMap={blockedSpaceMap}
         placement={ixBoardPlacement}
+        mobileEmbeddedOverlay={ixBoardMobileEmbedded}
         historyHighlightSpaceId={
           ixBoardDocked &&
           (historyHighlightSpaceId === 23 || historyHighlightSpaceId === 24)
@@ -414,6 +431,46 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
       markerDebug={markerDebug}
     />
   ) : null
+
+  const combatAreaCluster =
+    showCombatArea ? (
+      <CombatAreaCluster
+        players={players}
+        troops={combatTroops}
+        strength={combatStrength}
+        activePlayerId={currentPlayer}
+        gameState={gameStateForMarkers}
+        modalContainerRef={boardMediaRef}
+        riseOfIx={riseOfIx}
+        firstPlayerMarker={gameStateForMarkers.firstPlayerMarker}
+        mentatOwner={gameStateForMarkers.mentatOwner}
+        layout={combatAreaBelow ? 'row' : 'grid'}
+        gridHeightPercent={combatAreaBelow ? undefined : COMBAT_AREA_BOUNDS.height}
+        onPlayerSelect={
+          sandboxSetup ? player => sandboxSetup.onPlayerClick(player.id) : undefined
+        }
+        className={[
+          'image-board__combat-area-cluster',
+          combatAreaBelow ? 'image-board__combat-area-cluster--below' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        data-marker="combat-area"
+        style={
+          combatAreaBelow
+            ? undefined
+            : (() => {
+                const area = stageRect(COMBAT_AREA_BOUNDS)
+                return {
+                  left: `${area.left}%`,
+                  top: `${area.top}%`,
+                  width: `${area.width}%`,
+                  height: `${area.height}%`,
+                }
+              })()
+        }
+      />
+    ) : null
 
   const boardStage = (
     <div className="image-board__stage">
@@ -469,23 +526,20 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             const isCombat = space.conflictMarker
             const blockedBy = blockedSpaceMap.get(space.id)
             const isVoiceBlocked = typeof blockedBy === 'number'
-            const occupied = occupiedSpaces[space.id] || []
 
             const classes = [
               'image-board__hotspot',
               isRecallTarget ? 'recall-selectable' : '',
-              isHighlighted && enabled ? 'highlighted' : '',
+              canPlaceAgent && isHighlighted && enabled ? 'highlighted' : '',
               recallMode && !isRecallTarget ? 'recall-dimmed' : '',
               !enabled ? 'disabled' : '',
               isCombat ? 'combat-space' : '',
               voiceSelectionActive ? 'voice-selectable' : '',
               isVoiceBlocked ? 'voice-blocked' : '',
+              agentPlacedThisTurn && hotspot.spaceId === gameStateForMarkers.currTurn?.agentSpaceId
+                ? 'agent-placed'
+                : '',
             ].filter(Boolean).join(' ')
-
-            const occupiedBg =
-              occupied.length > 0
-                ? playerIdMarkerHex(occupied[occupied.length - 1], playerById)
-                : undefined
 
             const box = layoutHotspotPercent(hotspot)
 
@@ -498,7 +552,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   top: `${box.top}%`,
                   width: `${box.width}%`,
                   height: `${box.height}%`,
-                  backgroundColor: occupiedBg ? `${occupiedBg}33` : undefined,
                 }}
                 title={space.name}
                 data-space-id={hotspot.spaceId}
@@ -649,18 +702,15 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
               const cy = track.baselineY + track.stepY * step
               const st = stagePoint(cx, cy)
               return (
-                <div
+                <BoardTracker
                   key={`inf-${faction}-${player.id}`}
-                  className="image-board__tracker-circle"
-                  data-marker="influence"
-                  data-faction={faction}
-                  data-player-id={player.id}
-                  style={{
-                    left: `${st.x}%`,
-                    top: `${st.y}%`,
-                    backgroundColor: playerMarkerColor(player),
-                  }}
+                  kind="influence"
+                  player={player}
+                  left={`${st.x}%`}
+                  top={`${st.y}%`}
                   title={`${faction} influence ${step} (${player.leader.name})`}
+                  marker="influence"
+                  dataAttrs={{ 'data-faction': faction, 'data-player-id': player.id }}
                 />
               )
             })
@@ -703,17 +753,15 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             const innerY = lane.baselineY + lane.stepY * vp
             const st = stagePoint(lane.x, innerY)
             return (
-              <div
+              <BoardTracker
                 key={`vp-${player.id}`}
-                className="image-board__tracker-circle"
-                data-marker="vp"
-                data-player-id={player.id}
-                style={{
-                  left: `${st.x}%`,
-                  top: `${st.y}%`,
-                  backgroundColor: playerMarkerColor(player),
-                }}
+                kind="vp"
+                player={player}
+                left={`${st.x}%`}
+                top={`${st.y}%`}
                 title={`VP ${vp} (${player.leader.name})`}
+                marker="vp"
+                dataAttrs={{ 'data-player-id': player.id }}
               />
             )
           })}
@@ -727,40 +775,49 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             if (!slot) return null
             const st = stagePoint(slot.x, slot.y)
             return (
-              <div
+              <BoardTracker
                 key={`hc-${i}-${pid}`}
-                className="image-board__tracker-circle"
-                data-marker="high-council"
-                data-seat-index={i}
-                data-player-id={pid}
-                style={{
-                  left: `${st.x}%`,
-                  top: `${st.y}%`,
-                  backgroundColor: playerMarkerColor(p),
-                }}
+                kind="high-council"
+                player={p}
+                left={`${st.x}%`}
+                top={`${st.y}%`}
                 title={`High Council seat ${i + 1} (${p.leader.name})`}
+                marker="high-council"
+                dataAttrs={{ 'data-seat-index': i, 'data-player-id': pid }}
               />
             )
           })}
 
-          {/* Mentat — on board when not held by a player */}
+          {/* Mentat — icon when available; board-texture patch when held by a player */}
           {(() => {
             const mentatHotspot = boardHotspots.find(h => h.spaceId === 10)
-            if (!mentatHotspot || !isMentatAvailableOnBoard(gameStateForMarkers.mentatOwner)) {
-              return null
-            }
+            if (!mentatHotspot) return null
             const pt = mentatAvailabilityPoint(mentatHotspot)
+            const available = isMentatAvailableOnBoard(gameStateForMarkers.mentatOwner)
             return (
               <div
                 className="image-board__mentat-marker"
-                data-marker="mentat-available"
+                data-marker={available ? 'mentat-available' : 'mentat-taken'}
                 style={{
                   left: `${pt.x}%`,
                   top: `${pt.y}%`,
                 }}
-                title="Mentat available on board"
+                title={available ? 'Mentat available on board' : 'Mentat taken'}
               >
-                <img src="/icon/mentat.png" alt="" className="image-board__mentat-marker-img" draggable={false} />
+                {available ? (
+                  <img src="/icon/mentat.png" alt="" className="image-board__mentat-marker-img" draggable={false} />
+                ) : (
+                  <img
+                    src={
+                      riseOfIx
+                        ? '/board/riseofix/mentat_taken_3.png'
+                        : '/board/mentat_taken.png'
+                    }
+                    alt=""
+                    className="image-board__mentat-marker-img image-board__mentat-marker-img--taken"
+                    draggable={false}
+                  />
+                )}
               </div>
             )
           })()}
@@ -775,16 +832,21 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
               return (
                 <div
                   key={`sm-eligible-${player.id}`}
-                  className="image-board__tracker-circle"
+                  className="image-board__marker"
                   data-marker="swordmaster-eligibility"
                   data-player-id={player.id}
                   style={{
                     left: `${pt.x}%`,
                     top: `${pt.y}%`,
-                    backgroundColor: playerMarkerColor(player),
                   }}
                   title={`${player.leader.name} can still take Swordmaster`}
-                />
+                >
+                  <BoardAgentFigure
+                    playerId={player.id}
+                    color={player.color}
+                    className="image-board__agent-figure"
+                  />
+                </div>
               )
             })
           })()}
@@ -898,6 +960,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                       src={conflictImgSrc}
                       alt={currentConflict?.name}
                       draggable={false}
+                      data-preview-src={conflictImgSrc}
                       onError={() => setConflictImgFailed(true)}
                     />
                   ) : hasConflict && currentConflict ? (
@@ -967,46 +1030,17 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             />
           ) : null}
 
-          {showCombatArea && (
-            (() => {
-              const area = stageRect(COMBAT_AREA_BOUNDS)
-              return (
-                <CombatAreaCluster
-                  players={players}
-                  troops={combatTroops}
-                  strength={combatStrength}
-                  activePlayerId={currentPlayer}
-                  gameState={gameStateForMarkers}
-                  modalContainerRef={boardMediaRef}
-                  riseOfIx={riseOfIx}
-                  firstPlayerMarker={gameStateForMarkers.firstPlayerMarker}
-                  mentatOwner={gameStateForMarkers.mentatOwner}
-                  gridHeightPercent={COMBAT_AREA_BOUNDS.height}
-                  onPlayerSelect={
-                    sandboxSetup ? player => sandboxSetup.onPlayerClick(player.id) : undefined
-                  }
-                  className="image-board__combat-area-cluster"
-                  data-marker="combat-area"
-                  style={{
-                    left: `${area.left}%`,
-                    top: `${area.top}%`,
-                    width: `${area.width}%`,
-                    height: `${area.height}%`,
-                  }}
-                />
-              )
-            })()
-          )}
+          {showCombatArea && !combatAreaBelow ? combatAreaCluster : null}
 
           {influenceSelection ? (
             <div className="image-board__influence-selection-layer" aria-hidden={false}>
               {showBoardInfoTips && influenceSelection.prompt ? (
                 <div role="status" aria-live="polite">
                   <SandboxSetupHint
-                    label={`${influenceSelection.prompt}. Tap a highlighted track.`}
+                    label={`${influenceSelection.prompt}.`}
                     style={{
-                      left: `${INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].left}%`,
-                      top: `${INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].top + 6}%`,
+                      left: `${INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].left + INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].width}%`,
+                      top: `${INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].top }%`,
                     }}
                     className="sandbox-setup-hint--influence"
                   />
@@ -1298,6 +1332,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
       ) : (
         <>
           {boardStage}
+          {combatAreaBelow && combatAreaCluster ? (
+            <div className="image-board__combat-area-below" aria-label="Player leaders">
+              {combatAreaCluster}
+            </div>
+          ) : null}
           {immortality && !immortalityBoardDocked ? (
             <div className="image-board__immortality-stack">{beneTleilaxBoardOverlay}</div>
           ) : null}

@@ -282,6 +282,7 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
                       alt={entry.stackTile.name}
                       className="tech-acquire-modal__stack-slot-img"
                       draggable={false}
+                      data-preview-src={entry.stackTile.image}
                     />
                     <span className="tech-acquire-modal__stack-slot-name">{entry.stackTile.name}</span>
                     <span className="tech-acquire-modal__stack-slot-cost">
@@ -349,6 +350,7 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
               alt={tile!.name}
               className="imperium-preview-image tech-acquire-modal__tile-img"
               draggable={false}
+              data-preview-src={tile!.image}
             />
             <div className="tech-acquire-modal__meta">
               <span className="tech-acquire-modal__tile-name">{tile!.name}</span>

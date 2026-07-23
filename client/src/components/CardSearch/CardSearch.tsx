@@ -8,7 +8,8 @@ import {
   graftHandSelectionPreviewSlots,
   shouldPickGraftPartnerSlot,
 } from '../../expansions/immortality/graft'
-import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
+import { usePlayBoardModalContext } from '../../context/PlayBoardModalContext'
+import { BoardScopedModal } from '../BoardScopedModal'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import './CardSearch.css'
 
@@ -114,7 +115,14 @@ const CardGridItem = React.memo(function CardGridItem({
         className={`card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
         onClick={handleClick}
       >
-        {card.image && <img src={card.image} alt={card.name} className="card-image" />}
+        {card.image && (
+          <img
+            src={card.image}
+            alt={card.name}
+            className="card-image"
+            data-preview-src={card.image}
+          />
+        )}
         {!card.image && (
           <>
             <div className="card-header">
@@ -223,21 +231,20 @@ const CardSearch: React.FC<CardSearchProps> = ({
   getCardPlayabilityRef.current = getCardPlayability
 
   const showPreview =
-    showSelectionPreview ?? (selectionCount > 1 || Boolean(onSelectionChange) || graftPairSelection)
+    showSelectionPreview ?? (selectionCount > 1 || graftPairSelection)
+  const multiSelect = selectionCount > 1
   const slotCapacity = graftPairSelection ? 2 : selectionCount
   const previewSlotCount = graftPairSelection
     ? graftHandSelectionPreviewSlots(selectionSlots)
     : selectionCount
   const searchAtBottom = showPreview || Boolean(slotBetweenCardsAndSearch)
   const isStandaloneModal = !embedded
-  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(
-    isOpen && isStandaloneModal
-  )
-  const boardScoped = Boolean(scopedClass)
+  const { scopeModalsToBoard } = usePlayBoardModalContext()
+  const boardScoped = scopeModalsToBoard
   const useCompactBoardLayout = searchAtBottom && boardScoped
 
   useVisualViewportOverlay(overlayRef, {
-    enabled: isOpen && isStandaloneModal && !scopedClass,
+    enabled: isOpen && isStandaloneModal && !scopeModalsToBoard,
     lockDocumentScroll: true,
   })
 
@@ -415,10 +422,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
         return slots
       }
 
-      if (!isRevealTurn) {
-        slots.fill(null)
-        slots[0] = card
-      } else {
+      if (multiSelect) {
         const existingIndex = slots.findIndex(slot => slot === card)
         if (existingIndex !== -1) {
           slots[existingIndex] = null
@@ -428,10 +432,13 @@ const CardSearch: React.FC<CardSearchProps> = ({
             slots[emptyIndex] = card
           }
         }
+      } else {
+        slots.fill(null)
+        slots[0] = card
       }
       return slots
     })
-  }, [filledCards, graftPairSelection, isRevealTurn, normalizeSlots])
+  }, [graftPairSelection, isRevealTurn, multiSelect, normalizeSlots])
 
   const handleRemoveFromPreview = useCallback((slotIndex: number) => {
     setSelectionSlots(prev => {
@@ -488,7 +495,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
             }
           >
             {card?.image ? (
-              <img src={card.image} alt="" className="card-search-selection-preview-image" />
+              <img src={card.image} alt="" className="card-search-selection-preview-image" data-preview-src={card.image} />
             ) : null}
           </button>
         )
@@ -585,9 +592,9 @@ const CardSearch: React.FC<CardSearchProps> = ({
             isSelected={
               graftPairSelection && !isRevealTurn
                 ? selectionSlots.some(slot => slot?.id === card.id)
-                : isRevealTurn
+                : multiSelect
                   ? selectionSlots.some(slot => slot === card)
-                  : selectionSlots[0] === card
+                  : selectionSlots[0]?.id === card.id
             }
             playability={
               getCardPlayability ? playabilityByCardId.get(card.id) ?? PLAYABLE_CARD : PLAYABLE_CARD
@@ -611,23 +618,16 @@ const CardSearch: React.FC<CardSearchProps> = ({
   )
 
   if (isStandaloneModal) {
-    if (waitForBoardTarget) return null
-    const overlay = (
-      <div
-        ref={overlayRef}
-        className={[
-          'card-selection-dialog-overlay',
-          'card-selection-dialog-overlay-standalone',
-          scopedClass,
-        ]
-          .filter(Boolean)
-          .join(' ')}
+    return (
+      <BoardScopedModal
+        isOpen={isOpen}
+        overlayVariant="picker"
+        overlayClassName="card-selection-dialog-overlay card-selection-dialog-overlay-standalone"
+        overlayRef={overlayRef}
       >
         {dialog}
-      </div>
+      </BoardScopedModal>
     )
-
-    return portalNode(overlay)
   }
   return dialog
 }

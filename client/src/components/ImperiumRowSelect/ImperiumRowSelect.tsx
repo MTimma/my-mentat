@@ -1,7 +1,8 @@
 import React, { useMemo, useRef, useState } from 'react'
 import { Card } from '../../types/GameTypes'
 import CardSearch from '../CardSearch/CardSearch'
-import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
+import { PickerModalShell } from '../BoardScopedModal'
+import { usePlayBoardModalContext } from '../../context/PlayBoardModalContext'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import './ImperiumRowSelect.css'
 
@@ -14,12 +15,18 @@ interface ImperiumRowSelectProps {
   initialSelectedCards?: Card[]
 }
 
-const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCount, onConfirm, onCancel, initialSelectedCards }) => {
+const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({
+  cards,
+  requiredCount,
+  onConfirm,
+  onCancel,
+  initialSelectedCards,
+}) => {
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const overlayRef = useRef<HTMLDivElement>(null)
-  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true)
+  const { scopeModalsToBoard } = usePlayBoardModalContext()
 
-  useVisualViewportOverlay(overlayRef, { enabled: !scopedClass, lockDocumentScroll: true })
+  useVisualViewportOverlay(overlayRef, { enabled: !scopeModalsToBoard, lockDocumentScroll: true })
 
   const sortedCards = useMemo(
     () => [...cards].sort((a, b) => a.name.localeCompare(b.name)),
@@ -39,43 +46,29 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({ cards, requiredCo
     setSelectedCards(cards)
   }
 
-  if (waitForBoardTarget) return null
-
-  const overlay = (
-    <div
-      ref={overlayRef}
-      className={['imperium-select-overlay', scopedClass].filter(Boolean).join(' ')}
+  return (
+    <PickerModalShell
+      title={`Select ${requiredCount} Imperium Row Cards`}
+      lead="Click cards to choose which ones appear in the row before revealing the next conflict."
+      countLabel={`Selected ${selectedCards.length} / ${requiredCount}`}
+      overlayRef={overlayRef}
     >
-      <div className="imperium-select-dialog">
-        <header className="imperium-select-header">
-          <h2>Select {requiredCount} Imperium Row Cards</h2>
-          <p>Click cards to choose which ones appear in the row before revealing the next conflict.</p>
-          <div className="imperium-select-count">
-            Selected {selectedCards.length} / {requiredCount}
-          </div>
-        </header>
-
-        <div className="imperium-select-cardsearch-wrapper">
-          <CardSearch
-            isOpen={true}
-            cards={sortedCards}
-            onSelect={handleSelect}
-            onCancel={handleCancel}
-            isRevealTurn={true}
-            selectionCount={requiredCount}
-            text={`Select ${requiredCount} Imperium Row Cards`}
-            onSelectionChange={handleSelectionChange}
-            hideTitle={true}
-            initialSelectedCards={initialSelectedCards}
-            cancelButtonText={onCancel ? 'Cancel' : undefined}
-            embedded
-          />
-        </div>
-      </div>
-    </div>
+      <CardSearch
+        isOpen={true}
+        cards={sortedCards}
+        onSelect={handleSelect}
+        onCancel={handleCancel}
+        isRevealTurn={requiredCount > 1}
+        selectionCount={requiredCount}
+        text={`Select ${requiredCount} Imperium Row Cards`}
+        onSelectionChange={handleSelectionChange}
+        hideTitle={true}
+        initialSelectedCards={initialSelectedCards}
+        cancelButtonText={onCancel ? 'Cancel' : undefined}
+        embedded
+      />
+    </PickerModalShell>
   )
-
-  return portalNode(overlay)
 }
 
 export default ImperiumRowSelect

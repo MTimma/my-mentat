@@ -52,7 +52,13 @@ const RevealTurnStatsPanel = ({
       {stats.revealedCards.map(card => (
         <span key={card.id} className="reveal-turn-revealed-card" title={card.name}>
           {card.image ? (
-            <img src={card.image} alt="" className="reveal-turn-revealed-thumb" draggable={false} />
+            <img
+              src={card.image}
+              alt=""
+              className="reveal-turn-revealed-thumb"
+              draggable={false}
+              data-preview-src={card.image}
+            />
           ) : (
             <span className="reveal-turn-revealed-fallback">{card.name}</span>
           )}
@@ -68,7 +74,13 @@ const RevealTurnStatsPanel = ({
         return (
           <span key={card.id} className="reveal-turn-acquired-card" title={card.name}>
             {card.image ? (
-              <img src={card.image} alt="" className="reveal-turn-acquired-thumb" />
+              <img
+                src={card.image}
+                alt=""
+                className="reveal-turn-acquired-thumb"
+                draggable={false}
+                data-preview-src={card.image}
+              />
             ) : null}
             {!hideAcquiredNames ? (
               <span className="reveal-turn-acquired-name">{card.name}</span>
@@ -95,7 +107,13 @@ const RevealTurnStatsPanel = ({
         return (
           <span key={tile.id} className="reveal-turn-acquired-card reveal-turn-acquired-tech" title={tile.name}>
             {tile.image ? (
-              <img src={tile.image} alt="" className="reveal-turn-acquired-thumb reveal-turn-acquired-thumb--tech" />
+              <img
+                src={tile.image}
+                alt=""
+                className="reveal-turn-acquired-thumb reveal-turn-acquired-thumb--tech"
+                draggable={false}
+                data-preview-src={tile.image}
+              />
             ) : null}
             {!hideAcquiredNames ? (
               <span className="reveal-turn-acquired-name">{tile.name}</span>

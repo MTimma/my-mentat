@@ -22,6 +22,7 @@ import {
   applyImmediateTroopRecruit,
   isMandatoryRecruitAndDeployEffect,
 } from './mandatoryDeploy'
+import { enqueueOptionalPickTrashReward } from './optionalMayEffects'
 import {
   isRiseOfIxEnabled,
   pushFreighterChoicesFromReward,
@@ -193,9 +194,11 @@ export function applyUnloadRevealEffects(
         addPendingReward({ freighter: effect.reward.freighter })
       }
       if (effect.reward?.trash && !effect.reward?.trashThisCard) {
-        addPendingReward(
-          { trash: effect.reward.trash, trashThisCard: effect.reward.trashThisCard },
-          true
+        enqueueOptionalPickTrashReward(
+          optionalEffects,
+          source,
+          effect.reward.trash,
+          optionalEffects.map(e => e.id)
         )
       }
       if (effect.reward?.deployTroops) {

@@ -58,6 +58,7 @@ import {
   saveJsonFile,
   suggestedSaveFilenameFromTitle,
 } from '../utils/saveJsonFile'
+import TurnHistoryNav from './TurnHistoryNav/TurnHistoryNav'
 import './TurnHistory.css'
 
 interface TurnHistoryProps {
@@ -90,19 +91,6 @@ const DetailsIcon = () => (
   </svg>
 )
 
-const ChevronLeftIcon = () => (
-  <svg className="turn-history-nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path
-      d="M14 6l-6 6 6 6"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-)
-
 const PlayerOverviewIcon = () => (
   <svg className="turn-history-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <circle cx="7.25" cy="7.25" r="2.25" fill="none" stroke="currentColor" strokeWidth="1.75" />
@@ -110,19 +98,6 @@ const PlayerOverviewIcon = () => (
     <circle cx="15.75" cy="6.75" r="1.85" fill="none" stroke="currentColor" strokeWidth="1.75" />
     <path d="M12.85 11.75c.5-1.35 1.5-2 2.9-2s2.4.65 2.9 2" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
     <path d="M5 20v-3.25M11 20v-5.25M17 20v-7.25M3.5 20h16.75" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-  </svg>
-)
-
-const ChevronRightIcon = () => (
-  <svg className="turn-history-nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path
-      d="M10 6l6 6-6 6"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
   </svg>
 )
 
@@ -176,6 +151,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   const listRef = useRef<HTMLDivElement>(null)
   const liveEntryRef = useRef<HTMLDivElement>(null)
   const stickToBottomRef = useRef(true)
+  const prevIsViewingHistoryRef = useRef(false)
   const prevTurnsLengthRef = useRef(turns.length)
 
   // Determine which turn is being viewed (null means current/live)
@@ -318,8 +294,19 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       if (viewingTurnIndex !== null) {
         scrollTurnIntoView(viewingTurnIndex)
       }
+      prevIsViewingHistoryRef.current = true
       return
     }
+
+    const returnedToLive = prevIsViewingHistoryRef.current
+    prevIsViewingHistoryRef.current = false
+
+    if (returnedToLive) {
+      stickToBottomRef.current = true
+      scrollTurnIntoView('live')
+      return
+    }
+
     if (stickToBottomRef.current) {
       scrollTurnIntoView('live')
     }
@@ -465,6 +452,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             alt=""
             className="turn-history-card-thumb-img"
             draggable={false}
+            data-preview-src={card.image}
           />
         ) : (
           <span className="turn-history-card-thumb-fallback">{card.name}</span>
@@ -517,6 +505,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           alt=""
           className="turn-history-card-thumb-img"
           draggable={false}
+          data-preview-src={card.image}
         />
       </span>
     ))
@@ -770,6 +759,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           alt={turn.currentConflict.name}
           className="conflict-card-image"
           draggable={false}
+          data-preview-src={conflictCardImageSrc(turn.currentConflict.id) ?? undefined}
         />
           }</span>}
           {isEndgameEntry && (
@@ -904,28 +894,14 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
 
   const renderHeader = () => (
     <div className="turn-history-header">
-      <div className="turn-history-nav" aria-label="Turn navigation">
-        <button
-          type="button"
-          className="turn-history-nav-btn"
-          onClick={goToPreviousTurn}
-          disabled={!canGoToPreviousTurn}
-          title="Previous turn"
-          aria-label="Previous turn"
-        >
-          <ChevronLeftIcon />
-        </button>
-        <button
-          type="button"
-          className="turn-history-nav-btn"
-          onClick={goToNextTurn}
-          disabled={!canGoToNextTurn}
-          title="Next turn"
-          aria-label="Next turn"
-        >
-          <ChevronRightIcon />
-        </button>
-      </div>
+      <TurnHistoryNav
+        viewingTurnIndex={viewingTurnIndex}
+        historyLength={turns.length}
+        inSandboxSetup={inSandboxSetup}
+        isViewingHistory={isViewingHistory}
+        onTurnChange={onTurnChange}
+        onReturnToCurrent={onReturnToCurrent}
+      />
       <span
         className={[
           'turn-history-header-title',
@@ -949,7 +925,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             <UndoIcon />
           </button>
         )}
-        {onOpenPlayerOverview && (
+        {/* {onOpenPlayerOverview && (
           <button
             type="button"
             className="turn-history-icon-btn turn-history-icon-btn--overview"
@@ -959,7 +935,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           >
             <PlayerOverviewIcon />
           </button>
-        )}
+        )} */}
         <button
           type="button"
           className="turn-history-icon-btn turn-history-icon-btn--theme"

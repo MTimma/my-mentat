@@ -1,11 +1,11 @@
-import React, { useLayoutEffect, useState, type RefObject } from 'react'
-import { createPortal } from 'react-dom'
+import React, { useState, type RefObject } from 'react'
 import { FactionType, GameState, Player } from '../../types/GameTypes'
 import { getLeaderImage } from '../../data/leaders'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import TessiaLeaderOverlays from '../TessiaLeaderOverlays/TessiaLeaderOverlays'
 import PlayerPlayAreaModal from '../PlayerPlayAreaModal/PlayerPlayAreaModal'
 import PlayerTechTiles from '../PlayerTechTiles/PlayerTechTiles'
+import { BoardScopedModal } from '../BoardScopedModal'
 import './CombatPlayerDetailModal.css'
 
 type CardPileKind = 'deck' | 'discard' | 'trash'
@@ -37,13 +37,8 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
   onClose,
 }) => {
   const [openPile, setOpenPile] = useState<CardPileKind | null>(null)
-  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
   const leaderImage = getLeaderImage(player.leader.name)
   const vp = gameState ? getTotalVictoryPoints(player, gameState) : player.victoryPoints
-
-  useLayoutEffect(() => {
-    setPortalTarget(containerRef?.current ?? null)
-  }, [containerRef])
 
   const pileCards =
     openPile === 'deck'
@@ -67,17 +62,19 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
     { icon: '/icon/intrigue.png', label: 'Intrigue', value: player.intrigueCount },
   ]
 
-  const overlay = (
+  return (
     <>
-      <div
-        className={[
-          'dialog-overlay',
+      <BoardScopedModal
+        isOpen
+        overlayClassName={[
           'combat-player-detail-overlay',
-          portalTarget ? 'combat-player-detail-overlay--board-scoped' : '',
+          containerRef ? 'combat-player-detail-overlay--board-scoped' : '',
         ]
           .filter(Boolean)
           .join(' ')}
-        onClick={onClose}
+        containerRef={containerRef}
+        onClose={onClose}
+        closeOnOverlayClick
       >
         <div
           className={`combat-player-detail-modal combat-player-detail-modal--${player.color}`}
@@ -107,6 +104,7 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
                     alt={player.leader.name}
                     className="combat-player-detail-leader-img"
                     draggable={false}
+                    data-preview-src={leaderImage}
                   />
                   <TessiaLeaderOverlays leader={player.leader} />
                 </div>
@@ -187,7 +185,7 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </BoardScopedModal>
 
       {openPile && (
         <PlayerPlayAreaModal
@@ -201,10 +199,6 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
       )}
     </>
   )
-
-  if (typeof document === 'undefined') return overlay
-  if (!portalTarget) return null
-  return createPortal(overlay, portalTarget)
 }
 
 export default CombatPlayerDetailModal

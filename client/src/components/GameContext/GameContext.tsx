@@ -230,6 +230,7 @@ import {
 import {
   buildMayOptionalEffect,
   effectIsOptional,
+  enqueueOptionalPickTrashReward,
 } from './riseOfIx/optionalMayEffects'
 import {
   buildTechNegotiationChoice,
@@ -239,6 +240,7 @@ import { findRhomburSignetLegacyResolveChoice } from './riseOfIx/legacySignetPay
 import {
   applyRiseOfIxIntrigueCustomInEffect,
   applyQuidProQuo,
+  canPlayDiversion,
   canPlayStrongarm,
   checkDiversionAfterDeployChange,
   enqueueStrongarmChoice,
@@ -1670,7 +1672,7 @@ function canAffordIntrigueCost(state: GameState, player: Player, cost: Cost): bo
   if (cost.spice && player.spice < cost.spice) return false
   if (cost.water && player.water < cost.water) return false
   if (cost.solari && player.solari < cost.solari) return false
-  if (cost.troops && player.troops < cost.troops) return false// todo should be garrison(player.troops) + conflict 
+  if (cost.troops && player.troops < cost.troops) return false// todo should be player.troops + conflict 
   if (cost.discard && player.handCount < cost.discard) return false
   if (cost.influence?.chooseOne && !canPayInfluenceCost(state, player.id, cost.influence)) return false
   return true
@@ -2462,7 +2464,7 @@ function applyIntrigueCardPlay(
         : [...updatedState.intrigueDiscard, card]
       : [...updatedState.intrigueDiscard, card]
 
-  return {
+  let result: GameState = {
     ...updatedState,
     pendingRewards: intriguePendingRewards,
     players: fromEndgameReveal
@@ -2480,6 +2482,21 @@ function applyIntrigueCardPlay(
         ? false
         : updatedState.canEndTurn
   }
+
+  if (intrigueCardHasCustom(card, CustomEffect.DIVERSION)) {
+    const afterDiversion = checkAndApplyDiversion(result, playerId)
+    result = {
+      ...afterDiversion,
+      pendingRewards: result.pendingRewards,
+      intrigueDeck: result.intrigueDeck,
+      intrigueDiscard: result.intrigueDiscard,
+      players: result.players,
+      canEndTurn:
+        afterDiversion.canEndTurn === false || result.canEndTurn === false ? false : result.canEndTurn,
+    }
+  }
+
+  return result
 }
 
 type OpponentDiscardState = NonNullable<GameTurn['opponentDiscardState']>
@@ -4387,6 +4404,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (intrigueCardHasCustom(card, CustomEffect.STRONGARM) && !canPlayStrongarm(state, playerId)) {
         return state
       }
+      if (intrigueCardHasCustom(card, CustomEffect.DIVERSION) && !canPlayDiversion(state, playerId)) {
+        return state
+      }
 
       if (!canPlayIntrigueCardNow(state, player, card)) return state
 
@@ -4877,13 +4897,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
         }
         
-        // Handle trash rewards
-        if (effect.reward.trash || effect.reward.trashThisCard) {
-          addPendingReward(
-            { trash: effect.reward.trash, trashThisCard: effect.reward.trashThisCard },
-            gainSource,
-            true
-          )
+        // trashThisCard is mandatory; pick-a-card trash is optional (enqueued in runPlayEffectsForCard)
+        if (effect.reward.trashThisCard) {
+          addPendingReward({ trashThisCard: true }, gainSource, true)
         }
       }
 
@@ -5260,6 +5276,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             if (effect.reward) {
               applyCardPlayEffect(effect, playCard, space)
             }
+            if (effect.reward?.trash && !effect.reward?.trashThisCard) {
+              enqueueOptionalPickTrashReward(
+                optionalEffects,
+                { type: GainSource.CARD, id: playCard.id, name: playCard.name },
+                effect.reward.trash,
+                [
+                  ...optionalEffects.map(e => e.id),
+                  ...(tempCurrTurn.optionalEffects ?? []).map(e => e.id),
+                ]
+              )
+            }
           })
       }
 
@@ -5274,6 +5301,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           gholaCopyPartnerPlayEffects(partner, gholaCard, (effect, sourceCard) => {
             if (!playRequirementSatisfied(effect, partner, state, playerId)) return
             applyCardPlayEffect(effect, partner, space, sourceCard)
+            if (effect.reward?.trash && !effect.reward?.trashThisCard) {
+              enqueueOptionalPickTrashReward(
+                optionalEffects,
+                { type: GainSource.CARD, id: sourceCard.id, name: sourceCard.name },
+                effect.reward.trash,
+                [
+                  ...optionalEffects.map(e => e.id),
+                  ...(tempCurrTurn.optionalEffects ?? []).map(e => e.id),
+                ]
+              )
+            }
           })
         }
       }
@@ -5746,12 +5784,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 { type: GainSource.CARD, id: card.id, name: card.name }
               )
             }
-            // Pick-a-card trash on reveal (trash counts as N); trashThisCard is mandatory and applied immediately below
+            // Pick-a-card trash on reveal is optional; trashThisCard is mandatory and applied immediately below
             if (effect.reward?.trash && !effect.reward?.trashThisCard) {
-              addPendingReward(
-                { trash: effect.reward.trash, trashThisCard: effect.reward.trashThisCard },
+              enqueueOptionalPickTrashReward(
+                optionalEffects,
                 { type: GainSource.CARD, id: card.id, name: card.name },
-                true
+                effect.reward.trash,
+                [
+                  ...optionalEffects.map(e => e.id),
+                  ...(state.currTurn?.optionalEffects ?? []).map(e => e.id),
+                ]
               )
             }
 
@@ -6340,6 +6382,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if(cost.specimen && (player.specimens ?? 0) < cost.specimen) return false;
         if(cost.intrigueBottom && player.intrigueCount < cost.intrigueBottom) return false;
         if(cost.trash && !data?.trashedCardId) return false;
+        if (reward.trash && !reward.trashThisCard && !cost?.trash && !data?.trashedCardId) return false;
         if (reward.techNegotiator && (player.troopSupply ?? 0) < reward.techNegotiator) return false;
         if (reward.acquireTech !== undefined && !hasAvailableTechTile(state)) return false;
         return true;
@@ -6474,8 +6517,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
 
-      if(cost.trash) {
-        const cardId = data?.trashedCardId;
+      const trashPickCardId =
+        cost.trash || (reward.trash && !reward.trashThisCard && !cost?.trash)
+          ? data?.trashedCardId
+          : undefined
+      if (trashPickCardId !== undefined) {
+        const cardId = trashPickCardId;
         let trashedCard: Card | undefined;
         let isTrashedFromHand = false;
         player.playArea = player.playArea.filter(c => { if(c.id===cardId){trashedCard=c;return false;} return true;});

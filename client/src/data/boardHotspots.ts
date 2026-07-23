@@ -202,8 +202,8 @@ export function markerAnchorsForExpansions(expansions: Expansions): MarkerAnchor
 export function mentatAvailabilityPoint(h: BoardHotspot): { x: number; y: number } {
   const box = layoutHotspotPercent(h)
   return {
-    x: box.left + box.width * 0.85,
-    y: box.top + box.height * 0.6,
+    x: box.left + box.width * 0.87,
+    y: box.top + box.height * 0.55,
   }
 }
 
@@ -221,8 +221,8 @@ export function mentatAvailabilityPoint(h: BoardHotspot): { x: number; y: number
 export function foldspaceDeckCountPoint(h: BoardHotspot): { x: number; y: number } {
   const box = layoutHotspotPercent(h)
   return {
-    x: box.left + box.width * 0.72,
-    y: box.top + box.height * 0.38,
+    x: box.left + box.width * 0.92,
+    y: box.top + box.height * 0.45,
   }
 }
 

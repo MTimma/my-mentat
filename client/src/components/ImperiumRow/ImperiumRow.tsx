@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Card } from '../../types/GameTypes'
 import { getLeaderIconPath, LEADER_NAMES } from '../../data/leaders'
-import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
+import { BoardScopedModal } from '../BoardScopedModal'
 import './ImperiumRow.css'
 
 interface HelenaRemovedCard {
@@ -100,8 +100,6 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
               }
             : null
 
-  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(Boolean(preview))
-
   const handlePreviewKeyDown = (event: React.KeyboardEvent, selection: PreviewSelection) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
@@ -147,7 +145,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
               <div className="imperium-row-sandbox-slots" aria-hidden="true">
                 {cards.map(card => (
                   <div key={card.id} className="imperium-card imperium-card--sandbox-slot imperium-card--sandbox-display">
-                    <img src={card.image} alt="" className="card-image-ir" />
+                    <img src={card.image} alt="" className="card-image-ir" data-preview-src={card.image} />
                   </div>
                 ))}
                 {Array.from({ length: sandboxEmptySlots }, (_, index) => (
@@ -184,6 +182,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
                   src={helenaSlotData.card.image}
                   alt={helenaSlotData.card.name}
                   className="card-image-ir"
+                  data-preview-src={helenaSlotData.card.image}
                 />
                 <span className="helena-discount-badge">−1 Persuasion</span>
               </div>
@@ -200,7 +199,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
                 tabIndex={0}
                 title="View card"
               >
-                <img src={card.image} alt={card.name} className="card-image-ir" />
+                <img src={card.image} alt={card.name} className="card-image-ir" data-preview-src={card.image} />
               </div>
             ))}
           {!sandboxSetup && (
@@ -218,6 +217,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
                   src={'imperium_row/arrakis_liaison.avif'}
                   alt={'Arrakis Liaison'}
                   className="card-image-ir"
+                  data-preview-src="imperium_row/arrakis_liaison.avif"
                 />
               </div>
               <div
@@ -232,6 +232,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
                   src={'imperium_row/spice_must_flow.avif'}
                   alt={'The Spice Must Flow'}
                   className="card-image-ir"
+                  data-preview-src="imperium_row/spice_must_flow.avif"
                 />
               </div>
             </>
@@ -239,10 +240,12 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
         </div>
       </div>
 
-      {preview && !waitForBoardTarget && portalNode(
-        <div
-          className={['imperium-preview-overlay', scopedClass].filter(Boolean).join(' ')}
-          onClick={() => setPreviewSelection(null)}
+      {preview && (
+        <BoardScopedModal
+          isOpen
+          overlayVariant="preview"
+          onClose={() => setPreviewSelection(null)}
+          closeOnOverlayClick
         >
           <div
             className="imperium-preview-modal"
@@ -256,6 +259,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
               alt={preview.name}
               className="imperium-preview-image"
               draggable={false}
+              data-preview-src={preview.image}
             />
             {preview.note && <div className="imperium-preview-note">{preview.note}</div>}
             <div className="imperium-preview-actions">
@@ -290,7 +294,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
               )}
             </div>
           </div>
-        </div>
+        </BoardScopedModal>
       )}
     </div>
   )

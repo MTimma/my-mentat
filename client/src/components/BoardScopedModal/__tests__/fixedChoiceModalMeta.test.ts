@@ -28,4 +28,19 @@ describe('getFixedChoiceModalMeta', () => {
     expect(meta.title).toBe('Choose one reward')
     expect(meta.allowCancel).toBe(true)
   })
+
+  it('uses Shipping track copy for freighter choices', () => {
+    const meta = getFixedChoiceModalMeta({
+      id: 'card-8801-FREIGHTER-1',
+      type: ChoiceType.FIXED_OPTIONS,
+      prompt: 'Freighter (now at 1/3)',
+      options: [
+        { reward: { custom: CustomEffect.FREIGHTER_ADVANCE }, rewardLabel: 'Advance' },
+        { reward: { custom: CustomEffect.FREIGHTER_RECALL }, rewardLabel: 'Recall' },
+      ],
+    })
+    expect(meta.title).toBe('Freighter (now at 1/3)')
+    expect(meta.lead).toContain('Shipping track')
+    expect(meta.allowCancel).toBe(true)
+  })
 })

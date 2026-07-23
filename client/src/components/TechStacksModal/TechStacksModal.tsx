@@ -114,6 +114,7 @@ const TechStacksModal: React.FC<TechStacksModalProps> = ({
                       alt={tile.name}
                       title={tile.description}
                       draggable={false}
+                      data-preview-src={tile.image}
                     />
                     <p className="tech-stacks-modal__tile-name">{tile.name}</p>
                     <p className="tech-stacks-modal__tile-cost">

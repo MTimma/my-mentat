@@ -225,6 +225,9 @@ export interface CombatSpecimenDeployProps {
   onUndeploy: () => void
 }
 
+/** `grid` — 2×2 overlay on the board. `row` — one horizontal strip (mobile, below board). */
+export type CombatAreaClusterLayout = 'grid' | 'row'
+
 export interface CombatAreaClusterProps {
   players: Player[]
   troops: Record<number, number>
@@ -232,13 +235,14 @@ export interface CombatAreaClusterProps {
   activePlayerId: number
   gameState?: GameState
   modalContainerRef?: RefObject<HTMLElement | null>
-  /** Inner-board % height of leader grid; status rows are included inside the cluster. */
+  /** Inner-board % height of leader grid; status rows are included inside the cluster. Ignored for `row`. */
   gridHeightPercent?: number
   /** Overrides quadrant click (sandbox setup opens the player editor instead of the detail modal). */
   onPlayerSelect?: (player: Player) => void
   riseOfIx?: boolean
   firstPlayerMarker?: number
   mentatOwner?: number | null
+  layout?: CombatAreaClusterLayout
   className?: string
   style?: React.CSSProperties
   'data-marker'?: string
@@ -256,20 +260,61 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   riseOfIx = false,
   firstPlayerMarker = 0,
   mentatOwner = null,
+  layout = 'grid',
   className,
   style,
   'data-marker': dataMarker,
 }) => {
   const [detailPlayer, setDetailPlayer] = useState<Player | null>(null)
   const playerById = new Map(players.map(p => [p.id, p]))
+  const isRow = layout === 'row'
 
   const outerStyle = useMemo(() => {
-    if (gridHeightPercent == null) return style
+    if (isRow || gridHeightPercent == null) return style
     return {
       ...style,
       height: `calc(${gridHeightPercent}% + var(--combat-status-strip-height, 4.3em))`,
     }
-  }, [gridHeightPercent, style])
+  }, [gridHeightPercent, isRow, style])
+
+  const renderSeat = (playerId: number) => {
+    const player = playerById.get(playerId)
+    if (!player) return null
+
+    return (
+      <div
+        key={playerId}
+        className={[
+          'combat-area-cluster__seat',
+          `combat-area-cluster__seat--${player.color}`,
+        ].join(' ')}
+      >
+        <PlayerQuadrant
+          player={player}
+          isActive={player.id === activePlayerId}
+          isFirstPlayer={player.id === firstPlayerMarker}
+          hasMentat={player.id === mentatOwner}
+          riseOfIx={riseOfIx}
+          onSelect={() =>
+            onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
+          }
+        />
+        <PlayerCombatSlot
+          player={player}
+          troops={troops[player.id] ?? 0}
+          strength={strength[player.id] ?? 0}
+          isActive={player.id === activePlayerId}
+          riseOfIx={riseOfIx}
+        />
+      </div>
+    )
+  }
+
+  const rowPlayerIds = useMemo(
+    () =>
+      COMBAT_AREA_COLUMNS.flatMap(columnPlayerIds => columnPlayerIds).sort((a, b) => a - b),
+    []
+  )
 
   return (
     <>
@@ -278,44 +323,30 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
         style={outerStyle}
         data-marker={dataMarker}
       >
-        <div className="combat-area-cluster-stack">
-          <div className="combat-area-cluster combat-area-cluster--with-status-inline">
-            {COMBAT_AREA_COLUMNS.map((columnPlayerIds, columnIndex) => (
-              <div key={columnIndex} className="combat-area-cluster__column">
-                {columnPlayerIds.map(playerId => {
-                  const player = playerById.get(playerId)
-                  if (!player) return null
-
-                  return (
-                    <div
-                      key={playerId}
-                      className={[
-                        'combat-area-cluster__seat',
-                        `combat-area-cluster__seat--${player.color}`,
-                      ].join(' ')}
-                    >
-                      <PlayerQuadrant
-                        player={player}
-                        isActive={player.id === activePlayerId}
-                        isFirstPlayer={player.id === firstPlayerMarker}
-                        hasMentat={player.id === mentatOwner}
-                        riseOfIx={riseOfIx}
-                        onSelect={() =>
-                          onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
-                        }
-                      />
-                      <PlayerCombatSlot
-                        player={player}
-                        troops={troops[player.id] ?? 0}
-                        strength={strength[player.id] ?? 0}
-                        isActive={player.id === activePlayerId}
-                        riseOfIx={riseOfIx}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-            ))}
+        <div
+          className={[
+            'combat-area-cluster-stack',
+            isRow ? 'combat-area-cluster-stack--row' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          <div
+            className={[
+              'combat-area-cluster',
+              'combat-area-cluster--with-status-inline',
+              isRow ? 'combat-area-cluster--row' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
+            {isRow
+              ? rowPlayerIds.map(renderSeat)
+              : COMBAT_AREA_COLUMNS.map((columnPlayerIds, columnIndex) => (
+                  <div key={columnIndex} className="combat-area-cluster__column">
+                    {columnPlayerIds.map(renderSeat)}
+                  </div>
+                ))}
           </div>
         </div>
       </div>

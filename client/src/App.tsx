@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import './App.css'
+import './styles/modal.css'
 import './styles/playBoardModal.css'
 import { PlayBoardModalProvider } from './context/PlayBoardModalContext'
+import { AltImagePreviewProvider } from './components/AltImagePreview/AltImagePreview'
 import GameBoard from './components/GameBoard'
 import ImageBoard from './components/ImageBoard/ImageBoard'
 import ImperiumRow from './components/ImperiumRow/ImperiumRow'
 import TurnHistory from './components/TurnHistory'
+import TurnHistoryNav from './components/TurnHistoryNav/TurnHistoryNav'
 import { GameProvider } from './components/GameContext/GameContext'
 import { useGame } from './components/GameContext/GameContext'
 import { useTimeTravel } from './components/TimeTravel'
@@ -61,7 +64,7 @@ import { seedTessiaSnoopers } from './data/leaderAbilities/tessiaSnoopers'
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
 import UndoConfirmDialog from './components/TimeTravel/UndoConfirmDialog'
-import { getLeaderIconPath, LEADER_NAMES } from './data/leaders'
+import { LEADER_NAMES } from './data/leaders'
 import { getEndTurnButtonState } from './utils/endTurnState'
 import { buildSetupBlockFromConfiguration } from './save/buildSetupBlock'
 import { createGameInputDoc } from './save/createGameInput'
@@ -125,6 +128,8 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   )
   const [isPlayChromeHeld, setIsPlayChromeHeld] = useState(false)
   const playChromeHeldRef = useRef(false)
+  const [isPlayAreaDrawerOpen, setIsPlayAreaDrawerOpen] = useState(true)
+  const isPlayAreaDrawerOpenRef = useRef(true)
   const [isMobilePlayView, setIsMobilePlayView] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 600px)').matches
   )
@@ -162,11 +167,19 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       if (!mq.matches) {
         playChromeHeldRef.current = false
         setIsPlayChromeHeld(false)
+        isPlayAreaDrawerOpenRef.current = true
+        setIsPlayAreaDrawerOpen(true)
       }
     }
     apply()
     mq.addEventListener('change', apply)
     return () => mq.removeEventListener('change', apply)
+  }, [])
+
+  const setPlayAreaDrawerOpen = useCallback((open: boolean) => {
+    if (isPlayAreaDrawerOpenRef.current === open) return
+    isPlayAreaDrawerOpenRef.current = open
+    setIsPlayAreaDrawerOpen(open)
   }, [])
 
   useEffect(() => {
@@ -227,13 +240,6 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     displayState.currTurn.agentSpaceId != null
       ? displayState.currTurn.agentSpaceId
       : null
-
-  const liveTurnPlayer =
-    gameState.players.find(p => {
-      const id = gameState.currTurn?.playerId ?? gameState.activePlayerId
-      return p.id === id
-    }) ?? activePlayer
-  const liveLeaderIconPath = liveTurnPlayer ? getLeaderIconPath(liveTurnPlayer.leader.name) : undefined
 
   const undoSourceRow = viewingTurnIndex ?? gameState.history.length
   const canUndo =
@@ -1019,6 +1025,8 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         : 0
       const viewportH = window.visualViewport?.height ?? window.innerHeight
       const playFooterReserved = getPlayFooterReservedPx()
+      const isMobileOverlayLayout =
+        !desktop && window.matchMedia('(max-width: 600px)').matches
       // Stable reserve for board math only — never use the flex-expanded turn-controls container
       // (its box grows with leftover viewport and would shrink the board in a feedback loop).
       const playBandCap = Math.floor(viewportH * 0.24)
@@ -1026,8 +1034,25 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         MIN_PLAY_BAND_PX,
         Math.min(playFooterReserved, playBandCap)
       )
-      const playBandHeight = playBandReserve
-      const bottomChrome = navHeight + playBandHeight + 2
+      const mobileDrawerCollapsed =
+        isMobileOverlayLayout && !isPlayAreaDrawerOpenRef.current
+      let playBandHeight: number
+      let bottomChrome: number
+      if (isMobileOverlayLayout) {
+        // Mobile: footer overlays the board; reserve ~10% viewport for nav chrome only.
+        const overlayReserveRaw = getComputedStyle(root)
+          .getPropertyValue('--play-mobile-overlay-reserve')
+          .trim()
+        const overlayParsed = Number.parseFloat(overlayReserveRaw)
+        const overlayReserve = Number.isFinite(overlayParsed)
+          ? Math.ceil(overlayParsed)
+          : Math.max(navHeight + 8, Math.floor(viewportH * 0.1))
+        playBandHeight = 0
+        bottomChrome = overlayReserve + 2
+      } else {
+        playBandHeight = mobileDrawerCollapsed ? 0 : playBandReserve
+        bottomChrome = navHeight + playBandHeight + 2
+      }
       return { navHeight, topChrome, playFooterReserved, bottomChrome, playBandReserve, playBandHeight }
     }
 
@@ -1055,10 +1080,23 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       }
 
       const banner = historyBannerRef.current
+      const isMobileOverlayLayout =
+        !window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches &&
+        window.matchMedia('(max-width: 600px)').matches
       if (banner && !banner.hidden) {
         const bannerRect = banner.getBoundingClientRect()
         const bannerTop = Math.max(0, Math.ceil(bannerRect.top))
-        const playBandTop = Math.max(0, Math.ceil(bannerRect.bottom))
+        let playBandTop: number
+        if (isMobileOverlayLayout) {
+          const drawer = turnControlsFooterRef.current
+          if (drawer && !drawer.hidden && isPlayAreaDrawerOpenRef.current) {
+            playBandTop = Math.max(0, Math.ceil(drawer.getBoundingClientRect().top))
+          } else {
+            playBandTop = bannerTop
+          }
+        } else {
+          playBandTop = Math.max(0, Math.ceil(bannerRect.bottom))
+        }
         const bannerTopStr = `${bannerTop}px`
         const playBandTopStr = `${playBandTop}px`
         root.style.setProperty('--history-banner-top', bannerTopStr)
@@ -1087,9 +1125,17 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       root.style.setProperty('--play-nav-measured-height', navHeightPx)
       document.documentElement.style.setProperty('--play-nav-measured-height', navHeightPx)
 
+      const isMobileOverlayLayout =
+        !window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches &&
+        window.matchMedia('(max-width: 600px)').matches
+
       const tc = turnControlsFooterRef.current
       let turnControlsHeight = 0
-      if (tc && !tc.hidden) {
+      if (
+        tc &&
+        !tc.hidden &&
+        !(isMobileOverlayLayout && !isPlayAreaDrawerOpenRef.current)
+      ) {
         turnControlsHeight = Math.max(0, Math.ceil(tc.getBoundingClientRect().height))
       }
       const turnControlsHeightPx = `${turnControlsHeight}px`
@@ -1106,11 +1152,16 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         ) || 0
       const playFooterTopRaw = getComputedStyle(root).getPropertyValue('--play-footer-top').trim()
       const playFooterTop = Number.parseFloat(playFooterTopRaw)
-      let footerStackHeight = Number.isFinite(playFooterTop)
-        ? Math.max(0, Math.ceil(viewportH - playFooterTop - gapBottom))
-        : navHeight + turnControlsHeight
-      if (footerStackHeight <= 0) {
-        footerStackHeight = getPlayFooterReservedPx()
+      let footerStackHeight: number
+      if (isMobileOverlayLayout) {
+        footerStackHeight = navHeight + turnControlsHeight
+      } else {
+        footerStackHeight = Number.isFinite(playFooterTop)
+          ? Math.max(0, Math.ceil(viewportH - playFooterTop - gapBottom))
+          : navHeight + turnControlsHeight
+        if (footerStackHeight <= 0) {
+          footerStackHeight = getPlayFooterReservedPx()
+        }
       }
 
       const heightPx = `${footerStackHeight}px`
@@ -1327,6 +1378,11 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   ])
 
   useLayoutEffect(() => {
+    if (!isMobilePlayView || !useImageBoard || isDesktopPlayView) return
+    remeasurePlayChromeRef.current?.()
+  }, [isPlayAreaDrawerOpen, isMobilePlayView, useImageBoard, isDesktopPlayView])
+
+  useLayoutEffect(() => {
     remeasurePlayChromeRef.current?.()
   }, [
     isViewingHistory,
@@ -1447,9 +1503,13 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           ixBoardPlacement={
             isDesktopPlayView && gameState.expansions?.riseOfIx ? 'docked' : 'embedded'
           }
+          ixBoardMobileEmbedded={
+            !isDesktopPlayView && Boolean(gameState.expansions?.riseOfIx)
+          }
           immortalityBoardPlacement={
             isDesktopPlayView && gameState.expansions?.immortality ? 'docked' : 'stacked'
           }
+          combatAreaPlacement={isDesktopPlayView ? 'overlay' : 'below'}
           pendingAcquireTech={
             activePlayer && techAcquireSources.length > 0
               ? {
@@ -1498,6 +1558,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   )
 
   const holdToHidePlayChrome = isMobilePlayView && useImageBoard
+  const showPlayAreaDrawerToggle = isMobilePlayView && useImageBoard && !isDesktopPlayView
   const showTurnHistoryPanel = isDockedHistoryLayout || isTurnHistoryOpen
 
   useEffect(() => {
@@ -1542,6 +1603,8 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         isDockedHistoryLayout ? 'game-container--history-docked' : '',
         isViewingHistory ? 'viewing-history' : '',
         isPlayChromeHeld ? 'play-chrome-held' : '',
+        showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen ? 'play-area-collapsed' : '',
+        showPlayAreaDrawerToggle ? 'play-footer-overlay' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -1550,6 +1613,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         boardContainerRef={mainAreaRef}
         scopeModalsToBoard={isDesktopPlayView}
       >
+      <AltImagePreviewProvider>
       <div ref={playShellMainRef} className="play-shell-main">
         <div className="play-board-column">
       <div
@@ -1863,89 +1927,101 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         </>
       )}
         <div
+          id="play-area-drawer"
           ref={turnControlsFooterRef}
-          className="turn-controls-container"
+          className={[
+            'play-area-drawer',
+            showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen
+              ? 'play-area-drawer--closed'
+              : 'play-area-drawer--open',
+          ]
+            .filter(Boolean)
+            .join(' ')}
           hidden={
             !gameState.sandboxSetup &&
             turnControlsState.phase !== GamePhase.PLAYER_TURNS &&
             turnControlsState.phase !== GamePhase.COMBAT
           }
         >
-          <TurnControls
-            activePlayer={turnControlsActivePlayer}
-            canEndTurn={isViewingHistory ? false : gameState.canEndTurn}
-            onPlayCard={handleCardSelect}
-            onCompleteGraftPair={handleCompleteGraftPair}
-            onPlayIntrigue={handlePlayIntrigue}
-            onMobilizeGarrison={handleMobilizeGarrison}
-            onPlayCombatIntrigue={handlePlayCombatIntrigue}
-            onReveal={handleRevealCards}
-            isCombatPhase={turnControlsState.phase === GamePhase.COMBAT}
-            players={turnControlsState.players}
-            factionInfluence={turnControlsState.factionInfluence}
-            factionAlliances={turnControlsState.factionAlliances}
-            controlMarkers={turnControlsState.controlMarkers}
-            firstPlayerMarker={turnControlsState.firstPlayerMarker}
-            mentatOwner={turnControlsState.mentatOwner}
-            optionalEffects={isViewingHistory ? [] : gameState.currTurn?.optionalEffects || []}
-            pendingChoices={isViewingHistory ? [] : gameState.currTurn?.pendingChoices || []}
-            onResolveChoice={handleResolveChoice}
-            onResolveCardSelect={handleResolveCardSelect}
-            onResolveCounterChoice={handleResolveCounterChoice}
-            onActivateTechDiscard={handleActivateTechDiscard}
-            onPayCost={handlePayCost}
-            selectedCard={isViewingHistory ? null : getSelectedCard(gameState)}
-            recallMode={!isViewingHistory && kwisatzRecallActive}
-            placementPrompt={!isViewingHistory ? boardPlacementPrompt : null}
-            pendingRewards={isViewingHistory ? [] : gameState.pendingRewards}
-            onClaimReward={handleClaimReward}
-            onClaimAllRewards={handleClaimAllRewards}
-            onAutoApplyRewards={handleAutoApplyRewards}
-            autoApplyMandatoryRewards={autoApplyMandatoryRewards}
-            agentPlaced={Boolean(turnControlsState.currTurn?.agentSpace)}
-            opponentDiscardState={isViewingHistory ? undefined : gameState.currTurn?.opponentDiscardState}
-            onOpponentDiscardChoice={handleOpponentDiscardChoice}
-            onOpponentDiscardCard={handleOpponentDiscardCard}
-            onOpponentDiscardCards={handleOpponentDiscardCards}
-            combatTroops={turnControlsState.combatTroops}
-            onVoiceSelectionStart={handleVoiceSelectionStart}
-            voiceSelectionActive={!isViewingHistory && Boolean(voiceSelectionRewardId)}
-            onMasterstrokeSelectionStart={handleMasterstrokeSelectionStart}
-            masterstrokeSelectionActive={!isViewingHistory && Boolean(masterstrokeSelectionRewardId)}
-            onMemnonHighCouncilSelectionStart={handleMemnonHighCouncilSelectionStart}
-            memnonHighCouncilSelectionActive={!isViewingHistory && Boolean(memnonHighCouncilRewardId)}
-            influenceBoardSelectionActive={!isViewingHistory && influenceBoardSelectionActive}
-            onOpponentNoCardAck={handleOpponentNoCardAck}
-            intrigueDeck={turnControlsState.intrigueDeck}
-            gamePhase={turnControlsState.phase}
-            activeIntrigueThisRound={turnControlsActivePlayer ? (turnControlsState.activeIntrigueThisRound?.[turnControlsActivePlayer.id] || []) : []}
-            gameState={turnControlsState}
-            isHistoryView={isViewingHistory}
-            showDesktopPlayBar={isDesktopPlayView}
-            showEndTurnButton={showFooterEndTurn && !isViewingHistory}
-            showPassCombatButton={showFooterPassCombat && !isViewingHistory}
-            onEndTurn={
-              activePlayer ? () => handleEndTurn(activePlayer.id) : undefined
-            }
-            onRecallPlacedAgent={
-              !isViewingHistory && gameState.currTurn?.canRecallPlacedAgent
-                ? handleRecallPlacedAgent
-                : undefined
-            }
-            onCancelGraftSelection={
-              !isViewingHistory && gameState.pendingGraftPartner
-                ? handleCancelGraftSelection
-                : undefined
-            }
-            onPassCombat={
-              activePlayer ? () => handlePassCombat(activePlayer.id) : undefined
-            }
-            endTurnDisabled={endTurnButtonState.disabled}
-            endTurnTitle={endTurnButtonState.title}
-            passCombatLabel={combatFooterActionLabel}
-            onActivateTech={isViewingHistory ? undefined : handleActivateTech}
-            onOpenTechAcquire={isViewingHistory ? undefined : handleOpenTechAcquire}
-          />
+          <div className="play-area-drawer__inner">
+            <div className="turn-controls-container play-shell-footer--play-band">
+              <TurnControls
+                activePlayer={turnControlsActivePlayer}
+                canEndTurn={isViewingHistory ? false : gameState.canEndTurn}
+                onPlayCard={handleCardSelect}
+                onCompleteGraftPair={handleCompleteGraftPair}
+                onPlayIntrigue={handlePlayIntrigue}
+                onMobilizeGarrison={handleMobilizeGarrison}
+                onPlayCombatIntrigue={handlePlayCombatIntrigue}
+                onReveal={handleRevealCards}
+                isCombatPhase={turnControlsState.phase === GamePhase.COMBAT}
+                players={turnControlsState.players}
+                factionInfluence={turnControlsState.factionInfluence}
+                factionAlliances={turnControlsState.factionAlliances}
+                controlMarkers={turnControlsState.controlMarkers}
+                firstPlayerMarker={turnControlsState.firstPlayerMarker}
+                mentatOwner={turnControlsState.mentatOwner}
+                optionalEffects={isViewingHistory ? [] : gameState.currTurn?.optionalEffects || []}
+                pendingChoices={isViewingHistory ? [] : gameState.currTurn?.pendingChoices || []}
+                onResolveChoice={handleResolveChoice}
+                onResolveCardSelect={handleResolveCardSelect}
+                onResolveCounterChoice={handleResolveCounterChoice}
+                onActivateTechDiscard={handleActivateTechDiscard}
+                onPayCost={handlePayCost}
+                selectedCard={isViewingHistory ? null : getSelectedCard(gameState)}
+                recallMode={!isViewingHistory && kwisatzRecallActive}
+                placementPrompt={!isViewingHistory ? boardPlacementPrompt : null}
+                pendingRewards={isViewingHistory ? [] : gameState.pendingRewards}
+                onClaimReward={handleClaimReward}
+                onClaimAllRewards={handleClaimAllRewards}
+                onAutoApplyRewards={handleAutoApplyRewards}
+                autoApplyMandatoryRewards={autoApplyMandatoryRewards}
+                agentPlaced={Boolean(turnControlsState.currTurn?.agentSpace)}
+                opponentDiscardState={isViewingHistory ? undefined : gameState.currTurn?.opponentDiscardState}
+                onOpponentDiscardChoice={handleOpponentDiscardChoice}
+                onOpponentDiscardCard={handleOpponentDiscardCard}
+                onOpponentDiscardCards={handleOpponentDiscardCards}
+                combatTroops={turnControlsState.combatTroops}
+                onVoiceSelectionStart={handleVoiceSelectionStart}
+                voiceSelectionActive={!isViewingHistory && Boolean(voiceSelectionRewardId)}
+                onMasterstrokeSelectionStart={handleMasterstrokeSelectionStart}
+                masterstrokeSelectionActive={!isViewingHistory && Boolean(masterstrokeSelectionRewardId)}
+                onMemnonHighCouncilSelectionStart={handleMemnonHighCouncilSelectionStart}
+                memnonHighCouncilSelectionActive={!isViewingHistory && Boolean(memnonHighCouncilRewardId)}
+                influenceBoardSelectionActive={!isViewingHistory && influenceBoardSelectionActive}
+                onOpponentNoCardAck={handleOpponentNoCardAck}
+                intrigueDeck={turnControlsState.intrigueDeck}
+                gamePhase={turnControlsState.phase}
+                activeIntrigueThisRound={turnControlsActivePlayer ? (turnControlsState.activeIntrigueThisRound?.[turnControlsActivePlayer.id] || []) : []}
+                gameState={turnControlsState}
+                isHistoryView={isViewingHistory}
+                showDesktopPlayBar={isDesktopPlayView}
+                showEndTurnButton={showFooterEndTurn && !isViewingHistory}
+                showPassCombatButton={showFooterPassCombat && !isViewingHistory}
+                onEndTurn={
+                  activePlayer ? () => handleEndTurn(activePlayer.id) : undefined
+                }
+                onRecallPlacedAgent={
+                  !isViewingHistory && gameState.currTurn?.canRecallPlacedAgent
+                    ? handleRecallPlacedAgent
+                    : undefined
+                }
+                onCancelGraftSelection={
+                  !isViewingHistory && gameState.pendingGraftPartner
+                    ? handleCancelGraftSelection
+                    : undefined
+                }
+                onPassCombat={
+                  activePlayer ? () => handlePassCombat(activePlayer.id) : undefined
+                }
+                endTurnDisabled={endTurnButtonState.disabled}
+                endTurnTitle={endTurnButtonState.title}
+                passCombatLabel={combatFooterActionLabel}
+                onActivateTech={isViewingHistory ? undefined : handleActivateTech}
+                onOpenTechAcquire={isViewingHistory ? undefined : handleOpenTechAcquire}
+              />
+            </div>
+          </div>
         </div>
       {sandboxSetupMobileBar}
       {/* Navigator / status strip — directly under the board; play band fills below. */}
@@ -1969,6 +2045,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
               onTurnHistoryToggle={() => setIsTurnHistoryOpen(open => !open)}
               isTurnHistoryOpen={showTurnHistoryPanel}
               hideTurnHistoryToggle={isDockedHistoryLayout}
+              showPlayAreaDrawerToggle={showPlayAreaDrawerToggle}
+              isPlayAreaDrawerOpen={isPlayAreaDrawerOpen}
+              onPlayAreaDrawerToggle={() => setPlayAreaDrawerOpen(!isPlayAreaDrawerOpen)}
               showBoardPeekButton={holdToHidePlayChrome}
               isBoardPeekActive={isPlayChromeHeld}
               onBoardPeekHoldChange={setPlayChromeHeld}
@@ -1983,13 +2062,14 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
                   ? 'Setup'
                   : gameState.phase === GamePhase.END_GAME
                     ? 'Endgame'
-                    : formatTurnRoundHeader(
-                        getLivePlayerTurnNumber(
-                          gameState.history,
-                          gameState.playerTurnNumberOffset ?? 0
-                        ),
-                        getDisplayRound(gameState)
-                      )
+                    : ''
+                    // formatTurnRoundHeader(
+                    //     getLivePlayerTurnNumber(
+                    //       gameState.history,
+                    //       gameState.playerTurnNumberOffset ?? 0
+                    //     ),
+                    //     getDisplayRound(gameState)
+                    //   )
                 : (() => {
                     const snapshot = gameState.history[viewingTurnIndex]
                     if (viewingTurnIndex === 0 || snapshot?.historyEntryKind === 'setup') return 'Setup'
@@ -2008,79 +2088,40 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           )}
         </div>
         <div className="history-banner-actions">
-          {!isDockedHistoryLayout && (
-            <div className="history-banner-turn-nav" aria-label="Turn navigation">
-              <button
-                type="button"
-                className="history-nav-btn"
-                onClick={() => goToTurn(Math.max(0, (viewingTurnIndex ?? gameState.history.length) - 1))}
-                disabled={viewingTurnIndex === 0}
-                title="Previous turn"
-                aria-label="Previous turn"
-              >
-                &lt;
-              </button>
-              {isViewingHistory && liveTurnPlayer && (
-                <button
-                  type="button"
-                  className={`history-return-leader-btn leader-avatar-btn ${liveTurnPlayer.color}`}
-                  onClick={returnToCurrent}
-                  title={`Return to current turn (${liveTurnPlayer.leader.name})`}
-                  aria-label={`Return to current turn, ${liveTurnPlayer.leader.name}`}
-                >
-                  {liveLeaderIconPath ? (
-                    <img
-                      className="history-return-leader-icon"
-                      src={liveLeaderIconPath}
-                      alt=""
-                      draggable={false}
-                    />
-                  ) : (
-                    <span className="history-return-leader-fallback" aria-hidden="true">
-                      {liveTurnPlayer.leader.name.charAt(0)}
-                    </span>
-                  )}
-                </button>
-              )}
-              <button
-                type="button"
-                className="history-nav-btn"
-                onClick={() => {
-                  const effectiveViewIndex = viewingTurnIndex ?? gameState.history.length
-                  if (effectiveViewIndex < gameState.history.length) {
-                    goToTurn(effectiveViewIndex + 1)
-                  } else {
-                    returnToCurrent()
-                  }
-                }}
-                hidden={viewingTurnIndex === null}
-                title="Next turn"
-                aria-label="Next turn"
-              >
-                &gt;
-              </button>
-            </div>
-          )}
-          {showFooterEndTurn && (
-            <button
-              type="button"
-              className="footer-end-turn-button"
-              onClick={() => handleEndTurn(activePlayer!.id)}
-              disabled={endTurnButtonState.disabled}
-              title={endTurnButtonState.title}
-            >
-              End Turn
-            </button>
-          )}
-          {showFooterPassCombat && (
-            <button
-              type="button"
-              className="footer-pass-combat-button"
-              onClick={() => handlePassCombat(activePlayer!.id)}
-              aria-label={combatFooterActionLabel}
-            >
-              {combatFooterActionLabel}
-            </button>
+          {!isDockedHistoryLayout && isMobilePlayView && (
+            <TurnHistoryNav
+              className="history-banner-turn-nav"
+              viewingTurnIndex={viewingTurnIndex}
+              historyLength={gameState.history.length}
+              inSandboxSetup={Boolean(gameState.sandboxSetup)}
+              isViewingHistory={isViewingHistory}
+              onTurnChange={goToTurn}
+              onReturnToCurrent={returnToCurrent}
+              lastSlotWidthLabel="End Turn"
+              lastSlotWidthClassName="footer-end-turn-button footer-nav-slot-button"
+              lastSlot={
+                showFooterEndTurn ? (
+                  <button
+                    type="button"
+                    className="footer-end-turn-button footer-nav-slot-button"
+                    onClick={() => handleEndTurn(activePlayer!.id)}
+                    disabled={endTurnButtonState.disabled}
+                    title={endTurnButtonState.title}
+                  >
+                    End Turn
+                  </button>
+                ) : showFooterPassCombat ? (
+                  <button
+                    type="button"
+                    className="footer-pass-combat-button footer-nav-slot-button"
+                    onClick={() => handlePassCombat(activePlayer!.id)}
+                    aria-label={combatFooterActionLabel}
+                  >
+                    {combatFooterActionLabel}
+                  </button>
+                ) : undefined
+              }
+            />
           )}
         </div>
       </div>
@@ -2165,6 +2206,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           onClose={() => setIsPlayerOverviewOpen(false)}
         />
       )}
+      </AltImagePreviewProvider>
       </PlayBoardModalProvider>
     </div>
   )

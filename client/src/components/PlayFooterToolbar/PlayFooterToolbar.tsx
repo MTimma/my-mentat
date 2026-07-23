@@ -48,6 +48,21 @@ const BoardPeekIcon = () => (
   </svg>
 )
 
+const PlayAreaDrawerIcon = ({ open }: { open: boolean }) => (
+  <svg
+    className={[
+      'utility-action-icon',
+      'play-area-drawer-toggle__icon',
+      open ? 'play-area-drawer-toggle__icon--open' : 'play-area-drawer-toggle__icon--closed',
+    ].join(' ')}
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    focusable="false"
+  >
+    {open ? <path d="M6 9l6 6 6-6" /> : <path d="M6 15l6-6 6 6" />}
+  </svg>
+)
+
 export interface PlayFooterToolbarProps {
   player: Player
   onOpenPlayerOverview: () => void
@@ -55,6 +70,10 @@ export interface PlayFooterToolbarProps {
   isTurnHistoryOpen?: boolean
   /** Wide layout: timeline is always visible in the sidebar */
   hideTurnHistoryToggle?: boolean
+  /** Mobile: toggle collapsing the play band under the control bar */
+  showPlayAreaDrawerToggle?: boolean
+  isPlayAreaDrawerOpen?: boolean
+  onPlayAreaDrawerToggle?: () => void
   /** Mobile image board: hold to hide footer chrome and view the board */
   showBoardPeekButton?: boolean
   isBoardPeekActive?: boolean
@@ -67,6 +86,9 @@ const PlayFooterToolbar = ({
   onTurnHistoryToggle,
   isTurnHistoryOpen = false,
   hideTurnHistoryToggle = false,
+  showPlayAreaDrawerToggle = false,
+  isPlayAreaDrawerOpen = true,
+  onPlayAreaDrawerToggle,
   showBoardPeekButton = false,
   isBoardPeekActive = false,
   onBoardPeekHoldChange,
@@ -107,7 +129,7 @@ const PlayFooterToolbar = ({
           <MagnifyingGlassIcon />
         </button>
       )}
-      <button
+      {/* <button
         type="button"
         className="utility-action-button history-toolbar-button"
         onClick={onOpenPlayerOverview}
@@ -115,7 +137,7 @@ const PlayFooterToolbar = ({
         aria-label="View player overview and stats"
       >
         <PlayerOverviewIcon />
-      </button>
+      </button> */}
       {!hideTurnHistoryToggle && (
         <button
           type="button"
@@ -128,17 +150,29 @@ const PlayFooterToolbar = ({
           <TurnHistoryIcon />
         </button>
       )}
-      <button
-        type="button"
-        className="utility-action-button history-toolbar-button play-chrome-theme-button"
-        onClick={handleThemeCycle}
-        title={`UI theme: ${PLAY_CHROME_THEME_LABELS[playChromeTheme]}`}
-        aria-label={`Switch UI theme (current: ${PLAY_CHROME_THEME_LABELS[playChromeTheme]})`}
-      >
-        <span className="play-chrome-theme-button__label" aria-hidden="true">
-          {playChromeTheme === 'void' ? 'V' : 'B'}
-        </span>
-      </button>
+
+      {showPlayAreaDrawerToggle && onPlayAreaDrawerToggle && (
+        <button
+          type="button"
+          className={[
+            'utility-action-button',
+            'history-toolbar-button',
+            'play-area-drawer-toggle',
+            isPlayAreaDrawerOpen
+              ? 'play-area-drawer-toggle--open'
+              : 'play-area-drawer-toggle--closed',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          onClick={onPlayAreaDrawerToggle}
+          title={isPlayAreaDrawerOpen ? 'Hide play area' : 'Show play area'}
+          aria-label={isPlayAreaDrawerOpen ? 'Hide play area' : 'Show play area'}
+          aria-expanded={isPlayAreaDrawerOpen}
+          aria-controls="play-area-drawer"
+        >
+          <PlayAreaDrawerIcon open={isPlayAreaDrawerOpen} />
+        </button>
+      )}
       {showBoardPeekButton && onBoardPeekHoldChange && (
         <button
           type="button"

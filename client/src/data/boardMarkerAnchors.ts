@@ -46,23 +46,23 @@ export interface InfluenceTrackLayout {
 
 export const INFLUENCE_TRACKS: Record<FactionType, InfluenceTrackLayout> = {
   [FactionType.EMPEROR]: {
-    laneCenterX: [4, 5.8, 7.6, 9.4],
-    baselineY: 24,
+    laneCenterX: [3.8, 6.1, 8.4, 10.7],
+    baselineY: 23.2,
     stepY: -3.5,
   },
   [FactionType.SPACING_GUILD]: {
-    laneCenterX: [4, 5.8, 7.6, 9.4],
-    baselineY: 49,
+    laneCenterX: [3.8, 6.1, 8.4, 10.7],
+    baselineY: 48,
     stepY: -3.5,
   },
   [FactionType.BENE_GESSERIT]: {
-    laneCenterX: [4, 5.8, 7.6, 9.4],
-    baselineY: 73,
+    laneCenterX: [3.8, 6.1, 8.4, 10.7],
+    baselineY: 72.8,
     stepY: -3.5,
   },
   [FactionType.FREMEN]: {
-    laneCenterX: [4, 5.8, 7.6, 9.4],
-    baselineY: 98,
+    laneCenterX: [3.8, 6.1, 8.4, 10.7],
+    baselineY: 97.1,
     stepY: -3.5,
   },
 }
@@ -75,10 +75,10 @@ export const INFLUENCE_TRACK_AREAS: Record<
   FactionType,
   { left: number; top: number; width: number; height: number }
 > = {
-  [FactionType.EMPEROR]: { left: 3, top: 2, width: 9, height: 23 },
-  [FactionType.SPACING_GUILD]: { left: 3, top: 27, width: 9, height: 23 },
-  [FactionType.BENE_GESSERIT]: { left: 3, top: 51, width: 9, height: 23 },
-  [FactionType.FREMEN]: { left: 3, top: 76, width: 9, height: 23 },
+  [FactionType.EMPEROR]: { left: 2, top: 1, width: 11, height: 24 },
+  [FactionType.SPACING_GUILD]: { left: 2, top: 26, width: 11, height: 24 },
+  [FactionType.BENE_GESSERIT]: { left: 2, top: 50.5, width: 11, height: 24 },
+  [FactionType.FREMEN]: { left: 2, top: 75, width: 11, height: 24 },
 }
 
 /**
@@ -97,10 +97,10 @@ export const VP_LANES: Array<{ x: number; baselineY: number; stepY: number }> = 
 
 /** Left→right seat slots (inner %) next to High Council */
 export const HIGH_COUNCIL_SLOTS: Array<{ x: number; y: number }> = [
-  { x: 42, y: 6 },
-  { x: 44.8, y: 6 },
-  { x: 52.6, y: 6 },
-  { x: 56.0, y: 6 },
+  { x: 42.5, y: 7 },
+  { x: 45.9, y: 7 },
+  { x: 53.4, y: 7 },
+  { x: 56.9, y: 7 },
 ]
 
 /** Conflict card panel **/
@@ -156,9 +156,9 @@ export const COMBAT_DEPLOY_DOCK_RECT = {
 export const COMBAT_STRENGTH_ORIGIN = { x: 58, y: 72 }
 
 export const CONTROL_MARKER_POINTS: Record<ControlMarkerType, { x: number; y: number }> = {
-  [ControlMarkerType.ARRAKIN]: { x: 78, y: 34 },
-  [ControlMarkerType.CARTHAG]: { x: 61, y: 37 },
-  [ControlMarkerType.IMPERIAL_BASIN]: { x: 77, y: 49 },
+  [ControlMarkerType.ARRAKIN]: { x: 78.1, y: 33.7 },
+  [ControlMarkerType.CARTHAG]: { x: 60.8, y: 36.9 },
+  [ControlMarkerType.IMPERIAL_BASIN]: { x: 76.8, y: 48.7 },
 }
 
 /**
@@ -166,9 +166,9 @@ export const CONTROL_MARKER_POINTS: Record<ControlMarkerType, { x: number; y: nu
  * Anchor is the badge center — same as agent/VP markers. Tune with ?markerDebug=1.
  */
 export const BONUS_SPICE_ANCHORS: Record<MakerSpace, { x: number; y: number }> = {
-  [MakerSpace.IMPERIAL_BASIN]: { x: 88, y: 44 },
-  [MakerSpace.GREAT_FLAT]: { x: 43, y: 62 },
-  [MakerSpace.HAGGA_BASIN]: { x: 69, y: 50 },
+  [MakerSpace.IMPERIAL_BASIN]: { x: 88.6, y: 44.3 },
+  [MakerSpace.GREAT_FLAT]: { x: 43.3, y: 61.5 },
+  [MakerSpace.HAGGA_BASIN]: { x: 69.1, y: 50.2 },
 }
 
 export function clampInfluenceStep(v: number): number {

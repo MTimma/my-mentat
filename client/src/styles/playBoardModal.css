@@ -7,6 +7,7 @@
 }
 
 .play-board-modal-overlay--scoped,
+.modal-overlay.play-board-modal-overlay--scoped,
 .combat-phase-overlay--board-scoped,
 .dialog-overlay.play-board-modal-overlay--scoped,
 .conflict-select-overlay.play-board-modal-overlay--scoped,

@@ -95,6 +95,29 @@
   margin-top: clamp(6px, 1vh, 12px);
 }
 
+/* Mobile: leader seats in one row just below the board (above turn controls in scroll order). */
+.image-board__combat-area-below {
+  width: var(--play-board-max-edge, 100%);
+  max-width: 100%;
+  margin-top: clamp(6px, 1vh, 12px);
+  box-sizing: border-box;
+}
+
+.image-board__combat-area-cluster--below {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100%;
+  height: auto;
+  /* Viewport-relative type so resource text stays readable off-board. */
+  font-size: clamp(10px, 2.8vw, 13px);
+  line-height: 1.1;
+  color: #fff8e8;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 2px #000;
+  pointer-events: none;
+  z-index: 2;
+}
+
 .game-container--desktop-play .image-board__desktop-shell {
   display: flex;
   flex-direction: row;
@@ -211,12 +234,41 @@
   height: clamp(18px, 3.6cqw, 26px);
 }
 
+.image-board__dreadnought-control-marker .image-board__dreadnought-control-icon.dreadnought-icon--control::before {
+  filter: drop-shadow(1px 2px 1px rgba(0, 0, 0, 0.42));
+}
+
+.image-board__dreadnought-control-marker .image-board__dreadnought-control-icon.dreadnought-icon--control::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.32) 0%,
+    rgba(255, 255, 255, 0.08) 38%,
+    transparent 58%
+  );
+  -webkit-mask-image: url(/icon/dreadnought.png);
+  mask-image: url(/icon/dreadnought.png);
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
 /*
  * Hotspots stay clickable (pointer-events: auto on buttons).
  * Tracker nodes are normally pointer-events: none so clicks reach hotspots beneath.
  * With ?hotspotDebug=1 or ?markerDebug=1, trackers receive hits so DevTools can
  * "Inspect" them (right-click → Inspect lands on .image-board__tracker-circle etc.).
  */
+.image-board--tracker-inspect .image-board__tracker,
 .image-board--tracker-inspect .image-board__tracker-circle,
 .image-board--tracker-inspect .image-board__conflict-panel,
 .image-board--tracker-inspect .image-board__combat-deploy-dock,
@@ -250,6 +302,16 @@
   border-color: var(--chrome-accent);
   box-shadow: 0 0 10px var(--chrome-accent-glow);
   background: rgba(255, 215, 0, 0.15);
+}
+
+/* After agent placement, drop placement-target chrome (incl. sticky tap hover/focus). */
+.image-board--agent-placed .image-board__hotspot.highlighted,
+.image-board--agent-placed .image-board__hotspot.agent-placed,
+.image-board--agent-placed .image-board__hotspot:focus,
+.image-board--agent-placed .image-board__hotspot:focus-visible {
+  border-color: transparent;
+  box-shadow: none;
+  background: transparent;
 }
 
 .image-board__hotspot.disabled {
@@ -377,9 +439,12 @@
   border-color: #ffa726;
 }
 
-.image-board__hotspot:hover:not(.disabled) {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
+/* Touch devices keep :hover sticky after tap — only apply hover chrome on real pointers. */
+@media (hover: hover) and (pointer: fine) {
+  .image-board__hotspot:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
 }
 
 /* Turn history — outline the board space where the viewed turn's agent was placed (under agent figure) */
@@ -440,6 +505,34 @@
 .image-board__marker .image-board__agent-figure.agent--dreadnought {
   width: clamp(14px, 2.8cqw, 20px);
   height: clamp(14px, 2.8cqw, 20px);
+  filter: drop-shadow(1px 2px 1px rgba(0, 0, 0, 0.42));
+}
+
+.image-board__marker:has(> .agent--dreadnought)::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: clamp(14px, 2.8cqw, 20px);
+  height: clamp(14px, 2.8cqw, 20px);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.06) 38%,
+    transparent 58%
+  );
+  -webkit-mask-image: url(/icon/dreadnought_card.png);
+  mask-image: url(/icon/dreadnought_card.png);
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  pointer-events: none;
 }
 
 @media (max-width: 600px) {
@@ -449,6 +542,11 @@
   }
 
   .image-board__marker .image-board__agent-figure.agent--dreadnought {
+    width: 14px;
+    height: 14px;
+  }
+
+  .image-board__marker:has(> .agent--dreadnought)::after {
     width: 14px;
     height: 14px;
   }
@@ -471,6 +569,36 @@
   font-size: clamp(14px, 2.2cqw, 22px);
 }
 
+.image-board__bonus-spice .spice-amount-badge__icon {
+  filter: drop-shadow(1px 2px 1px rgba(0, 0, 0, 0.42));
+}
+
+.image-board__bonus-spice .spice-amount-badge::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.75em;
+  height: 1.75em;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.32) 0%,
+    rgba(255, 255, 255, 0.08) 38%,
+    transparent 58%
+  );
+  -webkit-mask-image: url(/icon/spice.png);
+  mask-image: url(/icon/spice.png);
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  pointer-events: none;
+}
+
 /* Zero-size anchor; badge centered on foldspaceDeckCountPoint (same as bonus spice). */
 .image-board__foldspace-deck-anchor {
   position: absolute;
@@ -487,7 +615,7 @@
   transform: translate(-50%, -50%);
   color: #fff;
   font-weight: 800;
-  font-size: clamp(14px, 2.2cqw, 22px);
+  font-size: clamp(8px, 2.2cqw, 22px);
   line-height: 1;
   pointer-events: none;
   text-shadow:
@@ -514,27 +642,96 @@
   object-fit: cover;
 }
 
-/* Scale with board width (overlay %), not viewport — keeps VP/influence cubes proportional on desktop */
+/* Scale with board width (overlay %), not viewport — keeps VP/influence markers proportional on desktop */
+.image-board__tracker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2;
+  box-sizing: border-box;
+  --tracker-depth-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.28),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.18);
+}
+
+.image-board__tracker--circle {
+  width: clamp(15px, 1.05%, 30px);
+  aspect-ratio: 1;
+  height: auto;
+  border-radius: 50%;
+  box-shadow: var(--tracker-depth-shadow);
+}
+
+.image-board__tracker--cube {
+  width: clamp(8px, 2.15%, 25px);
+  aspect-ratio: 1;
+  height: auto;
+  border-radius: 2px;
+  box-shadow: var(--tracker-depth-shadow);
+}
+
+.image-board__tracker--portrait {
+  /* Color ring extends past the head icon */
+  width: clamp(38px, 2.5%, 56px);
+  aspect-ratio: 1;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-board__tracker-portrait-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: var(--tracker-depth-shadow);
+}
+
+.image-board__tracker-portrait-img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: clamp(28px, 1.85%, 44px);
+  height: clamp(28px, 1.85%, 44px);
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Legacy circle markers (unused on main board; kept for debug / inspect tooling). */
 .image-board__tracker-circle {
   position: absolute;
-  width: clamp(5px, 1.05%, 10px);
+  width: clamp(15px, 1.05%, 30px);
   aspect-ratio: 1;
   height: auto;
   border-radius: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 2;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+  --tracker-depth-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.28),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.18);
+  box-shadow: var(--tracker-depth-shadow);
 }
 
 .image-board__tracker-circle--control {
   width: clamp(5px, 1.15%, 11px);
+  --tracker-depth-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.28),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .image-board__tracker-circle--mentat-available {
   width: clamp(6px, 1.2%, 11px);
   background-color: #c9a227;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  --tracker-depth-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.55),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.3),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.22);
+  box-shadow: var(--tracker-depth-shadow);
 }
 
 .image-board__mentat-marker {
@@ -556,6 +753,13 @@
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
 }
 
+/* Board-texture patch covering the printed Mentat when a player holds it.
+   Scales with board container width so mobile stays proportional. */
+.image-board__mentat-marker-img--taken {
+  width: clamp(12px, 2.8cqw, 28px);
+  filter: none;
+}
+
 .image-board__control-marker {
   position: absolute;
   width: 0;
@@ -569,6 +773,37 @@
   left: 0;
   top: 0;
   transform: translate(-50%, -50%);
+  /* width: clamp(10px, 2cqw, 16px); */
+  /* width: 200%; */
+  /* display: block; */
+}
+
+.image-board__control-marker-icon.control-marker-icon::before {
+  filter: drop-shadow(1px 2px 1px rgba(0, 0, 0, 0.42));
+}
+
+.image-board__control-marker-icon.control-marker-icon::after {
+  content: '';
+  position: absolute;
+  transform: scale(1.75);
+  inset: 0;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.32) 0%,
+    rgba(255, 255, 255, 0.08) 38%,
+    transparent 58%
+  );
+  -webkit-mask-image: url(/icon/control.png);
+  mask-image: url(/icon/control.png);
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  pointer-events: none;
 }
 
 .image-board__snooper-token {
@@ -620,6 +855,8 @@
   height: 100%;
   object-fit: contain;
   display: block;
+  /* Parent panel is pointer-events: none; allow Alt preview hover on the card art */
+  pointer-events: auto;
 }
 
 /* Sandbox setup: conflict slot is a click target */
@@ -938,6 +1175,11 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   background: linear-gradient(180deg, rgba(8, 10, 14, 0.92) 0%, rgba(2, 3, 5, 0.98) 100%);
 }
 
+.combat-area-cluster-stack--row {
+  height: auto;
+  overflow: visible;
+}
+
 .combat-area-cluster {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -948,6 +1190,33 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   min-height: 0;
   overflow: hidden;
   pointer-events: auto;
+}
+
+.combat-area-cluster--row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  grid-template-columns: none;
+  grid-template-rows: none;
+  flex: 0 0 auto;
+  height:  clamp(11rem, 46vw, 16rem);
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+/* 
+.image-board__combat-area-cluster--below .combat-area-cluster__leader-img {
+  object-position: top center;
+} */
+
+.combat-area-cluster--row .combat-area-cluster__seat {
+  flex: 1 1 0;
+  min-width: max(4.75rem, 22%);
+  border-bottom: none;
+}
+
+.combat-area-cluster--row .combat-area-cluster__seat + .combat-area-cluster__seat {
+  border-left: 1px solid rgba(255, 248, 232, 0.1);
 }
 
 .combat-area-cluster--with-status-inline {
@@ -993,13 +1262,15 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   pointer-events: none;
 }
 
-.game-container--play.play-chrome-held .combat-area-cluster-stack {
+.game-container--play.play-chrome-held .combat-area-cluster-stack:not(.combat-area-cluster-stack--row) {
   border: none;
   box-shadow: none;
   background: transparent;
 }
 
-.game-container--play.play-chrome-held .combat-area-cluster--with-status-inline {
+.game-container--play.play-chrome-held
+  .combat-area-cluster-stack:not(.combat-area-cluster-stack--row)
+  .combat-area-cluster--with-status-inline {
   border: 1px solid rgba(255, 248, 232, 0.18);
   border-radius: 0.42em;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
@@ -1303,6 +1574,7 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 }
 
 /* Combat status slot — rendered under each leader in combat-area-cluster__seat */
+.combat-status-strip__slot {
   display: flex;
   flex-direction: row;
   align-items: center;

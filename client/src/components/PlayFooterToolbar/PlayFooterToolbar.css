@@ -93,6 +93,10 @@
   letter-spacing: 0.02em;
 }
 
+.history-banner-toolbar .play-area-drawer-toggle__icon {
+  transition: transform 0.2s ease;
+}
+
 .history-banner-toolbar .board-peek-button {
   touch-action: none;
 }

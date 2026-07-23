@@ -104,7 +104,7 @@ export function getInfluenceBoardChoiceMeta(
 
 export function getInfluenceBoardPrompt(mode: InfluenceBoardMode, amount: number): string {
   if (mode === 'lose') {
-    return amount === 1 ? 'Choose where to lose influence' : `Choose where to lose ${amount} influence`
+    return amount === 1 ? 'Choose with which faction to lose influence' : `Choose with which faction to lose ${amount} influence`
   }
-  return amount === 1 ? 'Choose where to gain influence' : `Choose where to gain ${amount} influence`
+  return amount === 1 ? 'Choose with which faction to gain influence' : `Choose with which faction to gain ${amount} influence`
 }

@@ -14,7 +14,7 @@
   border: 1px solid #8b6f39;
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-  max-width: min(95vw, 400px);
+  max-width: min(95vw, 560px);
   overflow: hidden;
 }
 
@@ -63,5 +63,7 @@
   display: block;
   width: 100%;
   height: auto;
+  max-height: min(80vh, 720px);
+  object-fit: contain;
   border-radius: 6px;
 }

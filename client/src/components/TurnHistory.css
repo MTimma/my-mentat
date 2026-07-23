@@ -80,48 +80,6 @@
   border-top-color: var(--chrome-accent);
 }
 
-.turn-history-nav {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.turn-history-nav-btn {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  cursor: pointer;
-  flex-shrink: 0;
-  background: var(--chrome-accent-subtle);
-  color: var(--chrome-text-strong);
-  border: 1px solid var(--chrome-border-accent);
-  transition:
-    background 0.2s,
-    border-color 0.2s,
-    color 0.2s,
-    opacity 0.2s;
-}
-
-.turn-history-nav-btn:hover:not(:disabled) {
-  background: var(--chrome-accent-hover);
-  border-color: var(--chrome-border-accent-strong);
-}
-
-.turn-history-nav-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.turn-history-nav-icon {
-  width: 16px;
-  height: 16px;
-}
-
 .turn-history-list {
   flex: 1;
   overflow-y: auto;
@@ -1081,14 +1039,13 @@
 
   .turn-history-overlay--docked .turn-history-gains .turn-gains-display {
     display: flex;
-    flex-direction: column;
-    gap: 3px;
+    gap: 2px;
     width: 100%;
   }
 
   .turn-history-overlay--docked .turn-history-gains .turn-gain-source-group,
   .turn-history-overlay--docked .turn-history-gains .turn-gain-combat-group {
-    display: grid;
+    /* display: grid; */
     grid-template-columns: minmax(52px, 34%) minmax(0, 1fr);
     align-items: center;
     gap: 6px 8px;
@@ -1245,16 +1202,6 @@
     padding: 8px 12px 10px;
   }
 
-  .turn-history-nav-btn {
-    width: 26px;
-    height: 26px;
-  }
-
-  .turn-history-nav-icon {
-    width: 14px;
-    height: 14px;
-  }
-
   .turn-history-row {
     padding: 6px 10px;
     margin: 0 4px 3px;
@@ -1322,11 +1269,6 @@
     font-size: 0.85em;
   }
 
-  .turn-history-nav-btn {
-    width: 24px;
-    height: 24px;
-  }
-  
   .turn-history-row {
     padding: 5px 8px;
     gap: 4px;

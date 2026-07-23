@@ -94,18 +94,19 @@ describe('END_TURN gating — mandatory pending work blocks the turn', () => {
     expect(applyGameAction(s, { type: 'END_TURN', playerId: 0 })).toBe(s)
   })
 
-  it('is blocked by an unclaimed optional trash pendingReward', () => {
+  it('optional pick-a-card trash on reveal lapses on END_TURN like arrow-cost effects', () => {
     const card = stubDeckCard(8104, { revealEffect: [{ reward: { trash: 1 } }] })
     let s = getBaseTestState({ deck: [card], handCount: 1 }, { players: 2, activeId: 0 })
     s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [8104] })
 
-    expect(s.pendingRewards).toHaveLength(1)
-    expect(s.pendingRewards[0]).toMatchObject({ isTrash: true, reward: { trash: 1 } })
-    expect(s.canEndTurn).toBe(false)
+    expect(s.pendingRewards).toHaveLength(0)
+    expect(s.currTurn?.optionalEffects).toHaveLength(1)
+    expect(s.currTurn?.optionalEffects?.[0]).toMatchObject({ reward: { trash: 1 } })
+    expect(s.canEndTurn).toBe(true)
 
-    // NOTE: current behavior — optional trash rewards are NOT exempt from the
-    // pendingRewards gate; END_TURN no-ops until the reward is claimed or removed
-    expect(applyGameAction(s, { type: 'END_TURN', playerId: 0 })).toBe(s)
+    s = applyGameAction(s, { type: 'END_TURN', playerId: 0 })
+    expect(s.activePlayerId).toBe(1)
+    expect(s.currTurn).toBeNull()
   })
 
   it('disabled pendingRewards do not block END_TURN', () => {

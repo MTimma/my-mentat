@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { GameState } from '../../types/GameTypes'
 import { getHistoryRowLabel } from '../../utils/turnHistoryDisplay'
-import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
+import { BoardScopedModal } from '../BoardScopedModal'
 import './UndoConfirmDialog.css'
 
 interface UndoConfirmDialogProps {
@@ -25,7 +25,7 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
   targetState,
   currentState,
   onConfirm,
-  onCancel
+  onCancel,
 }) => {
   useEffect(() => {
     if (!isOpen) return
@@ -35,12 +35,9 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onCancel])
-  
-  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(isOpen)
 
   if (!isOpen || !targetState) return null
-  if (waitForBoardTarget) return null
-  
+
   const history = currentState.history
   const isSandboxEditUndo =
     Boolean(currentState.setupBaseline?.sandboxSetup) &&
@@ -66,23 +63,25 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
     ? `${getHistoryRowLabel(history, undoSourceRowIndex)} (current)`
     : getHistoryRowLabel(history, undoSourceRowIndex)
 
-  const dialog = (
-    <div
-      className={['undo-confirm-overlay', scopedClass].filter(Boolean).join(' ')}
-      onClick={onCancel}
+  return (
+    <BoardScopedModal
+      isOpen
+      overlayClassName="undo-confirm-overlay"
+      onClose={onCancel}
+      closeOnOverlayClick
     >
-      <div className="undo-confirm-dialog" onClick={e => e.stopPropagation()}>
+      <div className="undo-confirm-dialog" onClick={event => event.stopPropagation()}>
         <div className="undo-confirm-header">
           <h2>Confirm Undo</h2>
         </div>
-        
+
         <div className="undo-confirm-body">
           <p className="undo-main-warning">
             {isSandboxEditUndo
               ? 'You will return to setup editing. Your board configuration will be kept.'
               : `This will reset ${undoFromLabel} and all future turns.`}
           </p>
-          
+
           <div className="undo-details">
             <div className="undo-detail-row">
               <span className="detail-label">Reverting to:</span>
@@ -94,20 +93,18 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
             </div>
           </div>
         </div>
-        
+
         <div className="undo-confirm-actions">
-          <button className="undo-confirm-cancel" type="button" onClick={onCancel}>
+          <button className="undo-confirm-cancel modal-btn modal-btn--secondary" type="button" onClick={onCancel}>
             Cancel
           </button>
-          <button className="undo-confirm-submit" type="button" onClick={onConfirm}>
+          <button className="undo-confirm-submit modal-btn modal-btn--primary" type="button" onClick={onConfirm}>
             Undo {turnsToUndo} Turn{turnsToUndo !== 1 ? 's' : ''}
           </button>
         </div>
       </div>
-    </div>
+    </BoardScopedModal>
   )
-
-  return portalNode(dialog)
 }
 
 export default UndoConfirmDialog

@@ -9,6 +9,7 @@
 .control-marker-icon::before {
   content: '';
   position: absolute;
+  transform: scale(1.75);
   inset: 0;
   background-color: #d32f2f;
   -webkit-mask-image: url(/icon/control.png);

@@ -195,7 +195,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     description: 'When you deploy 4 units to the Conflict in one turn, gain +1 on the Shipping track.',
     image: '/intrigue/rise_of_ix/diversion.png',
     agentIcons: [],
-    playEffect: [{ reward: { custom: CustomEffect.DIVERSION } }],
+    playEffect: [{ requirement: { unitsInConflict: 4 }, reward: { custom: CustomEffect.DIVERSION } }],
   },
   {
     id: 115,

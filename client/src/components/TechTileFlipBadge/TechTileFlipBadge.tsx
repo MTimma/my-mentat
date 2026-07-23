@@ -25,7 +25,13 @@ const TechTileFlipBadge: React.FC<TechTileFlipBadgeProps> = ({
     title={alt || undefined}
   >
     {image ? (
-      <img src={image} alt="" className="tech-tile-flip-badge__tile" draggable={false} />
+      <img
+        src={image}
+        alt=""
+        className="tech-tile-flip-badge__tile"
+        draggable={false}
+        data-preview-src={image}
+      />
     ) : (
       <span className="tech-tile-flip-badge__placeholder" />
     )}

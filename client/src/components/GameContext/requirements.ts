@@ -1,5 +1,6 @@
 import { Card, FactionType, GameState, PlayEffect, RevealEffect, IntriguePlayEffect, IntrigueCard } from '../../types/GameTypes'
 import { geneLevelForNode } from '../../expansions/immortality/researchTrack'
+import { unitsInConflictForPlayer } from '../../utils/dreadnoughts'
 
 /**
  * Immortality requirement gates shared by play/reveal/intrigue effects:
@@ -146,6 +147,9 @@ export function intrigueRequirementSatisfied(
       if (!player) return false
       if (req.highCouncil && !player.hasHighCouncilSeat) return false
       if (!req.highCouncil && player.hasHighCouncilSeat) return false
+    }
+    if (req.unitsInConflict !== undefined) {
+      if (unitsInConflictForPlayer(state, playerId) < req.unitsInConflict) return false
     }
     if (!immortalityRequirementSatisfied(req, currCard, state, playerId)) return false
     return true

@@ -1,22 +1,33 @@
-import { useCallback, useLayoutEffect, useState, type ReactNode } from 'react'
+import { useCallback, useLayoutEffect, useState, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { usePlayBoardModalContext } from '../context/PlayBoardModalContext'
 
 export const PLAY_BOARD_MODAL_SCOPED_CLASS = 'play-board-modal-overlay--scoped'
 
-export function usePlayBoardModalPortal(isActive: boolean) {
+export type PlayBoardModalPortalOptions = {
+  /** When set, portal into this element instead of relying on context alone. */
+  containerRef?: RefObject<HTMLElement | null>
+}
+
+export function usePlayBoardModalPortal(
+  isActive: boolean,
+  options?: PlayBoardModalPortalOptions
+) {
   const { boardContainerRef, scopeModalsToBoard } = usePlayBoardModalContext()
+  const explicitContainer = options?.containerRef
+  const targetRef = explicitContainer ?? boardContainerRef
+  const shouldScope = Boolean(explicitContainer) || scopeModalsToBoard
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
 
   useLayoutEffect(() => {
-    if (!isActive || !scopeModalsToBoard) {
+    if (!isActive || !shouldScope) {
       setPortalTarget(null)
       return
     }
-    setPortalTarget(boardContainerRef.current)
-  }, [boardContainerRef, isActive, scopeModalsToBoard])
+    setPortalTarget(targetRef.current)
+  }, [isActive, shouldScope, targetRef])
 
-  const boardScoped = scopeModalsToBoard && Boolean(portalTarget)
+  const boardScoped = shouldScope && Boolean(portalTarget)
   const scopedClass = boardScoped ? PLAY_BOARD_MODAL_SCOPED_CLASS : ''
 
   const portalNode = useCallback(

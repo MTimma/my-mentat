@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useLayoutEffect, type RefObject } from 'react'
-import { createPortal } from 'react-dom'
+import React, { useMemo, type RefObject } from 'react'
 import { Player } from '../../types/GameTypes'
 import AgentIcon from '../AgentIcon/AgentIcon'
+import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import './CombatPhaseOverlay.css'
 
 export interface CombatPhaseOverlayProps {
@@ -28,15 +28,9 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
   readOnly = false,
   containerRef,
 }) => {
-  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
-
-  useLayoutEffect(() => {
-    if (!isVisible) {
-      setPortalTarget(null)
-      return
-    }
-    setPortalTarget(containerRef?.current ?? null)
-  }, [containerRef, isVisible])
+  const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(isVisible, {
+    containerRef,
+  })
 
   const rankings = useMemo(() => {
     return Object.entries(combatStrength)
@@ -50,13 +44,14 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
 
   const activePlayer = players.find(player => player.id === activePlayerId)
 
-  if (!isVisible) return null
+  if (!isVisible || waitForBoardTarget) return null
 
-  const overlay = (
+  return portalNode(
     <div
       className={[
         'combat-phase-overlay',
-        portalTarget ? 'combat-phase-overlay--board-scoped' : '',
+        'modal-overlay',
+        scopedClass || (containerRef ? 'combat-phase-overlay--board-scoped' : ''),
       ]
         .filter(Boolean)
         .join(' ')}
@@ -137,10 +132,6 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
       </div>
     </div>
   )
-
-  if (typeof document === 'undefined') return overlay
-  if (!portalTarget) return null
-  return createPortal(overlay, portalTarget)
 }
 
 export default CombatPhaseOverlay

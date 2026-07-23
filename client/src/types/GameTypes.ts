@@ -218,6 +218,8 @@ export interface CardEffectReq {
 export interface IntrigueReq extends CardEffectReq {
   or?: IntrigueReq[]
   highCouncil?: boolean
+  /** Rise of Ix — minimum troops + dreadnoughts (+ specimens) in the Conflict. */
+  unitsInConflict?: number
 }
 
 export type PlayEffect = CardEffect<PlayReq> & {
@@ -322,6 +324,7 @@ export interface CardEffect<R extends CardEffectReq = CardEffectReq> {
   timing?: EffectTiming
   // Optional phase gating (primarily used for intrigue cards that can be used in multiple phases)
   phase?: GamePhase | GamePhase[]
+  
 }
 
 export interface Gain {
@@ -761,7 +764,6 @@ export interface GameState {
   currTurn: GameTurn | null
   combatStrength: Record<number, number>
   combatTroops: Record<number, number>
-  /** Immortality — specimens deployed from Axolotl tanks to the Conflict. */
   combatSpecimens?: Record<number, number>
   currentConflict: ConflictCard
   combatPasses: Set<number>
