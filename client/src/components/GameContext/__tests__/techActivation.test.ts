@@ -12,6 +12,7 @@ import { tilesActivatableNow } from '../../../utils/techTiles'
 import { ChoiceType, CardPile, GamePhase, GainSource, NO_EXPANSIONS, RewardType, TurnType, type CardSelectChoice } from '../../../types/GameTypes'
 import { makePlayer, stubDeckCard } from './_helpers'
 import { RISE_OF_IX_INTRIGUE_CARDS } from '../../../data/intrigueCardsRiseOfIx'
+import { RISE_OF_IX_IMPERIUM_DECK } from '../../../data/cardsRiseOfIx'
 
 const RISE_OF_IX = { ...NO_EXPANSIONS, riseOfIx: true }
 
@@ -349,6 +350,37 @@ describe('tech tile activation', () => {
     expect(after.players[0].discardPile.map(c => c.id)).toEqual([hand1.id])
     expect(after.players[0].deck.map(c => c.id)).toEqual([drawTop.id])
     expect(after.players[0].tech[0]?.faceUp).toBe(false)
+  })
+
+  it('Holoprojectors discard triggers unload on Freighter Fleet', () => {
+    const freighterFleet = structuredClone(
+      RISE_OF_IX_IMPERIUM_DECK.find(c => c.name === 'Freighter Fleet')!
+    )
+    freighterFleet.id = 99050
+    const before = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.HOLOPROJECTORS, faceUp: true }],
+          deck: [freighterFleet],
+          handCount: 1,
+          freighterStep: 0,
+        }),
+        makePlayer(1),
+      ],
+    })
+    const after = applyGameAction(before, {
+      type: 'ACTIVATE_TECH_DISCARD',
+      playerId: 0,
+      tileId: TechTileId.HOLOPROJECTORS,
+      cardIds: [freighterFleet.id],
+    })
+    const freighterChoice = after.currTurn?.pendingChoices?.find(
+      c => c.type === ChoiceType.FIXED_OPTIONS && c.prompt.startsWith('Freighter')
+    )
+    expect(freighterChoice).toBeDefined()
+    expect(freighterChoice?.source).toEqual(
+      expect.objectContaining({ name: 'Freighter Fleet (Unload)' })
+    )
   })
 
 

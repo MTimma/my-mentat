@@ -148,6 +148,38 @@ describe('END_TURN gating — optional effects lapse silently', () => {
     expect(s.players[0].troops).toBe(8)
   })
 
+  it('Princess Yuna signet PAY_COST grants 1 troop and 1 spice before the influence choice', () => {
+    const yuna = RISE_OF_IX_LEADERS.find(l => l.name === LEADER_NAMES.PRINCESS_YUNA_MORITANI)!
+    const signet = structuredClone(STARTING_DECK.find(c => c.name === 'Signet Ring')!)
+    let s = getRoiTestState({
+      players: 2,
+      activeId: 0,
+      playerOverrides: {
+        leader: yuna,
+        deck: [signet],
+        handCount: 1,
+        solari: 20,
+        spice: 2,
+        troops: 4,
+      },
+    })
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: signet.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: CARTHAG_ID })
+    const effect = s.currTurn?.optionalEffects?.[0]
+    expect(effect?.cost?.solari).toBe(7)
+
+    const solariBefore = s.players[0].solari
+    const spiceBefore = s.players[0].spice
+    const troopsBefore = s.players[0].troops
+    s = applyGameAction(s, { type: 'PAY_COST', playerId: 0, effectId: effect!.id })
+
+    expect(s.players[0].solari).toBe(solariBefore - 7)
+    expect(s.players[0].spice).toBe(spiceBefore + 1)
+    expect(s.players[0].troops).toBe(troopsBefore + 1)
+    expect(s.currTurn?.pendingChoices?.length).toBeGreaterThan(0)
+    expect(s.currTurn?.optionalEffects ?? []).toHaveLength(0)
+  })
+
   it('Princess Yuna signet ring is optional — END_TURN proceeds without paying 7 Solari', () => {
     const yuna = RISE_OF_IX_LEADERS.find(l => l.name === LEADER_NAMES.PRINCESS_YUNA_MORITANI)!
     const signet = structuredClone(STARTING_DECK.find(c => c.name === 'Signet Ring')!)

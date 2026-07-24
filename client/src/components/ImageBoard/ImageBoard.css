@@ -756,7 +756,7 @@
 /* Board-texture patch covering the printed Mentat when a player holds it.
    Scales with board container width so mobile stays proportional. */
 .image-board__mentat-marker-img--taken {
-  width: clamp(12px, 2.8cqw, 28px);
+  width: clamp(16px, 3.2cqw, 28px);
   filter: none;
 }
 

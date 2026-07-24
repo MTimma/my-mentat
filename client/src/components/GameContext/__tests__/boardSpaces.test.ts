@@ -7,6 +7,7 @@ import { LEADERS, LEADER_NAMES } from '../../../data/leaders'
 import { applyGameAction } from '../GameContext'
 import {
   AgentIcon,
+  ChoiceType,
   ControlMarkerType,
   FactionType,
   GainSource,
@@ -17,6 +18,7 @@ import { getBaseTestState, stubDeckCard } from './_helpers'
 
 const ARRAKEEN_ID = BOARD_SPACES.find(s => s.name === 'Arrakeen')!.id
 const IMPERIAL_BASIN_ID = BOARD_SPACES.find(s => s.name === 'Imperial Basin')!.id
+const HARDY_WARRIORS_ID = BOARD_SPACES.find(s => s.name === 'Hardy Warriors')!.id
 
 function placeAgentOnSpace(spaceId: number, controllerId = 1) {
   const card = stubDeckCard(5000 + spaceId, { agentIcons: [AgentIcon.CITY] })
@@ -196,6 +198,64 @@ describe('Board spaces — control bonus', () => {
     s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
     expect(s.currTurn?.removableTroops).toBe(4)
     expect(s.combatTroops[0]).toBe(4)
+  })
+
+  it('Emperor 4th-influence milestone troops from RESOLVE_CHOICE count toward combat deploy limit', () => {
+    const card = stubDeckCard(5400, { agentIcons: [AgentIcon.FREMEN] })
+    let s = getBaseTestState(undefined, { players: 2 })
+    s = {
+      ...s,
+      factionInfluence: {
+        ...s.factionInfluence,
+        [FactionType.EMPEROR]: { 0: 3, 1: 0 },
+      },
+      players: s.players.map((p, i) =>
+        i === 0 ? { ...p, deck: [card], handCount: 1, water: 5 } : p
+      ),
+    }
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: HARDY_WARRIORS_ID })
+    s = applyGameAction(s, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+    expect(s.currTurn?.troopLimit).toBe(4)
+
+    const choiceId = 'test-emperor-milestone'
+    s = {
+      ...s,
+      currTurn: {
+        ...s.currTurn!,
+        pendingChoices: [
+          {
+            id: choiceId,
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Gain Emperor influence',
+            options: [
+              {
+                reward: {
+                  influence: { amounts: [{ faction: FactionType.EMPEROR, amount: 1 }] },
+                },
+              },
+            ],
+            source: { type: GainSource.CARD, id: card.id, name: card.name },
+          },
+        ],
+      },
+    }
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId,
+      optionIndex: 0,
+    })
+    expect(s.currTurn?.troopLimit).toBe(6)
+
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(s.currTurn?.removableTroops).toBe(6)
+    expect(s.combatTroops[0]).toBe(6)
   })
 })
 

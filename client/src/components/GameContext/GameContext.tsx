@@ -292,6 +292,24 @@ function withUnloadAfterCardRemoved(
   )
 }
 
+function handCardBeforeDiscard(state: GameState, playerId: number, cardId: number): Card | undefined {
+  const player = state.players.find(p => p.id === playerId)
+  if (!player) return undefined
+  return player.deck.slice(0, player.handCount).find(c => c.id === cardId)
+}
+
+/** RoI unload when a discard cost removes a card from hand (Holoprojectors, Ixian Probe, etc.). */
+function withUnloadAfterDiscardCost(
+  before: GameState,
+  after: GameState,
+  playerId: number,
+  cardIds: readonly number[]
+): GameState {
+  if (after === before || cardIds.length !== 1) return after
+  const card = handCardBeforeDiscard(before, playerId, cardIds[0])
+  return withUnloadAfterCardRemoved(after, playerId, card, 'discard')
+}
+
 /** Treachery (and similar): auto-deploy all troops from a mandatory recruit+deploy effect. */
 function resolveMandatoryTroopDeploy(state: GameState, playerId: number): GameState {
   if (!state.currTurn?.mandatoryDeployTroops) return state
@@ -1084,6 +1102,45 @@ function withRecruitedTroopsDeployLimit(state: GameState, troopsRecruited: numbe
     ...state,
     currTurn: applyRecruitedTroopsToTurnDeployLimit(state.currTurn, troopsRecruited),
   }
+}
+
+/** Spice/troops/etc. on paid optional effects that also queue an influence choice. */
+function applyNonInfluencePayCostRewards(
+  player: Player,
+  reward: Reward,
+  currTurn: GameTurn,
+  pushGain: (amount: number, type: RewardType) => void
+): { player: Player; currTurn: GameTurn } {
+  let nextPlayer = player
+  let nextTurn = currTurn
+  if (reward.spice) {
+    nextPlayer = { ...nextPlayer, spice: nextPlayer.spice + reward.spice }
+    pushGain(reward.spice, RewardType.SPICE)
+  }
+  if (reward.water) {
+    nextPlayer = { ...nextPlayer, water: nextPlayer.water + reward.water }
+    pushGain(reward.water, RewardType.WATER)
+  }
+  if (reward.solari) {
+    nextPlayer = { ...nextPlayer, solari: nextPlayer.solari + reward.solari }
+    pushGain(reward.solari, RewardType.SOLARI)
+  }
+  if (reward.troops) {
+    const recruited = recruitTroopsToGarrison(nextPlayer, reward.troops)
+    nextPlayer = recruited.player
+    pushGain(recruited.recruited, RewardType.TROOPS)
+    if (nextTurn.canDeployTroops && !isDeployTheseRecruitedTroops(reward)) {
+      nextTurn = {
+        ...nextTurn,
+        troopLimit: (nextTurn.troopLimit || 0) + recruited.recruited,
+      }
+    }
+  }
+  if (reward.intrigueCards) {
+    nextPlayer = { ...nextPlayer, intrigueCount: nextPlayer.intrigueCount + reward.intrigueCards }
+    pushGain(reward.intrigueCards, RewardType.INTRIGUE)
+  }
+  return { player: nextPlayer, currTurn: nextTurn }
 }
 
 function withEffectRetreatAllowance(state: GameState, amount: number): GameState {
@@ -6469,6 +6526,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             if (cost.water) { player.water -= cost.water; pushCostGain(cost.water, RewardType.WATER); }
             if (cost.solari) { player.solari -= cost.solari; pushCostGain(cost.solari, RewardType.SOLARI); }
             if (cost.troops) { player.troops -= cost.troops; pushCostGain(cost.troops, RewardType.TROOPS); }
+            const pushRewardGain = (amount: number, type: RewardType) => {
+              if (!amount) return
+              newGains.push({
+                round: state.currentRound,
+                playerId,
+                sourceId: source.id,
+                name: source.name,
+                amount,
+                type,
+                source: source.type,
+              })
+            }
+            const appliedCompanion = applyNonInfluencePayCostRewards(
+              player,
+              reward,
+              tempCurrTurn,
+              pushRewardGain
+            )
+            player = appliedCompanion.player
+            tempCurrTurn = appliedCompanion.currTurn
             influenceChoices.push(
               createGainInfluenceChoice(reward.influence, choiceSource, undefined, collectLiveIds(state, influenceChoices.map(c => c.id)))
             )
@@ -7258,17 +7335,20 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       const rewardForApply =
         reward.influence?.chooseOne ? { ...reward, influence: undefined } : reward
-      const newTurn = { ...state.currTurn }
-      newTurn.pendingChoices = (newTurn.pendingChoices || []).filter(c => c.id !== action.choiceId)
-      if (followUpGainChoice) {
-        newTurn.pendingChoices = [...(newTurn.pendingChoices || []), followUpGainChoice]
-      }
       const newState = applyChoiceReward(
         { ...state, players: state.players.map(p => p.id === playerId ? updatedPlayer : p), gains: updatedGains },
         rewardForApply,
         playerId,
         gainAttribution
       )
+      const baseTurn = newState.currTurn ?? state.currTurn
+      const newTurn = {
+        ...baseTurn,
+        pendingChoices: (baseTurn.pendingChoices || []).filter(c => c.id !== action.choiceId),
+      }
+      if (followUpGainChoice) {
+        newTurn.pendingChoices = [...(newTurn.pendingChoices || []), followUpGainChoice]
+      }
       const rewardFollowUps = (newState.currTurn?.pendingChoices ?? []).filter(
         c => c.id !== action.choiceId && !(newTurn.pendingChoices || []).some(tc => tc.id === c.id)
       )
@@ -7659,11 +7739,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
         case CustomEffect.HOLOPROJECTORS: {
           const cardIds = (data?.cardIds as number[]) ?? []
-          return applyHoloprojectorsDiscard(state, playerId, cardIds)
+          const next = applyHoloprojectorsDiscard(state, playerId, cardIds)
+          return withUnloadAfterDiscardCost(state, next, playerId, cardIds)
         }
         case CustomEffect.INVASION_SHIPS: {
           const cardIds = (data?.cardIds as number[]) ?? []
-          return applyInvasionShipsDiscard(state, playerId, cardIds)
+          const next = applyInvasionShipsDiscard(state, playerId, cardIds)
+          return withUnloadAfterDiscardCost(state, next, playerId, cardIds)
         }
         case CustomEffect.SONIC_SNOOPERS: {
           return applySonicSnoopers(state, playerId, data?.count)
@@ -8589,8 +8671,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return handleAcquireTech(state, action)
     case 'ACTIVATE_TECH':
       return handleActivateTech(state, action)
-    case 'ACTIVATE_TECH_DISCARD':
-      return handleActivateTechDiscard(state, action)
+    case 'ACTIVATE_TECH_DISCARD': {
+      const next = handleActivateTechDiscard(state, action)
+      return withUnloadAfterDiscardCost(state, next, action.playerId, action.cardIds)
+    }
     case 'TECH_NEGOTIATOR':
       return handleTechNegotiator(state, action)
     case 'ADVANCE_RESEARCH':
