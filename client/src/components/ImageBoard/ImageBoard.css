@@ -492,13 +492,13 @@
 }
 
 /* Same agent sculpt as BoardSpace; cqw scales with board, not the marker wrapper */
-.image-board__marker .image-board__agent-figure.agent {
+.image-board__marker .image-board__agent-figure.agent:not(.agent--dreadnought) {
   position: absolute;
   left: 0;
   top: 0;
   transform: translate(-50%, -50%);
-  width: clamp(14px, 2.8cqw, 18px);
-  height: clamp(21px, 4.2cqw, 27px);
+  width: clamp(20px, 4cqw, 32px);
+  height: clamp(25px, 5cqw, 40px);
   display: block;
 }
 
@@ -536,9 +536,9 @@
 }
 
 @media (max-width: 600px) {
-  .image-board__marker .image-board__agent-figure.agent {
-    width: 14px;
-    height: 21px;
+  .image-board__marker .image-board__agent-figure.agent:not(.agent--dreadnought) {
+    width: 18px;
+    height: 22px;
   }
 
   .image-board__marker .image-board__agent-figure.agent--dreadnought {

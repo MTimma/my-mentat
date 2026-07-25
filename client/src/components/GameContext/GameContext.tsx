@@ -6820,7 +6820,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             round: state.currentRound,
             playerId,
             sourceId: intrigueSource.id,
-            name: topCard.name,
+            name: intrigueSource.name,
             amount: 1,
             type: RewardType.DRAW,
             source: intrigueSource.type,
@@ -6841,7 +6841,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         gains.push({
           round: state.currentRound,
           playerId,
-          sourceId: topCard.id,
+          sourceId: intrigueSource.id,
+          cardId: topCard.id,
           name: topCard.name,
           amount: -1,
           type: RewardType.TRASH,

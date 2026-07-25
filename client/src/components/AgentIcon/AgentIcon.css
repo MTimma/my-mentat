@@ -1,18 +1,29 @@
-.agent {
+/* Subtle stacked depth + thin dark edge so agents separate from desert art. */
+.agent:not(.agent--dreadnought) {
   display: inline-block;
   position: relative;
-  width: 24px;
-  height: 36px;
+  width: 32px;
+  height: 40px;
   flex-shrink: 0;
+  /* ~1px border (lighter than the earlier heavy outline) + soft cast */
+  filter:
+    drop-shadow(0 -1px 0 rgba(26, 18, 8, 0.7))
+    drop-shadow(0 1px 0 rgba(26, 18, 8, 0.7))
+    drop-shadow(1px 0 0 rgba(26, 18, 8, 0.7))
+    drop-shadow(-1px 0 0 rgba(26, 18, 8, 0.7))
+    drop-shadow(1px 2px 1.5px rgba(0, 0, 0, 0.35));
 }
 
-.agent::before,
-.agent::after {
+/* Soft depth rim (behind) */
+.agent:not(.agent--dreadnought)::before {
   content: '';
   position: absolute;
   inset: 0;
-  -webkit-mask-image: url(/icon/agent.png);
-  mask-image: url(/icon/agent.png);
+  z-index: 0;
+  background-color: rgba(26, 20, 16, 0.45);
+  transform: translate(1.5px, 1.5px);
+  -webkit-mask-image: url(/icon/agent-e-3d.png);
+  mask-image: url(/icon/agent-e-3d.png);
   -webkit-mask-mode: alpha;
   mask-mode: alpha;
   -webkit-mask-size: contain;
@@ -23,43 +34,62 @@
   mask-position: center;
 }
 
-.agent::before {
+/* Player-colored face (front) */
+.agent:not(.agent--dreadnought)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   background-color: #d32f2f;
-  filter: drop-shadow(1px 2px 1px rgba(0, 0, 0, 0.42));
-}
-
-.agent::after {
-  background: linear-gradient(
+  background-image: linear-gradient(
     145deg,
     rgba(255, 255, 255, 0.32) 0%,
-    rgba(255, 255, 255, 0.08) 38%,
-    transparent 58%
+    rgba(255, 255, 255, 0.08) 40%,
+    transparent 62%
   );
+  -webkit-mask-image: url(/icon/agent-e-3d.png);
+  mask-image: url(/icon/agent-e-3d.png);
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
   pointer-events: none;
 }
 
-.agent.player-red::before { background-color: #d32f2f; }
-.agent.player-green::before { background-color: #388e3c; }
-.agent.player-yellow::before { background-color: #fbc02d; }
-.agent.player-blue::before { background-color: #1976d2; }
+.agent.player-red:not(.agent--dreadnought)::after { background-color: #d32f2f; }
+.agent.player-green:not(.agent--dreadnought)::after { background-color: #388e3c; }
+.agent.player-yellow:not(.agent--dreadnought)::after { background-color: #fbc02d; }
+.agent.player-blue:not(.agent--dreadnought)::after { background-color: #1976d2; }
 
 @media (max-width: 900px) {
-  .agent {
-    width: 16px;
-    height: 24px;
+  .agent:not(.agent--dreadnought) {
+    width: 22px;
+    height: 28px;
+  }
+
+  .agent:not(.agent--dreadnought)::before {
+    transform: translate(1px, 1px);
   }
 }
 
 @media (max-width: 600px) {
-  .agent {
-    width: 12px;
-    height: 18px;
+  .agent:not(.agent--dreadnought) {
+    width: 16px;
+    height: 20px;
+  }
+
+  .agent:not(.agent--dreadnought)::before {
+    transform: translate(1px, 1px);
   }
 }
 
 @media (max-width: 400px) {
-  .agent {
-    width: 10px;
-    height: 15px;
+  .agent:not(.agent--dreadnought) {
+    width: 13px;
+    height: 16px;
   }
 }

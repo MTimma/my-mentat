@@ -475,6 +475,15 @@ describe('Intrigue cards — scheduled on reveal', () => {
     })
     expect(s.players[0].handCount).toBe(2)
     expect(s.players[0].deck.map(c => c.id)).toEqual([handCard.id, drawCard.id])
+    expect(s.gains).toContainEqual(
+      expect.objectContaining({
+        type: RewardType.DRAW,
+        name: 'Poison Snooper',
+        source: GainSource.INTRIGUE,
+        sourceId: 34,
+        amount: 1,
+      })
+    )
   })
 
   it('Poison Snooper (34): trashes the top draw-pile card', () => {
