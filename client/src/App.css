@@ -1918,15 +1918,15 @@ body:has(.game-container--play) {
   }
 
   .game-container--play.play-footer-overlay .play-shell-board .image-board {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
-    height: 100%;
+    height: auto;
     max-height: none;
     justify-content: flex-start;
   }
 
   .game-container--play.play-footer-overlay .play-shell-board .image-board__stage {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
     width: 100%;
     max-width: 100%;
@@ -1935,13 +1935,20 @@ body:has(.game-container--play) {
   }
 
   .game-container--play.play-footer-overlay .play-shell-board .image-board__media {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
     width: min(100%, var(--play-board-max-edge, 100%));
-    height: min(100%, var(--play-board-max-edge, 100%));
+    height: auto;
     max-width: 100%;
-    max-height: min(100%, var(--play-board-max-edge, none));
+    max-height: none;
+    aspect-ratio: 1;
     margin-inline: auto;
+  }
+
+  .game-container--play.play-footer-overlay .play-shell-board .image-board__img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
   }
 
   .game-container--play.play-footer-overlay .image-board__combat-area-below {

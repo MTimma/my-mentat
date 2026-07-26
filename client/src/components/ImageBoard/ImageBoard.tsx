@@ -143,8 +143,8 @@ interface ImageBoardProps {
   ixBoardMobileEmbedded?: boolean
   /** Desktop: Bene Tleilax panel docked beside board; mobile: stacked below. */
   immortalityBoardPlacement?: BeneTleilaxBoardPlacement
-  /** Desktop: leader cluster on board; mobile: horizontal strip below the board. */
-  combatAreaPlacement?: 'overlay' | 'below'
+  /** Desktop: leader cluster on board; mobile: horizontal strip below the board; desktop dock: under Ix. */
+  combatAreaPlacement?: 'overlay' | 'below' | 'dock'
   /** Rise of Ix — player may click a face-up tech tile on the Ix board to acquire. */
   pendingAcquireTech?: GameState['pendingAcquireTech']
   onTechTileAcquire?: (stackIndex: number) => void
@@ -239,7 +239,9 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const dreadnoughtControlPoints = dreadnoughtControlPointsFor(expansions)
   const ixBoardDocked = riseOfIx && ixBoardPlacement === 'docked'
   const immortalityBoardDocked = immortality && immortalityBoardPlacement === 'docked'
-  const sidePanelDocked = ixBoardDocked || immortalityBoardDocked
+  const combatAreaDocked = combatAreaPlacement === 'dock'
+  const combatAreaBelow = combatAreaPlacement === 'below'
+  const sidePanelDocked = ixBoardDocked || immortalityBoardDocked || combatAreaDocked
   const boardHotspots = BOARD_HOTSPOTS_FOR_EXPANSIONS(gameStateForMarkers.expansions)
   const markerAnchors = markerAnchorsForExpansions(gameStateForMarkers.expansions).filter(
     anchor => !ixBoardDocked || (anchor.spaceId !== 23 && anchor.spaceId !== 24)
@@ -341,7 +343,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     gameStateForMarkers.phase !== GamePhase.ROUND_START
   const showConflictPanel = hasConflict || Boolean(sandboxSetup)
   const showCombatArea = showConflictPanel || inActivePlay
-  const combatAreaBelow = combatAreaPlacement === 'below'
+  const combatAreaOffBoard = combatAreaBelow || combatAreaDocked
 
   const historyHighlightHotspot =
     historyHighlightSpaceId != null
@@ -444,20 +446,21 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         riseOfIx={riseOfIx}
         firstPlayerMarker={gameStateForMarkers.firstPlayerMarker}
         mentatOwner={gameStateForMarkers.mentatOwner}
-        layout={combatAreaBelow ? 'row' : 'grid'}
-        gridHeightPercent={combatAreaBelow ? undefined : COMBAT_AREA_BOUNDS.height}
+        layout={combatAreaBelow ? 'row' : combatAreaDocked ? 'column' : 'grid'}
+        gridHeightPercent={combatAreaOffBoard ? undefined : COMBAT_AREA_BOUNDS.height}
         onPlayerSelect={
           sandboxSetup ? player => sandboxSetup.onPlayerClick(player.id) : undefined
         }
         className={[
           'image-board__combat-area-cluster',
           combatAreaBelow ? 'image-board__combat-area-cluster--below' : '',
+          combatAreaDocked ? 'image-board__combat-area-cluster--docked' : '',
         ]
           .filter(Boolean)
           .join(' ')}
         data-marker="combat-area"
         style={
-          combatAreaBelow
+          combatAreaOffBoard
             ? undefined
             : (() => {
                 const area = stageRect(COMBAT_AREA_BOUNDS)
@@ -1030,7 +1033,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             />
           ) : null}
 
-          {showCombatArea && !combatAreaBelow ? combatAreaCluster : null}
+          {showCombatArea && !combatAreaOffBoard ? combatAreaCluster : null}
 
           {influenceSelection ? (
             <div className="image-board__influence-selection-layer" aria-hidden={false}>
@@ -1314,20 +1317,23 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
       {sidePanelDocked ? (
         <div className="image-board__desktop-shell">
           {boardStage}
-          {ixBoardDocked || immortalityBoardDocked ? (
-            <aside className="image-board__expansion-dock-column" aria-label="Expansion boards">
-              {ixBoardDocked ? (
-                <div className="image-board__ix-dock" aria-label="Ix board">
-                  {ixBoardOverlay}
-                </div>
-              ) : null}
-              {immortalityBoardDocked ? (
-                <div className="image-board__immortality-dock" aria-label="Bene Tleilax board">
-                  {beneTleilaxBoardOverlay}
-                </div>
-              ) : null}
-            </aside>
-          ) : null}
+          <aside className="image-board__expansion-dock-column" aria-label="Expansion boards">
+            {ixBoardDocked ? (
+              <div className="image-board__ix-dock" aria-label="Ix board">
+                {ixBoardOverlay}
+              </div>
+            ) : null}
+            {combatAreaDocked && combatAreaCluster ? (
+              <div className="image-board__combat-area-dock" aria-label="Player leaders">
+                {combatAreaCluster}
+              </div>
+            ) : null}
+            {immortalityBoardDocked ? (
+              <div className="image-board__immortality-dock" aria-label="Bene Tleilax board">
+                {beneTleilaxBoardOverlay}
+              </div>
+            ) : null}
+          </aside>
         </div>
       ) : (
         <>

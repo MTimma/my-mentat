@@ -225,8 +225,8 @@ export interface CombatSpecimenDeployProps {
   onUndeploy: () => void
 }
 
-/** `grid` — 2×2 overlay on the board. `row` — one horizontal strip (mobile, below board). */
-export type CombatAreaClusterLayout = 'grid' | 'row'
+/** `grid` — 2×2 overlay on the board. `row` — horizontal strip (mobile). `column` — vertical stack (desktop dock). */
+export type CombatAreaClusterLayout = 'grid' | 'row' | 'column'
 
 export interface CombatAreaClusterProps {
   players: Player[]
@@ -268,18 +268,22 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   const [detailPlayer, setDetailPlayer] = useState<Player | null>(null)
   const playerById = new Map(players.map(p => [p.id, p]))
   const isRow = layout === 'row'
+  const isColumn = layout === 'column'
+  const isLinear = isRow || isColumn
 
   const outerStyle = useMemo(() => {
-    if (isRow || gridHeightPercent == null) return style
+    if (isLinear || gridHeightPercent == null) return style
     return {
       ...style,
       height: `calc(${gridHeightPercent}% + var(--combat-status-strip-height, 4.3em))`,
     }
-  }, [gridHeightPercent, isRow, style])
+  }, [gridHeightPercent, isLinear, style])
 
   const renderSeat = (playerId: number) => {
     const player = playerById.get(playerId)
     if (!player) return null
+
+    const isActive = player.id === activePlayerId
 
     return (
       <div
@@ -287,11 +291,14 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
         className={[
           'combat-area-cluster__seat',
           `combat-area-cluster__seat--${player.color}`,
-        ].join(' ')}
+          isActive ? 'combat-area-cluster__seat--active' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
       >
         <PlayerQuadrant
           player={player}
-          isActive={player.id === activePlayerId}
+          isActive={isActive}
           isFirstPlayer={player.id === firstPlayerMarker}
           hasMentat={player.id === mentatOwner}
           riseOfIx={riseOfIx}
@@ -303,14 +310,15 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
           player={player}
           troops={troops[player.id] ?? 0}
           strength={strength[player.id] ?? 0}
-          isActive={player.id === activePlayerId}
+          isActive={isActive}
           riseOfIx={riseOfIx}
         />
       </div>
     )
   }
 
-  const rowPlayerIds = useMemo(
+  /** Seat order by player id: P1 (former top-left) → P2 → P3 → P4 — turn sequence. */
+  const linearPlayerIds = useMemo(
     () =>
       COMBAT_AREA_COLUMNS.flatMap(columnPlayerIds => columnPlayerIds).sort((a, b) => a - b),
     []
@@ -327,6 +335,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
           className={[
             'combat-area-cluster-stack',
             isRow ? 'combat-area-cluster-stack--row' : '',
+            isColumn ? 'combat-area-cluster-stack--column' : '',
           ]
             .filter(Boolean)
             .join(' ')}
@@ -336,12 +345,13 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
               'combat-area-cluster',
               'combat-area-cluster--with-status-inline',
               isRow ? 'combat-area-cluster--row' : '',
+              isColumn ? 'combat-area-cluster--column' : '',
             ]
               .filter(Boolean)
               .join(' ')}
           >
-            {isRow
-              ? rowPlayerIds.map(renderSeat)
+            {isLinear
+              ? linearPlayerIds.map(renderSeat)
               : COMBAT_AREA_COLUMNS.map((columnPlayerIds, columnIndex) => (
                   <div key={columnIndex} className="combat-area-cluster__column">
                     {columnPlayerIds.map(renderSeat)}

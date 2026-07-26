@@ -99,7 +99,7 @@
 .image-board__combat-area-below {
   width: var(--play-board-max-edge, 100%);
   max-width: 100%;
-  margin-top: clamp(6px, 1vh, 12px);
+  margin-top: clamp(2px, 0.4vh, 6px);
   box-sizing: border-box;
 }
 
@@ -116,6 +116,32 @@
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 2px #000;
   pointer-events: none;
   z-index: 2;
+}
+
+/* Desktop: leader grid docked under Ix (right column). Match Ix dock width. */
+.image-board__combat-area-dock {
+  width: clamp(132px, 18vmin, 220px);
+  flex: 0 0 auto;
+  align-self: flex-start;
+  box-sizing: border-box;
+}
+
+.image-board__combat-area-cluster--docked {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100%;
+  height: auto;
+  font-size: clamp(9px, 1.35vmin, 13px);
+  line-height: 1.1;
+  color: #fff8e8;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 2px #000;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.image-board__combat-area-cluster--docked .combat-area-cluster-stack {
+  height: auto;
 }
 
 .game-container--desktop-play .image-board__desktop-shell {
@@ -1180,6 +1206,11 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   overflow: visible;
 }
 
+.combat-area-cluster-stack--column {
+  height: auto;
+  overflow: visible;
+}
+
 .combat-area-cluster {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1199,15 +1230,22 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   grid-template-columns: none;
   grid-template-rows: none;
   flex: 0 0 auto;
-  height:  clamp(11rem, 46vw, 16rem);
+  height: clamp(10rem, 40vw, 14.5rem);
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
 }
-/* 
-.image-board__combat-area-cluster--below .combat-area-cluster__leader-img {
-  object-position: top center;
-} */
+
+.combat-area-cluster--column {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  grid-template-columns: none;
+  grid-template-rows: none;
+  flex: 0 0 auto;
+  height: auto;
+  overflow: visible;
+}
 
 .combat-area-cluster--row .combat-area-cluster__seat {
   flex: 1 1 0;
@@ -1217,6 +1255,143 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 
 .combat-area-cluster--row .combat-area-cluster__seat + .combat-area-cluster__seat {
   border-left: 1px solid rgba(255, 248, 232, 0.1);
+}
+
+.combat-area-cluster--row .combat-area-cluster__quadrant {
+  padding: 0 0.06em 0;
+}
+
+.combat-area-cluster--row .combat-area-cluster__seat .combat-status-strip__slot {
+  flex: 0 0 1.55em;
+}
+
+/* Mobile: crop name banner via image position — keep leader layer full height (no top gap). */
+.combat-area-cluster--row .combat-area-cluster__leader {
+  inset: 0;
+  overflow: hidden;
+}
+
+.combat-area-cluster--row .combat-area-cluster__leader-img {
+  display: block;
+  width: 100%;
+  height: 150%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center 58%;
+  transform: translateY(-22%);
+}
+
+.combat-area-cluster--row .combat-area-cluster__leader--tessia .combat-area-cluster__leader-img {
+  object-position: center 58%;
+  transform: translateY(-22%);
+}
+
+/* Mobile: compact strip, shifted up over the lower portrait (no tall filler panel). */
+.combat-area-cluster--row .combat-area-cluster__quadrant-body {
+  bottom: 0;
+  align-items: flex-end;
+  justify-content: center;
+  transform: translateY(-28%);
+}
+
+.combat-area-cluster--row .combat-area-cluster__resources-panel {
+  flex: 0 0 auto;
+  display: block;
+  padding: 0.015em 0.04em 0.02em;
+  border-radius: 0.1em 0.1em 0 0;
+  box-shadow: 0 0.12em 0.3em rgba(0, 0, 0, 0.5);
+}
+
+.combat-area-cluster--row .combat-area-cluster__resources {
+  gap: 0;
+}
+
+.combat-area-cluster--row .combat-area-cluster__resource {
+  padding-block: 0;
+  line-height: 1;
+  font-size: 0.84em;
+}
+
+.combat-area-cluster--row .combat-area-cluster__value {
+  font-size: 1em;
+}
+
+.combat-area-cluster--row .combat-area-cluster__icon,
+.combat-area-cluster--row .combat-area-cluster__agent-icon {
+  width: 0.85em;
+  height: 0.85em;
+}
+
+.combat-area-cluster--row .combat-area-cluster__icon--dreadnought {
+  width: 0.85em;
+  height: 0.85em;
+}
+
+.combat-area-cluster--column .combat-area-cluster__seat {
+  flex: 0 0 auto;
+  height: clamp(5.75rem, 15vmin, 8rem);
+  min-height: 5.75rem;
+  border-bottom: none;
+}
+
+.combat-area-cluster--column .combat-area-cluster__seat + .combat-area-cluster__seat {
+  border-top: 1px solid rgba(255, 248, 232, 0.1);
+}
+
+.combat-area-cluster--column .combat-area-cluster__seat--red,
+.combat-area-cluster--column .combat-area-cluster__seat--green {
+  border-bottom: none;
+}
+
+/* Desktop dock: crop name banner; keep resource strip short at the bottom. */
+.combat-area-cluster--column .combat-area-cluster__leader {
+  top: 14%;
+  overflow: hidden;
+}
+
+.combat-area-cluster--column .combat-area-cluster__leader-img {
+  object-fit: cover;
+  object-position: center 36%;
+  height: 118%;
+  width: 100%;
+  max-width: none;
+}
+
+.combat-area-cluster--column .combat-area-cluster__leader--tessia .combat-area-cluster__leader-img {
+  object-position: center 36%;
+}
+
+.combat-area-cluster--column .combat-area-cluster__quadrant-body {
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.combat-area-cluster--column .combat-area-cluster__resources-panel {
+  padding: 0.02em 0.05em 0.03em;
+  border-radius: 0.12em 0.12em 0 0;
+}
+
+.combat-area-cluster--column .combat-area-cluster__resources {
+  gap: 0;
+}
+
+.combat-area-cluster--column .combat-area-cluster__resource {
+  font-size: 0.78em;
+}
+
+.combat-area-cluster--column .combat-area-cluster__value {
+  font-size: 0.95em;
+}
+
+.combat-area-cluster--column .combat-area-cluster__icon,
+.combat-area-cluster--column .combat-area-cluster__agent-icon {
+  width: 0.78em;
+  height: 0.78em;
+}
+
+.combat-area-cluster--column .combat-area-cluster__icon--dreadnought {
+  width: 0.78em;
+  height: 0.78em;
 }
 
 .combat-area-cluster--with-status-inline {
@@ -1238,6 +1413,7 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 }
 
 .combat-area-cluster__seat {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1 1 0;
@@ -1248,6 +1424,22 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 .combat-area-cluster__seat--red,
 .combat-area-cluster__seat--green {
   border-bottom: 1px solid rgba(255, 248, 232, 0.1);
+}
+
+/* Yellow border around the whole leader seat (portrait + resources + combat strip). */
+.combat-area-cluster__seat--active {
+  z-index: 1;
+  background: rgba(255, 215, 0, 0.06);
+}
+
+.combat-area-cluster__seat--active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255, 215, 0, 0.92);
+  pointer-events: none;
+  z-index: 6;
+  box-sizing: border-box;
 }
 
 .combat-area-cluster__seat .combat-area-cluster__quadrant {
@@ -1299,11 +1491,6 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 
 .combat-area-cluster__quadrant:hover {
   background: rgba(255, 255, 255, 0.04);
-}
-
-.combat-area-cluster__quadrant--active {
-  box-shadow: inset 0 0 0 2px rgba(255, 215, 0, 0.72);
-  background: rgba(255, 215, 0, 0.07);
 }
 
 .combat-area-cluster__leader {
@@ -1584,11 +1771,6 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   min-width: 0;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-}
-
-.combat-status-strip__slot--active {
-  box-shadow: inset 0 0 0 1px rgba(255, 215, 0, 0.55);
-  background: rgba(255, 215, 0, 0.06);
 }
 
 .combat-status-strip__color {

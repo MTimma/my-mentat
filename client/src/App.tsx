@@ -1509,7 +1509,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           immortalityBoardPlacement={
             isDesktopPlayView && gameState.expansions?.immortality ? 'docked' : 'stacked'
           }
-          combatAreaPlacement={isDesktopPlayView ? 'overlay' : 'below'}
+          combatAreaPlacement={isDesktopPlayView ? 'dock' : 'below'}
           pendingAcquireTech={
             activePlayer && techAcquireSources.length > 0
               ? {
