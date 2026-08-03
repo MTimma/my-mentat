@@ -1039,7 +1039,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       let playBandHeight: number
       let bottomChrome: number
       if (isMobileOverlayLayout) {
-        // Mobile: footer overlays the board; reserve ~10% viewport for nav chrome only.
+        // Mobile: footer overlays the board column. Board max-edge must also reserve the
+        // leader strip under the board — otherwise leftover height shows as a dynamic
+        // black gap above the board (or collapses leaders).
         const overlayReserveRaw = getComputedStyle(root)
           .getPropertyValue('--play-mobile-overlay-reserve')
           .trim()
@@ -1047,8 +1049,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         const overlayReserve = Number.isFinite(overlayParsed)
           ? Math.ceil(overlayParsed)
           : Math.max(navHeight + 8, Math.floor(viewportH * 0.1))
+        const leaderRowPx = Math.max(152, Math.min(216, Math.round(viewportH * 0.2)))
         playBandHeight = 0
-        bottomChrome = overlayReserve + 2
+        bottomChrome = overlayReserve + leaderRowPx + 2
       } else {
         playBandHeight = mobileDrawerCollapsed ? 0 : playBandReserve
         bottomChrome = navHeight + playBandHeight + 2

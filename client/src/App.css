@@ -1915,14 +1915,26 @@ body:has(.game-container--play) {
     flex: 1 1 auto;
     min-height: 0;
     flex-shrink: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
   }
 
+  /*
+   * Natural-sized board + leaders under the Imperium row.
+   * Stage must not flex-grow (that created a dynamic black gap above or below the board).
+   */
   .game-container--play.play-footer-overlay .play-shell-board .image-board {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     min-height: 0;
     height: auto;
-    max-height: none;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: flex-start;
+    padding-bottom: max(3rem, calc(env(safe-area-inset-bottom, 0px) + 2.5rem));
+    box-sizing: border-box;
   }
 
   .game-container--play.play-footer-overlay .play-shell-board .image-board__stage {
@@ -1932,15 +1944,19 @@ body:has(.game-container--play) {
     max-width: 100%;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
   }
 
   .game-container--play.play-footer-overlay .play-shell-board .image-board__media {
     flex: 0 0 auto;
+    min-width: 0;
     min-height: 0;
     width: min(100%, var(--play-board-max-edge, 100%));
     height: auto;
     max-width: 100%;
-    max-height: none;
+    /* Edge already reserves leaders + footer; keep square, no extra dynamic shrink. */
+    max-height: var(--play-board-max-edge, 100%);
     aspect-ratio: 1;
     margin-inline: auto;
   }
@@ -1948,11 +1964,29 @@ body:has(.game-container--play) {
   .game-container--play.play-footer-overlay .play-shell-board .image-board__img {
     width: 100%;
     height: auto;
+    display: block;
     object-fit: contain;
   }
 
   .game-container--play.play-footer-overlay .image-board__combat-area-below {
     flex: 0 0 auto;
+    width: min(100%, var(--play-board-max-edge, 100%));
+    margin-top: 0;
+    display: block;
+  }
+
+  .game-container--play.play-footer-overlay .image-board__combat-area-cluster--below {
+    position: relative;
+    width: 100%;
+    height: auto;
+  }
+
+  .game-container--play.play-footer-overlay
+    .image-board__combat-area-cluster--below
+    .combat-area-cluster--row {
+    flex: 0 0 auto;
+    height: clamp(9.5rem, 38vw, 13.5rem);
+    min-height: 9.5rem;
   }
 
   .game-container--play.play-footer-overlay .play-shell-footer {
