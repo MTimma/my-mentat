@@ -1,0 +1,88 @@
+/**
+ * Birds-eye mockup tokens — copied from client/src/theme-play-chrome.css (void theme).
+ * Used only by mockups/turn-birdseye/*.html — not wired into the app.
+ */
+
+:root {
+  --card-art-backing: #0f0d0a;
+
+  --chrome-persuasion-fill: #2f9eea;
+  --chrome-persuasion-border: rgba(206, 239, 255, 0.85);
+  --chrome-persuasion-glow: rgba(75, 174, 238, 0.5);
+
+  --chrome-shell: #14110f;
+  --chrome-surface: #1e1c1a;
+  --chrome-surface-raised: #262320;
+  --chrome-header: #1e1c1a;
+  --chrome-inset: rgba(0, 0, 0, 0.28);
+  --chrome-border: rgba(255, 255, 255, 0.08);
+  --chrome-border-accent: rgba(156, 120, 78, 0.28);
+  --chrome-border-accent-strong: rgba(156, 120, 78, 0.45);
+  --chrome-text: #e0d4c0;
+  --chrome-text-muted: rgba(224, 212, 192, 0.72);
+  --chrome-text-strong: rgba(224, 212, 192, 0.95);
+  --chrome-accent: #9c784e;
+  --chrome-accent-bright: #b8956a;
+  --chrome-accent-subtle: rgba(156, 120, 78, 0.1);
+  --chrome-accent-hover: rgba(156, 120, 78, 0.22);
+  --chrome-highlight-name: #c9a050;
+  --chrome-success: rgba(143, 168, 130, 0.95);
+  --chrome-success-bg: rgba(143, 168, 130, 0.12);
+  --chrome-success-border: rgba(143, 168, 130, 0.45);
+  --chrome-danger-text: rgba(216, 180, 174, 0.95);
+  --chrome-cta-bg: #e8dcc8;
+  --chrome-cta-border: #9c784e;
+  --chrome-cta-text: #1c1410;
+  --chrome-panel-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--chrome-shell) 98%, #000 2%) 0%,
+    var(--chrome-shell) 100%
+  );
+  --chrome-footer-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--chrome-shell) 94%, var(--chrome-accent) 6%) 0%,
+    var(--chrome-shell) 100%
+  );
+  --chrome-shadow-panel: -4px 0 24px rgba(0, 0, 0, 0.45);
+  --color-arrakis-parchment: var(--chrome-text);
+
+  --player-ring-red: #a85a52;
+  --player-ring-green: #6d8f62;
+  --player-ring-yellow: #b89a4a;
+  --player-ring-blue: #5a7f8f;
+
+  --play-history-sidebar-min-width: 304px;
+  --mockup-board-min-height: 420px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: var(--chrome-text);
+  background: var(--chrome-shell);
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+a {
+  color: var(--chrome-highlight-name);
+}

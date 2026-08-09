@@ -148,6 +148,14 @@ interface ImageBoardProps {
   /** Rise of Ix — player may click a face-up tech tile on the Ix board to acquire. */
   pendingAcquireTech?: GameState['pendingAcquireTech']
   onTechTileAcquire?: (stackIndex: number) => void
+  /** Birds-eye turn chrome on combat seats (3b mobile / 6 desktop). */
+  birdseyeMode?: 'mobile3b' | 'desktop6' | null
+  birdseyeActions?: import('./CombatSeatTurnChrome').BirdseyeSeatActions | null
+  birdseyeGainsByPlayer?: import('./CombatAreaCluster').BirdseyeSeatGainsMap
+  birdseyeTroopsDeployed?: number
+  birdseyeTroopsRetreated?: number
+  birdseyeIsHistoryView?: boolean
+  birdseyeInteractionsHostRef?: (el: HTMLDivElement | null) => void
 }
 
 const FACTIONS: FactionType[] = [
@@ -215,6 +223,13 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   combatAreaPlacement = 'overlay',
   pendingAcquireTech,
   onTechTileAcquire,
+  birdseyeMode = null,
+  birdseyeActions = null,
+  birdseyeGainsByPlayer,
+  birdseyeTroopsDeployed = 0,
+  birdseyeTroopsRetreated = 0,
+  birdseyeIsHistoryView = false,
+  birdseyeInteractionsHostRef,
 }) => {
   const boardMediaRef = useRef<HTMLDivElement>(null)
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
@@ -451,6 +466,13 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         onPlayerSelect={
           sandboxSetup ? player => sandboxSetup.onPlayerClick(player.id) : undefined
         }
+        birdseyeMode={birdseyeMode}
+        birdseyeActions={birdseyeActions}
+        birdseyeGainsByPlayer={birdseyeGainsByPlayer}
+        birdseyeTroopsDeployed={birdseyeTroopsDeployed}
+        birdseyeTroopsRetreated={birdseyeTroopsRetreated}
+        birdseyeIsHistoryView={birdseyeIsHistoryView}
+        birdseyeInteractionsHostRef={birdseyeInteractionsHostRef}
         className={[
           'image-board__combat-area-cluster',
           combatAreaBelow ? 'image-board__combat-area-cluster--below' : '',
@@ -1315,9 +1337,24 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         </div>
       ) : null}
       {sidePanelDocked ? (
-        <div className="image-board__desktop-shell">
+        <div
+          className={[
+            'image-board__desktop-shell',
+            ixBoardDocked ? 'image-board__desktop-shell--stack-below' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
           {boardStage}
-          <aside className="image-board__expansion-dock-column" aria-label="Expansion boards">
+          <aside
+            className={[
+              'image-board__expansion-dock-column',
+              ixBoardDocked ? 'image-board__expansion-dock-column--below-board' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            aria-label="Expansion boards"
+          >
             {ixBoardDocked ? (
               <div className="image-board__ix-dock" aria-label="Ix board">
                 {ixBoardOverlay}

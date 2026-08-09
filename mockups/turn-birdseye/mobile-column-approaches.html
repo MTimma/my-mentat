@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="void">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Mobile — approaches 3b / 6</title>
+  <link rel="stylesheet" href="_shared-mockup.css?v=8" />
+  <style>
+    body { background: var(--chrome-shell); }
+    .approaches { display: flex; flex-direction: column; gap: 32px; padding: 12px; max-width: 440px; margin: 0 auto; }
+
+    .col-row {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      border: 1px solid rgba(255, 248, 232, 0.18);
+      border-radius: 6px;
+      background: linear-gradient(180deg, rgba(8, 10, 14, 0.92), rgba(2, 3, 5, 0.98));
+      color: #fff8e8;
+      font-size: 10px;
+      text-shadow: 0 0 3px #000;
+    }
+    .col {
+      position: relative;
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid rgba(255, 248, 232, 0.1);
+    }
+    .col:first-child { border-left: none; }
+    /* Active gold border wraps chrome only (buttons + portrait [+ Intr/Tech]), not gains */
+    .col-chrome {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .col--active .col-chrome::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 2px solid rgba(255, 215, 0, 0.92);
+      pointer-events: none;
+      z-index: 10;
+    }
+    .col-row--grow .col { flex: 1 1 0; }
+    .col-row--grow .col--active { flex: 1.65 1 0; }
+
+    .col-top,
+    .col-top-spacer {
+      flex-shrink: 0;
+      height: 40px;
+      box-sizing: border-box;
+    }
+    .col-top {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 3px;
+      background: rgba(0, 0, 0, 0.55);
+      border-bottom: 1px solid rgba(255, 248, 232, 0.12);
+    }
+
+    .col-mid {
+      flex: 0 0 auto;
+      height: 156px;
+      position: relative;
+      overflow: hidden;
+    }
+    .col-mid img.portrait {
+      width: 100%;
+      height: 145%;
+      object-fit: cover;
+      object-position: center 42%;
+      transform: translateY(-12%);
+    }
+
+    .col-res {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      min-height: 38px;
+      padding: 4px 3px 3px;
+      background: linear-gradient(180deg, rgba(143, 36, 36, 0.92), #5a1212);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px 2px;
+      font-weight: 700;
+      font-size: 0.85em;
+      align-content: end;
+    }
+    .col--green .col-res { background: linear-gradient(180deg, rgba(47, 107, 51, 0.92), #17441d); }
+    .col--blue .col-res { background: linear-gradient(180deg, rgba(36, 95, 156, 0.92), #123560); }
+    .col--yellow .col-res { background: linear-gradient(180deg, rgba(154, 118, 24, 0.92), #5c4608); }
+    .col-res span { display: inline-flex; align-items: center; gap: 1px; }
+    .col-res img { width: 8px; height: 8px; }
+
+    /* 3b: Intr/Tech floating on portrait (above art, under active border) */
+    .col-overlay-utils {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      display: flex;
+      gap: 5px;
+      padding: 3px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 248, 232, 0.22);
+      pointer-events: auto;
+    }
+    .col-overlay-utils .mini-btn {
+      width: 28px;
+      height: 30px;
+      background: rgba(0, 0, 0, 0.55);
+    }
+    .col-res { z-index: 2; }
+
+    .col-gains {
+      flex-shrink: 0;
+      padding: 4px 3px;
+      background: rgba(0, 0, 0, 0.38);
+      border-top: 1px solid rgba(255, 248, 232, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .col-gains:empty { display: none; padding: 0; border: 0; }
+
+    /* 6: Play/End Turn above; Intr/Tech stacked under */
+    .col-top--stack {
+      flex-direction: column;
+      height: auto;
+      min-height: 40px;
+      gap: 3px;
+      padding: 3px 4px;
+    }
+    .col-top__primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .col-top__utils {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding-top: 2px;
+      border-top: 1px solid rgba(255, 248, 232, 0.28);
+    }
+    .col-top__utils .mini-btn {
+      width: 26px;
+      height: 28px;
+    }
+
+    .gain-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 2px;
+    }
+    .gain-line__title {
+      flex: 1 1 100%;
+      font-size: 0.52rem;
+      font-weight: 600;
+      color: var(--chrome-text-muted);
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mini-btn {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 34px;
+      padding: 0;
+      border: 1px dashed rgba(212, 177, 106, 0.5);
+      border-radius: 3px;
+      background: rgba(0, 0, 0, 0.35);
+      color: var(--chrome-text);
+      font-size: 0.48rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .mini-btn--wide {
+      width: auto;
+      min-width: 56px;
+      height: 32px;
+      padding: 0 8px;
+      border: 2px solid var(--chrome-cta-border);
+      background: var(--chrome-cta-bg);
+      color: var(--chrome-cta-text);
+      font-size: 0.58rem;
+      font-weight: 800;
+    }
+    .mini-btn--intr { border-color: rgba(143, 97, 188, 0.55); width: 28px; }
+    .mini-btn--intr img { width: 16px; height: auto; }
+    .mini-btn--tech img { width: 18px; height: auto; }
+    .mini-btn .n { font-size: 0.75rem; font-weight: 900; line-height: 1; }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 1px 3px;
+      border-radius: 2px;
+      background: rgba(46, 125, 50, 0.15);
+      border: 1px solid rgba(129, 199, 132, 0.25);
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: var(--chrome-success);
+    }
+    .chip--cost {
+      background: rgba(183, 28, 28, 0.14);
+      border-color: rgba(239, 154, 154, 0.28);
+      color: var(--chrome-danger-text);
+    }
+    .chip img { width: 9px; height: 9px; }
+    .chip-arrow { opacity: 0.5; font-size: 0.55rem; }
+
+    .approach-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--chrome-highlight-name);
+      margin: 0 0 4px;
+    }
+    .approach-desc {
+      font-size: 0.72rem;
+      color: var(--chrome-text-muted);
+      margin: 0 0 8px;
+      line-height: 1.4;
+    }
+
+    .ap-toggle { display: none; }
+    .ap-state-idle { display: flex; }
+    .ap-state-after { display: none; }
+    .ap-toggle:checked ~ .col-row .col--active .ap-state-idle { display: none; }
+    .ap-toggle:checked ~ .col-row .col--active .ap-state-after { display: flex; }
+    .ap-sim {
+      display: inline-block;
+      margin-bottom: 6px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--chrome-border-accent);
+      background: var(--chrome-accent-subtle);
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--chrome-text);
+      cursor: pointer;
+    }
+
+    .scenario {
+      font-size: 0.68rem;
+      color: var(--chrome-text-muted);
+      margin: 0 0 12px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px dashed var(--chrome-border-accent);
+      background: rgba(0, 0, 0, 0.2);
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <header class="mockup-page-header">
+    <h1>Mobile — shortlist 3b / 6</h1>
+    <p>
+      Buttons above portraits → after Play/Rev become End Turn.
+      Gains below leaders. Other seats only show <em>incidental</em> gains from Paul’s turn.
+    </p>
+    <nav class="mockup-nav">
+      <a href="README.md">Index</a>
+      <a href="desktop-full-layout.html">Desktop 3b / 6</a>
+    </nav>
+  </header>
+
+  <div class="approaches">
+    <p class="scenario">
+      <strong>This turn (Paul):</strong> Duncan Idaho → Arrakeen, plus a CHOAM dividends effect.<br />
+      <strong>Helena</strong> controls Arrakeen → +1 Solari (control bonus).<br />
+      <strong>Baron</strong> shares CHOAM dividends → +2 Solari.<br />
+      <strong>Leto</strong> gets nothing this turn (no column gains).<br />
+      Not shown: other players’ own earlier Wealth / Reveal turns — those belong in history.
+    </p>
+
+    <!-- 3b -->
+    <section>
+      <h2 class="approach-label">3b · Intr/Tech on portrait (z above art)</h2>
+      <p class="approach-desc">Intr + Tech float on the leader portrait. No strip between art and gains.</p>
+      <input type="checkbox" id="ap3b" class="ap-toggle" />
+      <label for="ap3b" class="ap-sim">Simulate: pressed Play ▸</label>
+      <div class="col-row">
+        <div class="col col--blue">
+          <div class="col-top-spacer" aria-hidden="true"></div>
+          <div class="col-mid">
+            <img class="portrait" src="assets/baron.avif" alt="" />
+            <div class="col-res"><span><img src="assets/solari.png" alt="" />9</span><span><img src="assets/troop.png" alt="" />4</span></div>
+          </div>
+          <div class="col-gains">
+            <div class="gain-line">
+              <span class="gain-line__title">Dividends</span>
+              <span class="chip"><img src="assets/solari.png" alt="" />2</span>
+            </div>
+          </div>
+        </div>
+        <div class="col col--green">
+          <div class="col-top-spacer" aria-hidden="true"></div>
+          <div class="col-mid">
+            <img class="portrait" src="assets/helena.avif" alt="" />
+            <div class="col-res"><span><img src="assets/spice.png" alt="" />2</span><span><img src="assets/troop.png" alt="" />3</span></div>
+          </div>
+          <div class="col-gains">
+            <div class="gain-line">
+              <span class="gain-line__title">Control · Arrakeen</span>
+              <span class="chip"><img src="assets/solari.png" alt="" />1</span>
+            </div>
+          </div>
+        </div>
+        <div class="col col--active">
+          <div class="col-chrome">
+          <div class="col-top ap-state-idle">
+            <button type="button" class="mini-btn" style="width:42px;height:34px;">Play</button>
+            <button type="button" class="mini-btn" style="width:42px;height:34px;"><span class="n">3</span>Rev</button>
+          </div>
+          <div class="col-top ap-state-after">
+            <button type="button" class="mini-btn mini-btn--wide">End Turn</button>
+          </div>
+          <div class="col-mid">
+            <img class="portrait" src="assets/paul.avif" alt="" />
+            <div class="col-overlay-utils">
+              <button type="button" class="mini-btn mini-btn--intr"><img src="assets/intrigue.png" alt="" /></button>
+              <button type="button" class="mini-btn mini-btn--tech"><img src="assets/tech.png" alt="" /></button>
+            </div>
+            <div class="col-res">
+              <span><img src="assets/spice.png" alt="" />4</span>
+              <span><img src="assets/water.png" alt="" />1</span>
+              <span><img src="assets/troop.png" alt="" />5</span>
+              <span><img src="assets/agent.png" alt="" />2</span>
+            </div>
+          </div>
+          </div>
+          <div class="col-gains">
+            <div class="gain-line">
+              <span class="gain-line__title">Duncan Idaho → Arrakeen</span>
+              <span class="chip chip--cost"><img src="assets/water.png" alt="" />1</span>
+              <span class="chip-arrow">→</span>
+              <span class="chip"><img src="assets/troop.png" alt="" />1</span>
+              <span class="chip"><img src="assets/draw.png" alt="" />1</span>
+            </div>
+            <div class="gain-line">
+              <span class="gain-line__title">Arrakeen</span>
+              <span class="chip"><img src="assets/troop.png" alt="" />1</span>
+              <span class="chip"><img src="assets/intrigue.png" alt="" />1</span>
+            </div>
+            <div class="gain-line">
+              <span class="gain-line__title">Dividends (CHOAM)</span>
+              <span class="chip"><img src="assets/solari.png" alt="" />2</span>
+            </div>
+            <div class="gain-line">
+              <span class="gain-line__title">Deployed</span>
+              <span class="chip chip--cost"><img src="assets/deploy.png" alt="" />2</span>
+            </div>
+          </div>
+        </div>
+        <div class="col col--yellow">
+          <div class="col-top-spacer" aria-hidden="true"></div>
+          <div class="col-mid">
+            <img class="portrait" src="assets/leto.avif" alt="" />
+            <div class="col-res"><span><img src="assets/spice.png" alt="" />1</span><span><img src="assets/troop.png" alt="" />2</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section>
+      <h2 class="approach-label">6 · Intr/Tech under Play / End Turn</h2>
+      <p class="approach-desc">Active column wider. Intr/Tech stacked under Play/Rev (or End Turn), with a thin rule between. No footer toolbar.</p>
+      <input type="checkbox" id="ap6" class="ap-toggle" />
+      <label for="ap6" class="ap-sim">Simulate: pressed Play ▸</label>
+      <div class="col-row col-row--grow">
+        <div class="col col--blue">
+          <div class="col-top-spacer" aria-hidden="true"></div>
+          <div class="col-mid">
+            <img class="portrait" src="assets/baron.avif" alt="" />
+            <div class="col-res"><span><img src="assets/solari.png" alt="" />9</span></div>
+          </div>
+          <div class="col-gains">
+            <div class="gain-line">
+              <span class="gain-line__title">Dividends</span>
+              <span class="chip"><img src="assets/solari.png" alt="" />2</span>
+            </div>
+          </div>
+        </div>
+        <div class="col col--green">
+          <div class="col-top-spacer" aria-hidden="true"></div>
+          <div class="col-mid">
+            <img class="portrait" src="assets/helena.avif" alt="" />
+            <div class="col-res"><span><img src="assets/spice.png" alt="" />2</span></div>
+          </div>
+          <div class="col-gains">
+            <div class="gain-line">
+              <span class="gain-line__title">Control · Arrakeen</span>
+              <span class="chip"><img src="assets/solari.png" alt="" />1</span>
+            </div>
+          </div>
+        </div>
+        <div class="col col--active">
+          <div class="col-chrome">
+          <div class="col-top col-top--stack ap-state-idle">
+            <div class="col-top__primary">
+              <button type="button" class="mini-btn" style="width:40px;height:32px;">Play</button>
+              <button type="button" class="mini-btn" style="width:40px;height:32px;"><span class="n">3</span>Rev</button>
+            </div>
+            <div class="col-top__utils">
+              <button type="button" class="mini-btn mini-btn--intr"><img src="assets/intrigue.png" alt="" /></button>
+              <button type="button" class="mini-btn mini-btn--tech"><img src="assets/tech.png" alt="" /></button>
+            </div>
+          </div>
+          <div class="col-top col-top--stack ap-state-after">
+            <div class="col-top__primary">
+              <button type="button" class="mini-btn mini-btn--wide" style="min-width:64px;">End Turn</button>
+            </div>
+            <div class="col-top__utils">
+              <button type="button" class="mini-btn mini-btn--intr"><img src="assets/intrigue.png" alt="" /></button>
+              <button type="button" class="mini-btn mini-btn--tech"><img src="assets/tech.png" alt="" /></button>
+            </div>
+          </div>
+          <div class="col-mid">
+            <img class="portrait" src="assets/paul.avif" alt="" />
+            <div class="col-res">
+              <span><img src="assets/spice.png" alt="" />4</span>
+              <span><img src="assets/water.png" alt="" />1</span>
+              <span><img src="assets/troop.png" alt="" />5</span>
+              <span><img src="assets/agent.png" alt="" />2</span>
+            </div>
+          </div>
+          </div>
+          <div class="col-gains">
+            <div class="gain-line">
+              <span class="gain-line__title">Duncan Idaho → Arrakeen</span>
+              <span class="chip chip--cost"><img src="assets/water.png" alt="" />1</span>
+              <span class="chip-arrow">→</span>
+              <span class="chip"><img src="assets/troop.png" alt="" />1</span>
+              <span class="chip"><img src="assets/draw.png" alt="" />1</span>
+            </div>
+            <div class="gain-line">
+              <span class="gain-line__title">Arrakeen</span>
+              <span class="chip"><img src="assets/troop.png" alt="" />1</span>
+              <span class="chip"><img src="assets/intrigue.png" alt="" />1</span>
+            </div>
+            <div class="gain-line">
+              <span class="gain-line__title">Dividends (CHOAM)</span>
+              <span class="chip"><img src="assets/solari.png" alt="" />2</span>
+            </div>
+            <div class="gain-line">
+              <span class="gain-line__title">Deployed</span>
+              <span class="chip chip--cost"><img src="assets/deploy.png" alt="" />2</span>
+            </div>
+          </div>
+        </div>
+        <div class="col col--yellow">
+          <div class="col-top-spacer" aria-hidden="true"></div>
+          <div class="col-mid">
+            <img class="portrait" src="assets/leto.avif" alt="" />
+            <div class="col-res"><span><img src="assets/spice.png" alt="" />1</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="mockup-note">
+      Other leaders’ columns show gains only when Paul’s action pays them something
+      (control bonus, dividends, etc.). Their own prior turns stay in history.
+    </div>
+  </div>
+</body>
+</html>

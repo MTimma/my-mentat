@@ -57,6 +57,21 @@
   flex-shrink: 0;
 }
 
+.turn-history-gains-toggle {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  min-width: 2.8rem;
+  opacity: 0.55;
+}
+
+.turn-history-gains-toggle--on {
+  opacity: 1;
+  border-color: rgba(212, 177, 106, 0.65);
+  color: #fff8e8;
+}
+
 .turn-history-header-live-btn {
   padding: 4px 10px;
   border-radius: 999px;

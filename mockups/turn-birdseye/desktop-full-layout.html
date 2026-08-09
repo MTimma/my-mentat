@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="void">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Desktop — approaches 3b / 6</title>
+  <link rel="stylesheet" href="_shared-mockup.css?v=9" />
+  <style>
+    body { background: var(--chrome-shell); }
+    .approaches {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+      padding: 12px 16px 40px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .scenario {
+      font-size: 0.72rem;
+      color: var(--chrome-text-muted);
+      margin: 0;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px dashed var(--chrome-border-accent);
+      background: rgba(0, 0, 0, 0.2);
+      line-height: 1.4;
+    }
+    .approach-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--chrome-highlight-name);
+      margin: 0 0 4px;
+    }
+    .approach-desc {
+      font-size: 0.75rem;
+      color: var(--chrome-text-muted);
+      margin: 0 0 8px;
+      line-height: 1.4;
+    }
+    .ap-toggle { display: none; }
+    .ap-sim {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--chrome-border-accent);
+      background: var(--chrome-accent-subtle);
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--chrome-text);
+      cursor: pointer;
+    }
+    .ap-state-idle { display: flex; }
+    .ap-state-after { display: none; }
+    .ap-toggle:checked ~ .desk-mini .turn-seat-row--active .ap-state-idle { display: none !important; }
+    .ap-toggle:checked ~ .desk-mini .turn-seat-row--active .ap-state-after { display: flex !important; }
+
+    .desk-mini {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) minmax(320px, 420px) 140px;
+      gap: 10px;
+      min-height: 320px;
+      align-items: stretch;
+    }
+    .desk-mini__board {
+      border: 1px dashed var(--chrome-border);
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.25);
+      color: var(--chrome-text-muted);
+      font-size: 0.75rem;
+      display: grid;
+      place-items: center;
+    }
+    .desk-mini__turn {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .desk-mini__history {
+      border: 1px solid var(--chrome-border);
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.28);
+      padding: 6px;
+      font-size: 0.65rem;
+      color: var(--chrome-text-muted);
+    }
+    .desk-mini__history strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--chrome-text);
+      font-size: 0.68rem;
+    }
+
+    /* 3b: Play/Rev left; Intr/Tech on portrait */
+    .btn-pair {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .btn-pair__row {
+      display: flex;
+      gap: 5px;
+    }
+    .portrait-overlay-utils {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 8;
+      display: flex;
+      gap: 5px;
+      padding: 3px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 248, 232, 0.22);
+      pointer-events: auto;
+    }
+    .portrait-overlay-utils .action-btn {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+    }
+    .portrait-overlay-utils .action-btn--intrigue img,
+    .portrait-overlay-utils .action-btn--tech img {
+      width: 18px;
+      height: auto;
+    }
+    .combat-quadrant { position: relative; }
+
+    /* 6: Play/Rev above; Intr/Tech under with rule */
+    .controls-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .controls-stack__primary-row {
+      display: flex;
+      gap: 5px;
+    }
+    .controls-stack__utils {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      padding-top: 5px;
+      border-top: 1px solid rgba(255, 248, 232, 0.28);
+    }
+    .controls-stack__utils .action-btn {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+    }
+
+    .turn-seat-row--active .turn-seat-row__controls.ap-state-idle,
+    .turn-seat-row--active .turn-seat-row__controls.ap-state-after {
+      flex-direction: column;
+    }
+  </style>
+</head>
+<body>
+  <header class="mockup-page-header">
+    <h1>Desktop — shortlist 3b / 6</h1>
+    <p>
+      Same Intr/Tech placements as mobile. Active: controls + portrait (gold border on seat).
+      Gains to the right — not inside the gold border. Incidentals only for other seats.
+    </p>
+    <nav class="mockup-nav">
+      <a href="README.md">Index</a>
+      <a href="mobile-column-approaches.html">Mobile 3b / 6</a>
+    </nav>
+  </header>
+
+  <div class="approaches">
+    <p class="scenario">
+      <strong>This turn (Paul):</strong> Duncan Idaho → Arrakeen + CHOAM dividends.<br />
+      <strong>Helena</strong> control bonus · <strong>Baron</strong> dividends · <strong>Leto</strong> nothing.
+    </p>
+
+    <!-- 3b -->
+    <section>
+      <h2 class="approach-label">3b · Intr/Tech on portrait</h2>
+      <p class="approach-desc">Left: Play + Rev (→ End Turn). Intr/Tech float on the active portrait (z above art).</p>
+      <input type="checkbox" id="desk3b" class="ap-toggle" />
+      <label for="desk3b" class="ap-sim">Simulate: pressed Play ▸</label>
+
+      <div class="desk-mini">
+        <div class="desk-mini__board">Board</div>
+        <div class="desk-mini__turn">
+          <div class="mockup-section-label">Current turn · round 3</div>
+
+          <div class="turn-seat-row turn-seat-row--active">
+            <div class="turn-seat-row__controls ap-state-idle">
+              <div class="btn-pair">
+                <div class="btn-pair__row">
+                  <button type="button" class="action-btn action-btn--play">
+                    <span class="action-btn__label">Play</span>
+                    <span class="action-btn__agent-badge"><img src="assets/agent.png" alt="" />2</span>
+                  </button>
+                  <button type="button" class="action-btn action-btn--reveal">
+                    <span class="action-btn__count">3</span>
+                    <span class="action-btn__label">Rev</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="turn-seat-row__controls ap-state-after">
+              <button type="button" class="end-turn-btn">End Turn</button>
+            </div>
+
+            <div class="turn-seat-row__portrait">
+              <div class="combat-dock">
+                <div class="combat-seat combat-seat--active">
+                  <div class="combat-quadrant combat-quadrant--red">
+                    <div class="combat-leader"><img src="assets/paul.avif" alt="Paul" /></div>
+                    <div class="portrait-overlay-utils">
+                      <button type="button" class="action-btn action-btn--intrigue">
+                        <img src="assets/intrigue.png" alt="Intrigue" />
+                        <span class="action-btn__count--overlay">2</span>
+                      </button>
+                      <button type="button" class="action-btn action-btn--tech">
+                        <img src="assets/tech.png" alt="Tech" />
+                      </button>
+                    </div>
+                    <div class="combat-resources">
+                      <div class="combat-resources-grid">
+                        <span class="combat-res"><img src="assets/spice.png" alt="" />4</span>
+                        <span class="combat-res"><img src="assets/solari.png" alt="" />7</span>
+                        <span class="combat-res"><img src="assets/water.png" alt="" />1</span>
+                        <span class="combat-res"><img src="assets/agent.png" alt="" />2</span>
+                        <span class="combat-res"><img src="assets/draw.png" alt="" />3</span>
+                        <span class="combat-res"><img src="assets/intrigue.png" alt="" />2</span>
+                        <span class="combat-res"><img src="assets/troop.png" alt="" />5</span>
+                        <span class="combat-res"><img src="assets/vp.png" alt="" />2</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="combat-status">
+                    <span><img src="assets/troop.png" alt="" /> 2</span>
+                    <span>str 4</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="turn-seat-row__gains gains-style-b">
+              <div class="gains-panel">
+                <div class="gains-display">
+                  <div class="gain-group">
+                    <span class="gain-title">Duncan Idaho → Arrakeen</span>
+                    <div class="gain-flow">
+                      <span class="gain-side gain-side--cost"><img src="assets/water.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--cost">1</span></span>
+                      <span class="gain-arrow">→</span>
+                      <span class="gain-side gain-side--reward"><img src="assets/troop.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">1</span></span>
+                      <span class="gain-side gain-side--reward"><img src="assets/draw.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">1</span></span>
+                    </div>
+                  </div>
+                  <div class="gain-group">
+                    <span class="gain-title">Arrakeen</span>
+                    <div class="gain-flow">
+                      <span class="gain-side gain-side--reward"><img src="assets/troop.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">1</span></span>
+                      <span class="gain-side gain-side--reward"><img src="assets/intrigue.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">1</span></span>
+                    </div>
+                  </div>
+                  <div class="gain-group">
+                    <span class="gain-title">Dividends (CHOAM)</span>
+                    <div class="gain-flow">
+                      <span class="gain-side gain-side--reward"><img src="assets/solari.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">2</span></span>
+                    </div>
+                  </div>
+                  <div class="gain-group">
+                    <span class="gain-title">Deployed</span>
+                    <div class="gain-flow">
+                      <span class="gain-side gain-side--cost"><img src="assets/deploy.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--cost">2</span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="turn-seat-row turn-seat-row--inactive">
+            <div class="turn-seat-row__portrait">
+              <div class="combat-dock">
+                <div class="combat-seat">
+                  <div class="combat-quadrant combat-quadrant--green">
+                    <div class="combat-leader"><img src="assets/helena.avif" alt="Helena" /></div>
+                    <div class="combat-resources">
+                      <div class="combat-resources-grid">
+                        <span class="combat-res"><img src="assets/spice.png" alt="" />2</span>
+                        <span class="combat-res"><img src="assets/solari.png" alt="" />5</span>
+                        <span class="combat-res"><img src="assets/troop.png" alt="" />3</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="turn-seat-row__gains gains-style-b">
+              <div class="gains-panel">
+                <div class="gains-display">
+                  <div class="gain-group">
+                    <span class="gain-title">Control · Arrakeen</span>
+                    <div class="gain-flow">
+                      <span class="gain-side gain-side--reward"><img src="assets/solari.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">1</span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="turn-seat-row turn-seat-row--inactive">
+            <div class="turn-seat-row__portrait">
+              <div class="combat-dock">
+                <div class="combat-seat">
+                  <div class="combat-quadrant combat-quadrant--blue">
+                    <div class="combat-leader"><img src="assets/baron.avif" alt="Baron" /></div>
+                    <div class="combat-resources">
+                      <div class="combat-resources-grid">
+                        <span class="combat-res"><img src="assets/solari.png" alt="" />9</span>
+                        <span class="combat-res"><img src="assets/troop.png" alt="" />4</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="turn-seat-row__gains gains-style-b">
+              <div class="gains-panel">
+                <div class="gains-display">
+                  <div class="gain-group">
+                    <span class="gain-title">Dividends</span>
+                    <div class="gain-flow">
+                      <span class="gain-side gain-side--reward"><img src="assets/solari.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">2</span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="turn-seat-row turn-seat-row--inactive">
+            <div class="turn-seat-row__portrait">
+              <div class="combat-dock">
+                <div class="combat-seat">
+                  <div class="combat-quadrant combat-quadrant--yellow">
+                    <div class="combat-leader"><img src="assets/leto.avif" alt="Leto" /></div>
+                    <div class="combat-resources">
+                      <div class="combat-resources-grid">
+                        <span class="combat-res"><img src="assets/spice.png" alt="" />1</span>
+                        <span class="combat-res"><img src="assets/troop.png" alt="" />2</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="desk-mini__history">
+          <strong>History</strong>
+          T3 Paul · Signet → Hagga<br />
+          T2 Helena · Reveal<br />
+          T1 Baron · Wealth
+        </aside>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section>
+      <h2 class="approach-label">6 · Intr/Tech under Play / End Turn</h2>
+      <p class="approach-desc">Left cluster: Play+Rev (or End Turn) on top; Intr+Tech underneath with a thin rule. Portrait stays clean.</p>
+      <input type="checkbox" id="desk6" class="ap-toggle" />
+      <label for="desk6" class="ap-sim">Simulate: pressed Play ▸</label>
+
+      <div class="desk-mini">
+        <div class="desk-mini__board">Board</div>
+        <div class="desk-mini__turn">
+          <div class="mockup-section-label">Current turn · round 3</div>
+
+          <div class="turn-seat-row turn-seat-row--active">
+            <div class="turn-seat-row__controls ap-state-idle">
+              <div class="controls-stack">
+                <div class="controls-stack__primary-row">
+                  <button type="button" class="action-btn action-btn--play">
+                    <span class="action-btn__label">Play</span>
+                    <span class="action-btn__agent-badge"><img src="assets/agent.png" alt="" />2</span>
+                  </button>
+                  <button type="button" class="action-btn action-btn--reveal">
+                    <span class="action-btn__count">3</span>
+                    <span class="action-btn__label">Rev</span>
+                  </button>
+                </div>
+                <div class="controls-stack__utils">
+                  <button type="button" class="action-btn action-btn--intrigue">
+                    <img src="assets/intrigue.png" alt="Intrigue" />
+                    <span class="action-btn__count--overlay">2</span>
+                  </button>
+                  <button type="button" class="action-btn action-btn--tech">
+                    <img src="assets/tech.png" alt="Tech" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="turn-seat-row__controls ap-state-after">
+              <div class="controls-stack">
+                <button type="button" class="end-turn-btn">End Turn</button>
+                <div class="controls-stack__utils">
+                  <button type="button" class="action-btn action-btn--intrigue">
+                    <img src="assets/intrigue.png" alt="Intrigue" />
+                    <span class="action-btn__count--overlay">2</span>
+                  </button>
+                  <button type="button" class="action-btn action-btn--tech">
+                    <img src="assets/tech.png" alt="Tech" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="turn-seat-row__portrait">
+              <div class="combat-dock">
+                <div class="combat-seat combat-seat--active">
+                  <div class="combat-quadrant combat-quadrant--red">
+                    <div class="combat-leader"><img src="assets/paul.avif" alt="Paul" /></div>
+                    <div class="combat-resources">
+                      <div class="combat-resources-grid">
+                        <span class="combat-res"><img src="assets/spice.png" alt="" />4</span>
+                        <span class="combat-res"><img src="assets/solari.png" alt="" />7</span>
+                        <span class="combat-res"><img src="assets/water.png" alt="" />1</span>
+                        <span class="combat-res"><img src="assets/agent.png" alt="" />2</span>
+                        <span class="combat-res"><img src="assets/draw.png" alt="" />3</span>
+                        <span class="combat-res"><img src="assets/intrigue.png" alt="" />2</span>
+                        <span class="combat-res"><img src="assets/troop.png" alt="" />5</span>
+                        <span class="combat-res"><img src="assets/vp.png" alt="" />2</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="combat-status">
+                    <span><img src="assets/troop.png" alt="" /> 2</span>
+                    <span>str 4</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="turn-seat-row__gains gains-style-b">
+              <div class="gains-panel">
+                <div class="gains-display">
+                  <div class="gain-group">
+                    <span class="gain-title">Duncan Idaho → Arrakeen</span>
+                    <div class="gain-flow">
+                      <span class="gain-side gain-side--cost"><img src="assets/water.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--cost">1</span></span>
+                      <span class="gain-arrow">→</span>
+                      <span class="gain-side gain-side--reward"><img src="assets/troop.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">1</span></span>
+                      <span class="gain-side gain-side--reward"><img src="assets/draw.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">1</span></span>
+                    </div>
+                  </div>
+                  <div class="gain-group">
+                    <span class="gain-title">Arrakeen</span>
+                    <div class="gain-flow">
+                      <span class="gain-side gain-side--reward"><img src="assets/troop.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">1</span></span>
+                      <span class="gain-side gain-side--reward"><img src="assets/intrigue.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">1</span></span>
+                    </div>
+                  </div>
+                  <div class="gain-group">
+                    <span class="gain-title">Dividends (CHOAM)</span>
+                    <div class="gain-flow">
+                      <span class="gain-side gain-side--reward"><img src="assets/solari.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">2</span></span>
+                    </div>
+                  </div>
+                  <div class="gain-group">
+                    <span class="gain-title">Deployed</span>
+                    <div class="gain-flow">
+                      <span class="gain-side gain-side--cost"><img src="assets/deploy.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--cost">2</span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="turn-seat-row turn-seat-row--inactive">
+            <div class="turn-seat-row__portrait">
+              <div class="combat-dock">
+                <div class="combat-seat">
+                  <div class="combat-quadrant combat-quadrant--green">
+                    <div class="combat-leader"><img src="assets/helena.avif" alt="Helena" /></div>
+                    <div class="combat-resources">
+                      <div class="combat-resources-grid">
+                        <span class="combat-res"><img src="assets/spice.png" alt="" />2</span>
+                        <span class="combat-res"><img src="assets/solari.png" alt="" />5</span>
+                        <span class="combat-res"><img src="assets/troop.png" alt="" />3</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="turn-seat-row__gains gains-style-b">
+              <div class="gains-panel">
+                <div class="gains-display">
+                  <div class="gain-group">
+                    <span class="gain-title">Control · Arrakeen</span>
+                    <div class="gain-flow">
+                      <span class="gain-side gain-side--reward"><img src="assets/solari.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">1</span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="turn-seat-row turn-seat-row--inactive">
+            <div class="turn-seat-row__portrait">
+              <div class="combat-dock">
+                <div class="combat-seat">
+                  <div class="combat-quadrant combat-quadrant--blue">
+                    <div class="combat-leader"><img src="assets/baron.avif" alt="Baron" /></div>
+                    <div class="combat-resources">
+                      <div class="combat-resources-grid">
+                        <span class="combat-res"><img src="assets/solari.png" alt="" />9</span>
+                        <span class="combat-res"><img src="assets/troop.png" alt="" />4</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="turn-seat-row__gains gains-style-b">
+              <div class="gains-panel">
+                <div class="gains-display">
+                  <div class="gain-group">
+                    <span class="gain-title">Dividends</span>
+                    <div class="gain-flow">
+                      <span class="gain-side gain-side--reward"><img src="assets/solari.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">2</span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="turn-seat-row turn-seat-row--inactive">
+            <div class="turn-seat-row__portrait">
+              <div class="combat-dock">
+                <div class="combat-seat">
+                  <div class="combat-quadrant combat-quadrant--yellow">
+                    <div class="combat-leader"><img src="assets/leto.avif" alt="Leto" /></div>
+                    <div class="combat-resources">
+                      <div class="combat-resources-grid">
+                        <span class="combat-res"><img src="assets/spice.png" alt="" />1</span>
+                        <span class="combat-res"><img src="assets/troop.png" alt="" />2</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="desk-mini__history">
+          <strong>History</strong>
+          T3 Paul · Signet → Hagga<br />
+          T2 Helena · Reveal<br />
+          T1 Baron · Wealth
+        </aside>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

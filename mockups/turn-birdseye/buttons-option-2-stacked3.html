@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="void">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Buttons 2 — stacked 3</title>
+  <link rel="stylesheet" href="_shared-mockup.css?v=5" />
+</head>
+<body class="mockup-page">
+  <header class="mockup-page-header">
+    <h1>Buttons 2 — stacked 3</h1>
+    <p>Annotation option: Play + Intr/Tech on top, wide Reveal below. Left of active combat portrait only.</p>
+    <nav class="mockup-nav">
+      <a href="README.md">Index</a>
+      <a href="buttons-option-1-grid2x2.html">Option 1</a>
+      <a href="desktop-full-layout.html">Desktop</a>
+    </nav>
+  </header>
+  <main class="mockup-content">
+    <div class="mockup-note">Narrower than 2×2. Merged Intr/Tech is a weaker tap target on mobile.</div>
+    <div class="turn-seat-row" style="max-width:400px;">
+      <div class="turn-seat-row__controls">
+        <div class="btn-stack-3">
+          <div class="btn-stack-3__top">
+            <button type="button" class="action-btn action-btn--play">
+              <span class="action-btn__label">Play</span>
+            </button>
+            <div class="btn-stack-3__merged">
+              <img src="assets/intrigue.png" alt="" /> Intr
+              <span style="opacity:0.35;">|</span>
+              <img src="assets/tech.png" alt="" /> Tech
+            </div>
+          </div>
+          <button type="button" class="action-btn action-btn--reveal">
+            <span class="action-btn__count">3</span>
+            <span class="action-btn__label">Reveal</span>
+          </button>
+        </div>
+      </div>
+      <div class="turn-seat-row__portrait">
+        <div class="combat-dock">
+          <div class="combat-seat combat-seat--active">
+            <div class="combat-quadrant combat-quadrant--green">
+              <div class="combat-leader"><img src="assets/helena.avif" alt="Helena" /></div>
+              <div class="combat-resources">
+                <div class="combat-resources-grid">
+                  <span class="combat-res"><img src="assets/spice.png" alt="" />2</span>
+                  <span class="combat-res"><img src="assets/solari.png" alt="" />5</span>
+                  <span class="combat-res"><img src="assets/water.png" alt="" />2</span>
+                  <span class="combat-res"><img src="assets/troop.png" alt="" />3</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

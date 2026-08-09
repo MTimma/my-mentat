@@ -1,4 +1,15 @@
-import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, Fragment } from 'react'
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  Fragment,
+  forwardRef,
+  useImperativeHandle,
+} from 'react'
+import { createPortal } from 'react-dom'
 import { Player, Card, Leader, IntrigueCard, IntrigueCardType, Cost, Reward, Gain, PendingChoice, FixedOptionsChoice, CardSelectChoice, OptionalEffect, ChoiceType, CardPile, PendingReward, GainSource, CustomEffect, GameTurn, GamePhase, FactionType, GameState, ControlMarkerType, IntriguePlayEffect, InfluenceAmount, InfluenceAmounts, TurnType, RewardType, AUTO_APPLIED_CUSTOM_EFFECTS, CounterChoice } from '../../types/GameTypes'
 import { intrigueCardHasCustom, intrigueHasPhaseEffect } from '../../utils/intrigueCardCustom'
 import { isKwisatzHaderachCard, isKwisatzAgentSourceChoice } from '../../utils/kwisatzHaderach'
@@ -124,6 +135,10 @@ interface TurnControlsProps {
   isHistoryView?: boolean
   /** Desktop: leader + effects + end turn in a top play bar; footer nav hidden */
   showDesktopPlayBar?: boolean
+  /** Hide Play/Reveal/Intrigue/Tech action row (actions live on combat dock). */
+  hidePrimaryTurnActions?: boolean
+  /** Portal pending reward/choice chips into birds-eye seat chrome. */
+  birdseyeInteractionsHost?: HTMLElement | null
   showEndTurnButton?: boolean
   showPassCombatButton?: boolean
   onEndTurn?: () => void
@@ -137,6 +152,13 @@ interface TurnControlsProps {
   passCombatLabel?: string
 }
 
+export type TurnControlsHandle = {
+  openPlayCardPicker: () => void
+  openRevealPicker: () => void
+  openIntriguePicker: () => void
+  openCombatIntriguePicker: () => void
+}
+
 /** Rewards that require a tap / modal / board step (not plain +resource claims), e.g. The Voice. */
 function rewardNeedsInteractionHighlight(reward: Reward): boolean {
   if (reward.custom) {
@@ -147,7 +169,8 @@ function rewardNeedsInteractionHighlight(reward: Reward): boolean {
   return false
 }
 
-const TurnControls: React.FC<TurnControlsProps> = ({
+const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function TurnControls(
+  {
   activePlayer,
   canEndTurn,
   onPlayCard,
@@ -192,6 +215,8 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   gameState,
   isHistoryView = false,
   showDesktopPlayBar = false,
+  hidePrimaryTurnActions = false,
+  birdseyeInteractionsHost = null,
   showEndTurnButton = false,
   showPassCombatButton = false,
   onEndTurn,
@@ -203,7 +228,23 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   endTurnDisabled = false,
   endTurnTitle,
   passCombatLabel = 'Pass Combat',
-}) => {
+}, ref) {
+  const openPlayCardPickerRef = useRef<() => void>(() => {})
+  const openRevealPickerRef = useRef<() => void>(() => {})
+  const openIntriguePickerRef = useRef<() => void>(() => {})
+  const openCombatIntriguePickerRef = useRef<() => void>(() => {})
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      openPlayCardPicker: () => openPlayCardPickerRef.current(),
+      openRevealPicker: () => openRevealPickerRef.current(),
+      openIntriguePicker: () => openIntriguePickerRef.current(),
+      openCombatIntriguePicker: () => openCombatIntriguePickerRef.current(),
+    }),
+    []
+  )
+
   const [isLeaderImageOpen, setIsLeaderImageOpen] = useState(false)
   const [isCardSelectionOpen, setIsCardSelectionOpen] = useState(false)
   const [isRevealTurn, setIsRevealTurn] = useState(false)
@@ -464,12 +505,14 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     ? [...playedIntrigueStripCards, ...activeIntrigueThisRound]
     : playedIntrigueStripCards
   const playAreaIntriguePreviewIdsKeyEarly = playAreaIntrigueCards.map(c => c.id).join(',')
-  const pendingAgentTurnCards = getAgentTurnCardsForDisplay(
-    gameState,
-    activePlayer,
-    selectedCard ?? null,
-    { isRevealTurn }
-  )
+  const pendingAgentTurnCards = activePlayer
+    ? getAgentTurnCardsForDisplay(
+        gameState,
+        activePlayer,
+        selectedCard ?? null,
+        { isRevealTurn }
+      )
+    : []
   const playAreaPreviewIdsKeyEarly = activePlayer
     ? [
         ...activePlayer.playArea,
@@ -653,6 +696,12 @@ const TurnControls: React.FC<TurnControlsProps> = ({
     setIsRevealTurn(true)
     setIsCardSelectionOpen(true)
   }
+
+  openPlayCardPickerRef.current = handlePlayCard
+  openRevealPickerRef.current = handleRevealTurn
+  openIntriguePickerRef.current = handlePlayIntrigueClick
+  openCombatIntriguePickerRef.current = handlePlayCombatIntrigue
+
   const graftPairSelection =
     !isRevealTurn && immortalityGraftEnabled(gameState?.expansions)
 
@@ -2707,28 +2756,41 @@ const TurnControls: React.FC<TurnControlsProps> = ({
   const renderIntegratedEffects = (
     effectCards: EffectCard[],
     visibleCardIds: Set<number>,
-    stripIntrigueCards: IntrigueCard[]
+    stripIntrigueCards: IntrigueCard[],
+    options?: { hideSourceTitles?: boolean; includeAll?: boolean }
   ) => {
+    const hideSourceTitles = Boolean(options?.hideSourceTitles)
+    const includeAll = Boolean(options?.includeAll)
     const playedIntrigueIds = new Set(stripIntrigueCards.map(c => c.id))
-    const fallbackCards = effectCards.filter(card => {
-      if (card.source.type === GainSource.CARD) {
-        return !visibleCardIds.has(card.source.id)
-      }
-      if (card.source.type === GainSource.INTRIGUE) {
-        return !playedIntrigueIds.has(card.source.id)
-      }
-      return true
-    })
+    const fallbackCards = includeAll
+      ? effectCards
+      : effectCards.filter(card => {
+          if (card.source.type === GainSource.CARD) {
+            return !visibleCardIds.has(card.source.id)
+          }
+          if (card.source.type === GainSource.INTRIGUE) {
+            return !playedIntrigueIds.has(card.source.id)
+          }
+          return true
+        })
     if (fallbackCards.length === 0) return null
 
     return (
-      <div className="effects-inline-panel" aria-label="Other pending effects">
+      <div
+        className={[
+          'effects-inline-panel',
+          hideSourceTitles ? 'effects-inline-panel--birdseye' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        aria-label="Other pending effects"
+      >
         {fallbackCards.map(card => (
           <div key={`${card.source.type}-${card.source.id}`} className="effect-chip-group">
-            <span className="effect-chip-source">{card.source.name}</span>
-            <div className="effect-chip-actions">
-              {renderEffectActions(card, 'compact')}
-            </div>
+            {!hideSourceTitles ? (
+              <span className="effect-chip-source">{card.source.name}</span>
+            ) : null}
+            <div className="effect-chip-actions">{renderEffectActions(card, 'compact')}</div>
           </div>
         ))}
       </div>
@@ -3056,6 +3118,42 @@ const TurnControls: React.FC<TurnControlsProps> = ({
 
   return (
     <>
+      {birdseyeInteractionsHost &&
+      !isHistoryView &&
+      (effectCards.length > 0 || showAutoApplyRewardsButton)
+        ? createPortal(
+            <div
+              className="birdseye-interactions-strip"
+              aria-label="Pending turn interactions"
+              onClick={event => event.stopPropagation()}
+            >
+              {showAutoApplyRewardsButton ? (
+                <button
+                  type="button"
+                  className="get-mandatory-effects-button get-mandatory-effects-button--birdseye"
+                  onClick={() => onAutoApplyRewards && onAutoApplyRewards()}
+                  disabled={
+                    voiceSelectionActive ||
+                    masterstrokeSelectionActive ||
+                    simpleAutoApplyCount === 0
+                  }
+                  title={
+                    voiceSelectionActive || masterstrokeSelectionActive
+                      ? 'Finish the current selection before claiming rewards.'
+                      : 'Apply non-interactive rewards; choices, trash, and target selections stay pending.'
+                  }
+                >
+                  Auto{simpleAutoApplyCount > 0 ? ` ${simpleAutoApplyCount}` : ''}
+                </button>
+              ) : null}
+              {renderIntegratedEffects(effectCards, visibleCardIds, playAreaIntrigueCards, {
+                hideSourceTitles: true,
+                includeAll: true,
+              })}
+            </div>,
+            birdseyeInteractionsHost
+          )
+        : null}
       {renderOpponentDiscardPanel()}
       {!influenceBoardSelectionActive && placementPrompt ? (
         <div className="placement-prompt-banner" role="status" aria-live="polite">
@@ -3263,7 +3361,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                   <span className="turn-controls-play-bar__turn-label">{playBarTurnLabel}</span>
                 ) : (
                   <>
-                    {effectCards.length > 0 && (
+                    {effectCards.length > 0 && !birdseyeInteractionsHost && (
                       <div className="turn-controls-effects-row turn-controls-effects-row--in-play-bar">
                         {renderIntegratedEffects(effectCards, visibleCardIds, playAreaIntrigueCards)}
                       </div>
@@ -3344,7 +3442,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
             </div>
           ) : (
             <>
-              {effectCards.length > 0 && (
+              {effectCards.length > 0 && !birdseyeInteractionsHost && (
                 <div className="turn-controls-effects-row">
                   {renderIntegratedEffects(effectCards, visibleCardIds, playAreaIntrigueCards)}
                 </div>
@@ -3366,7 +3464,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                         <span className="reveal-total-count">{revealCombatTotal}</span>
                       </div>
                     )}
-                    {showAutoApplyRewardsButton && (
+                    {showAutoApplyRewardsButton && !birdseyeInteractionsHost && (
                       <button
                         type="button"
                         className="get-mandatory-effects-button"
@@ -3528,7 +3626,7 @@ const TurnControls: React.FC<TurnControlsProps> = ({
                 </div>
               )}
             </div>
-            {(!primaryTurnActionsHidden || techControlsRow) && (
+            {(!primaryTurnActionsHidden || techControlsRow) && !hidePrimaryTurnActions && (
               <div className="selected-card-turn-actions" aria-label="Turn actions">
                 {!primaryTurnActionsHidden && renderPlayCardPlaceholder()}
                 {!primaryTurnActionsHidden && (
@@ -3714,6 +3812,6 @@ const TurnControls: React.FC<TurnControlsProps> = ({
       )}
     </>
   )
-}
+})
 
 export default TurnControls 

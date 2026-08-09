@@ -142,6 +142,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   const isDocked = layout === 'docked'
   const { exportSaveDoc } = useGame()
   const [showDebugModal, setShowDebugModal] = useState(false)
+  /** Birds-eye: history list gains collapsed by default (dock seats show gains). */
+  const [showHistoryGains, setShowHistoryGains] = useState(false)
   const [debugView, setDebugView] = useState<'save' | 'runtime' | 'load'>('save')
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null)
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null)
@@ -672,7 +674,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           <SetupSnapshotPreview imperiumRow={turn.imperiumRow} currentConflict={turn.currentConflict} />
         ) : null}
         {isEndgameEntry && renderEndgameRevealsByPlayer(turn)}
-        {showStandardGains &&
+        {showHistoryGains && showStandardGains &&
           renderStandardGainsBlock(turn, {
             groupGainsByPlayer: isCombatEntry || isEndgameEntry,
             gains,
@@ -690,8 +692,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               .join(', ')}
           </div>
         ) : null}
-        {otherPlayerGains.length > 0 && renderOtherPlayerGains(turn)}
-        {showRevealGains && revealStats && (
+        {showHistoryGains && otherPlayerGains.length > 0 && renderOtherPlayerGains(turn)}
+        {showHistoryGains && showRevealGains && revealStats && (
           <div className="turn-history-reveal-stats">
             <RevealTurnStatsPanel
               stats={revealStats}
@@ -913,6 +915,22 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         {headerTitle}
       </span>
       <div className="turn-history-header-actions">
+        <button
+          type="button"
+          className={[
+            'turn-history-icon-btn',
+            'turn-history-gains-toggle',
+            showHistoryGains ? 'turn-history-gains-toggle--on' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          onClick={() => setShowHistoryGains(v => !v)}
+          title={showHistoryGains ? 'Hide gains in history' : 'Show gains in history'}
+          aria-label={showHistoryGains ? 'Hide gains in history' : 'Show gains in history'}
+          aria-pressed={showHistoryGains}
+        >
+          {showHistoryGains ? 'Gains' : 'Gains'}
+        </button>
         {onUndo && (
           <button
             type="button"

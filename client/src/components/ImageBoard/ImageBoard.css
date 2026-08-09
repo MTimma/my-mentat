@@ -118,7 +118,7 @@
   z-index: 2;
 }
 
-/* Desktop: leader grid docked under Ix (right column). Match Ix dock width. */
+/* Desktop: combat dock width follows expansion column (birds-eye needs room). */
 .image-board__combat-area-dock {
   width: clamp(132px, 18vmin, 220px);
   flex: 0 0 auto;
@@ -153,11 +153,24 @@
   width: 100%;
 }
 
+/* Rise of Ix: Ix + combat stacked under the board (mobile-like), not beside the board. */
+.game-container--desktop-play .image-board__desktop-shell--stack-below {
+  flex-direction: column;
+  align-items: stretch;
+  max-width: var(--play-board-max-edge, 72vh);
+}
+
 .game-container--desktop-play .image-board--with-side-dock .image-board__stage,
 .game-container--desktop-play .image-board--with-ix-dock .image-board__stage {
   flex: 0 1 var(--play-board-max-edge, 72vh);
   max-width: var(--play-board-max-edge, 72vh);
   min-width: 0;
+  width: 100%;
+}
+
+.game-container--desktop-play .image-board__desktop-shell--stack-below .image-board__stage {
+  flex: 0 0 auto;
+  max-width: 100%;
   width: 100%;
 }
 
@@ -173,9 +186,37 @@
 .game-container--desktop-play .image-board__expansion-dock-column {
   display: flex;
   flex: 0 0 auto;
-  width: clamp(132px, 22vmin, 300px);
+  width: clamp(220px, 32vmin, 420px);
   align-self: flex-start;
   position: relative;
+}
+
+.game-container--desktop-play .image-board__expansion-dock-column--below-board {
+  width: 100%;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(4px, 0.6vh, 8px);
+}
+
+.game-container--desktop-play
+  .image-board__expansion-dock-column--below-board
+  .image-board__ix-dock {
+  width: min(100%, clamp(140px, 22vmin, 240px));
+  align-self: center;
+}
+
+.game-container--desktop-play
+  .image-board__expansion-dock-column--below-board
+  .image-board__combat-area-dock {
+  width: 100%;
+}
+
+.game-container--desktop-play .image-board__combat-area-dock {
+  width: 100%;
+  flex: 0 0 auto;
+  align-self: stretch;
+  box-sizing: border-box;
 }
 
 .game-container--desktop-play .image-board__immortality-dock {

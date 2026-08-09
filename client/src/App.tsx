@@ -19,10 +19,16 @@ import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameS
 import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
 import { isSoleTrashThisCardReward } from './utils/pendingRewardAutoApply'
 import { isKwisatzHaderachCard, canPlaceAgentOnBoard, isKwisatzSourceChoicePending, isKwisatzRecallMode, isAgentPlacementPending } from './utils/kwisatzHaderach'
-import TurnControls from './components/TurnControls/TurnControls'
+import TurnControls, { type TurnControlsHandle } from './components/TurnControls/TurnControls'
+import type { BirdseyeSeatActions } from './components/ImageBoard/CombatSeatTurnChrome'
 import PlayFooterToolbar from './components/PlayFooterToolbar/PlayFooterToolbar'
 import RetreatTroopControls from './components/RetreatTroopControls/RetreatTroopControls'
 import { getEffectRetreatRemaining } from './utils/turnGainsDisplay'
+import {
+  buildBirdseyeGainsByPlayer,
+  birdseyeTechCount,
+  birdseyeTroopDeployCounts,
+} from './utils/birdseyeTurnChrome'
 import { getRemainingDeploySlots } from './utils/dreadnoughtLifecycle'
 import { getRemainingTroopDeploySlots } from './utils/troops'
 import CombatResults from './components/CombatResults/CombatResults'
@@ -128,8 +134,15 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   )
   const [isPlayChromeHeld, setIsPlayChromeHeld] = useState(false)
   const playChromeHeldRef = useRef(false)
-  const [isPlayAreaDrawerOpen, setIsPlayAreaDrawerOpen] = useState(true)
-  const isPlayAreaDrawerOpenRef = useRef(true)
+  const [isPlayAreaDrawerOpen, setIsPlayAreaDrawerOpen] = useState(() => {
+    if (typeof window === 'undefined') return true
+    // Desktop: overlay drawer closed by default (frees board space).
+    return !window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
+  })
+  const isPlayAreaDrawerOpenRef = useRef(
+    typeof window === 'undefined' ? true : !window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
+  )
+  const turnControlsRef = useRef<TurnControlsHandle>(null)
   const [isMobilePlayView, setIsMobilePlayView] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 600px)').matches
   )
@@ -167,8 +180,10 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       if (!mq.matches) {
         playChromeHeldRef.current = false
         setIsPlayChromeHeld(false)
-        isPlayAreaDrawerOpenRef.current = true
-        setIsPlayAreaDrawerOpen(true)
+        const desktop = window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
+        // Leaving phone: open drawer on tablet; keep closed on desktop overlay.
+        isPlayAreaDrawerOpenRef.current = !desktop
+        setIsPlayAreaDrawerOpen(!desktop)
       }
     }
     apply()
@@ -192,6 +207,11 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       setIsDesktopPlayView(desktop)
       if (docked) {
         setIsTurnHistoryOpen(true)
+      }
+      if (desktop) {
+        // Overlay drawer closed by default on desktop so board reclaims height.
+        isPlayAreaDrawerOpenRef.current = false
+        setIsPlayAreaDrawerOpen(false)
       }
     }
     apply()
@@ -1395,6 +1415,141 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     viewingTurnIndex,
   ])
 
+  const holdToHidePlayChrome = isMobilePlayView && useImageBoard
+  const showPlayAreaDrawerToggle = useImageBoard && (isMobilePlayView || isDesktopPlayView)
+  const showTurnHistoryPanel = isDockedHistoryLayout || isTurnHistoryOpen
+
+  const birdseyeMode = useMemo<'mobile3b' | 'desktop6' | null>(() => {
+    if (!useImageBoard || gameState.sandboxSetup) return null
+    if (isDesktopPlayView) return 'desktop6'
+    return 'mobile3b'
+  }, [useImageBoard, gameState.sandboxSetup, isDesktopPlayView])
+
+  const birdseyeGainsByPlayer = useMemo(
+    () => buildBirdseyeGainsByPlayer(displayState),
+    [displayState]
+  )
+  const birdseyeTroopCounts = useMemo(
+    () => birdseyeTroopDeployCounts(displayState),
+    [displayState]
+  )
+
+  const [birdseyeInteractionsHost, setBirdseyeInteractionsHost] = useState<HTMLDivElement | null>(
+    null
+  )
+
+  useEffect(() => {
+    if (!birdseyeMode) setBirdseyeInteractionsHost(null)
+  }, [birdseyeMode])
+
+  const birdseyeActions = useMemo((): BirdseyeSeatActions | null => {
+    const player = turnControlsActivePlayer
+    if (!player || !birdseyeMode) return null
+    if (isViewingHistory || gameState.sandboxSetup) return null
+    if (
+      turnControlsState.phase !== GamePhase.PLAYER_TURNS &&
+      turnControlsState.phase !== GamePhase.COMBAT
+    ) {
+      return null
+    }
+
+    const agentPlaced = Boolean(turnControlsState.currTurn?.agentSpace)
+    const canEnd = Boolean(gameState.canEndTurn)
+    const showEndTurn =
+      turnControlsState.phase === GamePhase.PLAYER_TURNS && (canEnd || agentPlaced)
+    const techCount = birdseyeTechCount(player)
+    const showTech =
+      Boolean(gameState.expansions?.riseOfIx) && turnControlsState.phase !== GamePhase.COMBAT
+    const intrigueCount = player.intrigueCount
+    const hasOpponentDiscard = Boolean(turnControlsState.currTurn?.opponentDiscardState)
+    const hasMandatoryRewards = (turnControlsState.pendingRewards ?? []).some(
+      r => !r.disabled && !r.isTrash
+    )
+    const hasRecallableAgent = Object.values(turnControlsState.occupiedSpaces ?? {}).some(ids =>
+      ids.includes(player.id)
+    )
+    const canPlayKwisatzWithNoAgents =
+      player.agents === 0 &&
+      hasRecallableAgent &&
+      player.deck.some(isKwisatzHaderachCard)
+
+    // Match TurnControls play/reveal disable rules — do NOT use endTurnButtonState.disabled
+    // (that is true whenever !canEndTurn, which would permanently disable Play).
+    return {
+      playDisabled:
+        (player.agents === 0 && !canPlayKwisatzWithNoAgents) ||
+        player.handCount === 0 ||
+        canEnd ||
+        agentPlaced ||
+        hasOpponentDiscard ||
+        hasMandatoryRewards,
+      playTitle: agentPlaced
+        ? 'You have already placed an agent this turn'
+        : hasMandatoryRewards
+          ? 'Claim pending rewards before taking new actions.'
+          : hasOpponentDiscard
+            ? 'Resolve opponent discard before taking new actions.'
+            : player.handCount === 0
+              ? 'No cards in hand.'
+              : player.agents === 0 && !canPlayKwisatzWithNoAgents
+                ? 'No agents remaining.'
+                : undefined,
+      revealDisabled:
+        canEnd ||
+        agentPlaced ||
+        turnControlsState.phase === GamePhase.COMBAT ||
+        hasOpponentDiscard ||
+        hasMandatoryRewards,
+      revealTitle: agentPlaced
+        ? 'You have already placed an agent this turn'
+        : hasMandatoryRewards
+          ? 'Claim pending rewards before taking new actions.'
+          : hasOpponentDiscard
+            ? 'Resolve opponent discard before taking new actions.'
+            : undefined,
+      intrigueDisabled: intrigueCount === 0,
+      intrigueTitle: intrigueCount === 0 ? 'No intrigue cards.' : undefined,
+      intrigueCount,
+      techCount,
+      techDisabled: techCount === 0,
+      techTitle: techCount === 0 ? 'No tech tiles.' : undefined,
+      showTech,
+      showEndTurn,
+      endTurnDisabled: endTurnButtonState.disabled,
+      endTurnTitle: endTurnButtonState.title,
+      agents: player.agents,
+      handCount: player.handCount,
+      onPlay: () => turnControlsRef.current?.openPlayCardPicker(),
+      onReveal: () => turnControlsRef.current?.openRevealPicker(),
+      onIntrigue: () =>
+        turnControlsState.phase === GamePhase.COMBAT
+          ? turnControlsRef.current?.openCombatIntriguePicker()
+          : turnControlsRef.current?.openIntriguePicker(),
+      onEndTurn: () => {
+        if (activePlayer) handleEndTurn(activePlayer.id)
+      },
+      onActivateTech: isViewingHistory ? undefined : handleActivateTech,
+    }
+  }, [
+    turnControlsActivePlayer,
+    birdseyeMode,
+    isViewingHistory,
+    gameState.sandboxSetup,
+    gameState.canEndTurn,
+    gameState.expansions?.riseOfIx,
+    turnControlsState.phase,
+    turnControlsState.currTurn?.agentSpace,
+    turnControlsState.currTurn?.opponentDiscardState,
+    turnControlsState.pendingRewards,
+    turnControlsState.occupiedSpaces,
+    endTurnButtonState.disabled,
+    endTurnButtonState.title,
+    activePlayer,
+    handleEndTurn,
+    handleActivateTech,
+  ])
+
+
   const renderImageBoard = useCallback(
     () =>
       useImageBoard ? (
@@ -1503,9 +1658,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
               : undefined
           }
           showBoardInfoTips={showBoardInfoTips}
-          ixBoardPlacement={
-            isDesktopPlayView && gameState.expansions?.riseOfIx ? 'docked' : 'embedded'
-          }
+          ixBoardPlacement="embedded"
           ixBoardMobileEmbedded={
             !isDesktopPlayView && Boolean(gameState.expansions?.riseOfIx)
           }
@@ -1525,6 +1678,13 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
               : undefined
           }
           onTechTileAcquire={handleTechTileAcquireClick}
+          birdseyeMode={birdseyeMode}
+          birdseyeActions={birdseyeActions}
+          birdseyeGainsByPlayer={birdseyeGainsByPlayer}
+          birdseyeTroopsDeployed={birdseyeTroopCounts.deployed}
+          birdseyeTroopsRetreated={birdseyeTroopCounts.retreated}
+          birdseyeIsHistoryView={isViewingHistory}
+          birdseyeInteractionsHostRef={setBirdseyeInteractionsHost}
         />
       ) : null,
     [
@@ -1557,12 +1717,12 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       handleInfluenceBoardFactionSelect,
       isDesktopPlayView,
       showBoardInfoTips,
+      birdseyeMode,
+      birdseyeActions,
+      birdseyeGainsByPlayer,
+      birdseyeTroopCounts,
     ]
   )
-
-  const holdToHidePlayChrome = isMobilePlayView && useImageBoard
-  const showPlayAreaDrawerToggle = isMobilePlayView && useImageBoard && !isDesktopPlayView
-  const showTurnHistoryPanel = isDockedHistoryLayout || isTurnHistoryOpen
 
   useEffect(() => {
     if (inSandboxSetup && !isDockedHistoryLayout) {
@@ -1601,13 +1761,14 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         'game-container',
         'game-container--play',
         isDesktopPlayView ? 'game-container--desktop-play' : '',
-        isDesktopPlayView && gameState.expansions?.riseOfIx ? 'game-container--ix-dock' : '',
         isDesktopPlayView && gameState.expansions?.immortality ? 'game-container--immortality-dock' : '',
+        birdseyeMode === 'desktop6' ? 'game-container--birdseye-desktop' : '',
         isDockedHistoryLayout ? 'game-container--history-docked' : '',
         isViewingHistory ? 'viewing-history' : '',
         isPlayChromeHeld ? 'play-chrome-held' : '',
         showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen ? 'play-area-collapsed' : '',
         showPlayAreaDrawerToggle ? 'play-footer-overlay' : '',
+        isDesktopPlayView && showPlayAreaDrawerToggle ? 'play-footer-overlay--desktop' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -1949,6 +2110,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           <div className="play-area-drawer__inner">
             <div className="turn-controls-container play-shell-footer--play-band">
               <TurnControls
+                ref={turnControlsRef}
                 activePlayer={turnControlsActivePlayer}
                 canEndTurn={isViewingHistory ? false : gameState.canEndTurn}
                 onPlayCard={handleCardSelect}
@@ -1998,8 +2160,12 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
                 activeIntrigueThisRound={turnControlsActivePlayer ? (turnControlsState.activeIntrigueThisRound?.[turnControlsActivePlayer.id] || []) : []}
                 gameState={turnControlsState}
                 isHistoryView={isViewingHistory}
-                showDesktopPlayBar={isDesktopPlayView}
-                showEndTurnButton={showFooterEndTurn && !isViewingHistory}
+                showDesktopPlayBar={false}
+                hidePrimaryTurnActions={Boolean(birdseyeMode) && isDesktopPlayView}
+                birdseyeInteractionsHost={birdseyeInteractionsHost}
+                showEndTurnButton={
+                  showFooterEndTurn && !isViewingHistory && !(birdseyeMode && isDesktopPlayView)
+                }
                 showPassCombatButton={showFooterPassCombat && !isViewingHistory}
                 onEndTurn={
                   activePlayer ? () => handleEndTurn(activePlayer.id) : undefined
@@ -2129,6 +2295,24 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         </div>
       </div>
       </div>
+      {isDesktopPlayView && showPlayAreaDrawerToggle && (
+        <button
+          type="button"
+          className={[
+            'desktop-play-drawer-toggle',
+            isPlayAreaDrawerOpen
+              ? 'desktop-play-drawer-toggle--open'
+              : 'desktop-play-drawer-toggle--closed',
+          ].join(' ')}
+          onClick={() => setPlayAreaDrawerOpen(!isPlayAreaDrawerOpen)}
+          title={isPlayAreaDrawerOpen ? 'Hide play area' : 'Show play area'}
+          aria-label={isPlayAreaDrawerOpen ? 'Hide play area' : 'Show play area'}
+          aria-expanded={isPlayAreaDrawerOpen}
+          aria-controls="play-area-drawer"
+        >
+          {isPlayAreaDrawerOpen ? '▾ Play area' : '▴ Play area'}
+        </button>
+      )}
       </div>
       </div>
       {showTurnHistoryPanel && !isDockedHistoryLayout && (

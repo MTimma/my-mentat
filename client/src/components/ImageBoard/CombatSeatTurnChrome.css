@@ -1,0 +1,360 @@
+/* Birds-eye seat chrome — mobile 3b / desktop 6 */
+
+.birdseye-seat-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 2rem;
+  height: 2.15rem;
+  padding: 0 0.2rem;
+  border: 1px dashed rgba(212, 177, 106, 0.5);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--chrome-text, #fff8e8);
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  pointer-events: auto;
+}
+
+.birdseye-seat-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.birdseye-seat-btn--end-turn {
+  min-width: 3.6rem;
+  height: 2rem;
+  padding: 0 0.45rem;
+  border: 2px solid var(--chrome-cta-border, #d4b16a);
+  background: var(--chrome-cta-bg, #8a6a28);
+  color: var(--chrome-cta-text, #fff8e8);
+  font-size: 0.58rem;
+}
+
+.birdseye-seat-btn--intrigue {
+  border-color: rgba(143, 97, 188, 0.55);
+  width: 1.85rem;
+  min-width: 1.85rem;
+}
+
+.birdseye-seat-btn--intrigue img,
+.birdseye-seat-btn--tech img {
+  width: 1rem;
+  height: auto;
+  display: block;
+}
+
+.birdseye-seat-btn--tech img {
+  width: 1.1rem;
+}
+
+.birdseye-seat-btn__badge,
+.birdseye-seat-btn__count {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  min-width: 0.95rem;
+  height: 0.95rem;
+  padding: 0 0.15rem;
+  border-radius: 999px;
+  background: rgba(7, 6, 5, 0.92);
+  border: 1px solid rgba(244, 228, 188, 0.42);
+  font-size: 0.58rem;
+  font-weight: 900;
+  line-height: 0.95rem;
+  text-align: center;
+}
+
+.birdseye-seat-btn--reveal .birdseye-seat-btn__count {
+  position: static;
+  border: none;
+  background: transparent;
+  font-size: 0.75rem;
+  line-height: 1;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+}
+
+.birdseye-seat-btn__label {
+  line-height: 1;
+}
+
+.birdseye-seat-btn__agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 0.55rem;
+}
+
+.birdseye-seat-btn__agent-icon {
+  width: 0.65rem;
+  height: 0.85rem;
+}
+
+.birdseye-seat-btn__agent-count {
+  font-weight: 900;
+  font-size: 0.62rem;
+}
+
+.birdseye-seat__primary,
+.birdseye-seat__utils {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  pointer-events: auto;
+}
+
+.birdseye-seat__interactions {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.15rem;
+  pointer-events: auto;
+}
+
+.birdseye-seat__interactions:empty {
+  display: none;
+}
+
+.birdseye-seat__controls-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  min-width: 0;
+  pointer-events: auto;
+}
+
+.birdseye-seat__controls-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  padding: 0.15rem;
+  pointer-events: auto;
+}
+
+.birdseye-seat__controls-stack .birdseye-seat__utils {
+  padding-top: 0.3rem;
+  border-top: 1px solid rgba(255, 248, 232, 0.28);
+}
+
+.birdseye-seat__overlay-utils {
+  position: absolute;
+  top: 0.35rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.2rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 248, 232, 0.22);
+  pointer-events: auto;
+}
+
+.birdseye-seat-tech-panel {
+  position: absolute;
+  z-index: 12;
+  left: 0.25rem;
+  right: 0.25rem;
+  top: 2.4rem;
+  padding: 0.25rem;
+  border-radius: 4px;
+  background: rgba(8, 10, 14, 0.94);
+  border: 1px solid rgba(255, 248, 232, 0.2);
+  max-height: 6rem;
+  overflow: auto;
+}
+
+.birdseye-seat__controls-stack .birdseye-seat-tech-panel {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  max-height: 8rem;
+}
+
+.birdseye-seat-gains {
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 0.2rem 0.15rem;
+  background: rgba(0, 0, 0, 0.38);
+  border-top: 1px solid rgba(255, 248, 232, 0.1);
+  max-height: 7.5rem;
+  overflow: auto;
+  pointer-events: auto;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains {
+  border-top: none;
+  border-left: 1px solid rgba(255, 248, 232, 0.1);
+  max-height: none;
+  max-width: 11rem;
+  flex: 1 1 auto;
+  align-self: stretch;
+}
+
+.birdseye-seat-gains .turn-gains-display {
+  font-size: 0.72em;
+}
+
+.birdseye-seat-gains .gain-title,
+.birdseye-seat-gains .turn-gain-source-title {
+  font-size: 0.72em;
+  color: var(--chrome-text-muted, rgba(255, 248, 232, 0.65));
+}
+
+.birdseye-interactions-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
+  width: 100%;
+  min-width: 0;
+  max-height: 7.5rem;
+  overflow: auto;
+  pointer-events: auto;
+}
+
+.birdseye-interactions-strip .effects-inline-panel--birdseye {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+}
+
+.birdseye-interactions-strip .effect-chip-group {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.birdseye-interactions-strip .effect-chip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+}
+
+.birdseye-interactions-strip .effect-btn,
+.birdseye-interactions-strip .get-mandatory-effects-button--birdseye {
+  font-size: 0.58rem;
+  padding: 0.15rem 0.3rem;
+  min-height: 1.35rem;
+  white-space: nowrap;
+}
+
+/* Seat layout wrappers */
+.combat-area-cluster__seat--birdseye {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: visible;
+}
+
+.combat-area-cluster--row .combat-area-cluster__seat--birdseye {
+  height: auto;
+  min-height: clamp(10rem, 40vw, 14.5rem);
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat {
+  height: auto;
+  min-height: clamp(5.75rem, 15vmin, 8rem);
+}
+
+.combat-area-cluster--column .combat-area-cluster__seat--birdseye {
+  flex-direction: row;
+  align-items: stretch;
+  height: auto;
+  min-height: clamp(5.75rem, 15vmin, 8rem);
+}
+
+.combat-area-cluster__seat-top {
+  flex-shrink: 0;
+  min-height: 2.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  padding: 0.15rem;
+  background: rgba(0, 0, 0, 0.55);
+  border-bottom: 1px solid rgba(255, 248, 232, 0.12);
+  pointer-events: auto;
+}
+
+.combat-area-cluster__seat-top .birdseye-seat__interactions {
+  flex: 1 1 auto;
+  max-width: none;
+}
+
+.combat-area-cluster__seat-top-spacer {
+  flex-shrink: 0;
+  height: 2.35rem;
+}
+
+.combat-area-cluster__seat-chrome {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.combat-area-cluster--column .combat-area-cluster__seat-chrome {
+  flex: 0 0 auto;
+  width: clamp(7rem, 18vmin, 10.5rem);
+}
+
+/* Gold border on chrome only (not gains) */
+.combat-area-cluster__seat--active.combat-area-cluster__seat--birdseye::after {
+  display: none;
+}
+
+.combat-area-cluster__seat--active .combat-area-cluster__seat-chrome::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255, 215, 0, 0.92);
+  pointer-events: none;
+  z-index: 20;
+  box-sizing: border-box;
+}
+
+.combat-area-cluster--column .combat-area-cluster__seat--active .combat-area-cluster__seat-chrome::after,
+.combat-area-cluster--column .combat-area-cluster__seat--active .birdseye-seat__controls-stack {
+  /* desktop: border wraps chrome; controls sit outside to the left */
+}
+
+.combat-area-cluster--row.combat-area-cluster--birdseye {
+  height: auto;
+  overflow-x: auto;
+  overflow-y: visible;
+  align-items: flex-start;
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye {
+  gap: 0.35rem;
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat--birdseye {
+  width: 100%;
+}

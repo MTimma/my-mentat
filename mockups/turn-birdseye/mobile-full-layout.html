@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="void">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Mobile — big profiles (today’s layout)</title>
+  <link rel="stylesheet" href="_shared-mockup.css?v=5" />
+</head>
+<body>
+  <div class="mobile-frame">
+    <header class="mockup-page-header">
+      <h1>Mobile — big profiles</h1>
+      <p>
+        Same as today: board above, horizontal big portraits below.
+        Active controls sit in a strip above the profile row (not a separate leader UI).
+      </p>
+      <nav class="mockup-nav">
+        <a href="README.md">Index</a>
+        <a href="desktop-full-layout.html">Desktop</a>
+      </nav>
+    </header>
+
+    <div class="mobile-board">Board (same as now)</div>
+
+    <!-- Active turn controls above profiles -->
+    <div class="mobile-actions">
+      <div class="btn-grid-2x2">
+        <button type="button" class="action-btn action-btn--play"><span class="action-btn__label">Play</span></button>
+        <button type="button" class="action-btn action-btn--reveal"><span class="action-btn__count">3</span><span class="action-btn__label">Rev</span></button>
+        <button type="button" class="action-btn action-btn--intrigue"><img src="assets/intrigue.png" alt="" /><span class="action-btn__count--overlay">2</span></button>
+        <button type="button" class="action-btn action-btn--tech"><img src="assets/tech.png" alt="" /><span class="action-btn__label">Tech</span></button>
+      </div>
+      <div class="mobile-actions__gains gains-style-b">
+        <div class="gains-expandable">
+          <input type="checkbox" id="mob-gains" class="gains-expandable__toggle" />
+          <div class="gains-expandable__shell">
+            <div class="gains-panel gains-expandable__body">
+              <div class="gains-display">
+                <div class="gain-group">
+                  <span class="gain-title">Signet Ring → Hagga Basin</span>
+                  <div class="gain-flow">
+                    <span class="gain-side gain-side--cost"><img src="assets/water.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--cost">1</span></span>
+                    <span class="gain-arrow">→</span>
+                    <span class="gain-side gain-side--reward"><img src="assets/spice.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">4</span></span>
+                  </div>
+                </div>
+                <div class="gain-group">
+                  <span class="gain-title">Deployed</span>
+                  <div class="gain-flow">
+                    <span class="gain-side gain-side--cost"><img src="assets/deploy.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--cost">4</span></span>
+                  </div>
+                </div>
+                <div class="gain-group">
+                  <span class="gain-title">Hagga Basin</span>
+                  <div class="gain-flow">
+                    <span class="gain-side gain-side--reward"><img src="assets/troop.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">2</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <label for="mob-gains" class="gains-expandable__more"></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Big profile row (combat-area-cluster--row) -->
+    <div class="mobile-profiles">
+      <div class="combat-seat">
+        <div class="combat-quadrant combat-quadrant--blue">
+          <div class="combat-leader"><img src="assets/baron.avif" alt="Baron" /></div>
+          <div class="combat-resources">
+            <div class="combat-resources-grid">
+              <span class="combat-res"><img src="assets/spice.png" alt="" />3</span>
+              <span class="combat-res"><img src="assets/solari.png" alt="" />9</span>
+              <span class="combat-res"><img src="assets/water.png" alt="" />0</span>
+              <span class="combat-res"><img src="assets/troop.png" alt="" />4</span>
+              <span class="combat-res"><img src="assets/draw.png" alt="" />2</span>
+              <span class="combat-res"><img src="assets/intrigue.png" alt="" />3</span>
+              <span class="combat-res"><img src="assets/agent.png" alt="" />0</span>
+              <span class="combat-res"><img src="assets/vp.png" alt="" />3</span>
+            </div>
+          </div>
+        </div>
+        <div class="combat-status"><img src="assets/troop.png" alt="" /> 1</div>
+        <div class="mobile-seat-gains gains-style-b">
+          <div class="gains-panel">
+            <div class="gains-display">
+              <div class="gain-flow">
+                <span class="gain-side gain-side--reward"><img src="assets/solari.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">2</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="combat-seat">
+        <div class="combat-quadrant combat-quadrant--green">
+          <div class="combat-leader"><img src="assets/helena.avif" alt="Helena" /></div>
+          <div class="combat-resources">
+            <div class="combat-resources-grid">
+              <span class="combat-res"><img src="assets/spice.png" alt="" />2</span>
+              <span class="combat-res"><img src="assets/solari.png" alt="" />5</span>
+              <span class="combat-res"><img src="assets/water.png" alt="" />2</span>
+              <span class="combat-res"><img src="assets/troop.png" alt="" />3</span>
+              <span class="combat-res"><img src="assets/draw.png" alt="" />0</span>
+              <span class="combat-res"><img src="assets/intrigue.png" alt="" />1</span>
+              <span class="combat-res"><img src="assets/agent.png" alt="" />0</span>
+              <span class="combat-res"><img src="assets/vp.png" alt="" />1</span>
+            </div>
+          </div>
+        </div>
+        <div class="combat-status">Reveal</div>
+        <div class="mobile-seat-gains gains-style-b">
+          <div class="gains-panel">
+            <div class="gains-display">
+              <div class="gain-flow">
+                <span class="gain-side gain-side--reward"><span class="gain-persuasion-diamond"></span><span class="gain-amt gain-amt--gain">4</span></span>
+                <span class="gain-side gain-side--reward"><img src="assets/sword.png" alt="" class="gain-icon" /><span class="gain-amt gain-amt--gain">3</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="combat-seat combat-seat--active">
+        <div class="combat-quadrant combat-quadrant--red">
+          <div class="combat-leader"><img src="assets/paul.avif" alt="Paul" /></div>
+          <div class="combat-resources">
+            <div class="combat-resources-grid">
+              <span class="combat-res"><img src="assets/spice.png" alt="" />4</span>
+              <span class="combat-res"><img src="assets/solari.png" alt="" />7</span>
+              <span class="combat-res"><img src="assets/water.png" alt="" />1</span>
+              <span class="combat-res"><img src="assets/troop.png" alt="" />5</span>
+              <span class="combat-res"><img src="assets/draw.png" alt="" />3</span>
+              <span class="combat-res"><img src="assets/intrigue.png" alt="" />2</span>
+              <span class="combat-res"><img src="assets/agent.png" alt="" />2</span>
+              <span class="combat-res"><img src="assets/vp.png" alt="" />2</span>
+            </div>
+          </div>
+        </div>
+        <div class="combat-status"><img src="assets/troop.png" alt="" /> 2 · str 4</div>
+      </div>
+
+      <div class="combat-seat">
+        <div class="combat-quadrant combat-quadrant--yellow">
+          <div class="combat-leader"><img src="assets/leto.avif" alt="Leto" /></div>
+          <div class="combat-resources">
+            <div class="combat-resources-grid">
+              <span class="combat-res"><img src="assets/spice.png" alt="" />1</span>
+              <span class="combat-res"><img src="assets/solari.png" alt="" />3</span>
+              <span class="combat-res"><img src="assets/water.png" alt="" />1</span>
+              <span class="combat-res"><img src="assets/troop.png" alt="" />2</span>
+              <span class="combat-res"><img src="assets/draw.png" alt="" />4</span>
+              <span class="combat-res"><img src="assets/intrigue.png" alt="" />0</span>
+              <span class="combat-res"><img src="assets/agent.png" alt="" />1</span>
+              <span class="combat-res"><img src="assets/vp.png" alt="" />0</span>
+            </div>
+          </div>
+        </div>
+        <div class="combat-status">waiting…</div>
+      </div>
+    </div>
+
+    <div class="mobile-toolbar">
+      <div class="leader-head"><img src="assets/paul-head.png" alt="" /></div>
+      <span style="font-size:0.65rem;color:var(--chrome-text-muted);">toolbar</span>
+      <div class="mobile-toolbar__spacer"></div>
+      <button type="button" class="end-turn-btn">End Turn</button>
+    </div>
+  </div>
+</body>
+</html>
