@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { applyGameAction, getFreshDefaultGameState } from '../GameContext'
+import { applyGameAction, getFreshDefaultGameState, buildCombatResolutionView } from '../GameContext'
 import { IMPERIUM_ROW_DECK, SPICE_MUST_FLOW_DECK, STARTING_DECK } from '../../../catalog/runtime'
 import { intrigueCards } from '../../../services/IntrigueDeckService'
 import {
@@ -568,9 +568,11 @@ describe('Intrigue cards — combat phase', () => {
     expect(s.combatPasses.has(1)).toBe(false)
     expect(s.combatPasses.has(2)).toBe(false)
     expect(s.activePlayerId).toBe(0)
+    expect(s.currTurn?.playerId).toBe(0)
     s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 0 })
     expect(s.phase).toBe(GamePhase.COMBAT)
     expect(s.activePlayerId).toBe(1)
+    expect(s.currTurn?.playerId).toBe(1)
   })
 
   it('playing combat intrigue advances to next seat so earlier passers can act again', () => {
@@ -584,8 +586,10 @@ describe('Intrigue cards — combat phase', () => {
     expect(s.combatPasses.has(0)).toBe(false)
     expect(s.combatPasses.has(1)).toBe(false)
     expect(s.activePlayerId).toBe(3)
+    expect(s.currTurn?.playerId).toBe(3)
     s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 3 })
     expect(s.activePlayerId).toBe(0)
+    expect(s.currTurn?.playerId).toBe(0)
   })
 
   it('player with multiple combat intrigue cards may play again before passing', () => {
@@ -598,11 +602,13 @@ describe('Intrigue cards — combat phase', () => {
     expect(s.combatStrength[0]).toBe(8)
     expect(s.players[0].intrigueCount).toBe(1)
     expect(s.activePlayerId).toBe(0)
+    expect(s.currTurn?.playerId).toBe(0)
     expect(s.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toEqual([1])
     s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 27 })
     expect(s.players[0].intrigueCount).toBe(0)
     expect(s.combatStrength[0]).toBe(10)
     expect(s.activePlayerId).toBe(1)
+    expect(s.currTurn?.playerId).toBe(1)
   })
 
   it('START_COMBAT_PHASE auto-passes players without intrigue', () => {
@@ -667,6 +673,39 @@ describe('Intrigue cards — combat phase', () => {
     let s = combatFourPlayerState()
     s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 27 })
     expect(s.combatStrength[0]).toBe(6)
+  })
+
+  it('keeps played combat intrigue names on the live view and history snapshot', () => {
+    let s = combatFourPlayerState()
+    s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 1 })
+    expect(s.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toContain(1)
+    expect(
+      s.gains?.some(g => g.source === GainSource.INTRIGUE && g.sourceId === 1 && g.playerId === 0)
+    ).toBe(true)
+
+    const liveView = buildCombatResolutionView(s)
+    expect(
+      liveView.gains?.some(g => g.source === GainSource.INTRIGUE && g.sourceId === 1 && g.playerId === 0)
+    ).toBe(true)
+    expect(liveView.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toContain(1)
+
+    let guard = 0
+    while (s.phase === GamePhase.COMBAT && guard++ < 12) {
+      s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: s.activePlayerId })
+    }
+    expect(s.phase).toBe(GamePhase.COMBAT_REWARDS)
+    expect(s.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toContain(1)
+
+    const rewardsView = buildCombatResolutionView(s)
+    expect(rewardsView.historyEntryKind).toBe('combat')
+    expect(rewardsView.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toContain(1)
+
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    const combat = s.history.find(h => h.historyEntryKind === 'combat')
+    expect(combat?.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toContain(1)
+    expect(
+      combat?.gains?.some(g => g.source === GainSource.INTRIGUE && g.sourceId === 1)
+    ).toBe(true)
   })
 
   it('Master Tactician (17): choose +3 strength', () => {

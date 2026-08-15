@@ -93,6 +93,12 @@
   letter-spacing: 0.02em;
 }
 
+.history-banner-toolbar .play-area-drawer-toggle {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 8;
+}
+
 .history-banner-toolbar .play-area-drawer-toggle__icon {
   transition: transform 0.2s ease;
 }
@@ -121,17 +127,17 @@
 @media (max-width: 600px) {
   .history-banner-toolbar .see-leader-button,
   .history-banner-toolbar .history-toolbar-button {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
   }
 
   .history-banner-toolbar .utility-action-icon {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
   }
 
   .history-banner-toolbar {
-    gap: 4px;
-    padding-right: 6px;
+    gap: 3px;
+    padding-right: 4px;
   }
 }

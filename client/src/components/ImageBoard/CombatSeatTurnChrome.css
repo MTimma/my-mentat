@@ -6,6 +6,7 @@
   align-items: center;
   justify-content: center;
   gap: 1px;
+  box-sizing: border-box;
   min-width: 2rem;
   height: 2.15rem;
   padding: 0 0.2rem;
@@ -28,6 +29,7 @@
 }
 
 .birdseye-seat-btn--end-turn {
+  grid-column: 1 / -1;
   min-width: 3.6rem;
   height: 2rem;
   padding: 0 0.45rem;
@@ -39,8 +41,11 @@
 
 .birdseye-seat-btn--intrigue {
   border-color: rgba(143, 97, 188, 0.55);
-  width: 1.85rem;
-  min-width: 1.85rem;
+}
+
+.birdseye-seat-btn--intrigue,
+.birdseye-seat-btn--tech {
+  min-width: 2.7rem;
 }
 
 .birdseye-seat-btn--intrigue img,
@@ -54,8 +59,7 @@
   width: 1.1rem;
 }
 
-.birdseye-seat-btn__badge,
-.birdseye-seat-btn__count {
+.birdseye-seat-btn__badge {
   position: absolute;
   top: -0.25rem;
   right: -0.25rem;
@@ -71,61 +75,140 @@
   text-align: center;
 }
 
-.birdseye-seat-btn--reveal .birdseye-seat-btn__count {
-  position: static;
-  border: none;
-  background: transparent;
-  font-size: 0.75rem;
-  line-height: 1;
-  min-width: 0;
-  height: auto;
+.birdseye-seat-btn--play,
+.birdseye-seat-btn--reveal {
+  min-width: 2.7rem;
+  overflow: visible;
   padding: 0;
+  isolation: isolate;
+}
+
+.birdseye-seat-btn--play.birdseye-seat-btn--has-card {
+  overflow: visible;
+}
+
+.birdseye-seat-btn--play .birdseye-seat-btn__label,
+.birdseye-seat-btn--reveal .birdseye-seat-btn__label {
+  position: absolute;
+  top: 0;
+  left: 0.04rem;
+  right: 0.04rem;
+  transform: translateY(-50%);
+  z-index: 2;
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+  font-size: 0.5rem;
+  letter-spacing: 0.015em;
+  text-shadow:
+    0 0 3px rgba(0, 0, 0, 0.95),
+    0 1px 2px #000,
+    0 0 8px rgba(0, 0, 0, 0.85);
 }
 
 .birdseye-seat-btn__label {
   line-height: 1;
 }
 
+.birdseye-seat-btn__cards.reveal-cards-icon {
+  position: absolute;
+  inset: 0.06rem;
+  width: auto;
+  height: auto;
+  z-index: 0;
+  pointer-events: none;
+}
+
 .birdseye-seat-btn__agent {
-  display: inline-flex;
+  position: absolute;
+  inset: 0.08rem 0.06rem 0.06rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Fill the dashed Play box. Square PNG + mask contain keeps the meeple unstretched. */
+.birdseye-seat-btn--play .birdseye-seat-btn__agent-icon.agent {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+}
+
+.birdseye-seat-btn--has-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0.72rem;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.82), transparent);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.birdseye-seat-btn__card-thumb {
+  position: absolute;
+  top: 0.04rem;
+  bottom: 0.04rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: auto;
+  aspect-ratio: 5 / 7;
+  max-width: calc(100% - 0.08rem);
+  overflow: hidden;
+  border-radius: 2px;
+  z-index: 0;
+  pointer-events: none;
+  background: #0f0d0a;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.birdseye-seat-btn__card-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center top;
+}
+
+/* Drawer closed: do not keep a selected-card chip on the 44px Play key. */
+.game-container--play.play-area-collapsed .birdseye-rim .birdseye-seat-btn__card-thumb,
+.game-container--play.play-area-collapsed .birdseye-rim .birdseye-seat-btn--has-card::after {
+  display: none;
+}
+
+.birdseye-seat-btn__hand-count {
+  position: absolute;
+  inset: 0;
+  display: flex;
   align-items: center;
-  gap: 1px;
-  font-size: 0.55rem;
-}
-
-.birdseye-seat-btn__agent-icon {
-  width: 0.65rem;
-  height: 0.85rem;
-}
-
-.birdseye-seat-btn__agent-count {
+  justify-content: center;
+  z-index: 1;
   font-weight: 900;
-  font-size: 0.62rem;
+  font-size: 0.95rem;
+  line-height: 1;
+  letter-spacing: 0;
+  text-align: center;
+  pointer-events: none;
 }
 
 .birdseye-seat__primary,
 .birdseye-seat__utils {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  pointer-events: auto;
-}
-
-.birdseye-seat__interactions {
-  flex: 1 1 auto;
-  min-width: 0;
-  max-width: 9rem;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(2.7rem, 1fr) minmax(2.7rem, 1fr);
   align-items: stretch;
-  justify-content: center;
-  gap: 0.15rem;
+  gap: 0.25rem;
+  width: 100%;
+  box-sizing: border-box;
   pointer-events: auto;
 }
 
-.birdseye-seat__interactions:empty {
-  display: none;
+.birdseye-seat__primary .birdseye-seat-btn,
+.birdseye-seat__utils .birdseye-seat-btn {
+  width: 100%;
 }
 
 .birdseye-seat__controls-row {
@@ -143,30 +226,333 @@
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
-  gap: 0.3rem;
+  gap: 0.18rem;
   flex-shrink: 0;
-  padding: 0.15rem;
+  padding: 0.12rem;
   pointer-events: auto;
 }
 
 .birdseye-seat__controls-stack .birdseye-seat__utils {
-  padding-top: 0.3rem;
+  padding-top: 0.18rem;
   border-top: 1px solid rgba(255, 248, 232, 0.28);
 }
 
-.birdseye-seat__overlay-utils {
-  position: absolute;
-  top: 0.35rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 8;
+/* Deploy hang-left panel (sibling left of Play/End Turn stack). */
+.birdseye-seat__deploy {
   display: flex;
-  gap: 0.3rem;
-  padding: 0.2rem;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 248, 232, 0.22);
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+  min-width: 0;
+  padding: 0.22rem 0.28rem;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid rgba(255, 248, 232, 0.32);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
   pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.birdseye-seat__deploy-heading {
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 215, 0, 0.88);
+  text-align: center;
+  line-height: 1;
+  padding-bottom: 0.08rem;
+  border-bottom: 1px solid rgba(255, 248, 232, 0.18);
+}
+
+.birdseye-seat__deploy:empty,
+.birdseye-seat__deploy-dock:empty,
+.birdseye-seat__deploy:has(.combat-deploy-dock[hidden]) {
+  display: none;
+}
+
+.birdseye-seat__deploy-dock .combat-deploy-dock {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.28rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.birdseye-seat__deploy-dock .combat-deploy-dock[hidden] {
+  display: none;
+}
+
+.birdseye-seat__deploy-dock .combat-deploy-dock__controls.combat-troop-controls {
+  width: 100%;
+  min-width: 7.5rem;
+  gap: 0.2rem;
+  padding: 0.28rem 0.32rem;
+  border-radius: 4px;
+  border: 1px dashed rgba(212, 177, 106, 0.45);
+  background: rgba(8, 7, 6, 0.55);
+  box-shadow: none;
+  backdrop-filter: none;
+  box-sizing: border-box;
+}
+
+.birdseye-seat__deploy-dock .combat-deploy-dock__controls--dreadnought.combat-troop-controls {
+  border-color: rgba(140, 180, 255, 0.45);
+}
+
+.birdseye-seat__deploy-dock .combat-deploy-dock__controls--specimen.combat-troop-controls {
+  border-color: rgba(130, 200, 140, 0.45);
+}
+
+.birdseye-seat__deploy-dock .troop-action-unit-label {
+  font-size: 0.5rem;
+  color: rgba(255, 248, 232, 0.78);
+}
+
+.birdseye-seat__deploy-dock .troop-action-row {
+  gap: 0.28rem;
+}
+
+.birdseye-seat__deploy-dock .troop-action-button,
+.birdseye-seat__deploy-dock .troop-action-status {
+  min-height: 2.55rem;
+  padding: 0.24rem 0.42rem;
+  border-radius: 4px;
+  border-style: dashed;
+}
+
+.birdseye-seat__deploy-dock .troop-action-button {
+  min-width: 3.7rem;
+  flex-direction: column;
+  gap: 0.12rem;
+  font-size: 0.55rem;
+  transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.birdseye-seat__deploy-dock .troop-action-button .troop-action-btn-text {
+  font-size: 0.5rem;
+}
+
+.birdseye-seat__deploy-dock .troop-action-glyphs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
+}
+
+.birdseye-seat__deploy-dock .troop-action-button:hover:not(:disabled) {
+  background: rgba(20, 16, 10, 0.88);
+  border-color: rgba(255, 215, 0, 0.55);
+  transform: translateY(-1px);
+}
+
+.birdseye-seat__deploy-dock .troop-action-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.birdseye-seat__deploy-dock .troop-action-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.birdseye-seat__deploy-dock .troop-action-icon--dreadnought.dreadnought-icon {
+  width: 0.95rem;
+  height: 1.2rem;
+}
+
+.birdseye-seat__deploy-dock .troop-action-arrow {
+  font-size: 0.95rem;
+}
+
+.birdseye-seat__deploy-dock .troop-available-count,
+.birdseye-seat__deploy-dock .troop-deployed-count {
+  min-width: 1.05rem;
+  height: 1.05rem;
+  font-size: 0.68rem;
+}
+
+.birdseye-seat__deploy-dock .troop-action-status-label {
+  font-size: 0.48rem;
+}
+
+.birdseye-seat__deploy-dock .troop-undeploy-button {
+  min-width: 2.35rem;
+}
+
+/* Mobile chrome strip: deploy left of Play/Reveal column, above the portrait. */
+.birdseye-seat__overlay-utils,
+.birdseye-seat__overlay-actions {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  z-index: 22;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  overflow: hidden;
+}
+
+.birdseye-seat__overlay-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.2rem;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.birdseye-seat__overlay-core {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.12rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  pointer-events: auto;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat__deploy {
+  align-self: stretch;
+  flex: 0 1 auto;
+  flex-shrink: 1;
+  max-width: 42%;
+  max-height: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0.08rem 0.1rem;
+  gap: 0.08rem;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  animation: birdseye-deploy-append-left 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat__deploy-heading,
+.birdseye-seat__overlay-actions .troop-action-unit-label,
+.birdseye-seat__overlay-actions .troop-action-btn-text {
+  display: none;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat__deploy-dock .combat-deploy-dock {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0.08rem;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.birdseye-seat__overlay-actions
+  .birdseye-seat__deploy-dock
+  .combat-deploy-dock__controls.combat-troop-controls {
+  min-width: 0;
+  width: auto;
+  flex: 1 1 100%;
+  padding: 0.04rem;
+  gap: 0.04rem;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat__deploy-dock .troop-action-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.06rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat__deploy-dock .troop-action-button,
+.birdseye-seat__overlay-actions .birdseye-seat__deploy-dock .troop-action-status {
+  min-width: 0;
+  width: auto;
+  flex: 1 1 auto;
+  min-height: 1.1rem;
+  padding: 0.04rem 0.06rem;
+  flex-direction: row;
+  gap: 0.06rem;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat__deploy-dock .troop-undeploy-button {
+  min-width: 0;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat__deploy-dock .troop-action-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat__deploy-dock .troop-action-arrow {
+  font-size: 0.7rem;
+}
+
+.birdseye-seat__overlay-actions > *,
+.birdseye-seat__overlay-utils > *,
+.birdseye-seat__overlay-row > * {
+  pointer-events: auto;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat__primary,
+.birdseye-seat__overlay-actions .birdseye-seat__utils {
+  gap: 0.18rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+/* Mobile chrome strip: Play/Reveal/Intr/Tech above the leader art. */
+.birdseye-seat__overlay-actions .birdseye-seat-btn {
+  height: 1.85rem;
+  min-width: 0;
+  font-size: 0.5rem;
+  padding: 0 0.22rem;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat-btn--end-turn {
+  height: 2.2rem;
+  min-width: 0;
+  font-size: 0.58rem;
+  padding: 0 0.4rem;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat-btn--play,
+.birdseye-seat__overlay-actions .birdseye-seat-btn--reveal {
+  height: 2.4rem;
+  min-width: 0;
+  padding: 0;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat-btn--intrigue,
+.birdseye-seat__overlay-actions .birdseye-seat-btn--tech {
+  height: 1.85rem;
+  min-width: 0;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat-btn--intrigue img,
+.birdseye-seat__overlay-actions .birdseye-seat-btn--tech img {
+  width: 1.05rem;
 }
 
 .birdseye-seat-tech-panel {
@@ -174,13 +560,20 @@
   z-index: 12;
   left: 0.25rem;
   right: 0.25rem;
-  top: 2.4rem;
+  top: 2.1rem;
   padding: 0.25rem;
   border-radius: 4px;
   background: rgba(8, 10, 14, 0.94);
   border: 1px solid rgba(255, 248, 232, 0.2);
   max-height: 6rem;
   overflow: auto;
+}
+
+.combat-area-cluster--row .birdseye-seat-tech-panel {
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  max-height: 100%;
 }
 
 .birdseye-seat__controls-stack .birdseye-seat-tech-panel {
@@ -202,13 +595,137 @@
   pointer-events: auto;
 }
 
+.combat-area-cluster--row .birdseye-seat-gains {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: visible;
+  box-sizing: border-box;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-source-title,
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-source-title--totals {
+  display: none;
+}
+
+/* Totals hidden for now — keep markup/CSS; do not delete. */
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-totals-group,
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-totals-group {
+  display: none !important;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gains-display-root,
+.combat-area-cluster--row .birdseye-seat-gains .turn-gains-display-root--with-totals,
+.combat-area-cluster--row .birdseye-seat-gains .birdseye-seat-gains__display {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gains-display-root--totals-only {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0;
+  max-height: none;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gains-display-root--totals-only .turn-gains-display {
+  display: none;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-totals-group {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gains-display,
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-totals-row {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  font-size: 0.58em;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-source-group {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-source-flow,
+.combat-area-cluster--row .birdseye-seat-gains .turn-gains-side {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1px 2px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-resource-icon,
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-total-icon,
+.combat-area-cluster--row .birdseye-seat-gains .gain-icon {
+  width: 10px;
+  height: 10px;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-totals-row {
+  padding: 0;
+  border: none;
+  background: transparent;
+  gap: 1px;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-total-item {
+  padding: 0 1px;
+}
+
+.combat-area-cluster--row .birdseye-seat__interactions {
+  display: none;
+}
+
 .combat-area-cluster--column .birdseye-seat-gains {
   border-top: none;
   border-left: 1px solid rgba(255, 248, 232, 0.1);
   max-height: none;
-  max-width: 11rem;
+  max-width: none;
   flex: 1 1 auto;
+  min-width: 0;
   align-self: stretch;
+  box-sizing: border-box;
+  padding: 0.28rem 0.35rem 0.32rem;
+}
+
+/* Inactive seats stay compact so the column does not explode empty panels. */
+.combat-area-cluster--column
+  .combat-area-cluster__seat:not(.combat-area-cluster__seat--active)
+  .birdseye-seat-gains {
+  flex: 0 1 11rem;
+  max-width: 11rem;
+  padding: 0.2rem 0.15rem;
 }
 
 .birdseye-seat-gains .turn-gains-display {
@@ -221,23 +738,96 @@
   color: var(--chrome-text-muted, rgba(255, 248, 232, 0.65));
 }
 
+/*
+ * Desktop column: labeled source cells in a wrapping grid that grows with leftover
+ * width. Vertical stack when narrow; extra columns as the dock widens.
+ */
+.combat-area-cluster--column .birdseye-seat-gains .turn-gains-display {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.75rem, 1fr));
+  align-items: start;
+  gap: 0.4rem 0.65rem;
+  font-size: 0.86em;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-group {
+  min-width: 0;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-title {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  font-size: 0.78em;
+  line-height: 1.25;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-flow {
+  flex-wrap: wrap;
+  row-gap: 0.2rem;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-resource-icon,
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-combat-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-resource-amt,
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-combat-count {
+  font-size: 0.82rem;
+}
+
+.combat-area-cluster--column
+  .combat-area-cluster__seat:not(.combat-area-cluster__seat--active)
+  .birdseye-seat-gains
+  .turn-gains-display {
+  grid-template-columns: 1fr;
+  font-size: 0.72em;
+  gap: 0.28rem 0.4rem;
+}
+
+.combat-area-cluster--column
+  .combat-area-cluster__seat:not(.combat-area-cluster__seat--active)
+  .birdseye-seat-gains
+  .turn-gain-source-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-totals-row {
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  padding: 0.28rem 0.32rem;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-total-amt {
+  font-size: 0.82rem;
+}
+
 .birdseye-interactions-strip {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.2rem;
   width: 100%;
   min-width: 0;
-  max-height: 7.5rem;
+  max-height: 4.5rem;
   overflow: auto;
   pointer-events: auto;
 }
 
 .birdseye-interactions-strip .effects-inline-panel--birdseye {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.15rem;
   margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .birdseye-interactions-strip .effect-chip-group {
@@ -245,6 +835,10 @@
   padding: 0;
   border: none;
   background: transparent;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.15rem;
 }
 
 .birdseye-interactions-strip .effect-chip-actions {
@@ -269,9 +863,22 @@
   overflow: visible;
 }
 
+.combat-area-cluster__seat-main {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
 .combat-area-cluster--row .combat-area-cluster__seat--birdseye {
   height: auto;
-  min-height: clamp(10rem, 40vw, 14.5rem);
+  min-height: 0;
+  max-height: none;
+  overflow-x: hidden;
+  min-width: 0;
+  max-width: 25%;
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat {
@@ -280,33 +887,163 @@
 }
 
 .combat-area-cluster--column .combat-area-cluster__seat--birdseye {
-  flex-direction: row;
+  flex-direction: column;
   align-items: stretch;
   height: auto;
   min-height: clamp(5.75rem, 15vmin, 8rem);
 }
 
-.combat-area-cluster__seat-top {
-  flex-shrink: 0;
-  min-height: 2.35rem;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.25rem;
-  padding: 0.15rem;
-  background: rgba(0, 0, 0, 0.55);
-  border-bottom: 1px solid rgba(255, 248, 232, 0.12);
-  pointer-events: auto;
+.combat-area-cluster--column .combat-area-cluster__seat--active.combat-area-cluster__seat--birdseye {
+  z-index: 6;
+  isolation: isolate;
 }
 
-.combat-area-cluster__seat-top .birdseye-seat__interactions {
+.combat-area-cluster--column .combat-area-cluster__seat-main {
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
   flex: 1 1 auto;
-  max-width: none;
+  min-height: clamp(5.75rem, 15vmin, 8rem);
+  /* Room for absolute play controls hanging into the board gap. */
+  overflow: visible;
+}
+
+/* Play / End Turn hang left into the board gap — do not push leader right. */
+.combat-area-cluster--column .birdseye-seat__controls-row {
+  position: absolute;
+  right: calc(100% + 0.45rem);
+  top: 50%;
+  z-index: 30;
+  margin: 0;
+  gap: 0.35rem;
+  transform: translateY(-50%);
+  animation: birdseye-controls-out-left 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.combat-area-cluster--column .birdseye-seat__controls-stack {
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid rgba(255, 248, 232, 0.32);
+  border-radius: 5px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+  padding: 0.16rem;
+  gap: 0.14rem;
+  overflow: visible;
+}
+
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn {
+  min-width: 2.35rem;
+  height: 2.35rem;
+  font-size: 0.52rem;
+  transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn:hover:not(:disabled) {
+  background: rgba(20, 16, 10, 0.88);
+  border-color: rgba(255, 215, 0, 0.55);
+}
+
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn--play,
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn--reveal,
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn--intrigue,
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn--tech {
+  min-width: 2.7rem;
+}
+
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn--play,
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn--reveal {
+  height: 2.85rem;
+}
+
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn--end-turn {
+  min-width: 4.1rem;
+  height: 2.35rem;
+  font-size: 0.62rem;
+}
+
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-tech-panel {
+  max-height: 9rem;
+  overflow: auto;
+}
+
+/* Deploy appends further left of Play/End Turn with its own slide-out. */
+.combat-area-cluster--column .birdseye-seat__deploy {
+  align-self: center;
+  animation: birdseye-deploy-append-left 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 60ms;
+}
+
+.combat-area-cluster--column .birdseye-seat__deploy-dock .combat-deploy-dock__controls.combat-troop-controls {
+  min-width: 8.2rem;
+}
+
+.combat-area-cluster--column .birdseye-seat__deploy-dock .troop-action-button,
+.combat-area-cluster--column .birdseye-seat__deploy-dock .troop-action-status {
+  min-height: 2.5rem;
+}
+
+.combat-area-cluster--column .birdseye-seat__deploy .troop-action-button:focus-visible {
+  outline: 2px solid rgba(255, 215, 0, 0.9);
+  outline-offset: 1px;
+}
+
+@keyframes birdseye-controls-out-left {
+  from {
+    opacity: 0.35;
+    transform: translateY(-50%) translateX(72%) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0) scale(1);
+  }
+}
+
+/* Deploy panel slides further left from under the primary stack. */
+@keyframes birdseye-deploy-append-left {
+  from {
+    opacity: 0.15;
+    transform: translateX(68%) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combat-area-cluster--column .birdseye-seat__controls-row,
+  .combat-area-cluster--column .birdseye-seat__deploy,
+  .birdseye-seat__overlay-actions .birdseye-seat__deploy {
+    animation: none;
+  }
+}
+
+.combat-area-cluster__seat-top {
+  display: none;
 }
 
 .combat-area-cluster__seat-top-spacer {
-  flex-shrink: 0;
-  height: 2.35rem;
+  display: none;
+}
+
+/*
+ * Shared rim bar owns Play/Reveal. Do not keep a 4.6rem per-seat strip.
+ */
+.combat-area-cluster--row .combat-area-cluster__seat-top {
+  display: none;
+}
+
+.combat-area-cluster--row .birdseye-seat__deploy-dock .combat-deploy-dock__controls.combat-troop-controls {
+  min-width: 0;
+}
+
+.combat-area-cluster--row .birdseye-seat__deploy-dock .troop-action-button,
+.combat-area-cluster--row .birdseye-seat__deploy-dock .troop-undeploy-button,
+.combat-area-cluster--row .birdseye-seat__deploy-dock .troop-action-status {
+  min-width: 0;
 }
 
 .combat-area-cluster__seat-chrome {
@@ -319,12 +1056,175 @@
   overflow: hidden;
 }
 
+/*
+ * Mobile seat: portrait + compact resource/gains strip under it.
+ * Face ~72px so four seats + gains fit a phone width without huge chrome.
+ */
+.combat-area-cluster--row {
+  --birdseye-face-size: 72px;
+}
+
+.combat-area-cluster--row .combat-area-cluster__seat--birdseye .combat-area-cluster__seat-chrome {
+  flex: 0 0 auto;
+  width: 100%;
+  height: var(--birdseye-face-size, 72px);
+  min-height: var(--birdseye-face-size, 72px);
+  max-height: var(--birdseye-face-size, 72px);
+  overflow: hidden;
+}
+
+.combat-area-cluster--row .combat-area-cluster__seat-main {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: auto;
+  overflow-x: hidden;
+}
+
+.combat-area-cluster--row .combat-area-cluster__seat-meta {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  z-index: 2;
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: visible;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 2px;
+  padding: 2px 2px 3px;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.72);
+  box-sizing: border-box;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: visible;
+  pointer-events: auto;
+  padding: 0 1px 2px;
+  box-sizing: border-box;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gains-display-root--totals-only {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0;
+  max-height: none;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gains-display {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  font-size: 0.58rem;
+  gap: 2px;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-source-group {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-source-flow,
+.combat-area-cluster--row .birdseye-seat-gains .turn-gains-side {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1px 2px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-resource-icon,
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-combat-icon,
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-total-icon,
+.combat-area-cluster--row .birdseye-seat-gains .gain-icon {
+  width: 10px !important;
+  height: 10px !important;
+  flex-shrink: 0;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-total-item {
+  padding: 0 1px;
+  gap: 1px;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-resource-amt,
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-combat-count,
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-total-amt {
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.combat-area-cluster--row .combat-area-cluster__seat-top .birdseye-seat-tech-panel {
+  display: none;
+}
+
+.combat-area-cluster--row .birdseye-seat__overlay-actions .birdseye-seat__utils {
+  position: relative;
+  z-index: 2;
+}
+
 .combat-area-cluster--column .combat-area-cluster__seat-chrome {
   flex: 0 0 auto;
   width: clamp(7rem, 18vmin, 10.5rem);
 }
 
-/* Gold border on chrome only (not gains) */
+/* Full-width pending bar under leader + gains (play controls hang left separately). */
+.birdseye-seat__interactions {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.2rem;
+  padding: 0.25rem 0.35rem;
+  background: rgba(0, 0, 0, 0.55);
+  border-top: 1px solid rgba(255, 248, 232, 0.16);
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.birdseye-seat__interactions:empty {
+  display: none;
+  padding: 0;
+  border: none;
+}
+
+/* Gold border on chrome only (not gains / pending bar) */
 .combat-area-cluster__seat--active.combat-area-cluster__seat--birdseye::after {
   display: none;
 }
@@ -339,22 +1239,209 @@
   box-sizing: border-box;
 }
 
-.combat-area-cluster--column .combat-area-cluster__seat--active .combat-area-cluster__seat-chrome::after,
-.combat-area-cluster--column .combat-area-cluster__seat--active .birdseye-seat__controls-stack {
-  /* desktop: border wraps chrome; controls sit outside to the left */
+.combat-area-cluster--column .birdseye-seat-btn:focus-visible {
+  outline: 2px solid rgba(255, 215, 0, 0.9);
+  outline-offset: 1px;
 }
 
 .combat-area-cluster--row.combat-area-cluster--birdseye {
   height: auto;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: visible;
-  align-items: flex-start;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0;
+}
+
+.combat-area-cluster-stack--row .combat-area-cluster__mobile-deploy {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
+  padding: 0.2rem 0.35rem;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.72);
+  border-bottom: 1px solid rgba(255, 248, 232, 0.16);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.combat-area-cluster--row .birdseye-seat__interactions {
+  border-top: 1px solid rgba(255, 248, 232, 0.16);
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye {
   gap: 0.35rem;
+  overflow: visible;
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat--birdseye {
+  width: fit-content;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye
+  .combat-area-cluster__seat--active.combat-area-cluster__seat--birdseye {
   width: 100%;
 }
+
+/*
+ * Shared mobile action bar. Invented name `.birdseye-rim`.
+ * 48px bar / 44px buttons / 8px gutters come from the HUD critique, not a spec.
+ */
+.birdseye-rim {
+  flex: 1 1 100%;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  padding: 0 8px;
+  background: rgba(0, 0, 0, 0.72);
+  border-top: 1px solid rgba(255, 248, 232, 0.18);
+  pointer-events: auto;
+  position: relative;
+  z-index: 4;
+}
+
+.birdseye-rim__actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+  height: 44px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap;
+}
+
+.birdseye-rim .birdseye-seat__primary,
+.birdseye-rim .birdseye-seat__utils {
+  display: flex;
+  flex-direction: row;
+  grid-template-columns: none;
+  gap: 8px;
+  width: auto;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+}
+
+.birdseye-rim .birdseye-seat-btn {
+  height: 44px;
+  min-height: 44px;
+  min-width: 44px;
+  width: 44px;
+  flex: 0 0 44px;
+  flex-shrink: 0;
+  padding: 0;
+  font-size: 0.55rem;
+}
+
+.birdseye-rim .birdseye-seat-btn--end-turn {
+  width: auto;
+  min-width: 72px;
+  flex: 0 0 auto;
+  padding: 0 10px;
+  font-size: 0.62rem;
+}
+
+.birdseye-rim .birdseye-seat-btn--play,
+.birdseye-rim .birdseye-seat-btn--reveal {
+  height: 44px;
+  min-height: 44px;
+}
+
+.birdseye-rim .birdseye-seat-btn--intrigue img,
+.birdseye-rim .birdseye-seat-btn--tech img,
+.birdseye-rim .birdseye-seat-btn--deploy img {
+  width: 1.15rem;
+}
+
+.birdseye-rim .birdseye-seat-btn--deploy {
+  width: 44px;
+  min-width: 44px;
+}
+
+.birdseye-rim .birdseye-seat__interactions {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-height: 44px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.birdseye-rim .birdseye-seat__interactions:empty {
+  display: none;
+}
+
+/*
+ * Idle band between square board and 88px faces.
+ * Invented name `.birdseye-idle-band`. Not a spec. No prose fill.
+ */
+.birdseye-idle-band {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: rgba(6, 8, 12, 0.72);
+  border-bottom: 1px solid rgba(255, 248, 232, 0.14);
+  padding-bottom: var(--play-sheet-face-gap, 1px);
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.combat-area-cluster-stack--idle .combat-area-cluster--row {
+  flex: 0 0 auto;
+}
+
+.birdseye-idle-band__fill {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+}
+
+.birdseye-idle-band__sheet {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  padding: 6px 8px;
+  box-sizing: border-box;
+}
+
+.birdseye-idle-band__deploy {
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+}
+
+.birdseye-idle-band .birdseye-seat-tech-panel {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  top: auto;
+  z-index: 1;
+  max-height: 100%;
+  overflow: auto;
+}
+
+.birdseye-idle-band .turn-gain-source-title--totals,
+.birdseye-idle-band__conflict,
+.birdseye-idle-band__name {
+  display: none;
+}
+

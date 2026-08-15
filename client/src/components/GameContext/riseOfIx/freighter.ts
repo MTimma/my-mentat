@@ -39,8 +39,8 @@ export function seedFreighterStep<T extends { freighterStep?: 0 | 1 | 2 | 3 }>(
   return { ...player, freighterStep: player.freighterStep ?? 0 }
 }
 
-export function shippingTrackSource(name = 'Shipping track'): GainAttribution {
-  return { type: GainSource.SHIPPING_TRACK, id: 0, name }
+export function shippingTrackSource(step: 1 | 2 | 3): GainAttribution {
+  return { type: GainSource.SHIPPING_TRACK, id: 0, name: `Shipping ${step}` }
 }
 
 export function canFreighterAdvance(state: GameState, playerId: number): boolean {
@@ -150,7 +150,7 @@ export function enqueueRecallStep1Choice(
   pendingChoices: PendingChoice[],
   existingChoiceIds: Iterable<string>
 ): void {
-  const shippingSource = shippingTrackSource('Recall step 1')
+  const shippingSource = shippingTrackSource(1)
   const choiceId = nextSemanticId(shippingSource, 'RECALL-STEP1', existingChoiceIds)
   const choice: FixedOptionsChoice = {
     id: choiceId,
@@ -177,31 +177,32 @@ export function enqueueRecallBundle(
 
   const choiceIds = () => pendingChoices.map(c => c.id)
   const rewardIds = () => pendingRewards.map(r => r.id)
-  const shippingSource = shippingTrackSource()
 
   if (currentStep >= 1) {
     enqueueRecallStep1Choice(pendingChoices, choiceIds())
   }
   if (currentStep >= 2) {
+    const step2 = shippingTrackSource(2)
     pendingRewards.push({
-      id: nextSemanticId(shippingSource, 'RECALL-TROOPS', rewardIds()),
-      source: shippingSource,
+      id: nextSemanticId(step2, 'RECALL-TROOPS', rewardIds()),
+      source: step2,
       reward: applyTroopTransportsToFreighterReward(state, playerId, 2),
       isTrash: false,
     })
     pendingChoices.push(
       createGainInfluenceChoice(
         RECALL_STEP2_INFLUENCE,
-        shippingSource,
+        step2,
         'Recall reward (step 2): choose faction for +1 influence',
         choiceIds()
       )
     )
   }
   if (currentStep >= 3) {
+    const step3 = shippingTrackSource(3)
     pendingRewards.push({
-      id: nextSemanticId(shippingSource, 'RECALL-TECH', rewardIds()),
-      source: shippingSource,
+      id: nextSemanticId(step3, 'RECALL-TECH', rewardIds()),
+      source: step3,
       reward: { acquireTech: { discount: 2 } },
       isTrash: false,
     })
@@ -226,7 +227,7 @@ export function applyFreighterAdvance(
       playerId,
       source: source.type,
       sourceId: source.id,
-      name: 'Advance',
+      name: source.name,
       amount: 1,
       type: RewardType.FREIGHTER,
     })
@@ -255,7 +256,7 @@ export function applyFreighterRecall(
     playerId,
     source: source.type,
     sourceId: source.id,
-    name: 'Recall',
+    name: source.name,
     amount: -step,
     type: RewardType.FREIGHTER,
   })

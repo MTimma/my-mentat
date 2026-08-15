@@ -9,8 +9,7 @@ import ImageBoard from './components/ImageBoard/ImageBoard'
 import ImperiumRow from './components/ImperiumRow/ImperiumRow'
 import TurnHistory from './components/TurnHistory'
 import TurnHistoryNav from './components/TurnHistoryNav/TurnHistoryNav'
-import { GameProvider } from './components/GameContext/GameContext'
-import { useGame } from './components/GameContext/GameContext'
+import { GameProvider, useGame, buildCombatResolutionView } from './components/GameContext/GameContext'
 import { useTimeTravel } from './components/TimeTravel'
 import GameSetup from './components/GameSetup'
 import PwaPrompt from './components/PwaPrompt/PwaPrompt'
@@ -86,6 +85,7 @@ import {
   isInfluenceBoardChoice,
 } from './utils/influenceBoardChoice'
 import {
+  COMPACT_PLAY_OVERLAY_MQ,
   DESKTOP_PLAY_LAYOUT_MQ,
   DOCKED_HISTORY_LAYOUT_MQ,
 } from './constants/playLayout'
@@ -136,12 +136,10 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   const playChromeHeldRef = useRef(false)
   const [isPlayAreaDrawerOpen, setIsPlayAreaDrawerOpen] = useState(() => {
     if (typeof window === 'undefined') return true
-    // Desktop: overlay drawer closed by default (frees board space).
-    return !window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
+    // Phone, tablet, and desktop overlays start closed so leaders stay visible.
+    return false
   })
-  const isPlayAreaDrawerOpenRef = useRef(
-    typeof window === 'undefined' ? true : !window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
-  )
+  const isPlayAreaDrawerOpenRef = useRef(false)
   const turnControlsRef = useRef<TurnControlsHandle>(null)
   const [isMobilePlayView, setIsMobilePlayView] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 600px)').matches
@@ -174,21 +172,31 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   }, [gameState.activePlayerId])
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 600px)')
+    const phoneMq = window.matchMedia('(max-width: 600px)')
+    const compactMq = window.matchMedia(COMPACT_PLAY_OVERLAY_MQ)
+    let wasCompact = compactMq.matches
     const apply = () => {
-      setIsMobilePlayView(mq.matches)
-      if (!mq.matches) {
+      const mobile = phoneMq.matches
+      const compact = compactMq.matches
+      setIsMobilePlayView(mobile)
+      if (!mobile) {
         playChromeHeldRef.current = false
         setIsPlayChromeHeld(false)
-        const desktop = window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
-        // Leaving phone: open drawer on tablet; keep closed on desktop overlay.
-        isPlayAreaDrawerOpenRef.current = !desktop
-        setIsPlayAreaDrawerOpen(!desktop)
       }
+      if (compact && !wasCompact) {
+        // Entering phone/tablet overlay: keep closed so the leader band stays visible.
+        isPlayAreaDrawerOpenRef.current = false
+        setIsPlayAreaDrawerOpen(false)
+      }
+      wasCompact = compact
     }
     apply()
-    mq.addEventListener('change', apply)
-    return () => mq.removeEventListener('change', apply)
+    phoneMq.addEventListener('change', apply)
+    compactMq.addEventListener('change', apply)
+    return () => {
+      phoneMq.removeEventListener('change', apply)
+      compactMq.removeEventListener('change', apply)
+    }
   }, [])
 
   const setPlayAreaDrawerOpen = useCallback((open: boolean) => {
@@ -200,6 +208,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   useEffect(() => {
     const dockedMq = window.matchMedia(DOCKED_HISTORY_LAYOUT_MQ)
     const desktopMq = window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ)
+    let wasDesktop = desktopMq.matches
     const apply = () => {
       const docked = dockedMq.matches
       const desktop = desktopMq.matches
@@ -208,11 +217,16 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       if (docked) {
         setIsTurnHistoryOpen(true)
       }
-      if (desktop) {
-        // Overlay drawer closed by default on desktop so board reclaims height.
+      if (desktop && !wasDesktop) {
+        // Entering desktop: overlay drawer starts closed so the board reclaims height.
+        isPlayAreaDrawerOpenRef.current = false
+        setIsPlayAreaDrawerOpen(false)
+      } else if (!desktop && wasDesktop) {
+        // Leaving desktop: phone/tablet overlay stays closed.
         isPlayAreaDrawerOpenRef.current = false
         setIsPlayAreaDrawerOpen(false)
       }
+      wasDesktop = desktop
     }
     apply()
     dockedMq.addEventListener('change', apply)
@@ -831,18 +845,38 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   const remeasurePlayChromeRef = useRef<(() => void) | null>(null)
 
   const MIN_PLAY_BAND_PX = 88
+  /** Short-phone leftover so the open sheet can fit a 90px card. Invented, not a spec. */
+  /** Extra space above the leader row for the open play-area sheet (invented). */
+  const MOBILE_PLAY_SHEET_RESERVE_PX = 120
 
   const viewingCombatHistory =
     isViewingHistory && isCombatHistoryEntry(displayState)
   const viewingEndgameHistory =
     isViewingHistory && isEndgameHistoryEntry(displayState)
 
+  const liveCombatRewardsPhase =
+    !isViewingHistory && gameState.phase === GamePhase.COMBAT_REWARDS
+  const pendingCombatRewardChoices =
+    (gameState.pendingConflictRewardChoices?.length ?? 0) > 0
+
   const showCombatOverlay =
-    (gameState.phase === GamePhase.COMBAT && !isViewingHistory) || viewingCombatHistory
+    (gameState.phase === GamePhase.COMBAT && !isViewingHistory) ||
+    liveCombatRewardsPhase ||
+    viewingCombatHistory
   const showEndgameOverlay =
     (gameState.phase === GamePhase.END_GAME && !isViewingHistory) || viewingEndgameHistory
 
   const combatOverlayState = viewingCombatHistory ? displayState : gameState
+  const combatResolutionState = useMemo(() => {
+    if (viewingCombatHistory) return displayState
+    if (
+      gameState.phase !== GamePhase.COMBAT &&
+      gameState.phase !== GamePhase.COMBAT_REWARDS
+    ) {
+      return gameState
+    }
+    return buildCombatResolutionView(gameState)
+  }, [viewingCombatHistory, displayState, gameState])
   const endgameOverlayState = useMemo(() => {
     if (viewingEndgameHistory && viewingTurnIndex != null) {
       return mergeEndgameHistoryRow(
@@ -1027,7 +1061,8 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     const getPlayFooterReservedPx = () => {
       const raw = getComputedStyle(root).getPropertyValue('--play-footer-reserved-height').trim()
       const parsed = Number.parseFloat(raw)
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : 168
+      // 0 is valid (desktop overlay footer): do not fall back to 168px and shrink the board.
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : 168
     }
 
     const readBoardLayoutChrome = () => {
@@ -1046,22 +1081,21 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       const viewportH = window.visualViewport?.height ?? window.innerHeight
       const playFooterReserved = getPlayFooterReservedPx()
       const isMobileOverlayLayout =
-        !desktop && window.matchMedia('(max-width: 600px)').matches
+        !desktop && window.matchMedia(COMPACT_PLAY_OVERLAY_MQ).matches
       // Stable reserve for board math only — never use the flex-expanded turn-controls container
       // (its box grows with leftover viewport and would shrink the board in a feedback loop).
       const playBandCap = Math.floor(viewportH * 0.24)
-      const playBandReserve = Math.max(
-        MIN_PLAY_BAND_PX,
-        Math.min(playFooterReserved, playBandCap)
-      )
+      const playBandReserve =
+        playFooterReserved <= 0
+          ? 0
+          : Math.max(MIN_PLAY_BAND_PX, Math.min(playFooterReserved, playBandCap))
       const mobileDrawerCollapsed =
         isMobileOverlayLayout && !isPlayAreaDrawerOpenRef.current
       let playBandHeight: number
       let bottomChrome: number
       if (isMobileOverlayLayout) {
-        // Mobile: footer overlays the board column. Board max-edge must also reserve the
-        // leader strip under the board — otherwise leftover height shows as a dynamic
-        // black gap above the board (or collapses leaders).
+        // Mobile: footer overlays the board column. Board width fills the column;
+        // leaders scroll under the board — do not shrink the square board for HUD height.
         const overlayReserveRaw = getComputedStyle(root)
           .getPropertyValue('--play-mobile-overlay-reserve')
           .trim()
@@ -1069,9 +1103,8 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         const overlayReserve = Number.isFinite(overlayParsed)
           ? Math.ceil(overlayParsed)
           : Math.max(navHeight + 8, Math.floor(viewportH * 0.1))
-        const leaderRowPx = Math.max(152, Math.min(216, Math.round(viewportH * 0.2)))
         playBandHeight = 0
-        bottomChrome = overlayReserve + leaderRowPx + 2
+        bottomChrome = overlayReserve
       } else {
         playBandHeight = mobileDrawerCollapsed ? 0 : playBandReserve
         bottomChrome = navHeight + playBandHeight + 2
@@ -1105,7 +1138,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       const banner = historyBannerRef.current
       const isMobileOverlayLayout =
         !window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches &&
-        window.matchMedia('(max-width: 600px)').matches
+        window.matchMedia(COMPACT_PLAY_OVERLAY_MQ).matches
       if (banner && !banner.hidden) {
         const bannerRect = banner.getBoundingClientRect()
         const bannerTop = Math.max(0, Math.ceil(bannerRect.top))
@@ -1150,7 +1183,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
 
       const isMobileOverlayLayout =
         !window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches &&
-        window.matchMedia('(max-width: 600px)').matches
+        window.matchMedia(COMPACT_PLAY_OVERLAY_MQ).matches
 
       const tc = turnControlsFooterRef.current
       let turnControlsHeight = 0
@@ -1190,6 +1223,41 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       const heightPx = `${footerStackHeight}px`
       root.style.setProperty('--footer-measured-height', heightPx)
       document.documentElement.style.setProperty('--footer-measured-height', heightPx)
+
+      if (isMobileOverlayLayout) {
+        const hudEl = root.querySelector<HTMLElement>('.combat-area-cluster--row')
+        const measuredHud = hudEl
+          ? Math.max(0, Math.ceil(hudEl.getBoundingClientRect().height))
+          : 0
+        const hudStack = measuredHud > 0 ? measuredHud : 136
+        const imperium = imperiumRowRef.current
+        const topChrome = imperium
+          ? Math.max(0, Math.ceil(imperium.getBoundingClientRect().height))
+          : 0
+        const boardEdgeRaw = getComputedStyle(root).getPropertyValue('--play-board-max-edge').trim()
+        const boardEdge = Number.parseFloat(boardEdgeRaw)
+        const boardEdgePx = Number.isFinite(boardEdge) ? Math.ceil(boardEdge) : 0
+        const idleH = Math.max(
+          0,
+          Math.floor(viewportH - navHeight - topChrome - boardEdgePx - hudStack),
+        )
+        const hudStackPx = `${hudStack}px`
+        const idlePx = `${idleH}px`
+        const imperiumPx = `${topChrome}px`
+        root.style.setProperty('--mobile-hud-stack', hudStackPx)
+        root.style.setProperty('--play-idle-band-height', idlePx)
+        root.style.setProperty('--play-imperium-height', imperiumPx)
+        document.documentElement.style.setProperty('--mobile-hud-stack', hudStackPx)
+        document.documentElement.style.setProperty('--play-idle-band-height', idlePx)
+        document.documentElement.style.setProperty('--play-imperium-height', imperiumPx)
+      } else {
+        root.style.removeProperty('--mobile-hud-stack')
+        root.style.removeProperty('--play-idle-band-height')
+        root.style.removeProperty('--play-imperium-height')
+        document.documentElement.style.removeProperty('--mobile-hud-stack')
+        document.documentElement.style.removeProperty('--play-idle-band-height')
+        document.documentElement.style.removeProperty('--play-imperium-height')
+      }
     }
 
     const measureFooterStack = () => {
@@ -1239,10 +1307,17 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           getComputedStyle(document.documentElement).getPropertyValue('--vv-layout-gap-bottom')
         ) || 0
       const layoutGap = docked ? 0 : desktop ? 2 : 6
+      const minBoardEdge = docked ? 200 : 160
+      const isMobileOverlayLayout =
+        !desktop && window.matchMedia(COMPACT_PLAY_OVERLAY_MQ).matches
+      // Phone/tablet: fill the column width. Leaders sit under the board; user scrolls
+      // vertically instead of letterboxing the square board to fit one viewport.
+      if (isMobileOverlayLayout) {
+        return Math.max(minBoardEdge, shellWidth)
+      }
       const boardStackFoot = bottomChrome + layoutGap
       const availableH =
         viewportH - boardStackFoot - topChrome - layoutGap - gapBottom
-      const minBoardEdge = docked ? 200 : 160
       return Math.max(minBoardEdge, Math.min(shellWidth, Math.floor(availableH)))
     }
 
@@ -1317,7 +1392,10 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         } else if (target === imperiumRowRef.current) {
           scheduleFooterMeasure()
           scheduleBoardMeasure(true)
-        } else if (target === root) {
+        } else if (
+          target === root ||
+          target.classList.contains('image-board__combat-area-below')
+        ) {
           scheduleBoardMeasure(true)
         }
       }
@@ -1326,6 +1404,8 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     if (turnControlsFooterRef.current) ro.observe(turnControlsFooterRef.current)
     if (historyBannerRef.current) ro.observe(historyBannerRef.current)
     if (imperiumRowRef.current) ro.observe(imperiumRowRef.current)
+    const combatBelow = root.querySelector('.image-board__combat-area-below')
+    if (combatBelow) ro.observe(combatBelow)
     ro.observe(root)
 
     const desktopMq = window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ)
@@ -1371,6 +1451,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       root.style.removeProperty('--turn-controls-measured-height')
       root.style.removeProperty('--play-top-chrome-height')
       root.style.removeProperty('--play-board-max-edge')
+      root.style.removeProperty('--mobile-hud-stack')
+      root.style.removeProperty('--play-idle-band-height')
+      root.style.removeProperty('--play-imperium-height')
       root.style.removeProperty('--play-footer-top')
       root.style.removeProperty('--play-board-bottom')
       root.style.removeProperty('--combat-troop-dock-top')
@@ -1379,6 +1462,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       document.documentElement.style.removeProperty('--turn-controls-measured-height')
       document.documentElement.style.removeProperty('--play-top-chrome-height')
       document.documentElement.style.removeProperty('--play-board-max-edge')
+      document.documentElement.style.removeProperty('--mobile-hud-stack')
+      document.documentElement.style.removeProperty('--play-idle-band-height')
+      document.documentElement.style.removeProperty('--play-imperium-height')
       document.documentElement.style.removeProperty('--history-banner-top')
       document.documentElement.style.removeProperty('--play-footer-top')
       document.documentElement.style.removeProperty('--play-board-bottom')
@@ -1394,8 +1480,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   }, [
     hidePlayShellFooter,
     isMobilePlayView,
-      isDesktopPlayView,
-      gameState.expansions?.riseOfIx,
+    isDesktopPlayView,
+    gameState.expansions?.riseOfIx,
+    gameState.sandboxSetup,
     isDockedHistoryLayout,
     useImageBoard,
   ])
@@ -1416,7 +1503,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   ])
 
   const holdToHidePlayChrome = isMobilePlayView && useImageBoard
-  const showPlayAreaDrawerToggle = useImageBoard && (isMobilePlayView || isDesktopPlayView)
+  // Always when image board — includes tablet 601–900 (Chrome half-window / iPad).
+  const showPlayAreaDrawerToggle = useImageBoard
+  const isCompactPlayOverlay = useImageBoard && !isDesktopPlayView
   const showTurnHistoryPanel = isDockedHistoryLayout || isTurnHistoryOpen
 
   const birdseyeMode = useMemo<'mobile3b' | 'desktop6' | null>(() => {
@@ -1445,8 +1534,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   const birdseyeActions = useMemo((): BirdseyeSeatActions | null => {
     const player = turnControlsActivePlayer
     if (!player || !birdseyeMode) return null
-    if (isViewingHistory || gameState.sandboxSetup) return null
+    if (gameState.sandboxSetup) return null
     if (
+      !isViewingHistory &&
       turnControlsState.phase !== GamePhase.PLAYER_TURNS &&
       turnControlsState.phase !== GamePhase.COMBAT
     ) {
@@ -1454,6 +1544,11 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     }
 
     const agentPlaced = Boolean(turnControlsState.currTurn?.agentSpace)
+    const selectedCard = getSelectedCard(gameState)
+    const isRevealTurn = turnControlsState.currTurn?.type === TurnType.REVEAL
+    const isChangingSelectedCard = Boolean(
+      selectedCard && !agentPlaced && !player.revealed && !isRevealTurn
+    )
     const canEnd = Boolean(gameState.canEndTurn)
     const showEndTurn =
       turnControlsState.phase === GamePhase.PLAYER_TURNS && (canEnd || agentPlaced)
@@ -1475,7 +1570,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
 
     // Match TurnControls play/reveal disable rules — do NOT use endTurnButtonState.disabled
     // (that is true whenever !canEndTurn, which would permanently disable Play).
-    return {
+    const liveActions: BirdseyeSeatActions = {
       playDisabled:
         (player.agents === 0 && !canPlayKwisatzWithNoAgents) ||
         player.handCount === 0 ||
@@ -1519,6 +1614,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       endTurnTitle: endTurnButtonState.title,
       agents: player.agents,
       handCount: player.handCount,
+      isChangingSelectedCard,
+      selectedCardImage: isChangingSelectedCard ? selectedCard?.image : undefined,
+      selectedCardName: isChangingSelectedCard ? selectedCard?.name : undefined,
       onPlay: () => turnControlsRef.current?.openPlayCardPicker(),
       onReveal: () => turnControlsRef.current?.openRevealPicker(),
       onIntrigue: () =>
@@ -1530,6 +1628,21 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       },
       onActivateTech: isViewingHistory ? undefined : handleActivateTech,
     }
+    if (!isViewingHistory) return liveActions
+    return {
+      ...liveActions,
+      playDisabled: true,
+      revealDisabled: true,
+      intrigueDisabled: true,
+      techDisabled: true,
+      showEndTurn: false,
+      endTurnDisabled: true,
+      onPlay: () => {},
+      onReveal: () => {},
+      onIntrigue: () => {},
+      onEndTurn: () => {},
+      onActivateTech: undefined,
+    }
   }, [
     turnControlsActivePlayer,
     birdseyeMode,
@@ -1539,7 +1652,10 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     gameState.expansions?.riseOfIx,
     turnControlsState.phase,
     turnControlsState.currTurn?.agentSpace,
+    turnControlsState.currTurn?.type,
     turnControlsState.currTurn?.opponentDiscardState,
+    gameState.selectedCard,
+    gameState.selectedCardDeckIndex,
     turnControlsState.pendingRewards,
     turnControlsState.occupiedSpaces,
     endTurnButtonState.disabled,
@@ -1659,9 +1775,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           }
           showBoardInfoTips={showBoardInfoTips}
           ixBoardPlacement="embedded"
-          ixBoardMobileEmbedded={
-            !isDesktopPlayView && Boolean(gameState.expansions?.riseOfIx)
-          }
+          ixBoardMobileEmbedded={Boolean(gameState.expansions?.riseOfIx)}
           immortalityBoardPlacement={
             isDesktopPlayView && gameState.expansions?.immortality ? 'docked' : 'stacked'
           }
@@ -1780,6 +1894,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       <AltImagePreviewProvider>
       <div ref={playShellMainRef} className="play-shell-main">
         <div className="play-board-column">
+      <div className="play-board-scroll">
       <div
         ref={imperiumRowRef}
         className="imperium-row-container"
@@ -1864,10 +1979,19 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
             combatPasses={combatOverlayState.combatPasses}
             activePlayerId={combatOverlayState.activePlayerId}
             activePlayerPlayedCombatIntrigue={
-              viewingCombatHistory ? false : hasPlayedCombatIntrigueThisVisit
+              viewingCombatHistory || liveCombatRewardsPhase
+                ? false
+                : hasPlayedCombatIntrigueThisVisit
             }
             isVisible={showCombatOverlay}
-            readOnly={viewingCombatHistory}
+            readOnly={viewingCombatHistory || liveCombatRewardsPhase}
+            currentConflict={combatOverlayState.currentConflict}
+            resolutionState={combatResolutionState}
+            onConfirm={
+              liveCombatRewardsPhase && !pendingCombatRewardChoices
+                ? handleConfirmCombat
+                : undefined
+            }
             containerRef={mainAreaRef}
           />
           <EndgameOverlay
@@ -2068,6 +2192,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
             onClose={() => setSandboxEditPlayerId(null)}
           />
         )}
+      </div>
       <div
         className={[
           'play-shell-footer',
@@ -2106,6 +2231,8 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
             turnControlsState.phase !== GamePhase.PLAYER_TURNS &&
             turnControlsState.phase !== GamePhase.COMBAT
           }
+          inert={showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen ? true : undefined}
+          aria-hidden={showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen}
         >
           <div className="play-area-drawer__inner">
             <div className="turn-controls-container play-shell-footer--play-band">
@@ -2161,10 +2288,12 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
                 gameState={turnControlsState}
                 isHistoryView={isViewingHistory}
                 showDesktopPlayBar={false}
-                hidePrimaryTurnActions={Boolean(birdseyeMode) && isDesktopPlayView}
-                birdseyeInteractionsHost={birdseyeInteractionsHost}
+                hidePrimaryTurnActions={birdseyeMode === 'desktop6'}
+                birdseyeInteractionsHost={
+                  birdseyeMode === 'desktop6' ? birdseyeInteractionsHost : null
+                }
                 showEndTurnButton={
-                  showFooterEndTurn && !isViewingHistory && !(birdseyeMode && isDesktopPlayView)
+                  showFooterEndTurn && !isViewingHistory && birdseyeMode !== 'desktop6'
                 }
                 showPassCombatButton={showFooterPassCombat && !isViewingHistory}
                 onEndTurn={
@@ -2193,6 +2322,29 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           </div>
         </div>
       {sandboxSetupMobileBar}
+      {isCompactPlayOverlay && showPlayAreaDrawerToggle && (
+        <button
+          type="button"
+          className={[
+            'play-area-collapse-handle',
+            isPlayAreaDrawerOpen
+              ? 'play-area-collapse-handle--open'
+              : 'play-area-collapse-handle--closed',
+          ].join(' ')}
+          onClick={() => setPlayAreaDrawerOpen(!isPlayAreaDrawerOpenRef.current)}
+          title={isPlayAreaDrawerOpen ? 'Hide play area' : 'Show play area'}
+          aria-label={isPlayAreaDrawerOpen ? 'Hide play area' : 'Show play area'}
+          aria-expanded={isPlayAreaDrawerOpen}
+          aria-controls="play-area-drawer"
+        >
+          <span className="play-area-collapse-handle__chevron" aria-hidden="true">
+            {isPlayAreaDrawerOpen ? '▾' : '▴'}
+          </span>
+          <span className="play-area-collapse-handle__label">
+            {isPlayAreaDrawerOpen ? 'Hide play area' : 'Show play area'}
+          </span>
+        </button>
+      )}
       {/* Navigator / status strip — directly under the board; play band fills below. */}
       <div
         ref={historyBannerRef}
@@ -2216,7 +2368,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
               hideTurnHistoryToggle={isDockedHistoryLayout}
               showPlayAreaDrawerToggle={showPlayAreaDrawerToggle}
               isPlayAreaDrawerOpen={isPlayAreaDrawerOpen}
-              onPlayAreaDrawerToggle={() => setPlayAreaDrawerOpen(!isPlayAreaDrawerOpen)}
+              onPlayAreaDrawerToggle={() =>
+                setPlayAreaDrawerOpen(!isPlayAreaDrawerOpenRef.current)
+              }
               showBoardPeekButton={holdToHidePlayChrome}
               isBoardPeekActive={isPlayChromeHeld}
               onBoardPeekHoldChange={setPlayChromeHeld}
@@ -2266,8 +2420,20 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
               isViewingHistory={isViewingHistory}
               onTurnChange={goToTurn}
               onReturnToCurrent={returnToCurrent}
-              lastSlotWidthLabel="End Turn"
-              lastSlotWidthClassName="footer-end-turn-button footer-nav-slot-button"
+              lastSlotWidthLabel={
+                showFooterEndTurn
+                  ? 'End Turn'
+                  : showFooterPassCombat
+                    ? combatFooterActionLabel
+                    : undefined
+              }
+              lastSlotWidthClassName={
+                showFooterEndTurn
+                  ? 'footer-end-turn-button footer-nav-slot-button'
+                  : showFooterPassCombat
+                    ? 'footer-pass-combat-button footer-nav-slot-button'
+                    : undefined
+              }
               lastSlot={
                 showFooterEndTurn ? (
                   <button
@@ -2304,7 +2470,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
               ? 'desktop-play-drawer-toggle--open'
               : 'desktop-play-drawer-toggle--closed',
           ].join(' ')}
-          onClick={() => setPlayAreaDrawerOpen(!isPlayAreaDrawerOpen)}
+          onClick={() => setPlayAreaDrawerOpen(!isPlayAreaDrawerOpenRef.current)}
           title={isPlayAreaDrawerOpen ? 'Hide play area' : 'Show play area'}
           aria-label={isPlayAreaDrawerOpen ? 'Hide play area' : 'Show play area'}
           aria-expanded={isPlayAreaDrawerOpen}
@@ -2335,7 +2501,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           {...turnHistoryUndoProps}
         />
       )}
-      {gameState.phase === GamePhase.COMBAT_REWARDS && (
+      {gameState.phase === GamePhase.COMBAT_REWARDS && pendingCombatRewardChoices && (
         <div className="combat-results-container">
           <CombatResults
             players={gameState.players}

@@ -7,15 +7,15 @@ import AgentIcon from '../AgentIcon/AgentIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import TessiaLeaderOverlays from '../TessiaLeaderOverlays/TessiaLeaderOverlays'
 import CombatPlayerDetailModal from './CombatPlayerDetailModal'
-import { PlayerCombatSlot } from './CombatStatusStrip'
+import { resolveCardInSnapshot, resolveCardInSnapshotByName } from '../../utils/revealTurnStats'
 import {
   BirdseyeDesktopControls,
-  BirdseyeMobileTopRow,
-  BirdseyePortraitOverlay,
+  BirdseyeInteractionsHost,
   BirdseyeSeatGains,
   type BirdseyeSeatActions,
   type BirdseyeSeatMode,
 } from './CombatSeatTurnChrome'
+import CombatDeployDock, { isCombatDeployDockVisible } from './CombatDeployDock'
 import './CombatSeatTurnChrome.css'
 
 type ResourceDef = {
@@ -164,6 +164,7 @@ function PlayerQuadrant({
   hasMentat,
   riseOfIx,
   onSelect,
+  showResources = true,
 }: {
   player: Player
   isActive: boolean
@@ -171,6 +172,7 @@ function PlayerQuadrant({
   hasMentat: boolean
   riseOfIx: boolean
   onSelect: () => void
+  showResources?: boolean
 }) {
   const mentatSuffix = hasMentat ? ', mentat holder' : ''
   const firstPlayerSuffix = isFirstPlayer ? ' (first player)' : ''
@@ -201,7 +203,7 @@ function PlayerQuadrant({
             draggable={false}
           />
         ) : null}
-        <ResourceGrid player={player} riseOfIx={riseOfIx} />
+        {showResources ? <ResourceGrid player={player} riseOfIx={riseOfIx} /> : null}
       </div>
     </button>
   )
@@ -243,12 +245,10 @@ export interface BirdseyeSeatGainsMap {
 
 export interface CombatAreaClusterProps {
   players: Player[]
-  troops: Record<number, number>
-  strength: Record<number, number>
   activePlayerId: number
   gameState?: GameState
   modalContainerRef?: RefObject<HTMLElement | null>
-  /** Inner-board % height of leader grid; status rows are included inside the cluster. Ignored for `row`. */
+  /** Inner-board % height of leader grid. Ignored for `row`. */
   gridHeightPercent?: number
   /** Overrides quadrant click (sandbox setup opens the player editor instead of the detail modal). */
   onPlayerSelect?: (player: Player) => void
@@ -267,12 +267,13 @@ export interface CombatAreaClusterProps {
   birdseyeTroopsRetreated?: number
   birdseyeIsHistoryView?: boolean
   birdseyeInteractionsHostRef?: (el: HTMLDivElement | null) => void
+  troopDeploy?: CombatTroopDeployProps
+  dreadnoughtDeploy?: CombatDreadnoughtDeployProps
+  specimenDeploy?: CombatSpecimenDeployProps
 }
 
 const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   players,
-  troops,
-  strength,
   activePlayerId,
   gameState,
   modalContainerRef,
@@ -292,6 +293,9 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   birdseyeTroopsRetreated = 0,
   birdseyeIsHistoryView = false,
   birdseyeInteractionsHostRef,
+  troopDeploy,
+  dreadnoughtDeploy,
+  specimenDeploy,
 }) => {
   const [detailPlayer, setDetailPlayer] = useState<Player | null>(null)
   const playerById = new Map(players.map(p => [p.id, p]))
@@ -305,7 +309,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
     if (isLinear || gridHeightPercent == null) return style
     return {
       ...style,
-      height: `calc(${gridHeightPercent}% + var(--combat-status-strip-height, 4.3em))`,
+      height: `${gridHeightPercent}%`,
     }
   }, [gridHeightPercent, isLinear, style])
 
@@ -315,9 +319,18 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
 
     const isActive = player.id === activePlayerId
     const seatGains = birdseyeGainsByPlayer?.[player.id] ?? []
+    const resolveSeatCard =
+      gameState == null
+        ? undefined
+        : (cardId: number, name: string) =>
+            resolveCardInSnapshot(gameState, player.id, cardId) ??
+            (name ? resolveCardInSnapshotByName(gameState, player.id, name) : undefined)
     const showActiveActions = Boolean(
       birdseyeEnabled && isActive && birdseyeActions && !birdseyeIsHistoryView
     )
+    const seatDeploy = showActiveActions
+      ? { troopDeploy, dreadnoughtDeploy, specimenDeploy }
+      : {}
 
     const quadrant = (
       <PlayerQuadrant
@@ -329,16 +342,6 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
         onSelect={() =>
           onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
         }
-      />
-    )
-
-    const combatSlot = (
-      <PlayerCombatSlot
-        player={player}
-        troops={troops[player.id] ?? 0}
-        strength={strength[player.id] ?? 0}
-        isActive={isActive}
-        riseOfIx={riseOfIx}
       />
     )
 
@@ -355,7 +358,6 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
             .join(' ')}
         >
           {quadrant}
-          {combatSlot}
         </div>
       )
     }
@@ -373,33 +375,34 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
             .filter(Boolean)
             .join(' ')}
         >
-          {showActiveActions && birdseyeActions ? (
-            <BirdseyeMobileTopRow
-              player={player}
-              actions={birdseyeActions}
-              interactionsHostRef={birdseyeInteractionsHostRef}
-            />
-          ) : (
-            <div className="combat-area-cluster__seat-top-spacer" aria-hidden="true" />
-          )}
-          <div className="combat-area-cluster__seat-chrome">
-            {quadrant}
-            {combatSlot}
-            {showActiveActions && birdseyeActions ? (
-              <BirdseyePortraitOverlay
+          <div className="combat-area-cluster__seat-main">
+            <div className="combat-area-cluster__seat-chrome">
+              <PlayerQuadrant
                 player={player}
-                actions={birdseyeActions}
-                gameState={gameState}
-                isHistoryView={birdseyeIsHistoryView}
+                isActive={isActive}
+                isFirstPlayer={player.id === firstPlayerMarker}
+                hasMentat={player.id === mentatOwner}
+                riseOfIx={riseOfIx}
+                showResources={false}
+                onSelect={() =>
+                  onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
+                }
               />
-            ) : null}
+            </div>
+            <div className="combat-area-cluster__seat-meta">
+              <ResourceGrid player={player} riseOfIx={riseOfIx} />
+              <BirdseyeSeatGains
+                playerId={player.id}
+                gains={seatGains}
+                resolveCard={resolveSeatCard}
+                troopsDeployed={isActive ? birdseyeTroopsDeployed : 0}
+                troopsRetreated={isActive ? birdseyeTroopsRetreated : 0}
+                /* Totals hidden for now (mobile + desktop); keep prop wiring. */
+                showTotals={false}
+                showSourceTitles={false}
+              />
+            </div>
           </div>
-          <BirdseyeSeatGains
-            playerId={player.id}
-            gains={seatGains}
-            troopsDeployed={isActive ? birdseyeTroopsDeployed : 0}
-            troopsRetreated={isActive ? birdseyeTroopsRetreated : 0}
-          />
         </div>
       )
     }
@@ -417,25 +420,32 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
           .filter(Boolean)
           .join(' ')}
       >
-        {showActiveActions && birdseyeActions ? (
-          <BirdseyeDesktopControls
-            player={player}
-            actions={birdseyeActions}
-            gameState={gameState}
-            isHistoryView={birdseyeIsHistoryView}
-            interactionsHostRef={birdseyeInteractionsHostRef}
+        <div className="combat-area-cluster__seat-main">
+          {showActiveActions && birdseyeActions ? (
+            <BirdseyeDesktopControls
+              player={player}
+              actions={birdseyeActions}
+              gameState={gameState}
+              isHistoryView={birdseyeIsHistoryView}
+              {...seatDeploy}
+            />
+          ) : null}
+          <div className="combat-area-cluster__seat-chrome">
+            {quadrant}
+          </div>
+          <BirdseyeSeatGains
+            playerId={player.id}
+            gains={seatGains}
+            resolveCard={resolveSeatCard}
+            troopsDeployed={isActive ? birdseyeTroopsDeployed : 0}
+            troopsRetreated={isActive ? birdseyeTroopsRetreated : 0}
+            /* Totals hidden for now (mobile + desktop); keep prop wiring. */
+            showTotals={false}
           />
-        ) : null}
-        <div className="combat-area-cluster__seat-chrome">
-          {quadrant}
-          {combatSlot}
         </div>
-        <BirdseyeSeatGains
-          playerId={player.id}
-          gains={seatGains}
-          troopsDeployed={isActive ? birdseyeTroopsDeployed : 0}
-          troopsRetreated={isActive ? birdseyeTroopsRetreated : 0}
-        />
+        {showActiveActions ? (
+          <BirdseyeInteractionsHost hostRef={birdseyeInteractionsHostRef} />
+        ) : null}
       </div>
     )
   }
@@ -446,6 +456,14 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
       COMBAT_AREA_COLUMNS.flatMap(columnPlayerIds => columnPlayerIds).sort((a, b) => a - b),
     []
   )
+
+  const activePlayer = playerById.get(activePlayerId)
+  const showMobileDeploy =
+    birdseyeEnabled &&
+    birdseyeMode === 'mobile3b' &&
+    !birdseyeIsHistoryView &&
+    Boolean(activePlayer) &&
+    isCombatDeployDockVisible(troopDeploy, dreadnoughtDeploy, specimenDeploy)
 
   return (
     <>
@@ -463,6 +481,17 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
             .filter(Boolean)
             .join(' ')}
         >
+          {showMobileDeploy && activePlayer ? (
+            <div className="combat-area-cluster__mobile-deploy" onClick={e => e.stopPropagation()}>
+              <CombatDeployDock
+                troopDeploy={troopDeploy}
+                dreadnoughtDeploy={dreadnoughtDeploy}
+                specimenDeploy={specimenDeploy}
+                activePlayerId={activePlayer.id}
+                activePlayerColor={activePlayer.color}
+              />
+            </div>
+          ) : null}
           <div
             className={[
               'combat-area-cluster',

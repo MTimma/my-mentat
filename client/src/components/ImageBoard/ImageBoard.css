@@ -138,10 +138,12 @@
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 2px #000;
   pointer-events: none;
   z-index: 2;
+  overflow: visible;
 }
 
 .image-board__combat-area-cluster--docked .combat-area-cluster-stack {
   height: auto;
+  overflow: visible;
 }
 
 .game-container--desktop-play .image-board__desktop-shell {
@@ -151,6 +153,46 @@
   justify-content: flex-start;
   gap: clamp(6px, 0.8vw, 12px);
   width: 100%;
+  overflow: visible;
+}
+
+/* Extra lane so overhanging play controls sit in the board↔dock gap. */
+.game-container--desktop-play.game-container--birdseye-desktop .image-board__desktop-shell {
+  gap: clamp(3.6rem, 7vmin, 5.25rem);
+}
+
+.game-container--desktop-play .image-board--with-side-dock {
+  overflow: visible;
+  overflow-x: visible;
+}
+
+.game-container--desktop-play .image-board__expansion-dock-column {
+  display: flex;
+  flex: 0 0 auto;
+  width: clamp(220px, 32vmin, 420px);
+  align-self: flex-start;
+  position: relative;
+  overflow: visible;
+}
+
+/*
+ * History-docked leftover sits after leaders, before Turn History.
+ * Grow the dock into that strip so seat gains can expand; do not shrink the board.
+ * Cap so ultrawide does not turn the column into an empty slab.
+ */
+.game-container--desktop-play.game-container--history-docked .image-board__expansion-dock-column {
+  flex: 1 0 auto;
+  min-width: clamp(220px, 32vmin, 420px);
+  width: auto;
+  max-width: min(46rem, 100%);
+}
+
+.game-container--desktop-play .image-board__combat-area-dock {
+  width: 100%;
+  flex: 0 0 auto;
+  align-self: stretch;
+  box-sizing: border-box;
+  overflow: visible;
 }
 
 /* Rise of Ix: Ix + combat stacked under the board (mobile-like), not beside the board. */
@@ -166,6 +208,8 @@
   max-width: var(--play-board-max-edge, 72vh);
   min-width: 0;
   width: 100%;
+  /* Do not auto-margin the square stage; that opens a dead gap before the leader dock. */
+  margin-inline: 0;
 }
 
 .game-container--desktop-play .image-board__desktop-shell--stack-below .image-board__stage {
@@ -183,15 +227,8 @@
   position: relative;
 }
 
-.game-container--desktop-play .image-board__expansion-dock-column {
-  display: flex;
-  flex: 0 0 auto;
-  width: clamp(220px, 32vmin, 420px);
-  align-self: flex-start;
-  position: relative;
-}
-
 .game-container--desktop-play .image-board__expansion-dock-column--below-board {
+  flex: 0 0 auto;
   width: 100%;
   max-width: 100%;
   flex-direction: column;
@@ -212,19 +249,24 @@
   width: 100%;
 }
 
-.game-container--desktop-play .image-board__combat-area-dock {
-  width: 100%;
-  flex: 0 0 auto;
-  align-self: stretch;
-  box-sizing: border-box;
-}
-
 .game-container--desktop-play .image-board__immortality-dock {
   display: block;
   flex: 0 0 auto;
   width: 100%;
   aspect-ratio: 1676 / 1184;
   position: relative;
+}
+
+/* Leftover width feeds leader gains, not the Tleilax board. */
+.game-container--desktop-play.game-container--history-docked .image-board__immortality-dock {
+  max-width: clamp(220px, 32vmin, 420px);
+  align-self: flex-start;
+}
+
+.game-container--desktop-play.game-container--history-docked
+  .image-board__expansion-dock-column--below-board
+  .image-board__immortality-dock {
+  max-width: 100%;
 }
 
 .image-board__tech-stacks-btn {
@@ -270,18 +312,6 @@
 .image-board__negotiator-counter {
   min-width: 1ch;
   text-align: center;
-}
-
-.image-board__freighter-disc {
-  position: absolute;
-  width: clamp(5px, 1.05%, 10px);
-  aspect-ratio: 1;
-  height: auto;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 3;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 
 .image-board__dreadnought-control-marker {
@@ -1271,10 +1301,10 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   grid-template-columns: none;
   grid-template-rows: none;
   flex: 0 0 auto;
-  height: clamp(10rem, 40vw, 14.5rem);
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
+  height: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .combat-area-cluster--column {
@@ -1288,9 +1318,14 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   overflow: visible;
 }
 
+.combat-area-cluster--column.combat-area-cluster--birdseye {
+  overflow: visible;
+}
+
 .combat-area-cluster--row .combat-area-cluster__seat {
   flex: 1 1 0;
-  min-width: max(4.75rem, 22%);
+  min-width: 0;
+  max-width: 25%;
   border-bottom: none;
 }
 
@@ -1299,11 +1334,15 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 }
 
 .combat-area-cluster--row .combat-area-cluster__quadrant {
-  padding: 0 0.06em 0;
+  padding: 0;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-.combat-area-cluster--row .combat-area-cluster__seat .combat-status-strip__slot {
-  flex: 0 0 1.55em;
+.combat-area-cluster--row .combat-area-cluster__first-player-badge,
+.combat-area-cluster--row .combat-area-cluster__mentat-badge {
+  width: 14px;
+  height: 14px;
 }
 
 /* Mobile: crop name banner via image position — keep leader layer full height (no top gap). */
@@ -1315,16 +1354,16 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 .combat-area-cluster--row .combat-area-cluster__leader-img {
   display: block;
   width: 100%;
-  height: 150%;
+  height: 100%;
   max-width: none;
   object-fit: cover;
-  object-position: center 58%;
-  transform: translateY(-22%);
+  object-position: center 42%;
+  transform: none;
 }
 
 .combat-area-cluster--row .combat-area-cluster__leader--tessia .combat-area-cluster__leader-img {
-  object-position: center 58%;
-  transform: translateY(-22%);
+  object-position: center 42%;
+  transform: none;
 }
 
 /* Mobile: compact strip, shifted up over the lower portrait (no tall filler panel). */
@@ -1332,40 +1371,56 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   bottom: 0;
   align-items: flex-end;
   justify-content: center;
-  transform: translateY(-28%);
+  transform: none;
+}
+
+/* Thin in-flow band under the portrait — readable resource chips. */
+.combat-area-cluster--row .combat-area-cluster__resources-below,
+.combat-area-cluster--row .combat-area-cluster__seat-meta .combat-area-cluster__resources-panel {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  pointer-events: none;
 }
 
 .combat-area-cluster--row .combat-area-cluster__resources-panel {
   flex: 0 0 auto;
   display: block;
-  padding: 0.015em 0.04em 0.02em;
-  border-radius: 0.1em 0.1em 0 0;
-  box-shadow: 0 0.12em 0.3em rgba(0, 0, 0, 0.5);
+  padding: 0.12em 0.1em 0.1em;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
 }
 
 .combat-area-cluster--row .combat-area-cluster__resources {
-  gap: 0;
+  gap: 0.12rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .combat-area-cluster--row .combat-area-cluster__resource {
   padding-block: 0;
-  line-height: 1;
-  font-size: 0.84em;
+  line-height: 1.05;
+  font-size: 0.78em;
 }
 
 .combat-area-cluster--row .combat-area-cluster__value {
-  font-size: 1em;
+  font-size: 0.92em;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
 }
 
 .combat-area-cluster--row .combat-area-cluster__icon,
 .combat-area-cluster--row .combat-area-cluster__agent-icon {
-  width: 0.85em;
-  height: 0.85em;
+  width: 0.95em;
+  height: 0.95em;
 }
 
 .combat-area-cluster--row .combat-area-cluster__icon--dreadnought {
-  width: 0.85em;
-  height: 0.85em;
+  width: 0.95em;
+  height: 0.95em;
 }
 
 .combat-area-cluster--column .combat-area-cluster__seat {

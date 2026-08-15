@@ -141,7 +141,7 @@ export const COMBAT_AREA_BOUNDS = {
   height: 34,
 } as const
 
-/** Troop deploy controls — below conflict card, left of leader grid. Tune with ?markerDebug=1. */
+/** Troop deploy controls — below conflict card, left of leader grid. Legacy board dock (unused; deploy lives in seat chrome). */
 export const COMBAT_DEPLOY_DOCK_RECT = {
   left: CONFLICT_CARD_RECT.left,
   top: CONFLICT_CARD_RECT.top + CONFLICT_CARD_RECT.height,
@@ -150,6 +150,21 @@ export const COMBAT_DEPLOY_DOCK_RECT = {
     COMBAT_AREA_BOUNDS.top +
     COMBAT_AREA_BOUNDS.height -
     (CONFLICT_CARD_RECT.top + CONFLICT_CARD_RECT.height),
+} as const
+
+/**
+ * Ranked combat strip on the board stage (desktop + mobile).
+ * Baseline mid-size was left 47 / top 93 / width 42 / height 7.
+ * Widened so 4 chips fit with no scroll (cap 1.5× width = 63, 2× height = 14).
+ * left 40 sits 1% right of conflict card (ends 39); width 60 meets the board edge.
+ * Height 12 (cap 14) for 2-zone chips + podium labels; top 88 keeps bottom at 100.
+ * Tune with ?markerDebug=1.
+ */
+export const COMBAT_RANK_STRIP_RECT = {
+  left: 40,
+  top: 88,
+  width: 60,
+  height: 12,
 } as const
 
 /** Effect-retreat dock vertical anchor (inner % Y); X is in App.css `.effect-retreat-troop-dock__anchor`. */

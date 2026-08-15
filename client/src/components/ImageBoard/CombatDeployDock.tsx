@@ -17,16 +17,13 @@ export interface CombatDeployDockProps {
   style?: React.CSSProperties
 }
 
-const CombatDeployDock: React.FC<CombatDeployDockProps> = ({
-  troopDeploy,
-  dreadnoughtDeploy,
-  specimenDeploy,
-  activePlayerId,
-  activePlayerColor,
-  className,
-  style,
-}) => {
-  const deployStripVisible = Boolean(
+/** Invented helper name `isCombatDeployDockVisible` — same visibility rule the dock already used. */
+export function isCombatDeployDockVisible(
+  troopDeploy?: CombatTroopDeployProps,
+  dreadnoughtDeploy?: CombatDreadnoughtDeployProps,
+  specimenDeploy?: CombatSpecimenDeployProps,
+): boolean {
+  return Boolean(
     (troopDeploy &&
       troopDeploy.canDeploy &&
       ((troopDeploy.deployableTroops > 0 && troopDeploy.garrisonTroops > 0) ||
@@ -39,7 +36,23 @@ const CombatDeployDock: React.FC<CombatDeployDockProps> = ({
     (specimenDeploy &&
       specimenDeploy.canDeploy &&
       ((specimenDeploy.deployableSpecimens > 0 && specimenDeploy.specimensInTanks > 0) ||
-        specimenDeploy.deployedThisTurn > 0))
+        specimenDeploy.deployedThisTurn > 0)),
+  )
+}
+
+const CombatDeployDock: React.FC<CombatDeployDockProps> = ({
+  troopDeploy,
+  dreadnoughtDeploy,
+  specimenDeploy,
+  activePlayerId,
+  activePlayerColor,
+  className,
+  style,
+}) => {
+  const deployStripVisible = isCombatDeployDockVisible(
+    troopDeploy,
+    dreadnoughtDeploy,
+    specimenDeploy,
   )
 
   if (!troopDeploy && !dreadnoughtDeploy && !specimenDeploy) return null

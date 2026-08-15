@@ -3,7 +3,7 @@
   top: 0;
   right: 0;
   bottom: var(--footer-height, var(--footer-height-static, 84px));
-  width: min(var(--play-history-sidebar-min-width, 304px), 92vw);
+  width: min(var(--play-history-sidebar-min-width, 180px), 92vw);
   height: auto;
   background: var(--chrome-panel-gradient);
   color: var(--chrome-text);
@@ -955,9 +955,9 @@
     left: auto;
     bottom: auto;
     flex: none;
-    width: 100%;
+    width: var(--play-history-sidebar-width, 180px);
     min-width: 0;
-    max-width: none;
+    max-width: var(--play-history-sidebar-width, 180px);
     min-height: 0;
     height: 100%;
     max-height: 100%;
@@ -1200,7 +1200,7 @@
     right: 0;
     left: auto;
     bottom: calc(var(--footer-height, var(--footer-height-static, 84px)) + var(--vv-layout-gap-bottom, 0px));
-    width: min(var(--play-history-sidebar-min-width, 304px), 28.8vw);
+    width: min(var(--play-history-sidebar-min-width, 180px), 28.8vw);
     height: auto;
     border-right: 1px solid var(--chrome-border-accent);
     border-radius: 0;

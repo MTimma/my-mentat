@@ -4,10 +4,13 @@ import {
   aggregateInfluenceGains,
   aggregateResourceGains,
   computeTurnGainTotals,
+  discardedOrTrashedCardLabel,
+  freighterRecallStepOrdinal,
   getGainGroupIcon,
   getRepeatedIconDisplay,
   groupGainsForDisplay,
   INLINE_DISCARDS_GROUP_KEY,
+  resolveFreighterMoveGroupTitle,
   splitGainsByCostAndReward,
   type AggregatedResourceGain,
   type CardTypeTotal,
@@ -24,14 +27,14 @@ import {
 import { getRewardDisplayName, getRewardIcon } from '../../utils/rewardIcons'
 import { getTechTileByName } from '../../data/techTiles'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
+import FreighterIcon from '../FreighterIcon/FreighterIcon'
 import TechTileFlipBadge from '../TechTileFlipBadge/TechTileFlipBadge'
 import './TurnGainsDisplay.css'
 
 const TECH_GAIN_TITLE_PREFIX = 'Tech: '
 
-function renderSourceGroupTitle(group: TurnGainSourceGroup) {
-  const { title } = group
-  const groupIcon = getGainGroupIcon(group)
+function renderSourceGroupTitle(group: TurnGainSourceGroup, title: string) {
+  const groupIcon = getGainGroupIcon({ ...group, title })
 
   if (title.startsWith(TECH_GAIN_TITLE_PREFIX)) {
     const tileName = title.slice(TECH_GAIN_TITLE_PREFIX.length)
@@ -140,6 +143,21 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     <DreadnoughtIcon playerId={playerId} className={className} />
   )
 
+  const renderFreighterMove = (
+    direction: 'up' | 'down',
+    stepAmount: number,
+    className = 'turn-gain-freighter-icon'
+  ) => {
+    const ordinal = direction === 'down' ? freighterRecallStepOrdinal(stepAmount) : null
+    const title = direction === 'down' ? (ordinal ? `Recall ${ordinal}` : 'Recall') : 'Advance'
+    return (
+      <span className="turn-gain-freighter-move" title={title}>
+        <FreighterIcon direction={direction} size="sm" className={className} title={title} />
+        {ordinal ? <span className="turn-gain-freighter-step">{ordinal}</span> : null}
+      </span>
+    )
+  }
+
   const renderGainIcon = (iconPath: string, displayName: string, className = 'gain-icon') => {
     if (iconPath.includes('dreadnought')) {
       return renderDreadnoughtGainIcon(className)
@@ -247,9 +265,15 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     )
   }
 
+  const cardLabelForTrashOrDiscard = (gain: AggregatedResourceGain) => {
+    const resolved =
+      gain.cardId != null ? resolveCard?.(gain.cardId, gain.name ?? '') : undefined
+    return discardedOrTrashedCardLabel(gain, resolved?.name)
+  }
+
   const renderInlineTrashGain = (gain: AggregatedResourceGain, index: number) => {
     const iconPath = getRewardIcon(RewardType.TRASH)
-    const label = gain.name ?? 'Trash'
+    const label = cardLabelForTrashOrDiscard(gain)
     return (
       <div
         key={`trash-inline-${index}`}
@@ -257,14 +281,14 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         aria-label={`Trashed ${label}`}
       >
         {iconPath ? renderGainIcon(iconPath, 'Trash', 'turn-gain-trash-icon') : null}
-        {renderCardGains(gain.cardId, gain.name, gain.amount, `trash-inline-card-${index}`)}
+        {renderCardGains(gain.cardId, label, gain.amount, `trash-inline-card-${index}`)}
       </div>
     )
   }
 
   const renderInlineDiscardGain = (gain: AggregatedResourceGain, index: number) => {
     const iconPath = getRewardIcon(RewardType.DISCARD)
-    const label = gain.name ?? 'Discard'
+    const label = cardLabelForTrashOrDiscard(gain)
     return (
       <div
         key={`discard-inline-${index}`}
@@ -272,7 +296,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         aria-label={`Discarded ${label}`}
       >
         {iconPath ? renderGainIcon(iconPath, 'Discard', 'turn-gain-discard-icon') : null}
-        {renderCardGains(gain.cardId, gain.name, gain.amount, `discard-inline-card-${index}`)}
+        {renderCardGains(gain.cardId, label, gain.amount, `discard-inline-card-${index}`)}
       </div>
     )
   }
@@ -284,13 +308,27 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   ) => {
     const rewardType = gain.type as RewardType
     const iconPath = getRewardIcon(rewardType)
-    const displayName = getRewardDisplayName(rewardType, gain.name)
     const isCost = side === 'cost'
+    const displayName =
+      rewardType === RewardType.FREIGHTER
+        ? isCost
+          ? 'Recall'
+          : 'Advance'
+        : getRewardDisplayName(rewardType, gain.name)
     const absAmount = Math.abs(gain.amount)
+    const freighterOrdinal = rewardType === RewardType.FREIGHTER && isCost
+      ? freighterRecallStepOrdinal(absAmount)
+      : null
     const ariaLabel =
-      absAmount === 1
-        ? `${isCost ? 'Paid' : 'Gained'} 1 ${displayName}`
-        : `${isCost ? 'Paid' : 'Gained'} ${absAmount} ${displayName}`
+      rewardType === RewardType.FREIGHTER
+        ? isCost
+          ? freighterOrdinal
+            ? `Recall ${freighterOrdinal}`
+            : 'Recall'
+          : 'Advance'
+        : absAmount === 1
+          ? `${isCost ? 'Paid' : 'Gained'} 1 ${displayName}`
+          : `${isCost ? 'Paid' : 'Gained'} ${absAmount} ${displayName}`
 
     return (
       <div
@@ -310,6 +348,8 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
               <span className="gain-text-fallback">{displayName}</span>
             )}
           </span>
+        ) : rewardType === RewardType.FREIGHTER ? (
+          renderFreighterMove(isCost ? 'down' : 'up', absAmount)
         ) : rewardType === RewardType.CARD ? (
           renderCardGains(gain.cardId, gain.name, gain.amount, `${side}-card-${index}`)
         ) : rewardType === RewardType.TRASH ? (
@@ -493,9 +533,42 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     const displayName = getRewardDisplayName(total.type)
     const hasBoth = total.gained > 0 && total.spent > 0
     const isPersuasion = total.type === RewardType.PERSUASION
+    const isFreighter = total.type === RewardType.FREIGHTER
     const usesIconOnlyForSingleUnit =
       total.type === RewardType.VICTORY_POINTS || total.type === RewardType.WATER
     const renderAmount = usesIconOnlyForSingleUnit ? renderTotalIconOnlyAmount : renderTotalAmount
+
+    if (isFreighter) {
+      const recallOrdinal = total.spent > 0 ? freighterRecallStepOrdinal(total.spent) : null
+      const title = [
+        total.spent > 0 ? (recallOrdinal ? `Recall ${recallOrdinal}` : 'Recall') : null,
+        total.gained > 0 ? 'Advance' : null,
+      ]
+        .filter(Boolean)
+        .join(' → ')
+      return (
+        <div
+          key={total.type}
+          className="turn-gain-total-item"
+          title={title || 'Freighter'}
+          aria-label={title || 'Freighter'}
+        >
+          {hasBoth ? (
+            <span className="turn-gain-total-flow">
+              {renderFreighterMove('down', total.spent, 'turn-gain-total-icon')}
+              <span className="turn-gain-flow-arrow" aria-hidden="true">
+                →
+              </span>
+              {renderFreighterMove('up', total.gained, 'turn-gain-total-icon')}
+            </span>
+          ) : total.spent > 0 ? (
+            renderFreighterMove('down', total.spent, 'turn-gain-total-icon')
+          ) : (
+            renderFreighterMove('up', total.gained, 'turn-gain-total-icon')
+          )}
+        </div>
+      )
+    }
 
     return (
       <div
@@ -603,6 +676,9 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
       <div className="turn-gains-display">
       {groups.map(group => {
         const isInlineDiscards = group.key === INLINE_DISCARDS_GROUP_KEY
+        const groupTitle = resolveFreighterMoveGroupTitle(group, cardId =>
+          resolveCard?.(cardId, '')?.name
+        )
         const { costs, rewards } = splitGainsByCostAndReward(group.gains)
         const costContent = renderGainSide(costs, 'cost')
         const rewardContent = renderGainSide(rewards, 'reward')
@@ -618,7 +694,9 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
               .filter(Boolean)
               .join(' ')}
           >
-            {showSourceTitles && group.title && !isInlineDiscards ? renderSourceGroupTitle(group) : null}
+            {showSourceTitles && groupTitle && !isInlineDiscards
+              ? renderSourceGroupTitle(group, groupTitle)
+              : null}
             <div
               className={[
                 'turn-gain-source-flow',
@@ -626,8 +704,8 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              title={isInlineDiscards ? 'Discarded cards' : group.title}
-              aria-label={isInlineDiscards ? 'Discarded cards' : group.title}
+              title={isInlineDiscards ? 'Discarded cards' : groupTitle}
+              aria-label={isInlineDiscards ? 'Discarded cards' : groupTitle}
             >
               {isInlineDiscards ? (
                 costContent

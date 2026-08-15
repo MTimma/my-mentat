@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="void">
+<head>
+  <meta charset="UTF-8" />
+  <title>CombatRankStrip visual fixture</title>
+  <link rel="stylesheet" href="/src/theme-play-chrome.css" />
+  <style>
+    html, body {
+      margin: 0;
+      background: var(--chrome-shell, #14110f);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--chrome-text, #e0d4c0);
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 16px;
+      font-size: 13px;
+    }
+    .toolbar button {
+      border: 1px solid var(--chrome-border-accent-strong, rgba(156, 120, 78, 0.45));
+      background: var(--chrome-accent-muted, rgba(156, 120, 78, 0.12));
+      color: var(--chrome-text, #e0d4c0);
+      padding: 4px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .stage {
+      position: relative;
+      width: 650px;
+      height: 650px;
+      margin: 16px;
+      background:
+        radial-gradient(
+          ellipse at 50% 40%,
+          color-mix(in srgb, var(--chrome-surface, #1e1c1a) 70%, var(--chrome-accent, #9c784e)) 0%,
+          var(--chrome-shell, #14110f) 70%
+        );
+      border: 1px solid var(--chrome-border-accent-strong, rgba(156, 120, 78, 0.45));
+    }
+    .stage__label {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      font-size: 12px;
+    }
+    .zoom {
+      margin: 16px;
+    }
+    .zoom h2 { font-size: 13px; font-weight: 600; margin: 0 0 8px; }
+    .zoom-chip {
+      width: 382px;
+      height: 312px;
+      transform-origin: top left;
+      overflow: hidden;
+    }
+    .zoom-chip .combat-rank-strip.combat-rank-strip--board {
+      position: relative;
+      left: auto;
+      top: auto;
+      width: 390px;
+      height: 78px;
+      transform: scale(4);
+      transform-origin: top left;
+    }
+    .leader-avatar-btn {
+      box-sizing: border-box;
+      border-width: 2.5px;
+      border-style: solid;
+      padding: 1px;
+      background: rgba(0, 0, 0, 0.42);
+    }
+    .leader-avatar-btn.red { border-color: #d32f2f; }
+    .leader-avatar-btn.green { border-color: #388e3c; }
+    .leader-avatar-btn.yellow { border-color: #fbc02d; }
+    .leader-avatar-btn.blue { border-color: #1976d2; }
+  </style>
+  <link rel="stylesheet" href="/src/components/ImageBoard/CombatRankStrip.css" />
+</head>
+<body>
+  <div class="toolbar">
+    <button type="button" id="theme-toggle" aria-pressed="false">Theme: void</button>
+    <span>Chip fill/border follow --chrome-* (void sand / blueish steel). Podium 1/2/3 stay metal.</span>
+  </div>
+  <div class="zoom">
+    <h2>4× zoom · 390×78 strip (60×12% of 650, cap 63×14) · 4 slots · place 1 right · strength 12</h2>
+    <div class="zoom-chip" id="zoom-host"></div>
+  </div>
+  <div class="stage" id="board">
+    <div class="stage__label">650×650 board · strip 60×12% = 390×78 (cap 63×14) · 4 slots · place 1 right</div>
+    <div
+      class="combat-rank-strip combat-rank-strip--board"
+      style="left:40%;top:88%;width:60%;height:12%"
+      data-marker="combat-rank-strip"
+      data-slot-count="4"
+      role="list"
+    >
+      <div class="combat-rank-strip__slot combat-rank-strip__slot--place-4" data-slot-place="4" role="listitem">
+        <span class="combat-rank-strip__slot-label combat-rank-strip__slot-label--4">4</span>
+        <div class="combat-rank-strip__chip combat-rank-strip__chip--yellow" data-place="4">
+          <span class="combat-rank-strip__body">
+            <span class="combat-rank-strip__leader leader-avatar-btn yellow">
+              <img src="/leaders/icons/helena-head.png" alt="" class="combat-rank-strip__leader-icon" />
+            </span>
+            <span class="combat-rank-strip__strength">
+              <img src="/icon/sword.png" alt="" class="combat-rank-strip__icon" />
+              <span class="combat-rank-strip__value combat-rank-strip__value--strength">2</span>
+            </span>
+          </span>
+          <span class="combat-rank-strip__rule"></span>
+          <span class="combat-rank-strip__forces">
+            <span class="combat-rank-strip__stat">
+              <img src="/icon/troop.png" alt="" class="combat-rank-strip__icon" />
+              <span class="combat-rank-strip__value">1</span>
+            </span>
+            <span class="combat-rank-strip__stat">
+              <img src="/icon/dreadnought_card.png" alt="" class="combat-rank-strip__icon combat-rank-strip__icon--dreadnought dreadnought-icon dreadnought-icon--card" />
+              <span class="combat-rank-strip__value">0</span>
+            </span>
+          </span>
+        </div>
+      </div>
+      <div class="combat-rank-strip__slot combat-rank-strip__slot--place-3" data-slot-place="3" role="listitem">
+        <span class="combat-rank-strip__slot-label combat-rank-strip__slot-label--3">3</span>
+        <div class="combat-rank-strip__chip combat-rank-strip__chip--blue" data-place="3">
+          <span class="combat-rank-strip__body">
+            <span class="combat-rank-strip__leader leader-avatar-btn blue">
+              <img src="/leaders/icons/paul-head.png" alt="" class="combat-rank-strip__leader-icon" />
+            </span>
+            <span class="combat-rank-strip__strength">
+              <img src="/icon/sword.png" alt="" class="combat-rank-strip__icon" />
+              <span class="combat-rank-strip__value combat-rank-strip__value--strength">7</span>
+            </span>
+          </span>
+          <span class="combat-rank-strip__rule"></span>
+          <span class="combat-rank-strip__forces">
+            <span class="combat-rank-strip__stat">
+              <img src="/icon/troop.png" alt="" class="combat-rank-strip__icon" />
+              <span class="combat-rank-strip__value">2</span>
+            </span>
+            <span class="combat-rank-strip__stat">
+              <img src="/icon/dreadnought_card.png" alt="" class="combat-rank-strip__icon combat-rank-strip__icon--dreadnought dreadnought-icon dreadnought-icon--card" />
+              <span class="combat-rank-strip__value">1</span>
+            </span>
+          </span>
+        </div>
+      </div>
+      <div class="combat-rank-strip__slot combat-rank-strip__slot--place-2" data-slot-place="2" role="listitem">
+        <span class="combat-rank-strip__slot-label combat-rank-strip__slot-label--2">2</span>
+        <div class="combat-rank-strip__chip combat-rank-strip__chip--green" data-place="2">
+          <span class="combat-rank-strip__body">
+            <span class="combat-rank-strip__leader leader-avatar-btn green">
+              <img src="/leaders/icons/leto-head.png" alt="" class="combat-rank-strip__leader-icon" />
+            </span>
+            <span class="combat-rank-strip__strength">
+              <img src="/icon/sword.png" alt="" class="combat-rank-strip__icon" />
+              <span class="combat-rank-strip__value combat-rank-strip__value--strength">9</span>
+            </span>
+          </span>
+          <span class="combat-rank-strip__rule"></span>
+          <span class="combat-rank-strip__forces">
+            <span class="combat-rank-strip__stat">
+              <img src="/icon/troop.png" alt="" class="combat-rank-strip__icon" />
+              <span class="combat-rank-strip__value">3</span>
+            </span>
+            <span class="combat-rank-strip__stat">
+              <img src="/icon/dreadnought_card.png" alt="" class="combat-rank-strip__icon combat-rank-strip__icon--dreadnought dreadnought-icon dreadnought-icon--card" />
+              <span class="combat-rank-strip__value">1</span>
+            </span>
+          </span>
+        </div>
+      </div>
+      <div class="combat-rank-strip__slot combat-rank-strip__slot--place-1" data-slot-place="1" role="listitem">
+        <span class="combat-rank-strip__slot-label combat-rank-strip__slot-label--1">1</span>
+        <div class="combat-rank-strip__chip combat-rank-strip__chip--red combat-rank-strip__chip--active" data-place="1" id="place-1-chip">
+          <span class="combat-rank-strip__body">
+            <span class="combat-rank-strip__leader leader-avatar-btn red">
+              <img src="/leaders/icons/baron-head.png" alt="" class="combat-rank-strip__leader-icon" />
+            </span>
+            <span class="combat-rank-strip__strength">
+              <img src="/icon/sword.png" alt="" class="combat-rank-strip__icon" />
+              <span class="combat-rank-strip__value combat-rank-strip__value--strength">12</span>
+            </span>
+          </span>
+          <span class="combat-rank-strip__rule"></span>
+          <span class="combat-rank-strip__forces">
+            <span class="combat-rank-strip__stat">
+              <img src="/icon/troop.png" alt="" class="combat-rank-strip__icon" />
+              <span class="combat-rank-strip__value">4</span>
+            </span>
+            <span class="combat-rank-strip__stat">
+              <img src="/icon/dreadnought_card.png" alt="" class="combat-rank-strip__icon combat-rank-strip__icon--dreadnought dreadnought-icon dreadnought-icon--card" />
+              <span class="combat-rank-strip__value">2</span>
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const src = document.getElementById('board').querySelector('[data-marker="combat-rank-strip"]');
+    const host = document.getElementById('zoom-host');
+    host.appendChild(src.cloneNode(true));
+
+    const toggle = document.getElementById('theme-toggle');
+    const applyTheme = (theme) => {
+      document.documentElement.dataset.theme = theme;
+      toggle.textContent = `Theme: ${theme}`;
+      toggle.setAttribute('aria-pressed', theme === 'blueish' ? 'true' : 'false');
+    };
+    applyTheme('void');
+    toggle.addEventListener('click', () => {
+      applyTheme(document.documentElement.dataset.theme === 'void' ? 'blueish' : 'void');
+    });
+  </script>
+</body>
+</html>

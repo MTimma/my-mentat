@@ -1,0 +1,274 @@
+/* Ranked combat chips. Fill/border follow play chrome theme (html[data-theme]
+   void = sand/brown, blueish = steel) via --chrome-* tokens. Podium 1/2/3 stay metal. */
+
+.combat-rank-strip {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 0.12em;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.combat-rank-strip--board {
+  position: absolute;
+  z-index: 3;
+  height: 100%;
+  padding: 0.02em 0.04em;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  /* Height container so portraits/icons fill the chip box; cqw stays on the board. */
+  container-type: size;
+  font-size: clamp(9px, 1.55cqw, 14px);
+  line-height: 1.05;
+  color: var(--chrome-text, #e0d4c0);
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 2px #000;
+}
+
+.combat-rank-strip__slot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  max-width: calc((100% - 0.36em) / 4);
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.combat-rank-strip__slot-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30cqh;
+  height: 30cqh;
+  font-weight: 900;
+  font-size: 26cqh;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Podium 1/2/3 stay gold/silver/bronze regardless of void/blueish theme. */
+.combat-rank-strip__slot-label--1 {
+  color: #f0d078;
+  font-size: 28cqh;
+  text-shadow:
+    0 0 8px rgba(212, 177, 106, 0.95),
+    0 0 2px #000,
+    0 1px 2px #000;
+}
+
+.combat-rank-strip__slot-label--2 {
+  color: #c5cdd6;
+  font-size: 26cqh;
+  text-shadow:
+    0 0 7px rgba(180, 190, 205, 0.75),
+    0 0 2px #000,
+    0 1px 2px #000;
+}
+
+.combat-rank-strip__slot-label--3 {
+  color: #d09258;
+  font-size: 26cqh;
+  text-shadow:
+    0 0 7px rgba(196, 122, 58, 0.75),
+    0 0 2px #000,
+    0 1px 2px #000;
+}
+
+.combat-rank-strip__slot-label--4 {
+  color: var(--chrome-text-muted, rgba(224, 212, 192, 0.72));
+  font-size: 26cqh;
+  font-weight: 900;
+  text-shadow: 0 1px 2px #000;
+}
+
+.combat-rank-strip__chip {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
+  gap: 0;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 4cqh 0.12em 3cqh;
+  border: 1px solid var(--chrome-border-accent-strong, rgba(156, 120, 78, 0.45));
+  border-radius: 3px;
+  background:
+    linear-gradient(
+      180deg,
+      var(--chrome-accent-hover, rgba(156, 120, 78, 0.22)),
+      var(--chrome-accent-muted, rgba(156, 120, 78, 0.12))
+    ),
+    color-mix(in srgb, var(--chrome-shell, #14110f) 94%, transparent);
+  color: var(--chrome-text, #e0d4c0);
+  font-weight: 700;
+  pointer-events: auto;
+  overflow: hidden;
+  /* Chip is the cqh box so portrait/stats fill remaining height under the label. */
+  container-type: size;
+}
+
+.combat-rank-strip__chip--active {
+  border-color: var(--chrome-highlight-name, #c9a050);
+  box-shadow: 0 0 0 1px var(--chrome-accent-glow, rgba(156, 120, 78, 0.35));
+}
+
+.combat-rank-strip__chip--empty {
+  background: color-mix(in srgb, var(--chrome-shell, #14110f) 28%, transparent);
+  border: 1px dashed var(--chrome-border-accent, rgba(156, 120, 78, 0.28));
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/* Top zone: square portrait (main) + total combat to the right. */
+.combat-rank-strip__body {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12em;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+}
+
+.combat-rank-strip__leader {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 50cqh;
+  height: 50cqh;
+  min-width: 50cqh;
+  min-height: 50cqh;
+  aspect-ratio: 1 / 1;
+  border-radius: 2px;
+  overflow: hidden;
+  padding: 1px;
+  border-width: 1.5px;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.combat-rank-strip__leader-icon,
+.combat-rank-strip__leader-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 1px;
+}
+
+.combat-rank-strip__leader-icon {
+  display: block;
+  object-fit: cover;
+  object-position: center 18%;
+}
+
+.combat-rank-strip__leader-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--chrome-inset, rgba(0, 0, 0, 0.28));
+  font-size: 26cqh;
+  font-weight: 800;
+  color: var(--chrome-text, #e0d4c0);
+  line-height: 1;
+}
+
+.combat-rank-strip__strength {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.04em;
+  flex: 0 0 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.combat-rank-strip__strength .combat-rank-strip__icon {
+  width: 30cqh;
+  height: 30cqh;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
+}
+
+.combat-rank-strip__value--strength {
+  min-width: 2ch;
+  text-align: center;
+  font-size: 42cqh;
+  font-weight: 800;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.combat-rank-strip__rule {
+  flex: 0 0 1px;
+  height: 1px;
+  width: 78%;
+  align-self: center;
+  margin: 2cqh 0 1cqh;
+  background: var(--chrome-border-accent-strong, rgba(156, 120, 78, 0.45));
+  pointer-events: none;
+}
+
+/* Below the line: troop + dreadnought, horizontal. */
+.combat-rank-strip__forces {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.18em;
+  min-width: 0;
+  flex: 0 0 36cqh;
+  padding: 0 0.04em 1cqh;
+}
+
+.combat-rank-strip__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.04em;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.combat-rank-strip__forces .combat-rank-strip__icon {
+  width: 34cqh;
+  height: 34cqh;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
+}
+
+/* Beat DreadnoughtIcon --card clamp(14px) so RoI dreads fit a 4-chip ~360px row. */
+.combat-rank-strip .combat-rank-strip__icon--dreadnought.dreadnought-icon,
+.combat-rank-strip .combat-rank-strip__icon--dreadnought.dreadnought-icon--card {
+  width: 34cqh;
+  height: 34cqh;
+  min-width: 0;
+  min-height: 0;
+}
+
+.combat-rank-strip__forces .combat-rank-strip__value {
+  min-width: 1ch;
+  text-align: center;
+  font-size: 28cqh;
+  line-height: 1;
+  flex-shrink: 0;
+}

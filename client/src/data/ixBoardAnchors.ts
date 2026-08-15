@@ -2,7 +2,8 @@
  * Rise of Ix — `riseofix2.png` overlay (full Ix board panel).
  *
  * All rects/points below use **local 0–100** coordinates within the panel.
- * Embedded/mobile placement also uses `IX_BOARD_OVERLAY_RECT` on Board.jpg.
+ * Embedded play (desktop + mobile) uses `IX_BOARD_OVERLAY_RECT_MOBILE` on Board.jpg.
+ * `IX_BOARD_OVERLAY_RECT` is the legacy desktop-only anchor (kept for reference/tuning).
  * Tune with `?hotspotDebug=1` / `?markerDebug=1`.
  */
 import {
@@ -10,10 +11,10 @@ import {
   type BoardHotspot,
 } from './boardHotspots'
 
-/** Position of the Ix board image on the main `Board.jpg` (inner %). */
+/** Legacy desktop-only Ix overlay on `Board.jpg` (inner %). Prefer mobile rect for play. */
 export const IX_BOARD_OVERLAY_RECT = { left: 4, top: 20, width: 28, height: 28 }
 
-/** Mobile embedded RoI overlay on `Board.jpg` (inner %). */
+/** Embedded RoI overlay on `Board.jpg` (inner %) — used on mobile and desktop play. */
 export const IX_BOARD_OVERLAY_RECT_MOBILE = { left: 50, top: 60, width: 35, height: 35 }
 
 function ixHotspot(

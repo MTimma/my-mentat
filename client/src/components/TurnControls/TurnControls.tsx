@@ -18,6 +18,7 @@ import CardSearch from '../CardSearch/CardSearch'
 import ValueStepper from '../ValueStepper/ValueStepper'
 import { immortalityGraftEnabled } from '../../expansions/immortality/graft'
 import AgentIcon from '../AgentIcon/AgentIcon'
+import RevealCardsIcon from '../RevealCardsIcon/RevealCardsIcon'
 import { getLeaderIconPath } from '../../data/leaders'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS, REVEAL_EFFECT_TEXTS } from '../../data/effectTexts'
@@ -137,7 +138,7 @@ interface TurnControlsProps {
   showDesktopPlayBar?: boolean
   /** Hide Play/Reveal/Intrigue/Tech action row (actions live on combat dock). */
   hidePrimaryTurnActions?: boolean
-  /** Portal pending reward/choice chips into birds-eye seat chrome. */
+  /** Portal pending reward/choice chips into full-width birds-eye bar under the active seat. */
   birdseyeInteractionsHost?: HTMLElement | null
   showEndTurnButton?: boolean
   showPassCombatButton?: boolean
@@ -1928,9 +1929,12 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
       return text || reward.reward.custom
     }
     if (reward.isTrash) {
-      return reward.reward.trashThisCard
-        ? `Trash ${cardName}`
-        : `Choose a card to trash (${cardName})`
+      if (!reward.reward.trashThisCard) {
+        return `Choose a card to trash (${cardName})`
+      }
+      return reward.reward.victoryPoints
+        ? `Trash ${cardName} for ${reward.reward.victoryPoints} VP`
+        : `Trash ${cardName}`
     }
     return `Resolve effect for ${cardName}`
   }
@@ -2020,7 +2024,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 )
               : reward.isTrash
                 ? reward.reward.trashThisCard
-                  ? `Trash ${card.source.name}`
+                  ? reward.reward.victoryPoints
+                    ? `Trash ${card.source.name} for ${reward.reward.victoryPoints} VP`
+                    : `Trash ${card.source.name}`
                   : `Choose a card to trash (${card.source.name})`
                 : undefined
           return (
@@ -3638,8 +3644,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                     title={revealActionTitle}
                     aria-label={`Reveal hand with ${activePlayer.handCount} cards`}
                   >
+                    <RevealCardsIcon className="selected-card-action-reveal-cards" />
+                    <span className="selected-card-action-label selected-card-action-label--play">Reveal</span>
                     <span className="selected-card-action-count">{activePlayer.handCount}</span>
-                    <span className="selected-card-action-label">Reveal</span>
                   </button>
                 )}
                 {!isHistoryView && !isEndGame && renderIntrigueActionButton()}

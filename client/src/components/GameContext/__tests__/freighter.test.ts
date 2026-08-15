@@ -111,7 +111,7 @@ describe('freighter shipping track', () => {
     s = resolveFreighter(s, 0, choice.id, 'advance')
     expect(s.players[0].freighterStep).toBe(1)
     expect(s.gains).toContainEqual(
-      expect.objectContaining({ type: RewardType.FREIGHTER, amount: 1, name: 'Advance' })
+      expect.objectContaining({ type: RewardType.FREIGHTER, amount: 1, name: 'Smuggling' })
     )
   })
 
@@ -141,7 +141,7 @@ describe('freighter shipping track', () => {
     expect(s.players[0].freighterStep).toBe(0)
     expect(shippingPendingRewards(s)).toEqual([])
     expect(shippingPendingChoices(s)).toEqual([])
-    const recallGain = s.gains.find(g => g.type === RewardType.FREIGHTER && g.name === 'Recall')
+    const recallGain = s.gains.find(g => g.type === RewardType.FREIGHTER && g.amount <= 0)
     expect(recallGain).toBeDefined()
     expect(Math.abs(recallGain!.amount)).toBe(0)
   })

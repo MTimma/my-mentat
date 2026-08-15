@@ -96,6 +96,15 @@
   height: 100%;
 }
 
+.combat-phase-overlay--board-scoped,
+.combat-phase-overlay.play-board-modal-overlay--scoped,
+.game-container--desktop-play .combat-phase-overlay--board-scoped,
+.game-container--desktop-play .combat-phase-overlay.play-board-modal-overlay--scoped {
+  justify-content: flex-start;
+  align-items: center;
+  padding-left: 64px;
+}
+
 .player-play-area-overlay--board-scoped .player-play-area-modal,
 .combat-player-detail-overlay--board-scoped .combat-player-detail-modal {
   max-height: 100%;

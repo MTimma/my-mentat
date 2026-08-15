@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getFreshDefaultGameState, applyGameAction } from '../GameContext'
-import { TechTileId } from '../../../data/techTiles'
+import { TechTileId, techTileGainSourceId } from '../../../data/techTiles'
 import {
   applyHoloprojectorsDiscard,
   applySonicSnoopers,
@@ -154,8 +154,9 @@ describe('tech tile activation', () => {
     expect(p.activatedTechThisRound).toContain(TechTileId.HOLOPROJECTORS)
     const discardGain = after.gains.find(g => g.type === RewardType.DISCARD)
     expect(discardGain).toMatchObject({
-      sourceId: hand1.id,
-      name: 'Holoprojectors',
+      sourceId: techTileGainSourceId(TechTileId.HOLOPROJECTORS),
+      cardId: hand1.id,
+      name: hand1.name,
       amount: -1,
       source: GainSource.TECH,
     })

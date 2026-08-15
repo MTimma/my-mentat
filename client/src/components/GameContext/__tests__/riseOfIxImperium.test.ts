@@ -345,6 +345,67 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
       )
       expect(s.pendingRewards ?? []).toHaveLength(0)
     })
+
+    it('claiming trash-for-VP trashes the card and grants 1 VP', () => {
+      const card = cloneRoiCard('Ixian Engineer')
+      card.id = 88010
+      let s = getRoiTestState({
+        playerOverrides: {
+          deck: [card],
+          handCount: 1,
+          victoryPoints: 2,
+          tech: [
+            { id: TechTileId.MINIMIC_FILM, faceUp: true },
+            { id: TechTileId.ARTILLERY, faceUp: true },
+            { id: TechTileId.WINDTRAPS, faceUp: true },
+          ],
+        },
+      })
+      s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [card.id] })
+      const pending = s.pendingRewards.find(
+        r => r.reward.trashThisCard && r.reward.victoryPoints === 1
+      )
+      expect(pending).toBeDefined()
+
+      s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: pending!.id })
+
+      expect(s.players[0].victoryPoints).toBe(3)
+      expect(s.players[0].trash.map(c => c.id)).toEqual([card.id])
+      expect(s.players[0].playArea.map(c => c.id)).not.toContain(card.id)
+      expect(s.gains).toContainEqual(
+        expect.objectContaining({
+          type: RewardType.VICTORY_POINTS,
+          amount: 1,
+          sourceId: card.id,
+        })
+      )
+    })
+
+    it('CLAIM_ALL does not auto-apply optional trash-for-VP', () => {
+      const card = cloneRoiCard('Ixian Engineer')
+      card.id = 88011
+      let s = getRoiTestState({
+        playerOverrides: {
+          deck: [card],
+          handCount: 1,
+          victoryPoints: 2,
+          tech: [
+            { id: TechTileId.MINIMIC_FILM, faceUp: true },
+            { id: TechTileId.ARTILLERY, faceUp: true },
+            { id: TechTileId.WINDTRAPS, faceUp: true },
+          ],
+        },
+      })
+      s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [card.id] })
+      s = applyGameAction(s, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+
+      expect(s.players[0].victoryPoints).toBe(2)
+      expect(s.players[0].playArea.map(c => c.id)).toContain(card.id)
+      expect(s.players[0].trash.map(c => c.id)).not.toContain(card.id)
+      expect(s.pendingRewards.some(r => r.reward.trashThisCard && r.reward.victoryPoints === 1)).toBe(
+        true
+      )
+    })
   })
 
   describe('Negotiated Withdrawel', () => {

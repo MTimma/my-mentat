@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CONFLICTS } from '../../../data/conflicts'
 import { ControlMarkerType, GainSource, RewardType, GamePhase, FactionType } from '../../../types/GameTypes'
-import { applyGameAction } from '../GameContext'
+import { applyGameAction, buildCombatResolutionView } from '../GameContext'
 import { getBaseTestState } from './_helpers'
 
 function conflictGainKeys(gains: { playerId: number; name: string; type: RewardType; amount: number }[]) {
@@ -172,6 +172,37 @@ describe('combat reward duplication', () => {
     const combat = s.history.find(h => h.historyEntryKind === 'combat')
     expect(combat?.phase).toBe(GamePhase.ROUND_START)
     expect(s.phase).toBe(GamePhase.ROUND_START)
+  })
+
+  it('live COMBAT_REWARDS view previews the same conflict rewards as the history snapshot', () => {
+    let s = getBaseTestState(undefined, { players: 4 })
+    s = {
+      ...s,
+      currentConflict: skirmish902,
+      phase: GamePhase.COMBAT_REWARDS,
+      combatStrength: { 0: 10, 1: 8, 2: 6, 3: 2 },
+      players: s.players.map(p => ({
+        ...p,
+        spice: 0,
+        water: 0,
+        victoryPoints: 0,
+        solari: 0,
+        intrigueCount: 0,
+      })),
+    }
+    expect(s.history.find(h => h.historyEntryKind === 'combat')).toBeUndefined()
+    const preview = buildCombatResolutionView(s)
+    expect(preview.historyEntryKind).toBe('combat')
+    const previewConflict = (preview.gains ?? []).filter(g => g.source === GainSource.CONFLICT)
+    expect(previewConflict.find(g => g.playerId === 0 && g.type === RewardType.VICTORY_POINTS)?.amount).toBe(1)
+    expect(previewConflict.find(g => g.playerId === 1 && g.type === RewardType.SOLARI)?.amount).toBe(2)
+
+    const resolved = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    const combat = resolved.history.find(h => h.historyEntryKind === 'combat')
+    const historyConflict = (combat?.gains ?? []).filter(g => g.source === GainSource.CONFLICT)
+    expect(conflictGainKeys(previewConflict)).toEqual(conflictGainKeys(historyConflict))
+    expect(s.phase).toBe(GamePhase.COMBAT_REWARDS)
+    expect(s.players[0].victoryPoints).toBe(0)
   })
 
   it('deferred first-place choice does not duplicate immediate placement gains in history', () => {

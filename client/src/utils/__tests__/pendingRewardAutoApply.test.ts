@@ -55,4 +55,14 @@ describe('isSoleTrashThisCardReward', () => {
     const rewards = [drawReward(401, 'Foldspace'), foldspaceTrash]
     expect(isSoleTrashThisCardReward(rewards, foldspaceTrash)).toBe(false)
   })
+
+  it('is false when trashThisCard is bundled with another reward (optional trash-for-VP)', () => {
+    const ixianEngineer: PendingReward = {
+      id: 'ixian-vp',
+      source: { type: GainSource.CARD, id: 88010, name: 'Ixian Engineer' },
+      reward: { trashThisCard: true, victoryPoints: 1 },
+      isTrash: true,
+    }
+    expect(isSoleTrashThisCardReward([ixianEngineer], ixianEngineer)).toBe(false)
+  })
 })

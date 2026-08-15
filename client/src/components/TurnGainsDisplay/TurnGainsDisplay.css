@@ -432,6 +432,30 @@
   height: 14px;
 }
 
+.turn-gains-display .turn-gain-freighter-icon {
+  --freighter-ship-size: 14px;
+  --freighter-arrow-size: 9px;
+}
+
+.turn-gain-freighter-move {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.turn-gain-freighter-step {
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--chrome-text-muted);
+}
+
+.turn-gains-side--cost .turn-gain-freighter-step,
+.turn-gain-freighter-move .turn-gain-freighter-step {
+  color: var(--chrome-danger-text);
+}
+
 .turn-gains-display .gain-persuasion-badge {
   display: inline-flex;
   align-items: center;

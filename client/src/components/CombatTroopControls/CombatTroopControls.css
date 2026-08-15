@@ -1,10 +1,9 @@
 .combat-troop-controls {
   display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 5px 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(8, 7, 6, 0.82);
@@ -13,20 +12,46 @@
   backdrop-filter: blur(4px);
 }
 
-.troop-action-button {
+.troop-action-unit-label {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 248, 232, 0.72);
+  line-height: 1;
+  text-align: left;
+}
+
+.troop-action-row {
   display: inline-flex;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-height: 28px;
-  padding: 3px 7px;
+  gap: 6px;
+}
+
+.troop-action-button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 36px;
+  padding: 4px 8px;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 20px;
+  border-radius: 8px;
   background: linear-gradient(180deg, rgba(22, 18, 14, 0.92), rgba(8, 7, 6, 0.88));
   color: var(--color-arrakis-parchment);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.22);
   cursor: pointer;
   transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+.troop-action-glyphs {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .troop-action-button:hover:not(:disabled) {
@@ -56,6 +81,15 @@
   font-weight: 900;
 }
 
+.troop-action-btn-text {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: rgba(255, 248, 232, 0.88);
+}
+
 .troop-available-count {
   display: inline-flex;
   align-items: center;
@@ -74,15 +108,25 @@
 
 .troop-action-status {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
-  min-height: 28px;
-  padding: 3px 5px;
+  justify-content: center;
+  gap: 2px;
+  min-height: 36px;
+  padding: 3px 6px;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 20px;
+  border-radius: 8px;
   background: rgba(0, 0, 0, 0.24);
   color: rgba(255, 255, 255, 0.76);
   box-sizing: border-box;
+}
+
+.troop-action-status-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 248, 232, 0.55);
 }
 
 .troop-deployed-count {
@@ -102,8 +146,8 @@
 }
 
 .combat-troop-controls .troop-undeploy-button {
-  min-width: 28px;
-  padding-inline: 7px;
+  min-width: 32px;
+  padding-inline: 8px;
 }
 
 .troop-deploy-button {
@@ -139,14 +183,37 @@
   filter: grayscale(0.45);
 }
 
+.combat-troop-controls--dreadnought .troop-action-unit-label {
+  color: rgba(180, 210, 255, 0.85);
+}
+
+.combat-troop-controls--specimen .troop-action-unit-label {
+  color: rgba(160, 220, 170, 0.85);
+}
+
 @media (max-width: 600px) {
   .combat-troop-controls {
-    gap: 4px;
+    gap: 3px;
     padding: 4px 6px;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  .troop-action-button {
-    min-height: 24px;
+  /* Fit a half-seat deploy column. nowrap + 3.7rem mins spill into the next seat. */
+  .troop-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    min-width: 0;
+    width: 100%;
+    gap: 4px;
+  }
+
+  .troop-action-button,
+  .troop-action-status {
+    min-width: 0;
+    flex: 1 1 auto;
+    min-height: 28px;
     padding: 2px 6px;
   }
 

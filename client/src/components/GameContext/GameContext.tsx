@@ -616,22 +616,81 @@ function dedupeGains(gains: Gain[]): Gain[] {
   return result
 }
 
+/** Keep combat intrigue plays (and retreats) on the combat-scoped currTurn. */
+function combatIntrigueHistoryTurn(state: GameState, playerId: number): GameTurn | null {
+  const ct = state.currTurn
+  const plays = ct?.playedIntrigueCard
+  const retreated = ct?.troopsRetreatedFromConflict ?? 0
+  if ((!plays || plays.length === 0) && retreated <= 0) return null
+  return {
+    playerId,
+    type: retreated > 0 ? TurnType.PASS : TurnType.ACTION,
+    playedIntrigueCard: plays && plays.length > 0 ? plays.map(p => ({ ...p })) : undefined,
+    ...(retreated > 0
+      ? {
+          troopsRetreatedFromConflict: retreated,
+          removableTroops: 0,
+          troopsDeployedToConflict: 0,
+        }
+      : {}),
+  }
+}
+
+function isCombatResolutionIntrigueGain(gain: Gain, combatRound: number): boolean {
+  return gain.round === combatRound && gain.source === GainSource.INTRIGUE
+}
+
+/** Name row for a combat intrigue that produced no gain (so history/live overlay can still list it). */
+function ensureCombatIntriguePlayRecorded(
+  state: GameState,
+  playerId: number,
+  card: IntrigueCard
+): GameState {
+  const hasGain = (state.gains ?? []).some(
+    gain =>
+      gain.round === state.currentRound &&
+      gain.playerId === playerId &&
+      gain.source === GainSource.INTRIGUE &&
+      gain.sourceId === card.id
+  )
+  if (hasGain) return state
+  return {
+    ...state,
+    gains: [
+      ...(state.gains ?? []),
+      {
+        round: state.currentRound,
+        playerId,
+        sourceId: card.id,
+        name: card.name,
+        amount: 0,
+        type: RewardType.COMBAT,
+        source: GainSource.INTRIGUE,
+      },
+    ],
+  }
+}
+
+function collectCombatResolutionGains(state: GameState, combatRound: number): Gain[] {
+  const conflictId = state.currentConflict?.id
+  return dedupeGains(
+    (state.gains ?? []).filter(gain => {
+      if (gain.round !== combatRound) return false
+      if (gain.source === GainSource.CONFLICT) {
+        return gain.amount !== 0 && conflictId != null && gain.sourceId === conflictId
+      }
+      // Include amount-0 intrigue rows so played names survive when the card created no effect.
+      return isCombatResolutionIntrigueGain(gain, combatRound)
+    })
+  )
+}
+
 function snapshotCombatResolutionForHistory(
   stateAfterRewards: GameState,
   transitionedState: GameState,
   combatRound: number
 ): GameState {
-  const conflictId = stateAfterRewards.currentConflict?.id
-  const combatGains = dedupeGains(
-    (stateAfterRewards.gains ?? []).filter(gain => {
-      if (gain.round !== combatRound || gain.amount === 0) return false
-      if (gain.source === GainSource.CONFLICT) {
-        return conflictId != null && gain.sourceId === conflictId
-      }
-      return gain.source === GainSource.INTRIGUE
-    })
-  )
-  const ct = stateAfterRewards.currTurn
+  const combatGains = collectCombatResolutionGains(stateAfterRewards, combatRound)
   const copy = deepCopyGameState({
     ...transitionedState,
     currentRound: combatRound,
@@ -640,16 +699,10 @@ function snapshotCombatResolutionForHistory(
     combatTroops: { ...stateAfterRewards.combatTroops },
     historyEntryKind: 'combat',
     gains: combatGains,
-    currTurn:
-      ct && (ct.troopsRetreatedFromConflict ?? 0) > 0
-        ? {
-            playerId: ct.playerId,
-            type: TurnType.PASS,
-            troopsRetreatedFromConflict: ct.troopsRetreatedFromConflict,
-            removableTroops: 0,
-            troopsDeployedToConflict: 0,
-          }
-        : null,
+    currTurn: combatIntrigueHistoryTurn(
+      stateAfterRewards,
+      stateAfterRewards.currTurn?.playerId ?? stateAfterRewards.activePlayerId
+    ),
     selectedCard: null,
     selectedCardDeckIndex: null,
     pendingRewards: [],
@@ -1365,6 +1418,19 @@ function applyRewardToPlayer(
       source: source.type
     })
     updatedPlayer.intrigueCount += reward.intrigueCards
+  }
+
+  if (reward.victoryPoints) {
+    updatedPlayer.victoryPoints += reward.victoryPoints
+    gains.push({
+      round: state.currentRound,
+      playerId: player.id,
+      sourceId: source.id,
+      name: source.name,
+      amount: reward.victoryPoints,
+      type: RewardType.VICTORY_POINTS,
+      source: source.type
+    })
   }
   
   if (reward.trash || reward.trashThisCard) {
@@ -2788,15 +2854,7 @@ function finishCombatIntrigueAction(state: GameState, actedPlayerId: number): Ga
     ...state.combatPasses,
     ...getAutoCombatPassPlayerIds(state),
   ])
-  const playedIntrigue = state.currTurn?.playedIntrigueCard
-  const preserveCombatTurn =
-    playedIntrigue && playedIntrigue.length > 0
-      ? {
-          playerId: actedPlayerId,
-          type: TurnType.ACTION,
-          playedIntrigueCard: playedIntrigue,
-        }
-      : null
+  const preserveCombatTurn = combatIntrigueHistoryTurn(state, actedPlayerId)
   const withPasses = { ...state, combatPasses, currTurn: preserveCombatTurn }
 
   // Actor may play another combat intrigue while they still have cards and troops in the Conflict.
@@ -2817,7 +2875,7 @@ function finishCombatIntrigueAction(state: GameState, actedPlayerId: number): Ga
       ...withPasses,
       combatPasses: new Set(),
       phase: GamePhase.COMBAT_REWARDS,
-      currTurn: null,
+      currTurn: preserveCombatTurn,
     }
   }
 
@@ -2827,7 +2885,7 @@ function finishCombatIntrigueAction(state: GameState, actedPlayerId: number): Ga
       ...withPasses,
       combatPasses: new Set(),
       phase: GamePhase.COMBAT_REWARDS,
-      currTurn: null,
+      currTurn: preserveCombatTurn,
     }
   }
 
@@ -2835,7 +2893,11 @@ function finishCombatIntrigueAction(state: GameState, actedPlayerId: number): Ga
     ...withPasses,
     combatPasses,
     activePlayerId: nextIndex,
-    currTurn: null,
+    // Keep intrigue/retreat history on currTurn, but stamp the seat that now acts.
+    // Chrome and getGainsForTurnState read currTurn.playerId as the active leader.
+    currTurn: preserveCombatTurn
+      ? { ...preserveCombatTurn, playerId: nextIndex }
+      : { playerId: nextIndex, type: TurnType.ACTION },
   }
 }
 
@@ -3932,7 +3994,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...newState,
         activePlayerId: nextIndex,
-        currTurn: null,
+        currTurn: combatIntrigueHistoryTurn(newState, nextIndex) ?? {
+          playerId: nextIndex,
+          type: TurnType.ACTION,
+        },
       }
     }
     case 'PLAY_COMBAT_INTRIGUE': {
@@ -3959,7 +4024,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (!canPlayIntrigueCardNow(state, player, card)) return state
 
-      const updatedState = handleIntrigueEffect(state, card, playerId)
+      const updatedState = ensureCombatIntriguePlayRecorded(
+        handleIntrigueEffect(state, card, playerId),
+        playerId,
+        card
+      )
       const pendingCombatChoices: PendingChoice[] = []
       if (intrigueCardHasCustom(card, CustomEffect.MASTER_TACTICIAN)) {
         const ct = state.combatTroops[playerId] || 0
@@ -6495,7 +6564,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 const [removed] = deck.splice(idx, 1)
                 discardPile.push(removed)
                 handCount = Math.max(0, handCount - 1)
-                newGains.push(makeDiscardGain(state, playerId, removed, source, {displayName:source.name}))
+                newGains.push(makeDiscardGain(state, playerId, removed, source))
               }
               player = { ...player, deck, discardPile, handCount }
             } else {
@@ -9422,11 +9491,35 @@ function createImperiumRowAcquireChoice(
   }
 }
 
+/**
+ * Live Combat Resolution view: same snapshot shape as history.
+ * During COMBAT_REWARDS before confirm, previews RESOLVE_COMBAT on a copy so
+ * placement rewards show before the snapshot is appended to history.
+ */
+function buildCombatResolutionView(state: GameState): GameState {
+  if (state.historyEntryKind === 'combat') return state
+
+  const needsRewardPreview =
+    state.phase === GamePhase.COMBAT_REWARDS &&
+    !state.combatRewardsResolvedConflictId &&
+    !(state.pendingConflictRewardChoices?.length)
+
+  if (needsRewardPreview) {
+    const previewed = applyGameAction(deepCopyGameState(state), { type: 'RESOLVE_COMBAT' })
+    const snap = [...previewed.history].reverse().find(row => row.historyEntryKind === 'combat')
+    if (snap) return snap
+    return snapshotCombatResolutionForHistory(previewed, previewed, state.currentRound)
+  }
+
+  return snapshotCombatResolutionForHistory(state, state, state.currentRound)
+}
+
 export {
   deepCopyGameState,
   snapshotStateForHistory,
   snapshotCombatResolutionForHistory,
   snapshotEndgameForHistory,
   completeCombatTransition,
+  buildCombatResolutionView,
 }
 

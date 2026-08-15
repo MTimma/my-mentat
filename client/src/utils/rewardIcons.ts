@@ -26,6 +26,7 @@ export const REWARD_ICON_MAP: Partial<Record<RewardType, string>> = {
   [RewardType.RECALL]: 'icon/recall.png',
   [RewardType.PERSUASION]: 'icon/persuasion.png',
   [RewardType.DREADNOUGHT]: 'icon/dreadnought_card.png',
+  [RewardType.FREIGHTER]: 'icon/shipping.png',
 }
 
 /**
@@ -62,6 +63,7 @@ export function getRewardDisplayName(type: RewardType, name?: string): string {
     case RewardType.RECALL: return 'Recall'
     case RewardType.PERSUASION: return 'Persuasion'
     case RewardType.DREADNOUGHT: return 'Dreadnought'
+    case RewardType.FREIGHTER: return name || 'Freighter'
 
     default: return type
   }

@@ -9,6 +9,11 @@ import {
   aggregateResourceGains,
   aggregateInfluenceGains,
   computeTurnGainTotals,
+  discardedOrTrashedCardLabel,
+  freighterMoveSourceTitle,
+  freighterRecallStepOrdinal,
+  resolveFreighterMoveGroupTitle,
+  shippingTrackStepFromGain,
   getGainsForTurnState,
   getOtherPlayersGainsForTurnState,
   getTroopsDeployedToConflict,
@@ -269,7 +274,7 @@ describe('turnGainsDisplay', () => {
     ])
     expect(groups.map(g => g.title)).toEqual([
       'Tech: Flagship',
-      'Shipping track',
+      'Shipping 1',
       'Ix board',
     ])
   })
@@ -306,7 +311,7 @@ describe('turnGainsDisplay', () => {
     ])
     expect(groups.map(g => g.title)).toEqual([
       'Tech: Flagship',
-      'Shipping track',
+      'Shipping 1',
       'Ix board',
     ])
   })
@@ -787,6 +792,169 @@ describe('turnGainsDisplay', () => {
     expect(groups).toHaveLength(1)
     expect(groups[0].title).toBe('Tech: Holoprojectors')
     expect(groups[0].gains).toHaveLength(2)
+  })
+
+  it('groupGainsBySource keeps Holoprojectors discard+draw grouped when discard name is the card', () => {
+    const tileSourceId = techTileGainSourceId(TechTileId.HOLOPROJECTORS)
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: tileSourceId,
+        cardId: 101,
+        round: 1,
+        name: 'Seek Allies',
+        amount: -1,
+        type: RewardType.DISCARD,
+      },
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: 0,
+        round: 1,
+        name: 'Holoprojectors',
+        amount: 1,
+        type: RewardType.DRAW,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0])
+
+    expect(groups).toHaveLength(1)
+    expect(groups[0].title).toBe('Tech: Holoprojectors')
+    expect(groups[0].gains).toHaveLength(2)
+  })
+
+  it('groups board-space freighter recall under the space name', () => {
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.BOARD_SPACE,
+        sourceId: 25,
+        round: 1,
+        name: 'Recall',
+        amount: -2,
+        type: RewardType.FREIGHTER,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0])
+    expect(groups).toHaveLength(1)
+    expect(groups[0].title).toBe('Smuggling')
+  })
+
+  it('resolveFreighterMoveGroupTitle uses the source card when the gain name is Recall', () => {
+    const group = {
+      key: 'card:2001',
+      title: 'Recall',
+      gains: [
+        {
+          playerId: 0,
+          source: GainSource.CARD,
+          sourceId: 2001,
+          round: 1,
+          name: 'Recall',
+          amount: -1,
+          type: RewardType.FREIGHTER,
+        },
+      ],
+    }
+    expect(resolveFreighterMoveGroupTitle(group)).toBe('Recall')
+    expect(resolveFreighterMoveGroupTitle(group, id => (id === 2001 ? 'Freighter Fleet' : undefined))).toBe(
+      'Freighter Fleet'
+    )
+  })
+
+  it('freighterMoveSourceTitle is empty when the gain already stores the source name', () => {
+    expect(
+      freighterMoveSourceTitle({
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 2001,
+        round: 1,
+        name: 'Freighter Fleet',
+        amount: -1,
+        type: RewardType.FREIGHTER,
+      })
+    ).toBeUndefined()
+  })
+
+  it('splits shipping-track recall rewards by step', () => {
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'Recall step 1',
+        amount: 2,
+        type: RewardType.SPICE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'Dividends',
+        amount: 5,
+        type: RewardType.SOLARI,
+      },
+      {
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'Shipping track',
+        amount: 2,
+        type: RewardType.TROOPS,
+      },
+      {
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'emperor',
+        amount: 1,
+        type: RewardType.INFLUENCE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'Acquire Tech (−2)',
+        amount: 1,
+        type: RewardType.TECH,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0])
+
+    expect(groups.map(g => g.title)).toEqual(['Shipping 1', 'Shipping 2', 'Shipping 3'])
+    expect(groups[0].gains).toHaveLength(2)
+    expect(groups[1].gains).toHaveLength(2)
+    expect(groups[2].gains).toHaveLength(1)
+  })
+
+  it('maps shipping names and types to recall steps', () => {
+    expect(
+      shippingTrackStepFromGain({
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'Recall step 1',
+        amount: 2,
+        type: RewardType.SPICE,
+      })
+    ).toBe(1)
+    expect(
+      shippingTrackStepFromGain({
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'Shipping track',
+        amount: 2,
+        type: RewardType.TROOPS,
+      })
+    ).toBe(2)
+    expect(freighterRecallStepOrdinal(2)).toBe('2nd')
+    expect(freighterRecallStepOrdinal(3)).toBe('3rd')
   })
 
   it('aggregateResourceGains groups CARD gains by card id', () => {

@@ -33,7 +33,7 @@ import {
   BOARD_MARKER_VP_MAX_STEPS,
   HIGH_COUNCIL_SLOTS,
   CONFLICT_CARD_RECT,
-  COMBAT_DEPLOY_DOCK_RECT,
+  COMBAT_RANK_STRIP_RECT,
   COMBAT_RING_ANCHORS,
   COMBAT_AREA_BOUNDS,
   CONTROL_MARKER_POINTS,
@@ -74,7 +74,7 @@ import CombatAreaCluster, {
   type CombatSpecimenDeployProps,
   type CombatTroopDeployProps,
 } from './CombatAreaCluster'
-import CombatDeployDock from './CombatDeployDock'
+import CombatRankStrip from './CombatRankStrip'
 import IxBoardOverlay, { type IxBoardPlacement } from './IxBoardOverlay'
 import BeneTleilaxBoardOverlay, { type BeneTleilaxBoardPlacement } from './BeneTleilaxBoardOverlay'
 import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
@@ -115,7 +115,7 @@ interface ImageBoardProps {
   controlMarkers: Record<ControlMarkerType, number | null>
   /** When viewing turn history, outline the board space where this turn's agent was placed. */
   historyHighlightSpaceId?: number | null
-  /** Active-player troop deploy controls; rendered below conflict card, left of leader area. */
+  /** Active-player troop deploy controls; rendered in seat Play/End Turn chrome. */
   troopDeploy?: CombatTroopDeployProps
   dreadnoughtDeploy?: CombatDreadnoughtDeployProps
   specimenDeploy?: CombatSpecimenDeployProps
@@ -176,10 +176,6 @@ function percentToStyle(rect: { left: number; top: number; width: number; height
     width: `${rect.width}%`,
     height: `${rect.height}%`,
   }
-}
-
-function playerMarkerColor(player: Player): string {
-  return playerMarkerHex(player)
 }
 
 function playerIdMarkerHex(playerId: number, playersById: Map<number, Player>): string {
@@ -348,7 +344,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   )
 
   const conflictBox = stageRect(CONFLICT_CARD_RECT)
-  const deployDockBox = stageRect(COMBAT_DEPLOY_DOCK_RECT)
+  const rankStripBox = stageRect(COMBAT_RANK_STRIP_RECT)
   const conflictImgSrc =
     currentConflict && currentConflict.id > 0 ? conflictCardImageSrc(currentConflict.id) : null
   const hasConflict = Boolean(currentConflict && currentConflict.id > 0)
@@ -453,8 +449,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     showCombatArea ? (
       <CombatAreaCluster
         players={players}
-        troops={combatTroops}
-        strength={combatStrength}
         activePlayerId={currentPlayer}
         gameState={gameStateForMarkers}
         modalContainerRef={boardMediaRef}
@@ -473,6 +467,9 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         birdseyeTroopsRetreated={birdseyeTroopsRetreated}
         birdseyeIsHistoryView={birdseyeIsHistoryView}
         birdseyeInteractionsHostRef={birdseyeInteractionsHostRef}
+        troopDeploy={troopDeploy}
+        dreadnoughtDeploy={dreadnoughtDeploy}
+        specimenDeploy={specimenDeploy}
         className={[
           'image-board__combat-area-cluster',
           combatAreaBelow ? 'image-board__combat-area-cluster--below' : '',
@@ -494,6 +491,24 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 }
               })()
         }
+      />
+    ) : null
+
+  const combatRankStripProps = {
+    players,
+    troops: combatTroops,
+    strength: combatStrength,
+    activePlayerId: currentPlayer,
+    riseOfIx,
+  }
+
+  // Desktop + mobile: same board-stage overlay under RoI (COMBAT_RANK_STRIP_RECT).
+  const combatRankStrip =
+    showCombatArea ? (
+      <CombatRankStrip
+        {...combatRankStripProps}
+        className="image-board__combat-rank-strip"
+        style={percentToStyle(rankStripBox)}
       />
     ) : null
 
@@ -956,17 +971,15 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 if (cy === undefined) return null
                 const st = stagePoint(laneAnchor.x, cy)
                 return (
-                  <div
+                  <BoardTracker
                     key={`freighter-${player.id}`}
-                    className="image-board__freighter-disc"
-                    data-marker="freighter"
-                    data-player-id={player.id}
-                    style={{
-                      left: `${st.x}%`,
-                      top: `${st.y}%`,
-                      backgroundColor: playerMarkerColor(player),
-                    }}
+                    kind="shipping"
+                    player={player}
+                    left={`${st.x}%`}
+                    top={`${st.y}%`}
                     title={`Freighter step ${step} (${player.leader.name})`}
+                    marker="shipping"
+                    dataAttrs={{ 'data-player-id': player.id }}
                   />
                 )
               })}
@@ -1043,19 +1056,9 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             </>
           )}
 
-          {showCombatArea && (troopDeploy || dreadnoughtDeploy || specimenDeploy) ? (
-            <CombatDeployDock
-              troopDeploy={troopDeploy}
-              dreadnoughtDeploy={dreadnoughtDeploy}
-              specimenDeploy={specimenDeploy}
-              activePlayerId={currentPlayer}
-              activePlayerColor={players.find(p => p.id === currentPlayer)?.color}
-              className="image-board__combat-deploy-dock"
-              style={percentToStyle(deployDockBox)}
-            />
-          ) : null}
-
           {showCombatArea && !combatAreaOffBoard ? combatAreaCluster : null}
+
+          {combatRankStrip}
 
           {influenceSelection ? (
             <div className="image-board__influence-selection-layer" aria-hidden={false}>
@@ -1146,8 +1149,8 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 }}
               />
               <div
-                className="image-board__marker-debug-rect image-board__marker-debug-rect--deploy-dock"
-                style={percentToStyle(deployDockBox)}
+                className="image-board__marker-debug-rect image-board__marker-debug-rect--combat-rank-strip"
+                style={percentToStyle(rankStripBox)}
               />
               {HIGH_COUNCIL_SLOTS.map((s, i) => {
                 const st = stagePoint(s.x, s.y)

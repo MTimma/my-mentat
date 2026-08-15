@@ -273,7 +273,9 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   overflow: visible;
   min-width: 76px;
   min-height: 92px;
-  padding: 8px;
+  padding: 8px 8px 10px;
+  justify-content: flex-start;
+  gap: 6px;
 }
 
 .selected-card-action-placeholder--intrigue {
@@ -426,26 +428,13 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   font-size: 0.86rem;
 }
 
-.selected-card-action-placeholder--reveal::before,
-.selected-card-action-placeholder--reveal::after {
-  content: '';
+.selected-card-action-placeholder--reveal .selected-card-action-reveal-cards {
   position: absolute;
-  inset: 9px;
-  border: 1px solid rgba(244, 228, 188, 0.34);
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.035);
-  pointer-events: none;
+  inset: 8px 6px 6px;
+  z-index: 0;
 }
 
-.selected-card-action-placeholder--reveal::before {
-  transform: translate(-7px, -4px) rotate(-5deg);
-}
-
-.selected-card-action-placeholder--reveal::after {
-  transform: translate(7px, 4px) rotate(5deg);
-}
-
-.selected-card-action-placeholder--reveal > * {
+.selected-card-action-placeholder--reveal > :not(.selected-card-action-reveal-cards) {
   position: relative;
   z-index: 1;
 }
@@ -3242,18 +3231,8 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
     gap: 3px;
   }
 
-  .selected-card-action-placeholder--reveal::before,
-  .selected-card-action-placeholder--reveal::after {
-    inset: 6px;
-    border-radius: 4px;
-  }
-
-  .selected-card-action-placeholder--reveal::before {
-    transform: translate(-5px, -3px) rotate(-5deg);
-  }
-
-  .selected-card-action-placeholder--reveal::after {
-    transform: translate(5px, 3px) rotate(5deg);
+  .selected-card-action-placeholder--reveal .selected-card-action-reveal-cards {
+    inset: 5px 4px 4px;
   }
 
   .selected-card-action-placeholder--intrigue {

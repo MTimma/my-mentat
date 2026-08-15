@@ -1,19 +1,21 @@
 /** Visual style for a player marker on an image-board track. */
 export type BoardTrackerVariant = 'circle' | 'cube' | 'portrait'
 
-/** Influence, VP, and High Council tracks on the main board image. */
-export type BoardTrackerKind = 'influence' | 'vp' | 'high-council'
+/** Influence, VP, High Council, and Rise of Ix shipping tracks on the main board image. */
+export type BoardTrackerKind = 'influence' | 'vp' | 'high-council' | 'shipping'
 
 const BOARD_TRACKER_STYLE_DEFAULTS: Record<BoardTrackerKind, BoardTrackerVariant> = {
   influence: 'cube',
   vp: 'portrait',
   'high-council': 'circle',
+  shipping: 'circle',
 }
 
 const URL_PARAM_BY_KIND: Record<BoardTrackerKind, string> = {
   influence: 'trackerInfluence',
   vp: 'trackerVp',
   'high-council': 'trackerHighCouncil',
+  shipping: 'trackerShipping',
 }
 
 const VALID_VARIANTS = new Set<BoardTrackerVariant>(['circle', 'cube', 'portrait'])

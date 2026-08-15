@@ -6,5 +6,6 @@ describe('getBoardTrackerVariant', () => {
     expect(getBoardTrackerVariant('influence')).toBe('cube')
     expect(getBoardTrackerVariant('vp')).toBe('portrait')
     expect(getBoardTrackerVariant('high-council')).toBe('circle')
+    expect(getBoardTrackerVariant('shipping')).toBe('circle')
   })
 })

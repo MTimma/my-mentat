@@ -4,6 +4,7 @@ import {
   TechTileTiming,
   type PlayerTechTile,
   getTechTile,
+  getTechTileByName,
   techTileGainSourceId,
 } from '../../data/techTiles'
 import {
@@ -1220,12 +1221,13 @@ function discardFromHand(
   const drawn = drawResult.drawn
 
   const gains = [...state.gains]
+  const tileId = getTechTileByName(source.name)?.id
   gains.push({
     round: state.currentRound,
     playerId,
-    sourceId: removed.id,
+    sourceId: tileId ? techTileGainSourceId(tileId) : source.id,
     cardId: removed.id,
-    name: source.name,
+    name: removed.name,
     amount: -1,
     type: RewardType.DISCARD,
     source: source.type,
