@@ -33,14 +33,32 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
   const isDreadnought = variant === 'dreadnought'
   const isSpecimen = variant === 'specimen'
   const unitLabel = isDreadnought ? 'dreadnought' : isSpecimen ? 'specimen' : 'troop'
-  const shortLabel = isDreadnought ? 'Dread' : isSpecimen ? 'Specimen' : 'Troop'
-  const iconSrc = '/icon/troop.png'
+  const available = Math.min(deployableTroops, garrisonTroops)
 
   const visible =
     canDeploy &&
     ((deployableTroops > 0 && garrisonTroops > 0) || deployedThisTurn > 0)
 
   if (!visible) return null
+
+  const sourceIcon = isDreadnought ? (
+    <DreadnoughtIcon
+      playerId={playerId}
+      color={playerColor}
+      className="troop-action-icon troop-action-icon--dreadnought"
+    />
+  ) : (
+    <img
+      src={isSpecimen ? '/icon/specimen.png' : '/icon/troop.png'}
+      alt=""
+      className={[
+        'troop-action-icon',
+        isSpecimen ? 'troop-action-icon--specimen' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    />
+  )
 
   return (
     <div
@@ -55,64 +73,28 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
       role="group"
       aria-label={`Deploy or undo deployment of ${unitLabel}s to the Conflict`}
     >
-      <span className="troop-action-unit-label">{shortLabel}</span>
-      <div className="troop-action-row">
-        <button
-          type="button"
-          className="troop-action-button troop-deploy-button"
-          onClick={onDeploy}
-          disabled={!canDeploy || garrisonTroops <= 0 || deployableTroops <= 0}
-          aria-label={`Deploy one ${unitLabel}. ${deployableTroops} available to deploy.`}
-          title={`Deploy ${unitLabel} (${deployableTroops} available)`}
-        >
-          <span className="troop-action-glyphs">
-            <span className="troop-available-count">{deployableTroops}</span>
-            {isDreadnought ? (
-              <DreadnoughtIcon
-                playerId={playerId}
-                color={playerColor}
-                className="troop-action-icon troop-action-icon--dreadnought"
-              />
-            ) : isSpecimen ? (
-              <img
-                src="/icon/specimen.png"
-                alt=""
-                className="troop-action-icon troop-action-icon--specimen"
-              />
-            ) : (
-              <img src={iconSrc} alt="" className="troop-action-icon" />
-            )}
-            <span className="troop-action-arrow" aria-hidden="true">
-              ➤
-            </span>
-          </span>
-          <span className="troop-action-btn-text">Deploy</span>
-        </button>
-        <div
-          className="troop-action-status"
-          aria-label={`${deployedThisTurn} ${unitLabel}s deployed this turn`}
-        >
-          <span className="troop-deployed-count">{deployedThisTurn}</span>
-          <span className="troop-action-status-label" aria-hidden="true">
-            sent
-          </span>
-        </div>
-        <button
-          type="button"
-          className="troop-action-button troop-undeploy-button"
-          onClick={onUndeploy}
-          disabled={!canDeploy || deployedThisTurn <= 0}
-          aria-label={`Undo one deployment. ${deployedThisTurn} can be taken back.`}
-          title={`Undo deploy (${deployedThisTurn} deployed this turn)`}
-        >
-          <span className="troop-action-glyphs">
-            <span className="troop-action-arrow" aria-hidden="true">
-              ◄
-            </span>
-          </span>
-          <span className="troop-action-btn-text">Undo</span>
-        </button>
-      </div>
+      <button
+        type="button"
+        className="troop-action-button troop-undeploy-button"
+        onClick={onUndeploy}
+        disabled={!canDeploy || deployedThisTurn <= 0}
+        aria-label={`Return one ${unitLabel} from the Conflict. ${deployedThisTurn} deployed.`}
+        title={`${deployedThisTurn} in Conflict`}
+      >
+        <img src="/icon/deploy.png" alt="" className="troop-action-icon troop-action-icon--deploy" />
+        <span className="troop-action-count">{deployedThisTurn}</span>
+      </button>
+      <button
+        type="button"
+        className="troop-action-button troop-deploy-button"
+        onClick={onDeploy}
+        disabled={!canDeploy || available <= 0}
+        aria-label={`Deploy one ${unitLabel} to the Conflict. ${available} available.`}
+        title={`${available} available`}
+      >
+        {sourceIcon}
+        <span className="troop-action-count">{available}</span>
+      </button>
     </div>
   )
 }

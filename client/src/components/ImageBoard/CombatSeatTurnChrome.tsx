@@ -162,7 +162,7 @@ export function BirdseyePrimaryControls({
   )
 }
 
-/** Active-seat troop / dread / specimen deploy — hangs left of Play/End Turn (slides outward). */
+/** Active-seat troop / dread / specimen deploy — under End Turn / intrigue / tech. */
 export function BirdseyeSeatDeployControls({
   player,
   troopDeploy,
@@ -174,9 +174,6 @@ export function BirdseyeSeatDeployControls({
   if (!troopDeploy && !dreadnoughtDeploy && !specimenDeploy) return null
   return (
     <div className="birdseye-seat__deploy" onClick={stop} aria-label="Combat deploy controls">
-      <div className="birdseye-seat__deploy-heading" aria-hidden="true">
-        Deploy
-      </div>
       <CombatDeployDock
         troopDeploy={troopDeploy}
         dreadnoughtDeploy={dreadnoughtDeploy}
@@ -365,19 +362,18 @@ export function BirdseyeDesktopControls({
   const [techOpen, setTechOpen] = useState(false)
   return (
     <div className="birdseye-seat__controls-row">
-      {/* Deploy appends left of Play/End Turn — slides further into the board gap. */}
-      <BirdseyeSeatDeployControls
-        player={player}
-        troopDeploy={troopDeploy}
-        dreadnoughtDeploy={dreadnoughtDeploy}
-        specimenDeploy={specimenDeploy}
-      />
       <div className="birdseye-seat__controls-stack">
         <BirdseyePrimaryControls actions={actions} player={player} />
         <BirdseyeUtilControls
           actions={actions}
           techOpen={techOpen}
           onToggleTech={() => setTechOpen(o => !o)}
+        />
+        <BirdseyeSeatDeployControls
+          player={player}
+          troopDeploy={troopDeploy}
+          dreadnoughtDeploy={dreadnoughtDeploy}
+          specimenDeploy={specimenDeploy}
         />
         {techOpen && gameState && actions.showTech ? (
           <BirdseyeTechPanel
@@ -413,18 +409,18 @@ export function BirdseyePortraitOverlay({
     <>
       <div className="birdseye-seat__overlay-actions">
         <div className="birdseye-seat__overlay-row">
-          <BirdseyeSeatDeployControls
-            player={player}
-            troopDeploy={troopDeploy}
-            dreadnoughtDeploy={dreadnoughtDeploy}
-            specimenDeploy={specimenDeploy}
-          />
           <div className="birdseye-seat__overlay-core">
             <BirdseyePrimaryControls actions={actions} player={player} />
             <BirdseyeUtilControls
               actions={actions}
               techOpen={techOpen}
               onToggleTech={() => setTechOpen(o => !o)}
+            />
+            <BirdseyeSeatDeployControls
+              player={player}
+              troopDeploy={troopDeploy}
+              dreadnoughtDeploy={dreadnoughtDeploy}
+              specimenDeploy={specimenDeploy}
             />
             {techOpen && gameState && actions.showTech ? (
               <BirdseyeTechPanel
