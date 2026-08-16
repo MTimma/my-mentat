@@ -34,6 +34,7 @@
 
 .player-tech-tiles--inline .player-tech-tiles__tile {
   height: 60px;
+  max-width: 140px;
 }
 
 .player-tech-tiles--compact .player-tech-tiles__tile {

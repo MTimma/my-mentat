@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import type { Card, Gain, GameState, Player } from '../../types/GameTypes'
 import type { TechTileId } from '../../data/techTiles'
 import TurnGainsDisplay from '../TurnGainsDisplay/TurnGainsDisplay'
-import TurnControlsTechRow from '../TurnControlsTechRow/TurnControlsTechRow'
+import PlayerTechModal from '../PlayerTechModal/PlayerTechModal'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import RevealCardsIcon from '../RevealCardsIcon/RevealCardsIcon'
 import CombatDeployDock from './CombatDeployDock'
@@ -268,21 +268,21 @@ export function BirdseyeTechPanel({
   onClose: () => void
 }) {
   return (
-    <div className="birdseye-seat-tech-panel" onClick={stop}>
-      <TurnControlsTechRow
-        player={player}
-        gameState={gameState}
-        onActivateTech={
-          actions.onActivateTech
-            ? (playerId, tileId) => {
-                actions.onActivateTech?.(playerId, tileId)
-                onClose()
-              }
-            : undefined
-        }
-        isHistoryView={isHistoryView}
-      />
-    </div>
+    <PlayerTechModal
+      isOpen
+      onClose={onClose}
+      gameState={gameState}
+      player={player}
+      onActivateTech={
+        actions.onActivateTech
+          ? (playerId, tileId) => {
+              actions.onActivateTech?.(playerId, tileId)
+              onClose()
+            }
+          : undefined
+      }
+      isHistoryView={isHistoryView}
+    />
   )
 }
 
@@ -389,7 +389,7 @@ export function BirdseyeDesktopControls({
   )
 }
 
-/** Mobile 3b chrome strip: deploy + Play/Reveal + Intr/Tech sit above the leader portrait. */
+/** Mobile chrome strip: Play/Reveal + Intr/Tech + deploy under the stack. */
 export function BirdseyePortraitOverlay({
   player,
   actions,

@@ -2129,16 +2129,68 @@ body:has(.game-container--play) {
 
   .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-placeholder--play,
   .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-placeholder--reveal,
-  .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-placeholder--intrigue {
-    width: 36px;
-    min-width: 36px;
-    height: 48px;
-    min-height: 48px;
+  .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-placeholder--intrigue,
+  .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-placeholder--tech {
+    width: 48px;
+    min-width: 48px;
+    height: 4.25rem;
+    min-height: 4.25rem;
+    max-height: 4.25rem;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-placeholder--reveal {
-    min-width: 42px;
-    padding: 4px;
+    min-width: 52px;
+    width: 52px;
+    padding: 3px 2px 2px;
+  }
+
+  .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-placeholder--play {
+    padding: 3px 1px 1px;
+  }
+
+  .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-label--play {
+    font-size: 0.5rem;
+    letter-spacing: 0.02em;
+  }
+
+  .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-count {
+    font-size: 1.05rem;
+  }
+
+  .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-placeholder--reveal .selected-card-action-reveal-cards {
+    top: 0.95em;
+    left: 3px;
+    right: 3px;
+    bottom: 3px;
+  }
+
+  .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-placeholder--reveal .selected-card-action-count {
+    top: 0.95em;
+  }
+
+  .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-placeholder--intrigue .selected-card-action-intrigue-icon,
+  .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-action-placeholder--tech .selected-card-action-tech-icon {
+    max-width: 22px;
+    max-height: 22px;
+    width: auto;
+    height: auto;
+  }
+
+  .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-play-agent-badge {
+    right: 2px;
+    bottom: 2px;
+    width: auto;
+    height: auto;
+    max-width: calc(100% - 3px);
+  }
+
+  .game-container--play.play-footer-overlay .play-area-drawer--open .selected-card-agent-badge {
+    right: 0;
+    bottom: 0;
+    min-width: 20px;
+    height: 14px;
   }
 
   .game-container--play.play-footer-overlay .play-shell-footer .turn-controls-container {
@@ -2780,6 +2832,13 @@ body:has(.game-container--play) {
   padding: 0.15rem 0.35rem;
 }
 
+.game-container--desktop-play .play-area-drawer .selected-card-action-placeholder--play,
+.game-container--desktop-play .play-area-drawer .selected-card-action-placeholder--reveal,
+.game-container--desktop-play .play-area-drawer .selected-card-action-placeholder--intrigue,
+.game-container--desktop-play .play-area-drawer .selected-card-action-placeholder--tech {
+  padding: 4px 2px;
+}
+
 .game-container--desktop-play .play-area-drawer .turn-controls-effects-row {
   flex-wrap: nowrap;
   overflow-x: auto;
@@ -3254,6 +3313,7 @@ body:has(.game-container--play) {
 
 /* Play-area cards/intrigue/tech stay hoverable for Alt preview while scrubbing history */
 .game-container.viewing-history .turn-controls-container .selected-card-play-area,
-.game-container.viewing-history .turn-controls-container .turn-controls-tech-row {
+.game-container.viewing-history .turn-controls-container .turn-controls-tech-row,
+.game-container.viewing-history .turn-controls-container .selected-card-action-placeholder--tech {
   pointer-events: auto;
 }

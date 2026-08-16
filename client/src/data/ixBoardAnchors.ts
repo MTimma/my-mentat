@@ -15,7 +15,7 @@ import {
 export const IX_BOARD_OVERLAY_RECT = { left: 4, top: 20, width: 28, height: 28 }
 
 /** Embedded RoI overlay on `Board.jpg` (inner %) — used on mobile and desktop play. */
-export const IX_BOARD_OVERLAY_RECT_MOBILE = { left: 50, top: 60, width: 35, height: 35 }
+export const IX_BOARD_OVERLAY_RECT_MOBILE = { left: 50, top: 55, width: 35, height: 35 }
 
 function ixHotspot(
   spaceId: number,

@@ -24,7 +24,7 @@ import { BOARD_SPACES } from '../../data/boardSpaces'
 import { PLAY_EFFECT_TEXTS, PLAY_EFFECT_DISABLED_TEXTS, REVEAL_EFFECT_TEXTS } from '../../data/effectTexts'
 import { intrigueRequirementSatisfied } from '../GameContext/requirements'
 import type { TechTileId } from '../../data/techTiles'
-import { techActivationRequiresDiscard, techDiscardActivationPrompt } from '../../utils/techTiles'
+import { techActivationRequiresDiscard, techDiscardActivationPrompt, tilesActivatableNow } from '../../utils/techTiles'
 import {
   filterAcquireTechFromChoices,
   filterAcquireTechOptionalEffects,
@@ -34,7 +34,7 @@ import {
   isPlayAreaInlineTechOrSignetChoice,
 } from '../GameContext/riseOfIx/techTurnControlsUi'
 import { canPlayDiversion, canPlayStrongarm } from '../GameContext/riseOfIx/intrigue'
-import TurnControlsTechRow from '../TurnControlsTechRow/TurnControlsTechRow'
+import PlayerTechModal from '../PlayerTechModal/PlayerTechModal'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import FreighterIcon, { freighterArrowDirectionFromCustom } from '../FreighterIcon/FreighterIcon'
@@ -262,6 +262,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
 
   useEffect(() => {
     setIsRevealTurn(false)
+    setIsTechModalOpen(false)
   }, [activePlayer?.id])
   const [pendingEffect, setPendingEffect] = useState<typeof optionalEffects[0] | null>(null)
   const [pendingTrashReward, setPendingTrashReward] = useState<PendingReward | null>(null)
@@ -270,6 +271,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
   const [counterValue, setCounterValue] = useState(0)
   const [counterDrafts, setCounterDrafts] = useState<Record<string, number>>({})
   const [pendingTechDiscard, setPendingTechDiscard] = useState<{ tileId: TechTileId; prompt: string } | null>(null)
+  const [isTechModalOpen, setIsTechModalOpen] = useState(false)
   const [discardCostSelection, setDiscardCostSelection] = useState<Card[]>([])
   const suppressedCardSelectIdsRef = useRef<Set<string>>(new Set())
   const [opponentCardSelect, setOpponentCardSelect] = useState<{
@@ -429,26 +431,25 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     [pendingRewards, turnControlOptionalEffects, turnControlPendingChoices]
   )
 
-  const techControlsRow =
-    riseOfIx && activePlayer && gameState && !isCombatPhase ? (
-      <TurnControlsTechRow
-        gameState={gameState}
-        player={activePlayer}
-        onActivateTech={
-          isHistoryView
-            ? undefined
-            : (playerId, tileId) => {
-                if (techActivationRequiresDiscard(tileId)) {
-                  const prompt = techDiscardActivationPrompt(tileId)
-                  if (prompt) setPendingTechDiscard({ tileId, prompt })
-                  return
-                }
-                onActivateTech?.(playerId, tileId)
-              }
-        }
-        isHistoryView={isHistoryView}
-      />
-    ) : null
+  const ownedTechCount = activePlayer?.tech?.length ?? 0
+  const showPlayAreaTechButton = Boolean(
+    riseOfIx && activePlayer && gameState && !isCombatPhase && ownedTechCount > 0
+  )
+  const playAreaTechActivatable =
+    showPlayAreaTechButton && !isHistoryView && Boolean(onActivateTech) && gameState && activePlayer
+      ? tilesActivatableNow(gameState, activePlayer.id).length > 0
+      : false
+
+  const handlePlayAreaActivateTech = (playerId: number, tileId: TechTileId) => {
+    setIsTechModalOpen(false)
+    if (isHistoryView) return
+    if (techActivationRequiresDiscard(tileId)) {
+      const prompt = techDiscardActivationPrompt(tileId)
+      if (prompt) setPendingTechDiscard({ tileId, prompt })
+      return
+    }
+    onActivateTech?.(playerId, tileId)
+  }
 
   useLayoutEffect(() => {
     if (isHistoryView || !pendingPlayInputKey) return
@@ -466,6 +467,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     setActiveCardEffectSource(null)
     setActiveCardSelect(null)
     setPendingTechDiscard(null)
+    setIsTechModalOpen(false)
     setOpponentCardSelect(null)
     setActiveFixedChoice(null)
     setPendingEffect(null)
@@ -2759,6 +2761,43 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     )
   }
 
+  const renderTechActionButton = () => {
+    if (!showPlayAreaTechButton || !activePlayer) return null
+    const title = playAreaTechActivatable
+      ? 'View and activate technology'
+      : 'View owned technology'
+
+    return (
+      <button
+        type="button"
+        className={[
+          'selected-card-inline-slot',
+          'selected-card-action-placeholder',
+          'selected-card-action-placeholder--tech',
+          playAreaTechActivatable ? 'selected-card-action-placeholder--tech-activatable' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        onClick={() => setIsTechModalOpen(true)}
+        title={title}
+        aria-label={`Technology tiles. ${ownedTechCount} owned.`}
+        aria-expanded={isTechModalOpen}
+      >
+        <span className="selected-card-action-tech-stack">
+          <img
+            src="/icon/tech.png"
+            alt=""
+            className="selected-card-action-tech-icon"
+            decoding="sync"
+          />
+          <span className="selected-card-action-count selected-card-action-count--tech-overlay">
+            {ownedTechCount}
+          </span>
+        </span>
+      </button>
+    )
+  }
+
   const renderIntegratedEffects = (
     effectCards: EffectCard[],
     visibleCardIds: Set<number>,
@@ -3632,7 +3671,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 </div>
               )}
             </div>
-            {(!primaryTurnActionsHidden || techControlsRow) && !hidePrimaryTurnActions && (
+            {(!primaryTurnActionsHidden || showPlayAreaTechButton) && !hidePrimaryTurnActions && (
               <div className="selected-card-turn-actions" aria-label="Turn actions">
                 {!primaryTurnActionsHidden && renderPlayCardPlaceholder()}
                 {!primaryTurnActionsHidden && (
@@ -3644,19 +3683,30 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                     title={revealActionTitle}
                     aria-label={`Reveal hand with ${activePlayer.handCount} cards`}
                   >
-                    <RevealCardsIcon className="selected-card-action-reveal-cards" />
                     <span className="selected-card-action-label selected-card-action-label--play">Reveal</span>
+                    <RevealCardsIcon className="selected-card-action-reveal-cards" />
                     <span className="selected-card-action-count">{activePlayer.handCount}</span>
                   </button>
                 )}
                 {!isHistoryView && !isEndGame && renderIntrigueActionButton()}
-                {techControlsRow}
+                {renderTechActionButton()}
               </div>
             )}
           </div>
         </div>
         </div>
       </div>
+
+      {gameState && activePlayer ? (
+        <PlayerTechModal
+          isOpen={isTechModalOpen}
+          onClose={() => setIsTechModalOpen(false)}
+          gameState={gameState}
+          player={activePlayer}
+          onActivateTech={isHistoryView ? undefined : handlePlayAreaActivateTech}
+          isHistoryView={isHistoryView}
+        />
+      ) : null}
 
       {/* Card selection overlays - outside turn-controls so they stay visible when controls are hidden */}
       <CardSearch

@@ -12,7 +12,7 @@ export interface TurnControlsTechRowProps {
   isHistoryView?: boolean
 }
 
-/** Acquired tech tiles for the active player in the play-area footer. */
+/** Acquired tech tiles for the active player (play-area modal / birdseye tech button). */
 const TurnControlsTechRow: React.FC<TurnControlsTechRowProps> = ({
   gameState,
   player,

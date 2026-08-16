@@ -165,14 +165,17 @@ describe('Combat rank strip wiring', () => {
     expect(cluster).not.toContain('CombatStatusStrip')
   })
 
-  it('renders deploy controls left of Play/End Turn on desktop; mobile deploy is an idle-band sheet', () => {
+  it('renders deploy controls under End Turn / intrigue / tech on desktop', () => {
     expect(seatChrome).toContain('BirdseyeSeatDeployControls')
     expect(seatChrome).toContain('CombatDeployDock')
     expect(seatChrome).toContain('birdseye-seat__deploy')
     const desktopIdx = seatChrome.indexOf('export function BirdseyeDesktopControls')
-    const desktopBlock = seatChrome.slice(desktopIdx, desktopIdx + 1200)
-    expect(desktopBlock.indexOf('BirdseyeSeatDeployControls')).toBeLessThan(
-      desktopBlock.indexOf('birdseye-seat__controls-stack')
+    const desktopBlock = seatChrome.slice(desktopIdx, desktopIdx + 1600)
+    expect(desktopBlock.indexOf('birdseye-seat__controls-stack')).toBeLessThan(
+      desktopBlock.indexOf('BirdseyeSeatDeployControls')
+    )
+    expect(desktopBlock.indexOf('BirdseyeUtilControls')).toBeLessThan(
+      desktopBlock.indexOf('BirdseyeSeatDeployControls')
     )
     expect(imageBoard).toContain('troopDeploy={troopDeploy}')
   })
@@ -249,15 +252,14 @@ describe('Combat rank strip wiring', () => {
     expect(seatCss).toContain('.birdseye-seat__controls-stack')
   })
 
-  it('allows mobile troop controls to wrap in narrow seats', () => {
+  it('keeps troop deploy as a two-column icon+count row', () => {
     const troopCss = readFileSync(
       resolve(root, 'components/CombatTroopControls/CombatTroopControls.css'),
       'utf8'
     )
-    const mobileTroop = troopCss.slice(troopCss.indexOf('@media (max-width: 600px)'))
-    expect(mobileTroop).toContain('flex-wrap: wrap')
-    expect(mobileTroop).toContain('min-width: 0')
-    expect(mobileTroop).not.toContain('flex-wrap: nowrap')
+    expect(troopCss).toContain('grid-template-columns: 1fr 1fr')
+    expect(troopCss).not.toContain('flex-wrap: wrap')
+    expect(troopCss).toContain('min-width: 0')
   })
 
   it('keeps 4-player row seats sharing width without horizontal spill', () => {
@@ -327,23 +329,27 @@ describe('Combat rank strip wiring', () => {
     expect(seatCss).not.toContain('birdseye-seat-btn__agent-count')
   })
 
-  it('slides deploy further left with birdseye-deploy-append-left', () => {
+  it('keeps the play-control hang-left animation without a separate deploy slide', () => {
     const seatCss = readFileSync(
       resolve(root, 'components/ImageBoard/CombatSeatTurnChrome.css'),
       'utf8'
     )
-    expect(seatCss).toContain('@keyframes birdseye-deploy-append-left')
-    expect(seatCss).toContain('birdseye-deploy-append-left')
     expect(seatCss).toContain('birdseye-controls-out-left')
+    expect(seatCss).not.toContain('birdseye-deploy-append-left')
+    expect(seatCss).not.toContain('@keyframes birdseye-deploy-append-left')
   })
 
-  it('labels deploy / undo actions for readability', () => {
+  it('uses icon+count deploy piles with no visible labels', () => {
     const troopControls = readFileSync(
       resolve(root, 'components/CombatTroopControls/CombatTroopControls.tsx'),
       'utf8'
     )
-    expect(troopControls).toContain('>Deploy<')
-    expect(troopControls).toContain('>Undo<')
-    expect(troopControls).toContain('sent')
+    expect(troopControls).toContain('/icon/deploy.png')
+    expect(troopControls).toContain('troop-undeploy-button')
+    expect(troopControls).toContain('troop-deploy-button')
+    expect(troopControls).toContain('troop-action-count')
+    expect(troopControls).not.toContain('>Deploy<')
+    expect(troopControls).not.toContain('>Undo<')
+    expect(troopControls).not.toContain('sent')
   })
 })

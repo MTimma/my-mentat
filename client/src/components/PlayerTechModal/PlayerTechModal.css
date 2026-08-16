@@ -1,0 +1,102 @@
+.dialog-overlay.player-tech-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal-overlay-top);
+}
+
+.dialog-overlay.player-tech-overlay.player-tech-overlay--board-scoped,
+html:has(.game-container--play) .dialog-overlay.player-tech-overlay.player-tech-overlay--board-scoped {
+  position: absolute;
+  inset: 0;
+  padding: 8px;
+  box-sizing: border-box;
+  z-index: calc(var(--z-modal-overlay-top, 1300) + 1);
+}
+
+.player-tech-modal {
+  background: rgba(12, 10, 8, 0.96);
+  border: 1px solid rgba(212, 177, 106, 0.45);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  max-width: min(95vw, 520px);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: #fff8e8;
+}
+
+.player-tech-overlay--board-scoped .player-tech-modal {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.player-tech-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(212, 177, 106, 0.35);
+  background: linear-gradient(180deg, rgba(40, 32, 18, 0.95) 0%, rgba(22, 18, 12, 0.95) 100%);
+  flex-shrink: 0;
+}
+
+.player-tech-modal__header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff8e8;
+}
+
+.player-tech-modal__close {
+  background: transparent;
+  border: 1px solid rgba(212, 177, 106, 0.45);
+  border-radius: 4px;
+  color: #fff8e8;
+  width: 28px;
+  height: 28px;
+  font-size: 1.1rem;
+  padding: 0;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.player-tech-modal__close:hover {
+  background: rgba(212, 177, 106, 0.18);
+}
+
+.player-tech-modal__body {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.player-tech-modal__empty {
+  margin: 0;
+  color: rgba(255, 248, 232, 0.65);
+  font-style: italic;
+}
+
+.player-tech-modal .player-tech-tiles {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.player-tech-modal .player-tech-tiles--inline .player-tech-tiles__tile {
+  height: 72px;
+  width: auto;
+  max-width: min(180px, 42vw);
+}
+
+.player-tech-modal .player-tech-tiles__img {
+  width: auto;
+  height: 100%;
+  object-fit: contain;
+}

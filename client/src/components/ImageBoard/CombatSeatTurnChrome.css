@@ -288,7 +288,7 @@
   height: 2.15rem;
 }
 
-/* Mobile chrome strip: deploy left of Play/Reveal column, above the portrait. */
+/* Mobile chrome strip: Play/Reveal / Intr/Tech / deploy stacked above the portrait. */
 .birdseye-seat__overlay-utils,
 .birdseye-seat__overlay-actions {
   position: relative;

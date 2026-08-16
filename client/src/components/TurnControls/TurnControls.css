@@ -144,6 +144,10 @@
   justify-content: flex-end;
 }
 
+.utility-buttons--with-inline-card .selected-card-turn-actions .selected-card-action-placeholder {
+  flex-shrink: 0;
+}
+
 .selected-card-inline-slot {
   min-width: 76px;
   min-height: 92px;
@@ -266,34 +270,56 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 .selected-card-action-placeholder--play {
   width: 64px;
   height: 84px;
-  padding: 0;
+  padding: 4px 2px 2px;
+  justify-content: flex-start;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .selected-card-action-placeholder--reveal {
-  overflow: visible;
+  overflow: hidden;
+  box-sizing: border-box;
   min-width: 76px;
   min-height: 92px;
-  padding: 8px 8px 10px;
+  padding: 4px 4px 6px;
   justify-content: flex-start;
-  gap: 6px;
+  gap: 2px;
 }
 
-.selected-card-action-placeholder--intrigue {
+.selected-card-action-placeholder--intrigue,
+.selected-card-action-placeholder--tech {
   width: 64px;
   height: 84px;
   min-width: 64px;
   min-height: 84px;
   padding: 0;
   overflow: hidden;
+  box-sizing: border-box;
   /* Flex avoids WebKit issues with %-height + absolute imgs inside buttons. */
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.selected-card-action-placeholder--intrigue {
   border-style: dashed;
   border-color: rgba(143, 97, 188, 0.5);
   background:
     linear-gradient(180deg, rgba(143, 97, 188, 0.16), rgba(255, 255, 255, 0.04)),
     rgba(0, 0, 0, 0.2);
+}
+
+.selected-card-action-placeholder--tech {
+  border-style: dashed;
+  border-color: rgba(180, 140, 60, 0.5);
+  background:
+    linear-gradient(180deg, rgba(180, 140, 60, 0.16), rgba(255, 255, 255, 0.04)),
+    rgba(0, 0, 0, 0.2);
+}
+
+.selected-card-action-placeholder--tech-activatable {
+  border-color: rgba(255, 215, 100, 0.75);
+  box-shadow: 0 0 0 1px rgba(255, 215, 100, 0.35);
 }
 
 .selected-card-action-intrigue-stack {
@@ -331,6 +357,49 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   .selected-card-action-placeholder--intrigue .selected-card-action-intrigue-icon {
     filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
   }
+}
+
+.selected-card-action-placeholder--tech:hover:not(:disabled) {
+  border-color: rgba(230, 190, 90, 0.86);
+  background:
+    linear-gradient(180deg, rgba(180, 140, 60, 0.24), rgba(255, 255, 255, 0.07)),
+    rgba(0, 0, 0, 0.24);
+}
+
+.selected-card-action-tech-stack {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  align-self: stretch;
+  width: 100%;
+  min-height: 0;
+}
+
+.selected-card-action-placeholder--tech .selected-card-action-tech-icon {
+  position: relative;
+  flex-shrink: 0;
+  width: 56%;
+  max-width: 36px;
+  height: auto;
+  max-height: 56%;
+  object-fit: contain;
+  object-position: center;
+  box-sizing: border-box;
+}
+
+.selected-card-action-count--tech-overlay {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  text-shadow:
+    0 0 1px rgba(0, 0, 0, 0.95),
+    0 1px 3px rgba(0, 0, 0, 0.9),
+    0 0 10px rgba(0, 0, 0, 0.75);
+  pointer-events: none;
 }
 
 .selected-card-action-count--intrigue-overlay {
@@ -425,18 +494,36 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 }
 
 .selected-card-action-label--play {
-  font-size: 0.86rem;
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  line-height: 1;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
 }
 
 .selected-card-action-placeholder--reveal .selected-card-action-reveal-cards {
   position: absolute;
-  inset: 8px 6px 6px;
+  top: 1.15em;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
   z-index: 0;
+  max-width: none;
+  max-height: none;
 }
 
-.selected-card-action-placeholder--reveal > :not(.selected-card-action-reveal-cards) {
-  position: relative;
+.selected-card-action-placeholder--reveal .selected-card-action-count {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 1.15em;
+  bottom: 0;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .selected-card-action-count {
@@ -1173,7 +1260,8 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
     min-height: 96px;
   }
 
-  .selected-card-action-placeholder--intrigue {
+  .selected-card-action-placeholder--intrigue,
+  .selected-card-action-placeholder--tech {
     min-width: 72px;
     min-height: 96px;
   }
@@ -3185,7 +3273,8 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
     min-height: 55px;
   }
 
-  .selected-card-inline-slot.selected-card-action-placeholder--intrigue {
+  .selected-card-inline-slot.selected-card-action-placeholder--intrigue,
+  .selected-card-inline-slot.selected-card-action-placeholder--tech {
     width: 45px;
     min-height: 55px;
     height: 55px;
@@ -3222,20 +3311,29 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   .selected-card-action-placeholder--play {
     width: 45px;
     height: 59px;
+    padding: 3px 1px 1px;
   }
 
   .selected-card-action-placeholder--reveal {
     min-width: 53px;
     min-height: 64px;
-    padding: 6px;
-    gap: 3px;
+    padding: 3px 3px 4px;
+    gap: 1px;
   }
 
   .selected-card-action-placeholder--reveal .selected-card-action-reveal-cards {
-    inset: 5px 4px 4px;
+    top: 1.05em;
+    left: 3px;
+    right: 3px;
+    bottom: 3px;
   }
 
-  .selected-card-action-placeholder--intrigue {
+  .selected-card-action-placeholder--reveal .selected-card-action-count {
+    top: 1.05em;
+  }
+
+  .selected-card-action-placeholder--intrigue,
+  .selected-card-action-placeholder--tech {
     width: 45px;
     height: 59px;
     min-width: 45px;
@@ -3243,7 +3341,13 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   }
 
   .selected-card-action-placeholder--intrigue .selected-card-action-intrigue-icon {
-    max-width: 36px;
+    max-width: 28px;
+    max-height: 28px;
+  }
+
+  .selected-card-action-placeholder--tech .selected-card-action-tech-icon {
+    max-width: 22px;
+    max-height: 22px;
   }
 
   .selected-card-action-count {
@@ -3256,7 +3360,8 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   }
 
   .selected-card-action-label--play {
-    font-size: 0.6rem;
+    font-size: 0.52rem;
+    letter-spacing: 0.03em;
   }
 
   .selected-card-action-plus {
@@ -3289,10 +3394,11 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   }
 
   .selected-card-play-agent-badge {
-    right: 7px;
-    bottom: 6px;
-    width: 24px;
-    height: 15px;
+    right: 3px;
+    bottom: 3px;
+    width: auto;
+    height: auto;
+    max-width: calc(100% - 4px);
   }
 
   .or-choice-container {
