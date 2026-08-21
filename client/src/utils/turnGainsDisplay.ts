@@ -347,6 +347,21 @@ export function shippingTrackGroupTitle(gain: Gain): string {
   return step ? `Shipping ${step}` : 'Shipping track'
 }
 
+/**
+ * Group key for pending-effect chips. Shipping recall steps share source id 0
+ * (kept for recorded choice ids) so they must split on the step name.
+ */
+export function effectSourceGroupKey(source: {
+  type: string
+  id: number
+  name?: string
+}): string {
+  if (source.type === GainSource.SHIPPING_TRACK) {
+    return `${source.type}-${source.id}-${source.name ?? ''}`
+  }
+  return `${source.type}-${source.id}`
+}
+
 export function freighterRecallStepOrdinal(step: number): string | null {
   if (step === 1) return '1st'
   if (step === 2) return '2nd'

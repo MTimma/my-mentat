@@ -757,7 +757,7 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 
 .effects-inline-panel {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 6px;
   min-width: 0;
   flex: 1 1 auto;
@@ -772,6 +772,8 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   align-items: center;
   gap: 5px;
   flex: 0 0 auto;
+  align-self: stretch;
+  box-sizing: border-box;
   padding: 3px 5px;
   border-radius: 6px;
   border: 1px solid rgba(212, 177, 106, 0.22);
@@ -788,6 +790,26 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.effect-chip-group--shipping {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+}
+
+.effect-chip-group--shipping .effect-chip-source {
+  max-width: none;
+  font-size: 0.34rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.effect-chip-group--shipping .effect-chip-actions {
+  flex: 1 1 auto;
+  align-self: stretch;
 }
 
 .effect-chip-actions {
@@ -3086,6 +3108,10 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   justify-content: flex-start;
 }
 
+.fixed-choice-option--compact {
+  min-height: 26px;
+}
+
 .card-effects-inline-choice {
   display: flex;
   flex-direction: column;
@@ -3322,14 +3348,14 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   }
 
   .selected-card-action-placeholder--reveal .selected-card-action-reveal-cards {
-    top: 1.05em;
-    left: 3px;
-    right: 3px;
-    bottom: 3px;
+    top: 0.55em;
+    left: 1px;
+    right: 1px;
+    bottom: 1px;
   }
 
   .selected-card-action-placeholder--reveal .selected-card-action-count {
-    top: 1.05em;
+    top: 0.55em;
   }
 
   .selected-card-action-placeholder--intrigue,
@@ -3340,14 +3366,13 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
     min-height: 59px;
   }
 
-  .selected-card-action-placeholder--intrigue .selected-card-action-intrigue-icon {
-    max-width: 28px;
-    max-height: 28px;
-  }
-
+  .selected-card-action-placeholder--intrigue .selected-card-action-intrigue-icon,
   .selected-card-action-placeholder--tech .selected-card-action-tech-icon {
-    max-width: 22px;
-    max-height: 22px;
+    width: 94%;
+    max-width: none;
+    height: auto;
+    max-height: 94%;
+    object-fit: contain;
   }
 
   .selected-card-action-count {
@@ -3394,11 +3419,56 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   }
 
   .selected-card-play-agent-badge {
-    right: 3px;
-    bottom: 3px;
+    left: 1px;
+    right: 1px;
+    top: 0.58rem;
+    bottom: 1px;
     width: auto;
     height: auto;
-    max-width: calc(100% - 4px);
+    max-width: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .selected-card-play-agent-badge .selected-card-agent-badge {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    gap: 0;
+  }
+
+  .selected-card-play-agent-badge .agent.selected-card-agent-icon {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+  }
+
+  .selected-card-play-agent-badge .selected-card-agent-count {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    min-width: 0;
+    font-size: 1.05rem;
+    text-shadow:
+      0 0 1px rgba(0, 0, 0, 0.95),
+      0 1px 3px rgba(0, 0, 0, 0.9),
+      0 0 10px rgba(0, 0, 0, 0.75);
+    pointer-events: none;
   }
 
   .or-choice-container {

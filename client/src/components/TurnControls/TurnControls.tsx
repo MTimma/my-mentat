@@ -58,8 +58,12 @@ import {
   getLackingOptionalCostResources,
   requiresInfluenceChoices,
 } from '../../utils/influenceChoices'
-import { isInfluenceBoardChoice } from '../../utils/influenceBoardChoice'
+import {
+  influenceBoardChoiceDisplayReward,
+  isInfluenceBoardChoice,
+} from '../../utils/influenceBoardChoice'
 import { isSoleTrashThisCardReward } from '../../utils/pendingRewardAutoApply'
+import { effectSourceGroupKey } from '../../utils/turnGainsDisplay'
 import {
   CardEffectRect,
   CARD_EFFECT_REGIONS,
@@ -1783,7 +1787,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     
     // Add pending rewards
     pendingRewards.forEach(reward => {
-      const key = `${reward.source.type}-${reward.source.id}`
+      const key = effectSourceGroupKey(reward.source)
       if (!sourceMap.has(key)) {
         sourceMap.set(key, {
           source: reward.source,
@@ -1797,7 +1801,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     
     // Add optional effects
     turnControlOptionalEffects.forEach(effect => {
-      const key = `${effect.source.type}-${effect.source.id}`
+      const key = effectSourceGroupKey(effect.source)
       if (!sourceMap.has(key)) {
         sourceMap.set(key, {
           source: { type: effect.source.type, id: effect.source.id, name: effect.source.name },
@@ -1816,7 +1820,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
           !(choice.type === ChoiceType.FIXED_OPTIONS && isKwisatzAgentSourceChoice(choice.id))
       )
       .forEach(choice => {
-      const key = `${choice.source.type}-${choice.source.id}`
+      const key = effectSourceGroupKey(choice.source)
       if (!sourceMap.has(key)) {
         sourceMap.set(key, {
           source: { type: choice.source.type, id: choice.source.id, name: choice.source.name },
@@ -1984,12 +1988,12 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
       filter === 'overlay-only'
         ? []
         : filterAcquireTechFromChoices(
-            card.choices.filter(
-              choice =>
-                !influenceBoardSelectionActive ||
-                choice.type !== ChoiceType.FIXED_OPTIONS ||
-                !isInfluenceBoardChoice(choice as FixedOptionsChoice)
-            )
+            card.choices.filter(choice => {
+              if (choice.type !== ChoiceType.FIXED_OPTIONS) return true
+              if (!isInfluenceBoardChoice(choice as FixedOptionsChoice)) return true
+              // Compact chips keep a disabled bump; overlay still defers to the board.
+              return variant === 'compact' || !influenceBoardSelectionActive
+            })
           )
     const techAcquireOption =
       riseOfIx && activePlayer && gameState && !isHistoryView
@@ -2205,6 +2209,21 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
           const useInlineFixedChoice =
             variant === 'compact' || isPlayAreaInlineTechOrSignetChoice(fixedChoice)
           if (useInlineFixedChoice) {
+            if (influenceBoardSelectionActive && isInfluenceBoardChoice(fixedChoice)) {
+              const displayReward = influenceBoardChoiceDisplayReward(fixedChoice)
+              return (
+                <button
+                  key={choice.id}
+                  type="button"
+                  className="effect-btn effect-btn--compact choice"
+                  disabled
+                  title={fixedChoice.prompt}
+                  aria-label={fixedChoice.prompt}
+                >
+                  {displayReward ? renderLabel({ reward: displayReward }) : null}
+                </button>
+              )
+            }
             const isInlineOrChoice = fixedChoice.options.length > 1
             const defaultOrPrompt =
               fixedChoice.prompt === 'Choose one reward' || fixedChoice.prompt === 'Choose one option'
@@ -2831,7 +2850,15 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
         aria-label="Other pending effects"
       >
         {fallbackCards.map(card => (
-          <div key={`${card.source.type}-${card.source.id}`} className="effect-chip-group">
+          <div
+            key={effectSourceGroupKey(card.source)}
+            className={[
+              'effect-chip-group',
+              card.source.type === GainSource.SHIPPING_TRACK ? 'effect-chip-group--shipping' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
             {!hideSourceTitles ? (
               <span className="effect-chip-source">{card.source.name}</span>
             ) : null}

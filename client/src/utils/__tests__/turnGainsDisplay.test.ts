@@ -14,6 +14,7 @@ import {
   freighterRecallStepOrdinal,
   resolveFreighterMoveGroupTitle,
   shippingTrackStepFromGain,
+  effectSourceGroupKey,
   getGainsForTurnState,
   getOtherPlayersGainsForTurnState,
   getTroopsDeployedToConflict,
@@ -955,6 +956,17 @@ describe('turnGainsDisplay', () => {
     ).toBe(2)
     expect(freighterRecallStepOrdinal(2)).toBe('2nd')
     expect(freighterRecallStepOrdinal(3)).toBe('3rd')
+  })
+
+  it('splits pending shipping-track chips by step name, not shared source id', () => {
+    expect(
+      effectSourceGroupKey({ type: GainSource.SHIPPING_TRACK, id: 0, name: 'Shipping 2' })
+    ).not.toBe(
+      effectSourceGroupKey({ type: GainSource.SHIPPING_TRACK, id: 0, name: 'Shipping 1' })
+    )
+    expect(effectSourceGroupKey({ type: GainSource.CARD, id: 12, name: 'A' })).toBe(
+      effectSourceGroupKey({ type: GainSource.CARD, id: 12, name: 'B' })
+    )
   })
 
   it('aggregateResourceGains groups CARD gains by card id', () => {

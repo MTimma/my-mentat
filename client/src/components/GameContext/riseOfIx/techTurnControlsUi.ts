@@ -13,6 +13,7 @@ import { canPlayerAffordTechTile } from '../../../utils/techTiles'
 import type { TechAcquireSourceOption } from './techAcquireOffer'
 import { getTechAcquireSourceOptions } from './techAcquireOffer'
 import { SIGNET_RING_PROMPT } from './boardSpaceChoices'
+import { effectSourceGroupKey } from '../../../utils/turnGainsDisplay'
 
 function hasMeaningfulRewardBesidesAcquireTech(reward: Reward): boolean {
   if (reward.spice || reward.water || reward.solari) return true
@@ -92,18 +93,21 @@ export function findTechAcquireOptionForEffectSource(
   }
 
   return options.find(option => {
-    if (option.pendingChoice?.source.type === source.type && option.pendingChoice.source.id === source.id) {
+    if (
+      option.pendingChoice &&
+      effectSourceGroupKey(option.pendingChoice.source) === effectSourceGroupKey(source)
+    ) {
       return true
     }
     if (option.pendingOptionalEffectId) {
       const optional = state.currTurn?.optionalEffects?.find(
         effect => effect.id === option.pendingOptionalEffectId
       )
-      return optional?.source.type === source.type && optional.source.id === source.id
+      return optional != null && effectSourceGroupKey(optional.source) === effectSourceGroupKey(source)
     }
     if (option.pendingRewardId) {
       const reward = state.pendingRewards?.find(entry => entry.id === option.pendingRewardId)
-      return reward?.source.type === source.type && reward?.source.id === source.id
+      return reward != null && effectSourceGroupKey(reward.source) === effectSourceGroupKey(source)
     }
     if (source.type === GainSource.BOARD_SPACE && option.kind === 'board-space') {
       return option.label === source.name

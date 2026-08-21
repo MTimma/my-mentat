@@ -4,6 +4,7 @@ import {
   FixedOptionsChoice,
   GainSource,
   GameState,
+  type Reward,
 } from '../types/GameTypes'
 import { canAffordInfluenceReward } from './influenceChoices'
 import { isBlockedSequentialConflictChoice } from './conflictDistinctFactions'
@@ -37,6 +38,25 @@ export function findConflictInfluenceBoardChoice(
     }
   }
   return null
+}
+
+/** Compact pending-gains preview: one any-faction bump icon for a board influence choice. */
+export function influenceBoardChoiceDisplayReward(
+  choice: FixedOptionsChoice
+): Reward | null {
+  const mode = getInfluenceBoardMode(choice)
+  if (!mode) return null
+  const amount = getInfluenceBoardAmount(choice)
+  const signed = mode === 'lose' ? -amount : amount
+  return {
+    influence: {
+      chooseOne: true,
+      amounts: choice.options.map(opt => ({
+        faction: opt.reward.influence!.amounts[0].faction,
+        amount: signed,
+      })),
+    },
+  }
 }
 
 /** Fixed-options influence choices resolved by tapping faction tracks on the image board. */

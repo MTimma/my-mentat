@@ -117,4 +117,41 @@ describe('techTurnControlsUi', () => {
     expect(option?.kind).toBe('signet-ring')
     expect(canAffordAnyFaceUpTech(state, state.players[0], option!)).toBe(true)
   })
+
+  it('does not attach shipping step-3 tech acquire to a different shipping step chip', () => {
+    const base = getFreshDefaultGameState()
+    const state = {
+      ...base,
+      expansions: { ...NO_EXPANSIONS, riseOfIx: true },
+      players: [makePlayer(0, { spice: 10 })],
+      phase: GamePhase.PLAYER_TURNS,
+      activePlayerId: 0,
+      ixBoard: {
+        stacks: [[TechTileId.SPACEPORT], [TechTileId.WINDTRAPS], [TechTileId.HOLTZMAN_ENGINE]],
+        nextFaceUpRevealed: {},
+      },
+      pendingRewards: [
+        {
+          id: 'shipping-track-0-RECALL-TECH',
+          source: { type: GainSource.SHIPPING_TRACK, id: 0, name: 'Shipping 3' },
+          reward: { acquireTech: { discount: 2 } },
+          isTrash: false,
+        },
+      ],
+    }
+    expect(
+      findTechAcquireOptionForEffectSource(state, 0, {
+        type: GainSource.SHIPPING_TRACK,
+        id: 0,
+        name: 'Shipping 3',
+      })?.pendingRewardId
+    ).toBe('shipping-track-0-RECALL-TECH')
+    expect(
+      findTechAcquireOptionForEffectSource(state, 0, {
+        type: GainSource.SHIPPING_TRACK,
+        id: 0,
+        name: 'Shipping 1',
+      })
+    ).toBeUndefined()
+  })
 })

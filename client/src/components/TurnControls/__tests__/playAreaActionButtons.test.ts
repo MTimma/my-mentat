@@ -51,6 +51,24 @@ describe('Play area action buttons', () => {
     )
   })
 
+  it('splits shipping recall chips by step and uses a compact source title', () => {
+    expect(turnControls).toContain('effectSourceGroupKey')
+    expect(turnControls).toContain('effect-chip-group--shipping')
+    expect(turnCss).toMatch(
+      /\.effect-chip-group--shipping \{[\s\S]*?flex-direction:\s*column/
+    )
+    expect(turnCss).toMatch(
+      /\.effect-chip-group--shipping \.effect-chip-source \{[\s\S]*?font-size:\s*0\.34rem/
+    )
+  })
+
+  it('keeps pending-gain chip groups equal height and shows a disabled shipping influence bump', () => {
+    expect(turnCss).toMatch(/\.effects-inline-panel \{[\s\S]*?align-items:\s*stretch/)
+    expect(turnCss).toMatch(/\.effect-chip-group \{[\s\S]*?align-self:\s*stretch/)
+    expect(turnControls).toContain('influenceBoardChoiceDisplayReward')
+    expect(turnControls).toContain('influenceBoardSelectionActive && isInfluenceBoardChoice(fixedChoice)')
+  })
+
   it('opens owned techs in PlayerTechModal instead of inline tiles', () => {
     expect(turnControls).toContain('renderTechActionButton')
     expect(turnControls).toContain('selected-card-action-placeholder--tech')

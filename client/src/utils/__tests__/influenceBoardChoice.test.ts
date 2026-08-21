@@ -4,8 +4,10 @@ import {
   findConflictInfluenceBoardChoice,
   getInfluenceBoardChoiceMeta,
   getInfluenceBoardPrompt,
+  influenceBoardChoiceDisplayReward,
   isInfluenceBoardChoice,
 } from '../influenceBoardChoice'
+import { isAnyFactionInfluenceChoice } from '../influenceDisplay'
 import {
   ChoiceType,
   FactionType,
@@ -76,5 +78,24 @@ describe('influenceBoardChoice', () => {
     }
     expect(isInfluenceBoardChoice(conflictChoiceAsFixedOptions(conflictChoice))).toBe(true)
     expect(findConflictInfluenceBoardChoice([conflictChoice])?.id).toBe('conflict-903')
+  })
+
+  it('maps a four-faction gain choice to the any-faction bump reward', () => {
+    const choice = conflictChoiceAsFixedOptions({
+      id: 'shipping-track-0-INFLUENCE-GAIN',
+      playerId: 0,
+      placement: 'recall',
+      conflictId: 0,
+      conflictName: 'Shipping 2',
+      options: [
+        { reward: { influence: { amounts: [{ faction: FactionType.EMPEROR, amount: 1 }] } } },
+        { reward: { influence: { amounts: [{ faction: FactionType.SPACING_GUILD, amount: 1 }] } } },
+        { reward: { influence: { amounts: [{ faction: FactionType.BENE_GESSERIT, amount: 1 }] } } },
+        { reward: { influence: { amounts: [{ faction: FactionType.FREMEN, amount: 1 }] } } },
+      ],
+    })
+    const reward = influenceBoardChoiceDisplayReward(choice)
+    expect(reward?.influence && isAnyFactionInfluenceChoice(reward.influence)).toBe(true)
+    expect(reward?.influence?.amounts[0].amount).toBe(1)
   })
 })
