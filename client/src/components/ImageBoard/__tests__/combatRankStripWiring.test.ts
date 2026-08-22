@@ -262,6 +262,23 @@ describe('Combat rank strip wiring', () => {
     expect(troopCss).toContain('min-width: 0')
   })
 
+  it('lets mobile troop deploy buttons receive taps under the none-hit cluster wrapper', () => {
+    const seatCss = readFileSync(
+      resolve(root, 'components/ImageBoard/CombatSeatTurnChrome.css'),
+      'utf8'
+    )
+    const imageBoardCss = readFileSync(resolve(root, 'components/ImageBoard/ImageBoard.css'), 'utf8')
+    expect(imageBoardCss).toMatch(
+      /\.image-board__combat-area-cluster--below \{[\s\S]*?pointer-events:\s*none/
+    )
+    const mobileDeploy = seatCss.match(
+      /\.combat-area-cluster-stack--row \.combat-area-cluster__mobile-deploy \{[\s\S]*?\}/
+    )?.[0]
+    expect(mobileDeploy).toBeTruthy()
+    expect(mobileDeploy).toContain('pointer-events: auto')
+    expect(cluster).toContain('combat-area-cluster__mobile-deploy')
+  })
+
   it('keeps 4-player row seats sharing width without horizontal spill', () => {
     const imageBoardCss = readFileSync(resolve(root, 'components/ImageBoard/ImageBoard.css'), 'utf8')
     const rowSeat = imageBoardCss.match(
@@ -337,6 +354,28 @@ describe('Combat rank strip wiring', () => {
     expect(seatCss).toContain('birdseye-controls-out-left')
     expect(seatCss).not.toContain('birdseye-deploy-append-left')
     expect(seatCss).not.toContain('@keyframes birdseye-deploy-append-left')
+  })
+
+  it('gives desktop deploy a subtle combat-red pocket', () => {
+    const seatCss = readFileSync(
+      resolve(root, 'components/ImageBoard/CombatSeatTurnChrome.css'),
+      'utf8'
+    )
+    const pocket = seatCss.match(
+      /\.combat-area-cluster--column \.birdseye-seat__deploy \{[\s\S]*?box-shadow: inset 0 0 0 1px rgba\(211, 47, 47, 0\.16\);/
+    )?.[0]
+    expect(pocket).toBeTruthy()
+    expect(pocket).toContain('rgba(211, 47, 47, 0.14)')
+    expect(pocket).toContain('border-top: 1px solid rgba(211, 47, 47, 0.4)')
+    expect(seatCss).toContain(
+      '.combat-area-cluster--column .birdseye-seat__deploy .troop-undeploy-button:not(:disabled)'
+    )
+    expect(seatCss).toContain('background: rgba(211, 47, 47, 0.38)')
+    expect(seatCss).toContain(
+      '.combat-area-cluster--column .birdseye-seat__deploy .troop-deploy-button'
+    )
+    expect(seatCss).toContain('background: rgba(0, 0, 0, 0.88)')
+    expect(seatCss).not.toContain('>Deploy<')
   })
 
   it('uses icon+count deploy piles with no visible labels', () => {

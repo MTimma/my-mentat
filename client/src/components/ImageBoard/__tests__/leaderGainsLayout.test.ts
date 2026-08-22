@@ -21,6 +21,13 @@ describe('Leader gains leftover layout', () => {
     resolve(root, 'components/ImageBoard/CombatAreaCluster.tsx'),
     'utf8'
   )
+  const indexCss = readFileSync(resolve(root, 'index.css'), 'utf8')
+  const gainsCss = readFileSync(
+    resolve(root, 'components/TurnGainsDisplay/TurnGainsDisplay.css'),
+    'utf8'
+  )
+  const historyCss = readFileSync(resolve(root, 'components/TurnHistory.css'), 'utf8')
+  const mainTs = readFileSync(resolve(root, 'main.tsx'), 'utf8')
 
   it('history-docked leader dock grows into leftover toward Turn History', () => {
     expect(imageBoardCss).toContain(
@@ -56,6 +63,53 @@ describe('Leader gains leftover layout', () => {
   it('uses a wrapping source grid for desktop column gains', () => {
     expect(seatChromeCss).toContain(
       'grid-template-columns: repeat(auto-fill, minmax(8.75rem, 1fr))'
+    )
+  })
+
+  it('locks desktop portrait height so gains cannot stretch the seat', () => {
+    expect(seatChromeCss).toContain('--birdseye-desktop-face-height: clamp(5.75rem, 15vmin, 8rem)')
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.combat-area-cluster__seat-main \{[\s\S]*?max-height:\s*var\(--birdseye-desktop-face-height/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.combat-area-cluster__seat-chrome \{[\s\S]*?max-height:\s*var\(--birdseye-desktop-face-height/
+    )
+  })
+
+  it('shows a small source title above desktop column gains', () => {
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?font-size:\s*0\.51rem/
+    )
+  })
+
+  it('keeps each desktop gain row a fixed one-line height', () => {
+    expect(seatChromeCss).toContain('--birdseye-gain-row-height: 1.4rem')
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?max-height:\s*var\(--birdseye-gain-row-height/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-flow \{[\s\S]*?flex-wrap:\s*nowrap/
+    )
+  })
+
+  it('scrolls extra gains inside the portrait box with overflow fades', () => {
+    expect(seatChromeCss).toContain('.birdseye-seat-gains__scroll')
+    expect(seatChromeCss).toContain('overflow-y: auto')
+    expect(seatChromeCss).toContain('birdseye-seat-gains--overflow-end')
+    expect(seatChromeTsx).toContain('useScrollOverflowFades')
+    expect(seatChromeTsx).toContain('ResizeObserver')
+  })
+
+  it('uses IBM Plex Sans and chrome text color for gains and turn history', () => {
+    expect(mainTs).toContain('@fontsource/ibm-plex-sans/latin-400.css')
+    expect(indexCss).toContain('--font-log: "IBM Plex Sans"')
+    expect(gainsCss).toContain('font-family: var(--font-log)')
+    expect(historyCss).toContain('font-family: var(--font-log)')
+    expect(gainsCss).toMatch(
+      /\.turn-gain-source-title \{[\s\S]*?color:\s*var\(--chrome-text-muted\)/
+    )
+    expect(historyCss).toMatch(
+      /\.turn-history-overlay--docked \.turn-history-gains \.turn-gain-source-title \{[\s\S]*?color:\s*var\(--chrome-text-muted\)/
     )
   })
 

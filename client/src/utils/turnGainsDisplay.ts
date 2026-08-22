@@ -1,6 +1,5 @@
 import { Gain, GainSource, GameState, GameTurn, RewardType } from '../types/GameTypes'
 import { BOARD_SPACES } from '../data/boardSpaces'
-import { catalogDeckCardNameById, catalogIntrigueNameById } from './cardCatalogLookup'
 import { factionFromInfluenceGainName } from './influenceDisplay'
 import {
   TechTileId,
@@ -56,7 +55,6 @@ export const TURN_TOTAL_RESOURCE_ORDER: RewardType[] = [
   RewardType.COMBAT,
   RewardType.DEPLOY,
   RewardType.DREADNOUGHT,
-  RewardType.FREIGHTER,
   RewardType.VICTORY_POINTS,
   RewardType.MENTAT,
   RewardType.AGENT,
@@ -75,9 +73,7 @@ export interface TurnGainSourceGroup {
 
 /** Icon beside a turn-history source group title (shipping, unload, signet ring, etc.). */
 export function getGainGroupIcon(group: TurnGainSourceGroup): string | null {
-  if (group.title === 'Shipping track' || /^Shipping [123]$/.test(group.title)) {
-    return '/icon/shipping.png'
-  }
+  if (group.title === 'Shipping track') return '/icon/shipping.png'
   if (
     group.title === 'Signet Ring' ||
     group.gains.some(gain => gain.name === 'Signet Ring')
@@ -265,131 +261,6 @@ export function getRepeatedIconDisplay(
   return { iconCount: maxIcons, showTotalMultiplier: true }
 }
 
-function trashedCardIdFromGain(gain: Gain): number | undefined {
-  if (gain.type !== RewardType.TRASH && gain.type !== RewardType.DISCARD) return undefined
-  return gain.cardId ?? gain.sourceId
-}
-
-function trashDiscardSourceTitleForGain(gain: Gain): string | undefined {
-  if (gain.type !== RewardType.TRASH && gain.type !== RewardType.DISCARD) return undefined
-  switch (gain.source) {
-    case GainSource.CARD:
-      return catalogDeckCardNameById(gain.sourceId)
-    case GainSource.INTRIGUE:
-      return catalogIntrigueNameById(gain.sourceId)
-    default:
-      return undefined
-  }
-}
-
-const FREIGHTER_MOVE_LABELS = new Set(['Advance', 'Recall'])
-
-function isFreighterMoveLabel(name: string | undefined): boolean {
-  return name != null && FREIGHTER_MOVE_LABELS.has(name)
-}
-
-/** Source card/intrigue title for Advance/Recall gains that stored the move name, not the source. */
-export function freighterMoveSourceTitle(
-  gain: Gain,
-  resolveCardName?: (cardId: number) => string | undefined
-): string | undefined {
-  if (gain.type !== RewardType.FREIGHTER || !isFreighterMoveLabel(gain.name)) return undefined
-  switch (gain.source) {
-    case GainSource.CARD:
-      return resolveCardName?.(gain.sourceId) ?? catalogDeckCardNameById(gain.sourceId)
-    case GainSource.INTRIGUE:
-      return catalogIntrigueNameById(gain.sourceId)
-    default:
-      return undefined
-  }
-}
-
-export function resolveFreighterMoveGroupTitle(
-  group: TurnGainSourceGroup,
-  resolveCardName?: (cardId: number) => string | undefined
-): string {
-  if (!isFreighterMoveLabel(group.title)) return group.title
-  const gain = group.gains.find(g => g.type === RewardType.FREIGHTER)
-  if (!gain) return group.title
-  return freighterMoveSourceTitle(gain, resolveCardName) ?? group.title
-}
-
-function shippingStepFromName(name: string): 1 | 2 | 3 | null {
-  if (/Shipping 1|step\s*1|Dividends/i.test(name)) return 1
-  if (/Shipping 2|step\s*2/i.test(name)) return 2
-  if (/Shipping 3|step\s*3/i.test(name)) return 3
-  return null
-}
-
-/** Recall/advance shipping-track step for grouping (1 spice/dividends, 2 troops+inf, 3 tech). */
-export function shippingTrackStepFromGain(gain: Gain): 1 | 2 | 3 | null {
-  if (gain.source !== GainSource.SHIPPING_TRACK) return null
-  const named = shippingStepFromName(gain.name)
-  if (named) return named
-  switch (gain.type) {
-    case RewardType.SPICE:
-    case RewardType.SOLARI:
-      return 1
-    case RewardType.TROOPS:
-    case RewardType.POOL_TROOP:
-    case RewardType.DEPLOY:
-    case RewardType.INFLUENCE:
-      return 2
-    case RewardType.TECH:
-      return 3
-    default:
-      return null
-  }
-}
-
-export function shippingTrackGroupTitle(gain: Gain): string {
-  const step = shippingTrackStepFromGain(gain)
-  return step ? `Shipping ${step}` : 'Shipping track'
-}
-
-/**
- * Group key for pending-effect chips. Shipping recall steps share source id 0
- * (kept for recorded choice ids) so they must split on the step name.
- */
-export function effectSourceGroupKey(source: {
-  type: string
-  id: number
-  name?: string
-}): string {
-  if (source.type === GainSource.SHIPPING_TRACK) {
-    return `${source.type}-${source.id}-${source.name ?? ''}`
-  }
-  return `${source.type}-${source.id}`
-}
-
-export function freighterRecallStepOrdinal(step: number): string | null {
-  if (step === 1) return '1st'
-  if (step === 2) return '2nd'
-  if (step === 3) return '3rd'
-  return null
-}
-
-/** Tile id for grouping TECH costs/rewards when the gain `name` is the discarded card. */
-function techIdentityForGain(gain: Gain): string {
-  const fromId = techTileFromGainSourceId(gain.sourceId)
-  if (fromId) return fromId
-  const fromName = getTechTileByName(gain.name)
-  if (fromName) return fromName.id
-  return gain.name
-}
-
-/** Discarded/trashed card title for gain rows (not the effect source). */
-export function discardedOrTrashedCardLabel(
-  gain: { name?: string; cardId?: number },
-  resolvedName?: string
-): string {
-  if (resolvedName) return resolvedName
-  const catalog = gain.cardId != null ? catalogDeckCardNameById(gain.cardId) : undefined
-  if (catalog) return catalog
-  if (gain.name && getTechTileByName(gain.name)) return catalog ?? gain.name
-  return gain.name ?? 'Card'
-}
-
 /** Board-space title for grouping mandatory rewards from the same space (e.g. Foldspace card + influence). */
 function boardSpaceTitleForGain(gain: Gain): string | undefined {
   if (gain.source !== GainSource.BOARD_SPACE) return undefined
@@ -404,12 +275,10 @@ function abilityTitleForGain(gain: Gain): string | undefined {
       return 'Memnon: High Council'
     case GainSource.TESSIA_SNOOPER:
       return 'Tessia snooper'
-    case GainSource.TECH: {
-      const tile = getTechTile(techIdentityForGain(gain) as TechTileId) ?? getTechTileByName(gain.name)
-      return tile ? `Tech: ${tile.name}` : gain.name ? `Tech: ${gain.name}` : 'Tech'
-    }
+    case GainSource.TECH:
+      return gain.name ? `Tech: ${gain.name}` : 'Tech'
     case GainSource.SHIPPING_TRACK:
-      return shippingTrackGroupTitle(gain)
+      return 'Shipping track'
     case GainSource.IX_BOARD: {
       const tileId = techTileFromGainSourceId(gain.sourceId)
       const tileName = tileId ? getTechTile(tileId)?.name : getTechTileByName(gain.name)?.name
@@ -421,13 +290,7 @@ function abilityTitleForGain(gain: Gain): string | undefined {
 }
 
 function titleForGainGroup(gain: Gain): string {
-  return (
-    abilityTitleForGain(gain) ??
-    boardSpaceTitleForGain(gain) ??
-    trashDiscardSourceTitleForGain(gain) ??
-    freighterMoveSourceTitle(gain) ??
-    gain.name
-  )
+  return abilityTitleForGain(gain) ?? boardSpaceTitleForGain(gain) ?? gain.name
 }
 
 function conflictPlayerKey(sourceId: number, playerId: number): string {
@@ -478,10 +341,8 @@ export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
       gain.source === GainSource.CONFLICT
         ? conflictGainGroupKey(gain, conflictPlacements)
         : gain.source === GainSource.TECH
-          ? `${gain.source}:${techIdentityForGain(gain)}:${gain.playerId}`
-          : gain.source === GainSource.SHIPPING_TRACK
-            ? `${gain.source}:${shippingTrackStepFromGain(gain) ?? 0}:${gain.playerId}`
-            : gain.source === GainSource.IX_BOARD
+          ? `${gain.source}:${gain.name}:${gain.playerId}`
+          : gain.source === GainSource.IX_BOARD
             ? `${gain.source}:${gain.sourceId}:${gain.name}:${gain.playerId}`
             : `${gain.source}:${gain.sourceId}`
     const groupTitle =
@@ -509,18 +370,11 @@ export function aggregateResourceGains(gains: Gain[]): AggregatedResourceGain[] 
 
   gains.forEach(gain => {
     if (gain.type === RewardType.INFLUENCE || gain.amount === 0) return
-    const isTrashOrDiscard =
-      gain.type === RewardType.TRASH || gain.type === RewardType.DISCARD
-    const isCardLike = gain.type === RewardType.CARD || isTrashOrDiscard
-    const trashedCardId = isTrashOrDiscard ? trashedCardIdFromGain(gain) : undefined
-    const cardIdForAggregate = isTrashOrDiscard
-      ? trashedCardId
-      : gain.type === RewardType.CARD
-        ? gain.sourceId
-        : undefined
-    const key = isCardLike
-      ? `${gain.type}:${cardIdForAggregate ?? gain.sourceId}`
-      : gain.type
+    const isCardLike =
+      gain.type === RewardType.CARD ||
+      gain.type === RewardType.TRASH ||
+      gain.type === RewardType.DISCARD
+    const key = isCardLike ? `${gain.type}:${gain.sourceId}` : gain.type
     const existing = aggregated.get(key)
     if (existing) {
       existing.amount += gain.amount
@@ -529,7 +383,7 @@ export function aggregateResourceGains(gains: Gain[]): AggregatedResourceGain[] 
         type: gain.type,
         amount: gain.amount,
         name: isCardLike ? gain.name : gain.type === RewardType.CARD ? gain.name : undefined,
-        cardId: cardIdForAggregate,
+        cardId: isCardLike ? gain.sourceId : gain.type === RewardType.CARD ? gain.sourceId : undefined,
       })
     }
   })
@@ -584,14 +438,13 @@ export function computeTurnGainTotals(gains: Gain[]): TurnGainTotals {
     }
 
     if (gain.type === RewardType.TRASH || gain.type === RewardType.DISCARD) {
-      const trashedCardId = trashedCardIdFromGain(gain) ?? gain.sourceId
-      const existing = cardMap.get(trashedCardId)
+      const existing = cardMap.get(gain.sourceId)
       const delta = Math.abs(gain.amount)
       if (existing) {
         existing.count += delta
       } else {
-        cardMap.set(trashedCardId, {
-          cardId: trashedCardId,
+        cardMap.set(gain.sourceId, {
+          cardId: gain.sourceId,
           name: gain.name,
           count: delta,
         })
@@ -691,17 +544,10 @@ export function aggregateInfluenceGains(gains: Gain[]): Array<{ name: string; am
 export function splitGainsByCostAndReward(gains: Gain[]): { costs: Gain[]; rewards: Gain[] } {
   const costs: Gain[] = []
   const rewards: Gain[] = []
-
   for (const gain of gains) {
-    if (gain.amount === 0) continue
-    // Trashing a card is an effect (reward side), even though the gain amount is negative.
-    if (gain.type === RewardType.TRASH && gain.amount < 0) {
-      rewards.push({ ...gain, amount: Math.abs(gain.amount) })
-      continue
-    }
     if (gain.amount < 0) {
       costs.push({ ...gain, amount: Math.abs(gain.amount) })
-    } else {
+    } else if (gain.amount > 0) {
       rewards.push(gain)
     }
   }

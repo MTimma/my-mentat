@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useLayoutEffect, useRef, useState } from 'react'
 import type { Card, Gain, GameState, Player } from '../../types/GameTypes'
 import type { TechTileId } from '../../data/techTiles'
 import TurnGainsDisplay from '../TurnGainsDisplay/TurnGainsDisplay'
@@ -306,6 +306,41 @@ export function BirdseyeIdleBand({
   )
 }
 
+function useScrollOverflowFades(enabled: boolean, measureKey: string) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [overflowStart, setOverflowStart] = useState(false)
+  const [overflowEnd, setOverflowEnd] = useState(false)
+
+  useLayoutEffect(() => {
+    if (!enabled) {
+      setOverflowStart(false)
+      setOverflowEnd(false)
+      return
+    }
+    const el = scrollRef.current
+    if (!el) return
+
+    const update = () => {
+      const { scrollTop, scrollHeight, clientHeight } = el
+      setOverflowStart(scrollTop > 1)
+      setOverflowEnd(scrollTop + clientHeight < scrollHeight - 1)
+    }
+
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    const child = el.firstElementChild
+    if (child) observer.observe(child)
+    el.addEventListener('scroll', update, { passive: true })
+    return () => {
+      observer.disconnect()
+      el.removeEventListener('scroll', update)
+    }
+  }, [enabled, measureKey])
+
+  return { scrollRef, overflowStart, overflowEnd }
+}
+
 export function BirdseyeSeatGains({
   playerId,
   gains,
@@ -325,21 +360,37 @@ export function BirdseyeSeatGains({
   showSourceTitles?: boolean
   resolveCard?: (cardId: number, name: string) => Card | undefined
 }) {
-  if (gains.length === 0 && troopsDeployed === 0 && troopsRetreated === 0) return null
+  const hasGains = gains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0
+  const { scrollRef, overflowStart, overflowEnd } = useScrollOverflowFades(
+    hasGains,
+    `${gains.length}:${troopsDeployed}:${troopsRetreated}`
+  )
+
+  if (!hasGains) return null
   return (
-    <div className="birdseye-seat-gains">
-      <TurnGainsDisplay
-        gains={gains}
-        playerId={playerId}
-        showSourceTitles={showSourceTitles && !totalsOnly}
-        showTotals={showTotals}
-        totalsOnly={totalsOnly}
-        inlineTrash
-        resolveCard={resolveCard}
-        troopsDeployedToConflict={troopsDeployed}
-        troopsRetreatedFromConflict={troopsRetreated}
-        className="birdseye-seat-gains__display"
-      />
+    <div
+      className={[
+        'birdseye-seat-gains',
+        overflowStart ? 'birdseye-seat-gains--overflow-start' : '',
+        overflowEnd ? 'birdseye-seat-gains--overflow-end' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div className="birdseye-seat-gains__scroll" ref={scrollRef}>
+        <TurnGainsDisplay
+          gains={gains}
+          playerId={playerId}
+          showSourceTitles={showSourceTitles && !totalsOnly}
+          showTotals={showTotals}
+          totalsOnly={totalsOnly}
+          inlineTrash
+          resolveCard={resolveCard}
+          troopsDeployedToConflict={troopsDeployed}
+          troopsRetreatedFromConflict={troopsRetreated}
+          className="birdseye-seat-gains__display"
+        />
+      </div>
     </div>
   )
 }

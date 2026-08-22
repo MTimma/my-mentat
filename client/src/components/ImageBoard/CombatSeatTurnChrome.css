@@ -432,6 +432,12 @@
   max-height: 7.5rem;
   overflow: auto;
   pointer-events: auto;
+  font-family: var(--font-log);
+  font-variant-numeric: tabular-nums;
+}
+
+.birdseye-seat-gains__scroll {
+  min-width: 0;
 }
 
 .combat-area-cluster--row .birdseye-seat-gains {
@@ -547,15 +553,62 @@
 }
 
 .combat-area-cluster--column .birdseye-seat-gains {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   border-top: none;
   border-left: 1px solid rgba(255, 248, 232, 0.1);
-  max-height: none;
+  max-height: 100%;
+  height: 100%;
   max-width: none;
   flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
   align-self: stretch;
   box-sizing: border-box;
+  padding: 0;
+  overflow: hidden;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0.28rem 0.35rem 0.32rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 177, 106, 0.4) transparent;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains__scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains__scroll::-webkit-scrollbar-thumb {
+  background: rgba(212, 177, 106, 0.4);
+  border-radius: 999px;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains--overflow-start::before,
+.combat-area-cluster--column .birdseye-seat-gains--overflow-end::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  height: 1.15rem;
+  pointer-events: none;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains--overflow-start::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.78), transparent);
+}
+
+.combat-area-cluster--column .birdseye-seat-gains--overflow-end::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78), transparent);
 }
 
 /* Inactive seats stay compact so the column does not explode empty panels. */
@@ -564,6 +617,11 @@
   .birdseye-seat-gains {
   flex: 0 1 11rem;
   max-width: 11rem;
+}
+
+.combat-area-cluster--column
+  .combat-area-cluster__seat:not(.combat-area-cluster__seat--active)
+  .birdseye-seat-gains__scroll {
   padding: 0.2rem 0.15rem;
 }
 
@@ -574,36 +632,58 @@
 .birdseye-seat-gains .gain-title,
 .birdseye-seat-gains .turn-gain-source-title {
   font-size: 0.72em;
-  color: var(--chrome-text-muted, rgba(255, 248, 232, 0.65));
+  color: var(--chrome-text-muted);
 }
 
 /*
- * Desktop column: labeled source cells in a wrapping grid that grows with leftover
- * width. Vertical stack when narrow; extra columns as the dock widens.
+ * Desktop column: one-line source chips in a wrapping grid. Extra leftover
+ * width adds columns; height stays locked to the portrait and scrolls.
  */
 .combat-area-cluster--column .birdseye-seat-gains .turn-gains-display {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(8.75rem, 1fr));
   align-items: start;
-  gap: 0.4rem 0.65rem;
+  align-content: start;
+  gap: 0.2rem 0.45rem;
   font-size: 0.86em;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.28rem;
   min-width: 0;
+  height: var(--birdseye-gain-row-height, 1.4rem);
+  max-height: var(--birdseye-gain-row-height, 1.4rem);
+  overflow: hidden;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-title {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: unset;
-  font-size: 0.78em;
-  line-height: 1.25;
+  flex: 0 1 4.2rem;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.51rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-flow {
-  flex-wrap: wrap;
-  row-gap: 0.2rem;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gains-side--cost,
+.combat-area-cluster--column .birdseye-seat-gains .turn-gains-side--reward,
+.combat-area-cluster--column .birdseye-seat-gains .turn-gains-side--deployed,
+.combat-area-cluster--column .birdseye-seat-gains .turn-gains-side--retreated {
+  padding: 0 3px;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-resource-icon,
@@ -656,33 +736,49 @@
   max-height: 4.5rem;
   overflow: auto;
   pointer-events: auto;
+  font-family: var(--font-log);
+  font-variant-numeric: tabular-nums;
 }
 
 .birdseye-interactions-strip .effects-inline-panel--birdseye {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
   gap: 0.15rem;
   margin: 0;
   flex: 1 1 auto;
   min-width: 0;
+  padding: 0;
+  background: transparent;
 }
 
 .birdseye-interactions-strip .effect-chip-group {
   margin: 0;
-  padding: 0;
-  border: none;
-  background: transparent;
+  padding: 2px 4px;
+  border: 1px solid rgba(212, 177, 106, 0.22);
+  background: rgba(16, 13, 10, 0.72);
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 0.15rem;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  align-self: stretch;
+  gap: 2px;
+}
+
+.birdseye-interactions-strip .effect-chip-source {
+  max-width: none;
+  font-size: 0.51rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: var(--chrome-text-muted);
 }
 
 .birdseye-interactions-strip .effect-chip-actions {
   display: flex;
   flex-wrap: wrap;
+  align-self: stretch;
   gap: 0.15rem;
 }
 
@@ -721,15 +817,17 @@
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat {
+  --birdseye-desktop-face-height: clamp(5.75rem, 15vmin, 8rem);
+  --birdseye-gain-row-height: 1.4rem;
   height: auto;
-  min-height: clamp(5.75rem, 15vmin, 8rem);
+  min-height: var(--birdseye-desktop-face-height);
 }
 
 .combat-area-cluster--column .combat-area-cluster__seat--birdseye {
   flex-direction: column;
   align-items: stretch;
   height: auto;
-  min-height: clamp(5.75rem, 15vmin, 8rem);
+  min-height: var(--birdseye-desktop-face-height);
 }
 
 .combat-area-cluster--column .combat-area-cluster__seat--active.combat-area-cluster__seat--birdseye {
@@ -741,8 +839,10 @@
   position: relative;
   flex-direction: row;
   align-items: stretch;
-  flex: 1 1 auto;
-  min-height: clamp(5.75rem, 15vmin, 8rem);
+  flex: 0 0 auto;
+  height: var(--birdseye-desktop-face-height, clamp(5.75rem, 15vmin, 8rem));
+  min-height: var(--birdseye-desktop-face-height, clamp(5.75rem, 15vmin, 8rem));
+  max-height: var(--birdseye-desktop-face-height, clamp(5.75rem, 15vmin, 8rem));
   /* Room for absolute play controls hanging into the board gap. */
   overflow: visible;
 }
@@ -817,6 +917,43 @@
 .combat-area-cluster--column .birdseye-seat__deploy .troop-action-button:focus-visible {
   outline: 2px solid rgba(255, 215, 0, 0.9);
   outline-offset: 1px;
+}
+
+/*
+ * Desktop deploy pocket — combat-red wash so the row reads as send-to-Conflict,
+ * not another gold chrome control. Matches combat-stat--red language.
+ */
+.combat-area-cluster--column .birdseye-seat__deploy {
+  padding: 0.2rem 0.14rem 0.14rem;
+  margin-top: 0.02rem;
+  border-top: 1px solid rgba(211, 47, 47, 0.4);
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    rgba(211, 47, 47, 0.14) 0%,
+    rgba(40, 10, 8, 0.22) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(211, 47, 47, 0.16);
+}
+
+.combat-area-cluster--column .birdseye-seat__deploy .troop-undeploy-button:not(:disabled) {
+  border-color: rgba(211, 47, 47, 0.58);
+  background: rgba(211, 47, 47, 0.38);
+}
+
+.combat-area-cluster--column .birdseye-seat__deploy .troop-undeploy-button:hover:not(:disabled) {
+  border-color: rgba(255, 138, 128, 0.72);
+  background: rgba(211, 47, 47, 0.5);
+}
+
+.combat-area-cluster--column .birdseye-seat__deploy .troop-deploy-button {
+  border-color: rgba(212, 177, 106, 0.42);
+  background: rgba(0, 0, 0, 0.88);
+}
+
+.combat-area-cluster--column .birdseye-seat__deploy .troop-deploy-button:hover:not(:disabled) {
+  border-color: rgba(255, 215, 0, 0.55);
+  background: rgba(0, 0, 0, 0.95);
 }
 
 @keyframes birdseye-controls-out-left {
@@ -1007,6 +1144,8 @@
 .combat-area-cluster--column .combat-area-cluster__seat-chrome {
   flex: 0 0 auto;
   width: clamp(7rem, 18vmin, 10.5rem);
+  height: var(--birdseye-desktop-face-height, clamp(5.75rem, 15vmin, 8rem));
+  max-height: var(--birdseye-desktop-face-height, clamp(5.75rem, 15vmin, 8rem));
 }
 
 /* Full-width pending bar under leader + gains (play controls hang left separately). */
@@ -1071,6 +1210,11 @@
   background: rgba(0, 0, 0, 0.72);
   border-bottom: 1px solid rgba(255, 248, 232, 0.16);
   overflow: hidden;
+  /* Parent cluster wrapper is pointer-events: none; seats re-enable on
+     .combat-area-cluster. This strip is a sibling, so it must too. */
+  pointer-events: auto;
+  position: relative;
+  z-index: 3;
 }
 
 .combat-area-cluster-stack--row .combat-area-cluster__mobile-deploy .combat-deploy-dock {
@@ -1085,6 +1229,7 @@
 .combat-area-cluster-stack--row .combat-area-cluster__mobile-deploy .troop-action-button {
   min-height: 1.85rem;
   height: 1.85rem;
+  pointer-events: auto;
 }
 
 .combat-area-cluster--row .birdseye-seat__interactions {

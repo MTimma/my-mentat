@@ -2856,6 +2856,11 @@ body:has(.game-container--play) {
   white-space: nowrap;
 }
 
+.game-container--desktop-play .play-area-drawer .effect-chip-group--shipping .effect-chip-source,
+.game-container--desktop-play .play-area-drawer .effect-chip-source {
+  font-size: 0.51rem;
+}
+
 .game-container--desktop-play .play-area-drawer .utility-buttons--with-inline-card {
   flex-wrap: nowrap;
   align-items: center;

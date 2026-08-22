@@ -7,6 +7,8 @@
   height: auto;
   background: var(--chrome-panel-gradient);
   color: var(--chrome-text);
+  font-family: var(--font-log);
+  font-variant-numeric: tabular-nums;
   z-index: var(--z-play-history-strip);
   box-shadow: var(--chrome-shadow-panel);
   border-left: 1px solid var(--chrome-border-accent);
@@ -1073,7 +1075,7 @@
   .turn-history-overlay--docked .turn-history-gains .turn-gain-source-title {
     font-size: 0.64rem;
     font-weight: 700;
-    color: rgba(244, 228, 188, 0.62);
+    color: var(--chrome-text-muted);
     text-align: right;
     line-height: 1.2;
     white-space: normal;

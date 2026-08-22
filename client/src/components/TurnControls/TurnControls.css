@@ -785,9 +785,10 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: rgba(244, 228, 188, 0.78);
+  color: var(--chrome-text-muted);
+  font-family: var(--font-log);
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }

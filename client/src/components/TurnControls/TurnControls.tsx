@@ -2821,9 +2821,10 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     effectCards: EffectCard[],
     visibleCardIds: Set<number>,
     stripIntrigueCards: IntrigueCard[],
-    options?: { hideSourceTitles?: boolean; includeAll?: boolean }
+    options?: { hideSourceTitles?: boolean; includeAll?: boolean; compactBirdseye?: boolean }
   ) => {
     const hideSourceTitles = Boolean(options?.hideSourceTitles)
+    const compactBirdseye = Boolean(options?.compactBirdseye)
     const includeAll = Boolean(options?.includeAll)
     const playedIntrigueIds = new Set(stripIntrigueCards.map(c => c.id))
     const fallbackCards = includeAll
@@ -2843,7 +2844,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
       <div
         className={[
           'effects-inline-panel',
-          hideSourceTitles ? 'effects-inline-panel--birdseye' : '',
+          compactBirdseye ? 'effects-inline-panel--birdseye' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -3219,7 +3220,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 </button>
               ) : null}
               {renderIntegratedEffects(effectCards, visibleCardIds, playAreaIntrigueCards, {
-                hideSourceTitles: true,
+                compactBirdseye: true,
                 includeAll: true,
               })}
             </div>,

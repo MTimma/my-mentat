@@ -1,6 +1,8 @@
 .turn-gains-display-root {
   min-width: 0;
   width: 100%;
+  font-family: var(--font-log);
+  font-variant-numeric: tabular-nums;
 }
 
 .turn-gains-display-root--with-totals {
@@ -237,7 +239,8 @@
 .turn-gain-source-title {
   font-size: 0.68rem;
   font-weight: 600;
-  color: rgba(244, 228, 188, 0.55);
+  color: var(--chrome-text-muted);
+  font-family: var(--font-log);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -264,7 +267,7 @@
 }
 
 .turn-gain-source-title__tech-name {
-  color: rgba(244, 228, 188, 0.72);
+  color: var(--chrome-text);
 }
 
 .turn-gain-source-flow {

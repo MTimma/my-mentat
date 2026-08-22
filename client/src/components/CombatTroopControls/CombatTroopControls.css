@@ -27,6 +27,7 @@
   color: var(--chrome-text, #fff8e8);
   box-shadow: none;
   cursor: pointer;
+  pointer-events: auto;
   transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
 

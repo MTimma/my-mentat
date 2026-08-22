@@ -4761,7 +4761,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return state
       }
       const pendingRewards: PendingReward[] = [...newState.pendingRewards]
-      const tempCurrTurn: GameTurn = {
+      let tempCurrTurn: GameTurn = {
         playerId,
         type: TurnType.ACTION,
         cardId: card?.id,
@@ -5652,11 +5652,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'REVEAL_CARDS': {
       const { playerId, cardIds } = action
-      const player: Player = {...state.players.find(p => p.id === playerId)} as Player
+      let player: Player = {...state.players.find(p => p.id === playerId)} as Player
 
       if (!player || playerId !== state.activePlayerId) return state
 
-      const tempCurrTurn: GameTurn = {
+      let tempCurrTurn: GameTurn = {
         playerId,
         canDeployTroops: false,
         troopLimit: 0,

@@ -22,6 +22,10 @@ describe('Play area action buttons', () => {
     resolve(root, 'components/ImageBoard/CombatSeatTurnChrome.tsx'),
     'utf8'
   )
+  const seatChromeCss = readFileSync(
+    resolve(root, 'components/ImageBoard/CombatSeatTurnChrome.css'),
+    'utf8'
+  )
 
   it('puts Play and Reveal labels on the top line of the button', () => {
     const playIdx = turnControls.indexOf('renderPlayCardPlaceholder')
@@ -59,6 +63,17 @@ describe('Play area action buttons', () => {
     )
     expect(turnCss).toMatch(
       /\.effect-chip-group--shipping \.effect-chip-source \{[\s\S]*?font-size:\s*0\.34rem/
+    )
+  })
+
+  it('shows small source titles on desktop birdseye pending chips', () => {
+    expect(turnControls).toContain('compactBirdseye: true')
+    expect(turnControls).not.toContain('hideSourceTitles: true')
+    expect(seatChromeCss).toMatch(
+      /\.birdseye-interactions-strip \.effect-chip-source \{[\s\S]*?font-size:\s*0\.51rem/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.birdseye-interactions-strip \.effect-chip-group \{[\s\S]*?flex-direction:\s*column/
     )
   })
 
