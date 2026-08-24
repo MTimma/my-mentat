@@ -578,6 +578,7 @@ body:has(.game-container--play) {
   border-style: solid;
   padding: 1px;
   background: rgba(0, 0, 0, 0.42);
+  -webkit-tap-highlight-color: transparent;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.55),
     0 2px 7px var(--leader-ring-glow, rgba(0, 0, 0, 0.35));
@@ -622,6 +623,11 @@ body:has(.game-container--play) {
     0 0 0 1px rgba(0, 0, 0, 0.55),
     0 0 0 3px color-mix(in srgb, var(--leader-ring-color) 35%, transparent),
     0 3px 10px var(--leader-ring-glow, rgba(0, 0, 0, 0.4));
+}
+
+.leader-avatar-btn:focus,
+.leader-avatar-btn:focus-visible {
+  outline: none;
 }
 
 .leader-avatar-btn.yellow:hover {

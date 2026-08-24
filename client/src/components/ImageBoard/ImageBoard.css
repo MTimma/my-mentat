@@ -131,7 +131,10 @@
   left: auto;
   top: auto;
   width: 100%;
-  height: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   font-size: clamp(9px, 1.35vmin, 13px);
   line-height: 1.1;
   color: #fff8e8;
@@ -142,14 +145,14 @@
 }
 
 .image-board__combat-area-cluster--docked .combat-area-cluster-stack {
-  height: auto;
+  height: 100%;
   overflow: visible;
 }
 
 .game-container--desktop-play .image-board__desktop-shell {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: stretch;
   justify-content: flex-start;
   gap: clamp(6px, 0.8vw, 12px);
   width: 100%;
@@ -170,26 +173,26 @@
   display: flex;
   flex: 0 0 auto;
   width: clamp(220px, 32vmin, 420px);
-  align-self: flex-start;
+  align-self: stretch;
+  min-height: 0;
   position: relative;
   overflow: visible;
 }
 
 /*
- * History-docked leftover sits after leaders, before Turn History.
- * Grow the dock into that strip so seat gains can expand; do not shrink the board.
- * Cap so ultrawide does not turn the column into an empty slab.
+ * Leftover height (board column minus Ix / Tleilax) feeds seat gains.
+ * Do not grow this column into leftover width toward Turn History.
  */
 .game-container--desktop-play.game-container--history-docked .image-board__expansion-dock-column {
-  flex: 1 0 auto;
-  min-width: clamp(220px, 32vmin, 420px);
-  width: auto;
-  max-width: min(46rem, 100%);
+  flex: 0 0 auto;
+  width: clamp(220px, 32vmin, 420px);
+  max-width: clamp(220px, 32vmin, 420px);
 }
 
 .game-container--desktop-play .image-board__combat-area-dock {
   width: 100%;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
   align-self: stretch;
   box-sizing: border-box;
   overflow: visible;
@@ -208,6 +211,7 @@
   max-width: var(--play-board-max-edge, 72vh);
   min-width: 0;
   width: 100%;
+  align-self: flex-start;
   /* Do not auto-margin the square stage; that opens a dead gap before the leader dock. */
   margin-inline: 0;
 }
@@ -1278,7 +1282,10 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 }
 
 .combat-area-cluster-stack--column {
-  height: auto;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   overflow: visible;
 }
 
@@ -1430,6 +1437,12 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   border-bottom: none;
 }
 
+.combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat {
+  flex: 1 1 0;
+  height: auto;
+  width: 100%;
+}
+
 .combat-area-cluster--column .combat-area-cluster__seat + .combat-area-cluster__seat {
   border-top: 1px solid rgba(255, 248, 232, 0.1);
 }
@@ -1465,6 +1478,19 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 .combat-area-cluster--column .combat-area-cluster__resources-panel {
   padding: 0.02em 0.05em 0.03em;
   border-radius: 0.12em 0.12em 0 0;
+}
+
+.combat-area-cluster--column .combat-area-cluster__seat-meta .combat-area-cluster__resources-panel {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  pointer-events: none;
+  padding: 0.12em 0.1em 0.1em;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
 }
 
 .combat-area-cluster--column .combat-area-cluster__resources {

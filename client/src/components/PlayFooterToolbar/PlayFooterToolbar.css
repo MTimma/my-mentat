@@ -21,6 +21,11 @@
   overflow: hidden;
 }
 
+.history-banner-toolbar .see-leader-button:focus,
+.history-banner-toolbar .see-leader-button:focus-visible {
+  outline: none;
+}
+
 .history-banner-toolbar .see-leader-icon,
 .history-banner-toolbar .see-leader-icon-fallback {
   width: 100%;

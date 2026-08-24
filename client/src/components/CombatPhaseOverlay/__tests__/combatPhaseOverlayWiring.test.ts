@@ -61,6 +61,24 @@ describe('Combat phase overlay wiring', () => {
     expect(css).toContain('.combat-phase-modal-heading')
   })
 
+  it('uses explicit desktop leader portrait sizes in rank chips, not board-strip cqh', () => {
+    expect(css).toMatch(
+      /\.combat-phase-rank \.combat-rank-strip__leader \{[\s\S]*?width: 48px/
+    )
+    expect(css).toMatch(
+      /\.combat-phase-rank \.combat-rank-strip__leader \{[\s\S]*?min-width: 48px/
+    )
+    expect(css).toMatch(
+      /\.combat-phase-rank \.combat-rank-strip__chip \{[\s\S]*?width: 104px/
+    )
+    expect(css).toMatch(
+      /@media \(max-width: 600px\)[\s\S]*\.combat-phase-rank \.combat-rank-strip__leader \{[\s\S]*?width: 32px/
+    )
+    expect(css).not.toMatch(
+      /\.combat-phase-rank \.combat-rank-strip__leader \{[\s\S]*?width:\s*\d+cqh/
+    )
+  })
+
   it('keeps live-turn leader badges at 28–32px', () => {
     expect(overlay).toContain('turn-history-player-badge')
     expect(css).toMatch(/\.combat-phase-modal \.turn-history-player-badge \{[\s\S]*?width: 32px/)

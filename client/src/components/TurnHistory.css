@@ -45,11 +45,8 @@
   min-width: 0;
 }
 
-.turn-history-overlay--docked .turn-history-header-title--turn-round {
-  text-transform: none;
-  font-size: 0.88rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+.turn-history-overlay--docked .turn-history-header-actions {
+  margin-left: auto;
 }
 
 .turn-history-header-actions {
@@ -516,6 +513,14 @@
 .turn-history-action-kind--endgame,
 .turn-label--endgame {
   color: var(--chrome-highlight-name);
+}
+
+.turn-history-row--round-start .turn-history-row-header {
+  min-height: 22px;
+}
+
+.turn-history-row--round-start .turn-label {
+  flex: 1;
 }
 
 .turn-history-endgame-winners {

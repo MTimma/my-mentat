@@ -8,8 +8,10 @@ import {
   getHistoryRowLabel,
   getLivePlayerTurnNumber,
   getPlayerTurnNumber,
+  getRoundStartLabel,
   getTurnActionLabel,
   isMetaHistoryEntry,
+  isRoundStartHistoryEntry,
 } from '../turnHistoryDisplay'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 
@@ -85,8 +87,15 @@ describe('turnHistoryDisplay', () => {
       }),
     ]
     expect(getHistoryRowLabel(turns, 0)).toBe('Round 1 start')
-    expect(getHistoryRowBadge(turns[0], 0, turns)).toBe('Round')
+    expect(getHistoryRowBadge(turns[0], 0, turns)).toBe('')
     expect(getLivePlayerTurnNumber(turns)).toBe(1)
+  })
+
+  it('identifies round-start rows and labels them without a left badge', () => {
+    const roundStart = row({ historyEntryKind: 'round-start', currentRound: 6 })
+    expect(isRoundStartHistoryEntry(roundStart)).toBe(true)
+    expect(getRoundStartLabel(roundStart)).toBe('Round 6 start')
+    expect(getHistoryRowBadge(roundStart, 4, [roundStart])).toBe('')
   })
 
   it('getTurnActionLabel returns board space name for agent turns', () => {

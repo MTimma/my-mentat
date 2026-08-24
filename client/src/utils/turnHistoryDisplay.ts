@@ -8,6 +8,21 @@ export function isMetaHistoryEntry(turn: GameState | undefined): boolean {
   return kind === 'setup' || kind === 'round-start' || kind === 'combat' || kind === 'endgame'
 }
 
+/** Round-start divider rows, including the merged opening snapshot still tagged as setup. */
+export function isRoundStartHistoryEntry(turn: GameState | undefined): boolean {
+  if (!turn) return false
+  if (turn.historyEntryKind === 'round-start') return true
+  return (
+    turn.historyEntryKind === 'setup' &&
+    turn.phase === GamePhase.PLAYER_TURNS &&
+    !turn.sandboxSetup
+  )
+}
+
+export function getRoundStartLabel(turn: GameState): string {
+  return `Round ${turn.currentRound} start`
+}
+
 export function isPlayerTurnHistoryEntry(turn: GameState | undefined): boolean {
   return turn != null && !isMetaHistoryEntry(turn)
 }
@@ -49,15 +64,8 @@ export function getHistoryRowLabel(turns: GameState[], index: number): string {
   }
   const turn = turns[index]
   if (!turn) return `Turn ${index}`
-  if (
-    turn.historyEntryKind === 'setup' &&
-    turn.phase === GamePhase.PLAYER_TURNS &&
-    !turn.sandboxSetup
-  ) {
-    return `Round ${turn.currentRound} start`
-  }
+  if (isRoundStartHistoryEntry(turn)) return getRoundStartLabel(turn)
   if (index === 0 || turn.historyEntryKind === 'setup') return 'Setup'
-  if (turn.historyEntryKind === 'round-start') return `Round ${turn.currentRound} start`
   if (turn.historyEntryKind === 'combat') return 'Combat'
   if (turn.historyEntryKind === 'endgame') return 'Endgame'
   const playerTurnNum = getPlayerTurnNumber(turns, index)
@@ -85,14 +93,7 @@ export function getTurnActionLabel(turn: GameState): string {
 export function getHistoryRowBadge(turn: GameState, index: number, turns: GameState[]): string {
   if (turn.historyEntryKind === 'endgame') return 'Endgame'
   if (turn.historyEntryKind === 'combat') return 'Combat'
-  if (turn.historyEntryKind === 'round-start') return 'Round'
-  if (
-    turn.historyEntryKind === 'setup' &&
-    turn.phase === GamePhase.PLAYER_TURNS &&
-    !turn.sandboxSetup
-  ) {
-    return 'Round'
-  }
+  if (isRoundStartHistoryEntry(turn)) return ''
   if (index === 0 || turn.historyEntryKind === 'setup') return 'Setup'
   const playerTurnNum = getPlayerTurnNumber(turns, index)
   return playerTurnNum != null ? String(playerTurnNum) : String(index)

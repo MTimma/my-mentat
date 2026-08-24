@@ -164,7 +164,6 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
   const renderSourcePicker = () =>
     acquireSources.length > 1 ? (
       <div className="tech-acquire-modal__sources" aria-label="Acquire tech using">
-        <span className="tech-acquire-modal__sources-label">Acquire using</span>
         <div className="tech-acquire-modal__source-list" role="radiogroup" aria-label="Acquire source">
           {acquireSources.map(source => {
             const selected = activeSource?.id === source.id
@@ -352,15 +351,6 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
               draggable={false}
               data-preview-src={tile!.image}
             />
-            <div className="tech-acquire-modal__meta">
-              <span className="tech-acquire-modal__tile-name">{tile!.name}</span>
-              <span className="tech-acquire-modal__cost">
-                {effectiveCost} {currencyLabel}
-                {effectiveCost !== tile!.cost ? (
-                  <span className="tech-acquire-modal__cost-base"> (base {tile!.cost})</span>
-                ) : null}
-              </span>
-            </div>
 
             <div className="tech-acquire-modal__resources" aria-label="Your resources">
               <span className="tech-acquire-modal__resource">
@@ -383,51 +373,7 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
               </span>
             </div>
 
-            {sourceReady || acquireSources.length > 0 ? (
-              <div className="tech-acquire-modal__sources" aria-label="Acquire tech using">
-                <span className="tech-acquire-modal__sources-label">Acquire using</span>
-                <div className="tech-acquire-modal__source-list" role="radiogroup" aria-label="Acquire source">
-                  {acquireSources.map(source => {
-                    const selected = activeSource?.id === source.id
-                    return (
-                      <button
-                        key={source.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={selected}
-                        className={[
-                          'tech-acquire-modal__source',
-                          selected ? 'tech-acquire-modal__source--selected' : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                        onClick={() => {
-                          setSelectedSourceId(source.id)
-                          setNegotiatorsReturned(0)
-                        }}
-                      >
-                        <img
-                          src={source.icon}
-                          alt=""
-                          className="tech-acquire-modal__source-icon"
-                          aria-hidden
-                        />
-                        <span className="tech-acquire-modal__source-label">{source.label}</span>
-                        {source.discount > 0 ? (
-                          <span className="tech-acquire-modal__source-discount">
-                            −{source.discount} spice
-                          </span>
-                        ) : null}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : null}
-
-            {sourceReady && discount > 0 ? (
-              <p className="tech-acquire-modal__discount">Board discount: −{discount} {currencyLabel}</p>
-            ) : null}
+            {renderSourcePicker()}
 
             {sourceReady && negotiatorsAvailable > 0 ? (
               <div className="tech-acquire-modal__negotiators">
@@ -446,21 +392,8 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
                     )
                   }
                 />
-                <span className="tech-acquire-modal__negotiators-hint">
-                  Up to {maxReturnable} for this tile
-                </span>
               </div>
             ) : null}
-
-            {!sourceReady ? (
-              <p className="tech-acquire-modal__view-only-hint">
-                {acquireSources.length > 1
-                  ? 'Choose whether to acquire with your board space discount or Signet Ring.'
-                  : 'Acquire an Acquire Tech reward to purchase from the market.'}
-              </p>
-            ) : null}
-
-            <p className="tech-acquire-modal__description">{tile!.description}</p>
 
             <div className="imperium-preview-actions tech-acquire-modal__actions">
               <button

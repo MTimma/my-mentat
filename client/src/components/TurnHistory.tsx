@@ -16,13 +16,13 @@ import {
   getTroopsRetreatedFromConflict,
 } from '../utils/turnGainsDisplay'
 import {
-  formatTurnRoundHeader,
-  getDisplayRound,
   getHistoryRowBadge,
   getLivePlayerTurnNumber,
   getPlayerTurnNumber,
+  getRoundStartLabel,
   getTurnActionLabel,
   isMetaHistoryEntry,
+  isRoundStartHistoryEntry,
 } from '../utils/turnHistoryDisplay'
 import {
   hasEndgameRowContent,
@@ -421,7 +421,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   const getHistoryRowTitle = (turn: GameState, index: number): string => {
     if (turn.historyEntryKind === 'endgame') return 'Endgame'
     if (turn.historyEntryKind === 'combat') return 'Combat'
-    if (turn.historyEntryKind === 'round-start') return `Round ${turn.currentRound} start`
+    if (isRoundStartHistoryEntry(turn)) return getRoundStartLabel(turn)
     if (index === 0 || turn.historyEntryKind === 'setup') return 'Setup'
     return getTurnActionLabel(turn)
   }
@@ -628,6 +628,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     isCombatEntry: boolean
     isEndgameEntry: boolean
     isMetaEntry: boolean
+    isRoundStartEntry: boolean
     isSetupEntry: boolean
     isRevealTurn: boolean
     isAgentTurn: boolean
@@ -652,6 +653,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     isCombatEntry,
     isEndgameEntry,
     isMetaEntry,
+    isRoundStartEntry,
     isSetupEntry,
     isRevealTurn,
     isAgentTurn,
@@ -744,7 +746,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     return (
       <>
         <div className="turn-history-row-header">
-          <div className="turn-number">{badge}</div>
+          {!isRoundStartEntry && <div className="turn-number">{badge}</div>}
           {!isMetaEntry && renderPlayerBadge(turnPlayer)}
           {!isMetaEntry && !isRevealTurn && resolvePlayedCardsForTurn(turn).map(card => (
             <React.Fragment key={`header-played-${card.id}`}>
@@ -769,8 +771,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               {turn.endgameWinners?.length ? 'Endgame' : 'Endgame intrigue reveal'}
             </span>
           )}
-          {turn.historyEntryKind === 'round-start' && (
-            <span className="turn-label">Round {turn.currentRound} start</span>
+          {isRoundStartEntry && (
+            <span className="turn-label">{getRoundStartLabel(turn)}</span>
           )}
         </div>
         <div className="turn-history-row-body">{outcomes}</div>
@@ -849,32 +851,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     onTurnChange(index)
   }
 
-  const getDockedHeaderTitle = (): string => {
-    if (viewingTurnIndex === null) {
-      if (inSandboxSetup) return 'Setup'
-      return formatTurnRoundHeader(
-        getLivePlayerTurnNumber(turns, turnNumberOffset),
-        getDisplayRound(currentGameState)
-      )
-    }
-    const snapshot = turns[viewingTurnIndex]
-    if (snapshot?.historyEntryKind === 'combat') return 'Combat'
-    if (snapshot?.historyEntryKind === 'endgame') return 'Endgame'
-    if (snapshot?.historyEntryKind === 'round-start') {
-      const round = getDisplayRound(snapshot) ?? snapshot.currentRound
-      return round != null ? `Round ${round} start` : 'Round start'
-    }
-    if (viewingTurnIndex === 0 || snapshot?.historyEntryKind === 'setup') return 'Setup'
-    const round = getDisplayRound(snapshot) ?? getDisplayRound(currentGameState) ?? snapshot?.currentRound
-    const turnNum = getPlayerTurnNumber(turns, viewingTurnIndex)
-    if (turnNum != null) {
-      return round != null ? `Turn ${turnNum}, round ${round}` : `Turn ${turnNum}`
-    }
-    return round != null ? `Turn ${viewingTurnIndex}, round ${round}` : `Turn ${viewingTurnIndex}`
-  }
-
   const headerTitle = isDocked
-    ? getDockedHeaderTitle()
+    ? null
     : isViewingHistory
       ? (() => {
           if (viewingTurnIndex === null) {
@@ -883,8 +861,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           const snapshot = turns[viewingTurnIndex]
           if (snapshot?.historyEntryKind === 'combat') return 'Combat'
           if (snapshot?.historyEntryKind === 'endgame') return 'Endgame'
-          if (snapshot?.historyEntryKind === 'round-start') {
-            return `Round ${snapshot.currentRound} start`
+          if (snapshot && isRoundStartHistoryEntry(snapshot)) {
+            return getRoundStartLabel(snapshot)
           }
           if (viewingTurnIndex === 0 || snapshot?.historyEntryKind === 'setup') return 'Setup'
           const turnNum = getPlayerTurnNumber(turns, viewingTurnIndex)
@@ -904,16 +882,9 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         onTurnChange={onTurnChange}
         onReturnToCurrent={onReturnToCurrent}
       />
-      <span
-        className={[
-          'turn-history-header-title',
-          isDocked ? 'turn-history-header-title--turn-round' : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-      >
-        {headerTitle}
-      </span>
+      {headerTitle != null ? (
+        <span className="turn-history-header-title">{headerTitle}</span>
+      ) : null}
       <div className="turn-history-header-actions">
         <button
           type="button"
@@ -1021,6 +992,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           const isCombatEntry = isCombatHistoryEntry(displayTurn)
           const isEndgameEntry = isEndgameHistoryEntry(displayTurn)
           const isMetaEntry = isMetaHistoryEntry(displayTurn)
+          const isRoundStartEntry = isRoundStartHistoryEntry(displayTurn)
           const gains = getGainsForHistoryRow(displayTurn)
           const otherPlayerGains =
             isCombatEntry || isEndgameEntry ? [] : getOtherPlayersGainsForTurnState(displayTurn)
@@ -1075,6 +1047,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                 isCombatEntry ? 'turn-history-row--combat' : '',
                 isEndgameEntry ? 'turn-history-row--endgame' : '',
                 isSetupEntry ? 'turn-history-row--setup' : '',
+                isRoundStartEntry ? 'turn-history-row--round-start' : '',
                 isMetaEntry ? 'turn-history-row--meta' : '',
                 isRevealTurn ? 'turn-history-row--reveal' : '',
                 isAgentTurn ? 'turn-history-row--agent' : '',
@@ -1099,6 +1072,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                 isCombatEntry,
                 isEndgameEntry,
                 isMetaEntry,
+                isRoundStartEntry,
                 isSetupEntry,
                 isRevealTurn,
                 isAgentTurn,
@@ -1192,6 +1166,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             isCombatEntry: currentGameState.phase === GamePhase.COMBAT,
             isEndgameEntry: liveIsEndgame,
             isMetaEntry: liveIsEndgame,
+            isRoundStartEntry: false,
             isSetupEntry: false,
             isRevealTurn: liveIsRevealTurn,
             isAgentTurn: liveIsAgentTurn,

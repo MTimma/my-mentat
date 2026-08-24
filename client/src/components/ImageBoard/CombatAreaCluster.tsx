@@ -1,4 +1,4 @@
-import React, { useMemo, useState, type RefObject } from 'react'
+import React, { useEffect, useMemo, useState, type RefObject } from 'react'
 import { GameState, type Gain, type Player } from '../../types/GameTypes'
 import { COMBAT_AREA_SEATS } from '../../data/boardMarkerAnchors'
 import { getLeaderImage } from '../../data/leaders'
@@ -239,6 +239,19 @@ export interface CombatSpecimenDeployProps {
 /** `grid` — 2×2 overlay on the board. `row` — horizontal strip (mobile). `column` — vertical stack (desktop dock). */
 export type CombatAreaClusterLayout = 'grid' | 'row' | 'column'
 
+/** Desktop birdseye: gains stack down from the portrait, or up toward it. Invented for layout compare. */
+export type DesktopGainsDir = 'down' | 'up'
+
+const DESKTOP_GAINS_DIR_KEY = 'myMentat.desktopLeaderGainsDir'
+
+function readDesktopGainsDir(): DesktopGainsDir {
+  try {
+    return localStorage.getItem(DESKTOP_GAINS_DIR_KEY) === 'up' ? 'up' : 'down'
+  } catch {
+    return 'down'
+  }
+}
+
 export interface BirdseyeSeatGainsMap {
   [playerId: number]: Gain[]
 }
@@ -298,12 +311,22 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   specimenDeploy,
 }) => {
   const [detailPlayer, setDetailPlayer] = useState<Player | null>(null)
+  const [desktopGainsDir, setDesktopGainsDir] = useState<DesktopGainsDir>(readDesktopGainsDir)
   const playerById = new Map(players.map(p => [p.id, p]))
   const isRow = layout === 'row'
   const isColumn = layout === 'column'
   const isLinear = isRow || isColumn
   const birdseyeEnabled =
     Boolean(birdseyeMode) && ((isRow && birdseyeMode === 'mobile3b') || (isColumn && birdseyeMode === 'desktop6'))
+
+  useEffect(() => {
+    if (!isColumn || !birdseyeEnabled) return
+    try {
+      localStorage.setItem(DESKTOP_GAINS_DIR_KEY, desktopGainsDir)
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }, [desktopGainsDir, isColumn, birdseyeEnabled])
 
   const outerStyle = useMemo(() => {
     if (isLinear || gridHeightPercent == null) return style
@@ -421,27 +444,42 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
           .join(' ')}
       >
         <div className="combat-area-cluster__seat-main">
-          {showActiveActions && birdseyeActions ? (
-            <BirdseyeDesktopControls
-              player={player}
-              actions={birdseyeActions}
-              gameState={gameState}
-              isHistoryView={birdseyeIsHistoryView}
-              {...seatDeploy}
-            />
-          ) : null}
-          <div className="combat-area-cluster__seat-chrome">
-            {quadrant}
+          <div className="combat-area-cluster__seat-leader">
+            {showActiveActions && birdseyeActions ? (
+              <BirdseyeDesktopControls
+                player={player}
+                actions={birdseyeActions}
+                gameState={gameState}
+                isHistoryView={birdseyeIsHistoryView}
+                {...seatDeploy}
+              />
+            ) : null}
+            <div className="combat-area-cluster__seat-chrome">
+              <PlayerQuadrant
+                player={player}
+                isActive={isActive}
+                isFirstPlayer={player.id === firstPlayerMarker}
+                hasMentat={player.id === mentatOwner}
+                riseOfIx={riseOfIx}
+                showResources={false}
+                onSelect={() =>
+                  onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
+                }
+              />
+            </div>
           </div>
-          <BirdseyeSeatGains
-            playerId={player.id}
-            gains={seatGains}
-            resolveCard={resolveSeatCard}
-            troopsDeployed={isActive ? birdseyeTroopsDeployed : 0}
-            troopsRetreated={isActive ? birdseyeTroopsRetreated : 0}
-            /* Totals hidden for now (mobile + desktop); keep prop wiring. */
-            showTotals={false}
-          />
+          <div className="combat-area-cluster__seat-meta">
+            <ResourceGrid player={player} riseOfIx={riseOfIx} />
+            <BirdseyeSeatGains
+              playerId={player.id}
+              gains={seatGains}
+              resolveCard={resolveSeatCard}
+              troopsDeployed={isActive ? birdseyeTroopsDeployed : 0}
+              troopsRetreated={isActive ? birdseyeTroopsRetreated : 0}
+              /* Totals hidden for now (mobile + desktop); keep prop wiring. */
+              showTotals={false}
+            />
+          </div>
         </div>
         {showActiveActions ? (
           <BirdseyeInteractionsHost hostRef={birdseyeInteractionsHostRef} />
@@ -481,6 +519,30 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
             .filter(Boolean)
             .join(' ')}
         >
+          {isColumn && birdseyeEnabled ? (
+            <div
+              className="combat-area-cluster__gains-dir"
+              role="group"
+              aria-label="Leader and gains direction"
+            >
+              <button
+                type="button"
+                className="combat-area-cluster__gains-dir-btn"
+                aria-pressed={desktopGainsDir === 'down'}
+                onClick={() => setDesktopGainsDir('down')}
+              >
+                Leaders top
+              </button>
+              <button
+                type="button"
+                className="combat-area-cluster__gains-dir-btn"
+                aria-pressed={desktopGainsDir === 'up'}
+                onClick={() => setDesktopGainsDir('up')}
+              >
+                Leaders bottom
+              </button>
+            </div>
+          ) : null}
           {showMobileDeploy && activePlayer ? (
             <div className="combat-area-cluster__mobile-deploy" onClick={e => e.stopPropagation()}>
               <CombatDeployDock
@@ -499,6 +561,9 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
               isRow ? 'combat-area-cluster--row' : '',
               isColumn ? 'combat-area-cluster--column' : '',
               birdseyeEnabled ? 'combat-area-cluster--birdseye' : '',
+              isColumn && birdseyeEnabled && desktopGainsDir === 'up'
+                ? 'combat-area-cluster--gains-up'
+                : '',
             ]
               .filter(Boolean)
               .join(' ')}

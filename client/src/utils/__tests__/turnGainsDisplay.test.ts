@@ -984,7 +984,7 @@ describe('turnGainsDisplay', () => {
     expect(aggregateResourceGains(gains)[0]).toMatchObject({
       type: RewardType.CARD,
       amount: 1,
-      cardId: 109,
+      cardId: 42,
       name: 'Spy',
     })
   })

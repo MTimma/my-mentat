@@ -21,30 +21,6 @@
   margin-inline: auto;
 }
 
-.tech-acquire-modal__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.tech-acquire-modal__tile-name {
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
-.tech-acquire-modal__cost {
-  font-size: 0.88rem;
-  color: #e8dcc8;
-}
-
-.tech-acquire-modal__cost-base {
-  opacity: 0.7;
-  font-size: 0.8rem;
-}
-
 .tech-acquire-modal__resources {
   display: flex;
   flex-wrap: wrap;
@@ -77,15 +53,6 @@
 .tech-acquire-modal__sources {
   margin: 8px 0 6px;
   text-align: center;
-}
-
-.tech-acquire-modal__sources-label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 0.78rem;
-  color: #a89a82;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .tech-acquire-modal__source-list {
@@ -131,13 +98,6 @@
   color: #c9b87a;
 }
 
-.tech-acquire-modal__discount {
-  margin: 4px 0 8px;
-  text-align: center;
-  font-size: 0.8rem;
-  color: #c9b87a;
-}
-
 .tech-acquire-modal__negotiators {
   display: flex;
   flex-wrap: wrap;
@@ -153,19 +113,6 @@
   width: 3rem;
   padding: 2px 6px;
   font-size: 0.8rem;
-}
-
-.tech-acquire-modal__negotiators-hint {
-  opacity: 0.75;
-  font-size: 0.75rem;
-}
-
-.tech-acquire-modal__description {
-  margin: 0 0 10px;
-  text-align: center;
-  font-size: 0.78rem;
-  color: #c7c7c7;
-  line-height: 1.35;
 }
 
 .tech-acquire-modal__view-only-hint {

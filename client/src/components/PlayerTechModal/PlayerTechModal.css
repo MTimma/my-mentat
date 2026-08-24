@@ -22,7 +22,7 @@ html:has(.game-container--play) .dialog-overlay.player-tech-overlay.player-tech-
   border: 1px solid rgba(212, 177, 106, 0.45);
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
-  max-width: min(95vw, 520px);
+  max-width: min(95vw, 2080px);
   max-height: 90vh;
   overflow: hidden;
   display: flex;
@@ -86,13 +86,13 @@ html:has(.game-container--play) .dialog-overlay.player-tech-overlay.player-tech-
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: flex-start;
-  gap: 8px;
+  gap: 16px;
 }
 
 .player-tech-modal .player-tech-tiles--inline .player-tech-tiles__tile {
-  height: 72px;
+  height: 288px;
   width: auto;
-  max-width: min(180px, 42vw);
+  max-width: min(720px, 100%);
 }
 
 .player-tech-modal .player-tech-tiles__img {
