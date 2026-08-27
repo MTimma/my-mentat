@@ -404,15 +404,18 @@ export function BirdseyeDesktopControls({
   troopDeploy,
   dreadnoughtDeploy,
   specimenDeploy,
+  interactionsHostRef,
 }: {
   player: Player
   actions: BirdseyeSeatActions
   gameState?: GameState
   isHistoryView?: boolean
+  interactionsHostRef?: (el: HTMLDivElement | null) => void
 } & BirdseyeSeatDeployProps) {
   const [techOpen, setTechOpen] = useState(false)
   return (
     <div className="birdseye-seat__controls-row">
+      <BirdseyeInteractionsHost hostRef={interactionsHostRef} />
       <div className="birdseye-seat__controls-stack">
         <BirdseyePrimaryControls actions={actions} player={player} />
         <BirdseyeUtilControls

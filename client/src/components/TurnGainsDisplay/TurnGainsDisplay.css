@@ -277,6 +277,10 @@
   gap: 4px;
 }
 
+.turn-gain-source-flow__tech-badge {
+  flex-shrink: 0;
+}
+
 .turn-gains-side {
   display: inline-flex;
   flex-wrap: nowrap;

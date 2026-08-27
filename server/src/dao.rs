@@ -5,6 +5,11 @@ use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use axum_anyhow::ApiResult;
+use tower_sessions::Session;
+
+
+const ACTIVE_GAME_ID: &str = "active_game_id";
+
 // start with only save, for anonymous users just publish and share link
 // 3 tabs - anonymous, community, official approved (tournaments, etc)
 
@@ -39,8 +44,9 @@ pub struct GameLog {
     summary: Option<serde_json::Value>,
 }
 
-pub async fn save_game(Json(gameLog): Json<GameLog>) -> ApiResult<Json<i64>> {
-    // validate length/sqllite injection or corruption
+
+pub async fn save_game(session: Session, Json(gameLog): Json<GameLog>) -> ApiResult<Json<i64>> {
+    // TODO validate length/sqllite injection or corruption
     let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = SqlitePool::connect(&db_url).await?;
     let mut conn = pool.acquire().await?;
@@ -59,15 +65,35 @@ VALUES ( ?1, ?2, strftime('%s', 'now'), strftime('%s', 'now') )
     .await?
     .last_insert_rowid();
 
+    session.insert(ACTIVE_GAME_ID, id).await?;
+
     Ok(Json(id))
+}
+
+pub async fn get_active_game(session: Session) -> ApiResult<Json<String>> {
+    let active: Option<i64> = session.get(ACTIVE_GAME_ID).await?;
+    match (active) {
+        Some(active) => {
+            let game = get_game(Path(active)).await?;
+            return Ok(game);
+        }
+        None => {
+            let gameLog = GameRow { schemaVersion: 1, meta: GameMeta { id: "".to_string(), title: "".to_string(), createdAt: "".to_string(), updatedAt: "".to_string() }, setup: serde_json::Value::Null, events: serde_json::Value::Null, branches: serde_json::Value::Null, cursor: serde_json::Value::Null, summary: None };
+            let id = save_game(session, Json(gameLog)).await?;
+            return Ok(Json(gameLog));
+        }
+    }
 }
 
 #[axum::debug_handler]
 pub async fn get_games() -> ApiResult<Json<Vec<GameRow>>> {
-    // validate length/sqllite injection or corruption
+    
+    // TODO do not include json in response
     let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = SqlitePool::connect(&db_url).await?;
     let mut conn = pool.acquire().await?;
+
+    
 // TODO get only id/name, creator
 //TODO pagination
     let games: Vec<GameRow> = sqlx::query_as!(
@@ -83,7 +109,7 @@ SELECT id, owner_id, name, json, updated_at, created_at FROM games ORDER BY upda
 }
 
 pub async fn get_game(Path(id): Path<i64>) -> ApiResult<Json<String>> {
-    // validate length/sqllite injection or corruption
+    
     let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = SqlitePool::connect(&db_url).await?;
     let mut conn = pool.acquire().await?;

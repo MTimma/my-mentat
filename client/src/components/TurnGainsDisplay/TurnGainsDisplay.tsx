@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Card, Gain, RewardType } from '../../types/GameTypes'
+import { Card, Gain, GainSource, RewardType } from '../../types/GameTypes'
 import {
   aggregateInfluenceGains,
   aggregateResourceGains,
@@ -33,27 +33,33 @@ import './TurnGainsDisplay.css'
 
 const TECH_GAIN_TITLE_PREFIX = 'Tech: '
 
+function techTileFromGroupTitle(title: string) {
+  if (!title.startsWith(TECH_GAIN_TITLE_PREFIX)) return undefined
+  return getTechTileByName(title.slice(TECH_GAIN_TITLE_PREFIX.length))
+}
+
+function sourceTitleText(title: string) {
+  if (title.startsWith(TECH_GAIN_TITLE_PREFIX)) return title.slice(TECH_GAIN_TITLE_PREFIX.length)
+  return title
+}
+
+function distinctCardCopyCount(gains: Gain[]): number {
+  const ids = new Set<number>()
+  for (const gain of gains) {
+    if (gain.source !== GainSource.CARD) continue
+    if (gain.sourceId) ids.add(gain.sourceId)
+  }
+  return ids.size
+}
+
 function renderSourceGroupTitle(group: TurnGainSourceGroup, title: string) {
   const groupIcon = getGainGroupIcon({ ...group, title })
-
-  if (title.startsWith(TECH_GAIN_TITLE_PREFIX)) {
-    const tileName = title.slice(TECH_GAIN_TITLE_PREFIX.length)
-    const tile = getTechTileByName(tileName)
-    if (tile) {
-      return (
-        <span className="turn-gain-source-title turn-gain-source-title--tech" title={title}>
-          <TechTileFlipBadge image={tile.image} alt={tile.name} size="gain" />
-          <span className="turn-gain-source-title__tech-name">{tile.name}</span>
-        </span>
-      )
-    }
-  }
   return (
     <span className="turn-gain-source-title" title={title}>
       {groupIcon ? (
         <img src={groupIcon} alt="" className="turn-gain-source-title-icon" aria-hidden="true" />
       ) : null}
-      {title}
+      {sourceTitleText(title)}
     </span>
   )
 }
@@ -683,6 +689,10 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         const costContent = renderGainSide(costs, 'cost')
         const rewardContent = renderGainSide(rewards, 'reward')
         if (!costContent && !rewardContent) return null
+        const techTile = techTileFromGroupTitle(groupTitle)
+        const copyCount = distinctCardCopyCount(group.gains)
+        const showCopyCount =
+          copyCount > 1 && !group.gains.some(g => g.type === RewardType.CARD)
 
         return (
           <div
@@ -711,6 +721,17 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
                 costContent
               ) : (
                 <>
+                  {techTile ? (
+                    <TechTileFlipBadge
+                      image={techTile.image}
+                      alt={techTile.name}
+                      size="gain"
+                      className="turn-gain-source-flow__tech-badge"
+                    />
+                  ) : null}
+                  {showCopyCount ? (
+                    <span className="gain-multiplier">×{copyCount}</span>
+                  ) : null}
                   {costContent}
                   {costContent && rewardContent && (
                     <span className="turn-gain-flow-arrow" aria-hidden="true">

@@ -452,7 +452,8 @@
 }
 
 .combat-area-cluster--row .birdseye-seat-gains .turn-gain-source-title,
-.combat-area-cluster--row .birdseye-seat-gains .turn-gain-source-title--totals {
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-source-title--totals,
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-source-flow__tech-badge {
   display: none;
 }
 
@@ -581,7 +582,7 @@
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0.28rem 0.35rem 0.32rem;
+  padding: 0.16rem 0.2rem 0.2rem;
   scrollbar-width: thin;
   scrollbar-color: rgba(212, 177, 106, 0.4) transparent;
 }
@@ -627,7 +628,7 @@
 .combat-area-cluster--column
   .combat-area-cluster__seat:not(.combat-area-cluster__seat--active)
   .birdseye-seat-gains__scroll {
-  padding: 0.2rem 0.15rem;
+  padding: 0.12rem 0.1rem;
 }
 
 .birdseye-seat-gains .turn-gains-display {
@@ -650,7 +651,7 @@
   flex-wrap: nowrap;
   align-items: stretch;
   align-content: start;
-  gap: 0.2rem;
+  gap: 0.06rem;
   font-size: 0.86em;
 }
 
@@ -658,24 +659,32 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.12rem;
+  gap: 0.02rem;
   min-width: 0;
   height: auto;
   max-height: none;
   overflow: hidden;
+  padding: 0.04rem 0.06rem 0.06rem;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 248, 232, 0.05);
+  background: transparent;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-title {
   flex: 0 0 auto;
   min-width: 0;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 0.51rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1.2;
-  text-transform: uppercase;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.15;
+  text-transform: none;
+  opacity: 0.78;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-flow {
@@ -683,6 +692,12 @@
   flex-wrap: wrap;
   min-width: 0;
   overflow: hidden;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-flow__tech-badge.tech-tile-flip-badge--gain {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gains-side--cost,
@@ -694,8 +709,8 @@
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-resource-icon,
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-combat-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-resource-amt,
@@ -708,16 +723,7 @@
   .birdseye-seat-gains
   .turn-gains-display {
   font-size: 0.72em;
-  gap: 0.18rem;
-}
-
-.combat-area-cluster--column
-  .combat-area-cluster__seat:not(.combat-area-cluster__seat--active)
-  .birdseye-seat-gains
-  .turn-gain-source-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  gap: 0.06rem;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-totals-row {
@@ -822,16 +828,17 @@
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat {
-  --birdseye-desktop-face-height: clamp(5.75rem, 15vmin, 8rem);
+  --birdseye-desktop-face-height: clamp(4.5rem, 9vmin, 6rem);
   --birdseye-gain-row-height: 1.4rem;
+  position: static;
   height: auto;
-  min-height: calc(var(--birdseye-desktop-face-height) + 2.25rem);
+  min-height: 0;
   flex: 1 1 0;
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye
   .combat-area-cluster__seat--active.combat-area-cluster__seat--birdseye {
-  min-height: calc(var(--birdseye-desktop-face-height) + 6.5rem);
+  min-height: 0;
 }
 
 .combat-area-cluster--column .combat-area-cluster__seat--birdseye {
@@ -843,7 +850,6 @@
 
 .combat-area-cluster--column .combat-area-cluster__seat--active.combat-area-cluster__seat--birdseye {
   z-index: 6;
-  isolation: isolate;
 }
 
 .combat-area-cluster__seat-leader {
@@ -854,20 +860,20 @@
 }
 
 .combat-area-cluster--column .combat-area-cluster__seat-leader {
-  height: var(--birdseye-desktop-face-height, clamp(5.75rem, 15vmin, 8rem));
-  min-height: var(--birdseye-desktop-face-height, clamp(5.75rem, 15vmin, 8rem));
-  max-height: var(--birdseye-desktop-face-height, clamp(5.75rem, 15vmin, 8rem));
+  position: static;
+  height: var(--birdseye-desktop-face-height, clamp(4.5rem, 9vmin, 6rem));
+  min-height: var(--birdseye-desktop-face-height, clamp(4.5rem, 9vmin, 6rem));
+  max-height: var(--birdseye-desktop-face-height, clamp(4.5rem, 9vmin, 6rem));
 }
 
 .combat-area-cluster--column .combat-area-cluster__seat-main {
-  position: relative;
+  position: static;
   flex-direction: column;
   align-items: stretch;
   flex: 1 1 auto;
   min-height: 0;
   height: auto;
   max-height: none;
-  /* Room for absolute play controls hanging into the board gap. */
   overflow: visible;
 }
 
@@ -925,16 +931,36 @@
   color: #fff8e8;
 }
 
-/* Play / End Turn hang left into the board gap — do not push leader right. */
+/* Play / End Turn hang left of the 4-seat row into the board gap. */
 .combat-area-cluster--column .birdseye-seat__controls-row {
   position: absolute;
   right: calc(100% + 0.45rem);
-  top: 50%;
+  top: var(--birdseye-controls-y, 50%);
   z-index: 30;
   margin: 0;
   gap: 0.35rem;
+  align-items: flex-start;
+  flex-wrap: nowrap;
   transform: translateY(-50%);
   animation: birdseye-controls-out-left 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.combat-area-cluster--column .birdseye-seat__controls-row .birdseye-seat__interactions {
+  width: auto;
+  max-width: 12rem;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  padding: 0.12rem;
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid rgba(255, 248, 232, 0.32);
+  border-radius: 5px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+}
+
+.combat-area-cluster--column .birdseye-seat__controls-row .birdseye-interactions-strip {
+  width: auto;
+  max-height: none;
+  flex-wrap: nowrap;
 }
 
 .combat-area-cluster--column .birdseye-seat__controls-stack {
@@ -1315,23 +1341,32 @@
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye {
+  --birdseye-desktop-face-height: clamp(4.5rem, 9vmin, 6rem);
+  --birdseye-controls-y: calc(var(--birdseye-desktop-face-height) / 2);
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
   flex: 1 1 auto;
   min-height: 0;
   height: auto;
-  gap: 0.35rem;
-  overflow-x: visible;
-  overflow-y: auto;
+  gap: 0;
+  overflow: visible;
+}
+
+.combat-area-cluster--column.combat-area-cluster--gains-up {
+  --birdseye-controls-y: calc(100% - var(--birdseye-desktop-face-height) / 2);
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat--birdseye {
-  width: 100%;
-  max-width: 100%;
+  width: auto;
+  max-width: 25%;
   overflow: visible;
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye
   .combat-area-cluster__seat--active.combat-area-cluster__seat--birdseye {
-  width: 100%;
+  width: auto;
 }
 
 /*

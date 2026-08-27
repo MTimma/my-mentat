@@ -474,6 +474,10 @@ export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
   const conflictPlacements = buildConflictPlacementTitlesByPlayer(gains)
 
   for (const gain of gains) {
+    const groupTitle =
+      gain.source === GainSource.CONFLICT
+        ? conflictGainDisplayTitle(gain, conflictPlacements)
+        : titleForGainGroup(gain)
     const key =
       gain.source === GainSource.CONFLICT
         ? conflictGainGroupKey(gain, conflictPlacements)
@@ -483,11 +487,9 @@ export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
             ? `${gain.source}:${shippingTrackStepFromGain(gain) ?? 0}:${gain.playerId}`
             : gain.source === GainSource.IX_BOARD
             ? `${gain.source}:${gain.sourceId}:${gain.name}:${gain.playerId}`
-            : `${gain.source}:${gain.sourceId}`
-    const groupTitle =
-      gain.source === GainSource.CONFLICT
-        ? conflictGainDisplayTitle(gain, conflictPlacements)
-        : titleForGainGroup(gain)
+            : gain.source === GainSource.CARD
+              ? `${gain.source}:${groupTitle}:${gain.playerId}`
+              : `${gain.source}:${gain.sourceId}`
     const existing = map.get(key)
     if (existing) {
       existing.gains.push(gain)
@@ -518,7 +520,11 @@ export function aggregateResourceGains(gains: Gain[]): AggregatedResourceGain[] 
       : gain.type === RewardType.CARD
         ? gain.sourceId
         : undefined
-    const key = isCardLike ? `${gain.type}:${cardIdForAggregate ?? gain.sourceId}` : gain.type
+    const key = isTrashOrDiscard
+      ? `${gain.type}:${cardIdForAggregate ?? gain.sourceId}`
+      : gain.type === RewardType.CARD
+        ? `${gain.type}:${gain.name || gain.sourceId}`
+        : gain.type
     const existing = aggregated.get(key)
     if (existing) {
       existing.amount += gain.amount

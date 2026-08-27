@@ -10,7 +10,6 @@ import CombatPlayerDetailModal from './CombatPlayerDetailModal'
 import { resolveCardInSnapshot, resolveCardInSnapshotByName } from '../../utils/revealTurnStats'
 import {
   BirdseyeDesktopControls,
-  BirdseyeInteractionsHost,
   BirdseyeSeatGains,
   type BirdseyeSeatActions,
   type BirdseyeSeatMode,
@@ -451,6 +450,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 actions={birdseyeActions}
                 gameState={gameState}
                 isHistoryView={birdseyeIsHistoryView}
+                interactionsHostRef={birdseyeInteractionsHostRef}
                 {...seatDeploy}
               />
             ) : null}
@@ -476,14 +476,11 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
               resolveCard={resolveSeatCard}
               troopsDeployed={isActive ? birdseyeTroopsDeployed : 0}
               troopsRetreated={isActive ? birdseyeTroopsRetreated : 0}
-              /* Totals hidden for now (mobile + desktop); keep prop wiring. */
               showTotals={false}
+              showSourceTitles
             />
           </div>
         </div>
-        {showActiveActions ? (
-          <BirdseyeInteractionsHost hostRef={birdseyeInteractionsHostRef} />
-        ) : null}
       </div>
     )
   }

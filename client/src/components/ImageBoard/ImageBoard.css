@@ -180,13 +180,23 @@
 }
 
 /*
- * Leftover height (board column minus Ix / Tleilax) feeds seat gains.
- * Do not grow this column into leftover width toward Turn History.
+ * Four leader columns sit beside the board. Grow into leftover width
+ * toward Turn History so each seat is wide enough; leftover height feeds gains.
  */
 .game-container--desktop-play.game-container--history-docked .image-board__expansion-dock-column {
-  flex: 0 0 auto;
-  width: clamp(220px, 32vmin, 420px);
-  max-width: clamp(220px, 32vmin, 420px);
+  flex: 1 0 auto;
+  min-width: clamp(22rem, 36vmin, 28rem);
+  width: auto;
+  max-width: min(46rem, 100%);
+}
+
+.game-container--desktop-play.game-container--birdseye-desktop:not(
+    .game-container--history-docked
+  )
+  .image-board__expansion-dock-column {
+  min-width: clamp(22rem, 36vmin, 28rem);
+  width: clamp(28rem, 42vmin, 46rem);
+  max-width: min(46rem, 100%);
 }
 
 .game-container--desktop-play .image-board__combat-area-dock {
@@ -1440,11 +1450,19 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 .combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat {
   flex: 1 1 0;
   height: auto;
-  width: 100%;
+  min-width: 0;
+  max-width: 25%;
+  width: auto;
+  align-self: stretch;
 }
 
 .combat-area-cluster--column .combat-area-cluster__seat + .combat-area-cluster__seat {
   border-top: 1px solid rgba(255, 248, 232, 0.1);
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat + .combat-area-cluster__seat {
+  border-top: none;
+  border-left: 1px solid rgba(255, 248, 232, 0.1);
 }
 
 .combat-area-cluster--column .combat-area-cluster__seat--red,
@@ -1458,12 +1476,21 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   overflow: hidden;
 }
 
+.combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__leader {
+  inset: 0;
+}
+
 .combat-area-cluster--column .combat-area-cluster__leader-img {
   object-fit: cover;
   object-position: center 36%;
   height: 118%;
   width: 100%;
   max-width: none;
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__leader-img {
+  height: 100%;
+  object-position: center 42%;
 }
 
 .combat-area-cluster--column .combat-area-cluster__leader--tessia .combat-area-cluster__leader-img {
@@ -1487,10 +1514,12 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   max-height: none;
   overflow: visible;
   pointer-events: none;
-  padding: 0.12em 0.1em 0.1em;
+  padding: 0.1em 0.08em 0.08em;
   border-radius: 0;
   box-shadow: none;
   background: transparent;
+  container-type: inline-size;
+  container-name: desktop-leader-resources;
 }
 
 .combat-area-cluster--column .combat-area-cluster__resources {
@@ -1514,6 +1543,65 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 .combat-area-cluster--column .combat-area-cluster__icon--dreadnought {
   width: 0.78em;
   height: 0.78em;
+}
+
+/*
+ * Desktop birdseye: 4 cols × 2 rows, icon+number horizontal.
+ * Order: spice/solari/water/agents, hand/intrigue/troops/dread.
+ */
+.combat-area-cluster--column.combat-area-cluster--birdseye
+  .combat-area-cluster__seat-meta
+  .combat-area-cluster__resources {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, auto);
+  grid-auto-rows: auto;
+  gap: 0.08em 0.06em;
+  flex-wrap: nowrap;
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye
+  .combat-area-cluster__seat-meta
+  .combat-area-cluster__resources--rise-of-ix {
+  grid-template-rows: repeat(3, auto);
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye
+  .combat-area-cluster__seat-meta
+  .combat-area-cluster__resource {
+  min-width: 0;
+  overflow: hidden;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.06em;
+  font-size: clamp(8px, 12cqi, 14px);
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye
+  .combat-area-cluster__seat-meta
+  .combat-area-cluster__value {
+  font-size: 1em;
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye
+  .combat-area-cluster__seat-meta
+  .combat-area-cluster__icon,
+.combat-area-cluster--column.combat-area-cluster--birdseye
+  .combat-area-cluster__seat-meta
+  .combat-area-cluster__agent-icon,
+.combat-area-cluster--column.combat-area-cluster--birdseye
+  .combat-area-cluster__seat-meta
+  .combat-area-cluster__icon--dreadnought {
+  width: 1em;
+  height: 1em;
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye
+  .combat-area-cluster__seat-meta
+  .combat-area-cluster__agent-icon {
+  width: 0.82em;
+  height: 1.15em;
 }
 
 .combat-area-cluster--with-status-inline {

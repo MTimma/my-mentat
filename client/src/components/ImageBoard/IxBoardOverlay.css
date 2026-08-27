@@ -77,6 +77,18 @@
   color: inherit;
   min-width: 0;
   min-height: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ix-board-overlay__tech-slot--sandbox:focus,
+.ix-board-overlay__tech-slot--sandbox:focus-visible,
+.ix-board-overlay__tech-slot--acquire:focus,
+.ix-board-overlay__tech-slot--acquire:focus-visible,
+.ix-board-overlay__tech-slot--interactive:focus,
+.ix-board-overlay__tech-slot--interactive:focus-visible,
+.ix-board-overlay__tech-slot--browse:focus,
+.ix-board-overlay__tech-slot--browse:focus-visible {
+  outline: none;
 }
 
 .ix-board-overlay__tech-slot--sandbox {

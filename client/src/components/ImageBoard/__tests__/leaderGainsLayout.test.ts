@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 /**
- * Source contracts: desktop leader seats are vertical like mobile.
- * Leftover board-column height feeds gains; portraits stay a fixed face height.
+ * Source contracts: desktop leaders sit in a 4-seat row beside the board
+ * (like mobile). Each seat stacks portrait + vertical gains.
  */
 describe('Leader gains leftover layout', () => {
   const root = resolve(__dirname, '../../..')
@@ -29,14 +29,14 @@ describe('Leader gains leftover layout', () => {
   const historyCss = readFileSync(resolve(root, 'components/TurnHistory.css'), 'utf8')
   const mainTs = readFileSync(resolve(root, 'main.tsx'), 'utf8')
 
-  it('does not grow the history-docked leader dock into leftover width', () => {
+  it('grows the history-docked leader dock into leftover width for four columns', () => {
     const docked = imageBoardCss.match(
       /\.game-container--desktop-play\.game-container--history-docked \.image-board__expansion-dock-column \{[\s\S]*?\}/
     )?.[0]
     expect(docked).toBeTruthy()
-    expect(docked).toContain('flex: 0 0 auto')
-    expect(docked).toContain('width: clamp(220px, 32vmin, 420px)')
-    expect(docked).not.toContain('max-width: min(46rem, 100%)')
+    expect(docked).toContain('flex: 1 0 auto')
+    expect(docked).toContain('max-width: min(46rem, 100%)')
+    expect(docked).toContain('min-width: clamp(22rem, 36vmin, 28rem)')
   })
 
   it('stretches the expansion dock to board height so leftover is vertical', () => {
@@ -52,7 +52,7 @@ describe('Leader gains leftover layout', () => {
   })
 
   it('does not shrink leader portrait height', () => {
-    expect(seatChromeCss).toContain('--birdseye-desktop-face-height: clamp(5.75rem, 15vmin, 8rem)')
+    expect(seatChromeCss).toContain('--birdseye-desktop-face-height: clamp(4.5rem, 9vmin, 6rem)')
     expect(seatChromeCss).toMatch(
       /\.combat-area-cluster--column \.combat-area-cluster__seat-leader \{[\s\S]*?max-height:\s*var\(--birdseye-desktop-face-height/
     )
@@ -67,19 +67,46 @@ describe('Leader gains leftover layout', () => {
     expect(columnGains).not.toMatch(/max-width:\s*11rem/)
   })
 
-  it('stacks desktop seats vertically like mobile', () => {
+  it('keeps desktop leader resources in a fixed 4-col 2-row grid', () => {
+    const resources = imageBoardCss.match(
+      /\.combat-area-cluster--column\.combat-area-cluster--birdseye\s+\.combat-area-cluster__seat-meta\s+\.combat-area-cluster__resources \{[\s\S]*?\}/
+    )?.[0]
+    expect(resources).toBeTruthy()
+    expect(resources).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))')
+    expect(resources).toContain('grid-template-rows: repeat(2, auto)')
+    expect(resources).toContain('flex-wrap: nowrap')
+    expect(imageBoardCss).toMatch(
+      /\.combat-area-cluster--column\.combat-area-cluster--birdseye\s+\.combat-area-cluster__seat-meta\s+\.combat-area-cluster__resource \{[\s\S]*?flex-direction:\s*row/
+    )
+    expect(imageBoardCss).toMatch(
+      /\.combat-area-cluster--column\.combat-area-cluster--birdseye\s+\.combat-area-cluster__seat-meta\s+\.combat-area-cluster__resource \{[\s\S]*?font-size:\s*clamp\(8px, 12cqi, 14px\)/
+    )
+    expect(imageBoardCss).toContain('container-name: desktop-leader-resources')
+  })
+
+  it('places desktop seats in a horizontal row with vertical gains like mobile', () => {
+    const clusterRule = seatChromeCss.match(
+      /\.combat-area-cluster--column\.combat-area-cluster--birdseye \{[\s\S]*?\}/
+    )?.[0]
+    expect(clusterRule).toBeTruthy()
+    expect(clusterRule).toContain('flex-direction: row')
     const seatMain = seatChromeCss.match(
       /\.combat-area-cluster--column \.combat-area-cluster__seat-main \{[\s\S]*?\}/
     )?.[0]
     expect(seatMain).toBeTruthy()
     expect(seatMain).toContain('flex-direction: column')
     expect(seatMain).not.toContain('flex-direction: row')
+    expect(imageBoardCss).toMatch(
+      /\.combat-area-cluster--column\.combat-area-cluster--birdseye \.combat-area-cluster__seat \{[\s\S]*?max-width:\s*25%/
+    )
     expect(cluster).toContain('combat-area-cluster__seat-leader')
     expect(cluster).toContain('combat-area-cluster__seat-meta')
     const desktopIdx = cluster.indexOf('/* desktop6 */')
     const desktopBlock = cluster.slice(desktopIdx, desktopIdx + 2500)
     expect(desktopBlock).toContain('showResources={false}')
     expect(desktopBlock).toContain('ResourceGrid')
+    expect(desktopBlock).toContain('showSourceTitles')
+    expect(desktopBlock).not.toContain('showSourceTitles={false}')
   })
 
   it('can reverse so leaders sit at the bottom and gains go up', () => {
@@ -108,7 +135,7 @@ describe('Leader gains leftover layout', () => {
   })
 
   it('locks desktop portrait height so gains fill leftover instead of stretching the face', () => {
-    expect(seatChromeCss).toContain('--birdseye-desktop-face-height: clamp(5.75rem, 15vmin, 8rem)')
+    expect(seatChromeCss).toContain('--birdseye-desktop-face-height: clamp(4.5rem, 9vmin, 6rem)')
     expect(seatChromeCss).toMatch(
       /\.combat-area-cluster--column \.combat-area-cluster__seat-leader \{[\s\S]*?max-height:\s*var\(--birdseye-desktop-face-height/
     )
@@ -119,8 +146,24 @@ describe('Leader gains leftover layout', () => {
 
   it('shows a small source title above desktop column gains', () => {
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?font-size:\s*0\.51rem/
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?font-size:\s*0\.58rem/
     )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?-webkit-line-clamp:\s*2/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?white-space:\s*normal/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?text-transform:\s*none/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?border:\s*1px solid rgba\(255, 248, 232, 0\.05\)/
+    )
+    expect(seatChromeCss).toContain(
+      '.combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-flow__tech-badge'
+    )
+    expect(seatChromeTsx).toContain('BirdseyeInteractionsHost hostRef={interactionsHostRef}')
   })
 
   it('lets desktop gain rows wrap instead of a fixed one-line height', () => {

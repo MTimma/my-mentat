@@ -824,6 +824,116 @@ describe('turnGainsDisplay', () => {
     expect(groups[0].gains).toHaveLength(2)
   })
 
+  it('groupGainsBySource merges two copies of the same revealed card', () => {
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 6,
+        round: 1,
+        name: 'Dune, the Desert Planet',
+        amount: 1,
+        type: RewardType.PERSUASION,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 7,
+        round: 1,
+        name: 'Dune, the Desert Planet',
+        amount: 1,
+        type: RewardType.PERSUASION,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 1,
+        round: 1,
+        name: 'Convincing Argument',
+        amount: 2,
+        type: RewardType.PERSUASION,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 2,
+        round: 1,
+        name: 'Convincing Argument',
+        amount: 2,
+        type: RewardType.PERSUASION,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0])
+
+    expect(groups).toHaveLength(2)
+    expect(groups[0].title).toBe('Dune, the Desert Planet')
+    expect(groups[0].gains).toHaveLength(2)
+    expect(groups[1].title).toBe('Convincing Argument')
+    expect(groups[1].gains).toHaveLength(2)
+    expect(aggregateResourceGains(groups[0].gains)).toEqual([
+      expect.objectContaining({ type: RewardType.PERSUASION, amount: 2 }),
+    ])
+    expect(aggregateResourceGains(groups[1].gains)).toEqual([
+      expect.objectContaining({ type: RewardType.PERSUASION, amount: 4 }),
+    ])
+  })
+
+  it('groupGainsBySource merges a split card that used sourceId 0', () => {
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 6,
+        round: 1,
+        name: 'Dune, the Desert Planet',
+        amount: 1,
+        type: RewardType.PERSUASION,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 0,
+        round: 1,
+        name: 'Dune, the Desert Planet',
+        amount: 1,
+        type: RewardType.COMBAT,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0])
+
+    expect(groups).toHaveLength(1)
+    expect(groups[0].gains).toHaveLength(2)
+  })
+
+  it('aggregateResourceGains merges duplicate card thumbs by name', () => {
+    expect(
+      aggregateResourceGains([
+        {
+          playerId: 0,
+          source: GainSource.CARD,
+          sourceId: 6,
+          round: 1,
+          name: 'Dune, the Desert Planet',
+          amount: 1,
+          type: RewardType.CARD,
+        },
+        {
+          playerId: 0,
+          source: GainSource.CARD,
+          sourceId: 7,
+          round: 1,
+          name: 'Dune, the Desert Planet',
+          amount: 1,
+          type: RewardType.CARD,
+        },
+      ] as Parameters<typeof aggregateResourceGains>[0])
+    ).toEqual([
+      expect.objectContaining({
+        type: RewardType.CARD,
+        amount: 2,
+        name: 'Dune, the Desert Planet',
+      }),
+    ])
+  })
+
   it('groups board-space freighter recall under the space name', () => {
     const groups = groupGainsBySource([
       {
