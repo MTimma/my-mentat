@@ -463,20 +463,20 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     )
   }
 
-  const renderRevealCardsInline = (turn: GameState) => {
-    if (turn.currTurn?.type !== TurnType.REVEAL || turn.currTurn.playerId == null) return null
-    const stats = getRevealTurnStats(turn, turn.currTurn.playerId)
-    if (!stats?.revealedCards.length) return null
-    return (
-      <div className="turn-history-reveal-cards turn-history-reveal-cards--inline" aria-label="Revealed cards">
-        {stats.revealedCards.map(card => (
-          <React.Fragment key={`reveal-thumb-${card.id}`}>
-            {renderTurnCardThumb(card, true)}
-          </React.Fragment>
-        ))}
-      </div>
-    )
-  }
+  // const renderRevealCardsInline = (turn: GameState) => {
+  //   if (turn.currTurn?.type !== TurnType.REVEAL || turn.currTurn.playerId == null) return null
+  //   const stats = getRevealTurnStats(turn, turn.currTurn.playerId)
+  //   if (!stats?.revealedCards.length) return null
+  //   return (
+  //     <div className="turn-history-reveal-cards turn-history-reveal-cards--inline" aria-label="Revealed cards">
+  //       {stats.revealedCards.map(card => (
+  //         <React.Fragment key={`reveal-thumb-${card.id}`}>
+  //           {renderTurnCardThumb(card, true)}
+  //         </React.Fragment>
+  //       ))}
+  //     </div>
+  //   )
+  // }
 
   const renderPlayerBadge = (player: Player | undefined) => {
     const color = player?.color ?? 'gray'
@@ -522,17 +522,14 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     )
   }
 
-  const renderRowIdentity = (badge: React.ReactNode, player: Player | undefined) => (
-    <div className="turn-history-row-identity">
-      <div className="turn-number">{badge}</div>
-      {player != null ? renderPlayerBadge(player) : null}
-    </div>
+  const renderTurnNumber = (badge: React.ReactNode) => (
+    <div className="turn-number">{badge}</div>
   )
 
   const renderAgentActionBand = (
     turn: GameState,
     destinationLabel: string,
-    intrigueCards: IntrigueCard[]
+    _intrigueCards: IntrigueCard[]
   ) => {
     const playedCards = resolvePlayedCardsForTurn(turn)
     const playedLabel = playedCards.map(c => c.name).join(' + ') || 'card'
@@ -551,7 +548,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           </span>
           <span className="turn-history-action-destination">{destinationLabel}</span>
         </div>
-        {renderIntrigueInline(intrigueCards)}
+        {/* {renderIntrigueInline(_intrigueCards)} */}
       </div>
     )
   }
@@ -559,7 +556,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   const renderRevealActionBand = (turn: GameState) => (
     <div className="turn-history-action-band turn-history-action-band--reveal">
       <span className="turn-history-action-kind">Reveal</span>
-      {renderRevealCardsInline(turn)}
+      {/* {renderRevealCardsInline(turn)} */}
     </div>
   )
 
@@ -712,31 +709,35 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       </>
     )
 
+    const actionBand = isEndgameEntry ? (
+      <div className="turn-history-action-band turn-history-action-band--meta">
+        <span className="turn-history-action-kind turn-history-action-kind--endgame">
+          {turn.endgameWinners?.length ? 'Endgame' : 'Endgame intrigue reveal'}
+        </span>
+      </div>
+    ) : isCombatEntry ? (
+      <div className="turn-history-action-band turn-history-action-band--meta">
+        <span className="turn-history-action-kind turn-history-action-kind--combat">Combat</span>
+      </div>
+    ) : isRevealTurn ? (
+      renderRevealActionBand(turn)
+    ) : isAgentTurn ? (
+      renderAgentActionBand(turn, title, playedIntrigue)
+    ) : (
+      <div className="turn-history-action-band turn-history-action-band--meta">
+        <span className="turn-history-action-kind">{title}</span>
+      </div>
+    )
+
     if (isDocked && !isMetaEntry && !isSetupEntry) {
       return (
         <div className="turn-history-row-grid">
-          {renderRowIdentity(badge, turnPlayer)}
+          {renderTurnNumber(badge)}
           <div className="turn-history-row-main">
-            {isEndgameEntry ? (
-              <div className="turn-history-action-band turn-history-action-band--meta">
-                <span className="turn-history-action-kind turn-history-action-kind--endgame">
-                  {turn.endgameWinners?.length ? 'Endgame' : 'Endgame intrigue reveal'}
-                </span>
-              </div>
-            ) : isCombatEntry ? (
-              <div className="turn-history-action-band turn-history-action-band--meta">
-                <span className="turn-history-action-kind turn-history-action-kind--combat">Combat</span>
-              </div>
-            ) : isRevealTurn ? (
-              renderRevealActionBand(turn)
-            ) : isAgentTurn ? (
-              renderAgentActionBand(turn, title, playedIntrigue)
-            ) : (
-              <div className="turn-history-action-band turn-history-action-band--meta">
-                <span className="turn-history-action-kind">{title}</span>
-                {renderIntrigueInline(playedIntrigue)}
-              </div>
-            )}
+            <div className="turn-history-row-summary">
+              {turnPlayer != null ? renderPlayerBadge(turnPlayer) : null}
+              {actionBand}
+            </div>
             <div className="turn-history-row-body">{outcomes}</div>
           </div>
         </div>
@@ -744,39 +745,43 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     }
 
     return (
-      <>
-        <div className="turn-history-row-header">
-          {!isRoundStartEntry && <div className="turn-number">{badge}</div>}
-          {!isMetaEntry && renderPlayerBadge(turnPlayer)}
-          {!isMetaEntry && !isRevealTurn && resolvePlayedCardsForTurn(turn).map(card => (
-            <React.Fragment key={`header-played-${card.id}`}>
-              {renderTurnCardThumb(card, true)}
-            </React.Fragment>
-          ))}
-          {!isMetaEntry && <span className="turn-label">{title}</span>}
-          {isRevealTurn && renderRevealCardsInline(turn)}
-          {!isMetaEntry && renderIntrigueInline(playedIntrigue)}
-          
-          {isCombatEntry && <span className="turn-label turn-label--combat">{
-          conflictCardImageSrc(turn.currentConflict.id) && <img style={{ width: '30px', height: '42px' }}
-          src={conflictCardImageSrc(turn.currentConflict.id)?? undefined}
-          alt={turn.currentConflict.name}
-          className="conflict-card-image"
-          draggable={false}
-          data-preview-src={conflictCardImageSrc(turn.currentConflict.id) ?? undefined}
-        />
-          }</span>}
-          {isEndgameEntry && (
-            <span className="turn-label turn-label--endgame">
-              {turn.endgameWinners?.length ? 'Endgame' : 'Endgame intrigue reveal'}
-            </span>
-          )}
-          {isRoundStartEntry && (
-            <span className="turn-label">{getRoundStartLabel(turn)}</span>
-          )}
+      <div className={isRoundStartEntry ? undefined : 'turn-history-row-grid'}>
+        {!isRoundStartEntry && renderTurnNumber(badge)}
+        <div className="turn-history-row-main">
+          <div className="turn-history-row-header">
+            {!isMetaEntry && renderPlayerBadge(turnPlayer)}
+            {!isMetaEntry && !isRevealTurn && resolvePlayedCardsForTurn(turn).map(card => (
+              <React.Fragment key={`header-played-${card.id}`}>
+                {renderTurnCardThumb(card, true)}
+              </React.Fragment>
+            ))}
+            {!isMetaEntry && isAgentTurn && (
+              <span className="turn-history-action-arrow" aria-hidden="true">
+                →
+              </span>
+            )}
+            {!isMetaEntry && <span className="turn-label">{title}</span>}
+            {isCombatEntry && <span className="turn-label turn-label--combat">{
+            conflictCardImageSrc(turn.currentConflict.id) && <img style={{ width: '30px', height: '42px' }}
+            src={conflictCardImageSrc(turn.currentConflict.id)?? undefined}
+            alt={turn.currentConflict.name}
+            className="conflict-card-image"
+            draggable={false}
+            data-preview-src={conflictCardImageSrc(turn.currentConflict.id) ?? undefined}
+          />
+            }</span>}
+            {isEndgameEntry && (
+              <span className="turn-label turn-label--endgame">
+                {turn.endgameWinners?.length ? 'Endgame' : 'Endgame intrigue reveal'}
+              </span>
+            )}
+            {isRoundStartEntry && (
+              <span className="turn-label">{getRoundStartLabel(turn)}</span>
+            )}
+          </div>
+          <div className="turn-history-row-body">{outcomes}</div>
         </div>
-        <div className="turn-history-row-body">{outcomes}</div>
-      </>
+      </div>
     )
   }
 

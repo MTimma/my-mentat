@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { AgentIcon, TurnType, type Card, type GameState, type Player } from '../../types/GameTypes'
-import { getOpponentDiscardableCards, getPlayAreaCardsForTurnView, getSelectableDeckCards, validateDiscardCostSelection, getDiscardCostPlayability, canPayDiscardCost, getAgentTurnCardsForDisplay } from '../playAreaDisplay'
+import { getOpponentDiscardableCards, getPlayAreaCardsForTurnView, getRevealedCardIdsForTurnView, getSelectableDeckCards, validateDiscardCostSelection, getDiscardCostPlayability, canPayDiscardCost, getAgentTurnCardsForDisplay } from '../playAreaDisplay'
 
 function stubCard(id: number, name = `card-${id}`): Card {
   return { id, name, image: '', agentIcons: [AgentIcon.CITY] }
@@ -125,5 +125,26 @@ describe('playAreaDisplay', () => {
     const playability = getDiscardCostPlayability({ ...player, handCount: 2 }, 2, [])
     expect(playability(stubCard(1)).playable).toBe(true)
     expect(playability(stubCard(3)).playable).toBe(false)
+  })
+
+  it('getRevealedCardIdsForTurnView returns ids only for that player\'s reveal turn', () => {
+    const player = stubPlayer({ id: 0, revealed: true })
+    const other = stubPlayer({ id: 1, revealed: true })
+    const revealState = {
+      currTurn: {
+        playerId: 0,
+        type: TurnType.REVEAL,
+        revealedCardIds: [11, 12],
+      },
+      players: [player],
+    } as GameState
+    expect(getRevealedCardIdsForTurnView(revealState, player)).toEqual([11, 12])
+    expect(getRevealedCardIdsForTurnView(revealState, other)).toEqual([])
+    expect(
+      getRevealedCardIdsForTurnView(
+        { currTurn: { playerId: 0, type: TurnType.ACTION, cardId: 1 }, players: [player] } as GameState,
+        player
+      )
+    ).toEqual([])
   })
 })

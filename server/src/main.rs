@@ -66,6 +66,8 @@ async fn main() {
 //publish
 // cookie or user setting to see tutorial, auto claim
 
+// list view vs sandbox right away. sandbox how to choose kits/expansions?
+
     let addr = format!("0.0.0.0:{port}");
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     eprintln!("games API listening on http://{addr}");

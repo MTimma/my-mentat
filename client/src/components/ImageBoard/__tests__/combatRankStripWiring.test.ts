@@ -346,14 +346,17 @@ describe('Combat rank strip wiring', () => {
     expect(seatCss).not.toContain('birdseye-seat-btn__agent-count')
   })
 
-  it('keeps the play-control hang-left animation without a separate deploy slide', () => {
+  it('keeps desktop play controls in-flow under the leader without a hang-left animation', () => {
     const seatCss = readFileSync(
       resolve(root, 'components/ImageBoard/CombatSeatTurnChrome.css'),
       'utf8'
     )
-    expect(seatCss).toContain('birdseye-controls-out-left')
+    expect(seatCss).not.toContain('birdseye-controls-out-left')
     expect(seatCss).not.toContain('birdseye-deploy-append-left')
     expect(seatCss).not.toContain('@keyframes birdseye-deploy-append-left')
+    expect(seatCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat__controls-row \{[\s\S]*?position:\s*static/
+    )
   })
 
   it('gives desktop deploy a subtle combat-red pocket', () => {

@@ -62,6 +62,18 @@ export function getPlayAreaCardsForTurnView(gameState: GameState, player: Player
   return resolved.length > 0 ? resolved : fromPlayArea.filter(c => !trashedIds.has(c.id))
 }
 
+/** Revealed-hand ids for this player's current reveal turn (empty otherwise). */
+export function getRevealedCardIdsForTurnView(
+  gameState: GameState | undefined,
+  player: Player
+): number[] {
+  const currTurn = gameState?.currTurn
+  if (!currTurn || currTurn.playerId !== player.id || currTurn.type !== TurnType.REVEAL) {
+    return []
+  }
+  return currTurn.revealedCardIds ?? []
+}
+
 /**
  * Agent-turn cards to show in the play strip: full graft pair while choosing a space or after placement.
  */

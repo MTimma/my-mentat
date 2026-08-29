@@ -11,6 +11,7 @@ type PreviewState = {
 
 /** Containers where hover may hit padding/chrome but a preview image lives inside. */
 const PREVIEW_FRAME_SELECTOR = [
+  '.birdseye-seat-play-area__card',
   '.turn-card-frame',
   '.turn-history-card-thumb',
   '.turn-gain-card-thumb',
@@ -97,6 +98,21 @@ function findPreviewImageAtPoint(x: number, y: number, target: EventTarget | nul
   return best
 }
 
+function previewPanelStyle(x: number, y: number): React.CSSProperties {
+  const pad = 12
+  const maxW = Math.min(window.innerWidth * 0.92, 720)
+  const maxH = window.innerHeight * 0.9
+  let left = x + 20
+  let top = y + 16
+  if (left + maxW > window.innerWidth - pad) {
+    left = Math.max(pad, x - maxW - 16)
+  }
+  if (top + maxH > window.innerHeight - pad) {
+    top = Math.max(pad, window.innerHeight - maxH - pad)
+  }
+  return { left, top }
+}
+
 export function AltImagePreviewProvider({ children }: { children: React.ReactNode }) {
   const [altHeld, setAltHeld] = useState(false)
   const [preview, setPreview] = useState<PreviewState | null>(null)
@@ -172,10 +188,7 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
     (altHeld || preview) && preview ? (
       <div
         className="alt-image-preview"
-        style={{
-          left: Math.min(preview.x + 18, window.innerWidth - 24),
-          top: Math.min(preview.y + 18, window.innerHeight - 24),
-        }}
+        style={previewPanelStyle(preview.x, preview.y)}
         aria-hidden="true"
       >
         <img src={preview.src} alt={preview.alt} className="alt-image-preview__img" draggable={false} />

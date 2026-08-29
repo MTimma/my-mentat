@@ -159,11 +159,6 @@
   overflow: visible;
 }
 
-/* Extra lane so overhanging play controls sit in the board↔dock gap. */
-.game-container--desktop-play.game-container--birdseye-desktop .image-board__desktop-shell {
-  gap: clamp(3.6rem, 7vmin, 5.25rem);
-}
-
 .game-container--desktop-play .image-board--with-side-dock {
   overflow: visible;
   overflow-x: visible;
@@ -181,22 +176,23 @@
 
 /*
  * Four leader columns sit beside the board. Grow into leftover width
- * toward Turn History so each seat is wide enough; leftover height feeds gains.
+ * toward Turn History so each seat is wide enough; leftover height feeds
+ * the per-seat play area under stacked gain boxes.
  */
 .game-container--desktop-play.game-container--history-docked .image-board__expansion-dock-column {
   flex: 1 0 auto;
-  min-width: clamp(22rem, 36vmin, 28rem);
+  min-width: clamp(26rem, 40vmin, 32rem);
   width: auto;
-  max-width: min(46rem, 100%);
+  max-width: min(52rem, 100%);
 }
 
 .game-container--desktop-play.game-container--birdseye-desktop:not(
     .game-container--history-docked
   )
   .image-board__expansion-dock-column {
-  min-width: clamp(22rem, 36vmin, 28rem);
-  width: clamp(28rem, 42vmin, 46rem);
-  max-width: min(46rem, 100%);
+  min-width: clamp(26rem, 40vmin, 32rem);
+  width: clamp(30rem, 44vmin, 52rem);
+  max-width: min(52rem, 100%);
 }
 
 .game-container--desktop-play .image-board__combat-area-dock {
@@ -1451,8 +1447,9 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   flex: 1 1 0;
   height: auto;
   min-width: 0;
-  max-width: 25%;
-  width: auto;
+  max-width: none;
+  width: 100%;
+  justify-self: stretch;
   align-self: stretch;
 }
 

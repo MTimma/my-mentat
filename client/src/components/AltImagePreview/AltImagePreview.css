@@ -2,24 +2,23 @@
   position: fixed;
   z-index: calc(var(--z-modal-overlay-top, 1320) + 20);
   pointer-events: none;
-  transform: translate(-8px, -8px);
-  max-width: min(92vw, 420px);
-  max-height: min(92vh, 620px);
-  padding: 8px;
-  border-radius: 10px;
+  max-width: min(92vw, 720px);
+  max-height: min(90vh, 900px);
+  padding: 10px;
+  border-radius: 12px;
   background:
     radial-gradient(circle at center, rgba(212, 177, 106, 0.12), transparent 42%),
-    rgba(10, 8, 6, 0.92);
-  border: 1px solid rgba(212, 177, 106, 0.35);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+    rgba(10, 8, 6, 0.94);
+  border: 1px solid rgba(212, 177, 106, 0.4);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.62);
 }
 
 .alt-image-preview__img {
   display: block;
   width: auto;
   height: auto;
-  max-width: min(88vw, 400px);
-  max-height: min(88vh, 600px);
+  max-width: min(90vw, 700px);
+  max-height: min(88vh, 860px);
   object-fit: contain;
   border-radius: 8px;
 }

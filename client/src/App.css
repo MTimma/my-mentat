@@ -2973,9 +2973,7 @@ body:has(.game-container--play) {
     .play-board-column {
     width: min(
       100%,
-      calc(
-        var(--play-board-max-edge, 72vh) + clamp(220px, 32vmin, 420px) + clamp(3.6rem, 7vmin, 5.25rem)
-      )
+      calc(var(--play-board-max-edge, 72vh) + clamp(30rem, 44vmin, 52rem) + 12px)
     );
   }
 

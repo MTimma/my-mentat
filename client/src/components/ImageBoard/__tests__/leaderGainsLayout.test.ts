@@ -35,8 +35,8 @@ describe('Leader gains leftover layout', () => {
     )?.[0]
     expect(docked).toBeTruthy()
     expect(docked).toContain('flex: 1 0 auto')
-    expect(docked).toContain('max-width: min(46rem, 100%)')
-    expect(docked).toContain('min-width: clamp(22rem, 36vmin, 28rem)')
+    expect(docked).toContain('max-width: min(52rem, 100%)')
+    expect(docked).toContain('min-width: clamp(26rem, 40vmin, 32rem)')
   })
 
   it('stretches the expansion dock to board height so leftover is vertical', () => {
@@ -89,7 +89,11 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster--column\.combat-area-cluster--birdseye \{[\s\S]*?\}/
     )?.[0]
     expect(clusterRule).toBeTruthy()
-    expect(clusterRule).toContain('flex-direction: row')
+    expect(clusterRule).toContain('display: grid')
+    expect(clusterRule).toContain('grid-template-columns: repeat(4, minmax(0, 1fr))')
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column\.combat-area-cluster--birdseye \.combat-area-cluster__seat--birdseye,[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/
+    )
     const seatMain = seatChromeCss.match(
       /\.combat-area-cluster--column \.combat-area-cluster__seat-main \{[\s\S]*?\}/
     )?.[0]
@@ -97,7 +101,7 @@ describe('Leader gains leftover layout', () => {
     expect(seatMain).toContain('flex-direction: column')
     expect(seatMain).not.toContain('flex-direction: row')
     expect(imageBoardCss).toMatch(
-      /\.combat-area-cluster--column\.combat-area-cluster--birdseye \.combat-area-cluster__seat \{[\s\S]*?max-width:\s*25%/
+      /\.combat-area-cluster--column\.combat-area-cluster--birdseye \.combat-area-cluster__seat \{[\s\S]*?max-width:\s*none/
     )
     expect(cluster).toContain('combat-area-cluster__seat-leader')
     expect(cluster).toContain('combat-area-cluster__seat-meta')
@@ -109,20 +113,28 @@ describe('Leader gains leftover layout', () => {
     expect(desktopBlock).not.toContain('showSourceTitles={false}')
   })
 
-  it('can reverse so leaders sit at the bottom and gains go up', () => {
-    expect(cluster).toContain("desktopGainsDir === 'up'")
-    expect(cluster).toContain('combat-area-cluster--gains-up')
-    expect(cluster).toContain('Leaders top')
-    expect(cluster).toContain('Leaders bottom')
-    expect(seatChromeCss).toContain(
-      '.combat-area-cluster--column.combat-area-cluster--gains-up .combat-area-cluster__seat-main'
+  it('toggles per-seat vertical play area vs a dock-width horizontal strip', () => {
+    expect(cluster).toContain('Play area vertical')
+    expect(cluster).toContain('Play area horizontal')
+    expect(cluster).toContain('combat-area-cluster--play-horizontal')
+    expect(cluster).toContain('combat-area-cluster-stack--play-horizontal')
+    expect(cluster).toContain('orientation="horizontal"')
+    expect(cluster).toContain("desktopPlayAreaLayout === 'horizontal'")
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column\.combat-area-cluster--birdseye \{[\s\S]*?grid-template-rows:\s*max-content minmax\(0, 1fr\) minmax\(0, 1fr\)/
     )
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column\.combat-area-cluster--gains-up \.combat-area-cluster__seat-main \{[\s\S]*?flex-direction:\s*column-reverse/
+      /\.combat-area-cluster--column\.combat-area-cluster--play-horizontal \{[\s\S]*?grid-template-rows:\s*max-content minmax\(0, 1fr\) max-content/
     )
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column\.combat-area-cluster--gains-up \.combat-area-cluster__seat-meta \{[\s\S]*?flex-direction:\s*column-reverse/
+      /\.combat-area-cluster-stack--column > \.birdseye-seat-play-area--horizontal \{[\s\S]*?height:\s*clamp\(7\.2rem, 18vh, 10\.5rem\)/
     )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster-stack--column > \.birdseye-seat-play-area--horizontal \.birdseye-seat-play-area__cards \{[\s\S]*?flex-direction:\s*row/
+    )
+    expect(seatChromeCss).not.toContain('combat-area-cluster--gains-up')
+    expect(cluster).not.toContain('Leaders top')
+    expect(cluster).not.toContain('Leaders bottom')
   })
 
   it('uses a vertical source list for desktop column gains', () => {
@@ -134,7 +146,7 @@ describe('Leader gains leftover layout', () => {
     )
   })
 
-  it('locks desktop portrait height so gains fill leftover instead of stretching the face', () => {
+  it('locks desktop portrait height so leftover can sit under the face', () => {
     expect(seatChromeCss).toContain('--birdseye-desktop-face-height: clamp(4.5rem, 9vmin, 6rem)')
     expect(seatChromeCss).toMatch(
       /\.combat-area-cluster--column \.combat-area-cluster__seat-leader \{[\s\S]*?max-height:\s*var\(--birdseye-desktop-face-height/
@@ -149,7 +161,7 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?font-size:\s*0\.58rem/
     )
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?-webkit-line-clamp:\s*2/
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?-webkit-line-clamp:\s*1/
     )
     expect(seatChromeCss).toMatch(
       /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?white-space:\s*normal/
@@ -158,7 +170,7 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?text-transform:\s*none/
     )
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?border:\s*1px solid rgba\(255, 248, 232, 0\.05\)/
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?border:\s*1px solid rgba\(255, 248, 232, 0\.14\)/
     )
     expect(seatChromeCss).toContain(
       '.combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-flow__tech-badge'
@@ -171,7 +183,7 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?max-height:\s*none/
     )
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-flow \{[\s\S]*?flex-wrap:\s*wrap/
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-flow \{[\s\S]*?flex-wrap:\s*nowrap/
     )
   })
 
@@ -204,5 +216,73 @@ describe('Leader gains leftover layout', () => {
     expect(seatChromeTsx).toContain('resolveCard={resolveCard}')
     expect(cluster).toContain('resolveSeatCard')
     expect(cluster).toContain('resolveCardInSnapshot')
+  })
+
+  it('stacks desktop gain sources as boxes and does not stretch them into leftover height', () => {
+    const columnGains = seatChromeCss.match(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \{[\s\S]*?\}/
+    )?.[0]
+    expect(columnGains).toBeTruthy()
+    expect(columnGains).toContain('flex: 0 1 auto')
+    expect(columnGains).not.toMatch(/flex:\s*1 1 auto/)
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?background:\s*rgba\(10, 9, 8, 0\.72\)/
+    )
+  })
+
+  it('places turn buttons and pending choices in-flow under the leader', () => {
+    const controls = seatChromeCss.match(
+      /\.combat-area-cluster--column \.birdseye-seat__controls-row \{[\s\S]*?\}/
+    )?.[0]
+    expect(controls).toBeTruthy()
+    expect(controls).toContain('position: static')
+    expect(controls).not.toContain('position: absolute')
+    expect(seatChromeCss).not.toContain('birdseye-controls-out-left')
+    const desktopIdx = cluster.indexOf('/* desktop6 */')
+    const desktopBlock = cluster.slice(desktopIdx, desktopIdx + 2800)
+    expect(desktopBlock.indexOf('BirdseyeDesktopControls')).toBeGreaterThan(
+      desktopBlock.indexOf('combat-area-cluster__seat-meta')
+    )
+    expect(desktopBlock.indexOf('BirdseyeDesktopControls')).toBeGreaterThan(
+      desktopBlock.indexOf('ResourceGrid')
+    )
+  })
+
+  it('gives leftover height to a per-seat play area under the leaders', () => {
+    expect(cluster).toContain('BirdseyeSeatPlayArea')
+    expect(cluster).toContain('getPlayAreaCardsForTurnView')
+    expect(seatChromeTsx).toContain('export function BirdseyeSeatPlayArea')
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area \{[\s\S]*?flex:\s*1 1 auto/
+    )
+  })
+
+  it('keeps desktop gains above the leader, not in the play-area column', () => {
+    const desktopIdx = cluster.indexOf('/* desktop6 */')
+    const desktopBlock = cluster.slice(desktopIdx, desktopIdx + 3500)
+    expect(desktopBlock).toContain('combat-area-cluster__seat-head')
+    expect(desktopBlock.indexOf('BirdseyeSeatGains')).toBeLessThan(
+      desktopBlock.indexOf('combat-area-cluster__seat-leader')
+    )
+    expect(desktopBlock.indexOf('BirdseyeSeatPlayArea')).toBeGreaterThan(
+      desktopBlock.indexOf('combat-area-cluster__seat-meta')
+    )
+    expect(seatChromeTsx).not.toContain('Play area</span>')
+    expect(seatChromeCss).not.toContain('birdseye-seat-play-area__label')
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.combat-area-cluster__seat-head \{[\s\S]*?display:\s*contents/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column\.combat-area-cluster--birdseye \.combat-area-cluster__seat-leader \{[\s\S]*?align-self:\s*end/
+    )
+  })
+
+  it('stacks revealed play-area cards with reversed z-index so bottoms show', () => {
+    expect(cluster).toContain('getRevealedCardIdsForTurnView')
+    expect(seatChromeTsx).toContain('birdseye-seat-play-area__card--revealed')
+    expect(seatChromeTsx).toContain('revealedCount - revealedOrder')
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__cards \{[\s\S]*?isolation:\s*isolate/
+    )
   })
 })

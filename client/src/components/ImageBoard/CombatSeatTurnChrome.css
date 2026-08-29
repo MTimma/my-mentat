@@ -213,9 +213,9 @@
 
 .birdseye-seat__controls-row {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: stretch;
-  gap: 0.25rem;
+  gap: 0.2rem;
   flex-shrink: 0;
   min-width: 0;
   pointer-events: auto;
@@ -557,27 +557,24 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  border-top: 1px solid rgba(255, 248, 232, 0.1);
+  border-top: none;
+  border-bottom: 1px solid rgba(255, 248, 232, 0.12);
   border-left: none;
-  max-height: none;
+  max-height: 9rem;
   height: auto;
   max-width: none;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   min-height: 0;
   align-self: stretch;
   box-sizing: border-box;
   padding: 0;
   overflow: hidden;
-}
-
-.combat-area-cluster--column.combat-area-cluster--gains-up .birdseye-seat-gains {
-  border-top: none;
-  border-bottom: 1px solid rgba(255, 248, 232, 0.1);
+  background: rgba(0, 0, 0, 0.55);
 }
 
 .combat-area-cluster--column .birdseye-seat-gains__scroll {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -617,11 +614,11 @@
   background: linear-gradient(to top, rgba(0, 0, 0, 0.78), transparent);
 }
 
-/* Inactive seats keep the same vertical stack; leftover height is shared equally. */
+/* Inactive seats keep the same compact gain stack; leftover goes to play area. */
 .combat-area-cluster--column
   .combat-area-cluster__seat:not(.combat-area-cluster__seat--active)
   .birdseye-seat-gains {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   max-width: none;
 }
 
@@ -642,8 +639,8 @@
 }
 
 /*
- * Desktop column: vertical source list like mobile. Leftover height
- * after the portrait is for gains; extra rows scroll inside the seat.
+ * Desktop column: stacked gain boxes. Leftover height after gains
+ * is the per-seat play area, not an empty gains column.
  */
 .combat-area-cluster--column .birdseye-seat-gains .turn-gains-display {
   display: flex;
@@ -651,7 +648,7 @@
   flex-wrap: nowrap;
   align-items: stretch;
   align-content: start;
-  gap: 0.06rem;
+  gap: 0.22rem;
   font-size: 0.86em;
 }
 
@@ -659,15 +656,16 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.02rem;
+  gap: 0.12rem;
   min-width: 0;
   height: auto;
   max-height: none;
   overflow: hidden;
-  padding: 0.04rem 0.06rem 0.06rem;
-  border-radius: 2px;
-  border: 1px solid rgba(255, 248, 232, 0.05);
-  background: transparent;
+  padding: 0.1rem 0.22rem 0.12rem;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 248, 232, 0.14);
+  background: rgba(10, 9, 8, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 248, 232, 0.04);
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-title {
@@ -675,7 +673,7 @@
   min-width: 0;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   white-space: normal;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -688,10 +686,16 @@
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-flow {
-  flex: 1 1 auto;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-content: start;
   min-width: 0;
   overflow: hidden;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-card-thumb-img {
+  width: 16px;
+  max-height: 20px;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-flow__tech-badge.tech-tile-flip-badge--gain {
@@ -877,8 +881,34 @@
   overflow: visible;
 }
 
-.combat-area-cluster--column.combat-area-cluster--gains-up .combat-area-cluster__seat-main {
-  flex-direction: column-reverse;
+.combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat--birdseye,
+.combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: subgrid;
+  grid-row: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  justify-self: stretch;
+}
+
+.combat-area-cluster--column .combat-area-cluster__seat-head {
+  display: contents;
+}
+
+.combat-area-cluster--column .combat-area-cluster__seat-gains-slot {
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  height: max-content;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat-leader {
+  grid-row: 2;
+  align-self: end;
 }
 
 .combat-area-cluster--column .combat-area-cluster__seat-meta {
@@ -892,10 +922,7 @@
   overflow: hidden;
   background: rgba(0, 0, 0, 0.72);
   box-sizing: border-box;
-}
-
-.combat-area-cluster--column.combat-area-cluster--gains-up .combat-area-cluster__seat-meta {
-  flex-direction: column-reverse;
+  grid-row: 3;
 }
 
 .combat-area-cluster__gains-dir {
@@ -931,44 +958,50 @@
   color: #fff8e8;
 }
 
-/* Play / End Turn hang left of the 4-seat row into the board gap. */
+/* Play / Reveal / pending sit in-flow under the portrait. */
 .combat-area-cluster--column .birdseye-seat__controls-row {
-  position: absolute;
-  right: calc(100% + 0.45rem);
-  top: var(--birdseye-controls-y, 50%);
-  z-index: 30;
+  position: static;
+  z-index: 4;
+  width: 100%;
   margin: 0;
-  gap: 0.35rem;
-  align-items: flex-start;
+  padding: 0.18rem 0.2rem 0.16rem;
+  gap: 0.18rem;
+  align-items: stretch;
   flex-wrap: nowrap;
-  transform: translateY(-50%);
-  animation: birdseye-controls-out-left 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform: none;
+  background: rgba(0, 0, 0, 0.28);
+  border-top: 1px solid rgba(255, 248, 232, 0.12);
+  box-sizing: border-box;
 }
 
 .combat-area-cluster--column .birdseye-seat__controls-row .birdseye-seat__interactions {
-  width: auto;
-  max-width: 12rem;
-  flex: 0 0 auto;
-  align-self: flex-start;
+  width: 100%;
+  max-width: none;
+  flex: 0 1 auto;
+  align-self: stretch;
+  max-height: 6.5rem;
+  overflow: auto;
   padding: 0.12rem;
-  background: rgba(0, 0, 0, 0.78);
-  border: 1px solid rgba(255, 248, 232, 0.32);
+  background: rgba(0, 0, 0, 0.42);
+  border: 1px solid rgba(255, 248, 232, 0.16);
   border-radius: 5px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+  box-shadow: none;
 }
 
 .combat-area-cluster--column .birdseye-seat__controls-row .birdseye-interactions-strip {
-  width: auto;
+  width: 100%;
   max-height: none;
+  flex-direction: column;
   flex-wrap: nowrap;
+  align-items: stretch;
 }
 
 .combat-area-cluster--column .birdseye-seat__controls-stack {
-  background: rgba(0, 0, 0, 0.78);
-  border: 1px solid rgba(255, 248, 232, 0.32);
-  border-radius: 5px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
-  padding: 0.16rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
   gap: 0.14rem;
   overflow: visible;
 }
@@ -1060,21 +1093,96 @@
   background: rgba(0, 0, 0, 0.95);
 }
 
-@keyframes birdseye-controls-out-left {
-  from {
-    opacity: 0.35;
-    transform: translateY(-50%) translateX(72%) scale(0.94);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(-50%) translateX(0) scale(1);
-  }
+/* Per-seat play area fills leftover height under the leader. Cards only — no gains. */
+.birdseye-seat-play-area {
+  display: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .combat-area-cluster--column .birdseye-seat__controls-row {
-    animation: none;
-  }
+.combat-area-cluster--column .birdseye-seat-play-area {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 2.4rem;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.18rem 0.2rem 0.22rem;
+  border-top: 1px dashed rgba(255, 248, 232, 0.16);
+  background: rgba(4, 5, 8, 0.42);
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area--active {
+  background: rgba(12, 10, 6, 0.5);
+  border-top-color: rgba(212, 177, 106, 0.28);
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__well {
+  flex: 1 1 auto;
+  min-height: 2.4rem;
+  border: 1px dashed rgba(255, 248, 232, 0.1);
+  border-radius: 4px;
+  background: rgba(255, 248, 232, 0.02);
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__cards {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  isolation: isolate;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 177, 106, 0.4) transparent;
+  padding-bottom: 0.2rem;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card {
+  position: relative;
+  width: 86%;
+  max-width: 5.6rem;
+  aspect-ratio: 5 / 7;
+  margin-top: -38%;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #0f0d0a;
+  box-shadow:
+    0 0 0 1px rgba(255, 248, 232, 0.16),
+    0 3px 8px rgba(0, 0, 0, 0.45);
+  z-index: 1;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card:first-child {
+  margin-top: 0;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card:last-child {
+  z-index: 2;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center top;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0.2rem;
+  font-size: 0.52rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--chrome-text-muted, #d4c4a8);
 }
 
 .combat-area-cluster__seat-top {
@@ -1252,7 +1360,7 @@
   max-height: none;
 }
 
-/* Full-width pending bar under leader + gains (play controls hang left separately). */
+/* Pending choices sit under the turn buttons in the seat column. */
 .birdseye-seat__interactions {
   flex: 0 0 auto;
   align-self: stretch;
@@ -1342,10 +1450,10 @@
 
 .combat-area-cluster--column.combat-area-cluster--birdseye {
   --birdseye-desktop-face-height: clamp(4.5rem, 9vmin, 6rem);
-  --birdseye-controls-y: calc(var(--birdseye-desktop-face-height) / 2);
   position: relative;
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: max-content minmax(0, 1fr) minmax(0, 1fr);
   align-items: stretch;
   flex: 1 1 auto;
   min-height: 0;
@@ -1354,19 +1462,112 @@
   overflow: visible;
 }
 
-.combat-area-cluster--column.combat-area-cluster--gains-up {
-  --birdseye-controls-y: calc(100% - var(--birdseye-desktop-face-height) / 2);
+.combat-area-cluster--column.combat-area-cluster--play-horizontal {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-rows: max-content minmax(0, 1fr) max-content;
+}
+
+.combat-area-cluster-stack--play-horizontal .combat-area-cluster--column .combat-area-cluster__seat-meta {
+  flex: 0 0 auto;
+}
+
+.combat-area-cluster-stack--column > .birdseye-seat-play-area--horizontal {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 0 0 auto;
+  height: clamp(7.2rem, 18vh, 10.5rem);
+  max-height: 10.5rem;
+  min-height: 6.5rem;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.2rem 0.28rem 0.28rem;
+  border-top: 1px solid rgba(255, 248, 232, 0.16);
+  background: rgba(12, 10, 6, 0.55);
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.combat-area-cluster-stack--column > .birdseye-seat-play-area--horizontal .birdseye-seat-play-area__well {
+  flex: 1 1 auto;
+  min-height: 3.6rem;
+  border: 1px dashed rgba(255, 248, 232, 0.12);
+  border-radius: 4px;
+  background: rgba(255, 248, 232, 0.03);
+}
+
+.combat-area-cluster-stack--column > .birdseye-seat-play-area--horizontal .birdseye-seat-play-area__cards {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 177, 106, 0.4) transparent;
+  padding: 0.1rem 0.2rem 0.12rem;
+  isolation: isolate;
+}
+
+.combat-area-cluster-stack--column > .birdseye-seat-play-area--horizontal .birdseye-seat-play-area__card {
+  position: relative;
+  height: 100%;
+  width: auto;
+  max-height: 100%;
+  max-width: none;
+  aspect-ratio: 5 / 7;
+  margin-top: 0;
+  margin-left: -1.15rem;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #0f0d0a;
+  box-shadow:
+    0 0 0 1px rgba(255, 248, 232, 0.18),
+    0 3px 8px rgba(0, 0, 0, 0.45);
+  z-index: 1;
+}
+
+.combat-area-cluster-stack--column
+  > .birdseye-seat-play-area--horizontal
+  .birdseye-seat-play-area__card:first-child {
+  margin-left: 0;
+}
+
+.combat-area-cluster-stack--column
+  > .birdseye-seat-play-area--horizontal
+  .birdseye-seat-play-area__card:last-child {
+  z-index: 2;
+}
+
+.combat-area-cluster-stack--column > .birdseye-seat-play-area--horizontal .birdseye-seat-play-area__card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center top;
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat--birdseye {
-  width: auto;
-  max-width: 25%;
+  width: 100%;
+  max-width: none;
   overflow: visible;
+  border-right: 1px solid rgba(255, 248, 232, 0.1);
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye
+  .combat-area-cluster__seat--birdseye:last-child {
+  border-right: none;
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye
   .combat-area-cluster__seat--active.combat-area-cluster__seat--birdseye {
-  width: auto;
+  width: 100%;
 }
 
 /*

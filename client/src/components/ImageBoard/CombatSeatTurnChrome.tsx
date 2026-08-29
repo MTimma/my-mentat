@@ -70,7 +70,7 @@ export function BirdseyeInteractionsHost({
   )
 }
 
-/** Play / Reveal or End Turn — strip above portrait (mobile) or hang left (desktop). */
+/** Play / Reveal or End Turn — rim strip (mobile) or under the portrait (desktop). */
 export function BirdseyePrimaryControls({
   actions,
   player,
@@ -395,7 +395,7 @@ export function BirdseyeSeatGains({
   )
 }
 
-/** Active-seat action chrome + tech panel state for desktop 6 stack. */
+/** Active-seat action chrome + pending choices under the portrait. */
 export function BirdseyeDesktopControls({
   player,
   actions,
@@ -415,7 +415,6 @@ export function BirdseyeDesktopControls({
   const [techOpen, setTechOpen] = useState(false)
   return (
     <div className="birdseye-seat__controls-row">
-      <BirdseyeInteractionsHost hostRef={interactionsHostRef} />
       <div className="birdseye-seat__controls-stack">
         <BirdseyePrimaryControls actions={actions} player={player} />
         <BirdseyeUtilControls
@@ -439,6 +438,73 @@ export function BirdseyeDesktopControls({
           />
         ) : null}
       </div>
+      <BirdseyeInteractionsHost hostRef={interactionsHostRef} />
+    </div>
+  )
+}
+
+/** Compact in-play cards. `horizontal` is the dock-width strip (active player only). */
+export function BirdseyeSeatPlayArea({
+  cards,
+  isActive = false,
+  orientation = 'vertical',
+  revealedCardIds,
+}: {
+  cards: Card[]
+  isActive?: boolean
+  orientation?: 'vertical' | 'horizontal'
+  revealedCardIds?: number[]
+}) {
+  const names = cards.map(card => card.name).filter(Boolean)
+  const revealedIds = new Set(revealedCardIds ?? [])
+  const revealedCount = cards.filter(card => revealedIds.has(card.id)).length
+  let revealedOrder = 0
+  return (
+    <div
+      className={[
+        'birdseye-seat-play-area',
+        isActive ? 'birdseye-seat-play-area--active' : '',
+        cards.length === 0 ? 'birdseye-seat-play-area--empty' : '',
+        orientation === 'horizontal' ? 'birdseye-seat-play-area--horizontal' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      aria-label={names.length > 0 ? `Play area: ${names.join(', ')}` : 'Empty play area'}
+    >
+      {cards.length === 0 ? (
+        <div className="birdseye-seat-play-area__well" />
+      ) : (
+        <div className="birdseye-seat-play-area__cards">
+          {cards.map(card => {
+            const isRevealed = revealedIds.has(card.id)
+            const revealZ = isRevealed ? revealedCount - revealedOrder++ : undefined
+            return (
+              <div
+                key={card.id}
+                className={[
+                  'birdseye-seat-play-area__card',
+                  isRevealed ? 'birdseye-seat-play-area__card--revealed' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                title={card.name}
+                style={revealZ != null ? { zIndex: revealZ } : undefined}
+              >
+                {card.image ? (
+                  <img
+                    src={card.image}
+                    alt={card.name}
+                    draggable={false}
+                    data-preview-src={card.image}
+                  />
+                ) : (
+                  <span className="birdseye-seat-play-area__card-name">{card.name}</span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

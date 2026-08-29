@@ -133,14 +133,15 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: 8px 12px;
+  padding: 0;
   margin: 0 6px 4px;
   border-radius: 8px;
   border: 1px solid var(--chrome-border-accent);
   background: var(--chrome-accent-subtle);
   transition: background 0.2s, border-color 0.2s;
-  gap: 6px;
+  gap: 0;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .turn-history-row--static {
@@ -180,6 +181,10 @@
   flex-direction: column;
   gap: 6px;
   width: 100%;
+}
+
+.turn-history-row-body:empty {
+  display: none;
 }
 
 .turn-label {
@@ -261,24 +266,29 @@
 }
 
 .turn-number {
-  min-width: 24px;
-  height: 24px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  min-width: 28px;
+  align-self: stretch;
+  padding: 6px 6px;
+  border-radius: 0;
+  border-right: 1px solid var(--chrome-border-accent);
+  background: rgba(0, 0, 0, 0.22);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--chrome-text-strong);
   flex-shrink: 0;
   box-sizing: border-box;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .turn-history-row.viewing .turn-number {
   background: var(--chrome-accent-hover);
   color: var(--chrome-text-strong);
+  border-right-color: var(--chrome-accent-ring);
 }
 
 .turn-history-player-badge {
@@ -432,23 +442,9 @@
 .turn-history-row-grid {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 8px 10px;
+  gap: 0;
   width: 100%;
-  align-items: start;
-}
-
-.turn-history-row-identity {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  padding-top: 2px;
-}
-
-.turn-history-row-identity .turn-number {
-  min-width: 22px;
-  height: 22px;
+  align-items: stretch;
 }
 
 .turn-history-row-main {
@@ -457,6 +453,21 @@
   gap: 6px;
   min-width: 0;
   width: 100%;
+  padding: 8px 10px 8px 8px;
+  box-sizing: border-box;
+}
+
+.turn-history-row-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.turn-history-row-summary .turn-history-action-band {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .turn-history-action-band {
@@ -473,9 +484,9 @@
 .turn-history-action-flow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .turn-history-action-arrow {
@@ -984,9 +995,19 @@
   }
 
   .turn-history-overlay--docked .turn-history-row {
-    padding: 10px 10px 8px;
+    padding: 0;
     margin: 0 8px 6px;
+  }
+
+  .turn-history-overlay--docked .turn-history-row-main {
+    padding: 8px 10px 8px 8px;
     gap: 8px;
+  }
+
+  .turn-history-overlay--docked .turn-number {
+    min-width: 32px;
+    padding: 8px 6px;
+    font-size: 0.72rem;
   }
 
   .turn-history-reveal-cards--inline {
@@ -1225,15 +1246,19 @@
   }
 
   .turn-history-row {
-    padding: 6px 10px;
+    padding: 0;
     margin: 0 4px 3px;
+  }
+
+  .turn-history-row-main {
+    padding: 6px 8px 6px 6px;
     gap: 6px;
   }
   
   .turn-number {
-    width: 20px;
-    height: 20px;
-    font-size: 0.75em;
+    min-width: 24px;
+    padding: 4px 4px;
+    font-size: 0.65rem;
   }
   
   .turn-history-player-badge {
@@ -1292,14 +1317,19 @@
   }
 
   .turn-history-row {
-    padding: 5px 8px;
+    padding: 0;
+    gap: 0;
+  }
+
+  .turn-history-row-main {
+    padding: 5px 6px 5px 5px;
     gap: 4px;
   }
   
   .turn-number {
-    width: 18px;
-    height: 18px;
-    font-size: 0.7em;
+    min-width: 22px;
+    padding: 3px 3px;
+    font-size: 0.6rem;
   }
   
   .turn-history-player-badge {
