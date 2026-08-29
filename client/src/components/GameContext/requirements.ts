@@ -2,6 +2,22 @@ import { Card, FactionType, GameState, PlayEffect, RevealEffect, IntriguePlayEff
 import { geneLevelForNode } from '../../expansions/immortality/researchTrack'
 import { unitsInConflictForPlayer } from '../../utils/dreadnoughts'
 
+/** Live play area is on the player. `GameState.playArea` is an unused leftover map. */
+function playAreaForPlayer(state: GameState, playerId: number): Card[] {
+  return state.players.find(p => p.id === playerId)?.playArea ?? []
+}
+
+function hasOtherFactionCardInPlay(
+  state: GameState,
+  playerId: number,
+  currCard: Card,
+  faction: FactionType
+): boolean {
+  return playAreaForPlayer(state, playerId).some(
+    card => currCard.id !== card.id && card.faction?.includes(faction)
+  )
+}
+
 /**
  * Immortality requirement gates shared by play/reveal/intrigue effects:
  * - `researchLevel` ⇒ the player must have reached that genetic-marker level.
@@ -45,10 +61,9 @@ export function playRequirementSatisfied(
       if (state.factionAlliances[req.alliance] !== playerId) return false
     }
     if (req.inPlay) {
-      const hasFactionInPlay = Boolean(
-        state.playArea[playerId]?.find(card => currCard.id !== card.id && card.faction?.includes(req.inPlay as FactionType))
-      )
-      if (!hasFactionInPlay) return false
+      if (!hasOtherFactionCardInPlay(state, playerId, currCard, req.inPlay as FactionType)) {
+        return false
+      }
     }
     if (!immortalityRequirementSatisfied(req, currCard, state, playerId)) return false
     return true
@@ -92,7 +107,7 @@ export function revealRequirementSatisfied(
     if (req.bond) {
       const faction = req.bond
       const hasBond =
-        Boolean(state.playArea[playerId]?.find(card => currCard.id !== card.id && card.faction?.includes(faction))) ||
+        hasOtherFactionCardInPlay(state, playerId, currCard, faction) ||
         Boolean(revealedCards.find(card => currCard.id !== card.id && card.faction?.includes(faction)))
       if (!hasBond) return false
     }

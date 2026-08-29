@@ -1055,18 +1055,8 @@
     flex: 0 1 auto;
   }
 
-  .turn-history-player-badge {
-    width: 30px;
-    height: 30px;
-  }
-
   .turn-history-player-icon-fallback {
-    font-size: 0.72rem;
-  }
-
-  .turn-history-overlay--docked .turn-history-player-badge {
-    width: 32px;
-    height: 32px;
+    font-size: 0.62rem;
   }
 
   .turn-history-overlay--docked .turn-history-gains {

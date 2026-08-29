@@ -306,6 +306,13 @@ describe('Combat rank strip wiring', () => {
     expect(seatChrome).toContain('RevealCardsIcon')
     expect(seatChrome).toContain('birdseye-seat-btn__cards')
     expect(seatChrome).not.toContain('/icon/draw.png')
+    const revealIcon = readFileSync(
+      resolve(root, 'components/RevealCardsIcon/RevealCardsIcon.tsx'),
+      'utf8'
+    )
+    expect(revealIcon).toContain('strokeWidth="0.75"')
+    expect(revealIcon).toContain('width="100%"')
+    expect(revealIcon).toContain('height="100%"')
     const seatCss = readFileSync(
       resolve(root, 'components/ImageBoard/CombatSeatTurnChrome.css'),
       'utf8'
@@ -318,6 +325,9 @@ describe('Combat rank strip wiring', () => {
     )
     expect(seatCss).toMatch(
       /\.birdseye-seat__primary,\s*\n\s*\.birdseye-seat__utils \{[\s\S]*?grid-template-columns:\s*minmax\(2\.7rem, 1fr\) minmax\(2\.7rem, 1fr\)/
+    )
+    expect(seatCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-btn__cards\.reveal-cards-icon \{[\s\S]*?height:\s*calc\(100% - 0\.34rem\)/
     )
   })
 

@@ -1284,8 +1284,25 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   }
 
   .selected-card-action-placeholder--reveal {
-    min-width: 72px;
-    min-height: 96px;
+    min-width: 52px;
+    min-height: 64px;
+  }
+
+  .selected-card-action-placeholder--reveal .selected-card-action-reveal-cards {
+    top: 0.95em;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    transform: none;
+  }
+
+  .selected-card-action-placeholder--reveal .selected-card-action-count {
+    top: 0.95em;
+    font-size: 1.15rem;
   }
 
   .selected-card-action-placeholder--intrigue,

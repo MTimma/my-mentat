@@ -42,6 +42,9 @@ describe('Play area action buttons', () => {
     expect(turnCss).toMatch(
       /\.selected-card-action-placeholder--reveal \.selected-card-action-reveal-cards \{[\s\S]*?top:\s*1\.15em/
     )
+    expect(turnCss).toMatch(
+      /@media \(min-width: 901px\)[\s\S]*?\.selected-card-action-placeholder--reveal \.selected-card-action-reveal-cards \{[\s\S]*?bottom:\s*5px/
+    )
   })
 
   it('keeps overlay play-button graphics inside the slot', () => {

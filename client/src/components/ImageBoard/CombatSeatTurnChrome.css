@@ -112,11 +112,20 @@
 
 .birdseye-seat-btn__cards.reveal-cards-icon {
   position: absolute;
-  inset: 0.06rem;
-  width: auto;
-  height: auto;
+  top: 0.22rem;
+  left: 0.1rem;
+  width: calc(100% - 0.2rem);
+  height: calc(100% - 0.3rem);
   z-index: 0;
   pointer-events: none;
+}
+
+/* Fill the dashed Reveal box, leaving a small gap for the overlay label. */
+.combat-area-cluster--column .birdseye-seat-btn__cards.reveal-cards-icon {
+  top: 0.26rem;
+  left: 0.1rem;
+  width: calc(100% - 0.2rem);
+  height: calc(100% - 0.34rem);
 }
 
 .birdseye-seat-btn__agent {
@@ -1143,11 +1152,14 @@
 }
 
 .combat-area-cluster--column .birdseye-seat-play-area__card {
+  --play-card-max-w: 5.6rem;
+  --play-card-w-pct: 0.86;
   position: relative;
-  width: 86%;
-  max-width: 5.6rem;
+  width: calc(100% * var(--play-card-w-pct));
+  max-width: var(--play-card-max-w);
   aspect-ratio: 5 / 7;
-  margin-top: -38%;
+  /* % margin uses parent width, so cap at the width where the card hits max-width. */
+  margin-top: calc(-0.90 * min(100%, calc(var(--play-card-max-w) / var(--play-card-w-pct))));
   border-radius: 3px;
   overflow: hidden;
   background: #0f0d0a;
