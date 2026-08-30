@@ -54,12 +54,25 @@ export function factionFromInfluenceGainName(name: string): FactionType | null {
   return FACTION_VALUES.has(base) ? (base as FactionType) : null
 }
 
+/** Source title + faction so bump icons keep the faction and gain groups use the card/space name. */
+export function influenceGainName(sourceTitle: string, faction: FactionType): string {
+  if (!sourceTitle || FACTION_VALUES.has(sourceTitle)) return faction
+  return `${sourceTitle}|${faction}`
+}
+
 /** Conflict influence choice: embed placement title + faction in one gain name for history display. */
 export function conflictInfluenceGainName(
   placementTitle: string,
   faction: FactionType
 ): string {
-  return `${placementTitle}|${faction}`
+  return influenceGainName(placementTitle, faction)
+}
+
+/** Group title for an encoded influence gain (`Missionaria Protectiva|emperor` → card name). */
+export function sourceTitleFromInfluenceGainName(name: string): string {
+  const pipe = name.indexOf('|')
+  if (pipe < 0) return name
+  return factionFromInfluenceGainName(name) ? name.slice(0, pipe) : name
 }
 
 /** Builds influence amounts for rendering faction / any-faction bump icons from a gain row. */

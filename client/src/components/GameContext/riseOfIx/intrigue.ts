@@ -17,6 +17,7 @@ import { countSpiceMustFlowCards } from '../../../utils/spiceMustFlow'
 import { unitsInConflictForPlayer } from '../../../utils/dreadnoughts'
 import { syncCombatStrengthForPlayer } from '../../../utils/dreadnoughtLifecycle'
 import { createGainInfluenceChoice } from '../../../utils/influenceChoices'
+import { influenceGainName } from '../../../utils/influenceDisplay'
 import { nextSemanticId } from '../../../utils/semanticIds'
 import {
   isRiseOfIxEnabled,
@@ -126,7 +127,7 @@ export function applyQuidProQuo(state: GameState, playerId: number, source: Gain
     const track = { ...(next.factionInfluence[faction] ?? {}) }
     track[playerId] = (track[playerId] ?? 0) + 1
     next = { ...next, factionInfluence: { ...next.factionInfluence, [faction]: track } }
-    pushGain(next.gains, next, playerId, source, 1, RewardType.INFLUENCE, faction)
+    pushGain(next.gains, next, playerId, source, 1, RewardType.INFLUENCE, influenceGainName(source.name, faction))
   }
   return next
 }
@@ -140,7 +141,7 @@ export function applyStrongarmInfluence(
   const track = { ...(state.factionInfluence[faction] ?? {}) }
   track[playerId] = (track[playerId] ?? 0) + 1
   const gains = [...state.gains]
-  pushGain(gains, state, playerId, source, 1, RewardType.INFLUENCE, faction)
+  pushGain(gains, state, playerId, source, 1, RewardType.INFLUENCE, influenceGainName(source.name, faction))
   return {
     ...state,
     gains,

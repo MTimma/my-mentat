@@ -440,6 +440,25 @@ describe('turnGainsDisplay', () => {
     expect(groups[0].title).toBe('Masterstroke')
   })
 
+  it('groups card choose-one influence under the card name, not the chosen faction', () => {
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 1035,
+        round: 1,
+        name: 'Missionaria Protectiva|emperor',
+        amount: 1,
+        type: RewardType.INFLUENCE,
+      },
+    ])
+    expect(groups).toHaveLength(1)
+    expect(groups[0].title).toBe('Missionaria Protectiva')
+    expect(aggregateInfluenceGains(groups[0].gains)).toEqual([
+      { name: FactionType.EMPEROR, amount: 1 },
+    ])
+  })
+
   it('getTroopsDeployedToConflict uses removable troops in conflict', () => {
     expect(
       getTroopsDeployedToConflict({
@@ -527,10 +546,10 @@ describe('turnGainsDisplay', () => {
     expect(getEffectRetreatRemaining(null)).toBe(0)
   })
 
-  it('getRepeatedIconDisplay caps icons at 3 and shows multiplier for larger amounts', () => {
+  it('getRepeatedIconDisplay repeats up to 3 icons, then one icon plus a count', () => {
     expect(getRepeatedIconDisplay(2)).toEqual({ iconCount: 2, showTotalMultiplier: false })
     expect(getRepeatedIconDisplay(3)).toEqual({ iconCount: 3, showTotalMultiplier: false })
-    expect(getRepeatedIconDisplay(5)).toEqual({ iconCount: 3, showTotalMultiplier: true })
+    expect(getRepeatedIconDisplay(5)).toEqual({ iconCount: 1, showTotalMultiplier: true })
   })
 
   it('computeTurnGainTotals nets resources and splits gained vs spent', () => {

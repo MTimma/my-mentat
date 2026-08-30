@@ -139,7 +139,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   const renderGainMultiplier = (amount: number) => {
     const absAmount = Math.abs(amount)
     if (absAmount < 2) return null
-    return <span className="gain-multiplier">×{absAmount}</span>
+    return <span className="gain-multiplier">{absAmount}</span>
   }
 
   const iconSrc = (iconPath: string) =>
@@ -226,7 +226,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
             data-preview-src={image}
           />
         ))}
-        {showTotalMultiplier ? <span className="gain-multiplier">×{absCount}</span> : null}
+        {showTotalMultiplier ? renderGainMultiplier(absCount) : null}
       </span>
     )
   }

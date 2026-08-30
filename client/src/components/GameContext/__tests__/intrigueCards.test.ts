@@ -17,6 +17,7 @@ import {
   type Player,
 } from '../../../types/GameTypes'
 import { seedTroopSupply } from '../../../utils/troops'
+import { factionFromInfluenceGainName } from '../../../utils/influenceDisplay'
 
 function stubDeckCard(id: number): Card {
   return {
@@ -131,7 +132,8 @@ describe('Intrigue cards — player turns (plot)', () => {
     const influenceGain = s.gains.find(
       g => g.playerId === 0 && g.type === RewardType.INFLUENCE && g.source === GainSource.INTRIGUE
     )
-    expect(influenceGain?.name).toBe(faction)
+    expect(factionFromInfluenceGainName(influenceGain?.name ?? '')).toBe(faction)
+    expect(influenceGain?.name).not.toBe(faction)
   })
 
   it('CHOAM Shares (8): pay 7 Solari for 1 VP', () => {

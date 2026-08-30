@@ -139,7 +139,7 @@ import {
   requiresInfluenceChoices,
 } from '../../utils/influenceChoices'
 import { isSoleTrashThisCardReward } from '../../utils/pendingRewardAutoApply'
-import { conflictInfluenceGainName } from '../../utils/influenceDisplay'
+import { conflictInfluenceGainName, influenceGainName } from '../../utils/influenceDisplay'
 import {
   applyDistinctChoiceExclusion,
   applyDistinctFactionExclusion,
@@ -1741,7 +1741,7 @@ function applyChoiceReward(
       newState = applied.state
       player = applied.player
       tessiaChoices.push(...applied.tessiaChoices)
-      pushGain(amount, RewardType.INFLUENCE, faction)
+      pushGain(amount, RewardType.INFLUENCE, influenceGainName(gainSource.name, faction))
     })
     if (milestoneMeta.troopsRecruited > 0) {
       newState = withRecruitedTroopsDeployLimit(newState, milestoneMeta.troopsRecruited)
@@ -1945,7 +1945,7 @@ function handleIntrigueEffect(
         newState = applied.state
         updatedPlayer = applied.player
         tessiaChoices.push(...applied.tessiaChoices)
-        pushGain(amount, RewardType.INFLUENCE, faction)
+        pushGain(amount, RewardType.INFLUENCE, influenceGainName(card.name, faction))
       })
     }
     if (reward.mentat && !newState.mentatOwner) {
@@ -8209,7 +8209,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           newState = applied.state
           newPlayer = applied.player
           tessiaChoices.push(...applied.tessiaChoices)
-          newGains.push({ round: newState.currentRound, playerId: playerId, sourceId: reward.source.id, name: inf.faction, amount: influenceAmount, type: RewardType.INFLUENCE, source: reward.source.type })
+          newGains.push({ round: newState.currentRound, playerId: playerId, sourceId: reward.source.id, name: influenceGainName(reward.source.name, inf.faction), amount: influenceAmount, type: RewardType.INFLUENCE, source: reward.source.type })
         })
         if (milestoneMeta.troopsRecruited > 0) {
           newState = withRecruitedTroopsDeployLimit(newState, milestoneMeta.troopsRecruited)
@@ -8311,7 +8311,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             newState = applied.state
             newPlayer = applied.player
             tessiaChoices.push(...applied.tessiaChoices)
-            newGains.push({ round: newState.currentRound, playerId: playerId, sourceId: reward.source.id, name: inf.faction, amount: influenceAmount, type: RewardType.INFLUENCE, source: reward.source.type })
+            newGains.push({ round: newState.currentRound, playerId: playerId, sourceId: reward.source.id, name: influenceGainName(reward.source.name, inf.faction), amount: influenceAmount, type: RewardType.INFLUENCE, source: reward.source.type })
           })
         }
 

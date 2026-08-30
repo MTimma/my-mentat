@@ -5,11 +5,13 @@ import { RISE_OF_IX_IMPERIUM_DECK } from '../../../data/cardsRiseOfIx'
 import {
   ChoiceType,
   FactionType,
+  GainSource,
   type FixedOptionsChoice,
 } from '../../../types/GameTypes'
 import { playRequirementSatisfied, revealRequirementSatisfied } from '../requirements'
 import { applyGameAction } from '../GameContext'
 import { getBaseTestState, stubDeckCard } from './_helpers'
+import { groupGainsBySource } from '../../../utils/turnGainsDisplay'
 
 const ARRAKEEN_ID = BOARD_SPACES.find(s => s.name === 'Arrakeen')!.id
 
@@ -87,6 +89,42 @@ describe('Missionaria Protectiva agent play', () => {
         FactionType.BENE_GESSERIT,
         FactionType.FREMEN,
       ])
+    )
+  })
+
+  it('records the resolved influence gain under Missionaria Protectiva, not the chosen faction', () => {
+    const missionariaCard = missionaria()
+    const shadows = inTheShadows()
+    let s = getBaseTestState({
+      deck: [missionariaCard],
+      handCount: 1,
+      agents: 1,
+      playArea: [shadows],
+    })
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: missionariaCard.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: ARRAKEEN_ID })
+
+    const influenceChoice = s.currTurn?.pendingChoices?.find(
+      c => c.type === ChoiceType.FIXED_OPTIONS && c.prompt.includes('influence')
+    ) as FixedOptionsChoice
+    const emperorIndex = influenceChoice.options.findIndex(
+      o => o.reward?.influence?.amounts?.[0]?.faction === FactionType.EMPEROR
+    )
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: influenceChoice.id,
+      optionIndex: emperorIndex,
+      source: { type: GainSource.CARD, id: missionariaCard.id, name: missionariaCard.name },
+    })
+
+    const missionariaGains = s.gains.filter(
+      g => g.source === GainSource.CARD && g.sourceId === missionariaCard.id
+    )
+    const groups = groupGainsBySource(missionariaGains)
+    expect(groups.map(g => g.title)).toContain('Missionaria Protectiva')
+    expect(groups.some(g => g.title === FactionType.EMPEROR || g.title.includes('Alliance'))).toBe(
+      false
     )
   })
 

@@ -1,7 +1,7 @@
 import { Gain, GainSource, GameState, GameTurn, RewardType } from '../types/GameTypes'
 import { BOARD_SPACES } from '../data/boardSpaces'
 import { catalogDeckCardNameById, catalogIntrigueNameById } from './cardCatalogLookup'
-import { factionFromInfluenceGainName } from './influenceDisplay'
+import { factionFromInfluenceGainName, sourceTitleFromInfluenceGainName } from './influenceDisplay'
 import {
   TechTileId,
   getTechTile,
@@ -251,7 +251,7 @@ export function getEffectRetreatRemaining(turn: GameTurn | null | undefined): nu
   return Math.max(0, allowance - used)
 }
 
-/** Max duplicate icons before showing a total multiplier (e.g. 3 water drops + ×5). */
+/** Max duplicate icons before collapsing to one icon plus a count (e.g. 1 troop cube + 5). */
 export const MAX_REPEATED_GAIN_ICONS = 3
 
 export function getRepeatedIconDisplay(
@@ -261,7 +261,7 @@ export function getRepeatedIconDisplay(
   const absAmount = Math.abs(amount)
   if (absAmount <= 1) return { iconCount: absAmount, showTotalMultiplier: false }
   if (absAmount <= maxIcons) return { iconCount: absAmount, showTotalMultiplier: false }
-  return { iconCount: maxIcons, showTotalMultiplier: true }
+  return { iconCount: 1, showTotalMultiplier: true }
 }
 
 function trashedCardIdFromGain(gain: Gain): number | undefined {
@@ -426,7 +426,7 @@ function titleForGainGroup(gain: Gain): string {
     boardSpaceTitleForGain(gain) ??
     trashDiscardSourceTitleForGain(gain) ??
     freighterMoveSourceTitle(gain) ??
-    gain.name
+    sourceTitleFromInfluenceGainName(gain.name)
   )
 }
 
@@ -559,8 +559,9 @@ export function computeTurnGainTotals(gains: Gain[]): TurnGainTotals {
     if (gain.amount === 0) continue
 
     if (gain.type === RewardType.INFLUENCE) {
-      const entry = influenceMap.get(gain.name) ?? {
-        faction: gain.name,
+      const factionKey = factionFromInfluenceGainName(gain.name) ?? gain.name
+      const entry = influenceMap.get(factionKey) ?? {
+        faction: factionKey,
         net: 0,
         gained: 0,
         lost: 0,
@@ -568,7 +569,7 @@ export function computeTurnGainTotals(gains: Gain[]): TurnGainTotals {
       entry.net += gain.amount
       if (gain.amount > 0) entry.gained += gain.amount
       else entry.lost += Math.abs(gain.amount)
-      influenceMap.set(gain.name, entry)
+      influenceMap.set(factionKey, entry)
       continue
     }
 
@@ -684,7 +685,8 @@ export function aggregateInfluenceGains(gains: Gain[]): Array<{ name: string; am
   const aggregated = new Map<string, number>()
   gains.forEach(gain => {
     if (gain.type !== RewardType.INFLUENCE || gain.amount === 0) return
-    aggregated.set(gain.name, (aggregated.get(gain.name) ?? 0) + gain.amount)
+    const key = factionFromInfluenceGainName(gain.name) ?? gain.name
+    aggregated.set(key, (aggregated.get(key) ?? 0) + gain.amount)
   })
   return Array.from(aggregated.entries())
     .map(([name, amount]) => ({ name, amount }))
