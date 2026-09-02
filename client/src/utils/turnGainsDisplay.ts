@@ -43,6 +43,29 @@ export interface TurnGainTotals {
   cards: CardTypeTotal[]
 }
 
+/**
+ * Reveal-turn commons: persuasion and swords (daggers) show as totals,
+ * not as a per-card row. Other reveal effects keep the card title.
+ */
+export const REVEAL_POOLED_REWARD_TYPES: ReadonlySet<RewardType> = new Set([
+  RewardType.PERSUASION,
+  RewardType.COMBAT,
+])
+
+export function isRevealPooledRewardType(type: RewardType | string): boolean {
+  return type === RewardType.PERSUASION || type === RewardType.COMBAT
+}
+
+export function splitRevealPooledGains(gains: Gain[]): { pooled: Gain[]; specifics: Gain[] } {
+  const pooled: Gain[] = []
+  const specifics: Gain[] = []
+  for (const gain of gains) {
+    if (isRevealPooledRewardType(gain.type)) pooled.push(gain)
+    else specifics.push(gain)
+  }
+  return { pooled, specifics }
+}
+
 /** Display order for net resource totals in turn history. */
 export const TURN_TOTAL_RESOURCE_ORDER: RewardType[] = [
   RewardType.PERSUASION,
@@ -269,8 +292,38 @@ function trashedCardIdFromGain(gain: Gain): number | undefined {
   return gain.cardId ?? gain.sourceId
 }
 
+/**
+ * Trash/discard `name` is `Source|RemovedCard` when an effect removes a different card
+ * (same pattern as influence `Missionaria Protectiva|emperor`).
+ */
+export function encodeEffectCardGainName(
+  sourceTitle: string | undefined,
+  removedCardName: string
+): string {
+  if (!sourceTitle || sourceTitle === removedCardName) return removedCardName
+  return `${sourceTitle}|${removedCardName}`
+}
+
+export function sourceTitleFromEffectCardGainName(name: string): string | undefined {
+  const pipe = name.indexOf('|')
+  if (pipe <= 0) return undefined
+  const source = name.slice(0, pipe)
+  const removed = name.slice(pipe + 1)
+  if (!source || !removed) return undefined
+  return source
+}
+
+export function removedCardNameFromEffectCardGainName(name: string | undefined): string | undefined {
+  if (!name) return undefined
+  const pipe = name.indexOf('|')
+  if (pipe < 0) return undefined
+  return name.slice(pipe + 1) || undefined
+}
+
 function trashDiscardSourceTitleForGain(gain: Gain): string | undefined {
   if (gain.type !== RewardType.TRASH && gain.type !== RewardType.DISCARD) return undefined
+  const encoded = sourceTitleFromEffectCardGainName(gain.name)
+  if (encoded) return encoded
   switch (gain.source) {
     case GainSource.CARD:
       return catalogDeckCardNameById(gain.sourceId)
@@ -370,6 +423,8 @@ export function discardedOrTrashedCardLabel(
   if (resolvedName) return resolvedName
   const catalog = gain.cardId != null ? catalogDeckCardNameById(gain.cardId) : undefined
   if (catalog) return catalog
+  const fromEncoded = removedCardNameFromEffectCardGainName(gain.name)
+  if (fromEncoded) return fromEncoded
   if (gain.name && getTechTileByName(gain.name)) return catalog ?? gain.name
   return gain.name ?? 'Card'
 }

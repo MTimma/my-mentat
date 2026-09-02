@@ -1,4 +1,13 @@
-import { Card, GameState, Player, TurnType } from '../types/GameTypes'
+import {
+  AUTO_APPLIED_CUSTOM_EFFECTS,
+  Card,
+  GainSource,
+  GameState,
+  Player,
+  TurnType,
+  type PendingReward,
+  type Reward,
+} from '../types/GameTypes'
 import { resolveGraftCards } from '../expansions/immortality/graft'
 
 /** Find card objects by id across a player's in-round piles (play area, deck, discard; optionally trash). */
@@ -60,6 +69,65 @@ export function getPlayAreaCardsForTurnView(gameState: GameState, player: Player
 
   const resolved = findPlayerCardsByIds(player, idsToResolve)
   return resolved.length > 0 ? resolved : fromPlayArea.filter(c => !trashedIds.has(c.id))
+}
+
+function rewardNeedsInteractionHighlight(reward: Reward): boolean {
+  if (reward.custom) {
+    return !AUTO_APPLIED_CUSTOM_EFFECTS.includes(reward.custom)
+  }
+  if (reward.mentat || reward.acquire) return true
+  if (reward.influence?.chooseOne) return true
+  return false
+}
+
+function pendingRewardNeedsPlayerInput(reward: PendingReward): boolean {
+  if (reward.disabled) return false
+  if (reward.isTrash) return true
+  if (reward.source.type === GainSource.MASTERSTROKE) return true
+  if (reward.source.type === GainSource.MEMNON_HIGH_COUNCIL) return true
+  return rewardNeedsInteractionHighlight(reward.reward)
+}
+
+/**
+ * Play-area card ids that still need a player choice (OR, optional, interactive reward).
+ * Same highlight gate as TurnControls `turn-card-frame--has-effects`.
+ *
+ * Ids are catalog ids, not per-player instance ids — every Signet Ring is `10`.
+ * Only apply the ring on the current-turn seat (see `playAreaCardHasPendingEffectHighlight`).
+ */
+export function playAreaCardIdsWithPendingEffectChoice(
+  gameState: GameState | undefined,
+  options?: { isHistoryView?: boolean }
+): Set<number> {
+  const ids = new Set<number>()
+  if (!gameState || options?.isHistoryView) return ids
+
+  const addCardSource = (source: { type: GainSource; id: number } | undefined) => {
+    if (source?.type === GainSource.CARD) ids.add(source.id)
+  }
+
+  for (const choice of gameState.currTurn?.pendingChoices ?? []) {
+    if (!choice.disabled) addCardSource(choice.source)
+  }
+  for (const effect of gameState.currTurn?.optionalEffects ?? []) {
+    addCardSource(effect.source)
+  }
+  for (const reward of gameState.pendingRewards ?? []) {
+    if (pendingRewardNeedsPlayerInput(reward)) addCardSource(reward.source)
+  }
+  return ids
+}
+
+/**
+ * Yellow pending-effect ring for a play-area card. Off on inactive seats so
+ * other players' copies of the same catalog id (starter Signet Ring, etc.) stay unhighlighted.
+ */
+export function playAreaCardHasPendingEffectHighlight(
+  cardId: number,
+  pendingEffectCardIds: ReadonlySet<number> | undefined,
+  isActiveSeat: boolean
+): boolean {
+  return Boolean(isActiveSeat && pendingEffectCardIds?.has(cardId))
 }
 
 /** Revealed-hand ids for this player's current reveal turn (empty otherwise). */

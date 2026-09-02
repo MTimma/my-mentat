@@ -244,6 +244,10 @@
   color: var(--chrome-accent-bright);
 }
 
+.combat-phase-rank--place-4 .combat-phase-rank-place {
+  color: var(--chrome-text-muted);
+}
+
 .combat-phase-rank-strength {
   display: inline-flex;
   align-items: center;

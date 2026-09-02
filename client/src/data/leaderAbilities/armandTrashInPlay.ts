@@ -54,6 +54,7 @@ export function buildArmandTrashChoice(
       type: 'TRASH_CARD',
       playerId: player.id,
       cardId: cardIds[0],
+      source,
     }),
     source,
   }

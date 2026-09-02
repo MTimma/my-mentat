@@ -22,3 +22,81 @@
   object-fit: contain;
   border-radius: 8px;
 }
+
+.alt-image-preview--gains {
+  max-width: min(92vw, 420px);
+  padding: 8px 10px;
+}
+
+.alt-gain-preview {
+  min-width: 10rem;
+  max-width: min(90vw, 400px);
+  font-family: var(--font-log);
+  font-variant-numeric: tabular-nums;
+  color: var(--chrome-text);
+}
+
+.alt-gain-preview .turn-gains-display-root,
+.alt-gain-preview .turn-gains-display,
+.alt-gain-preview .turn-gain-source-group,
+.alt-gain-preview .turn-gain-totals-group {
+  width: auto;
+  max-width: none;
+  overflow: visible;
+}
+
+.alt-gain-preview .turn-gain-source-title {
+  display: block;
+  -webkit-line-clamp: unset;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: none;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.25;
+  opacity: 1;
+  color: var(--chrome-text);
+}
+
+.alt-gain-preview .turn-gain-source-flow,
+.alt-gain-preview .turn-gain-totals-row,
+.alt-gain-preview .turn-gains-side {
+  flex-wrap: wrap;
+  overflow: visible;
+  max-width: none;
+}
+
+.alt-gain-preview .gain-icon,
+.alt-gain-preview .turn-gain-resource-icon,
+.alt-gain-preview .turn-gain-total-icon,
+.alt-gain-preview .turn-gain-combat-icon,
+.alt-gain-preview .turn-gain-trash-icon,
+.alt-gain-preview .turn-gain-discard-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.alt-gain-preview .turn-gain-card-thumb-img {
+  width: 64px;
+  max-height: 90px;
+  height: auto;
+}
+
+.alt-gain-preview .gain-persuasion-diamond {
+  width: 18px;
+  height: 18px;
+}
+
+.alt-gain-preview .gain-persuasion-count,
+.alt-gain-preview .turn-gain-resource-amt,
+.alt-gain-preview .turn-gain-total-amt,
+.alt-gain-preview .turn-gain-combat-count,
+.alt-gain-preview .gain-multiplier {
+  font-size: 1.15rem;
+}
+
+.alt-gain-preview .tech-tile-flip-badge--gain {
+  width: 36px;
+  height: 36px;
+}

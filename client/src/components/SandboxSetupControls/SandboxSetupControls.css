@@ -251,3 +251,14 @@
   border-top: 1px solid rgba(255, 215, 0, 0.28);
   background: var(--chrome-surface);
 }
+
+/* Desktop overlay footer is height:0 when the play drawer is closed; pin Begin
+   here so it stays visible when docked turn history is hidden. */
+.sandbox-setup-mobile-bar--desktop {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 46;
+  pointer-events: auto;
+}

@@ -149,9 +149,10 @@ const RevealTurnStatsPanel = ({
     totalsGains.length > 0 || troopsDeployedToConflict > 0 || troopsRetreatedFromConflict > 0 ? (
       <TurnGainsDisplay
         gains={totalsGains}
-        totalsOnly
-        showTotals
+        revealPooledTotals
+        showSourceTitles
         omitPositiveSign
+        inlineTrash
         resolveCard={resolveCard}
         troopsDeployedToConflict={troopsDeployedToConflict}
         troopsRetreatedFromConflict={troopsRetreatedFromConflict}

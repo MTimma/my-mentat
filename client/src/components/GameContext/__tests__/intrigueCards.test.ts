@@ -18,6 +18,7 @@ import {
 } from '../../../types/GameTypes'
 import { seedTroopSupply } from '../../../utils/troops'
 import { factionFromInfluenceGainName } from '../../../utils/influenceDisplay'
+import { groupGainsBySource } from '../../../utils/turnGainsDisplay'
 
 function stubDeckCard(id: number): Card {
   return {
@@ -509,6 +510,14 @@ describe('Intrigue cards — scheduled on reveal', () => {
     expect(s.players[0].handCount).toBe(1)
     expect(s.players[0].deck.map(c => c.id)).toEqual([handCard.id])
     expect(s.players[0].trash.map(c => c.id)).toEqual([drawCard.id])
+    const trashGain = s.gains.find(g => g.type === RewardType.TRASH)
+    expect(trashGain).toMatchObject({
+      name: 'Poison Snooper|stub-6101',
+      cardId: drawCard.id,
+      source: GainSource.INTRIGUE,
+      sourceId: 34,
+    })
+    expect(groupGainsBySource([trashGain!])[0].title).toBe('Poison Snooper')
   })
 
   it('Poison Snooper (34): cannot play with an empty draw pile', () => {

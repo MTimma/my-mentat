@@ -7,6 +7,7 @@ import {
 } from '../../utils/influenceBoardChoice';
 import { isBlockedSequentialConflictChoice } from '../../utils/conflictDistinctFactions';
 import { getFactionBumpIcon } from '../../utils/influenceDisplay';
+import { combatRewardPlace } from '../../utils/combatPlacements';
 import FreighterIcon, { freighterArrowDirectionFromCustom } from '../FreighterIcon/FreighterIcon';
 import './CombatResults.css';
 
@@ -73,45 +74,21 @@ const CombatResults: React.FC<CombatResultsProps> = ({
 
     if (strengths.length === 0) return [];
 
-    // Group players by strength
-    const strengthGroups: { strength: number; players: number[] }[] = [];
-    strengths.forEach((player) => {
-      const existingGroup = strengthGroups.find(g => g.strength === player.strength);
-      if (existingGroup) {
-        existingGroup.players.push(player.playerId);
-      } else {
-        strengthGroups.push({ strength: player.strength, players: [player.playerId] });
-      }
-    });
+    const fieldStrengths = strengths.map(player => player.strength)
+    const placeLabel = (place: number): string => {
+      if (place === 1) return '1st'
+      if (place === 2) return '2nd'
+      if (place === 3) return '3rd'
+      return '-'
+    }
 
-    // Assign places based on groups
-    let currentPlace = 1;
-    strengthGroups.forEach((group) => {
-      const place = group.players.length > 1 ? 
-        (currentPlace === 1 ? '2nd' : currentPlace === 2 ? '3rd' : '-') : 
-        (currentPlace === 1 ? '1st' : currentPlace === 2 ? '2nd' : currentPlace === 3 ? '3rd' : '-');
-
-      // If this is a tie for first, next non-tied group starts at position 3
-      if (group.players.length > 1 && currentPlace === 1) {
-        currentPlace = 3;
-      } 
-      // If this is a tie for second, remaining players get nothing
-      else if (group.players.length > 1 && currentPlace === 2) {
-        currentPlace = 4;
-      }
-      // Normal progression
-      else {
-        currentPlace++;
-      }
-
-      group.players.forEach(playerId => {
-        results.push({
-          playerId,
-          strength: group.strength,
-          place: place
-        });
-      });
-    });
+    strengths.forEach(player => {
+      results.push({
+        playerId: player.playerId,
+        strength: player.strength,
+        place: placeLabel(combatRewardPlace(player.strength, fieldStrengths)),
+      })
+    })
 
     return results;
   };

@@ -48,6 +48,7 @@ describe('Mobile HUD layout', () => {
     expect(mobileBlock).toContain('BirdseyeSeatGains')
     expect(mobileBlock).toContain('showSourceTitles={false}')
     expect(mobileBlock).toContain('showTotals={false}')
+    expect(mobileBlock).toContain('revealPooledTotals={isRevealSeat}')
     const gains = seatCss.match(
       /\.combat-area-cluster--row \.birdseye-seat-gains \{[\s\S]*?\}/
     )?.[0]

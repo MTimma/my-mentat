@@ -165,7 +165,7 @@ describe('Combat rank strip wiring', () => {
     expect(cluster).not.toContain('CombatStatusStrip')
   })
 
-  it('renders deploy controls under End Turn / intrigue / tech on desktop', () => {
+  it('renders deploy controls in the desktop stack after intrigue / tech (column-reverse puts Play at the bottom)', () => {
     expect(seatChrome).toContain('BirdseyeSeatDeployControls')
     expect(seatChrome).toContain('CombatDeployDock')
     expect(seatChrome).toContain('birdseye-seat__deploy')
@@ -177,6 +177,7 @@ describe('Combat rank strip wiring', () => {
     expect(desktopBlock.indexOf('BirdseyeUtilControls')).toBeLessThan(
       desktopBlock.indexOf('BirdseyeSeatDeployControls')
     )
+    expect(desktopBlock).not.toContain('keepPlayReveal')
     expect(imageBoard).toContain('troopDeploy={troopDeploy}')
   })
 
@@ -356,7 +357,7 @@ describe('Combat rank strip wiring', () => {
     expect(seatCss).not.toContain('birdseye-seat-btn__agent-count')
   })
 
-  it('keeps desktop play controls in-flow under the leader without a hang-left animation', () => {
+  it('keeps desktop play controls in-flow under the play area without a hang-left animation', () => {
     const seatCss = readFileSync(
       resolve(root, 'components/ImageBoard/CombatSeatTurnChrome.css'),
       'utf8'

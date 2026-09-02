@@ -10,8 +10,10 @@ import {
   getRepeatedIconDisplay,
   groupGainsForDisplay,
   INLINE_DISCARDS_GROUP_KEY,
+  isRevealPooledRewardType,
   resolveFreighterMoveGroupTitle,
   splitGainsByCostAndReward,
+  splitRevealPooledGains,
   type AggregatedResourceGain,
   type CardTypeTotal,
   type InfluenceTypeTotal,
@@ -75,6 +77,11 @@ export interface TurnGainsDisplayProps {
   showTotals?: boolean
   /** Only render the totals row (and combat troop counts), not per-source groups. */
   totalsOnly?: boolean
+  /**
+   * Reveal turn: persuasion + swords as a totals row; other effects keep
+   * their card/source title.
+   */
+  revealPooledTotals?: boolean
   /** Resolve acquired/gained cards for thumbnails. */
   resolveCard?: (cardId: number, name: string) => Card | undefined
   /** Troops sent to the Conflict this turn (shown after source groups). */
@@ -109,6 +116,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   showSourceTitles = true,
   showTotals = false,
   totalsOnly = false,
+  revealPooledTotals = false,
   resolveCard,
   troopsDeployedToConflict = 0,
   troopsRetreatedFromConflict = 0,
@@ -118,21 +126,23 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
 }) => {
   const deployedCount = Math.max(0, troopsDeployedToConflict)
   const retreatedCount = Math.max(0, troopsRetreatedFromConflict)
-  const totals = useMemo(
-    () => (showTotals || totalsOnly ? computeTurnGainTotals(gains) : null),
-    [gains, showTotals, totalsOnly]
-  )
+  const totals = useMemo(() => {
+    if (revealPooledTotals) {
+      return computeTurnGainTotals(splitRevealPooledGains(gains).pooled)
+    }
+    if (showTotals || totalsOnly) return computeTurnGainTotals(gains)
+    return null
+  }, [gains, revealPooledTotals, showTotals, totalsOnly])
+  const groups = useMemo(() => {
+    if (totalsOnly) return []
+    const sourceGains = revealPooledTotals ? splitRevealPooledGains(gains).specifics : gains
+    return groupGainsForDisplay(sourceGains, { inlineDiscards })
+  }, [gains, inlineDiscards, revealPooledTotals, totalsOnly])
   const hasTotals =
     totals != null &&
     (totals.resources.length > 0 || totals.influence.length > 0 || totals.cards.length > 0)
 
-  if (!totalsOnly && gains.length === 0 && deployedCount === 0 && retreatedCount === 0) return null
-  if (totalsOnly && !hasTotals && deployedCount === 0 && retreatedCount === 0) return null
-
-  const groups = useMemo(
-    () => (totalsOnly ? [] : groupGainsForDisplay(gains, { inlineDiscards })),
-    [gains, inlineDiscards, totalsOnly]
-  )
+  if (!hasTotals && groups.length === 0 && deployedCount === 0 && retreatedCount === 0) return null
   const troopIcon = getRewardIcon(RewardType.TROOPS)
   const retreatIcon = getRewardIcon(RewardType.RETREAT)
 
@@ -651,13 +661,23 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
 
   const renderTotalsRow = () => {
     if (!hasTotals) return null
+    const resourceTotals = revealPooledTotals
+      ? totals!.resources.filter(total => isRevealPooledRewardType(total.type))
+      : totals!.resources
+    const influenceTotals = revealPooledTotals ? [] : totals!.influence
+    const cardTotals = revealPooledTotals ? [] : totals!.cards
+    if (resourceTotals.length === 0 && influenceTotals.length === 0 && cardTotals.length === 0) {
+      return null
+    }
     return (
       <div className="turn-gain-totals-group">
-        <span className="turn-gain-source-title turn-gain-source-title--totals">Total</span>
+        {revealPooledTotals ? null : (
+          <span className="turn-gain-source-title turn-gain-source-title--totals">Total</span>
+        )}
         <div className="turn-gain-totals-row">
-          {totals!.resources.map(renderTotalResource)}
-          {totals!.influence.map(renderTotalInfluence)}
-          {renderTotalCards(totals!.cards)}
+          {resourceTotals.map(renderTotalResource)}
+          {influenceTotals.map(renderTotalInfluence)}
+          {renderTotalCards(cardTotals)}
         </div>
       </div>
     )
@@ -671,8 +691,11 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     <div
       className={[
         'turn-gains-display-root',
-        showTotals || totalsOnly ? 'turn-gains-display-root--with-totals' : '',
+        showTotals || totalsOnly || (revealPooledTotals && hasTotals)
+          ? 'turn-gains-display-root--with-totals'
+          : '',
         totalsOnly ? 'turn-gains-display-root--totals-only' : '',
+        revealPooledTotals ? 'turn-gains-display-root--reveal-pooled' : '',
         className,
       ]
         .filter(Boolean)
@@ -704,7 +727,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
               .filter(Boolean)
               .join(' ')}
           >
-            {showSourceTitles && groupTitle && !isInlineDiscards
+            {(showSourceTitles || revealPooledTotals) && groupTitle && !isInlineDiscards
               ? renderSourceGroupTitle(group, groupTitle)
               : null}
             <div

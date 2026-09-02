@@ -10,6 +10,8 @@ import {
   aggregateInfluenceGains,
   computeTurnGainTotals,
   discardedOrTrashedCardLabel,
+  encodeEffectCardGainName,
+  sourceTitleFromEffectCardGainName,
   freighterMoveSourceTitle,
   freighterRecallStepOrdinal,
   resolveFreighterMoveGroupTitle,
@@ -27,6 +29,8 @@ import {
   groupCombatHistoryGainsByPlayer,
   excludeAcquiredGainsFromDisplay,
   getGainGroupIcon,
+  isRevealPooledRewardType,
+  splitRevealPooledGains,
 } from '../turnGainsDisplay'
 
 describe('turnGainsDisplay', () => {
@@ -164,6 +168,62 @@ describe('turnGainsDisplay', () => {
       name: 'Dune, the Desert Planet',
       cardId: duneId,
     })
+  })
+
+  it('titles encoded trash by the source even when sourceId is the trashed card', () => {
+    const daggerId = 3
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: daggerId,
+        cardId: daggerId,
+        round: 1,
+        name: encodeEffectCardGainName('Sietch Reverend Mother', 'Dagger'),
+        amount: -1,
+        type: RewardType.TRASH,
+      },
+    ]
+
+    const groups = groupGainsBySource(gains)
+    expect(groups[0].title).toBe('Sietch Reverend Mother')
+    expect(sourceTitleFromEffectCardGainName(gains[0].name)).toBe('Sietch Reverend Mother')
+    expect(discardedOrTrashedCardLabel(gains[0])).toBe('Dagger')
+  })
+
+  it('titles encoded intrigue trash by the intrigue, not the trashed card', () => {
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.INTRIGUE,
+        sourceId: 0,
+        cardId: 3,
+        round: 1,
+        name: encodeEffectCardGainName('Cull', 'Dagger'),
+        amount: -1,
+        type: RewardType.TRASH,
+      },
+    ])
+    expect(groups[0].title).toBe('Cull')
+    expect(discardedOrTrashedCardLabel(groups[0].gains[0])).toBe('Dagger')
+    expect(discardedOrTrashedCardLabel({ name: 'Cull|Dagger' })).toBe('Dagger')
+  })
+
+  it('titles encoded leader trash by the ability, not the trashed card', () => {
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.LEADER_ABILITY,
+        sourceId: 0,
+        cardId: 3,
+        round: 1,
+        name: encodeEffectCardGainName("Houses' Confidence", 'Dagger'),
+        amount: -1,
+        type: RewardType.TRASH,
+      },
+    ])
+    expect(groups[0].title).toBe("Houses' Confidence")
+    expect(discardedOrTrashedCardLabel(groups[0].gains[0])).toBe('Dagger')
   })
 
   it('titles board-space trash by the space and thumbnails the trashed card', () => {
@@ -1260,6 +1320,52 @@ describe('turnGainsDisplay', () => {
     ] as Parameters<typeof groupCombatHistoryGainsByPlayer>[0]
 
     expect(groupCombatHistoryGainsByPlayer(gains).map(g => g.playerId)).toEqual([0, 1, 2])
+  })
+
+  it('splitRevealPooledGains keeps persuasion and swords as totals, spice as a named card', () => {
+    const persuasion = {
+      playerId: 0,
+      source: GainSource.CARD,
+      sourceId: 1,
+      round: 1,
+      name: 'Convincing Argument',
+      amount: 2,
+      type: RewardType.PERSUASION,
+    }
+    const swords = {
+      playerId: 0,
+      source: GainSource.CARD,
+      sourceId: 2,
+      round: 1,
+      name: 'Bene Gesserit Initiate',
+      amount: 1,
+      type: RewardType.COMBAT,
+    }
+    const spice = {
+      playerId: 0,
+      source: GainSource.CARD,
+      sourceId: 3,
+      round: 1,
+      name: "Smuggler's Thopter",
+      amount: 1,
+      type: RewardType.SPICE,
+    }
+
+    expect(isRevealPooledRewardType(RewardType.PERSUASION)).toBe(true)
+    expect(isRevealPooledRewardType(RewardType.COMBAT)).toBe(true)
+    expect(isRevealPooledRewardType(RewardType.SPICE)).toBe(false)
+
+    const { pooled, specifics } = splitRevealPooledGains([persuasion, swords, spice])
+    expect(pooled.map(g => g.type)).toEqual([RewardType.PERSUASION, RewardType.COMBAT])
+    expect(specifics).toEqual([spice])
+
+    const totals = computeTurnGainTotals(pooled)
+    expect(totals.resources.find(r => r.type === RewardType.PERSUASION)?.net).toBe(2)
+    expect(totals.resources.find(r => r.type === RewardType.COMBAT)?.net).toBe(1)
+
+    const groups = groupGainsBySource(specifics)
+    expect(groups).toHaveLength(1)
+    expect(groups[0].title).toBe("Smuggler's Thopter")
   })
 
   it('groupGainsBySource merges conflict spice and influence under placement title', () => {

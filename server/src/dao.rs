@@ -127,6 +127,9 @@ SELECT id, owner_id, name, json, updated_at, created_at FROM games
     Ok(Json(game.json))
 }
 
+// Debounce ~300–1000ms so undo/spam clicks don’t fire a write each time.
+// Compact JSON in prod, not pretty-print.
+
 
 // pub async fn save_user(user: &str, hash: &str) -> anyhow::Result<()> {
 //     // validate user/hash

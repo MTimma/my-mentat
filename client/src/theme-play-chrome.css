@@ -12,6 +12,10 @@
   --chrome-acquire-glow: rgba(95, 170, 220, 0.42);
   --chrome-acquire-hover-border: #9bd3ff;
   --chrome-acquire-hover-glow: rgba(95, 170, 220, 0.5);
+  /* Selectable targets (spaces, pending cards, default influence). Always gold — not chrome accent. */
+  --play-target-highlight: #ffd700;
+  --play-target-highlight-glow: rgba(255, 215, 0, 0.55);
+  --play-target-highlight-fill: rgba(255, 215, 0, 0.15);
 }
 
 :root,

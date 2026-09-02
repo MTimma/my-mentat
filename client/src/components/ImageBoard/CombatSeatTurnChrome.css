@@ -466,10 +466,25 @@
   display: none;
 }
 
-/* Totals hidden for now — keep markup/CSS; do not delete. */
+.combat-area-cluster--row
+  .birdseye-seat-gains
+  .turn-gains-display-root--reveal-pooled
+  .turn-gain-source-title:not(.turn-gain-source-title--totals) {
+  display: inline-flex;
+  font-size: 0.58rem;
+  line-height: 1.15;
+  max-width: 100%;
+}
+
+/* Totals hidden except reveal-pooled persuasion + swords. */
 .combat-area-cluster--row .birdseye-seat-gains .turn-gain-totals-group,
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-totals-group {
   display: none !important;
+}
+
+.combat-area-cluster--row .birdseye-seat-gains .turn-gains-display-root--reveal-pooled .turn-gain-totals-group,
+.combat-area-cluster--column .birdseye-seat-gains .turn-gains-display-root--reveal-pooled .turn-gain-totals-group {
+  display: flex !important;
 }
 
 .combat-area-cluster--row .birdseye-seat-gains .turn-gains-display-root,
@@ -569,8 +584,8 @@
   border-top: none;
   border-bottom: 1px solid rgba(255, 248, 232, 0.12);
   border-left: none;
-  max-height: 9rem;
   height: auto;
+  max-height: 100%;
   max-width: none;
   flex: 0 1 auto;
   min-width: 0;
@@ -583,7 +598,7 @@
 }
 
 .combat-area-cluster--column .birdseye-seat-gains__scroll {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -743,6 +758,16 @@
   flex-wrap: wrap;
   gap: 0.35rem 0.5rem;
   padding: 0.28rem 0.32rem;
+}
+
+.combat-area-cluster--column
+  .birdseye-seat-gains
+  .turn-gains-display-root--reveal-pooled
+  .turn-gain-totals-row {
+  padding: 0.1rem 0.22rem 0.12rem;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 248, 232, 0.14);
+  background: rgba(10, 9, 8, 0.72);
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-total-amt {
@@ -909,15 +934,25 @@
   grid-row: 1;
   min-width: 0;
   min-height: 0;
-  height: max-content;
-  align-self: start;
+  height: 100%;
+  align-self: stretch;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.55);
 }
 
-.combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat-leader {
+/* Portrait-only row so all four faces stay aligned. Buttons live under that column's cards. */
+.combat-area-cluster--column .combat-area-cluster__seat-leader-stack {
   grid-row: 2;
-  align-self: end;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
 }
 
 .combat-area-cluster--column .combat-area-cluster__seat-meta {
@@ -967,19 +1002,25 @@
   color: #fff8e8;
 }
 
-/* Play / Reveal / pending sit in-flow under the portrait. */
+/* Same bottom-to-top stack as the old gains slot: Play nearest the bottom of the column. */
 .combat-area-cluster--column .birdseye-seat__controls-row {
   position: static;
   z-index: 4;
+  flex: 0 0 auto;
+  flex-direction: column-reverse;
   width: 100%;
+  max-height: min(42%, 14rem);
+  min-height: 0;
   margin: 0;
-  padding: 0.18rem 0.2rem 0.16rem;
+  padding: 0.18rem 0.2rem 0.2rem;
   gap: 0.18rem;
   align-items: stretch;
   flex-wrap: nowrap;
+  overflow: auto;
   transform: none;
   background: rgba(0, 0, 0, 0.28);
   border-top: 1px solid rgba(255, 248, 232, 0.12);
+  border-bottom: none;
   box-sizing: border-box;
 }
 
@@ -997,6 +1038,13 @@
   box-shadow: none;
 }
 
+.combat-area-cluster--column .birdseye-seat__controls-row .birdseye-seat__interactions:empty {
+  display: none;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
 .combat-area-cluster--column .birdseye-seat__controls-row .birdseye-interactions-strip {
   width: 100%;
   max-height: none;
@@ -1006,6 +1054,7 @@
 }
 
 .combat-area-cluster--column .birdseye-seat__controls-stack {
+  flex-direction: column-reverse;
   background: transparent;
   border: none;
   border-radius: 0;
@@ -1013,6 +1062,13 @@
   padding: 0;
   gap: 0.14rem;
   overflow: visible;
+}
+
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat__utils {
+  padding-top: 0;
+  border-top: none;
+  padding-bottom: 0.18rem;
+  border-bottom: 1px solid rgba(255, 248, 232, 0.28);
 }
 
 .combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn {
@@ -1175,6 +1231,17 @@
 
 .combat-area-cluster--column .birdseye-seat-play-area__card:last-child {
   z-index: 2;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card.turn-card-frame--has-effects {
+  overflow: visible;
+  z-index: 8;
+  box-shadow: var(--pending-ring);
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card.turn-card-frame--has-effects img {
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--pending-accent) 82%, white);
 }
 
 .combat-area-cluster--column .birdseye-seat-play-area__card img {
@@ -1462,10 +1529,11 @@
 
 .combat-area-cluster--column.combat-area-cluster--birdseye {
   --birdseye-desktop-face-height: clamp(4.5rem, 9vmin, 6rem);
+  --birdseye-gains-slot-height: 9rem;
   position: relative;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-template-rows: max-content minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: var(--birdseye-gains-slot-height) var(--birdseye-desktop-face-height) minmax(0, 1fr);
   align-items: stretch;
   flex: 1 1 auto;
   min-height: 0;
@@ -1477,92 +1545,221 @@
 .combat-area-cluster--column.combat-area-cluster--play-horizontal {
   flex: 1 1 auto;
   min-height: 0;
-  grid-template-rows: max-content minmax(0, 1fr) max-content;
+  grid-template-rows:
+    minmax(0, var(--birdseye-gains-slot-height))
+    var(--birdseye-desktop-face-height)
+    minmax(0, 1fr);
+}
+
+.combat-area-cluster-stack--column.combat-area-cluster-stack--play-horizontal {
+  overflow: hidden;
+}
+
+.combat-area-cluster-stack--play-horizontal .combat-area-cluster--column .combat-area-cluster__seat-gains-slot {
+  height: auto;
+  max-height: var(--birdseye-gains-slot-height);
 }
 
 .combat-area-cluster-stack--play-horizontal .combat-area-cluster--column .combat-area-cluster__seat-meta {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
-.combat-area-cluster-stack--column > .birdseye-seat-play-area--horizontal {
+.combat-area-cluster-stack--play-horizontal .combat-area-cluster--column .combat-area-cluster__quadrant {
+  padding: 0;
+}
+
+.combat-area-cluster-stack--play-horizontal .combat-area-cluster--column .combat-area-cluster__leader,
+.combat-area-cluster-stack--play-horizontal .combat-area-cluster--column .combat-area-cluster__seat-chrome {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.combat-area-cluster-stack--play-horizontal > .birdseye-turn-history {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  flex: 0 0 auto;
-  height: clamp(7.2rem, 18vh, 10.5rem);
-  max-height: 10.5rem;
-  min-height: 6.5rem;
+  flex: 0 1 auto;
+  height: auto;
+  max-height: min(15.1rem, 50%);
+  min-height: 0;
   min-width: 0;
-  overflow: hidden;
-  padding: 0.2rem 0.28rem 0.28rem;
-  border-top: 1px solid rgba(255, 248, 232, 0.16);
-  background: rgba(12, 10, 6, 0.55);
-  box-sizing: border-box;
   pointer-events: auto;
+  border-bottom: 1px solid rgba(255, 248, 232, 0.16);
+  background: rgba(8, 7, 6, 0.55);
 }
 
-.combat-area-cluster-stack--column > .birdseye-seat-play-area--horizontal .birdseye-seat-play-area__well {
+.birdseye-turn-history {
+  font-family: var(--font-log);
+  font-variant-numeric: tabular-nums;
+  color: var(--chrome-text, #fff8e8);
+}
+
+.birdseye-turn-history__header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  gap: 0.35rem;
+  padding: 0.18rem 0.35rem;
+  border-bottom: 1px solid rgba(255, 248, 232, 0.12);
+}
+
+.birdseye-turn-history__nav {
+  gap: 3px;
+}
+
+.birdseye-turn-history__nav .turn-history-nav-btn {
+  width: 24px;
+  height: 24px;
+}
+
+.birdseye-turn-history__nav .turn-history-nav-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.birdseye-turn-history__scroll {
   flex: 1 1 auto;
-  min-height: 3.6rem;
-  border: 1px dashed rgba(255, 248, 232, 0.12);
-  border-radius: 4px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  overflow-anchor: none;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 177, 106, 0.4) transparent;
+}
+
+.birdseye-turn-history__round {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.birdseye-turn-history__banner {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.22rem 0.4rem;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 248, 232, 0.1);
+  background: rgba(255, 248, 232, 0.05);
+  color: var(--chrome-text-muted, #d4c4a8);
+  font: inherit;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+}
+
+.birdseye-turn-history__banner--viewing {
+  background: var(--chrome-accent-muted, rgba(212, 177, 106, 0.22));
+  color: var(--chrome-text-strong, #fff8e8);
+}
+
+.birdseye-turn-history__row {
+  display: grid;
+  grid-template-columns: repeat(var(--birdseye-history-cols, 4), minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.birdseye-turn-history__row:nth-child(even) .birdseye-turn-history__cell:not(.birdseye-turn-history__cell--viewing) {
   background: rgba(255, 248, 232, 0.03);
 }
 
-.combat-area-cluster-stack--column > .birdseye-seat-play-area--horizontal .birdseye-seat-play-area__cards {
+.birdseye-turn-history__cell-wrap {
+  min-width: 0;
+}
+
+.birdseye-turn-history__cell {
   display: flex;
-  flex-direction: row;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: flex-start;
   justify-content: center;
-  flex: 1 1 auto;
-  min-height: 0;
-  height: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212, 177, 106, 0.4) transparent;
-  padding: 0.1rem 0.2rem 0.12rem;
-  isolation: isolate;
-}
-
-.combat-area-cluster-stack--column > .birdseye-seat-play-area--horizontal .birdseye-seat-play-area__card {
-  position: relative;
-  height: 100%;
-  width: auto;
-  max-height: 100%;
-  max-width: none;
-  aspect-ratio: 5 / 7;
-  margin-top: 0;
-  margin-left: -1.15rem;
-  flex: 0 0 auto;
-  border-radius: 4px;
-  overflow: hidden;
-  background: #0f0d0a;
-  box-shadow:
-    0 0 0 1px rgba(255, 248, 232, 0.18),
-    0 3px 8px rgba(0, 0, 0, 0.45);
-  z-index: 1;
-}
-
-.combat-area-cluster-stack--column
-  > .birdseye-seat-play-area--horizontal
-  .birdseye-seat-play-area__card:first-child {
-  margin-left: 0;
-}
-
-.combat-area-cluster-stack--column
-  > .birdseye-seat-play-area--horizontal
-  .birdseye-seat-play-area__card:last-child {
-  z-index: 2;
-}
-
-.combat-area-cluster-stack--column > .birdseye-seat-play-area--horizontal .birdseye-seat-play-area__card img {
-  display: block;
+  gap: 0.04rem;
+  box-sizing: border-box;
   width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center top;
+  min-height: 1.7rem;
+  margin: 0;
+  padding: 0.16rem 0.32rem 0.18rem;
+  border: 0;
+  border-right: 1px solid rgba(255, 248, 232, 0.08);
+  border-bottom: 1px solid rgba(255, 248, 232, 0.06);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.68rem;
+  line-height: 1.15;
+  text-align: left;
+  cursor: pointer;
+}
+
+.birdseye-turn-history__cell--empty {
+  min-height: 1.7rem;
+  border-right: 1px solid rgba(255, 248, 232, 0.08);
+  border-bottom: 1px solid rgba(255, 248, 232, 0.06);
+}
+
+.birdseye-turn-history__cell-wrap:last-child .birdseye-turn-history__cell,
+.birdseye-turn-history__row > .birdseye-turn-history__cell--empty:last-child {
+  border-right: none;
+}
+
+.birdseye-turn-history__cell:hover {
+  background: var(--chrome-accent-muted, rgba(212, 177, 106, 0.16));
+}
+
+.birdseye-turn-history__cell--viewing {
+  background: rgba(255, 215, 0, 0.28);
+  outline: 1px solid rgba(255, 215, 0, 0.55);
+  outline-offset: -1px;
+  color: var(--chrome-text-strong, #fff8e8);
+}
+
+.birdseye-turn-history__cell--live:not(.birdseye-turn-history__cell--viewing) {
+  outline: 1px dashed rgba(255, 248, 232, 0.22);
+  outline-offset: -1px;
+}
+
+.birdseye-turn-history__played,
+.birdseye-turn-history__action {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.birdseye-turn-history__played {
+  font-weight: 650;
+}
+
+.birdseye-turn-history__action {
+  color: var(--chrome-text-muted, #d4c4a8);
+  font-size: 0.6rem;
+}
+
+.birdseye-turn-history__cell--viewing .birdseye-turn-history__action,
+.birdseye-turn-history__cell--reveal .birdseye-turn-history__action {
+  color: inherit;
+}
+
+.birdseye-turn-history__cell--red {
+  box-shadow: inset 2px 0 0 rgba(196, 62, 62, 0.85);
+}
+
+.birdseye-turn-history__cell--green {
+  box-shadow: inset 2px 0 0 rgba(62, 140, 78, 0.85);
+}
+
+.birdseye-turn-history__cell--yellow {
+  box-shadow: inset 2px 0 0 rgba(196, 164, 62, 0.85);
+}
+
+.birdseye-turn-history__cell--blue {
+  box-shadow: inset 2px 0 0 rgba(62, 102, 180, 0.85);
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat--birdseye {

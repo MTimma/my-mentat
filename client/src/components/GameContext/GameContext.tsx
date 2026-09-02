@@ -140,6 +140,7 @@ import {
 } from '../../utils/influenceChoices'
 import { isSoleTrashThisCardReward } from '../../utils/pendingRewardAutoApply'
 import { conflictInfluenceGainName, influenceGainName } from '../../utils/influenceDisplay'
+import { encodeEffectCardGainName } from '../../utils/turnGainsDisplay'
 import {
   applyDistinctChoiceExclusion,
   applyDistinctFactionExclusion,
@@ -1280,15 +1281,16 @@ function makeTrashGain(
   state: GameState,
   playerId: number,
   trashedCard: Card,
-  source: { type: GainSource; id: number },
+  source: { type: GainSource; id: number; name?: string },
   options?: { displayName?: string }
 ): Gain {
+  const removedName = options?.displayName ?? trashedCard.name
   return {
     round: state.currentRound,
     playerId,
     sourceId: source.id,
     cardId: trashedCard.id,
-    name: options?.displayName ?? trashedCard.name,
+    name: encodeEffectCardGainName(source.name, removedName),
     amount: -1,
     type: RewardType.TRASH,
     source: source.type,
@@ -1303,12 +1305,13 @@ function makeDiscardGain(
   source: { type: GainSource; id: number; name?: string },
   options?: { displayName?: string }
 ): Gain {
+  const removedName = options?.displayName ?? discardedCard.name
   return {
     round: state.currentRound,
     playerId,
     sourceId: source.id,
     cardId: discardedCard.id,
-    name: options?.displayName ?? discardedCard.name,
+    name: encodeEffectCardGainName(source.name, removedName),
     amount: -1,
     type: RewardType.DISCARD,
     source: source.type,
@@ -5986,7 +5989,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 const removed = mutablePlayArea.splice(ix, 1)[0]
                 mutableTrash.push(removed)
                 updatedGains.push(
-                  makeTrashGain(state, playerId, removed, { type: GainSource.CARD, id: card.id })
+                  makeTrashGain(state, playerId, removed, {
+                    type: GainSource.CARD,
+                    id: card.id,
+                    name: card.name,
+                  })
                 )
               }
             }
@@ -6907,16 +6914,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
 
         const deck = player.deck.filter((_, idx) => idx !== topIdx)
-        gains.push({
-          round: state.currentRound,
-          playerId,
-          sourceId: intrigueSource.id,
-          cardId: topCard.id,
-          name: topCard.name,
-          amount: -1,
-          type: RewardType.TRASH,
-          source: intrigueSource.type,
-        })
+        gains.push(makeTrashGain(state, playerId, topCard, intrigueSource))
         const after = {
           ...state,
           gains,
@@ -7709,6 +7707,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             makeTrashGain(state, playerId, trashed, {
               type: GainSource.INTRIGUE,
               id: sourceCardId,
+              name: 'Cull',
             }),
           ]
           const afterCull: GameState = {
@@ -7764,17 +7763,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           const drawn = drawResult.drawn
 
           const gains = [...state.gains]
+          const ixianSource = { type: GainSource.INTRIGUE, id: sourceCardId, name: 'Ixian Probe' }
           for (const card of discardedCards) {
-            gains.push({
-              round: state.currentRound,
-              playerId,
-              sourceId: sourceCardId,
-              cardId: card.id,
-              name: card.name,
-              amount: -1,
-              type: RewardType.DISCARD,
-              source: GainSource.INTRIGUE,
-            })
+            gains.push(makeDiscardGain(state, playerId, card, ixianSource))
           }
           if (drawn > 0) {
             gains.push({
@@ -8002,6 +7993,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         makeTrashGain(state, playerId, card, {
           type: trashGainSource.type,
           id: trashGainSource.id,
+          name: trashGainSource.name,
         }),
       ]
       
@@ -9404,10 +9396,11 @@ function getEffectChoice(currPlayer: Player, card: Card, effect: PlayEffect, exi
       prompt: 'Choose a card to trash',
       piles: [CardPile.DECK, CardPile.DISCARD],
       selectionCount: 1,
-      onResolve: (cardIds: number[]) => ({ 
+      onResolve: (cardIds: number[]) => ({
         type: 'TRASH_CARD',
         playerId: currPlayer.id,
-        cardId: cardIds[0]
+        cardId: cardIds[0],
+        source: { type: GainSource.CARD, id: card.id, name: card.name },
       }),
       source: { type: GainSource.CARD, id: card.id, name: card.name }
     }

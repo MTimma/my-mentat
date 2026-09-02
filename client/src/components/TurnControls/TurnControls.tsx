@@ -44,6 +44,7 @@ import {
   getOpponentDiscardableCards,
   getSelectableDeckCards,
   getDiscardCostPlayability,
+  playAreaCardIdsWithPendingEffectChoice,
 } from '../../utils/playAreaDisplay'
 import {
   getAnyFactionInfluenceGainIcon,
@@ -2589,7 +2590,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
 
   const renderTurnCard = (card: Card, mode: 'played' | 'revealed', effectCards: EffectCard[]) => {
     const effectCard = effectCards.find(entry => entry.source.type === GainSource.CARD && entry.source.id === card.id)
-    const shouldHighlightPending = effectCardHasPendingInput(effectCard)
+    const shouldHighlightPending =
+      effectCardHasPendingInput(effectCard) ||
+      playAreaCardIdsWithPendingEffectChoice(gameState, { isHistoryView }).has(card.id)
     const isRevealed = mode === 'revealed'
     const overlayChoicePlacements =
       effectCard && isRevealed

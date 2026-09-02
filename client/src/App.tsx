@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import './App.css'
 import './styles/modal.css'
 import './styles/playBoardModal.css'
@@ -20,6 +20,10 @@ import { isSoleTrashThisCardReward } from './utils/pendingRewardAutoApply'
 import { isKwisatzHaderachCard, canPlaceAgentOnBoard, isKwisatzSourceChoicePending, isKwisatzRecallMode, isAgentPlacementPending } from './utils/kwisatzHaderach'
 import TurnControls, { type TurnControlsHandle } from './components/TurnControls/TurnControls'
 import type { BirdseyeSeatActions } from './components/ImageBoard/CombatSeatTurnChrome'
+import {
+  readDesktopPlayAreaLayout,
+  type DesktopPlayAreaLayout,
+} from './components/ImageBoard/CombatAreaCluster'
 import PlayFooterToolbar from './components/PlayFooterToolbar/PlayFooterToolbar'
 import RetreatTroopControls from './components/RetreatTroopControls/RetreatTroopControls'
 import { getEffectRetreatRemaining } from './utils/turnGainsDisplay'
@@ -153,6 +157,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     () =>
       typeof window !== 'undefined' &&
       window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
+  )
+  const [desktopPlayAreaLayout, setDesktopPlayAreaLayout] = useState<DesktopPlayAreaLayout>(
+    readDesktopPlayAreaLayout
   )
   const [isPlayerOverviewOpen, setIsPlayerOverviewOpen] = useState(false)
   const [voiceSelectionRewardId, setVoiceSelectionRewardId] = useState<string | null>(null)
@@ -1484,6 +1491,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     gameState.expansions?.riseOfIx,
     gameState.sandboxSetup,
     isDockedHistoryLayout,
+    desktopPlayAreaLayout,
     useImageBoard,
   ])
 
@@ -1506,7 +1514,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
   // Always when image board — includes tablet 601–900 (Chrome half-window / iPad).
   const showPlayAreaDrawerToggle = useImageBoard
   const isCompactPlayOverlay = useImageBoard && !isDesktopPlayView
-  const showTurnHistoryPanel = isDockedHistoryLayout || isTurnHistoryOpen
+  const hideDockedHistory = isDesktopPlayView && desktopPlayAreaLayout === 'horizontal'
+  const showTurnHistoryPanel =
+    (isDockedHistoryLayout || isTurnHistoryOpen) && !hideDockedHistory
 
   const birdseyeMode = useMemo<'mobile3b' | 'desktop6' | null>(() => {
     if (!useImageBoard || gameState.sandboxSetup) return null
@@ -1667,7 +1677,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
 
 
   const renderImageBoard = useCallback(
-    () =>
+    (imperiumRowSlot?: ReactNode) =>
       useImageBoard ? (
         <ImageBoard
           currentPlayer={displayState.currTurn?.playerId ?? displayState.activePlayerId}
@@ -1799,6 +1809,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           birdseyeTroopsRetreated={birdseyeTroopCounts.retreated}
           birdseyeIsHistoryView={isViewingHistory}
           birdseyeInteractionsHostRef={setBirdseyeInteractionsHost}
+          imperiumRowSlot={imperiumRowSlot}
+          desktopPlayAreaLayout={desktopPlayAreaLayout}
+          onDesktopPlayAreaLayoutChange={setDesktopPlayAreaLayout}
         />
       ) : null,
     [
@@ -1835,6 +1848,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       birdseyeActions,
       birdseyeGainsByPlayer,
       birdseyeTroopCounts,
+      desktopPlayAreaLayout,
     ]
   )
 
@@ -1861,40 +1875,30 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       />
     ) : null
 
-  const turnHistoryTopSlot =
-    inSandboxSetup && isDockedHistoryLayout ? sandboxSetupControls(false) : undefined
-  const sandboxSetupMobileBar =
-    inSandboxSetup && !isDockedHistoryLayout ? (
-      <div className="sandbox-setup-mobile-bar">{sandboxSetupControls(true)}</div>
-    ) : null
-
-  return (
+  const sandboxControlsInHistoryDock =
+    inSandboxSetup && isDockedHistoryLayout && showTurnHistoryPanel
+  const turnHistoryTopSlot = sandboxControlsInHistoryDock
+    ? sandboxSetupControls(false)
+    : undefined
+  const sandboxPickerOpen =
+    sandboxImperiumOpen || sandboxTechOpen || sandboxConflictOpen || sandboxEditPlayerId !== null
+  const showSandboxFooterBar =
+    inSandboxSetup && !sandboxControlsInHistoryDock && !sandboxPickerOpen
+  const sandboxSetupBar = showSandboxFooterBar ? (
     <div
-      ref={gameContainerRef}
       className={[
-        'game-container',
-        'game-container--play',
-        isDesktopPlayView ? 'game-container--desktop-play' : '',
-        isDesktopPlayView && gameState.expansions?.immortality ? 'game-container--immortality-dock' : '',
-        birdseyeMode === 'desktop6' ? 'game-container--birdseye-desktop' : '',
-        isDockedHistoryLayout ? 'game-container--history-docked' : '',
-        isViewingHistory ? 'viewing-history' : '',
-        isPlayChromeHeld ? 'play-chrome-held' : '',
-        showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen ? 'play-area-collapsed' : '',
-        showPlayAreaDrawerToggle ? 'play-footer-overlay' : '',
-        isDesktopPlayView && showPlayAreaDrawerToggle ? 'play-footer-overlay--desktop' : '',
+        'sandbox-setup-mobile-bar',
+        isDesktopPlayView ? 'sandbox-setup-mobile-bar--desktop' : '',
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      <PlayBoardModalProvider
-        boardContainerRef={mainAreaRef}
-        scopeModalsToBoard={isDesktopPlayView}
-      >
-      <AltImagePreviewProvider>
-      <div ref={playShellMainRef} className="play-shell-main">
-        <div className="play-board-column">
-      <div className="play-board-scroll">
+      {sandboxSetupControls(true)}
+    </div>
+  ) : null
+
+  const dockImperiumAboveBoard = isDesktopPlayView && useImageBoard
+  const imperiumRowEl = (
       <div
         ref={imperiumRowRef}
         className="imperium-row-container"
@@ -1954,6 +1958,37 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           ) : null}
         </div>
       </div>
+  )
+
+  return (
+    <div
+      ref={gameContainerRef}
+      className={[
+        'game-container',
+        'game-container--play',
+        isDesktopPlayView ? 'game-container--desktop-play' : '',
+        isDesktopPlayView && gameState.expansions?.immortality ? 'game-container--immortality-dock' : '',
+        birdseyeMode === 'desktop6' ? 'game-container--birdseye-desktop' : '',
+        isDockedHistoryLayout ? 'game-container--history-docked' : '',
+        hideDockedHistory ? 'game-container--history-panel-hidden' : '',
+        isViewingHistory ? 'viewing-history' : '',
+        isPlayChromeHeld ? 'play-chrome-held' : '',
+        showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen ? 'play-area-collapsed' : '',
+        showPlayAreaDrawerToggle ? 'play-footer-overlay' : '',
+        isDesktopPlayView && showPlayAreaDrawerToggle ? 'play-footer-overlay--desktop' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <PlayBoardModalProvider
+        boardContainerRef={mainAreaRef}
+        scopeModalsToBoard={isDesktopPlayView}
+      >
+      <AltImagePreviewProvider>
+      <div ref={playShellMainRef} className="play-shell-main">
+        <div className="play-board-column">
+      <div className="play-board-scroll">
+      {!dockImperiumAboveBoard ? imperiumRowEl : null}
       <div
         ref={playShellBoardRowRef}
         className={[
@@ -2003,7 +2038,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
             onRevealIntrigue={handleRevealEndgameIntrigue}
           />
           {useImageBoard ? (
-            renderImageBoard()
+            renderImageBoard(dockImperiumAboveBoard ? imperiumRowEl : undefined)
           ) : (
             <GameBoard
               currentPlayer={displayState.activePlayerId}
@@ -2227,9 +2262,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
             .filter(Boolean)
             .join(' ')}
           hidden={
-            !gameState.sandboxSetup &&
-            turnControlsState.phase !== GamePhase.PLAYER_TURNS &&
-            turnControlsState.phase !== GamePhase.COMBAT
+            inSandboxSetup ||
+            (turnControlsState.phase !== GamePhase.PLAYER_TURNS &&
+              turnControlsState.phase !== GamePhase.COMBAT)
           }
           inert={showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen ? true : undefined}
           aria-hidden={showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen}
@@ -2321,8 +2356,8 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
             </div>
           </div>
         </div>
-      {sandboxSetupMobileBar}
-      {isCompactPlayOverlay && showPlayAreaDrawerToggle && (
+      {!isDesktopPlayView ? sandboxSetupBar : null}
+      {isCompactPlayOverlay && showPlayAreaDrawerToggle && !inSandboxSetup && (
         <button
           type="button"
           className={[
@@ -2461,7 +2496,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         </div>
       </div>
       </div>
-      {isDesktopPlayView && showPlayAreaDrawerToggle && (
+      {isDesktopPlayView && showPlayAreaDrawerToggle && !inSandboxSetup && (
         <button
           type="button"
           className={[
@@ -2479,6 +2514,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           {isPlayAreaDrawerOpen ? '▾ Play area' : '▴ Play area'}
         </button>
       )}
+      {isDesktopPlayView ? sandboxSetupBar : null}
       </div>
       </div>
       {showTurnHistoryPanel && !isDockedHistoryLayout && (

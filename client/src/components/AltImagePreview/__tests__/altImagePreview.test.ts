@@ -8,7 +8,22 @@ describe('Alt / Option card zoom', () => {
   const css = readFileSync(resolve(root, 'components/AltImagePreview/AltImagePreview.css'), 'utf8')
 
   it('treats Alt (Windows/Linux) and Option (Mac) as the zoom modifier', () => {
-    expect(tsx).toContain("event.key === 'Alt' || event.altKey")
+    expect(tsx).toContain("event.key !== 'Alt' && !event.altKey")
+  })
+
+  it('zooms gains as a full-content clone, not a scaled compact chip', () => {
+    expect(tsx).toContain("kind: 'gains'")
+    expect(tsx).toContain('findGainZoomTarget')
+    expect(tsx).toContain('alt-gain-preview')
+    expect(css).toContain('.alt-gain-preview .turn-gain-source-title')
+    expect(css).toContain('-webkit-line-clamp: unset')
+    expect(css).not.toContain('transform: scale(1.55)')
+  })
+
+  it('pins the gains zoom just above the chip, not offset below the cursor', () => {
+    expect(tsx).toContain('gainsPreviewPanelStyle')
+    expect(tsx).toContain("transform: 'translate(-50%, -100%)'")
+    expect(tsx).toContain('anchorTop')
   })
 
   it('shows a large card preview, not the old 400px cap', () => {
@@ -19,5 +34,12 @@ describe('Alt / Option card zoom', () => {
 
   it('includes seat play-area cards in the hover hit targets', () => {
     expect(tsx).toContain("'.birdseye-seat-play-area__card'")
+  })
+
+  it('zooms on Alt / Option keydown without requiring a mouse move', () => {
+    expect(tsx).toContain('pointerRef')
+    expect(tsx).toContain('document.elementFromPoint')
+    expect(tsx).toContain('if (event.repeat) return')
+    expect(tsx).toContain('applyPreview(x, y, document.elementFromPoint(x, y), true)')
   })
 })

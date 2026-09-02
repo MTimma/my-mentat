@@ -2104,6 +2104,10 @@ body:has(.game-container--play) {
     min-height: 0;
   }
 
+  .game-container--play.play-footer-overlay .play-area-drawer--open .turn-card-frame--has-effects {
+    overflow: visible;
+  }
+
   .game-container--play.play-footer-overlay .play-area-drawer--closed .play-area-drawer__inner {
     display: none !important;
     max-height: 0 !important;
@@ -2934,11 +2938,19 @@ body:has(.game-container--play) {
   );
 }
 
+.game-container--history-docked.game-container--history-panel-hidden .desktop-play-drawer-toggle {
+  right: max(0.75rem, env(safe-area-inset-right, 0px));
+}
+
 @media (min-width: 901px) {
   :root {
     --play-footer-reserved-height: clamp(84px, 14vh, 148px);
     /* Desktop Turn History: ~30% wider than the 180px mobile/tablet default. */
     --play-history-sidebar-min-width: 234px;
+  }
+
+  .game-container--history-docked.game-container--history-panel-hidden .play-board-column {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .game-container--play.play-footer-overlay--desktop {

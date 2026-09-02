@@ -29,6 +29,7 @@ import { countSpiceMustFlowCards } from '../../utils/spiceMustFlow'
 import { getDreadnoughtsInConflict } from '../../utils/dreadnoughts'
 import { createGainInfluenceChoice } from '../../utils/influenceChoices'
 import { collectLiveIds, nextSemanticId } from '../../utils/semanticIds'
+import { encodeEffectCardGainName } from '../../utils/turnGainsDisplay'
 import { effectiveTechCost, playerOwnsTile, techTilesAvailableForNextReveal, tileById, tilesActivatableNow, techTileIdFromDiscardPrompt } from '../../utils/techTiles'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { updateFactionInfluence } from '../../utils/influenceVictoryPoints'
@@ -1227,7 +1228,7 @@ function discardFromHand(
     playerId,
     sourceId: tileId ? techTileGainSourceId(tileId) : source.id,
     cardId: removed.id,
-    name: removed.name,
+    name: encodeEffectCardGainName(source.name, removed.name),
     amount: -1,
     type: RewardType.DISCARD,
     source: source.type,

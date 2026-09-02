@@ -1,6 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { AgentIcon, TurnType, type Card, type GameState, type Player } from '../../types/GameTypes'
-import { getOpponentDiscardableCards, getPlayAreaCardsForTurnView, getRevealedCardIdsForTurnView, getSelectableDeckCards, validateDiscardCostSelection, getDiscardCostPlayability, canPayDiscardCost, getAgentTurnCardsForDisplay } from '../playAreaDisplay'
+import {
+  AgentIcon,
+  ChoiceType,
+  CustomEffect,
+  GainSource,
+  TurnType,
+  type Card,
+  type GameState,
+  type Player,
+} from '../../types/GameTypes'
+import { getOpponentDiscardableCards, getPlayAreaCardsForTurnView, getRevealedCardIdsForTurnView, getSelectableDeckCards, validateDiscardCostSelection, getDiscardCostPlayability, canPayDiscardCost, getAgentTurnCardsForDisplay, playAreaCardIdsWithPendingEffectChoice, playAreaCardHasPendingEffectHighlight } from '../playAreaDisplay'
 
 function stubCard(id: number, name = `card-${id}`): Card {
   return { id, name, image: '', agentIcons: [AgentIcon.CITY] }
@@ -146,5 +155,75 @@ describe('playAreaDisplay', () => {
         player
       )
     ).toEqual([])
+  })
+
+  it('playAreaCardIdsWithPendingEffectChoice collects card sources that still need input', () => {
+    const gameState = {
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        cardId: 42,
+        pendingChoices: [
+          {
+            id: 'or-42',
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Choose',
+            options: [],
+            source: { type: GainSource.CARD, id: 42, name: 'Spy' },
+          },
+          {
+            id: 'disabled-7',
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Skip',
+            disabled: true,
+            options: [],
+            source: { type: GainSource.CARD, id: 7, name: 'Disabled' },
+          },
+          {
+            id: 'board',
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Board',
+            options: [],
+            source: { type: GainSource.BOARD_SPACE, id: 3, name: 'Wealth' },
+          },
+        ],
+        optionalEffects: [
+          {
+            id: 'opt-11',
+            cost: { spice: 2 },
+            reward: { troops: 3 },
+            source: { type: GainSource.CARD, id: 11, name: 'Fremen Camp' },
+          },
+        ],
+      },
+      pendingRewards: [
+        {
+          id: 'voice-9',
+          source: { type: GainSource.CARD, id: 9, name: 'The Voice' },
+          reward: { custom: CustomEffect.THE_VOICE },
+          isTrash: false,
+        },
+        {
+          id: 'spice-8',
+          source: { type: GainSource.CARD, id: 8, name: 'Spice' },
+          reward: { spice: 1 },
+          isTrash: false,
+        },
+      ],
+    } as GameState
+
+    expect([...playAreaCardIdsWithPendingEffectChoice(gameState)].sort((a, b) => a - b)).toEqual([
+      9, 11, 42,
+    ])
+    expect(playAreaCardIdsWithPendingEffectChoice(gameState, { isHistoryView: true }).size).toBe(0)
+    expect(playAreaCardIdsWithPendingEffectChoice(undefined).size).toBe(0)
+  })
+
+  it('playAreaCardHasPendingEffectHighlight only rings the active seat (catalog ids are shared)', () => {
+    const pending = new Set([10])
+    expect(playAreaCardHasPendingEffectHighlight(10, pending, true)).toBe(true)
+    expect(playAreaCardHasPendingEffectHighlight(10, pending, false)).toBe(false)
+    expect(playAreaCardHasPendingEffectHighlight(11, pending, true)).toBe(false)
+    expect(playAreaCardHasPendingEffectHighlight(10, undefined, true)).toBe(false)
   })
 })

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   SpaceProps,
   AgentIcon,
@@ -73,6 +73,7 @@ import CombatAreaCluster, {
   type CombatDreadnoughtDeployProps,
   type CombatSpecimenDeployProps,
   type CombatTroopDeployProps,
+  type DesktopPlayAreaLayout,
 } from './CombatAreaCluster'
 import CombatRankStrip from './CombatRankStrip'
 import IxBoardOverlay, { type IxBoardPlacement } from './IxBoardOverlay'
@@ -156,6 +157,10 @@ interface ImageBoardProps {
   birdseyeTroopsRetreated?: number
   birdseyeIsHistoryView?: boolean
   birdseyeInteractionsHostRef?: (el: HTMLDivElement | null) => void
+  /** Desktop: Imperium row sits above the board, board-width only. */
+  imperiumRowSlot?: ReactNode
+  desktopPlayAreaLayout?: DesktopPlayAreaLayout
+  onDesktopPlayAreaLayoutChange?: (layout: DesktopPlayAreaLayout) => void
 }
 
 const FACTIONS: FactionType[] = [
@@ -226,6 +231,9 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   birdseyeTroopsRetreated = 0,
   birdseyeIsHistoryView = false,
   birdseyeInteractionsHostRef,
+  imperiumRowSlot,
+  desktopPlayAreaLayout,
+  onDesktopPlayAreaLayoutChange,
 }) => {
   const boardMediaRef = useRef<HTMLDivElement>(null)
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
@@ -470,6 +478,8 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         troopDeploy={troopDeploy}
         dreadnoughtDeploy={dreadnoughtDeploy}
         specimenDeploy={specimenDeploy}
+        desktopPlayAreaLayout={desktopPlayAreaLayout}
+        onDesktopPlayAreaLayoutChange={onDesktopPlayAreaLayoutChange}
         className={[
           'image-board__combat-area-cluster',
           combatAreaBelow ? 'image-board__combat-area-cluster--below' : '',
@@ -1348,7 +1358,12 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             .filter(Boolean)
             .join(' ')}
         >
-          {boardStage}
+          <div className="image-board__board-stack">
+            {imperiumRowSlot ? (
+              <div className="image-board__imperium-dock">{imperiumRowSlot}</div>
+            ) : null}
+            {boardStage}
+          </div>
           <aside
             className={[
               'image-board__expansion-dock-column',

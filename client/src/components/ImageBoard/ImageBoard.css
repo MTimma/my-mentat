@@ -174,6 +174,39 @@
   overflow: visible;
 }
 
+.game-container--desktop-play .image-board__board-stack {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 var(--play-board-max-edge, 72vh);
+  max-width: var(--play-board-max-edge, 72vh);
+  min-width: 0;
+  width: 100%;
+  align-self: stretch;
+}
+
+.image-board__imperium-dock {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  pointer-events: auto;
+  z-index: 3;
+}
+
+.image-board__imperium-dock .imperium-row-container {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.image-board__imperium-dock .imperium-section {
+  margin-bottom: 0;
+}
+
+.image-board__imperium-dock .imperium-card {
+  max-height: clamp(56px, 8vmin, 88px);
+}
+
 /*
  * Four leader columns sit beside the board. Grow into leftover width
  * toward Turn History so each seat is wide enough; leftover height feeds
@@ -184,6 +217,11 @@
   min-width: clamp(26rem, 40vmin, 32rem);
   width: auto;
   max-width: min(52rem, 100%);
+}
+
+.game-container--desktop-play.game-container--history-docked.game-container--history-panel-hidden
+  .image-board__expansion-dock-column {
+  max-width: none;
 }
 
 .game-container--desktop-play.game-container--birdseye-desktop:not(
@@ -220,6 +258,13 @@
   align-self: flex-start;
   /* Do not auto-margin the square stage; that opens a dead gap before the leader dock. */
   margin-inline: 0;
+}
+
+.game-container--desktop-play .image-board__board-stack .image-board__stage {
+  flex: 0 0 auto;
+  max-width: 100%;
+  width: 100%;
+  align-self: stretch;
 }
 
 .game-container--desktop-play .image-board__desktop-shell--stack-below .image-board__stage {
@@ -406,9 +451,9 @@
 }
 
 .image-board__hotspot.highlighted {
-  border-color: var(--chrome-accent);
-  box-shadow: 0 0 10px var(--chrome-accent-glow);
-  background: rgba(255, 215, 0, 0.15);
+  border-color: var(--play-target-highlight, #ffd700);
+  box-shadow: 0 0 10px var(--play-target-highlight-glow, rgba(255, 215, 0, 0.55));
+  background: var(--play-target-highlight-fill, rgba(255, 215, 0, 0.15));
 }
 
 /* After agent placement, drop placement-target chrome (incl. sticky tap hover/focus). */
@@ -493,11 +538,11 @@
 }
 
 .image-board__influence-track-highlight--active {
-  border-color: rgba(255, 215, 0, 0.95);
+  border-color: var(--play-target-highlight, #ffd700);
   box-shadow:
-    0 0 0 1px rgba(255, 215, 0, 0.35),
-    0 0 14px rgba(255, 215, 0, 0.55);
-  background: rgba(255, 215, 0, 0.12);
+    0 0 0 1px color-mix(in srgb, var(--play-target-highlight, #ffd700) 35%, transparent),
+    0 0 14px var(--play-target-highlight-glow, rgba(255, 215, 0, 0.55));
+  background: var(--play-target-highlight-fill, rgba(255, 215, 0, 0.15));
 }
 
 .image-board__influence-track-highlight--lose.image-board__influence-track-highlight--active {

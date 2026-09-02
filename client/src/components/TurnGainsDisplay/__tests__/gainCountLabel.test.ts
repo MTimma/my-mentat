@@ -23,4 +23,10 @@ describe('Gain count labels', () => {
     expect(tsx).toContain('return <span className="gain-multiplier">{absAmount}</span>')
     expect(tsx).not.toContain('×{absAmount}')
   })
+
+  it('reveal turns pool persuasion and swords, then title other effects', () => {
+    expect(tsx).toContain('revealPooledTotals')
+    expect(tsx).toContain('splitRevealPooledGains')
+    expect(tsx).not.toContain('data-preview-hover')
+  })
 })

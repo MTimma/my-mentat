@@ -11,6 +11,7 @@ import type {
   CombatSpecimenDeployProps,
   CombatTroopDeployProps,
 } from './CombatAreaCluster'
+import { playAreaCardHasPendingEffectHighlight } from '../../utils/playAreaDisplay'
 import './CombatSeatTurnChrome.css'
 
 export type BirdseyeSeatDeployProps = {
@@ -54,7 +55,7 @@ function stop(e: React.SyntheticEvent) {
   e.stopPropagation()
 }
 
-/** Host for TurnControls-ported reward/choice chips (full-width bar under End Turn + leader + gains). */
+/** Host for TurnControls-ported reward/choice chips (in the gains column above the leader). */
 export function BirdseyeInteractionsHost({
   hostRef,
 }: {
@@ -70,7 +71,7 @@ export function BirdseyeInteractionsHost({
   )
 }
 
-/** Play / Reveal or End Turn — rim strip (mobile) or under the portrait (desktop). */
+/** Play / Reveal or End Turn — rim strip (mobile) or per-column stack (desktop). */
 export function BirdseyePrimaryControls({
   actions,
   player,
@@ -348,6 +349,7 @@ export function BirdseyeSeatGains({
   troopsRetreated = 0,
   showTotals = false,
   totalsOnly = false,
+  revealPooledTotals = false,
   showSourceTitles = true,
   resolveCard,
 }: {
@@ -357,6 +359,7 @@ export function BirdseyeSeatGains({
   troopsRetreated?: number
   showTotals?: boolean
   totalsOnly?: boolean
+  revealPooledTotals?: boolean
   showSourceTitles?: boolean
   resolveCard?: (cardId: number, name: string) => Card | undefined
 }) {
@@ -384,6 +387,8 @@ export function BirdseyeSeatGains({
           showSourceTitles={showSourceTitles && !totalsOnly}
           showTotals={showTotals}
           totalsOnly={totalsOnly}
+          revealPooledTotals={revealPooledTotals}
+          omitPositiveSign={revealPooledTotals}
           inlineTrash
           resolveCard={resolveCard}
           troopsDeployedToConflict={troopsDeployed}
@@ -395,7 +400,7 @@ export function BirdseyeSeatGains({
   )
 }
 
-/** Active-seat action chrome + pending choices under the portrait. */
+/** Active-seat action chrome under that column's play-area cards. */
 export function BirdseyeDesktopControls({
   player,
   actions,
@@ -443,20 +448,24 @@ export function BirdseyeDesktopControls({
   )
 }
 
-/** Compact in-play cards. `horizontal` is the dock-width strip (active player only). */
+/** Compact in-play cards under each desktop leader seat. */
 export function BirdseyeSeatPlayArea({
   cards,
   isActive = false,
-  orientation = 'vertical',
   revealedCardIds,
+  pendingEffectCardIds,
 }: {
   cards: Card[]
   isActive?: boolean
-  orientation?: 'vertical' | 'horizontal'
   revealedCardIds?: number[]
+  pendingEffectCardIds?: ReadonlySet<number> | number[]
 }) {
   const names = cards.map(card => card.name).filter(Boolean)
   const revealedIds = new Set(revealedCardIds ?? [])
+  const pendingIds =
+    pendingEffectCardIds instanceof Set
+      ? pendingEffectCardIds
+      : new Set(pendingEffectCardIds ?? [])
   const revealedCount = cards.filter(card => revealedIds.has(card.id)).length
   let revealedOrder = 0
   return (
@@ -465,7 +474,6 @@ export function BirdseyeSeatPlayArea({
         'birdseye-seat-play-area',
         isActive ? 'birdseye-seat-play-area--active' : '',
         cards.length === 0 ? 'birdseye-seat-play-area--empty' : '',
-        orientation === 'horizontal' ? 'birdseye-seat-play-area--horizontal' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -477,6 +485,11 @@ export function BirdseyeSeatPlayArea({
         <div className="birdseye-seat-play-area__cards">
           {cards.map(card => {
             const isRevealed = revealedIds.has(card.id)
+            const hasPendingEffects = playAreaCardHasPendingEffectHighlight(
+              card.id,
+              pendingIds,
+              isActive
+            )
             const revealZ = isRevealed ? revealedCount - revealedOrder++ : undefined
             return (
               <div
@@ -484,11 +497,20 @@ export function BirdseyeSeatPlayArea({
                 className={[
                   'birdseye-seat-play-area__card',
                   isRevealed ? 'birdseye-seat-play-area__card--revealed' : '',
+                  hasPendingEffects ? 'turn-card-frame--has-effects' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                title={card.name}
-                style={revealZ != null ? { zIndex: revealZ } : undefined}
+                title={
+                  hasPendingEffects ? `Resolve pending effects for ${card.name}` : card.name
+                }
+                style={
+                  hasPendingEffects
+                    ? { zIndex: 8 }
+                    : revealZ != null
+                      ? { zIndex: revealZ }
+                      : undefined
+                }
               >
                 {card.image ? (
                   <img

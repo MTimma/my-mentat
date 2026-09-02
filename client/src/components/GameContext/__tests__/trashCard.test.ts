@@ -121,13 +121,13 @@ describe('TRASH_CARD — pile semantics', () => {
     // handCount: 2 - 1 (trashed from hand) + 1 (drawCards) = 2
     expect(p.handCount).toBe(2)
     expect(p.trash.map(c => c.id)).toEqual([hand1.id])
-    // Trash gain keeps the card name but takes the source's GainSource type.
+    // Trash gain keeps the removed card id; name encodes the effect source.
     expect(after.gains).toContainEqual(
       expect.objectContaining({
         playerId: 0,
         sourceId: SELECTIVE_BREEDING_ID,
         cardId: hand1.id,
-        name: hand1.name,
+        name: 'Selective Breeding|stub-101',
         amount: -1,
         type: RewardType.TRASH,
         source: GainSource.BOARD_SPACE,
@@ -374,6 +374,7 @@ describe('Selective Breeding — trash via board-space PAY_COST', () => {
     // handCount: 5 - 1 (played) - 1 (trashed from hand) + 1 (only one card left to draw) = 3
     expect(p.handCount).toBe(3)
     expect(p.spice).toBe(8)
-    expect(s.gains.some(g => g.type === RewardType.TRASH && g.name === trashed.name && g.cardId === trashed.id)).toBe(true)
+    expect(s.gains.some(g => g.type === RewardType.TRASH && g.cardId === trashed.id)).toBe(true)
+    expect(s.gains.some(g => g.type === RewardType.TRASH && g.name === `Selective Breeding|${trashed.name}`)).toBe(true)
   })
 })

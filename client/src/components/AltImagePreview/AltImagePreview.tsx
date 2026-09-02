@@ -1,13 +1,29 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import './AltImagePreview.css'
 
-type PreviewState = {
+type ImagePreviewState = {
+  kind: 'image'
   src: string
   alt: string
   x: number
   y: number
 }
+
+type GainsPreviewState = {
+  kind: 'gains'
+  html: string
+  x: number
+  y: number
+  anchorTop: number
+  anchorBottom: number
+  anchorLeft: number
+  anchorRight: number
+}
+
+type PreviewState = ImagePreviewState | GainsPreviewState
+
+const GAIN_ZOOM_GROUP_SELECTOR = '.turn-gain-source-group, .turn-gain-totals-group'
 
 /** Containers where hover may hit padding/chrome but a preview image lives inside. */
 const PREVIEW_FRAME_SELECTOR = [
@@ -45,6 +61,24 @@ function isVisiblePreviewTarget(img: HTMLImageElement): boolean {
 
 function pointInRect(x: number, y: number, rect: DOMRect): boolean {
   return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+}
+
+function setAltPreviewHeld(held: boolean) {
+  document.documentElement.classList.toggle('alt-preview-held', held)
+}
+
+function findGainZoomTarget(target: EventTarget | null): HTMLElement | null {
+  if (!(target instanceof Element)) return null
+  const group = target.closest(GAIN_ZOOM_GROUP_SELECTOR)
+  if (group instanceof HTMLElement) return group
+  const root = target.closest('.turn-gains-display-root')
+  if (root instanceof HTMLElement) return root
+  const seat = target.closest('.birdseye-seat-gains')
+  if (seat instanceof HTMLElement) {
+    const inner = seat.querySelector('.turn-gains-display-root')
+    if (inner instanceof HTMLElement) return inner
+  }
+  return null
 }
 
 function findPreviewImageFromTarget(target: EventTarget | null): HTMLImageElement | null {
@@ -98,7 +132,7 @@ function findPreviewImageAtPoint(x: number, y: number, target: EventTarget | nul
   return best
 }
 
-function previewPanelStyle(x: number, y: number): React.CSSProperties {
+function cardPreviewPanelStyle(x: number, y: number): React.CSSProperties {
   const pad = 12
   const maxW = Math.min(window.innerWidth * 0.92, 720)
   const maxH = window.innerHeight * 0.9
@@ -113,21 +147,102 @@ function previewPanelStyle(x: number, y: number): React.CSSProperties {
   return { left, top }
 }
 
+/** Sit just above the gain chip / cursor; flip below if the top edge is tight. */
+function gainsPreviewPanelStyle(preview: GainsPreviewState): React.CSSProperties {
+  const pad = 8
+  const gap = 6
+  const maxW = Math.min(window.innerWidth * 0.92, 420)
+  const centerX = (preview.anchorLeft + preview.anchorRight) / 2 || preview.x
+  const half = maxW / 2
+  const left = Math.min(
+    Math.max(pad + half, centerX),
+    window.innerWidth - pad - half
+  )
+  const spaceAbove = preview.anchorTop - pad
+  const placeAbove = spaceAbove >= 72
+  if (placeAbove) {
+    return {
+      left,
+      top: preview.anchorTop - gap,
+      transform: 'translate(-50%, -100%)',
+    }
+  }
+  return {
+    left,
+    top: preview.anchorBottom + gap,
+    transform: 'translate(-50%, 0)',
+  }
+}
+
+function previewPanelStyle(preview: PreviewState): React.CSSProperties {
+  return preview.kind === 'gains'
+    ? gainsPreviewPanelStyle(preview)
+    : cardPreviewPanelStyle(preview.x, preview.y)
+}
+
+function resolvePreview(
+  x: number,
+  y: number,
+  target: EventTarget | null
+): PreviewState | null {
+  const fromPoint = document.elementFromPoint(x, y)
+  const gainEl = findGainZoomTarget(target) ?? findGainZoomTarget(fromPoint)
+  if (gainEl) {
+    const rect = gainEl.getBoundingClientRect()
+    return {
+      kind: 'gains',
+      html: gainEl.outerHTML,
+      x,
+      y,
+      anchorTop: rect.top,
+      anchorBottom: rect.bottom,
+      anchorLeft: rect.left,
+      anchorRight: rect.right,
+    }
+  }
+
+  const img = findPreviewImageAtPoint(x, y, target ?? fromPoint)
+  if (!img) return null
+  return {
+    kind: 'image',
+    src: img.getAttribute('data-preview-src') ?? img.src,
+    alt: img.alt || 'Preview',
+    x,
+    y,
+  }
+}
+
 export function AltImagePreviewProvider({ children }: { children: React.ReactNode }) {
   const [altHeld, setAltHeld] = useState(false)
   const [preview, setPreview] = useState<PreviewState | null>(null)
+  const pointerRef = useRef({ x: 0, y: 0 })
+
+  const applyPreview = useCallback((x: number, y: number, target: EventTarget | null, altActive: boolean) => {
+    if (!altActive) {
+      setPreview(null)
+      return
+    }
+    setPreview(resolvePreview(x, y, target))
+  }, [])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Alt' || event.altKey) setAltHeld(true)
+      if (event.key !== 'Alt' && !event.altKey) return
+      setAltPreviewHeld(true)
+      setAltHeld(true)
+      if (event.repeat) return
+      const { x, y } = pointerRef.current
+      applyPreview(x, y, document.elementFromPoint(x, y), true)
     }
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.key === 'Alt' || !event.altKey) {
+        setAltPreviewHeld(false)
         setAltHeld(false)
         setPreview(null)
       }
     }
     const onBlur = () => {
+      setAltPreviewHeld(false)
       setAltHeld(false)
       setPreview(null)
     }
@@ -139,59 +254,46 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
       window.removeEventListener('blur', onBlur)
+      setAltPreviewHeld(false)
     }
-  }, [])
-
-  const updatePreviewFromEvent = useCallback((event: MouseEvent) => {
-    const altActive = altHeld || event.altKey
-    if (!altActive) {
-      setPreview(null)
-      return
-    }
-
-    const img = findPreviewImageAtPoint(event.clientX, event.clientY, event.target)
-    if (!img) {
-      setPreview(null)
-      return
-    }
-
-    const src = img.getAttribute('data-preview-src') ?? img.src
-    setPreview({
-      src,
-      alt: img.alt || 'Preview',
-      x: event.clientX,
-      y: event.clientY,
-    })
-  }, [altHeld])
-
-  const handleMouseMove = useCallback(
-    (event: MouseEvent) => {
-      updatePreviewFromEvent(event)
-    },
-    [updatePreviewFromEvent]
-  )
-
-  const handleMouseLeave = useCallback(() => {
-    setPreview(null)
-  }, [])
+  }, [applyPreview])
 
   useEffect(() => {
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseleave', handleMouseLeave)
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseleave', handleMouseLeave)
+    const onMouseMove = (event: MouseEvent) => {
+      pointerRef.current = { x: event.clientX, y: event.clientY }
+      applyPreview(event.clientX, event.clientY, event.target, altHeld || event.altKey)
     }
-  }, [handleMouseLeave, handleMouseMove])
+    const onMouseLeave = () => {
+      setPreview(null)
+    }
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseleave', onMouseLeave)
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseleave', onMouseLeave)
+    }
+  }, [altHeld, applyPreview])
 
   const panel =
     (altHeld || preview) && preview ? (
       <div
-        className="alt-image-preview"
-        style={previewPanelStyle(preview.x, preview.y)}
+        className={[
+          'alt-image-preview',
+          preview.kind === 'gains' ? 'alt-image-preview--gains' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        style={previewPanelStyle(preview)}
         aria-hidden="true"
       >
-        <img src={preview.src} alt={preview.alt} className="alt-image-preview__img" draggable={false} />
+        {preview.kind === 'gains' ? (
+          <div
+            className="alt-gain-preview"
+            dangerouslySetInnerHTML={{ __html: preview.html }}
+          />
+        ) : (
+          <img src={preview.src} alt={preview.alt} className="alt-image-preview__img" draggable={false} />
+        )}
       </div>
     ) : null
 

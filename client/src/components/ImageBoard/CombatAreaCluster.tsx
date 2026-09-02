@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState, type RefObject } from 'react'
-import { GameState, type Gain, type Player } from '../../types/GameTypes'
+import { GameState, TurnType, type Gain, type Player } from '../../types/GameTypes'
 import {
   getPlayAreaCardsForTurnView,
   getRevealedCardIdsForTurnView,
+  playAreaCardIdsWithPendingEffectChoice,
 } from '../../utils/playAreaDisplay'
 import { COMBAT_AREA_SEATS } from '../../data/boardMarkerAnchors'
 import { getLeaderImage } from '../../data/leaders'
@@ -20,6 +21,7 @@ import {
   type BirdseyeSeatMode,
 } from './CombatSeatTurnChrome'
 import CombatDeployDock, { isCombatDeployDockVisible } from './CombatDeployDock'
+import { BirdseyeTurnHistoryGrid } from './BirdseyeTurnHistoryGrid'
 import './CombatSeatTurnChrome.css'
 
 type ResourceDef = {
@@ -243,12 +245,12 @@ export interface CombatSpecimenDeployProps {
 /** `grid` — 2×2 overlay on the board. `row` — horizontal strip (mobile). `column` — vertical stack (desktop dock). */
 export type CombatAreaClusterLayout = 'grid' | 'row' | 'column'
 
-/** Desktop birdseye: per-seat card stack, or one strip under the dock. Invented name. */
+/** Desktop birdseye: per-seat card stack, or chess-style turn history above leaders. */
 export type DesktopPlayAreaLayout = 'vertical' | 'horizontal'
 
-const DESKTOP_PLAY_AREA_LAYOUT_KEY = 'myMentat.desktopPlayAreaLayout'
+export const DESKTOP_PLAY_AREA_LAYOUT_KEY = 'myMentat.desktopPlayAreaLayout'
 
-function readDesktopPlayAreaLayout(): DesktopPlayAreaLayout {
+export function readDesktopPlayAreaLayout(): DesktopPlayAreaLayout {
   try {
     return localStorage.getItem(DESKTOP_PLAY_AREA_LAYOUT_KEY) === 'horizontal'
       ? 'horizontal'
@@ -289,6 +291,9 @@ export interface CombatAreaClusterProps {
   troopDeploy?: CombatTroopDeployProps
   dreadnoughtDeploy?: CombatDreadnoughtDeployProps
   specimenDeploy?: CombatSpecimenDeployProps
+  /** Controlled desktop play-area orientation (App hides docked history when horizontal). */
+  desktopPlayAreaLayout?: DesktopPlayAreaLayout
+  onDesktopPlayAreaLayoutChange?: (layout: DesktopPlayAreaLayout) => void
 }
 
 const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
@@ -315,11 +320,18 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   troopDeploy,
   dreadnoughtDeploy,
   specimenDeploy,
+  desktopPlayAreaLayout: desktopPlayAreaLayoutProp,
+  onDesktopPlayAreaLayoutChange,
 }) => {
   const [detailPlayer, setDetailPlayer] = useState<Player | null>(null)
-  const [desktopPlayAreaLayout, setDesktopPlayAreaLayout] = useState<DesktopPlayAreaLayout>(
+  const [internalPlayAreaLayout, setInternalPlayAreaLayout] = useState<DesktopPlayAreaLayout>(
     readDesktopPlayAreaLayout
   )
+  const desktopPlayAreaLayout = desktopPlayAreaLayoutProp ?? internalPlayAreaLayout
+  const setDesktopPlayAreaLayout = (next: DesktopPlayAreaLayout) => {
+    if (desktopPlayAreaLayoutProp == null) setInternalPlayAreaLayout(next)
+    onDesktopPlayAreaLayoutChange?.(next)
+  }
   const playerById = new Map(players.map(p => [p.id, p]))
   const isRow = layout === 'row'
   const isColumn = layout === 'column'
@@ -327,6 +339,9 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   const birdseyeEnabled =
     Boolean(birdseyeMode) && ((isRow && birdseyeMode === 'mobile3b') || (isColumn && birdseyeMode === 'desktop6'))
   const playAreaHorizontal = isColumn && birdseyeEnabled && desktopPlayAreaLayout === 'horizontal'
+  const pendingEffectCardIds = playAreaCardIdsWithPendingEffectChoice(gameState, {
+    isHistoryView: birdseyeIsHistoryView,
+  })
 
   useEffect(() => {
     if (!isColumn || !birdseyeEnabled) return
@@ -351,6 +366,8 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
 
     const isActive = player.id === activePlayerId
     const seatGains = birdseyeGainsByPlayer?.[player.id] ?? []
+    const isRevealSeat =
+      gameState?.currTurn?.type === TurnType.REVEAL && gameState.currTurn.playerId === player.id
     const resolveSeatCard =
       gameState == null
         ? undefined
@@ -432,6 +449,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 /* Totals hidden for now (mobile + desktop); keep prop wiring. */
                 showTotals={false}
                 showSourceTitles={false}
+                revealPooledTotals={isRevealSeat}
               />
             </div>
           </div>
@@ -467,26 +485,35 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 troopsRetreated={isActive ? birdseyeTroopsRetreated : 0}
                 showTotals={false}
                 showSourceTitles
+                revealPooledTotals={isRevealSeat}
               />
             </div>
-            <div className="combat-area-cluster__seat-leader">
-              <div className="combat-area-cluster__seat-chrome">
-                <PlayerQuadrant
-                  player={player}
-                  isActive={isActive}
-                  isFirstPlayer={player.id === firstPlayerMarker}
-                  hasMentat={player.id === mentatOwner}
-                  riseOfIx={riseOfIx}
-                  showResources={false}
-                  onSelect={() =>
-                    onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
-                  }
-                />
+            <div className="combat-area-cluster__seat-leader-stack">
+              <div className="combat-area-cluster__seat-leader">
+                <div className="combat-area-cluster__seat-chrome">
+                  <PlayerQuadrant
+                    player={player}
+                    isActive={isActive}
+                    isFirstPlayer={player.id === firstPlayerMarker}
+                    hasMentat={player.id === mentatOwner}
+                    riseOfIx={riseOfIx}
+                    showResources={false}
+                    onSelect={() =>
+                      onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
+                    }
+                  />
+                </div>
               </div>
             </div>
           </div>
           <div className="combat-area-cluster__seat-meta">
             <ResourceGrid player={player} riseOfIx={riseOfIx} />
+            <BirdseyeSeatPlayArea
+              cards={seatPlayAreaCards}
+              isActive={isActive}
+              revealedCardIds={getRevealedCardIdsForTurnView(gameState, player)}
+              pendingEffectCardIds={isActive ? pendingEffectCardIds : undefined}
+            />
             {showActiveActions && birdseyeActions ? (
               <BirdseyeDesktopControls
                 player={player}
@@ -497,13 +524,6 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 {...seatDeploy}
               />
             ) : null}
-            {playAreaHorizontal ? null : (
-              <BirdseyeSeatPlayArea
-                cards={seatPlayAreaCards}
-                isActive={isActive}
-                revealedCardIds={getRevealedCardIdsForTurnView(gameState, player)}
-              />
-            )}
           </div>
         </div>
       </div>
@@ -577,6 +597,9 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
               />
             </div>
           ) : null}
+          {playAreaHorizontal ? (
+            <BirdseyeTurnHistoryGrid playerIds={linearPlayerIds} players={players} />
+          ) : null}
           <div
             className={[
               'combat-area-cluster',
@@ -597,18 +620,6 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                   </div>
                 ))}
           </div>
-          {playAreaHorizontal && activePlayer ? (
-            <BirdseyeSeatPlayArea
-              cards={
-                gameState
-                  ? getPlayAreaCardsForTurnView(gameState, activePlayer)
-                  : (activePlayer.playArea ?? [])
-              }
-              isActive
-              orientation="horizontal"
-              revealedCardIds={getRevealedCardIdsForTurnView(gameState, activePlayer)}
-            />
-          ) : null}
         </div>
       </div>
 

@@ -114,6 +114,7 @@ const CombatRankStrip: React.FC<CombatRankStripProps> = ({
     >
       {slots.map(slot => {
         const { slotPlace, entry } = slot
+        const labelPlace = entry?.place ?? slotPlace
         const occupiedLabel = entry
           ? `${placeOrdinal(entry.place)} place, ${entry.player.leader.name}, ${entry.troops} troops${
               riseOfIx ? `, ${entry.dreadnoughts} dreadnoughts` : ''
@@ -124,14 +125,15 @@ const CombatRankStrip: React.FC<CombatRankStripProps> = ({
             key={slotPlace}
             className={`combat-rank-strip__slot combat-rank-strip__slot--place-${slotPlace}`}
             data-slot-place={slotPlace}
+            data-reward-place={entry?.place ?? undefined}
             role="listitem"
             aria-label={occupiedLabel}
           >
             <span
-              className={`combat-rank-strip__slot-label combat-rank-strip__slot-label--${slotPlace}`}
+              className={`combat-rank-strip__slot-label combat-rank-strip__slot-label--${labelPlace}`}
               aria-hidden="true"
             >
-              {slotPlace}
+              {labelPlace}
             </span>
             {entry ? (
               <CombatRankChip

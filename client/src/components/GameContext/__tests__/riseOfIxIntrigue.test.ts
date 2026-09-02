@@ -314,7 +314,8 @@ describe('Rise of Ix intrigue cards', () => {
     })
     expect(s.players[0].solari).toBe(2)
     expect(s.players[0].trash).toHaveLength(1)
-    expect(s.gains.some(g => g.type === RewardType.TRASH && g.name === s.players[0].trash[0].name)).toBe(true)
+    expect(s.gains.some(g => g.type === RewardType.TRASH && g.cardId === 55)).toBe(true)
+    expect(s.gains.some(g => g.type === RewardType.TRASH && g.name === `Cull|${s.players[0].trash[0].name}`)).toBe(true)
   })
 
   it('Secret Forces: requires High Council for +2 troops', () => {

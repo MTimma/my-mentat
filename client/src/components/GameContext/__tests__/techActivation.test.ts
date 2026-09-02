@@ -156,7 +156,7 @@ describe('tech tile activation', () => {
     expect(discardGain).toMatchObject({
       sourceId: techTileGainSourceId(TechTileId.HOLOPROJECTORS),
       cardId: hand1.id,
-      name: hand1.name,
+      name: `Holoprojectors|${hand1.name}`,
       amount: -1,
       source: GainSource.TECH,
     })
