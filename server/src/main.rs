@@ -17,7 +17,7 @@ use axum::{
     routing::{get, post},
 };
 use tower_http::cors::CorsLayer;
-.
+
 const MAX_BODY_BYTES: usize = 1024 * 1024;
 const DEFAULT_DEV_BIND: &str = "0.0.0.0";
 const DEFAULT_PROD_BIND: &str = "127.0.0.1";
