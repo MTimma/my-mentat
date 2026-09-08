@@ -54,8 +54,11 @@ Copy `.env.example` to `.env` for local work. `.env` is gitignored.
 
 Typical layout:
 
-- **nginx** serves `client/dist` (static Vite build) and proxies `/api/*` to the Rust binary.
-- **Rust** runs as a service (e.g. systemd) on `127.0.0.1:3000` with `DATABASE_URL` pointing at a persistent path such as `/var/lib/my-mentat/data.db`.
+- **nginx** serves `client/dist` (static Vite build) and proxies `/games/*` to the Rust binary. Use `client_max_body_size 1m;` to match Axum.
+- **Later:** nginx `limit_req` (and/or Axum rate limits) on `/games/` — especially `/games/save` and `/games/new` — so autosave spam and anon creates cannot hammer SQLite.
+- **Rust** runs as a service (e.g. systemd) on `127.0.0.1:3000` with `APP_ENV=prod` and `DATABASE_URL` pointing at a persistent path such as `/var/lib/my-mentat/data.db`.
+- `APP_ENV=prod` binds `127.0.0.1`, sets Secure cookies, disables CORS (same-origin), and keeps a 1 MiB body limit. Override with `BIND_ADDR` / `CORS_ORIGINS` if needed.
+- `APP_ENV=dev` (default) binds `0.0.0.0`, allows CORS from `http://localhost:5173` (or `CORS_ORIGINS`), Secure=false.
 - Run `sqlx migrate run` on deploy (or from the app on startup when you wire that up).
 - Back up the `.db` file periodically, e.g. `sqlite3 /var/lib/my-mentat/data.db ".backup /backups/mentat-latest.db"`.
 

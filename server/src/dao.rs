@@ -1,18 +1,15 @@
-use axum::{Json, extract::Path};
-use sqlx::{Pool, Sqlite, SqlitePool, SqliteConnection, Connection, Row};
-// use sqlx_core::types::Row;
+use axum::{Json, extract::{Path, Query, State}};
+use sqlx::SqlitePool;
 use anyhow::Result;
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use axum_anyhow::ApiResult;
+use axum_anyhow::{ApiError, ApiResult, OptionExt};
+use axum::http::StatusCode;
 use tower_sessions::Session;
 
 
 const ACTIVE_GAME_ID: &str = "active_game_id";
-
-// start with only save, for anonymous users just publish and share link
-// 3 tabs - anonymous, community, official approved (tournaments, etc)
-
+const USER_ID: &str = "user_id";
+const GAMES_LIST: &str = "games_list";
 #[derive(sqlx::FromRow)]
 #[derive(serde::Serialize)]
 pub struct GameRow {
@@ -20,6 +17,16 @@ pub struct GameRow {
     owner_id: Option<String>,
     name: String,
     json: String,
+    updated_at: String,
+    created_at: String,
+}
+
+#[derive(sqlx::FromRow)]
+#[derive(serde::Serialize)]
+pub struct GameDetail {
+    id: i64,
+    owner_id: Option<String>,
+    name: String,
     updated_at: String,
     created_at: String,
 }
@@ -45,14 +52,33 @@ pub struct GameLog {
 }
 
 
-pub async fn save_game(session: Session, Json(gameLog): Json<GameLog>) -> ApiResult<Json<i64>> {
-    // TODO validate length/sqllite injection or corruption
-    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let pool = SqlitePool::connect(&db_url).await?;
-    let mut conn = pool.acquire().await?;
-    let name = &gameLog.meta.title;
-    let json= serde_json::to_string_pretty(&gameLog)?;
-// if exists, update
+#[derive(Deserialize)]
+pub struct SaveGameQuery {
+    id: Option<i64>,
+}
+
+#[derive(Serialize)]
+pub struct ActiveGameResponse {
+    id: i64,
+    doc: serde_json::Value,
+    can_edit: bool,
+}
+
+#[derive(Serialize)]
+pub struct ActivateGameResponse {
+    id: i64,
+    can_edit: bool,
+}
+
+fn session_can_edit(user_id: &Option<String>, owner_id: &Option<String>) -> bool {
+    match (user_id, owner_id) {
+        (_, None) => true,
+        (Some(uid), Some(oid)) => uid == oid,
+        (None, Some(_)) => false,
+    }
+}
+
+async fn insert_game(pool: &SqlitePool, name: &str, json: &str) -> Result<i64, sqlx::Error> {
     let id = sqlx::query!(
         r#"
 INSERT INTO games ( name, json, updated_at, created_at )
@@ -61,71 +87,205 @@ VALUES ( ?1, ?2, strftime('%s', 'now'), strftime('%s', 'now') )
         name,
         json
     )
-    .execute(&mut *conn)
+    .execute(pool)
     .await?
     .last_insert_rowid();
+    Ok(id)
+}
 
+
+async fn update_game(pool: &SqlitePool, id: i64, name: &str, json: &str) -> Result<u64, sqlx::Error> {
+    let result = sqlx::query!(
+        r#"
+UPDATE games
+SET name = ?1, json = ?2, updated_at = strftime('%s', 'now')
+WHERE id = ?3
+        "#,
+        name,
+        json,
+        id
+    )
+    .execute(pool)
+    .await?;
+    Ok(result.rows_affected())
+}
+
+pub async fn save_game(
+    State(pool): State<SqlitePool>,
+    session: Session,
+    Query(query): Query<SaveGameQuery>,
+    Json(gameLog): Json<GameLog>,
+) -> ApiResult<Json<bool>> {
+    // TODO validate length/sqllite injection or corruption
+    let name = &gameLog.meta.title;
+    let json = serde_json::to_string_pretty(&gameLog)?; //todo remove
+
+    let query_id = query.id;
+    let active_game_id = session.get::<i64>(ACTIVE_GAME_ID).await?;
+    let game_id = query_id.or(active_game_id);
+
+    if game_id.is_none() {
+        let id = insert_game(&pool, name, &json).await?;
+        session.insert(ACTIVE_GAME_ID, id).await?;
+
+        return Ok(Json(true));
+    }
+
+    let game = game_by_id(&pool, game_id.unwrap()).await?;
+    let user_id = session.get::<String>(USER_ID).await?;
+    let _user_id = match (&user_id, &game.owner_id) {
+        (Some(user_id), Some(owner_id)) => {
+            if user_id != owner_id {
+                return Err(ApiError::builder()
+                    .status(StatusCode::FORBIDDEN)
+                    .title("You are not the author of this game")
+                    .build());
+            }
+            Option::Some(user_id)
+        }
+        (None, Some(_)) => {
+            if game.owner_id.is_some() {
+                return Err(ApiError::builder()
+                    .status(StatusCode::UNAUTHORIZED)
+                    .title("Please log in to save the game")
+                    .build());
+            }
+            Option::None
+        }
+        (_, None) => { Option::None }
+    };
+    let rows = update_game(&pool, game_id.unwrap(), name, &json).await?;
+    if rows == 0 {
+        // TODO log::warn!("Failed to update game {game_id}: {rows}");
+        return Ok(Json(false));
+    }
+
+    Ok(Json(true))
+}
+
+/// TODO use save_game instead?
+pub async fn new_game(
+    State(pool): State<SqlitePool>,
+    session: Session,
+    Json(gameLog): Json<GameLog>,
+) -> ApiResult<Json<i64>> {
+    let name = &gameLog.meta.title;
+    let json = serde_json::to_string_pretty(&gameLog)?; //todo remove
+    let id = insert_game(&pool, name, &json).await?;
     session.insert(ACTIVE_GAME_ID, id).await?;
 
     Ok(Json(id))
 }
 
-pub async fn get_active_game(session: Session) -> ApiResult<Json<String>> {
-    let active: Option<i64> = session.get(ACTIVE_GAME_ID).await?;
-    match (active) {
-        Some(active) => {
-            let game = get_game(Path(active)).await?;
-            return Ok(game);
-        }
-        None => {
-            let gameLog = GameRow { schemaVersion: 1, meta: GameMeta { id: "".to_string(), title: "".to_string(), createdAt: "".to_string(), updatedAt: "".to_string() }, setup: serde_json::Value::Null, events: serde_json::Value::Null, branches: serde_json::Value::Null, cursor: serde_json::Value::Null, summary: None };
-            let id = save_game(session, Json(gameLog)).await?;
-            return Ok(Json(gameLog));
-        }
-    }
+
+
+/// Point this browser session at an existing game without writing JSON.
+pub async fn activate_game(
+    State(pool): State<SqlitePool>,
+    session: Session,
+    Path(id): Path<i64>,
+) -> ApiResult<Json<ActivateGameResponse>> {
+    let game = game_by_id(&pool, id).await?;
+    session.insert(ACTIVE_GAME_ID, id).await?;
+    //TODO delete old active game, if no owner_id?
+    let user_id = session.get::<String>(USER_ID).await?;
+    Ok(Json(ActivateGameResponse {
+        id,
+        can_edit: session_can_edit(&user_id, &game.owner_id),
+    }))
 }
 
-#[axum::debug_handler]
-pub async fn get_games() -> ApiResult<Json<Vec<GameRow>>> {
-    
-    // TODO do not include json in response
-    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let pool = SqlitePool::connect(&db_url).await?;
-    let mut conn = pool.acquire().await?;
-
-    
-// TODO get only id/name, creator
-//TODO pagination
-    let games: Vec<GameRow> = sqlx::query_as!(
+async fn game_by_id(pool: &SqlitePool, id: i64) -> ApiResult<GameRow> {
+    let game = sqlx::query_as!(
         GameRow,
         r#"
-SELECT id, owner_id, name, json, updated_at, created_at FROM games ORDER BY updated_at DESC
+SELECT id, owner_id, name, json, updated_at, created_at FROM games
+        WHERE id = ?1"#,
+        id
+    )
+    .fetch_optional(pool)
+    .await?
+    .context_not_found("Game not found")?;
+    Ok(game)
+}
+
+async fn game_json_by_id(pool: &SqlitePool, id: i64) -> ApiResult<String> {
+    let game = game_by_id(pool, id).await?;
+    Ok(game.json)
+}
+
+pub async fn get_active_game(
+    State(pool): State<SqlitePool>,
+    session: Session,
+) -> ApiResult<Json<ActiveGameResponse>> {
+    let id = session
+        .get::<i64>(ACTIVE_GAME_ID)
+        .await?
+        .context_not_found("No active game")?;
+    let game = game_by_id(&pool, id).await?;
+    let user_id = session.get::<String>(USER_ID).await?;
+    let game_json = serde_json::from_str(&game.json)?;
+    Ok(Json(ActiveGameResponse {
+        id,
+        doc: game_json,
+        can_edit: session_can_edit(&user_id, &game.owner_id),
+    }))
+}
+//todo batch or on call remove all with expired
+#[allow(dead_code)]
+pub async fn get_local_games(
+    State(pool): State<SqlitePool>,
+    session: Session,
+) -> ApiResult<Json<Vec<GameRow>>> {
+    let ids = session
+        .get::<Vec<i64>>(GAMES_LIST)
+        .await?
+        .context_not_found("No active game")?;
+    // TODO do not include json in response
+    // TODO get only id/name, creator
+    // TODO pagination
+    if ids.is_empty() {
+        return Ok(Json(vec![]));
+    }
+    let mut qb = sqlx::QueryBuilder::new(
+        "SELECT id, owner_id, name, json, updated_at, created_at FROM games WHERE id IN (",
+    );
+    {
+        let mut separated = qb.separated(',');
+        for id in &ids {
+            separated.push_bind(*id);
+        }
+    }
+    qb.push(") ORDER BY updated_at DESC");
+    let games = qb.build_query_as::<GameRow>().fetch_all(&pool).await?;
+
+    Ok(Json(games))
+}
+
+
+#[axum::debug_handler]
+pub async fn get_games(State(pool): State<SqlitePool>) -> ApiResult<Json<Vec<GameDetail>>> {
+    // TODO do not include json in response
+    // TODO pagination
+    let games: Vec<GameDetail> = sqlx::query_as!(
+        GameDetail,
+        r#"
+SELECT id, owner_id, name, updated_at, created_at FROM games where owner_id is not null ORDER BY updated_at DESC
         "#,
     )
-    .fetch_all(&mut *conn)
+    .fetch_all(&pool)
     .await?;
 
     Ok(Json(games))
 }
 
-pub async fn get_game(Path(id): Path<i64>) -> ApiResult<Json<String>> {
-    
-    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let pool = SqlitePool::connect(&db_url).await?;
-    let mut conn = pool.acquire().await?;
-
-    let game: GameRow = sqlx::query_as!(
-        GameRow,
-        r#"
-SELECT id, owner_id, name, json, updated_at, created_at FROM games
-        WHERE id = ?1"#,    
-        id
-    )
-    .fetch_one(&mut *conn)
-    .await?;
-
-    Ok(Json(game.json))
+pub async fn get_game(
+    State(pool): State<SqlitePool>,
+    Path(id): Path<i64>,
+) -> ApiResult<Json<String>> {
+    Ok(Json(game_json_by_id(&pool, id).await?))
 }
+
 
 // Debounce ~300–1000ms so undo/spam clicks don’t fire a write each time.
 // Compact JSON in prod, not pretty-print.
