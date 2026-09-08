@@ -131,6 +131,12 @@
   white-space: nowrap;
 }
 
+.games-list-actions {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
 .games-list-load-btn {
   padding: 0.3rem 0.55rem;
   font-size: 0.8rem;
@@ -150,6 +156,22 @@
 .games-list-load-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.games-list-delete-btn {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--color-arrakis-earth) 45%, transparent);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--color-arrakis-earth);
+  white-space: nowrap;
+}
+
+.games-list-delete-btn:hover {
+  background: color-mix(in srgb, var(--color-arrakis-earth) 8%, #fff);
 }
 
 .games-list-load-error {

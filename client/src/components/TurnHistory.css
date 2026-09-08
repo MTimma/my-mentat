@@ -21,6 +21,11 @@
   border-left-color: var(--chrome-border-accent-strong);
 }
 
+.turn-history-top-slot {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
 .turn-history-header {
   display: flex;
   align-items: center;
@@ -985,6 +990,11 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+  }
+
+  .turn-history-overlay--docked .turn-history-top-slot {
+    flex: 0 0 auto;
+    min-width: 0;
   }
 
   .turn-history-overlay--docked .turn-history-list {

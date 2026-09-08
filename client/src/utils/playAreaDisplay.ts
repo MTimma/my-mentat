@@ -5,6 +5,7 @@ import {
   GameState,
   Player,
   TurnType,
+  type IntrigueCard,
   type PendingReward,
   type Reward,
 } from '../types/GameTypes'
@@ -95,27 +96,43 @@ function pendingRewardNeedsPlayerInput(reward: PendingReward): boolean {
  * Ids are catalog ids, not per-player instance ids — every Signet Ring is `10`.
  * Only apply the ring on the current-turn seat (see `playAreaCardHasPendingEffectHighlight`).
  */
-export function playAreaCardIdsWithPendingEffectChoice(
+function playAreaSourceIdsWithPendingEffectChoice(
   gameState: GameState | undefined,
+  sourceType: GainSource,
   options?: { isHistoryView?: boolean }
 ): Set<number> {
   const ids = new Set<number>()
   if (!gameState || options?.isHistoryView) return ids
 
-  const addCardSource = (source: { type: GainSource; id: number } | undefined) => {
-    if (source?.type === GainSource.CARD) ids.add(source.id)
+  const addMatchingSource = (source: { type: GainSource; id: number } | undefined) => {
+    if (source?.type === sourceType) ids.add(source.id)
   }
 
   for (const choice of gameState.currTurn?.pendingChoices ?? []) {
-    if (!choice.disabled) addCardSource(choice.source)
+    if (!choice.disabled) addMatchingSource(choice.source)
   }
   for (const effect of gameState.currTurn?.optionalEffects ?? []) {
-    addCardSource(effect.source)
+    addMatchingSource(effect.source)
   }
   for (const reward of gameState.pendingRewards ?? []) {
-    if (pendingRewardNeedsPlayerInput(reward)) addCardSource(reward.source)
+    if (pendingRewardNeedsPlayerInput(reward)) addMatchingSource(reward.source)
   }
   return ids
+}
+
+export function playAreaCardIdsWithPendingEffectChoice(
+  gameState: GameState | undefined,
+  options?: { isHistoryView?: boolean }
+): Set<number> {
+  return playAreaSourceIdsWithPendingEffectChoice(gameState, GainSource.CARD, options)
+}
+
+/** Intrigue catalog ids that still need a player choice. Separate from cards — ids overlap. */
+export function playAreaIntrigueIdsWithPendingEffectChoice(
+  gameState: GameState | undefined,
+  options?: { isHistoryView?: boolean }
+): Set<number> {
+  return playAreaSourceIdsWithPendingEffectChoice(gameState, GainSource.INTRIGUE, options)
 }
 
 /**
@@ -128,6 +145,46 @@ export function playAreaCardHasPendingEffectHighlight(
   isActiveSeat: boolean
 ): boolean {
   return Boolean(isActiveSeat && pendingEffectCardIds?.has(cardId))
+}
+
+function resolveIntrigueCardForTurnView(
+  gameState: GameState,
+  cardId: number,
+  extraPiles: IntrigueCard[] = []
+): IntrigueCard | undefined {
+  return (
+    extraPiles.find(card => card.id === cardId) ??
+    gameState.intrigueDiscard?.find(card => card.id === cardId) ??
+    gameState.intrigueDeck?.find(card => card.id === cardId)
+  )
+}
+
+/** Active-this-round intrigues that stay in this player's play area until recall. */
+export function getActiveIntrigueCardsForTurnView(
+  gameState: GameState | undefined,
+  player: Player
+): IntrigueCard[] {
+  if (!gameState) return []
+  return gameState.activeIntrigueThisRound?.[player.id] ?? []
+}
+
+/**
+ * Played intrigues for this player's current turn, excluding ones still marked active.
+ * Same split as TurnControls `playedIntrigueStripCards`.
+ */
+export function getPlayedIntrigueCardsForTurnView(
+  gameState: GameState | undefined,
+  player: Player
+): IntrigueCard[] {
+  if (!gameState) return []
+  const currTurn = gameState.currTurn
+  if (!currTurn || currTurn.playerId !== player.id) return []
+
+  const active = getActiveIntrigueCardsForTurnView(gameState, player)
+  const activeIds = new Set(active.map(card => card.id))
+  return (currTurn.playedIntrigueCard ?? [])
+    .map(play => resolveIntrigueCardForTurnView(gameState, play.cardId, active))
+    .filter((card): card is IntrigueCard => Boolean(card) && !activeIds.has(card.id))
 }
 
 /** Revealed-hand ids for this player's current reveal turn (empty otherwise). */

@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { Card } from '../../types/GameTypes'
 import { getLeaderIconPath, LEADER_NAMES } from '../../data/leaders'
 import { BoardScopedModal } from '../BoardScopedModal'
+import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './ImperiumRow.css'
 
 interface HelenaRemovedCard {
@@ -27,6 +29,7 @@ interface ImperiumRowProps {
   sandboxSetup?: {
     onConfigure: () => void
     requiredCount: number
+    showSetupHint?: boolean
   }
 }
 
@@ -121,6 +124,9 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
     cards.length === sandboxRequiredCount
       ? 'Change imperium row'
       : `Set imperium row (${cards.length}/${sandboxRequiredCount})`
+  const showSandboxHint = Boolean(
+    sandboxSetup?.showSetupHint && cards.length < sandboxRequiredCount
+  )
 
   return (
     <div
@@ -132,6 +138,14 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
         .filter(Boolean)
         .join(' ')}
     >
+      {showSandboxHint ? (
+        <SandboxSetupHint
+          label="Pick 5 cards for the Imperium row"
+          placement="inline"
+          size="large"
+          className="sandbox-setup-hint--imperium-row"
+        />
+      ) : null}
       <div className="imperium-row-layout imperium-row-layout--single">
         <div className="imperium-row-strip no-buttons" aria-label="Imperium row">
           {sandboxSetup ? (
@@ -139,7 +153,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
               type="button"
               className="imperium-row-sandbox-area"
               onClick={sandboxSetup.onConfigure}
-              title={sandboxRowLabel}
+              title={withImageZoomHint(sandboxRowLabel)}
               aria-label={sandboxRowLabel}
             >
               <div className="imperium-row-sandbox-slots" aria-hidden="true">
@@ -164,11 +178,11 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
               onKeyDown={(event) => handlePreviewKeyDown(event, { kind: 'helena' })}
               role="button"
               tabIndex={0}
-              title={
+              title={withImageZoomHint(
                 helenaCanAcquire
                   ? 'View card'
                   : 'Helena may acquire this card for 1 Persuasion less during her Reveal turn.'
-              }
+              )}
             >
               <div className="helena-card-image-wrapper">
                 {getLeaderIconPath(LEADER_NAMES.HELENA_RICHESE) && (
@@ -197,7 +211,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
                 onKeyDown={(event) => handlePreviewKeyDown(event, { kind: 'row', cardId: card.id })}
                 role="button"
                 tabIndex={0}
-                title="View card"
+                title={withImageZoomHint('View card')}
               >
                 <img src={card.image} alt={card.name} className="card-image-ir" data-preview-src={card.image} />
               </div>
@@ -211,7 +225,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
                 onKeyDown={(event) => handlePreviewKeyDown(event, { kind: 'arrakis-liaison' })}
                 role="button"
                 tabIndex={0}
-                title="View Arrakis Liaison"
+                title={withImageZoomHint('View Arrakis Liaison')}
               >
                 <img
                   src={'imperium_row/arrakis_liaison.avif'}
@@ -226,7 +240,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
                 onKeyDown={(event) => handlePreviewKeyDown(event, { kind: 'spice-must-flow' })}
                 role="button"
                 tabIndex={0}
-                title="View The Spice Must Flow"
+                title={withImageZoomHint('View The Spice Must Flow')}
               >
                 <img
                   src={'imperium_row/spice_must_flow.avif'}
@@ -257,6 +271,7 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
             <img
               src={preview.image}
               alt={preview.name}
+              title={withImageZoomHint(preview.name)}
               className="imperium-preview-image"
               draggable={false}
               data-preview-src={preview.image}

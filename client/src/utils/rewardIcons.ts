@@ -49,6 +49,7 @@ export function getRewardDisplayName(type: RewardType, name?: string): string {
     case RewardType.INFLUENCE: return name || 'Influence'
     case RewardType.CONTROL: return 'Control'
     case RewardType.AGENT: return 'Agent'
+    case RewardType.SWORDMASTER: return 'Agent'
     case RewardType.EXTRA_TURN: return 'Extra turn'
     case RewardType.COMBAT: return 'Combat'
     case RewardType.TROOPS: return 'Troops'

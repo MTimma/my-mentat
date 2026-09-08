@@ -7,6 +7,8 @@ export const PLAY_BOARD_MODAL_SCOPED_CLASS = 'play-board-modal-overlay--scoped'
 export type PlayBoardModalPortalOptions = {
   /** When set, portal into this element instead of relying on context alone. */
   containerRef?: RefObject<HTMLElement | null>
+  /** Full-viewport overlay (document.body), even when desktop play scopes other modals to the board. */
+  forceViewport?: boolean
 }
 
 export function usePlayBoardModalPortal(
@@ -16,7 +18,8 @@ export function usePlayBoardModalPortal(
   const { boardContainerRef, scopeModalsToBoard } = usePlayBoardModalContext()
   const explicitContainer = options?.containerRef
   const targetRef = explicitContainer ?? boardContainerRef
-  const shouldScope = Boolean(explicitContainer) || scopeModalsToBoard
+  const shouldScope =
+    !options?.forceViewport && (Boolean(explicitContainer) || scopeModalsToBoard)
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
 
   useLayoutEffect(() => {

@@ -16,6 +16,7 @@ describe('Alt / Option card zoom', () => {
     expect(tsx).toContain('findGainZoomTarget')
     expect(tsx).toContain('alt-gain-preview')
     expect(css).toContain('.alt-gain-preview .turn-gain-source-title')
+    expect(css).toContain('.alt-gain-preview .turn-gain-persuasion-sources')
     expect(css).toContain('-webkit-line-clamp: unset')
     expect(css).not.toContain('transform: scale(1.55)')
   })
@@ -30,6 +31,16 @@ describe('Alt / Option card zoom', () => {
     expect(css).toMatch(/max-width:\s*min\(90vw, 700px\)/)
     expect(css).toMatch(/max-height:\s*min\(88vh, 860px\)/)
     expect(css).not.toMatch(/max-width:\s*min\(88vw, 400px\)/)
+  })
+
+  it('adds a Hold Alt/Option zoom hint to preview image tooltips', () => {
+    expect(tsx).toContain('withImageZoomHint')
+    expect(tsx).toContain('ensureZoomHintTitle')
+    expect(tsx).toContain('findTitleHost')
+    expect(tsx).toContain('alt-image-zoom-hint')
+    expect(tsx).toContain('alt-image-zoom-hint__hint')
+    expect(css).toContain('.alt-image-zoom-hint__hint')
+    expect(css).toContain('display: block')
   })
 
   it('includes seat play-area cards in the hover hit targets', () => {

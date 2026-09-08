@@ -20,7 +20,7 @@ import {
   normalizeExpansions,
 } from '../types/GameTypes'
 import { getConflictPool } from '../data/conflicts'
-import { getLeaderPool, LEADER_ICON_SLUGS } from '../data/leaders'
+import { createUnassignedLeader, getLeaderPool, LEADER_ICON_SLUGS, UNASSIGNED_LEADER_NAME } from '../data/leaders'
 import { getStartingSpice, getStartingSolari } from '../data/leaderAbilities/beastSetup'
 import { getStartingWater, isYunaLeader } from '../data/leaderAbilities/yunaSolariBonus'
 import { getStartingIntrigue } from '../data/leaderAbilities/hudroSetup'
@@ -41,6 +41,9 @@ import type { SetupBlock } from './types'
 export class SetupResolutionError extends Error {}
 
 function resolveLeader(leaderId: string, expansions = normalizeExpansions()): Leader {
+  if (leaderId === 'unassigned' || leaderId === slugify(UNASSIGNED_LEADER_NAME)) {
+    return createUnassignedLeader()
+  }
   const pool = getLeaderPool(expansions)
   const leader = pool.find(
     l => (LEADER_ICON_SLUGS[l.name] ?? slugify(l.name)) === leaderId

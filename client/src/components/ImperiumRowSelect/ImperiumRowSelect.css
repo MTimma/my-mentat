@@ -137,15 +137,15 @@
 }
 
 .imperium-select-cardsearch-wrapper .card-cell {
-  flex: 0 0 64px;
-  width: 64px;
+  flex: 0 0 96px;
+  width: 96px;
   flex-shrink: 0;
 }
 
 .imperium-select-cardsearch-wrapper .cards-grid .card {
-  width: 64px;
-  min-width: 64px;
-  max-width: 64px;
+  width: 96px;
+  min-width: 96px;
+  max-width: 96px;
   transform: none;
   padding: 3px;
   box-sizing: border-box;
@@ -160,8 +160,26 @@
 }
 
 .imperium-select-cardsearch-wrapper .card-search-selection-preview-slot {
-  width: 40px;
-  height: 58px;
+  width: 60px;
+  height: 87px;
+}
+
+@media (min-width: 901px) {
+  .imperium-select-overlay.modal-overlay {
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow: hidden;
+    padding: 12px;
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .imperium-select-dialog {
+    width: min(100%, 1200px);
+    height: 100%;
+    max-height: 100%;
+    margin-inline: auto;
+  }
 }
 
 @media (max-width: 600px) {

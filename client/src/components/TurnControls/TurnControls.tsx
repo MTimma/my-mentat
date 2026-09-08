@@ -79,6 +79,7 @@ import {
 import PlayerTargetDialog from '../PlayerTargetDialog'
 import LeaderResourceStrip from '../LeaderResourceStrip/LeaderResourceStrip'
 import LeaderImageModal from '../LeaderImageModal/LeaderImageModal'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import RevealPersuasionRemaining from '../RevealPersuasionRemaining/RevealPersuasionRemaining'
 import './TurnControls.css'
 
@@ -139,6 +140,8 @@ interface TurnControlsProps {
   mentatOwner?: number | null
   gameState?: GameState
   isHistoryView?: boolean
+  /** When false, Play / Reveal stay disabled (viewing another player's game). */
+  canEdit?: boolean
   /** Desktop: leader + effects + end turn in a top play bar; footer nav hidden */
   showDesktopPlayBar?: boolean
   /** Hide Play/Reveal/Intrigue/Tech action row (actions live on combat dock). */
@@ -220,6 +223,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
   activeIntrigueThisRound = [],
   gameState,
   isHistoryView = false,
+  canEdit = true,
   showDesktopPlayBar = false,
   hidePrimaryTurnActions = false,
   birdseyeInteractionsHost = null,
@@ -579,6 +583,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
   })()
 
   const playActionDisabled =
+    !canEdit ||
     isSandboxSetup ||
     (activePlayer.agents === 0 && !canPlayKwisatzWithNoAgents) ||
     activePlayer.handCount === 0 ||
@@ -588,6 +593,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     hasOpponentDiscard ||
     hasMandatoryRewards
   const revealActionDisabled =
+    !canEdit ||
     isSandboxSetup ||
     isHistoryView ||
     canEndTurn ||
@@ -596,7 +602,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     hasOpponentDiscard ||
     hasMandatoryRewards
   const playActionTitle =
-    isSandboxSetup
+    !canEdit
+      ? "Viewing another player's game"
+      : isSandboxSetup
       ? sandboxSetupBlockedTitle
       : hasOpponentDiscard
       ? 'Resolve opponent discard instructions before taking new actions.'
@@ -627,7 +635,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
   const showRevealCombat = isActiveRevealTurn && revealCombatTotal > 0
   const showRevealPersuasionRemaining =
     !isHistoryView && activePlayer.revealed && Boolean(gameState?.canAcquireIR)
-  const revealActionTitle = isSandboxSetup
+  const revealActionTitle = !canEdit
+    ? "Viewing another player's game"
+    : isSandboxSetup
     ? sandboxSetupBlockedTitle
     : hasOpponentDiscard
       ? 'Resolve opponent discard instructions before taking new actions.'
@@ -2088,7 +2098,6 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
             masterstrokeSelectionActive ||
             influenceBoardSelectionActive ||
             cannotAfford
-          const optionalFrameOnly = variant === 'overlay'
           const optionalAriaLabel = getOptionalEffectAriaLabel(eff)
           return (
             <button
@@ -2097,7 +2106,6 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 `effect-btn effect-btn--${variant} optional`,
                 !disabled ? 'effect-btn--needs-input' : '',
                 cannotAfford ? 'effect-btn--unaffordable' : '',
-                optionalFrameOnly ? 'effect-btn--overlay-frame' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
@@ -2112,9 +2120,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                     ? 'Cannot afford this optional effect.'
                     : optionalAriaLabel
               }
-              aria-label={optionalFrameOnly ? optionalAriaLabel : undefined}
+              aria-label={optionalAriaLabel}
             >
-              {optionalFrameOnly ? null : renderLabel(eff)}
+              {renderLabel(eff)}
             </button>
           )
         })}
@@ -2650,14 +2658,16 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
           }
         }}
         aria-label={shouldHighlightPending ? `Resolve pending effects for ${card.name}` : card.name}
-        title={shouldHighlightPending ? `Resolve pending effects for ${card.name}` : card.name}
+        title={withImageZoomHint(
+          shouldHighlightPending ? `Resolve pending effects for ${card.name}` : card.name
+        )}
       >
         {card.image ? (
           <img
             className="selected-card-inline-img"
             src={card.image}
             alt={card.name}
-            title={card.name}
+            title={withImageZoomHint(card.name)}
             draggable={false}
             data-preview-src={card.image}
           />
@@ -3610,11 +3620,11 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                           ? `Resolve pending effects for ${card.name}`
                           : `View played intrigue card: ${card.name}`
                       }
-                      title={
+                      title={withImageZoomHint(
                         hasIntriguePendingInput
                           ? `Resolve pending effects for ${card.name}`
                           : `View ${card.name}`
-                      }
+                      )}
                       onClick={() => {
                         closeCardEffectsDialog()
                         setActiveIntriguePreviewCard(card)
@@ -3672,11 +3682,11 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                                 ? `Resolve pending effects for active intrigue: ${card.name}`
                                 : `Active intrigue: ${card.name}`
                             }
-                            title={
+                            title={withImageZoomHint(
                               hasIntriguePendingInput
                                 ? `Resolve pending effects for ${card.name}`
                                 : `${card.name} (active this round)`
-                            }
+                            )}
                             onClick={() => {
                               closeCardEffectsDialog()
                               setActiveIntriguePreviewCard(card)

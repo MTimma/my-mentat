@@ -124,6 +124,7 @@
   flex: 0 0 auto;
   align-self: flex-start;
   box-sizing: border-box;
+  position: relative;
 }
 
 .image-board__combat-area-cluster--docked {
@@ -240,6 +241,7 @@
   align-self: stretch;
   box-sizing: border-box;
   overflow: visible;
+  position: relative;
 }
 
 /* Rise of Ix: Ix + combat stacked under the board (mobile-like), not beside the board. */
@@ -701,6 +703,13 @@
   .image-board__marker:has(> .agent--dreadnought)::after {
     width: 14px;
     height: 14px;
+  }
+}
+
+@media (min-width: 901px) {
+  .image-board__marker .image-board__agent-figure.agent:not(.agent--dreadnought) {
+    width: clamp(32px, 6.4cqw, 51.2px);
+    height: clamp(40px, 8cqw, 64px);
   }
 }
 
@@ -1811,6 +1820,44 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 
 .combat-area-cluster__leader--yellow .combat-area-cluster__leader-img {
   box-shadow: 0 2px 8px rgba(251, 192, 45, 0.22);
+}
+
+.combat-area-cluster__leader--unassigned {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 18, 14, 0.42);
+}
+
+.combat-area-cluster__leader-plus {
+  font-size: clamp(2.8rem, 8vmin, 5.2rem);
+  font-weight: 200;
+  line-height: 1;
+  color: rgba(255, 248, 232, 0.5);
+  text-shadow: 0 0 14px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  user-select: none;
+}
+
+.combat-area-cluster--column .combat-area-cluster__leader--unassigned {
+  top: 0;
+  right: auto;
+  width: min(9.5rem, 42%);
+}
+
+.combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__leader--unassigned {
+  inset: 0;
+  width: auto;
+}
+
+.combat-area-cluster--row .combat-area-cluster__leader--unassigned {
+  inset: 0;
+  width: auto;
+}
+
+.combat-area-cluster__quadrant--unassigned {
+  border: 2px dashed rgba(255, 215, 0, 0.32);
+  background: rgba(20, 18, 14, 0.35);
 }
 
 .combat-area-cluster__quadrant-body {

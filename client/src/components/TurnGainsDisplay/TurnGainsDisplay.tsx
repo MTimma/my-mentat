@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Card, Gain, GainSource, RewardType } from '../../types/GameTypes'
+import { Card, Gain, GainSource, PlayerColor, RewardType } from '../../types/GameTypes'
 import {
   aggregateInfluenceGains,
   aggregateResourceGains,
@@ -7,16 +7,19 @@ import {
   discardedOrTrashedCardLabel,
   freighterRecallStepOrdinal,
   getGainGroupIcon,
+  getPersuasionSourceContributions,
   getRepeatedIconDisplay,
   groupGainsForDisplay,
   INLINE_DISCARDS_GROUP_KEY,
   isRevealPooledRewardType,
+  peelFreighterRecallsFromCosts,
   resolveFreighterMoveGroupTitle,
   splitGainsByCostAndReward,
   splitRevealPooledGains,
   type AggregatedResourceGain,
   type CardTypeTotal,
   type InfluenceTypeTotal,
+  type PersuasionSourceContribution,
   type ResourceTypeTotal,
   type TurnGainSourceGroup,
 } from '../../utils/turnGainsDisplay'
@@ -28,9 +31,11 @@ import {
 } from '../../utils/influenceDisplay'
 import { getRewardDisplayName, getRewardIcon } from '../../utils/rewardIcons'
 import { getTechTileByName } from '../../data/techTiles'
+import AgentIcon from '../AgentIcon/AgentIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import FreighterIcon from '../FreighterIcon/FreighterIcon'
 import TechTileFlipBadge from '../TechTileFlipBadge/TechTileFlipBadge'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './TurnGainsDisplay.css'
 
 const TECH_GAIN_TITLE_PREFIX = 'Tech: '
@@ -69,8 +74,10 @@ function renderSourceGroupTitle(group: TurnGainSourceGroup, title: string) {
 export interface TurnGainsDisplayProps {
   gains: Gain[]
   className?: string
-  /** Player color for dreadnought gain icons. */
+  /** Player seat for colored dreadnought / agent gain icons. */
   playerId?: number
+  /** When set, tints agent/dreadnought icons by assigned seat color. */
+  playerColor?: PlayerColor
   /** Each source group shows a short title above its cost → reward row. */
   showSourceTitles?: boolean
   /** Net summary row (turn history). */
@@ -113,6 +120,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   gains,
   className = '',
   playerId = 0,
+  playerColor,
   showSourceTitles = true,
   showTotals = false,
   totalsOnly = false,
@@ -133,6 +141,11 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     if (showTotals || totalsOnly) return computeTurnGainTotals(gains)
     return null
   }, [gains, revealPooledTotals, showTotals, totalsOnly])
+  const persuasionContributions = useMemo(
+    () =>
+      revealPooledTotals ? getPersuasionSourceContributions(splitRevealPooledGains(gains).pooled) : [],
+    [gains, revealPooledTotals]
+  )
   const groups = useMemo(() => {
     if (totalsOnly) return []
     const sourceGains = revealPooledTotals ? splitRevealPooledGains(gains).specifics : gains
@@ -156,7 +169,11 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     iconPath.startsWith('/') ? iconPath : `/${iconPath}`
 
   const renderDreadnoughtGainIcon = (className = 'gain-icon') => (
-    <DreadnoughtIcon playerId={playerId} className={className} />
+    <DreadnoughtIcon playerId={playerId} color={playerColor} className={className} />
+  )
+
+  const renderAgentGainIcon = (className = 'turn-gain-agent-icon') => (
+    <AgentIcon playerId={playerId} color={playerColor} className={className} />
   )
 
   const renderFreighterMove = (
@@ -225,7 +242,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     }
     const { iconCount, showTotalMultiplier } = getRepeatedIconDisplay(absCount)
     return (
-      <span key={key} className="turn-gain-card-thumb" title={label}>
+      <span key={key} className="turn-gain-card-thumb" title={withImageZoomHint(label)}>
         {Array.from({ length: iconCount }, (_, i) => (
           <img
             key={i}
@@ -330,7 +347,9 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         ? isCost
           ? 'Recall'
           : 'Advance'
-        : getRewardDisplayName(rewardType, gain.name)
+        : rewardType === RewardType.SWORDMASTER
+          ? 'Agent'
+          : getRewardDisplayName(rewardType, gain.name)
     const absAmount = Math.abs(gain.amount)
     const freighterOrdinal = rewardType === RewardType.FREIGHTER && isCost
       ? freighterRecallStepOrdinal(absAmount)
@@ -366,6 +385,10 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
           </span>
         ) : rewardType === RewardType.FREIGHTER ? (
           renderFreighterMove(isCost ? 'down' : 'up', absAmount)
+        ) : rewardType === RewardType.SWORDMASTER ? (
+          <span className="turn-gain-agent" title={displayName}>
+            {renderAgentGainIcon()}
+          </span>
         ) : rewardType === RewardType.CARD ? (
           renderCardGains(gain.cardId, gain.name, gain.amount, `${side}-card-${index}`)
         ) : rewardType === RewardType.TRASH ? (
@@ -528,19 +551,78 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
 
   const renderTotalInfluenceAmount = renderTotalIconOnlyAmount
 
-  const renderTotalPersuasionAmount = (value: number) => {
+  const renderTotalPersuasionAmount = (value: number, labeledTotal = false) => {
     if (value === 0) return null
     const absAmount = Math.abs(value)
     const isCost = value < 0
+    const signed = isCost ? `−${absAmount}` : String(absAmount)
     return (
-      <span
-        className="gain-persuasion-badge turn-gain-total-persuasion"
-        title={`Persuasion: ${isCost ? '−' : ''}${absAmount}`}
-        aria-label={`Persuasion ${isCost ? 'spent' : 'gained'} ${absAmount}`}
+      <>
+        <span
+          className="gain-persuasion-badge turn-gain-total-persuasion"
+          title={labeledTotal ? `Persuasion total: ${signed}` : `Persuasion: ${signed}`}
+          aria-label={
+            labeledTotal
+              ? `Persuasion total ${absAmount}`
+              : `Persuasion ${isCost ? 'spent' : 'gained'} ${absAmount}`
+          }
+        >
+          <span className="gain-persuasion-diamond" aria-hidden="true" />
+          <span className="gain-persuasion-count">{signed}</span>
+        </span>
+        {labeledTotal ? (
+          <span className="turn-gain-total-persuasion-label">{`total: ${signed}`}</span>
+        ) : null}
+      </>
+    )
+  }
+
+  const renderPersuasionContribution = (source: PersuasionSourceContribution) => {
+    const resolvedImage =
+      source.kind === 'card' && source.cardId != null
+        ? resolveCard?.(source.cardId, source.title)?.image || source.image
+        : source.image
+    const signed = source.amount < 0 ? `−${Math.abs(source.amount)}` : String(source.amount)
+    const showThumb = (source.kind === 'card' || source.kind === 'intrigue') && Boolean(resolvedImage)
+    const showTechThumb = source.kind === 'tech' && Boolean(resolvedImage)
+    const showText = !showThumb
+
+    return (
+      <div
+        key={source.key}
+        className="turn-gain-persuasion-source"
+        title={
+          showThumb || showTechThumb
+            ? withImageZoomHint(`${source.title}: ${signed}`)
+            : `${source.title}: ${signed}`
+        }
       >
-        <span className="gain-persuasion-diamond" aria-hidden="true" />
-        <span className="gain-persuasion-count">{isCost ? `−${absAmount}` : absAmount}</span>
-      </span>
+        {showThumb ? (
+          <img
+            src={iconSrc(resolvedImage!)}
+            alt=""
+            className="turn-gain-persuasion-source-thumb"
+            draggable={false}
+            data-preview-src={iconSrc(resolvedImage!)}
+          />
+        ) : null}
+        {showTechThumb ? (
+          <img
+            src={iconSrc(resolvedImage!)}
+            alt=""
+            className="turn-gain-persuasion-source-tech"
+            draggable={false}
+            data-preview-src={iconSrc(resolvedImage!)}
+          />
+        ) : null}
+        {showText ? (
+          <span className="turn-gain-persuasion-source-text">{source.title}</span>
+        ) : null}
+        <span className="gain-persuasion-badge turn-gain-persuasion-source-amt" aria-hidden="true">
+          <span className="gain-persuasion-diamond" />
+          <span className="gain-persuasion-count">{signed}</span>
+        </span>
+      </div>
     )
   }
 
@@ -550,18 +632,21 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     const hasBoth = total.gained > 0 && total.spent > 0
     const isPersuasion = total.type === RewardType.PERSUASION
     const isFreighter = total.type === RewardType.FREIGHTER
+    const isSwordmaster = total.type === RewardType.SWORDMASTER
     const usesIconOnlyForSingleUnit =
-      total.type === RewardType.VICTORY_POINTS || total.type === RewardType.WATER
+      total.type === RewardType.VICTORY_POINTS ||
+      total.type === RewardType.WATER ||
+      isSwordmaster
     const renderAmount = usesIconOnlyForSingleUnit ? renderTotalIconOnlyAmount : renderTotalAmount
 
     if (isFreighter) {
       const recallOrdinal = total.spent > 0 ? freighterRecallStepOrdinal(total.spent) : null
       const title = [
-        total.spent > 0 ? (recallOrdinal ? `Recall ${recallOrdinal}` : 'Recall') : null,
         total.gained > 0 ? 'Advance' : null,
+        total.spent > 0 ? (recallOrdinal ? `Recall ${recallOrdinal}` : 'Recall') : null,
       ]
         .filter(Boolean)
-        .join(' → ')
+        .join(' ')
       return (
         <div
           key={total.type}
@@ -571,11 +656,8 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         >
           {hasBoth ? (
             <span className="turn-gain-total-flow">
-              {renderFreighterMove('down', total.spent, 'turn-gain-total-icon')}
-              <span className="turn-gain-flow-arrow" aria-hidden="true">
-                →
-              </span>
               {renderFreighterMove('up', total.gained, 'turn-gain-total-icon')}
+              {renderFreighterMove('down', total.spent, 'turn-gain-total-icon')}
             </span>
           ) : total.spent > 0 ? (
             renderFreighterMove('down', total.spent, 'turn-gain-total-icon')
@@ -586,12 +668,39 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
       )
     }
 
+    if (isSwordmaster) {
+      return (
+        <div
+          key={total.type}
+          className="turn-gain-total-item"
+          title={`${displayName}: ${formatSignedTotal(total.net)}`}
+          aria-label={`${displayName} net ${total.net}`}
+        >
+          {renderAgentGainIcon('turn-gain-agent-icon turn-gain-total-icon')}
+          {renderAmount(total.net)}
+        </div>
+      )
+    }
+
     return (
       <div
         key={total.type}
-        className="turn-gain-total-item"
-        title={`${displayName}: ${formatSignedTotal(total.net)}`}
-        aria-label={`${displayName} net ${total.net}`}
+        className={[
+          'turn-gain-total-item',
+          isPersuasion && revealPooledTotals ? 'turn-gain-total-item--persuasion-total' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        title={
+          isPersuasion && revealPooledTotals
+            ? `Persuasion total: ${formatSignedTotal(total.net)}`
+            : `${displayName}: ${formatSignedTotal(total.net)}`
+        }
+        aria-label={
+          isPersuasion && revealPooledTotals
+            ? `Persuasion total ${total.net}`
+            : `${displayName} net ${total.net}`
+        }
       >
         {isPersuasion ? null : iconPath ? renderGainIcon(iconPath, displayName, 'turn-gain-total-icon') : null}
         {isPersuasion ? (
@@ -601,10 +710,12 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
               <span className="turn-gain-flow-arrow" aria-hidden="true">
                 →
               </span>
-              <span className="turn-gain-total-gained">{renderTotalPersuasionAmount(total.gained)}</span>
+              <span className="turn-gain-total-gained">
+                {renderTotalPersuasionAmount(total.gained, revealPooledTotals)}
+              </span>
             </span>
           ) : (
-            renderTotalPersuasionAmount(total.net)
+            renderTotalPersuasionAmount(total.net, revealPooledTotals)
           )
         ) : hasBoth ? (
           <span className="turn-gain-total-flow">
@@ -670,7 +781,16 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
       return null
     }
     return (
-      <div className="turn-gain-totals-group">
+      <div
+        className={[
+          'turn-gain-totals-group',
+          revealPooledTotals && persuasionContributions.length > 0
+            ? 'turn-gain-totals-group--persuasion-breakdown'
+            : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         {revealPooledTotals ? null : (
           <span className="turn-gain-source-title turn-gain-source-title--totals">Total</span>
         )}
@@ -679,6 +799,11 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
           {influenceTotals.map(renderTotalInfluence)}
           {renderTotalCards(cardTotals)}
         </div>
+        {revealPooledTotals && persuasionContributions.length > 0 ? (
+          <div className="turn-gain-persuasion-sources" aria-label="Persuasion sources">
+            {persuasionContributions.map(renderPersuasionContribution)}
+          </div>
+        ) : null}
       </div>
     )
   }
@@ -709,9 +834,11 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
           resolveCard?.(cardId, '')?.name
         )
         const { costs, rewards } = splitGainsByCostAndReward(group.gains)
-        const costContent = renderGainSide(costs, 'cost')
+        const { paidCosts, freighterRecalls } = peelFreighterRecallsFromCosts(costs)
+        const costContent = renderGainSide(paidCosts, 'cost')
         const rewardContent = renderGainSide(rewards, 'reward')
-        if (!costContent && !rewardContent) return null
+        const recallContent = renderGainSide(freighterRecalls, 'cost')
+        if (!costContent && !rewardContent && !recallContent) return null
         const techTile = techTileFromGroupTitle(groupTitle)
         const copyCount = distinctCardCopyCount(group.gains)
         const showCopyCount =
@@ -756,12 +883,13 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
                     <span className="gain-multiplier">×{copyCount}</span>
                   ) : null}
                   {costContent}
-                  {costContent && rewardContent && (
+                  {costContent && (rewardContent || recallContent) && (
                     <span className="turn-gain-flow-arrow" aria-hidden="true">
                       →
                     </span>
                   )}
                   {rewardContent}
+                  {recallContent}
                 </>
               )}
             </div>

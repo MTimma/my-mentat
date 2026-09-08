@@ -79,10 +79,17 @@
 }
 
 .sandbox-player-editor__color-select {
-  flex: 0 0 auto;
-  width: 5.5rem;
-  min-height: 2.25rem;
-  margin-top: 2px;
+  width: 100%;
+  min-height: 2.4rem;
+  margin: 0;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 215, 0, 0.55);
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff8e8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .sandbox-player-editor__leader-row--menu-open {

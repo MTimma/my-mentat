@@ -10,6 +10,8 @@ export interface PickerModalShellProps {
   closeOnOverlayClick?: boolean
   overlayRef?: Ref<HTMLDivElement>
   className?: string
+  /** Large grid pickers need the full viewport; the board stage can extend below the screen. */
+  forceViewport?: boolean
   children: ReactNode
 }
 
@@ -25,6 +27,7 @@ export function PickerModalShell({
   closeOnOverlayClick = false,
   overlayRef,
   className,
+  forceViewport = true,
   children,
 }: PickerModalShellProps) {
   return (
@@ -35,6 +38,7 @@ export function PickerModalShell({
       onClose={onClose}
       closeOnOverlayClick={closeOnOverlayClick}
       overlayRef={overlayRef}
+      forceViewport={forceViewport}
     >
       <div className={['picker-modal-shell', 'imperium-select-dialog', className].filter(Boolean).join(' ')}>
         <header className="picker-modal-shell__header imperium-select-header">

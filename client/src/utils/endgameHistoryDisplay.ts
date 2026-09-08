@@ -48,6 +48,33 @@ export function isEndgameResolved(currentGameState: GameState): boolean {
   return (currentGameState.endgameWinners?.length ?? 0) > 0
 }
 
+/** View-only in-progress games hide the live turn. Finished games show every turn. */
+export function shouldHideLiveTurnForViewers(
+  canEdit: boolean,
+  currentGameState: GameState
+): boolean {
+  if (canEdit) return false
+  return !isEndgameResolved(currentGameState)
+}
+
+export function clampHistoryViewIndex(
+  turnIndex: number | null,
+  historyLength: number,
+  hideLiveTurn: boolean
+): number | null {
+  if (!hideLiveTurn) {
+    if (turnIndex == null) return null
+    if (turnIndex < 0) return 0
+    if (turnIndex >= historyLength) return null
+    return turnIndex
+  }
+  if (historyLength <= 0) return null
+  const last = historyLength - 1
+  if (turnIndex == null || turnIndex >= historyLength) return last
+  if (turnIndex < 0) return 0
+  return turnIndex
+}
+
 export function shouldHideLiveHistoryEntry(
   turns: GameState[],
   currentGameState: GameState

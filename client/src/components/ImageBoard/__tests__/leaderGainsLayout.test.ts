@@ -202,20 +202,27 @@ describe('Leader gains leftover layout', () => {
     expect(cluster).toContain('onDesktopPlayAreaLayoutChange')
   })
 
-  it('keeps sandbox Begin visible when docked history is hidden', () => {
-    expect(appTsx).toContain('sandboxControlsInHistoryDock')
-    expect(appTsx).toContain('showSandboxFooterBar')
-    expect(appTsx).toContain('sandbox-setup-mobile-bar--desktop')
-    expect(appTsx).toContain('sandboxPickerOpen')
-    expect(appTsx).toMatch(
-      /inSandboxSetup && !sandboxControlsInHistoryDock && !sandboxPickerOpen/
-    )
-    const setupCss = readFileSync(
-      resolve(root, 'components/SandboxSetupControls/SandboxSetupControls.css'),
+  it('keeps sandbox Begin under the session kit bar', () => {
+    expect(appTsx).toContain('setupSlot={sandboxSetupControls(true)}')
+    expect(appTsx).toContain('showKit={inSandboxSetup}')
+    expect(appTsx).toContain('<SandboxSessionBar')
+    expect(appTsx).toContain('sandboxBarInHistoryDock')
+    expect(appTsx).toContain('topSlot={sandboxBarInHistoryDock ? sandboxSessionBarEl : undefined}')
+    expect(appTsx).not.toContain('sandbox-setup-mobile-bar--desktop')
+    const sessionBarCss = readFileSync(
+      resolve(root, 'components/SandboxSessionBar/SandboxSessionBar.css'),
       'utf8'
     )
-    expect(setupCss).toMatch(
-      /\.sandbox-setup-mobile-bar--desktop \{[\s\S]*?position:\s*fixed/
+    expect(sessionBarCss).toContain('.sandbox-session-bar__setup')
+  })
+
+  it('uses in-game birdseye seats while configuring sandbox leaders', () => {
+    expect(appTsx).not.toContain('if (!useImageBoard || gameState.sandboxSetup) return null')
+    expect(appTsx).toMatch(
+      /const birdseyeMode = useMemo[\s\S]*?if \(!useImageBoard\) return null/
+    )
+    expect(imageBoardCss).toMatch(
+      /\.combat-area-cluster--column\.combat-area-cluster--birdseye \.combat-area-cluster__leader--unassigned \{[\s\S]*?inset:\s*0/
     )
   })
 
@@ -421,6 +428,25 @@ describe('Leader gains leftover layout', () => {
     expect(seatChromeTsx).toContain("hasPendingEffects ? 'turn-card-frame--has-effects' : ''")
     expect(seatChromeCss).toMatch(
       /\.birdseye-seat-play-area__card\.turn-card-frame--has-effects \{[\s\S]*?box-shadow:\s*var\(--pending-ring\)/
+    )
+  })
+
+  it('renders played and active intrigues below play-area cards', () => {
+    expect(cluster).toContain('getPlayedIntrigueCardsForTurnView')
+    expect(cluster).toContain('getActiveIntrigueCardsForTurnView')
+    expect(cluster).toContain('playedIntrigues={getPlayedIntrigueCardsForTurnView(gameState, player)}')
+    expect(cluster).toContain('activeIntrigues={getActiveIntrigueCardsForTurnView(gameState, player)}')
+    expect(cluster).toContain(
+      'pendingIntrigueIds={isActive ? pendingIntrigueIds : undefined}'
+    )
+    expect(seatChromeTsx).toContain('birdseye-seat-play-area__intrigues')
+    expect(seatChromeTsx).toContain('birdseye-seat-play-area__card--intrigue')
+    expect(seatChromeTsx).toContain('birdseye-seat-play-area__card--active-intrigue')
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__intrigues \{[\s\S]*?border-top:\s*1px dashed rgba\(143, 97, 188, 0\.38\)/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__stack \{[\s\S]*?overflow-y:\s*auto/
     )
   })
 })

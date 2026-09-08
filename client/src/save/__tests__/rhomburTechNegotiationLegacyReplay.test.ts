@@ -78,7 +78,7 @@ describe('legacy Rhombur signet + Tech Negotiation replay', () => {
     expect(replayed.pendingAcquireTech).toBeFalsy()
   })
 
-  it('replays PAY_COST card-10-EFFECT (acquire) without needing a negotiator on Ix first', () => {
+  it('replays PAY_COST card-10-EFFECT {ACQUIRE_GROUP_TITLE} without needing a negotiator on Ix first', () => {
     const genesis = buildInitialState(rhomburSandboxSetup)
     let state = {
       ...genesis,

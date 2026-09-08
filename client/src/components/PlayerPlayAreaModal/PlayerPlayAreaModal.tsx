@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { Card, Player } from '../../types/GameTypes'
 import { usePlayBoardModalContext } from '../../context/PlayBoardModalContext'
 import { BoardScopedModal } from '../BoardScopedModal'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import type { RefObject } from 'react'
 import './PlayerPlayAreaModal.css'
 
@@ -75,6 +76,7 @@ const PlayerPlayAreaModal: React.FC<PlayerPlayAreaModalProps> = ({
                     <img
                       src={card.image}
                       alt={card.name}
+                      title={withImageZoomHint(card.name)}
                       className="player-play-area-card-image"
                       data-preview-src={card.image}
                     />

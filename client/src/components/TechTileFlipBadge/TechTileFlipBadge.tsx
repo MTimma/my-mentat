@@ -1,4 +1,5 @@
 import React from 'react'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './TechTileFlipBadge.css'
 
 export const TECH_TILE_FLIP_ICON = '/icon/flip.png'
@@ -22,7 +23,7 @@ const TechTileFlipBadge: React.FC<TechTileFlipBadgeProps> = ({
   <span
     className={['tech-tile-flip-badge', `tech-tile-flip-badge--${size}`, className].filter(Boolean).join(' ')}
     aria-hidden={alt ? undefined : true}
-    title={alt || undefined}
+    title={alt ? withImageZoomHint(alt) : undefined}
   >
     {image ? (
       <img

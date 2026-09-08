@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { splitImageZoomHint, withImageZoomHint } from './imageZoomHint'
 import './AltImagePreview.css'
 
 type ImagePreviewState = {
@@ -22,6 +23,16 @@ type GainsPreviewState = {
 }
 
 type PreviewState = ImagePreviewState | GainsPreviewState
+
+type ZoomHintState = {
+  label: string
+  hint: string
+  x: number
+  y: number
+}
+
+const ZOOM_HINT_DELAY_MS = 400
+const TITLE_BACKUP_ATTR = 'data-zoom-title-backup'
 
 const GAIN_ZOOM_GROUP_SELECTOR = '.turn-gain-source-group, .turn-gain-totals-group'
 
@@ -132,6 +143,71 @@ function findPreviewImageAtPoint(x: number, y: number, target: EventTarget | nul
   return best
 }
 
+function findTitleHost(img: HTMLImageElement): Element {
+  if (img.getAttribute('title') || img.hasAttribute(TITLE_BACKUP_ATTR)) return img
+  const frame = img.closest(PREVIEW_FRAME_SELECTOR)
+  let node: Element | null = img.parentElement
+  while (node && node !== document.body) {
+    if (node.getAttribute('title') || node.hasAttribute(TITLE_BACKUP_ATTR)) return node
+    if (frame && node === frame) break
+    node = node.parentElement
+  }
+  return frame ?? img
+}
+
+function ensureZoomHintTitle(img: HTMLImageElement) {
+  const host = findTitleHost(img)
+  const current = host.getAttribute(TITLE_BACKUP_ATTR) ?? host.getAttribute('title')
+  const next = withImageZoomHint(current)
+  if (host.getAttribute(TITLE_BACKUP_ATTR)) {
+    if (host.getAttribute(TITLE_BACKUP_ATTR) !== next) {
+      host.setAttribute(TITLE_BACKUP_ATTR, next)
+    }
+    return host
+  }
+  if (host.getAttribute('title') !== next) {
+    host.setAttribute('title', next)
+  }
+  return host
+}
+
+function suppressNativeTitle(host: Element) {
+  if (host.hasAttribute(TITLE_BACKUP_ATTR)) return
+  const current = host.getAttribute('title')
+  if (current == null) return
+  host.setAttribute(TITLE_BACKUP_ATTR, current)
+  host.removeAttribute('title')
+}
+
+function restoreNativeTitle(host: Element | null) {
+  if (!host) return
+  const backup = host.getAttribute(TITLE_BACKUP_ATTR)
+  if (backup == null) return
+  host.setAttribute('title', backup)
+  host.removeAttribute(TITLE_BACKUP_ATTR)
+}
+
+function collectTitledAncestors(img: HTMLImageElement): Element[] {
+  const hosts: Element[] = []
+  const frame = img.closest(PREVIEW_FRAME_SELECTOR)
+  let node: Element | null = img
+  while (node && node !== document.body) {
+    if (node.getAttribute('title') || node.hasAttribute(TITLE_BACKUP_ATTR)) {
+      hosts.push(node)
+    }
+    if (frame && node === frame) break
+    node = node.parentElement
+  }
+  return hosts
+}
+
+function zoomHintPanelStyle(hint: ZoomHintState): React.CSSProperties {
+  const pad = 8
+  const left = Math.min(hint.x + 14, window.innerWidth - pad - 160)
+  const top = Math.min(hint.y + 18, window.innerHeight - pad - 48)
+  return { left: Math.max(pad, left), top: Math.max(pad, top) }
+}
+
 function cardPreviewPanelStyle(x: number, y: number): React.CSSProperties {
   const pad = 12
   const maxW = Math.min(window.innerWidth * 0.92, 720)
@@ -215,7 +291,25 @@ function resolvePreview(
 export function AltImagePreviewProvider({ children }: { children: React.ReactNode }) {
   const [altHeld, setAltHeld] = useState(false)
   const [preview, setPreview] = useState<PreviewState | null>(null)
+  const [zoomHint, setZoomHint] = useState<ZoomHintState | null>(null)
   const pointerRef = useRef({ x: 0, y: 0 })
+  const hintTimerRef = useRef<number | null>(null)
+  const hintHostRef = useRef<Element | null>(null)
+  const suppressedTitlesRef = useRef<Element[]>([])
+  const hintShownRef = useRef(false)
+
+  const clearZoomHint = useCallback(() => {
+    if (hintTimerRef.current != null) {
+      window.clearTimeout(hintTimerRef.current)
+      hintTimerRef.current = null
+    }
+    restoreNativeTitle(hintHostRef.current)
+    suppressedTitlesRef.current.forEach(restoreNativeTitle)
+    suppressedTitlesRef.current = []
+    hintHostRef.current = null
+    hintShownRef.current = false
+    setZoomHint(null)
+  }, [])
 
   const applyPreview = useCallback((x: number, y: number, target: EventTarget | null, altActive: boolean) => {
     if (!altActive) {
@@ -230,6 +324,7 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
       if (event.key !== 'Alt' && !event.altKey) return
       setAltPreviewHeld(true)
       setAltHeld(true)
+      clearZoomHint()
       if (event.repeat) return
       const { x, y } = pointerRef.current
       applyPreview(x, y, document.elementFromPoint(x, y), true)
@@ -245,6 +340,7 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
       setAltPreviewHeld(false)
       setAltHeld(false)
       setPreview(null)
+      clearZoomHint()
     }
 
     window.addEventListener('keydown', onKeyDown)
@@ -256,23 +352,67 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
       window.removeEventListener('blur', onBlur)
       setAltPreviewHeld(false)
     }
-  }, [applyPreview])
+  }, [applyPreview, clearZoomHint])
 
   useEffect(() => {
     const onMouseMove = (event: MouseEvent) => {
       pointerRef.current = { x: event.clientX, y: event.clientY }
-      applyPreview(event.clientX, event.clientY, event.target, altHeld || event.altKey)
+      const altActive = altHeld || event.altKey
+      const img = findPreviewImageAtPoint(event.clientX, event.clientY, event.target)
+      if (!img || altActive) {
+        if (hintHostRef.current) clearZoomHint()
+        applyPreview(event.clientX, event.clientY, event.target, altActive)
+        return
+      }
+
+      const host = ensureZoomHintTitle(img)
+      if (hintHostRef.current !== host) {
+        restoreNativeTitle(hintHostRef.current)
+        suppressedTitlesRef.current.forEach(restoreNativeTitle)
+        suppressedTitlesRef.current = []
+        hintHostRef.current = host
+        hintShownRef.current = false
+        setZoomHint(null)
+        if (hintTimerRef.current != null) {
+          window.clearTimeout(hintTimerRef.current)
+          hintTimerRef.current = null
+        }
+      }
+      suppressNativeTitle(host)
+      collectTitledAncestors(img).forEach(node => {
+        suppressNativeTitle(node)
+        if (!suppressedTitlesRef.current.includes(node)) {
+          suppressedTitlesRef.current.push(node)
+        }
+      })
+      if (!hintShownRef.current && hintTimerRef.current == null) {
+        const title = host.getAttribute(TITLE_BACKUP_ATTR) ?? host.getAttribute('title')
+        const parts = splitImageZoomHint(title)
+        hintTimerRef.current = window.setTimeout(() => {
+          hintTimerRef.current = null
+          hintShownRef.current = true
+          setZoomHint({
+            ...parts,
+            x: pointerRef.current.x,
+            y: pointerRef.current.y,
+          })
+        }, ZOOM_HINT_DELAY_MS)
+      }
+
+      applyPreview(event.clientX, event.clientY, event.target, false)
     }
     const onMouseLeave = () => {
       setPreview(null)
+      clearZoomHint()
     }
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('mouseleave', onMouseLeave)
     return () => {
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('mouseleave', onMouseLeave)
+      clearZoomHint()
     }
-  }, [altHeld, applyPreview])
+  }, [altHeld, applyPreview, clearZoomHint])
 
   const panel =
     (altHeld || preview) && preview ? (
@@ -297,10 +437,19 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
       </div>
     ) : null
 
+  const hintPanel =
+    !preview && zoomHint ? (
+      <div className="alt-image-zoom-hint" style={zoomHintPanelStyle(zoomHint)} aria-hidden="true">
+        {zoomHint.label ? <span className="alt-image-zoom-hint__label">{zoomHint.label}</span> : null}
+        <span className="alt-image-zoom-hint__hint">{zoomHint.hint}</span>
+      </div>
+    ) : null
+
   return (
     <>
       {children}
       {typeof document !== 'undefined' && panel ? createPortal(panel, document.body) : null}
+      {typeof document !== 'undefined' && hintPanel ? createPortal(hintPanel, document.body) : null}
     </>
   )
 }

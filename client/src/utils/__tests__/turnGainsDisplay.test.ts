@@ -6,6 +6,7 @@ import {
   groupGainsForDisplay,
   INLINE_DISCARDS_GROUP_KEY,
   splitGainsByCostAndReward,
+  peelFreighterRecallsFromCosts,
   aggregateResourceGains,
   aggregateInfluenceGains,
   computeTurnGainTotals,
@@ -28,9 +29,11 @@ import {
   excludeAcquireEffectGains,
   groupCombatHistoryGainsByPlayer,
   excludeAcquiredGainsFromDisplay,
+  ACQUIRE_GROUP_TITLE,
   getGainGroupIcon,
   isRevealPooledRewardType,
   splitRevealPooledGains,
+  getPersuasionSourceContributions,
 } from '../turnGainsDisplay'
 
 describe('turnGainsDisplay', () => {
@@ -1029,6 +1032,67 @@ describe('turnGainsDisplay', () => {
     expect(groups[0].title).toBe('Smuggling')
   })
 
+  it('peels Interstellar Shipping recall off the cost→reward arrow and keeps advance first', () => {
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.BOARD_SPACE,
+        sourceId: 26,
+        round: 1,
+        name: 'Interstellar Shipping',
+        amount: 1,
+        type: RewardType.FREIGHTER,
+      },
+      {
+        playerId: 0,
+        source: GainSource.BOARD_SPACE,
+        sourceId: 26,
+        round: 1,
+        name: 'Interstellar Shipping',
+        amount: -2,
+        type: RewardType.FREIGHTER,
+      },
+    ]
+    const groups = groupGainsBySource(gains)
+    expect(groups).toHaveLength(1)
+    expect(groups[0].title).toBe('Interstellar Shipping')
+
+    const { costs, rewards } = splitGainsByCostAndReward(groups[0].gains)
+    const { paidCosts, freighterRecalls } = peelFreighterRecallsFromCosts(costs)
+    expect(paidCosts).toHaveLength(0)
+    expect(rewards).toEqual([expect.objectContaining({ type: RewardType.FREIGHTER, amount: 1 })])
+    expect(freighterRecalls).toEqual([
+      expect.objectContaining({ type: RewardType.FREIGHTER, amount: 2 }),
+    ])
+  })
+
+  it('keeps paid solari on the cost side when peeling freighter recalls', () => {
+    const { costs, rewards } = splitGainsByCostAndReward([
+      {
+        playerId: 0,
+        source: GainSource.BOARD_SPACE,
+        sourceId: 13,
+        round: 1,
+        name: 'Swordmaster',
+        amount: -8,
+        type: RewardType.SOLARI,
+      },
+      {
+        playerId: 0,
+        source: GainSource.BOARD_SPACE,
+        sourceId: 13,
+        round: 1,
+        name: 'Swordmaster',
+        amount: 1,
+        type: RewardType.SWORDMASTER,
+      },
+    ])
+    const { paidCosts, freighterRecalls } = peelFreighterRecallsFromCosts(costs)
+    expect(paidCosts).toEqual([expect.objectContaining({ type: RewardType.SOLARI, amount: 8 })])
+    expect(freighterRecalls).toHaveLength(0)
+    expect(rewards).toEqual([expect.objectContaining({ type: RewardType.SWORDMASTER, amount: 1 })])
+  })
+
   it('resolveFreighterMoveGroupTitle uses the source card when the gain name is Recall', () => {
     const group = {
       key: 'card:2001',
@@ -1213,6 +1277,81 @@ describe('turnGainsDisplay', () => {
     expect(excludeAcquireEffectGains(gains, [cardId])).toHaveLength(1)
   })
 
+  it('groupGainsBySource titles acquired cards {ACQUIRE_GROUP_TITLE} and merges acquire effects', () => {
+    const acquiredId = 1033
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: acquiredId,
+        round: 1,
+        name: 'Lady Jessica',
+        amount: 1,
+        type: RewardType.CARD,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: acquiredId,
+        round: 1,
+        name: 'Bene Gesserit Acquire',
+        amount: 1,
+        type: RewardType.INFLUENCE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 99,
+        round: 1,
+        name: 'Stilgar',
+        amount: 3,
+        type: RewardType.PERSUASION,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0])
+
+    expect(groups).toHaveLength(2)
+    expect(groups[0].title).toBe(ACQUIRE_GROUP_TITLE)
+    expect(groups[0].gains.map(g => g.type)).toEqual([RewardType.CARD, RewardType.INFLUENCE])
+    expect(groups[1].title).toBe('Stilgar')
+  })
+
+  it('groupGainsBySource keeps two acquired cards as separate {ACQUIRE_GROUP_TITLE} rows', () => {
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 1,
+        round: 1,
+        name: 'The Spice Must Flow',
+        amount: 1,
+        type: RewardType.CARD,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 1,
+        round: 1,
+        name: 'The Spice Must Flow Acquire Effect',
+        amount: 1,
+        type: RewardType.VICTORY_POINTS,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 2,
+        round: 1,
+        name: 'Arrakis Liaison',
+        amount: 1,
+        type: RewardType.CARD,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0])
+
+    expect(groups).toHaveLength(2)
+    expect(groups.map(g => g.title)).toEqual([ACQUIRE_GROUP_TITLE, ACQUIRE_GROUP_TITLE])
+    expect(groups[0].gains).toHaveLength(2)
+    expect(groups[1].gains).toHaveLength(1)
+  })
+
   it('attributes acquire-trash gains to the acquired card source id', () => {
     const acquiredId = 7001
     const trashedId = 7002
@@ -1366,6 +1505,83 @@ describe('turnGainsDisplay', () => {
     const groups = groupGainsBySource(specifics)
     expect(groups).toHaveLength(1)
     expect(groups[0].title).toBe("Smuggler's Thopter")
+  })
+
+  it('getPersuasionSourceContributions lists cards, intrigue, tech, and High Council', () => {
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 201,
+        round: 1,
+        name: 'Arrakis Liaison',
+        amount: 2,
+        type: RewardType.PERSUASION,
+      },
+      {
+        playerId: 0,
+        source: GainSource.INTRIGUE,
+        sourceId: 7,
+        round: 1,
+        name: 'Charisma',
+        amount: 2,
+        type: RewardType.PERSUASION,
+      },
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: 0,
+        round: 1,
+        name: 'Minimic Film',
+        amount: 1,
+        type: RewardType.PERSUASION,
+      },
+      {
+        playerId: 0,
+        source: GainSource.HIGH_COUNCIL,
+        sourceId: 0,
+        round: 1,
+        name: 'High Council Seat',
+        amount: 2,
+        type: RewardType.PERSUASION,
+      },
+    ]
+
+    const contributions = getPersuasionSourceContributions(gains)
+    expect(contributions.map(c => ({ kind: c.kind, title: c.title, amount: c.amount }))).toEqual([
+      { kind: 'card', title: 'Arrakis Liaison', amount: 2 },
+      { kind: 'intrigue', title: 'Charisma', amount: 2 },
+      { kind: 'tech', title: 'Minimic Film', amount: 1 },
+      { kind: 'text', title: 'High Council', amount: 2 },
+    ])
+    expect(contributions.find(c => c.kind === 'card')?.image).toMatch(/arrakis_liaison/)
+    expect(contributions.find(c => c.kind === 'intrigue')?.image).toMatch(/charisma/)
+    expect(contributions.find(c => c.kind === 'tech')?.image).toBeTruthy()
+  })
+
+  it('keeps separate persuasion thumbs for two copies of the same card', () => {
+    const contributions = getPersuasionSourceContributions([
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 10,
+        round: 1,
+        name: 'Convincing Argument',
+        amount: 2,
+        type: RewardType.PERSUASION,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 11,
+        round: 1,
+        name: 'Convincing Argument',
+        amount: 2,
+        type: RewardType.PERSUASION,
+      },
+    ])
+    expect(contributions).toHaveLength(2)
+    expect(contributions.every(c => c.title === 'Convincing Argument' && c.amount === 2)).toBe(true)
   })
 
   it('groupGainsBySource merges conflict spice and influence under placement title', () => {

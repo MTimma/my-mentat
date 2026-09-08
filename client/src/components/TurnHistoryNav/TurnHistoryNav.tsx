@@ -62,6 +62,8 @@ export interface TurnHistoryNavProps {
   isViewingHistory: boolean
   onTurnChange: (turnIndex: number) => void
   onReturnToCurrent: () => void
+  /** When true, next/current cannot land on the live in-progress turn. */
+  hideLiveTurn?: boolean
   className?: string
   /** Replaces the skip-to-current button (e.g. End Turn on the live turn). */
   lastSlot?: ReactNode
@@ -78,6 +80,7 @@ const TurnHistoryNav = ({
   isViewingHistory,
   onTurnChange,
   onReturnToCurrent,
+  hideLiveTurn = false,
   className,
   lastSlot,
   lastSlotWidthLabel,
@@ -87,11 +90,15 @@ const TurnHistoryNav = ({
   const [lastSlotWidth, setLastSlotWidth] = useState<number | undefined>()
 
   const effectiveViewIndex = viewingTurnIndex ?? historyLength
+  const lastVisibleIndex = hideLiveTurn ? Math.max(-1, historyLength - 1) : historyLength
   const canGoToBeginning = !inSandboxSetup && effectiveViewIndex > 0
   const canGoToPreviousTurn = !inSandboxSetup && effectiveViewIndex > 0
   const canGoToNextTurn =
-    !inSandboxSetup && viewingTurnIndex !== null && effectiveViewIndex < historyLength
-  const canGoToCurrent = !inSandboxSetup && isViewingHistory
+    !inSandboxSetup && viewingTurnIndex !== null && effectiveViewIndex < lastVisibleIndex
+  const canGoToCurrent =
+    !inSandboxSetup &&
+    isViewingHistory &&
+    (!hideLiveTurn || (historyLength > 0 && viewingTurnIndex !== historyLength - 1))
 
   const goToBeginning = useCallback(() => {
     if (!canGoToBeginning) return
@@ -105,12 +112,12 @@ const TurnHistoryNav = ({
 
   const goToNextTurn = useCallback(() => {
     if (!canGoToNextTurn) return
-    if (effectiveViewIndex < historyLength) {
+    if (effectiveViewIndex < lastVisibleIndex) {
       onTurnChange(effectiveViewIndex + 1)
     } else {
       onReturnToCurrent()
     }
-  }, [canGoToNextTurn, effectiveViewIndex, historyLength, onTurnChange, onReturnToCurrent])
+  }, [canGoToNextTurn, effectiveViewIndex, lastVisibleIndex, onTurnChange, onReturnToCurrent])
 
   const goToCurrent = useCallback(() => {
     if (!canGoToCurrent) return

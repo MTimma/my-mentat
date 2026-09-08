@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from 'react'
-import type { Card, Gain, GameState, Player } from '../../types/GameTypes'
+import type { Card, Gain, GameState, IntrigueCard, Player, PlayerColor } from '../../types/GameTypes'
 import type { TechTileId } from '../../data/techTiles'
 import TurnGainsDisplay from '../TurnGainsDisplay/TurnGainsDisplay'
 import PlayerTechModal from '../PlayerTechModal/PlayerTechModal'
@@ -12,6 +12,7 @@ import type {
   CombatTroopDeployProps,
 } from './CombatAreaCluster'
 import { playAreaCardHasPendingEffectHighlight } from '../../utils/playAreaDisplay'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './CombatSeatTurnChrome.css'
 
 export type BirdseyeSeatDeployProps = {
@@ -344,6 +345,7 @@ function useScrollOverflowFades(enabled: boolean, measureKey: string) {
 
 export function BirdseyeSeatGains({
   playerId,
+  playerColor,
   gains,
   troopsDeployed = 0,
   troopsRetreated = 0,
@@ -354,6 +356,7 @@ export function BirdseyeSeatGains({
   resolveCard,
 }: {
   playerId: number
+  playerColor?: PlayerColor
   gains: Gain[]
   troopsDeployed?: number
   troopsRetreated?: number
@@ -384,6 +387,7 @@ export function BirdseyeSeatGains({
         <TurnGainsDisplay
           gains={gains}
           playerId={playerId}
+          playerColor={playerColor}
           showSourceTitles={showSourceTitles && !totalsOnly}
           showTotals={showTotals}
           totalsOnly={totalsOnly}
@@ -448,17 +452,45 @@ export function BirdseyeDesktopControls({
   )
 }
 
+function PlayAreaThumb({
+  card,
+  className,
+  title,
+  style,
+}: {
+  card: Card
+  className: string
+  title: string
+  style?: React.CSSProperties
+}) {
+  return (
+    <div className={className} title={card.image ? withImageZoomHint(title) : title} style={style}>
+      {card.image ? (
+        <img src={card.image} alt={card.name} draggable={false} data-preview-src={card.image} />
+      ) : (
+        <span className="birdseye-seat-play-area__card-name">{card.name}</span>
+      )}
+    </div>
+  )
+}
+
 /** Compact in-play cards under each desktop leader seat. */
 export function BirdseyeSeatPlayArea({
   cards,
   isActive = false,
   revealedCardIds,
   pendingEffectCardIds,
+  playedIntrigues = [],
+  activeIntrigues = [],
+  pendingIntrigueIds,
 }: {
   cards: Card[]
   isActive?: boolean
   revealedCardIds?: number[]
   pendingEffectCardIds?: ReadonlySet<number> | number[]
+  playedIntrigues?: IntrigueCard[]
+  activeIntrigues?: IntrigueCard[]
+  pendingIntrigueIds?: ReadonlySet<number> | number[]
 }) {
   const names = cards.map(card => card.name).filter(Boolean)
   const revealedIds = new Set(revealedCardIds ?? [])
@@ -466,65 +498,118 @@ export function BirdseyeSeatPlayArea({
     pendingEffectCardIds instanceof Set
       ? pendingEffectCardIds
       : new Set(pendingEffectCardIds ?? [])
+  const pendingIntrigueIdSet =
+    pendingIntrigueIds instanceof Set
+      ? pendingIntrigueIds
+      : new Set(pendingIntrigueIds ?? [])
   const revealedCount = cards.filter(card => revealedIds.has(card.id)).length
   let revealedOrder = 0
+  const hasCards = cards.length > 0
+  const hasIntrigues = playedIntrigues.length > 0 || activeIntrigues.length > 0
+  const ariaLabel = [
+    names.length > 0 && `Play area: ${names.join(', ')}`,
+    playedIntrigues.length > 0 &&
+      `Played intrigue: ${playedIntrigues.map(card => card.name).join(', ')}`,
+    activeIntrigues.length > 0 &&
+      `Active intrigue: ${activeIntrigues.map(card => card.name).join(', ')}`,
+  ]
+    .filter(Boolean)
+    .join('. ')
+
+  const renderIntrigue = (card: IntrigueCard, kind: 'played' | 'active') => {
+    const hasPendingEffects = playAreaCardHasPendingEffectHighlight(
+      card.id,
+      pendingIntrigueIdSet,
+      isActive
+    )
+    const isActiveIntrigue = kind === 'active'
+    return (
+      <PlayAreaThumb
+        key={`${kind}-intrigue-${card.id}`}
+        card={card}
+        className={[
+          'birdseye-seat-play-area__card',
+          'birdseye-seat-play-area__card--intrigue',
+          isActiveIntrigue ? 'birdseye-seat-play-area__card--active-intrigue' : '',
+          hasPendingEffects ? 'turn-card-frame--has-effects' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        title={
+          hasPendingEffects
+            ? `Resolve pending effects for ${card.name}`
+            : isActiveIntrigue
+              ? `${card.name} (active this round)`
+              : card.name
+        }
+        style={hasPendingEffects ? { zIndex: 8 } : undefined}
+      />
+    )
+  }
+
   return (
     <div
       className={[
         'birdseye-seat-play-area',
         isActive ? 'birdseye-seat-play-area--active' : '',
-        cards.length === 0 ? 'birdseye-seat-play-area--empty' : '',
+        !hasCards && !hasIntrigues ? 'birdseye-seat-play-area--empty' : '',
       ]
         .filter(Boolean)
         .join(' ')}
-      aria-label={names.length > 0 ? `Play area: ${names.join(', ')}` : 'Empty play area'}
+      aria-label={ariaLabel || 'Empty play area'}
     >
-      {cards.length === 0 ? (
+      {!hasCards && !hasIntrigues ? (
         <div className="birdseye-seat-play-area__well" />
       ) : (
-        <div className="birdseye-seat-play-area__cards">
-          {cards.map(card => {
-            const isRevealed = revealedIds.has(card.id)
-            const hasPendingEffects = playAreaCardHasPendingEffectHighlight(
-              card.id,
-              pendingIds,
-              isActive
-            )
-            const revealZ = isRevealed ? revealedCount - revealedOrder++ : undefined
-            return (
-              <div
-                key={card.id}
-                className={[
-                  'birdseye-seat-play-area__card',
-                  isRevealed ? 'birdseye-seat-play-area__card--revealed' : '',
-                  hasPendingEffects ? 'turn-card-frame--has-effects' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                title={
-                  hasPendingEffects ? `Resolve pending effects for ${card.name}` : card.name
-                }
-                style={
-                  hasPendingEffects
-                    ? { zIndex: 8 }
-                    : revealZ != null
-                      ? { zIndex: revealZ }
-                      : undefined
-                }
-              >
-                {card.image ? (
-                  <img
-                    src={card.image}
-                    alt={card.name}
-                    draggable={false}
-                    data-preview-src={card.image}
+        <div className="birdseye-seat-play-area__stack">
+          {hasCards ? (
+            <div className="birdseye-seat-play-area__cards">
+              {cards.map(card => {
+                const isRevealed = revealedIds.has(card.id)
+                const hasPendingEffects = playAreaCardHasPendingEffectHighlight(
+                  card.id,
+                  pendingIds,
+                  isActive
+                )
+                const revealZ = isRevealed ? revealedCount - revealedOrder++ : undefined
+                return (
+                  <PlayAreaThumb
+                    key={card.id}
+                    card={card}
+                    className={[
+                      'birdseye-seat-play-area__card',
+                      isRevealed ? 'birdseye-seat-play-area__card--revealed' : '',
+                      hasPendingEffects ? 'turn-card-frame--has-effects' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    title={
+                      hasPendingEffects
+                        ? `Resolve pending effects for ${card.name}`
+                        : card.name
+                    }
+                    style={
+                      hasPendingEffects
+                        ? { zIndex: 8 }
+                        : revealZ != null
+                          ? { zIndex: revealZ }
+                          : undefined
+                    }
                   />
-                ) : (
-                  <span className="birdseye-seat-play-area__card-name">{card.name}</span>
-                )}
-              </div>
-            )
-          })}
+                )
+              })}
+            </div>
+          ) : null}
+          {hasIntrigues ? (
+            <div
+              className="birdseye-seat-play-area__intrigues"
+              role="group"
+              aria-label="Played and active intrigue"
+            >
+              {playedIntrigues.map(card => renderIntrigue(card, 'played'))}
+              {activeIntrigues.map(card => renderIntrigue(card, 'active'))}
+            </div>
+          ) : null}
         </div>
       )}
     </div>

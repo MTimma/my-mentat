@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { ConflictCard } from '../../types/GameTypes'
 import { conflictCardImageSrc } from '../../data/boardMarkerAnchors'
 import { BoardScopedModal } from '../BoardScopedModal'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './ConflictSelect.css'
 
 interface ConflictSelectProps {
@@ -48,6 +49,7 @@ const ConflictSelect: React.FC<ConflictSelectProps> = ({
                   <img
                     src={cardImageSrc ?? undefined}
                     alt={card.name}
+                    title={withImageZoomHint(card.name)}
                     className="conflict-card-image"
                     draggable={false}
                     data-preview-src={cardImageSrc ?? undefined}

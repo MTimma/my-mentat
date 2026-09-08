@@ -1,0 +1,209 @@
+.sandbox-session-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px 12px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 215, 0, 0.1) 0%,
+    rgba(10, 12, 18, 0.55) 100%
+  );
+  border-bottom: 1px solid rgba(255, 215, 0, 0.28);
+  color: #f0e6d4;
+  z-index: 20;
+}
+
+.sandbox-session-bar__row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.sandbox-session-bar__kit {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.sandbox-session-bar__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 248, 232, 0.78);
+}
+
+.sandbox-session-bar__select {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-height: 2rem;
+  padding: 0.3rem 1.7rem 0.3rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 248, 232, 0.28);
+  background-color: rgba(0, 0, 0, 0.45);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%23fff8e8' d='M1.2 1.4L6 6.2l4.8-4.8'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.55rem center;
+  background-size: 0.7rem;
+  color: #fff8e8;
+  font-size: 0.82rem;
+  appearance: none;
+}
+
+.sandbox-session-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.sandbox-session-bar__btn {
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 248, 232, 0.3);
+  background: transparent;
+  color: #fff8e8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sandbox-session-bar__btn:hover {
+  border-color: rgba(255, 215, 0, 0.55);
+  color: #ffd700;
+}
+
+.sandbox-session-bar__btn--primary {
+  background: #ffd700;
+  border-color: #ffd700;
+  color: #000;
+}
+
+.sandbox-session-bar__btn--primary:hover {
+  filter: brightness(1.08);
+  color: #000;
+}
+
+.sandbox-session-bar--compact {
+  padding: 6px 10px;
+  gap: 6px 8px;
+}
+
+.sandbox-session-bar--compact .sandbox-session-bar__kit {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.sandbox-session-bar--compact .sandbox-session-bar__actions {
+  width: 100%;
+}
+
+.sandbox-session-bar--compact .sandbox-session-bar__btn {
+  flex: 1 1 auto;
+}
+
+.sandbox-session-bar--docked {
+  padding: 8px 8px 6px;
+  z-index: auto;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.22);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.sandbox-session-bar--docked .sandbox-session-bar__row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.sandbox-session-bar--docked .sandbox-session-bar__kit {
+  width: 100%;
+  max-width: 100%;
+}
+
+.sandbox-session-bar--docked .sandbox-session-bar__select {
+  width: 100%;
+}
+
+.sandbox-session-bar--docked .sandbox-session-bar__actions {
+  width: 100%;
+}
+
+.sandbox-session-bar--docked .sandbox-session-bar__btn {
+  flex: 1 1 0;
+  font-size: 0.72rem;
+  padding: 6px 8px;
+  white-space: normal;
+}
+
+.sandbox-session-bar--docked .sandbox-session-bar__setup .sandbox-setup-controls {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.sandbox-session-bar--docked .sandbox-session-bar__setup .sandbox-setup-controls__finish,
+.sandbox-session-bar--docked .sandbox-session-bar__setup .sandbox-setup-controls__actions {
+  width: 100%;
+}
+
+.sandbox-session-bar--docked .sandbox-session-bar__setup .sandbox-setup-controls__commit {
+  width: 100%;
+}
+
+.sandbox-session-bar__setup {
+  width: 100%;
+}
+
+.sandbox-session-bar__setup .sandbox-setup-controls {
+  padding: 0;
+  border: none;
+  background: none;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.sandbox-session-bar__setup .sandbox-setup-controls__finish,
+.sandbox-session-bar__setup .sandbox-setup-controls__actions {
+  flex: 0 1 auto;
+}
+
+.sandbox-session-bar__browse-dialog {
+  width: min(36rem, 92vw);
+  max-height: min(70vh, 32rem);
+  overflow: auto;
+}
+
+.sandbox-session-bar__browse-list {
+  background: var(--color-arrakis-parchment, #f4e4bc);
+  color: var(--color-arrakis-earth, #5c3d24);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.sandbox-session-bar__browse-empty {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.sandbox-session-bar__browse-note {
+  margin: 0.35rem auto 0.9rem;
+  max-width: 28rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+  color: color-mix(in srgb, var(--color-arrakis-earth, #5c3d24) 42%, #000);
+}

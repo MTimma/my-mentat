@@ -3,6 +3,7 @@ import type { TechTileId } from '../../data/techTiles'
 import { getTechTile } from '../../data/techTiles'
 import type { Player } from '../../types/GameTypes'
 import { effectiveTechCost, techTilesAvailableForNextReveal } from '../../utils/techTiles'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './TechMarketRow.css'
 
 export interface TechMarketRowProps {
@@ -118,7 +119,7 @@ const TechMarketRow: React.FC<TechMarketRowProps> = ({
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                title={tile.name}
+                title={withImageZoomHint(tile.name)}
                 onClick={() => setSelectedNextTileId(tileId)}
               >
                 <img src={tile.image} alt={tile.name} className="tech-market-tile__img" draggable={false} data-preview-src={tile.image} />
@@ -213,11 +214,11 @@ const TechMarketRow: React.FC<TechMarketRowProps> = ({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              title={
+              title={withImageZoomHint(
                 canAfford
                   ? `Acquire ${tile.name} for ${cost} ${currencyLabel}`
                   : `Cannot afford ${tile.name} (${cost} ${currencyLabel})`
-              }
+              )}
               disabled={!canAfford}
               onClick={() => beginAcquire(stackIndex)}
             >

@@ -5,6 +5,7 @@ import { getTechTile } from '../../data/techTiles'
 import type { TechTileId } from '../../data/techTiles'
 import type { Player } from '../../types/GameTypes'
 import { effectiveTechCost } from '../../utils/techTiles'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './TechStacksModal.css'
 
 interface TechStacksModalProps {
@@ -112,7 +113,7 @@ const TechStacksModal: React.FC<TechStacksModalProps> = ({
                       className="tech-stacks-modal__tile-img"
                       src={tile.image}
                       alt={tile.name}
-                      title={tile.description}
+                      title={withImageZoomHint(tile.description)}
                       draggable={false}
                       data-preview-src={tile.image}
                     />

@@ -1,6 +1,11 @@
 import { Gain, GainSource, GameState, GameTurn, RewardType } from '../types/GameTypes'
 import { BOARD_SPACES } from '../data/boardSpaces'
-import { catalogDeckCardNameById, catalogIntrigueNameById } from './cardCatalogLookup'
+import {
+  catalogDeckCardImageById,
+  catalogDeckCardNameById,
+  catalogIntrigueImageById,
+  catalogIntrigueNameById,
+} from './cardCatalogLookup'
 import { factionFromInfluenceGainName, sourceTitleFromInfluenceGainName } from './influenceDisplay'
 import {
   TechTileId,
@@ -66,6 +71,99 @@ export function splitRevealPooledGains(gains: Gain[]): { pooled: Gain[]; specifi
   return { pooled, specifics }
 }
 
+export type PersuasionSourceKind = 'card' | 'intrigue' | 'tech' | 'text'
+
+export interface PersuasionSourceContribution {
+  key: string
+  kind: PersuasionSourceKind
+  title: string
+  amount: number
+  image?: string
+  cardId?: number
+}
+
+const TECH_GAIN_TITLE_PREFIX = 'Tech: '
+
+function persuasionSourceKind(source: GainSource): PersuasionSourceKind {
+  if (source === GainSource.CARD) return 'card'
+  if (source === GainSource.INTRIGUE) return 'intrigue'
+  if (source === GainSource.TECH || source === GainSource.IX_BOARD) return 'tech'
+  return 'text'
+}
+
+function persuasionSourceTitle(group: TurnGainSourceGroup): string {
+  const sample = group.gains[0]
+  if (sample?.source === GainSource.HIGH_COUNCIL) return 'High Council'
+  if (group.title.startsWith(TECH_GAIN_TITLE_PREFIX)) {
+    return group.title.slice(TECH_GAIN_TITLE_PREFIX.length)
+  }
+  return group.title
+}
+
+function persuasionSourceImage(
+  kind: PersuasionSourceKind,
+  sample: Gain,
+  title: string
+): string | undefined {
+  if (kind === 'card') return catalogDeckCardImageById(sample.sourceId)
+  if (kind === 'intrigue') return catalogIntrigueImageById(sample.sourceId)
+  if (kind === 'tech') {
+    const tile =
+      getTechTile(techIdentityForGain(sample) as TechTileId) ?? getTechTileByName(title)
+    return tile?.image || undefined
+  }
+  return undefined
+}
+
+/** Reveal-turn persuasion total breakdown (cards, intrigue, tech, High Council). */
+export function getPersuasionSourceContributions(gains: Gain[]): PersuasionSourceContribution[] {
+  const persuasionGains = gains.filter(
+    gain => gain.type === RewardType.PERSUASION && gain.amount !== 0
+  )
+  if (persuasionGains.length === 0) return []
+
+  const order: string[] = []
+  const grouped = new Map<string, Gain[]>()
+  for (const gain of persuasionGains) {
+    const key =
+      gain.source === GainSource.TECH || gain.source === GainSource.IX_BOARD
+        ? `${gain.source}:${techIdentityForGain(gain)}:${gain.playerId}`
+        : `${gain.source}:${gain.sourceId}:${gain.playerId}`
+    const existing = grouped.get(key)
+    if (existing) {
+      existing.push(gain)
+    } else {
+      order.push(key)
+      grouped.set(key, [gain])
+    }
+  }
+
+  return order
+    .map(key => {
+      const groupGains = grouped.get(key)
+      if (!groupGains) return null
+      const sample = groupGains[0]
+      const amount = groupGains.reduce((sum, gain) => sum + gain.amount, 0)
+      if (!sample || amount === 0) return null
+      const kind = persuasionSourceKind(sample.source)
+      const title = persuasionSourceTitle({
+        key,
+        title: abilityTitleForGain(sample) ?? sample.name,
+        gains: groupGains,
+      })
+      const image = persuasionSourceImage(kind, sample, title)
+      return {
+        key,
+        kind,
+        title,
+        amount,
+        image,
+        cardId: kind === 'card' || kind === 'intrigue' ? sample.sourceId : undefined,
+      } satisfies PersuasionSourceContribution
+    })
+    .filter((entry): entry is PersuasionSourceContribution => entry != null)
+}
+
 /** Display order for net resource totals in turn history. */
 export const TURN_TOTAL_RESOURCE_ORDER: RewardType[] = [
   RewardType.PERSUASION,
@@ -82,6 +180,7 @@ export const TURN_TOTAL_RESOURCE_ORDER: RewardType[] = [
   RewardType.VICTORY_POINTS,
   RewardType.MENTAT,
   RewardType.AGENT,
+  RewardType.SWORDMASTER,
   RewardType.EXTRA_TURN,
   RewardType.CONTROL,
   RewardType.DISCARD,
@@ -454,6 +553,8 @@ function abilityTitleForGain(gain: Gain): string | undefined {
   switch (gain.source) {
     case GainSource.MASTERSTROKE:
       return 'Masterstroke'
+    case GainSource.HIGH_COUNCIL:
+      return 'High Council'
     case GainSource.MEMNON_HIGH_COUNCIL:
       return 'Memnon: High Council'
     case GainSource.TESSIA_SNOOPER:
@@ -475,7 +576,30 @@ function abilityTitleForGain(gain: Gain): string | undefined {
   }
 }
 
-function titleForGainGroup(gain: Gain): string {
+/** Source-group title for Imperium / reserve / intrigue card acquisitions. */
+export const ACQUIRE_GROUP_TITLE = 'Acquire'
+
+function isAcquireGainName(name: string): boolean {
+  return name.endsWith(' Acquire') || name.endsWith(' Acquire Effect')
+}
+
+/** Card ids that were bought this turn (CARD row or legacy acquire-effect names). */
+function acquiredCardSourceIds(gains: Gain[]): Set<number> {
+  const ids = new Set<number>()
+  for (const gain of gains) {
+    if (gain.source !== GainSource.CARD) continue
+    if (gain.type === RewardType.CARD && gain.amount > 0) ids.add(gain.sourceId)
+    else if (isAcquireGainName(gain.name)) ids.add(gain.sourceId)
+  }
+  return ids
+}
+
+function isAcquireRelatedGain(gain: Gain, acquiredIds: Set<number>): boolean {
+  return gain.source === GainSource.CARD && acquiredIds.has(gain.sourceId)
+}
+
+function titleForGainGroup(gain: Gain, acquiredIds: Set<number>): string {
+  if (isAcquireRelatedGain(gain, acquiredIds)) return ACQUIRE_GROUP_TITLE
   return (
     abilityTitleForGain(gain) ??
     boardSpaceTitleForGain(gain) ??
@@ -527,15 +651,19 @@ export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
   const order: string[] = []
   const map = new Map<string, TurnGainSourceGroup>()
   const conflictPlacements = buildConflictPlacementTitlesByPlayer(gains)
+  const acquiredIds = acquiredCardSourceIds(gains)
 
   for (const gain of gains) {
+    const isAcquire = isAcquireRelatedGain(gain, acquiredIds)
     const groupTitle =
       gain.source === GainSource.CONFLICT
         ? conflictGainDisplayTitle(gain, conflictPlacements)
-        : titleForGainGroup(gain)
+        : titleForGainGroup(gain, acquiredIds)
     const key =
       gain.source === GainSource.CONFLICT
         ? conflictGainGroupKey(gain, conflictPlacements)
+        : isAcquire
+          ? `${GainSource.CARD}:acquire:${gain.sourceId}:${gain.playerId}`
         : gain.source === GainSource.TECH
           ? `${gain.source}:${techIdentityForGain(gain)}:${gain.playerId}`
           : gain.source === GainSource.SHIPPING_TRACK
@@ -548,10 +676,14 @@ export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
     const existing = map.get(key)
     if (existing) {
       existing.gains.push(gain)
-      const abilityTitle = abilityTitleForGain(gain)
-      const spaceTitle = boardSpaceTitleForGain(gain)
-      if (abilityTitle) existing.title = abilityTitle
-      else if (spaceTitle) existing.title = spaceTitle
+      if (isAcquire) {
+        existing.title = ACQUIRE_GROUP_TITLE
+      } else {
+        const abilityTitle = abilityTitleForGain(gain)
+        const spaceTitle = boardSpaceTitleForGain(gain)
+        if (abilityTitle) existing.title = abilityTitle
+        else if (spaceTitle) existing.title = spaceTitle
+      }
     } else {
       order.push(key)
       map.set(key, { key, title: groupTitle, gains: [gain] })
@@ -765,4 +897,21 @@ export function splitGainsByCostAndReward(gains: Gain[]): { costs: Gain[]; rewar
     }
   }
   return { costs, rewards }
+}
+
+/**
+ * Recall (negative FREIGHTER) is a track move, not a paid cost.
+ * Keep it off the cost → reward arrow and show it after Advance.
+ */
+export function peelFreighterRecallsFromCosts(costs: Gain[]): {
+  paidCosts: Gain[]
+  freighterRecalls: Gain[]
+} {
+  const paidCosts: Gain[] = []
+  const freighterRecalls: Gain[] = []
+  for (const gain of costs) {
+    if (gain.type === RewardType.FREIGHTER) freighterRecalls.push(gain)
+    else paidCosts.push(gain)
+  }
+  return { paidCosts, freighterRecalls }
 }

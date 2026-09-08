@@ -35,14 +35,14 @@ export function BirdseyeTurnHistoryGrid({
   players: Player[]
 }) {
   const { gameState } = useGame()
-  const { viewingTurnIndex, isViewingHistory, goToTurn, returnToCurrent } = useTimeTravel()
+  const { viewingTurnIndex, isViewingHistory, goToTurn, returnToCurrent, hideLiveTurn } = useTimeTravel()
   const activeCellRef = useRef<HTMLButtonElement | null>(null)
   const playerById = useMemo(() => new Map(players.map(player => [player.id, player])), [players])
 
   const history = gameState.history
   const rows = useMemo(
-    () => buildBirdseyeTurnHistoryGrid(history, playerIds, gameState),
-    [history, playerIds, gameState]
+    () => buildBirdseyeTurnHistoryGrid(history, playerIds, hideLiveTurn ? undefined : gameState),
+    [history, playerIds, gameState, hideLiveTurn]
   )
   const roundGroups = useMemo(() => groupBirdseyeHistoryRounds(rows), [rows])
   const scrollRef = useRef<HTMLDivElement | null>(null)
@@ -67,6 +67,7 @@ export function BirdseyeTurnHistoryGrid({
   const handleCellClick = (cell: BirdseyeHistoryCell) => {
     if (gameState.sandboxSetup) return
     if (cell.isLive) {
+      if (hideLiveTurn) return
       returnToCurrent()
       return
     }
@@ -76,11 +77,12 @@ export function BirdseyeTurnHistoryGrid({
   const handleBannerClick = (historyIndex: number, isLive: boolean) => {
     if (gameState.sandboxSetup) return
     if (isLive || historyIndex >= history.length) {
+      if (hideLiveTurn) return
       returnToCurrent()
       return
     }
     if (isViewingHistory && viewingTurnIndex === historyIndex) {
-      returnToCurrent()
+      if (!hideLiveTurn) returnToCurrent()
       return
     }
     goToTurn(historyIndex)
@@ -88,9 +90,10 @@ export function BirdseyeTurnHistoryGrid({
 
   const inSandboxSetup = Boolean(gameState.sandboxSetup)
   const effectiveViewIndex = viewingTurnIndex ?? history.length
+  const lastVisibleIndex = hideLiveTurn ? Math.max(-1, history.length - 1) : history.length
   const canGoToPreviousTurn = !inSandboxSetup && effectiveViewIndex > 0
   const canGoToNextTurn =
-    !inSandboxSetup && viewingTurnIndex !== null && effectiveViewIndex < history.length
+    !inSandboxSetup && viewingTurnIndex !== null && effectiveViewIndex < lastVisibleIndex
 
   const goToPreviousTurn = useCallback(() => {
     if (!canGoToPreviousTurn) return
@@ -99,12 +102,12 @@ export function BirdseyeTurnHistoryGrid({
 
   const goToNextTurn = useCallback(() => {
     if (!canGoToNextTurn) return
-    if (effectiveViewIndex < history.length) {
+    if (effectiveViewIndex < lastVisibleIndex) {
       goToTurn(effectiveViewIndex + 1)
     } else {
       returnToCurrent()
     }
-  }, [canGoToNextTurn, effectiveViewIndex, history.length, goToTurn, returnToCurrent])
+  }, [canGoToNextTurn, effectiveViewIndex, lastVisibleIndex, goToTurn, returnToCurrent])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -143,6 +146,7 @@ export function BirdseyeTurnHistoryGrid({
           isViewingHistory={isViewingHistory}
           onTurnChange={goToTurn}
           onReturnToCurrent={returnToCurrent}
+          hideLiveTurn={hideLiveTurn}
         />
       </div>
       <div className="birdseye-turn-history__scroll" ref={scrollRef}>

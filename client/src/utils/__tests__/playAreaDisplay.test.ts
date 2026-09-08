@@ -4,12 +4,14 @@ import {
   ChoiceType,
   CustomEffect,
   GainSource,
+  IntrigueCardType,
   TurnType,
   type Card,
   type GameState,
+  type IntrigueCard,
   type Player,
 } from '../../types/GameTypes'
-import { getOpponentDiscardableCards, getPlayAreaCardsForTurnView, getRevealedCardIdsForTurnView, getSelectableDeckCards, validateDiscardCostSelection, getDiscardCostPlayability, canPayDiscardCost, getAgentTurnCardsForDisplay, playAreaCardIdsWithPendingEffectChoice, playAreaCardHasPendingEffectHighlight } from '../playAreaDisplay'
+import { getOpponentDiscardableCards, getPlayAreaCardsForTurnView, getRevealedCardIdsForTurnView, getSelectableDeckCards, validateDiscardCostSelection, getDiscardCostPlayability, canPayDiscardCost, getAgentTurnCardsForDisplay, playAreaCardIdsWithPendingEffectChoice, playAreaCardHasPendingEffectHighlight, playAreaIntrigueIdsWithPendingEffectChoice, getActiveIntrigueCardsForTurnView, getPlayedIntrigueCardsForTurnView } from '../playAreaDisplay'
 
 function stubCard(id: number, name = `card-${id}`): Card {
   return { id, name, image: '', agentIcons: [AgentIcon.CITY] }
@@ -36,6 +38,17 @@ function stubPlayer(overrides: Partial<Player> = {}): Player {
     hasHighCouncilSeat: false,
     ...overrides,
   } as Player
+}
+
+function stubIntrigue(id: number, name = `intrigue-${id}`): IntrigueCard {
+  return {
+    id,
+    name,
+    image: '',
+    agentIcons: [],
+    type: IntrigueCardType.PLOT,
+    description: '',
+  }
 }
 
 describe('playAreaDisplay', () => {
@@ -225,5 +238,70 @@ describe('playAreaDisplay', () => {
     expect(playAreaCardHasPendingEffectHighlight(10, pending, false)).toBe(false)
     expect(playAreaCardHasPendingEffectHighlight(11, pending, true)).toBe(false)
     expect(playAreaCardHasPendingEffectHighlight(10, undefined, true)).toBe(false)
+  })
+
+  it('getPlayedIntrigueCardsForTurnView resolves this player\'s played intrigues and skips active ones', () => {
+    const ambush = stubIntrigue(1, 'Ambush')
+    const bindu = stubIntrigue(3, 'Bindu Suspension')
+    const player = stubPlayer({ id: 0 })
+    const other = stubPlayer({ id: 1 })
+    const gameState = {
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        playedIntrigueCard: [{ cardId: 1 }, { cardId: 3 }],
+      },
+      intrigueDiscard: [ambush],
+      intrigueDeck: [],
+      activeIntrigueThisRound: { 0: [bindu] },
+    } as unknown as GameState
+
+    expect(getPlayedIntrigueCardsForTurnView(gameState, player).map(c => c.id)).toEqual([1])
+    expect(getPlayedIntrigueCardsForTurnView(gameState, other)).toEqual([])
+    expect(getPlayedIntrigueCardsForTurnView(undefined, player)).toEqual([])
+  })
+
+  it('getActiveIntrigueCardsForTurnView returns this player\'s active-this-round intrigues', () => {
+    const bindu = stubIntrigue(3, 'Bindu Suspension')
+    const player = stubPlayer({ id: 0 })
+    const other = stubPlayer({ id: 1 })
+    const gameState = {
+      activeIntrigueThisRound: { 0: [bindu] },
+    } as unknown as GameState
+
+    expect(getActiveIntrigueCardsForTurnView(gameState, player).map(c => c.id)).toEqual([3])
+    expect(getActiveIntrigueCardsForTurnView(gameState, other)).toEqual([])
+    expect(getActiveIntrigueCardsForTurnView(undefined, player)).toEqual([])
+  })
+
+  it('playAreaIntrigueIdsWithPendingEffectChoice collects intrigue sources that still need input', () => {
+    const gameState = {
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        pendingChoices: [
+          {
+            id: 'or-1',
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Choose',
+            options: [],
+            source: { type: GainSource.INTRIGUE, id: 1, name: 'Ambush' },
+          },
+          {
+            id: 'card',
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Card',
+            options: [],
+            source: { type: GainSource.CARD, id: 1, name: 'Scout' },
+          },
+        ],
+        optionalEffects: [],
+      },
+      pendingRewards: [],
+    } as GameState
+
+    expect([...playAreaIntrigueIdsWithPendingEffectChoice(gameState)]).toEqual([1])
+    expect([...playAreaCardIdsWithPendingEffectChoice(gameState)]).toEqual([1])
+    expect(playAreaIntrigueIdsWithPendingEffectChoice(gameState, { isHistoryView: true }).size).toBe(0)
   })
 })

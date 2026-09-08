@@ -1554,6 +1554,7 @@ body:has(.game-container--play) {
 
 .game-name-input,
 .player-count-select,
+.game-pack-select,
 .color-select {
   width: 100%;
   max-width: 100%;

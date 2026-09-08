@@ -6,6 +6,7 @@ export interface SandboxSetupControlsProps {
   position: SandboxSetupPosition | undefined
   ready: boolean
   riseOfIx?: boolean
+  leadersDone: boolean
   imperiumRowDone: boolean
   techTilesDone: boolean
   conflictDone: boolean
@@ -19,6 +20,7 @@ const SandboxSetupControls: React.FC<SandboxSetupControlsProps> = ({
   position,
   ready,
   riseOfIx = false,
+  leadersDone,
   imperiumRowDone,
   techTilesDone,
   conflictDone,
@@ -27,8 +29,8 @@ const SandboxSetupControls: React.FC<SandboxSetupControlsProps> = ({
   compact = false,
 }) => {
   const commitBlockedHint = riseOfIx
-    ? 'Pick 5 imperium row cards, 3 tech tiles, and a conflict card first'
-    : 'Pick 5 imperium row cards and a conflict card first'
+    ? 'Pick a leader for each player, 5 imperium row cards, 3 tech tiles, and a conflict card first'
+    : 'Pick a leader for each player, 5 imperium row cards, and a conflict card first'
 
   const currentRound = position?.round ?? null
 
@@ -43,6 +45,7 @@ const SandboxSetupControls: React.FC<SandboxSetupControlsProps> = ({
   }
 
   const setupSteps = [
+    { key: 'leaders', label: 'Leaders', done: leadersDone },
     { key: 'imperium-row', label: 'Imperium row', done: imperiumRowDone },
     ...(riseOfIx ? [{ key: 'tech-tiles', label: 'Tech tiles', done: techTilesDone }] : []),
     { key: 'conflict', label: 'Conflict', done: conflictDone },

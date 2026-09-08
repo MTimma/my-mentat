@@ -10,6 +10,7 @@ import {
 } from '../../expansions/immortality/graft'
 import { usePlayBoardModalContext } from '../../context/PlayBoardModalContext'
 import { BoardScopedModal } from '../BoardScopedModal'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import './CardSearch.css'
 
@@ -119,6 +120,7 @@ const CardGridItem = React.memo(function CardGridItem({
           <img
             src={card.image}
             alt={card.name}
+            title={withImageZoomHint(card.name)}
             className="card-image"
             data-preview-src={card.image}
           />
@@ -487,7 +489,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
             }`}
             disabled={!card}
             onClick={() => handleRemoveFromPreview(index)}
-            title={card ? `Remove ${card.name}` : undefined}
+            title={card ? withImageZoomHint(`Remove ${card.name}`) : undefined}
             aria-label={
               card
                 ? `Remove ${card.name} from selection`

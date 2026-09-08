@@ -17,6 +17,9 @@ export const LEADER_NAMES = {
   TESSIA_VERNIUS: "Tessia Vernius",
 } as const
 
+/** Sandbox setup placeholder until the user picks a real leader. */
+export const UNASSIGNED_LEADER_NAME = 'Unassigned'
+
 /** Maps leader names to full image paths. Returns undefined if no image exists. */
 export const LEADER_IMAGES: Record<string, string> = {
   [LEADER_NAMES.COUNTESS_ARIANA_THORVALD]: '/leaders/ariana.avif',
@@ -52,8 +55,10 @@ export const LEADER_ICON_SLUGS: Record<string, string> = {
   [LEADER_NAMES.ARCHDUKE_ARMAND_ECAZ]: 'archduke-armand-ecaz',
   [LEADER_NAMES.ILESA_ECAZ]: 'ilesa-ecaz',
   [LEADER_NAMES.TESSIA_VERNIUS]: 'tessia-vernius',
+  [UNASSIGNED_LEADER_NAME]: 'unassigned',
 }
 export const getLeaderIconPath = (leaderName: string): string | undefined => {
+  if (leaderName === UNASSIGNED_LEADER_NAME) return undefined
   const portraitPath = LEADER_IMAGES[leaderName]
   if (portraitPath?.startsWith('/leaders/rise_of_ix/')) {
     const basename = portraitPath.slice('/leaders/rise_of_ix/'.length)
@@ -249,4 +254,16 @@ export const RISE_OF_IX_LEADERS: Leader[] = [
 
 export function getLeaderPool(expansions: Expansions): Leader[] {
   return expansions.riseOfIx ? [...LEADERS, ...RISE_OF_IX_LEADERS] : LEADERS
+}
+
+export function createUnassignedLeader(): Leader {
+  return new Leader(UNASSIGNED_LEADER_NAME, { name: '', description: '' }, '', 1)
+}
+
+export function isUnassignedLeader(leader: Leader | null | undefined): boolean {
+  return !leader || leader.name === UNASSIGNED_LEADER_NAME
+}
+
+export function areAllLeadersAssigned(players: Array<{ leader: Leader }>): boolean {
+  return players.length > 0 && players.every(player => !isUnassignedLeader(player.leader))
 }

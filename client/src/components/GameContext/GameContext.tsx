@@ -188,6 +188,7 @@ import { shouldGrantIlbanSolariDraw } from '../../data/leaderAbilities/ilbanSola
 import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraadDiscount'
 import { shouldGrantMemnonInfluence, buildMemnonInfluenceReward } from '../../data/leaderAbilities/memnonHighCouncilInfluence'
 import { applyLeaderStartingResourceDelta } from '../../data/leaderAbilities/beastSetup'
+import { isUnassignedLeader } from '../../data/leaders'
 import {
   shouldGrantYunaSolariBonus,
   applyYunaSolariBonus,
@@ -3175,7 +3176,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Swap leaders with another player when picking an already-assigned leader.
       if (
         action.patch.leader !== undefined &&
-        action.patch.leader.name !== player.leader.name
+        action.patch.leader.name !== player.leader.name &&
+        !isUnassignedLeader(action.patch.leader)
       ) {
         const other = state.players.find(
           p => p.id !== action.playerId && p.leader.name === action.patch.leader!.name
@@ -9164,9 +9166,10 @@ interface GameProviderProps {
   /** Event-sourced game input: setup + optional pre-recorded events. */
   gameInput: SaveDoc
   children: React.ReactNode
+  canEdit?: boolean
 }
 
-export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children }) => {
+export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children, canEdit = true }) => {
   const initialEvents = JSON.parse(JSON.stringify(gameInput.events)) as EventEntry[]
   const initialStateWithHistory = buildInitialStateFromSaveDoc(gameInput)
 
@@ -9346,7 +9349,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children 
 
   return (
     <GameContext.Provider value={value}>
-      <TimeTravelProvider gameState={gameState} onUndoToTurn={handleUndoToTurn}>
+      <TimeTravelProvider gameState={gameState} onUndoToTurn={handleUndoToTurn} canEdit={canEdit}>
         {children}
       </TimeTravelProvider>
     </GameContext.Provider>

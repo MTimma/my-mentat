@@ -4,6 +4,7 @@ import { getTechTile } from '../../data/techTiles'
 import type { PlayerTechTile } from '../../data/techTiles'
 import type { Player } from '../../types/GameTypes'
 import TechTileFlipBadge from '../TechTileFlipBadge/TechTileFlipBadge'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './PlayerTechTiles.css'
 
 export interface PlayerTechTilesProps {
@@ -65,7 +66,7 @@ const PlayerTechTiles: React.FC<PlayerTechTilesProps> = ({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              title={title}
+              title={withImageZoomHint(title)}
               disabled={!activatable && variant === 'compact'}
               onClick={() => onTileClick(owned.id)}
             >
@@ -84,7 +85,7 @@ const PlayerTechTiles: React.FC<PlayerTechTilesProps> = ({
             ]
               .filter(Boolean)
               .join(' ')}
-            title={title}
+            title={withImageZoomHint(title)}
           >
             {content}
           </span>

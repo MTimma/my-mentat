@@ -73,5 +73,41 @@
 }
 
 .sandbox-setup-hint--imperium-row {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.sandbox-setup-hint--large {
+  max-width: min(36ch, 42vw);
+  padding: 10px 12px;
+  gap: 8px;
+  border-radius: 10px;
+  font-size: clamp(11px, 1.35vw, 15px);
+  line-height: 1.3;
+}
+
+.sandbox-setup-hint--large .sandbox-setup-hint__icon {
+  width: 1.55em;
+  height: 1.55em;
+  font-size: 0.95em;
+}
+
+.sandbox-setup-hint--large.sandbox-setup-hint--inline {
+  max-width: min(100%, 44ch);
+}
+
+.sandbox-setup-hint--leaders {
+  position: absolute;
+  right: calc(50% - 130px);
+  top: 10%;
+  z-index: 6;
+  margin: 0;
+  width: max-content;
+  max-width: min(28ch, 32vw);
+}
+
+.sandbox-setup-hint--tech-tiles {
+  z-index: 6;
+  width: max-content;
+  max-width: min(24ch, 28vw);
+  margin-right: 6px;
 }

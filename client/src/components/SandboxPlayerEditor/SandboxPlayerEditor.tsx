@@ -7,7 +7,7 @@ import {
   recalculateTessiaSnooperRewardSlot,
   seedTessiaSnoopers,
 } from '../../data/leaderAbilities/tessiaSnoopers'
-import { getLeaderPool } from '../../data/leaders'
+import { getLeaderPool, isUnassignedLeader } from '../../data/leaders'
 import LeaderSelect from '../LeaderSelect/LeaderSelect'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
@@ -167,9 +167,24 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
 
   const availableLeaders = useMemo(() => {
     const pool = getLeaderPool(expansions)
+    if (isUnassignedLeader(player.leader)) return pool
     if (pool.some(leader => leader.name === player.leader.name)) return pool
     return [player.leader, ...pool]
   }, [expansions, player.leader])
+
+  useEffect(() => {
+    if (!isUnassignedLeader(player.leader)) return
+    const pick = availableLeaders.find(leader => !usedLeaderNames.includes(leader.name))
+    if (!pick) return
+    const { spice, solari, water, intrigueCount } = applyLeaderStartingResourceDelta(player, pick)
+    setNumericDraft(prev => ({ ...prev, spice, solari, water, intrigueCount }))
+    onUpdate(
+      seedTessiaSnoopers(
+        { ...player, leader: pick, spice, solari, water, intrigueCount },
+        expansions.riseOfIx
+      )
+    )
+  }, [player.id])
 
   const deckEditorCards = useMemo(
     () =>
@@ -403,18 +418,6 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
 
         <div className="sandbox-player-editor__body">
           <div className="sandbox-player-editor__leader-row">
-            <select
-              value={player.color}
-              onChange={event => handleColorChange(event.target.value as PlayerColor)}
-              className={`sandbox-player-editor__color-select color-select ${player.color}`}
-              aria-label="Player color"
-            >
-              {Object.values(PlayerColor).map(color => (
-                <option key={color} value={color}>
-                  {color}
-                </option>
-              ))}
-            </select>
             <LeaderSelect
               leaders={availableLeaders}
               value={player.leader}
@@ -424,6 +427,18 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
             />
             <div className="sandbox-player-editor__pile-actions">
               <div className="sandbox-player-editor__pile-buttons">
+                <select
+                  value={player.color}
+                  onChange={event => handleColorChange(event.target.value as PlayerColor)}
+                  className={`sandbox-player-editor__color-select color-select ${player.color}`}
+                  aria-label="Player color"
+                >
+                  {Object.values(PlayerColor).map(color => (
+                    <option key={color} value={color}>
+                      {color}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   className="sandbox-player-editor__deck-button"

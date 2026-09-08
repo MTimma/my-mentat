@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import type { PlayerTechTile, TechTile, TechTileId } from '../../data/techTiles'
 import { filterBySearchTokens } from '../../utils/searchTokens'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import '../ImperiumRowSelect/ImperiumRowSelect.css'
 import '../TechTileSelect/TechTileSelect.css'
 import './SandboxPlayerTechSelect.css'
@@ -83,7 +84,7 @@ const SandboxPlayerTechSelect: React.FC<SandboxPlayerTechSelectProps> = ({
                   key={tileId}
                   type="button"
                   className="tech-tile-select-preview-slot tech-tile-select-preview-slot--button tech-tile-select-preview-slot--filled"
-                  title={`Remove ${tile.name}`}
+                  title={withImageZoomHint(`Remove ${tile.name}`)}
                   aria-label={`Remove ${tile.name}`}
                   onClick={() => toggleTile(tileId)}
                 >
@@ -113,11 +114,11 @@ const SandboxPlayerTechSelect: React.FC<SandboxPlayerTechSelectProps> = ({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              title={
+              title={withImageZoomHint(
                 isBlocked
                   ? `${tile.name} — unavailable`
                   : `${tile.name} (${tile.cost} spice) — ${tile.description}`
-              }
+              )}
               disabled={isBlocked}
               onClick={() => toggleTile(tile.id)}
             >

@@ -7,7 +7,7 @@ import { buildStartingDeck } from '../services/starterDeckSetup'
 import SaveDocImportPanel from './SaveDocImportPanel/SaveDocImportPanel'
 import GamesList from './GamesList/GamesList'
 import GamePackEditor from './GamePackEditor/GamePackEditor'
-import type { SaveDoc } from '../save/types'
+import type { LoadSaveFn } from '../api/gamesApi'
 import { getSelectableGamePacks } from '../gamePacks/registry'
 import { subscribeGamePacks } from '../gamePacks/customGamePacks'
 import { expansionsForGamePack } from '../gamePacks/resolveGamePack'
@@ -23,8 +23,8 @@ interface GameSetupProps {
   onGamePackChange: (gamePackId: string) => void
   onComplete: (playerSetups: PlayerSetup[], gamePackId: string) => void
   /** Start sandbox mode: straight to the board with default state, configure everything there. */
-  onSandbox: (playerSetups: PlayerSetup[], gamePackId: string) => void
-  onLoadSave?: (doc: SaveDoc) => void
+  onSandbox: (playerSetups: PlayerSetup[], gamePackId: string, title?: string) => void
+  onLoadSave?: LoadSaveFn
   showBoardInfoTips: boolean
   onShowBoardInfoTipsChange: (enabled: boolean) => void
 }
@@ -239,7 +239,7 @@ const GameSetup: React.FC<GameSetupProps> = ({
         <button
           className="start-game-button start-game-button--sandbox"
           disabled={!isSetupComplete()}
-          onClick={() => onSandbox(players, gamePackId)}
+          onClick={() => onSandbox(players, gamePackId, gameName.trim() || 'Sandbox game')}
           title="Skip setup screens — configure everything directly on the board"
         >
           Sandbox Mode

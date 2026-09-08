@@ -79,7 +79,7 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
           <p className="undo-main-warning">
             {isSandboxEditUndo
               ? 'You will return to setup editing. Your board configuration will be kept.'
-              : `This will reset ${undoFromLabel} and all future turns.`}
+              : `This will clear all turns to the beginning of ${undoFromLabel}`}
           </p>
 
           <div className="undo-details">

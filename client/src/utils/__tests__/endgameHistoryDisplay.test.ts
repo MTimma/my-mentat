@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { GamePhase } from '../../types/GameTypes'
 import { getFreshDefaultGameState } from '../../components/GameContext/GameContext'
 import {
+  clampHistoryViewIndex,
   hasEndgameRowContent,
   mergeEndgameHistoryRow,
   shouldHideLiveHistoryEntry,
+  shouldHideLiveTurnForViewers,
 } from '../endgameHistoryDisplay'
 
 describe('endgameHistoryDisplay', () => {
@@ -43,5 +45,26 @@ describe('endgameHistoryDisplay', () => {
     ]
 
     expect(shouldHideLiveHistoryEntry(turns, current)).toBe(true)
+  })
+
+  it('hides the live turn for view-only in-progress games, not finished games', () => {
+    const inProgress = getFreshDefaultGameState()
+    const finished = {
+      ...getFreshDefaultGameState(),
+      phase: GamePhase.END_GAME,
+      endgameWinners: [0],
+    }
+    expect(shouldHideLiveTurnForViewers(true, inProgress)).toBe(false)
+    expect(shouldHideLiveTurnForViewers(false, inProgress)).toBe(true)
+    expect(shouldHideLiveTurnForViewers(false, finished)).toBe(false)
+  })
+
+  it('clamps view-only navigation off the live turn', () => {
+    expect(clampHistoryViewIndex(null, 5, true)).toBe(4)
+    expect(clampHistoryViewIndex(5, 5, true)).toBe(4)
+    expect(clampHistoryViewIndex(2, 5, true)).toBe(2)
+    expect(clampHistoryViewIndex(null, 5, false)).toBe(null)
+    expect(clampHistoryViewIndex(5, 5, false)).toBe(null)
+    expect(clampHistoryViewIndex(null, 0, true)).toBe(null)
   })
 })

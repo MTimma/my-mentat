@@ -85,6 +85,7 @@
 
 .birdseye-seat-btn--play.birdseye-seat-btn--has-card {
   overflow: visible;
+  z-index: 2;
 }
 
 .birdseye-seat-btn--play .birdseye-seat-btn__label,
@@ -104,6 +105,11 @@
     0 0 3px rgba(0, 0, 0, 0.95),
     0 1px 2px #000,
     0 0 8px rgba(0, 0, 0, 0.85);
+}
+
+/* Same top-edge hang as Play/Reveal; card starts lower so it does not cover the title. */
+.birdseye-seat-btn--play.birdseye-seat-btn--has-card .birdseye-seat-btn__label {
+  z-index: 4;
 }
 
 .birdseye-seat-btn__label {
@@ -145,15 +151,20 @@
   max-height: none;
 }
 
+/* Card is 5:7 in a wide key — hide the meeple instead of leaving it peeking around the thumb. */
+.birdseye-seat-btn--has-card .birdseye-seat-btn__agent {
+  display: none;
+}
+
 .birdseye-seat-btn--has-card::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 0.72rem;
+  height: 0.42rem;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.82), transparent);
-  z-index: 1;
+  z-index: 3;
   pointer-events: none;
 }
 
@@ -175,6 +186,10 @@
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
 }
 
+.birdseye-seat-btn--has-card .birdseye-seat-btn__card-thumb {
+  top: 0.52rem;
+}
+
 .birdseye-seat-btn__card-thumb img {
   display: block;
   width: 100%;
@@ -187,6 +202,10 @@
 .game-container--play.play-area-collapsed .birdseye-rim .birdseye-seat-btn__card-thumb,
 .game-container--play.play-area-collapsed .birdseye-rim .birdseye-seat-btn--has-card::after {
   display: none;
+}
+
+.game-container--play.play-area-collapsed .birdseye-rim .birdseye-seat-btn--has-card .birdseye-seat-btn__agent {
+  display: block;
 }
 
 .birdseye-seat-btn__hand-count {
@@ -839,6 +858,16 @@
   white-space: nowrap;
 }
 
+.birdseye-interactions-strip .effect-btn--compact .effect-resource-cost,
+.birdseye-interactions-strip .effect-btn--compact .effect-resource-cost-icon,
+.birdseye-interactions-strip .effect-token-icon,
+.birdseye-interactions-strip .resource-icon {
+  width: 14px;
+  height: 14px;
+  max-width: 14px;
+  max-height: 14px;
+}
+
 /* Seat layout wrappers */
 .combat-area-cluster__seat--birdseye {
   display: flex;
@@ -1071,6 +1100,12 @@
   border-bottom: 1px solid rgba(255, 248, 232, 0.28);
 }
 
+/* Play sits under Intrigue in this reverse stack; overlay labels must paint above it. */
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat__primary {
+  position: relative;
+  z-index: 3;
+}
+
 .combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn {
   min-width: 2.35rem;
   height: 2.35rem;
@@ -1191,20 +1226,28 @@
   background: rgba(255, 248, 232, 0.02);
 }
 
-.combat-area-cluster--column .birdseye-seat-play-area__cards {
+.combat-area-cluster--column .birdseye-seat-play-area__stack {
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-height: 0;
   max-height: 100%;
-  isolation: isolate;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: rgba(212, 177, 106, 0.4) transparent;
   padding-bottom: 0.2rem;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__cards {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+  width: 100%;
+  isolation: isolate;
 }
 
 .combat-area-cluster--column .birdseye-seat-play-area__card {
@@ -1262,6 +1305,32 @@
   font-weight: 700;
   text-align: center;
   color: var(--chrome-text-muted, #d4c4a8);
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__intrigues {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+  width: 100%;
+  isolation: isolate;
+  margin-top: 0.28rem;
+  padding-top: 0.22rem;
+  border-top: 1px dashed rgba(143, 97, 188, 0.38);
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card--intrigue {
+  --play-card-max-w: 4.6rem;
+  --play-card-w-pct: 0.74;
+  box-shadow:
+    0 0 0 1px rgba(143, 97, 188, 0.48),
+    0 3px 8px rgba(0, 0, 0, 0.45);
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card--active-intrigue {
+  box-shadow:
+    0 0 0 1px rgba(212, 177, 106, 0.55),
+    0 2px 10px rgba(0, 0, 0, 0.28);
 }
 
 .combat-area-cluster__seat-top {

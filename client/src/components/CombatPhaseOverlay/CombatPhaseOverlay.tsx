@@ -16,6 +16,7 @@ import { resolveCardInSnapshot, resolveCardInSnapshotByName } from '../../utils/
 import { buildCombatRankEntries } from '../../utils/combatRankStrip'
 import { CombatRankChip } from '../ImageBoard/CombatRankStrip'
 import TurnGainsDisplay from '../TurnGainsDisplay/TurnGainsDisplay'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import '../TurnHistory.css'
 import './CombatPhaseOverlay.css'
 
@@ -68,7 +69,7 @@ function CombatConflictCard({ conflict }: { conflict: ConflictCard }) {
   const showImage = Boolean(src && !failed)
 
   return (
-    <div className="combat-phase-conflict" title={conflict.name}>
+    <div className="combat-phase-conflict" title={withImageZoomHint(conflict.name)}>
       {showImage ? (
         <img
           src={src ?? undefined}

@@ -1,28 +1,31 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { fetchGames, type GameListItem } from '../../api/gamesApi'
-import { parseSaveDocJson } from '../../save/parseSaveDoc'
-import type { SaveDoc } from '../../save/types'
+import { fetchGameDoc, fetchGames, type GameDetail, type LoadSaveFn } from '../../api/gamesApi'
 import './GamesList.css'
 
 type GamesListTab = 'community' | 'official'
 
 export interface GamesListProps {
-  onLoad: (doc: SaveDoc) => void
+  onLoad: LoadSaveFn
   className?: string
 }
 
-function formatTimestamp(raw: string): string {
+function formatUnixOrIso(raw: string): string {
   const seconds = Number(raw)
-  if (!Number.isFinite(seconds)) return raw
-  return new Date(seconds * 1000).toLocaleString()
+  if (Number.isFinite(seconds) && raw.trim() !== '') {
+    return new Date(seconds * 1000).toLocaleString()
+  }
+  const parsed = Date.parse(raw)
+  if (Number.isFinite(parsed)) return new Date(parsed).toLocaleString()
+  return raw
 }
 
 const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
   const [activeTab, setActiveTab] = useState<GamesListTab>('community')
-  const [games, setGames] = useState<GameListItem[]>([])
-  const [listStatus, setListStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const [games, setGames] = useState<GameDetail[]>([])
+  const [listStatus, setListStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('loading')
   const [listError, setListError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [loadingId, setLoadingId] = useState<number | null>(null)
 
   const loadGames = useCallback(async () => {
     setListStatus('loading')
@@ -43,14 +46,17 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
     void loadGames()
   }, [activeTab, loadGames])
 
-  const handleLoadGame = (game: GameListItem) => {
+  const handleLoadGame = async (game: GameDetail) => {
     setLoadError(null)
-    const result = parseSaveDocJson(game.json)
-    if (!result.ok) {
-      setLoadError(`Game #${game.id}: ${result.error}`)
-      return
+    setLoadingId(game.id)
+    try {
+      const doc = await fetchGameDoc(game.id)
+      onLoad(doc, game.id)
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : `Failed to load game #${game.id}`)
+    } finally {
+      setLoadingId(null)
     }
-    onLoad(result.doc)
   }
 
   return (
@@ -116,14 +122,15 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
                 {games.map(game => (
                   <tr key={game.id}>
                     <td className="games-list-name">{game.name || `Game #${game.id}`}</td>
-                    <td className="games-list-meta">{formatTimestamp(game.updated_at)}</td>
+                    <td className="games-list-meta">{formatUnixOrIso(game.updated_at)}</td>
                     <td>
                       <button
                         type="button"
                         className="games-list-load-btn"
-                        onClick={() => handleLoadGame(game)}
+                        disabled={loadingId === game.id}
+                        onClick={() => void handleLoadGame(game)}
                       >
-                        Load
+                        {loadingId === game.id ? 'Loading…' : 'Load'}
                       </button>
                     </td>
                   </tr>

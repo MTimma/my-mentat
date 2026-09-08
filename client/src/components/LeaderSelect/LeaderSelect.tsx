@@ -40,8 +40,10 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
     }
     const rect = trigger.getBoundingClientRect()
     const menuWidth =
-      variant === 'setup' || variant === 'sandbox'
-        ? Math.min(240, Math.max(180, window.innerWidth - rect.left - 16))
+      variant === 'sandbox'
+        ? Math.min(400, Math.max(280, window.innerWidth - rect.left - 16))
+        : variant === 'setup'
+          ? Math.min(240, Math.max(180, window.innerWidth - rect.left - 16))
         : rect.width
     setMenuRect({
       top: rect.bottom,
@@ -185,7 +187,7 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
           {selectedImage ? (
             <img src={selectedImage} alt="" draggable={false} />
           ) : (
-            <span className="leader-select__thumb-fallback">?</span>
+            <span className="leader-select__thumb-fallback">+</span>
           )}
         </span>
         <span className="leader-select__chevron" aria-hidden="true" />

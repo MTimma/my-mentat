@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { AgentIcon, GainSource, RewardType, TurnType, type Card, type GameState } from '../../types/GameTypes'
 import { getAcquiredTechTilesForTurn, getRevealTurnStats, resolvePlayedCardForTurn, resolvePlayedCardsForTurn, revealTurnStatsHasContent } from '../revealTurnStats'
 import { TechTileId } from '../../data/techTiles'
@@ -201,5 +203,16 @@ describe('revealTurnStats', () => {
       currTurn: { ...state.currTurn!, type: TurnType.REVEAL },
     }, 0)
     expect(stats?.acquiredTechTiles).toHaveLength(1)
+  })
+})
+
+describe('RevealTurnStatsPanel acquire label', () => {
+  it('uses {ACQUIRE_GROUP_TITLE} instead of the card name', () => {
+    const tsx = readFileSync(
+      resolve(__dirname, '../../components/RevealTurnStatsPanel/RevealTurnStatsPanel.tsx'),
+      'utf8'
+    )
+    expect(tsx).toContain('className="reveal-turn-acquired-name">{ACQUIRE_GROUP_TITLE}')
+    expect(tsx).not.toContain('className="reveal-turn-acquired-name">{card.name}')
   })
 })

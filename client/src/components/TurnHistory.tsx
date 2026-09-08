@@ -40,6 +40,7 @@ import {
   revealTurnStatsHasContent,
 } from '../utils/revealTurnStats'
 import RevealTurnStatsPanel from './RevealTurnStatsPanel/RevealTurnStatsPanel'
+import { withImageZoomHint } from './AltImagePreview/imageZoomHint'
 import {
   cyclePlayChromeTheme,
   getPlayChromeTheme,
@@ -49,7 +50,7 @@ import {
 import SetupSnapshotPreview from './SetupSnapshotPreview/SetupSnapshotPreview'
 import TurnGainsDisplay from './TurnGainsDisplay/TurnGainsDisplay'
 import { useGame } from './GameContext/GameContext'
-import { saveGameJson } from '../api/gamesApi'
+import { saveGameJson, type LoadSaveFn } from '../api/gamesApi'
 import SaveDocImportPanel from './SaveDocImportPanel/SaveDocImportPanel'
 import GamesList from './GamesList/GamesList'
 import type { SaveDoc } from '../save/types'
@@ -79,7 +80,8 @@ interface TurnHistoryProps {
   /** Rendered at the top of the panel (e.g. sandbox setup controls). */
   topSlot?: React.ReactNode
   /** Replace the current session with a loaded SaveDoc (in-game debug load). */
-  onLoadSave?: (doc: SaveDoc) => void
+  onLoadSave?: LoadSaveFn
+  hideLiveTurn?: boolean
 }
 
 const DetailsIcon = () => (
@@ -138,6 +140,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   onOpenPlayerOverview,
   topSlot,
   onLoadSave,
+  hideLiveTurn = false,
 }) => {
   const isDocked = layout === 'docked'
   const { exportSaveDoc } = useGame()
@@ -216,16 +219,16 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   }, [exportSaveDoc])
 
   const handleLoadSaveFromPanel = useCallback(
-    (doc: SaveDoc) => {
+    (doc: SaveDoc, serverGameId?: number) => {
       if (!onLoadSave) return
       const current = exportSaveDoc()
       if (current.events.length > 0) {
         const ok = window.confirm(
-          'Replace the current game with the pasted save? Unsaved progress in this session will be lost.'
+          'Load this game? The started game will be lost.'
         )
         if (!ok) return
       }
-      onLoadSave(doc)
+      onLoadSave(doc, serverGameId)
       setShowDebugModal(false)
     },
     [exportSaveDoc, onLoadSave]
@@ -381,6 +384,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               <TurnGainsDisplay
                 gains={playerGains}
                 playerId={playerId}
+                playerColor={player?.color}
                 showSourceTitles
                 inlineTrash
                 resolveCard={makeResolveCardForPlayer(turn, playerId)}
@@ -406,6 +410,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               <TurnGainsDisplay
                 gains={otherGains}
                 playerId={playerId}
+                playerColor={otherPlayer?.color}
                 showSourceTitles
                 inlineDiscards
                 inlineTrash
@@ -446,7 +451,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         ]
           .filter(Boolean)
           .join(' ')}
-        title={card.name}
+        title={card.image ? withImageZoomHint(card.name) : card.name}
       >
         {card.image ? (
           <img
@@ -501,7 +506,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   const renderIntrigueThumbs = (intrigueCards: IntrigueCard[]) => {
     if (intrigueCards.length === 0) return null
     return intrigueCards.map(card => (
-      <span key={`intrigue-${card.id}`} className="turn-history-card-thumb turn-history-card-thumb--intrigue" title={card.name}>
+      <span key={`intrigue-${card.id}`} className="turn-history-card-thumb turn-history-card-thumb--intrigue" title={withImageZoomHint(card.name)}>
         <img
           src={card.image}
           alt=""
@@ -591,6 +596,10 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             <TurnGainsDisplay
               gains={gainsForDisplay}
               playerId={turn.currPlayer}
+              playerColor={
+                (turn.players.find(p => p.id === turn.currPlayer) ??
+                  players.find(p => p.id === turn.currPlayer))?.color
+              }
               resolveCard={makeResolveCard(turn)}
               troopsDeployedToConflict={troopsDeployed}
               troopsRetreatedFromConflict={troopsRetreated}
@@ -765,6 +774,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             conflictCardImageSrc(turn.currentConflict.id) && <img style={{ width: '30px', height: '42px' }}
             src={conflictCardImageSrc(turn.currentConflict.id)?? undefined}
             alt={turn.currentConflict.name}
+            title={withImageZoomHint(turn.currentConflict.name)}
             className="conflict-card-image"
             draggable={false}
             data-preview-src={conflictCardImageSrc(turn.currentConflict.id) ?? undefined}
@@ -789,9 +799,10 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   const inSandboxSetup = Boolean(currentGameState.sandboxSetup)
 
   const effectiveViewIndex = viewingTurnIndex ?? turns.length
+  const lastVisibleIndex = hideLiveTurn ? Math.max(-1, turns.length - 1) : turns.length
   const canGoToPreviousTurn = !inSandboxSetup && effectiveViewIndex > 0
   const canGoToNextTurn =
-    !inSandboxSetup && viewingTurnIndex !== null && effectiveViewIndex < turns.length
+    !inSandboxSetup && viewingTurnIndex !== null && effectiveViewIndex < lastVisibleIndex
 
   const goToPreviousTurn = useCallback(() => {
     if (!canGoToPreviousTurn) return
@@ -800,12 +811,12 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
 
   const goToNextTurn = useCallback(() => {
     if (!canGoToNextTurn) return
-    if (effectiveViewIndex < turns.length) {
+    if (effectiveViewIndex < lastVisibleIndex) {
       onTurnChange(effectiveViewIndex + 1)
     } else {
       onReturnToCurrent()
     }
-  }, [canGoToNextTurn, effectiveViewIndex, turns.length, onTurnChange, onReturnToCurrent])
+  }, [canGoToNextTurn, effectiveViewIndex, lastVisibleIndex, onTurnChange, onReturnToCurrent])
 
   // Handle keyboard navigation (up/down and left/right)
   useEffect(() => {
@@ -841,6 +852,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     if (inSandboxSetup) return
 
     if (index === turns.length) {
+      if (hideLiveTurn) return
       onReturnToCurrent()
       return
     }
@@ -849,7 +861,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     const isReplayMetaRow =
       turn.historyEntryKind === 'combat' || turn.historyEntryKind === 'endgame'
     if (isReplayMetaRow && viewingTurnIndex === index) {
-      onReturnToCurrent()
+      if (!hideLiveTurn) onReturnToCurrent()
       return
     }
 
@@ -886,6 +898,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         isViewingHistory={isViewingHistory}
         onTurnChange={onTurnChange}
         onReturnToCurrent={onReturnToCurrent}
+        hideLiveTurn={hideLiveTurn}
       />
       {headerTitle != null ? (
         <span className="turn-history-header-title">{headerTitle}</span>
@@ -950,7 +963,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         >
           <DetailsIcon />
         </button>
-        {isViewingHistory && !isDocked && (
+        {isViewingHistory && !isDocked && !hideLiveTurn && (
           <button
             type="button"
             className="turn-history-header-live-btn"
@@ -977,7 +990,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       aria-modal={isDocked ? undefined : true}
       aria-label="Turn history"
     >
-      {topSlot}
+      {topSlot ? <div className="turn-history-top-slot">{topSlot}</div> : null}
       <div className="turn-history-list" ref={listRef}>
         {turns.map((turn, index) => {
           const isLastHistoryRow = index === turns.length - 1
@@ -1099,7 +1112,9 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         })}
         
         {/* Current turn pseudo-entry — hidden during sandbox setup until Begin turns */}
-        {!inSandboxSetup && !shouldHideLiveHistoryEntry(turns, currentGameState) && (() => {
+        {!inSandboxSetup &&
+          !hideLiveTurn &&
+          !shouldHideLiveHistoryEntry(turns, currentGameState) && (() => {
           const liveIsEndgame = isLiveEndgameEntry(currentGameState)
           const liveGains = getGainsForTurnState(currentGameState)
           const liveOtherPlayerGains = getOtherPlayersGainsForTurnState(currentGameState)

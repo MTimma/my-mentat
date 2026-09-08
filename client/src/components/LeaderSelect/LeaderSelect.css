@@ -51,9 +51,9 @@
 }
 
 .leader-select__thumb-fallback {
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: var(--color-arrakis-earth);
+  font-size: 1.35rem;
+  font-weight: 300;
+  color: rgba(107, 58, 18, 0.45);
 }
 
 .leader-select__chevron {
@@ -180,7 +180,7 @@
 }
 
 .leader-select--sandbox .leader-select__trigger {
-  width: 4.25rem;
+  width: 8rem;
 }
 
 .leader-select--setup .leader-select__thumb,

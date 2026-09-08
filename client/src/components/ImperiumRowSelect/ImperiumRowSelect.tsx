@@ -49,7 +49,6 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({
   return (
     <PickerModalShell
       title={`Select ${requiredCount} Imperium Row Cards`}
-      lead="Click cards to choose which ones appear in the row before revealing the next conflict."
       countLabel={`Selected ${selectedCards.length} / ${requiredCount}`}
       overlayRef={overlayRef}
     >

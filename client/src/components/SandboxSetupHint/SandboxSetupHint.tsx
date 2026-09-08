@@ -9,6 +9,8 @@ export interface SandboxSetupHintProps {
   anchor?: 'left' | 'center' | 'right'
   /** Board overlay: above anchor. Footer: static row below imperium row. */
   placement?: 'above' | 'inline'
+  /** Desktop sandbox callouts use a larger type size. */
+  size?: 'default' | 'large'
 }
 
 const SandboxSetupHint: React.FC<SandboxSetupHintProps> = ({
@@ -17,6 +19,7 @@ const SandboxSetupHint: React.FC<SandboxSetupHintProps> = ({
   className,
   anchor = 'right',
   placement,
+  size = 'default',
 }) => (
   <div
     className={[
@@ -25,6 +28,7 @@ const SandboxSetupHint: React.FC<SandboxSetupHintProps> = ({
       anchor === 'center' ? 'sandbox-setup-hint--anchor-center' : '',
       placement === 'above' ? 'sandbox-setup-hint--placement-above' : '',
       placement === 'inline' ? 'sandbox-setup-hint--inline' : '',
+      size === 'large' ? 'sandbox-setup-hint--large' : '',
       className,
     ]
       .filter(Boolean)

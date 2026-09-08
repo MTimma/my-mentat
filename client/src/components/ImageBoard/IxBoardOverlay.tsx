@@ -11,6 +11,8 @@ import {
 import { tileById, canPlayerAffordTechTile } from '../../utils/techTiles'
 import { DEFAULT_PLAYER_COLORS, playerColorHex, playerMarkerHex } from '../../utils/playerColors'
 import BoardAgentFigure from '../AgentIcon/AgentIcon'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
+import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
 import './IxBoardOverlay.css'
 
 function playerMarkerColor(player: Player): string {
@@ -45,6 +47,7 @@ export interface IxBoardOverlayProps {
   sandboxTechSetup?: {
     onConfigure: () => void
     requiredFilledStacks: number
+    showSetupHint?: boolean
   }
   /** Active player on the main board (used for afford preview when no acquire reward). */
   currentPlayerId: number
@@ -89,6 +92,11 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
 
   const faceUpCount = stacks.filter(stack => stack[0]).length
   const requiredFilledStacks = sandboxTechSetup?.requiredFilledStacks ?? 3
+  const showSandboxHint = Boolean(
+    sandboxTechSetup?.showSetupHint &&
+      requiredFilledStacks > 0 &&
+      faceUpCount < requiredFilledStacks
+  )
   const sandboxTechLabel = sandboxTechSetup
     ? requiredFilledStacks === 0
       ? 'All tech stacks empty'
@@ -135,6 +143,18 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
       />
 
       <div className="ix-board-overlay__layer">
+        {showSandboxHint ? (
+          <SandboxSetupHint
+            label="Pick 3 face-up tech tiles"
+            anchor="left"
+            size="large"
+            className="sandbox-setup-hint--tech-tiles"
+            style={{
+              left: `${(IX_TECH_TILE_RECTS[0]?.left ?? 56) + 55}%`,
+              top: `${(IX_TECH_TILE_RECTS[0]?.top ?? 5) - 20}%`,
+            }}
+          />
+        ) : null}
         {playersSorted.map((player, laneIdx) => {
           const count = player.negotiatorsOnIx ?? 0
           const anchor = IX_NEGOTIATOR_LANE_ANCHORS[laneIdx]
@@ -189,7 +209,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
                 data-marker="tech-tile"
                 data-stack-index={slot.stackIndex}
                 style={slotStyle}
-                title={sandboxTechLabel}
+                title={withImageZoomHint(sandboxTechLabel)}
                 aria-label={sandboxTechLabel}
                 onClick={sandboxTechSetup.onConfigure}
               >
@@ -257,7 +277,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
               data-marker="tech-tile"
               data-stack-index={slot.stackIndex}
               style={slotStyle}
-              title={title}
+              title={withImageZoomHint(title)}
               aria-label={ariaLabel}
               onClick={() => onTechTileAcquire?.(slot.stackIndex)}
             >

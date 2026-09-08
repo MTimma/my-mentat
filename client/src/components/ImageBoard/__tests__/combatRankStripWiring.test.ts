@@ -352,6 +352,21 @@ describe('Combat rank strip wiring', () => {
     expect(seatCss).toContain('aspect-ratio: 5 / 7')
     expect(seatCss).toContain('object-fit: contain')
     expect(seatCss).toMatch(
+      /\.birdseye-seat-btn--has-card \.birdseye-seat-btn__agent \{[\s\S]*?display:\s*none/
+    )
+    expect(seatCss).toMatch(
+      /\.birdseye-seat-btn__card-thumb \{[\s\S]*?z-index:\s*0/
+    )
+    expect(seatCss).toMatch(
+      /\.birdseye-seat-btn--play\.birdseye-seat-btn--has-card \.birdseye-seat-btn__label \{[\s\S]*?z-index:\s*4/
+    )
+    expect(seatCss).toMatch(
+      /\.birdseye-seat-btn--has-card \.birdseye-seat-btn__card-thumb \{[\s\S]*?top:\s*0\.52rem/
+    )
+    expect(seatCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat__controls-stack \.birdseye-seat__primary \{[\s\S]*?z-index:\s*3/
+    )
+    expect(seatCss).toMatch(
       /\.birdseye-seat-btn--play \.birdseye-seat-btn__agent-icon\.agent \{[\s\S]*?inset:\s*0/
     )
     expect(seatCss).not.toContain('birdseye-seat-btn__agent-count')

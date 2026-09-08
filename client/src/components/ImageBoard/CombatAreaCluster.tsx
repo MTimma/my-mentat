@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useState, type RefObject } from 'react'
 import { GameState, TurnType, type Gain, type Player } from '../../types/GameTypes'
 import {
+  getActiveIntrigueCardsForTurnView,
   getPlayAreaCardsForTurnView,
+  getPlayedIntrigueCardsForTurnView,
   getRevealedCardIdsForTurnView,
   playAreaCardIdsWithPendingEffectChoice,
+  playAreaIntrigueIdsWithPendingEffectChoice,
 } from '../../utils/playAreaDisplay'
 import { COMBAT_AREA_SEATS } from '../../data/boardMarkerAnchors'
-import { getLeaderImage } from '../../data/leaders'
+import { getLeaderImage, isUnassignedLeader } from '../../data/leaders'
 import { isTessiaLeader } from '../../data/leaderAbilities/tessiaSnoopers'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
@@ -131,8 +134,8 @@ function LeaderPortrait({
   player: Player
   isFirstPlayer: boolean
 }) {
-  const leaderImage = getLeaderImage(player.leader.name)
-  if (!leaderImage) return null
+  const unassigned = isUnassignedLeader(player.leader)
+  const leaderImage = unassigned ? undefined : getLeaderImage(player.leader.name)
 
   return (
     <div
@@ -140,16 +143,23 @@ function LeaderPortrait({
         'combat-area-cluster__leader',
         `combat-area-cluster__leader--${player.color}`,
         isTessiaLeader(player.leader) ? 'combat-area-cluster__leader--tessia' : '',
-      ].join(' ')}
+        unassigned || !leaderImage ? 'combat-area-cluster__leader--unassigned' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       aria-hidden="true"
     >
-      <img
-        src={leaderImage}
-        alt=""
-        className="combat-area-cluster__leader-img"
-        draggable={false}
-      />
-      <TessiaLeaderOverlays leader={player.leader} />
+      {leaderImage ? (
+        <img
+          src={leaderImage}
+          alt=""
+          className="combat-area-cluster__leader-img"
+          draggable={false}
+        />
+      ) : (
+        <span className="combat-area-cluster__leader-plus">+</span>
+      )}
+      {leaderImage ? <TessiaLeaderOverlays leader={player.leader} /> : null}
       {isFirstPlayer ? (
         <img
           src="/icon/first_player.png"
@@ -180,8 +190,11 @@ function PlayerQuadrant({
   onSelect: () => void
   showResources?: boolean
 }) {
+  const unassigned = isUnassignedLeader(player.leader)
   const mentatSuffix = hasMentat ? ', mentat holder' : ''
   const firstPlayerSuffix = isFirstPlayer ? ' (first player)' : ''
+  const playerLabel = unassigned ? `Player ${player.id + 1}` : player.leader.name
+  const actionLabel = unassigned ? 'Select leader' : 'View player details'
 
   return (
     <button
@@ -190,12 +203,13 @@ function PlayerQuadrant({
         'combat-area-cluster__quadrant',
         `combat-area-cluster__quadrant--${player.color}`,
         isActive ? 'combat-area-cluster__quadrant--active' : '',
+        unassigned ? 'combat-area-cluster__quadrant--unassigned' : '',
       ]
         .filter(Boolean)
         .join(' ')}
       data-player-id={player.id}
-      title={`${player.leader.name}${firstPlayerSuffix}${mentatSuffix}: view details`}
-      aria-label={`${player.leader.name}${firstPlayerSuffix}${mentatSuffix}. View player details.`}
+      title={`${playerLabel}${firstPlayerSuffix}${mentatSuffix}: ${actionLabel}`}
+      aria-label={`${playerLabel}${firstPlayerSuffix}${mentatSuffix}. ${actionLabel}.`}
       onClick={onSelect}
     >
       <LeaderPortrait player={player} isFirstPlayer={isFirstPlayer} />
@@ -342,6 +356,9 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   const pendingEffectCardIds = playAreaCardIdsWithPendingEffectChoice(gameState, {
     isHistoryView: birdseyeIsHistoryView,
   })
+  const pendingIntrigueIds = playAreaIntrigueIdsWithPendingEffectChoice(gameState, {
+    isHistoryView: birdseyeIsHistoryView,
+  })
 
   useEffect(() => {
     if (!isColumn || !birdseyeEnabled) return
@@ -442,6 +459,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
               <ResourceGrid player={player} riseOfIx={riseOfIx} />
               <BirdseyeSeatGains
                 playerId={player.id}
+                playerColor={player.color}
                 gains={seatGains}
                 resolveCard={resolveSeatCard}
                 troopsDeployed={isActive ? birdseyeTroopsDeployed : 0}
@@ -479,6 +497,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
             <div className="combat-area-cluster__seat-gains-slot">
               <BirdseyeSeatGains
                 playerId={player.id}
+                playerColor={player.color}
                 gains={seatGains}
                 resolveCard={resolveSeatCard}
                 troopsDeployed={isActive ? birdseyeTroopsDeployed : 0}
@@ -513,6 +532,9 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
               isActive={isActive}
               revealedCardIds={getRevealedCardIdsForTurnView(gameState, player)}
               pendingEffectCardIds={isActive ? pendingEffectCardIds : undefined}
+              playedIntrigues={getPlayedIntrigueCardsForTurnView(gameState, player)}
+              activeIntrigues={getActiveIntrigueCardsForTurnView(gameState, player)}
+              pendingIntrigueIds={isActive ? pendingIntrigueIds : undefined}
             />
             {showActiveActions && birdseyeActions ? (
               <BirdseyeDesktopControls
@@ -574,7 +596,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 aria-pressed={!playAreaHorizontal}
                 onClick={() => setDesktopPlayAreaLayout('vertical')}
               >
-                Play area vertical
+                Turn log vertical
               </button>
               <button
                 type="button"
@@ -582,7 +604,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 aria-pressed={playAreaHorizontal}
                 onClick={() => setDesktopPlayAreaLayout('horizontal')}
               >
-                Play area horizontal
+                Turn log horizontal
               </button>
             </div>
           ) : null}

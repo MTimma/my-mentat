@@ -13,6 +13,8 @@ export interface BoardScopedModalProps {
   closeOnOverlayClick?: boolean
   overlayRef?: React.Ref<HTMLDivElement>
   containerRef?: RefObject<HTMLElement | null>
+  /** Portal to document.body as a viewport overlay instead of the play board. */
+  forceViewport?: boolean
 }
 
 const OVERLAY_VARIANT_CLASS: Record<ModalOverlayVariant, string | undefined> = {
@@ -34,9 +36,11 @@ export function BoardScopedModal({
   closeOnOverlayClick = false,
   overlayRef,
   containerRef,
+  forceViewport = false,
 }: BoardScopedModalProps) {
   const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(isOpen, {
     containerRef,
+    forceViewport,
   })
 
   if (!isOpen || waitForBoardTarget) return null

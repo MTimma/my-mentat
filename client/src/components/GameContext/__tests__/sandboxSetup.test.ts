@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyGameAction, getFreshDefaultGameState } from '../GameContext'
 import { CONFLICTS } from '../../../data/conflicts'
-import { LEADERS, LEADER_NAMES, RISE_OF_IX_LEADERS } from '../../../data/leaders'
+import { LEADERS, LEADER_NAMES, RISE_OF_IX_LEADERS, createUnassignedLeader, UNASSIGNED_LEADER_NAME } from '../../../data/leaders'
 import { TechTileId } from '../../../data/techTiles'
 import { buildIxBoardFromFaceUpTiles, buildIxBoardFromSandboxStackTops } from '../riseOfIxReducer'
 import {
@@ -78,6 +78,27 @@ describe('Sandbox setup turn', () => {
     expect(s.sandboxSetup).toBe(true)
     expect(s.history).toHaveLength(1)
     expect(s.history[0].currentConflict.id).toBe(conflict.id)
+  })
+
+  it('SANDBOX_UPDATE_PLAYER assigns a leader from an empty seat without swapping other empty seats', () => {
+    const paul = LEADERS.find(l => l.name === LEADER_NAMES.PAUL_ATREIDES)!
+    let s = getSandboxSetupState()
+    s = {
+      ...s,
+      players: [
+        makePlayer(0, { leader: createUnassignedLeader(), spice: 0, solari: 0, water: 1 }),
+        makePlayer(1, { leader: createUnassignedLeader(), spice: 0, solari: 0, water: 1 }),
+      ],
+    }
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 0,
+      patch: { leader: paul },
+    })
+
+    expect(s.players[0].leader.name).toBe(LEADER_NAMES.PAUL_ATREIDES)
+    expect(s.players[1].leader.name).toBe(UNASSIGNED_LEADER_NAME)
   })
 
   it('SANDBOX_UPDATE_PLAYER patches resources and leader', () => {

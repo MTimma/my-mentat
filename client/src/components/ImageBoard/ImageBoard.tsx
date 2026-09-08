@@ -69,6 +69,7 @@ import {
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { highCouncilSlotAssignments } from '../../utils/highCouncilDisplay'
 import BoardTracker from './BoardTracker'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import CombatAreaCluster, {
   type CombatDreadnoughtDeployProps,
   type CombatSpecimenDeployProps,
@@ -81,6 +82,7 @@ import BeneTleilaxBoardOverlay, { type BeneTleilaxBoardPlacement } from './BeneT
 import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
 import { expansionOverlaysFor } from '../../expansions/registry'
 import { DEFAULT_PLAYER_COLORS, playerColorHex, playerMarkerHex } from '../../utils/playerColors'
+import { areAllLeadersAssigned } from '../../data/leaders'
 import './ImageBoard.css'
 
 interface SellMelangeData {
@@ -261,6 +263,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const combatAreaDocked = combatAreaPlacement === 'dock'
   const combatAreaBelow = combatAreaPlacement === 'below'
   const sidePanelDocked = ixBoardDocked || immortalityBoardDocked || combatAreaDocked
+  const showSandboxSetupHints = Boolean(showBoardInfoTips && sandboxSetup && combatAreaDocked)
   const boardHotspots = BOARD_HOTSPOTS_FOR_EXPANSIONS(gameStateForMarkers.expansions)
   const markerAnchors = markerAnchorsForExpansions(gameStateForMarkers.expansions).filter(
     anchor => !ixBoardDocked || (anchor.spaceId !== 23 && anchor.spaceId !== 24)
@@ -428,6 +431,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             ? {
                 onConfigure: sandboxSetup.onTechTilesClick,
                 requiredFilledStacks: sandboxSetup.sandboxTechRequiredFilledStacks ?? 3,
+                showSetupHint: showSandboxSetupHints,
               }
             : undefined
         }
@@ -1036,15 +1040,16 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                       className="image-board__conflict-panel image-board__conflict-panel--sandbox"
                       data-marker="conflict-card"
                       style={panelStyle}
-                      title={hasConflict ? 'Change conflict card' : 'Select conflict card'}
+                      title={withImageZoomHint(hasConflict ? 'Change conflict card' : 'Select conflict card')}
                       onClick={sandboxSetup.onConflictClick}
                     >
                       {conflictContent}
                     </button>
-                    {showBoardInfoTips ? (
+                    {showBoardInfoTips && !hasConflict ? (
                       <SandboxSetupHint
                         anchor="center"
                         placement="above"
+                        size={combatAreaDocked ? 'large' : 'default'}
                         label="Pick this round's conflict card"
                         style={{
                           left: `${conflictBox.left + conflictBox.width / 2}%`,
@@ -1058,6 +1063,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                     className="image-board__conflict-panel"
                     data-marker="conflict-card"
                     style={panelStyle}
+                    title={withImageZoomHint(currentConflict?.name)}
                   >
                     {conflictContent}
                   </div>
@@ -1380,6 +1386,13 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
             ) : null}
             {combatAreaDocked && combatAreaCluster ? (
               <div className="image-board__combat-area-dock" aria-label="Player leaders">
+                {showSandboxSetupHints && !areAllLeadersAssigned(players) ? (
+                  <SandboxSetupHint
+                    label="Pick a leader for each player"
+                    size="large"
+                    className="sandbox-setup-hint--leaders"
+                  />
+                ) : null}
                 {combatAreaCluster}
               </div>
             ) : null}

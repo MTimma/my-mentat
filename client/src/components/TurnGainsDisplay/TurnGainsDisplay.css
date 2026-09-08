@@ -87,6 +87,55 @@
   font-size: 0.58rem;
 }
 
+.turn-gain-total-item--persuasion-total {
+  flex-wrap: nowrap;
+  gap: 5px;
+}
+
+.turn-gain-total-persuasion-label {
+  font-size: 0.62rem;
+  font-weight: 650;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  color: var(--chrome-text-muted);
+  white-space: nowrap;
+}
+
+.turn-gain-persuasion-sources {
+  display: none;
+}
+
+.turn-gain-persuasion-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.turn-gain-persuasion-source-thumb {
+  width: 22px;
+  height: auto;
+  max-height: 32px;
+  object-fit: contain;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.turn-gain-persuasion-source-tech {
+  width: 18px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.turn-gain-persuasion-source-text {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--chrome-text);
+}
+
 .turn-gain-total-cards {
   display: inline-flex;
   flex-wrap: wrap;
@@ -443,6 +492,18 @@
 .turn-gains-display .turn-gain-total-icon.dreadnought-icon {
   width: 11px;
   height: 14px;
+}
+
+.turn-gain-agent {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+}
+
+.turn-gains-display .turn-gain-agent-icon.agent:not(.agent--dreadnought),
+.turn-gains-display .turn-gain-total-icon.agent:not(.agent--dreadnought) {
+  width: 13px;
+  height: 16px;
 }
 
 .turn-gains-display .turn-gain-freighter-icon {

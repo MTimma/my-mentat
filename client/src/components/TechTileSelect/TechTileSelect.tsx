@@ -9,6 +9,7 @@ import type { Player } from '../../types/GameTypes'
 import { filterBySearchTokens } from '../../utils/searchTokens'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import { PickerModalShell } from '../BoardScopedModal'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import { usePlayBoardModalContext } from '../../context/PlayBoardModalContext'
 import './TechTileSelect.css'
 
@@ -179,7 +180,7 @@ const TechTileSelect: React.FC<TechTileSelectProps> = ({
                   onClick={() => clearSlot(index)}
                   title={
                     tile
-                      ? `Remove ${tile.name}`
+                      ? withImageZoomHint(`Remove ${tile.name}`)
                       : top === null
                         ? 'Clear empty stack'
                         : undefined
@@ -233,7 +234,7 @@ const TechTileSelect: React.FC<TechTileSelectProps> = ({
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                title={`${tile.name} (${tile.cost} spice) — ${tile.description}`}
+                title={withImageZoomHint(`${tile.name} (${tile.cost} spice) — ${tile.description}`)}
                 disabled={disabled}
                 onClick={() => handleTilePick(tile.id)}
               >

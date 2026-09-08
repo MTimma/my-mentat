@@ -1,8 +1,11 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
+import React, { createContext, useContext, useState, useCallback, useMemo, useLayoutEffect } from 'react'
 import { GameState } from '../../types/GameTypes'
 import {
+  clampHistoryViewIndex,
+  shouldHideLiveTurnForViewers,
+} from '../../utils/endgameHistoryDisplay'
+import {
   countPlayerTurns,
-  getLivePlayerTurnNumber,
   getPlayerTurnNumber,
 } from '../../utils/turnHistoryDisplay'
 
@@ -12,6 +15,9 @@ interface TimeTravelContextType {
   
   // Whether we're viewing historical state
   isViewingHistory: boolean
+
+  /** View-only in-progress: live turn is off-limits. */
+  hideLiveTurn: boolean
   
   // The state to display (historical or live)
   displayState: GameState
@@ -52,14 +58,24 @@ interface TimeTravelProviderProps {
   children: React.ReactNode
   gameState: GameState
   onUndoToTurn: (turnIndex: number) => void
+  canEdit?: boolean
 }
 
 export const TimeTravelProvider: React.FC<TimeTravelProviderProps> = ({
   children,
   gameState,
-  onUndoToTurn
+  onUndoToTurn,
+  canEdit = true,
 }) => {
-  const [viewingTurnIndex, setViewingTurnIndex] = useState<number | null>(null)
+  const hideLiveTurn = shouldHideLiveTurnForViewers(canEdit, gameState)
+  const historyLength = gameState.history.length
+  const [viewingTurnIndex, setViewingTurnIndex] = useState<number | null>(() =>
+    clampHistoryViewIndex(null, gameState.history.length, shouldHideLiveTurnForViewers(canEdit, gameState))
+  )
+
+  useLayoutEffect(() => {
+    setViewingTurnIndex(prev => clampHistoryViewIndex(prev, historyLength, hideLiveTurn))
+  }, [hideLiveTurn, historyLength])
   
   // Calculate total turns: history entries + 1 for current in-progress
   const totalTurns = gameState.history.length + 1
@@ -119,25 +135,17 @@ export const TimeTravelProvider: React.FC<TimeTravelProviderProps> = ({
   
   // Navigate to a specific turn
   const goToTurn = useCallback((turnIndex: number) => {
-    if (turnIndex < 0) {
-      setViewingTurnIndex(0)
-    } else if (turnIndex >= gameState.history.length) {
-      // Going to or past the end means return to live state
-      setViewingTurnIndex(null)
-    } else {
-      setViewingTurnIndex(turnIndex)
-    }
-  }, [gameState.history.length])
+    setViewingTurnIndex(clampHistoryViewIndex(turnIndex, gameState.history.length, hideLiveTurn))
+  }, [gameState.history.length, hideLiveTurn])
   
-  // Return to current live state
+  // Return to live, or last committed turn when live is hidden
   const returnToCurrent = useCallback(() => {
-    setViewingTurnIndex(null)
-  }, [])
+    setViewingTurnIndex(clampHistoryViewIndex(null, gameState.history.length, hideLiveTurn))
+  }, [gameState.history.length, hideLiveTurn])
   
   // Navigate to previous turn
   const goToPreviousTurn = useCallback(() => {
     if (viewingTurnIndex === null) {
-      // Currently viewing live, go to last history entry
       if (gameState.history.length > 0) {
         setViewingTurnIndex(gameState.history.length - 1)
       }
@@ -148,35 +156,24 @@ export const TimeTravelProvider: React.FC<TimeTravelProviderProps> = ({
   
   // Navigate to next turn
   const goToNextTurn = useCallback(() => {
-    if (viewingTurnIndex !== null) {
-      if (viewingTurnIndex < gameState.history.length - 1) {
-        setViewingTurnIndex(viewingTurnIndex + 1)
-      } else {
-        // At the end of history, return to live state
-        setViewingTurnIndex(null)
-      }
-    }
-  }, [viewingTurnIndex, gameState.history.length])
+    if (viewingTurnIndex === null) return
+    setViewingTurnIndex(
+      clampHistoryViewIndex(viewingTurnIndex + 1, gameState.history.length, hideLiveTurn)
+    )
+  }, [viewingTurnIndex, gameState.history.length, hideLiveTurn])
   
   // Undo to a specific turn
   const undoToTurn = useCallback((turnIndex: number) => {
     if (turnIndex >= 0 && turnIndex < gameState.history.length) {
       onUndoToTurn(turnIndex)
-      // After undo, return to current (which will be the new state)
-      setViewingTurnIndex(null)
+      setViewingTurnIndex(clampHistoryViewIndex(null, gameState.history.length, hideLiveTurn))
     }
-  }, [gameState.history.length, onUndoToTurn])
-  
-  // Reset viewing index if history shrinks (e.g., after undo)
-  useEffect(() => {
-    if (viewingTurnIndex !== null && viewingTurnIndex >= gameState.history.length) {
-      setViewingTurnIndex(null)
-    }
-  }, [viewingTurnIndex, gameState.history.length])
+  }, [gameState.history.length, hideLiveTurn, onUndoToTurn])
   
   const value: TimeTravelContextType = {
     viewingTurnIndex,
     isViewingHistory,
+    hideLiveTurn,
     displayState,
     goToTurn,
     returnToCurrent,

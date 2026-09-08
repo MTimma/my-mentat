@@ -10,6 +10,7 @@ import {
   techTilesAvailableForNextReveal,
 } from '../../utils/techTiles'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import '../ImperiumRow/ImperiumRow.css'
 import './TechAcquireModal.css'
 
@@ -265,11 +266,11 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
                     ]
                       .filter(Boolean)
                       .join(' ')}
-                    title={
+                    title={withImageZoomHint(
                       disabled
                         ? `Need ${entryCost} ${currencyLabel} (you have ${currency})`
                         : `${entry.stackTile.name} — ${entryCost} ${currencyLabel}`
-                    }
+                    )}
                     onClick={() => {
                       if (disabled) return
                       setActiveStackIndex(entry.index)
@@ -320,7 +321,7 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
                     ]
                       .filter(Boolean)
                       .join(' ')}
-                    title={pickTile.name}
+                    title={withImageZoomHint(pickTile.name)}
                     onClick={() => setSelectedNextTileId(tileId)}
                   >
                     <img src={pickTile.image} alt={pickTile.name} draggable={false} />
@@ -347,6 +348,7 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
             <img
               src={tile!.image}
               alt={tile!.name}
+              title={withImageZoomHint(tile!.name)}
               className="imperium-preview-image tech-acquire-modal__tile-img"
               draggable={false}
               data-preview-src={tile!.image}

@@ -27,6 +27,18 @@ describe('Play area action buttons', () => {
     'utf8'
   )
 
+  it('disables Play, Reveal, and undo when the session cannot edit the loaded game', () => {
+    const app = readFileSync(resolve(root, 'App.tsx'), 'utf8')
+    expect(app).toContain('hideLiveTurn={hideLiveTurn}')
+    expect(app).toContain('canEdit={canEdit}')
+    expect(app).toContain('canEdit &&')
+    expect(app).toContain('!canEdit ||')
+    expect(app).toContain("Viewing another player's game")
+    expect(app).toContain('gameId={canEdit ? serverGameId : null}')
+    expect(turnControls).toContain('canEdit = true')
+    expect(turnControls).toContain('!canEdit ||')
+  })
+
   it('puts Play and Reveal labels on the top line of the button', () => {
     const playIdx = turnControls.indexOf('renderPlayCardPlaceholder')
     const playBlock = turnControls.slice(playIdx, playIdx + 900)
@@ -66,6 +78,20 @@ describe('Play area action buttons', () => {
     )
     expect(turnCss).toMatch(
       /\.effect-chip-group--shipping \.effect-chip-source \{[\s\S]*?font-size:\s*0\.34rem/
+    )
+  })
+
+  it('caps pay-cost resource icons so 300px PNGs do not overflow compact chips', () => {
+    expect(turnCss).toMatch(/(?:^|\n)\.effect-resource-cost-icon \{[\s\S]*?width:\s*20px/)
+    expect(turnCss).toMatch(
+      /\.effect-btn--compact \.effect-resource-cost-icon[\s\S]*?width:\s*18px/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.birdseye-interactions-strip \.effect-btn--compact \.effect-resource-cost-icon[\s\S]*?width:\s*14px/
+    )
+    expect(turnControls).not.toContain('optionalFrameOnly')
+    expect(turnCss).toMatch(
+      /\.card-effects-dialog \.effect-btn--overlay\.optional[\s\S]*?width:\s*auto/
     )
   })
 

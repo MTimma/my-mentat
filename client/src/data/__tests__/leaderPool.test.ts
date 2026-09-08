@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LEADERS, RISE_OF_IX_LEADERS, getLeaderPool, LEADER_NAMES } from '../leaders'
+import { LEADERS, RISE_OF_IX_LEADERS, getLeaderPool, LEADER_NAMES, areAllLeadersAssigned, createUnassignedLeader, isUnassignedLeader } from '../leaders'
 import { NO_EXPANSIONS } from '../../types/GameTypes'
 
 describe('getLeaderPool', () => {
@@ -27,5 +27,20 @@ describe('getLeaderPool', () => {
     expect(names).toContain(LEADER_NAMES.ARCHDUKE_ARMAND_ECAZ)
     expect(names).toContain(LEADER_NAMES.ILESA_ECAZ)
     expect(names).toContain(LEADER_NAMES.TESSIA_VERNIUS)
+  })
+})
+
+describe('unassigned sandbox leaders', () => {
+  it('areAllLeadersAssigned is false until every seat has a real leader', () => {
+    const empty = createUnassignedLeader()
+    const paul = LEADERS.find(l => l.name === LEADER_NAMES.PAUL_ATREIDES)!
+    expect(areAllLeadersAssigned([{ leader: empty }, { leader: empty }])).toBe(false)
+    expect(areAllLeadersAssigned([{ leader: paul }, { leader: empty }])).toBe(false)
+    expect(areAllLeadersAssigned([{ leader: paul }, { leader: paul }])).toBe(true)
+  })
+
+  it('isUnassignedLeader matches the placeholder name', () => {
+    expect(isUnassignedLeader(createUnassignedLeader())).toBe(true)
+    expect(isUnassignedLeader(LEADERS[0])).toBe(false)
   })
 })

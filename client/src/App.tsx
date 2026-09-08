@@ -11,7 +11,8 @@ import TurnHistory from './components/TurnHistory'
 import TurnHistoryNav from './components/TurnHistoryNav/TurnHistoryNav'
 import { GameProvider, useGame, buildCombatResolutionView } from './components/GameContext/GameContext'
 import { useTimeTravel } from './components/TimeTravel'
-import GameSetup from './components/GameSetup'
+import LocalGameAutosave from './components/LocalGameAutosave/LocalGameAutosave'
+import SandboxSessionBar from './components/SandboxSessionBar/SandboxSessionBar'
 import PwaPrompt from './components/PwaPrompt/PwaPrompt'
 import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
 import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
@@ -64,23 +65,24 @@ import { findTechAcquireSourceOption, getTechAcquireSourceOptions } from './comp
 import CardCreator from './components/CardCreator/CardCreator'
 import SandboxPlayerEditor from './components/SandboxPlayerEditor/SandboxPlayerEditor'
 import SandboxSetupControls from './components/SandboxSetupControls/SandboxSetupControls'
-import { buildImperiumDeck } from './catalog/runtime'
-import { applyStarterDeckReservationToImperium } from './services/starterDeckSetup'
-import { getStartingSpice, getStartingSolari } from './data/leaderAbilities/beastSetup'
-import { getStartingWater } from './data/leaderAbilities/yunaSolariBonus'
-import { getStartingIntrigue } from './data/leaderAbilities/hudroSetup'
-import { seedTessiaSnoopers } from './data/leaderAbilities/tessiaSnoopers'
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
 import UndoConfirmDialog from './components/TimeTravel/UndoConfirmDialog'
-import { LEADER_NAMES } from './data/leaders'
+import { LEADER_NAMES, areAllLeadersAssigned, createUnassignedLeader, isUnassignedLeader } from './data/leaders'
 import { getEndTurnButtonState } from './utils/endTurnState'
 import { buildSetupBlockFromConfiguration } from './save/buildSetupBlock'
 import { createGameInputDoc } from './save/createGameInput'
+import {
+  adoptLoadedGame,
+  createGameJson,
+  fetchActiveGame,
+  saveGameJson,
+  type LoadSaveFn,
+} from './api/gamesApi'
+import { createSandboxGameInput } from './save/createSandboxGame'
 import type { SaveDoc } from './save/types'
 import { GAME_PACK_STORAGE_KEY } from './gamePacks/constants'
 import { resolveStoredGamePackId } from './gamePacks/inferGamePack'
-import { expansionsForGamePack } from './gamePacks/resolveGamePack'
 import {
   conflictChoiceAsFixedOptions,
   findConflictInfluenceBoardChoice,
@@ -109,13 +111,31 @@ import {
 interface GameContentProps {
   autoApplyMandatoryRewards: boolean
   showBoardInfoTips: boolean
-  onLoadSave?: (doc: SaveDoc) => void
+  gamePackId: string
+  onRestartSandbox: (gamePackId: string) => void
+  onStartNewSandbox: () => void
+  /** After sandbox Begin — persist a new DB row for the committed game. */
+  onSandboxBegun?: (serverGameId: number) => void
+  onLoadSave?: LoadSaveFn
+  /** False while viewing another player's game — undo / Play / Reveal stay off. */
+  canEdit?: boolean
 }
 
-const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave }: GameContentProps) => {
+const GameContent = ({
+  autoApplyMandatoryRewards,
+  showBoardInfoTips,
+  gamePackId,
+  onRestartSandbox,
+  onStartNewSandbox,
+  onSandboxBegun,
+  onLoadSave,
+  canEdit = true,
+}: GameContentProps) => {
   const {
     gameState,
     dispatch,
+    getRecordedEventCount,
+    exportSaveDoc,
   } = useGame()
 
   const {
@@ -124,6 +144,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     viewingTurnIndex,
     goToTurn,
     returnToCurrent,
+    hideLiveTurn,
   } = useTimeTravel()
 
   const [undoTargetIndex, setUndoTargetIndex] = useState<number | null>(null)
@@ -283,7 +304,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       : null
 
   const undoSourceRow = viewingTurnIndex ?? gameState.history.length
+  const viewOnlyTitle = "Viewing another player's game"
   const canUndo =
+    canEdit &&
     !gameState.sandboxSetup &&
     (undoSourceRow === 0
       ? Boolean(gameState.setupBaseline)
@@ -332,14 +355,21 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
       ? 'setup'
       : getHistoryRowLabel(gameState.history, undoSourceRow).toLowerCase()
   const isSandboxGame = Boolean(gameState.setupBaseline?.sandboxSetup)
-  const undoTitle =
-    undoSourceRow === 0
+  const sandboxHasProgress =
+    getRecordedEventCount() > 0 ||
+    gameState.imperiumRow.length > 0 ||
+    gameState.currentConflict.id > 0 ||
+    gameState.players.some(p => !isUnassignedLeader(p.leader))
+  const undoTitle = !canEdit
+    ? viewOnlyTitle
+    : undoSourceRow === 0
       ? isSandboxGame
         ? 'Edit setup (keep current configuration)'
         : 'Undo setup (re-select imperium row and conflict)'
       : `Undo ${getHistoryRowLabel(gameState.history, undoSourceRow)} and all later turns`
-  const undoAriaLabel =
-    undoSourceRow === 0
+  const undoAriaLabel = !canEdit
+    ? viewOnlyTitle
+    : undoSourceRow === 0
       ? isSandboxGame
         ? 'Edit setup'
         : 'Undo setup'
@@ -817,12 +847,27 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
 
   // Sandbox setup turn: blocking round-start modals are replaced by on-board click targets.
   const inSandboxSetup = Boolean(gameState.sandboxSetup) && !isViewingHistory
+  const sandboxSetupOpenRef = useRef(Boolean(gameState.sandboxSetup))
+  useEffect(() => {
+    const wasOpen = sandboxSetupOpenRef.current
+    const isOpen = Boolean(gameState.sandboxSetup)
+    sandboxSetupOpenRef.current = isOpen
+    if (!wasOpen || isOpen || !onSandboxBegun) return
+    const doc = exportSaveDoc()
+    void createGameJson(doc)
+      .then(onSandboxBegun)
+      .catch(() => {
+        /* draft row still autosaves */
+      })
+  }, [gameState.sandboxSetup, exportSaveDoc, onSandboxBegun])
   const riseOfIx = Boolean(gameState.expansions?.riseOfIx)
   const immortality = Boolean(gameState.expansions?.immortality)
   const sandboxTechSummary = sandboxTechSetupSummary(gameState.players)
   const ixBoardReady =
     !riseOfIx || isSandboxIxBoardReady(gameState.players, gameState.ixBoard)
+  const sandboxLeadersDone = areAllLeadersAssigned(gameState.players)
   const sandboxReady =
+    sandboxLeadersDone &&
     gameState.imperiumRow.length === 5 &&
     gameState.currentConflict.id > 0 &&
     ixBoardReady
@@ -1519,10 +1564,10 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     (isDockedHistoryLayout || isTurnHistoryOpen) && !hideDockedHistory
 
   const birdseyeMode = useMemo<'mobile3b' | 'desktop6' | null>(() => {
-    if (!useImageBoard || gameState.sandboxSetup) return null
+    if (!useImageBoard) return null
     if (isDesktopPlayView) return 'desktop6'
     return 'mobile3b'
-  }, [useImageBoard, gameState.sandboxSetup, isDesktopPlayView])
+  }, [useImageBoard, isDesktopPlayView])
 
   const birdseyeGainsByPlayer = useMemo(
     () => buildBirdseyeGainsByPlayer(displayState),
@@ -1582,13 +1627,16 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     // (that is true whenever !canEndTurn, which would permanently disable Play).
     const liveActions: BirdseyeSeatActions = {
       playDisabled:
+        !canEdit ||
         (player.agents === 0 && !canPlayKwisatzWithNoAgents) ||
         player.handCount === 0 ||
         canEnd ||
         agentPlaced ||
         hasOpponentDiscard ||
         hasMandatoryRewards,
-      playTitle: agentPlaced
+      playTitle: !canEdit
+        ? viewOnlyTitle
+        : agentPlaced
         ? 'You have already placed an agent this turn'
         : hasMandatoryRewards
           ? 'Claim pending rewards before taking new actions.'
@@ -1600,12 +1648,15 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
                 ? 'No agents remaining.'
                 : undefined,
       revealDisabled:
+        !canEdit ||
         canEnd ||
         agentPlaced ||
         turnControlsState.phase === GamePhase.COMBAT ||
         hasOpponentDiscard ||
         hasMandatoryRewards,
-      revealTitle: agentPlaced
+      revealTitle: !canEdit
+        ? viewOnlyTitle
+        : agentPlaced
         ? 'You have already placed an agent this turn'
         : hasMandatoryRewards
           ? 'Claim pending rewards before taking new actions.'
@@ -1657,6 +1708,8 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
     turnControlsActivePlayer,
     birdseyeMode,
     isViewingHistory,
+    canEdit,
+    viewOnlyTitle,
     gameState.sandboxSetup,
     gameState.canEndTurn,
     gameState.expansions?.riseOfIx,
@@ -1865,6 +1918,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         position={gameState.sandboxSetupPosition}
         ready={sandboxReady}
         riseOfIx={riseOfIx}
+        leadersDone={sandboxLeadersDone}
         imperiumRowDone={gameState.imperiumRow.length === 5}
         techTilesDone={ixBoardReady}
         conflictDone={gameState.currentConflict.id > 0}
@@ -1874,28 +1928,6 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         onCommit={() => dispatch({ type: 'SANDBOX_COMMIT_SETUP' })}
       />
     ) : null
-
-  const sandboxControlsInHistoryDock =
-    inSandboxSetup && isDockedHistoryLayout && showTurnHistoryPanel
-  const turnHistoryTopSlot = sandboxControlsInHistoryDock
-    ? sandboxSetupControls(false)
-    : undefined
-  const sandboxPickerOpen =
-    sandboxImperiumOpen || sandboxTechOpen || sandboxConflictOpen || sandboxEditPlayerId !== null
-  const showSandboxFooterBar =
-    inSandboxSetup && !sandboxControlsInHistoryDock && !sandboxPickerOpen
-  const sandboxSetupBar = showSandboxFooterBar ? (
-    <div
-      className={[
-        'sandbox-setup-mobile-bar',
-        isDesktopPlayView ? 'sandbox-setup-mobile-bar--desktop' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
-      {sandboxSetupControls(true)}
-    </div>
-  ) : null
 
   const dockImperiumAboveBoard = isDesktopPlayView && useImageBoard
   const imperiumRowEl = (
@@ -1939,6 +1971,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
                   ? {
                       onConfigure: () => setSandboxImperiumOpen(true),
                       requiredCount: 5,
+                      showSetupHint: showBoardInfoTips && isDesktopPlayView,
                     }
                   : undefined
               }
@@ -1959,6 +1992,22 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         </div>
       </div>
   )
+
+  const sandboxBarInHistoryDock =
+    isSandboxGame && isDockedHistoryLayout && showTurnHistoryPanel
+  const sandboxSessionBarEl = isSandboxGame ? (
+    <SandboxSessionBar
+      gamePackId={gamePackId}
+      hasProgress={sandboxHasProgress}
+      compact={!isDesktopPlayView || sandboxBarInHistoryDock}
+      docked={sandboxBarInHistoryDock}
+      onRestart={onRestartSandbox}
+      onStartNew={onStartNewSandbox}
+      onLoadSave={onLoadSave}
+      setupSlot={sandboxSetupControls(true)}
+      showKit={inSandboxSetup}
+    />
+  ) : null
 
   return (
     <div
@@ -1984,6 +2033,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         boardContainerRef={mainAreaRef}
         scopeModalsToBoard={isDesktopPlayView}
       >
+      {!sandboxBarInHistoryDock ? sandboxSessionBarEl : null}
       <AltImagePreviewProvider>
       <div ref={playShellMainRef} className="play-shell-main">
         <div className="play-board-column">
@@ -2077,8 +2127,9 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
             currentGameState={gameState}
             onTurnChange={goToTurn}
             onReturnToCurrent={returnToCurrent}
-            topSlot={turnHistoryTopSlot}
             onLoadSave={onLoadSave}
+            hideLiveTurn={hideLiveTurn}
+            topSlot={sandboxBarInHistoryDock ? sandboxSessionBarEl : undefined}
             {...turnHistoryUndoProps}
           />
         )}
@@ -2180,7 +2231,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
             player={sandboxEditPlayer}
             expansions={gameState.expansions}
             usedLeaderNames={gameState.players
-              .filter(p => p.id !== sandboxEditPlayer.id)
+              .filter(p => p.id !== sandboxEditPlayer.id && !isUnassignedLeader(p.leader))
               .map(p => p.leader.name)}
             imperiumDeckCards={gameState.imperiumRowDeck}
             arrakisLiaisonCards={gameState.arrakisLiaisonDeck}
@@ -2322,6 +2373,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
                 activeIntrigueThisRound={turnControlsActivePlayer ? (turnControlsState.activeIntrigueThisRound?.[turnControlsActivePlayer.id] || []) : []}
                 gameState={turnControlsState}
                 isHistoryView={isViewingHistory}
+                canEdit={canEdit}
                 showDesktopPlayBar={false}
                 hidePrimaryTurnActions={birdseyeMode === 'desktop6'}
                 birdseyeInteractionsHost={
@@ -2356,7 +2408,6 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
             </div>
           </div>
         </div>
-      {!isDesktopPlayView ? sandboxSetupBar : null}
       {isCompactPlayOverlay && showPlayAreaDrawerToggle && !inSandboxSetup && (
         <button
           type="button"
@@ -2455,6 +2506,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
               isViewingHistory={isViewingHistory}
               onTurnChange={goToTurn}
               onReturnToCurrent={returnToCurrent}
+              hideLiveTurn={hideLiveTurn}
               lastSlotWidthLabel={
                 showFooterEndTurn
                   ? 'End Turn'
@@ -2496,25 +2548,7 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
         </div>
       </div>
       </div>
-      {isDesktopPlayView && showPlayAreaDrawerToggle && !inSandboxSetup && (
-        <button
-          type="button"
-          className={[
-            'desktop-play-drawer-toggle',
-            isPlayAreaDrawerOpen
-              ? 'desktop-play-drawer-toggle--open'
-              : 'desktop-play-drawer-toggle--closed',
-          ].join(' ')}
-          onClick={() => setPlayAreaDrawerOpen(!isPlayAreaDrawerOpenRef.current)}
-          title={isPlayAreaDrawerOpen ? 'Hide play area' : 'Show play area'}
-          aria-label={isPlayAreaDrawerOpen ? 'Hide play area' : 'Show play area'}
-          aria-expanded={isPlayAreaDrawerOpen}
-          aria-controls="play-area-drawer"
-        >
-          {isPlayAreaDrawerOpen ? '▾ Play area' : '▴ Play area'}
-        </button>
-      )}
-      {isDesktopPlayView ? sandboxSetupBar : null}
+
       </div>
       </div>
       {showTurnHistoryPanel && !isDockedHistoryLayout && (
@@ -2526,8 +2560,8 @@ const GameContent = ({ autoApplyMandatoryRewards, showBoardInfoTips, onLoadSave 
           currentGameState={gameState}
           onTurnChange={goToTurn}
           onReturnToCurrent={returnToCurrent}
-          topSlot={turnHistoryTopSlot}
           onLoadSave={onLoadSave}
+          hideLiveTurn={hideLiveTurn}
           onClose={() => {
             setIsTurnHistoryOpen(false)
             if (!inSandboxSetup) {
@@ -2680,30 +2714,91 @@ function buildGameInputFromConfiguration(
   })
 }
 
+function packIdFromSaveDoc(doc: SaveDoc): string | null {
+  if (doc.setup.gamePackId) return doc.setup.gamePackId
+  if (doc.setup.expansions) {
+    return doc.setup.expansions.riseOfIx ? 'official/base+riseOfIx@1' : 'official/base@1'
+  }
+  return null
+}
+
 function App() {
-  const [screenState, setScreenState] = useState<ScreenState>(ScreenState.SETUP)
+  const [screenState, setScreenState] = useState<ScreenState>(ScreenState.GAME)
   const [autoApplyMandatoryRewards, setAutoApplyMandatoryRewards] = useState(() => {
     return localStorage.getItem('myMentat.autoApplyMandatoryRewards') !== 'false'
   })
   const [showBoardInfoTips, setShowBoardInfoTips] = useState(() => getPlayBoardInfoTipsEnabled())
   const [gamePackId, setGamePackId] = useState<string>(() => resolveStoredGamePackId())
-  const expansions = useMemo(() => expansionsForGamePack(gamePackId), [gamePackId])
-  const [creatorReturnScreen, setCreatorReturnScreen] = useState<ScreenState>(ScreenState.SETUP)
+  const [creatorReturnScreen, setCreatorReturnScreen] = useState<ScreenState>(ScreenState.GAME)
   const [playerSetups, setPlayerSetups] = useState<PlayerSetup[]>([])
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
   const [gameInput, setGameInput] = useState<SaveDoc | null>(null)
   const [gameSessionKey, setGameSessionKey] = useState(0)
+  const [serverGameId, setServerGameId] = useState<number | null>(null)
+  const [canEdit, setCanEdit] = useState(true)
+  const serverGameIdRef = useRef(serverGameId)
+  serverGameIdRef.current = serverGameId
+  const loadGenRef = useRef(0)
 
-  const handleLoadSaveDoc = useCallback((doc: SaveDoc) => {
-    if (doc.setup.gamePackId) {
-      setGamePackId(doc.setup.gamePackId)
-    } else if (doc.setup.expansions) {
-      setGamePackId(doc.setup.expansions.riseOfIx ? 'official/base+riseOfIx@1' : 'official/base@1')
-    }
+  const applySaveDoc = useCallback((doc: SaveDoc) => {
+    const packId = packIdFromSaveDoc(doc)
+    if (packId) setGamePackId(packId)
     setGameInput(doc)
     setGameSessionKey(k => k + 1)
     setScreenState(ScreenState.GAME)
   }, [])
+
+  const handleLoadSaveDoc = useCallback<LoadSaveFn>(
+    (doc, listedGameId) => {
+      const gen = ++loadGenRef.current
+      void (async () => {
+        try {
+          const access = await adoptLoadedGame(doc, listedGameId)
+          if (gen !== loadGenRef.current) return
+          setServerGameId(access.id)
+          setCanEdit(access.canEdit)
+        } catch {
+          if (gen !== loadGenRef.current) return
+          setServerGameId(null)
+          setCanEdit(true)
+        }
+        if (gen !== loadGenRef.current) return
+        applySaveDoc(doc)
+      })()
+    },
+    [applySaveDoc]
+  )
+
+  useEffect(() => {
+    const ac = new AbortController()
+    void (async () => {
+      try {
+        const existing = await fetchActiveGame(ac.signal)
+        if (ac.signal.aborted) return
+        if (existing) {
+          setServerGameId(existing.id)
+          setCanEdit(existing.canEdit)
+          applySaveDoc(existing.doc)
+          return
+        }
+      } catch {
+        if (ac.signal.aborted) return
+      }
+      const created = createSandboxGameInput(resolveStoredGamePackId())
+      if (ac.signal.aborted) return
+      try {
+        const id = await saveGameJson(created)
+        if (ac.signal.aborted) return
+        setServerGameId(id)
+        setCanEdit(true)
+      } catch {
+        if (ac.signal.aborted) return
+        setServerGameId(null)
+      }
+      applySaveDoc(created)
+    })()
+    return () => ac.abort()
+  }, [applySaveDoc])
 
   useEffect(() => {
     localStorage.setItem('myMentat.autoApplyMandatoryRewards', autoApplyMandatoryRewards ? 'true' : 'false')
@@ -2764,52 +2859,26 @@ function App() {
     }
   }
 
-  // Sandbox: skip leader choices and game-state setup; configure everything on the board.
-  const handleSandboxStart = (setups: PlayerSetup[], selectedGamePackId: string) => {
+  const replaceCurrentSandbox = (selectedGamePackId: string) => {
     setGamePackId(selectedGamePackId)
-    const setupExpansions = expansionsForGamePack(selectedGamePackId)
-    setPlayerSetups(setups)
-    const imperiumDeck = applyStarterDeckReservationToImperium(
-      buildImperiumDeck(setupExpansions),
-      setups.map(setup => setup.deck)
-    )
-    const players: Player[] = setups.map((setup, index) =>
-      seedTessiaSnoopers(
-        {
-          id: index,
-          leader: setup.leader,
-          color: setup.color,
-          spice: getStartingSpice(setup.leader),
-          water: getStartingWater(setup.leader),
-          solari: getStartingSolari(setup.leader),
-          troops: 3,
-          combatValue: 0,
-          agents: 2,
-          handCount: 5,
-          intrigueCount: getStartingIntrigue(setup.leader),
-          deck: [...setup.deck],
-          discardPile: [],
-          trash: [],
-          hasHighCouncilSeat: false,
-          hasSwordmaster: false,
-          playArea: [],
-          persuasion: 0,
-          victoryPoints: 1,
-          revealed: false,
-          ...(setupExpansions.riseOfIx ? { freighterStep: 0 as const } : {}),
-        },
-        setupExpansions.riseOfIx
-      )
-    )
-    setGameInput(
-      buildGameInputFromConfiguration(players, imperiumDeck, {
-        firstPlayer: resolveFirstPlayer(setups),
-        sandbox: true,
-        title: 'Sandbox game',
-        gamePackId: selectedGamePackId,
-      })
-    )
-    setScreenState(ScreenState.GAME)
+    const doc = createSandboxGameInput(selectedGamePackId, {
+      id: gameInput?.meta.id,
+    })
+    const gen = ++loadGenRef.current
+    const currentId = serverGameIdRef.current
+    void (async () => {
+      try {
+        const id = await saveGameJson(doc, currentId ?? undefined)
+        if (gen !== loadGenRef.current) return
+        setServerGameId(id)
+        setCanEdit(true)
+      } catch {
+        if (gen !== loadGenRef.current) return
+        setCanEdit(true)
+      }
+      if (gen !== loadGenRef.current) return
+      applySaveDoc(doc)
+    })()
   }
 
   const handleLeaderChoicesComplete = (leader: Leader) => {
@@ -2827,15 +2896,26 @@ function App() {
     currentRound: number
     imperiumRowDeck: Card[]
   }) => {
-    setGameInput(
-      buildGameInputFromConfiguration(state.players, state.imperiumRowDeck, {
-        firstPlayer: resolveFirstPlayer(playerSetups),
-        currentRound: state.currentRound,
-        title: 'New game',
-        gamePackId,
-      })
-    )
-    setScreenState(ScreenState.GAME)
+    const doc = buildGameInputFromConfiguration(state.players, state.imperiumRowDeck, {
+      firstPlayer: resolveFirstPlayer(playerSetups),
+      currentRound: state.currentRound,
+      title: 'New game',
+      gamePackId,
+    })
+    void (async () => {
+      const gen = ++loadGenRef.current
+      const currentId = serverGameIdRef.current
+      try {
+        const id = await saveGameJson(doc, currentId ?? undefined)
+        if (gen !== loadGenRef.current) return
+        setServerGameId(id)
+        setCanEdit(true)
+      } catch {
+        if (gen !== loadGenRef.current) return
+      }
+      if (gen !== loadGenRef.current) return
+      applySaveDoc(doc)
+    })()
   }
 
   const handleOpenCardCreator = () => {
@@ -2871,17 +2951,6 @@ function App() {
   return (
     <div className="app">
       <PwaPrompt />
-      {screenState === ScreenState.SETUP && (
-        <GameSetup
-          gamePackId={gamePackId}
-          onGamePackChange={setGamePackId}
-          onComplete={handleSetupComplete}
-          onSandbox={handleSandboxStart}
-          onLoadSave={handleLoadSaveDoc}
-          showBoardInfoTips={showBoardInfoTips}
-          onShowBoardInfoTipsChange={setShowBoardInfoTips}
-        />
-      )}
 
       {screenState === ScreenState.LEADER_CHOICES && renderLeaderChoices()}
 
@@ -2903,12 +2972,25 @@ function App() {
         />
       )}
 
+      {screenState === ScreenState.GAME && !gameInput && (
+        <p className="app-loading-game">Loading game…</p>
+      )}
+
       {screenState === ScreenState.GAME && gameInput && (
-        <GameProvider key={gameSessionKey} gameInput={gameInput}>
+        <GameProvider key={gameSessionKey} gameInput={gameInput} canEdit={canEdit}>
+          <LocalGameAutosave gameId={canEdit ? serverGameId : null} />
           <GameContent
             autoApplyMandatoryRewards={autoApplyMandatoryRewards}
             showBoardInfoTips={showBoardInfoTips}
+            gamePackId={gamePackId}
+            onRestartSandbox={packId => replaceCurrentSandbox(packId)}
+            onStartNewSandbox={() => replaceCurrentSandbox(gamePackId)}
+            onSandboxBegun={id => {
+              setServerGameId(id)
+              setCanEdit(true)
+            }}
             onLoadSave={handleLoadSaveDoc}
+            canEdit={canEdit}
           />
         </GameProvider>
       )}
