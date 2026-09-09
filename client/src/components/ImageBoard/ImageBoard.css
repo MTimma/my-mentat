@@ -14,6 +14,10 @@
   overflow: hidden;
 }
 
+.image-board__stage:has(.image-board__tutorial-messages-layer) {
+  overflow: visible;
+}
+
 /* Wraps the raster + overlay so hotspots/markers use %-of-image, not the padded stage (see .game-container--play). */
 .image-board__media {
   position: relative;

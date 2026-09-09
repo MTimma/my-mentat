@@ -454,6 +454,8 @@ describe('Leader gains leftover layout', () => {
     const appCss = readFileSync(resolve(root, 'App.css'), 'utf8')
     expect(imageBoardTsx).toContain('image-board__tutorial-messages-layer')
     expect(imageBoardTsx).toContain('sandbox-setup-hint--conflict')
+    expect(imageBoardTsx).toContain("label=\"Pick this round's conflict card\"")
+    expect(imageBoardTsx).toContain('conflictBox.top - 16')
     expect(appCss).toContain('--z-board-tutorial-message')
     expect(imageBoardCss).toMatch(
       /\.image-board__tutorial-messages-layer \{[\s\S]*?z-index:\s*var\(--z-board-tutorial-message/

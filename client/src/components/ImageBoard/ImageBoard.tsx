@@ -1328,14 +1328,14 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           <div className="image-board__tutorial-messages-layer" aria-hidden={false}>
             {showBoardInfoTips && sandboxSetup && showConflictPanel && !hasConflict ? (
               <SandboxSetupHint
-                anchor="left"
+                anchor="center"
                 placement="above"
                 size={combatAreaDocked ? 'large' : 'default'}
                 label="Pick this round's conflict card"
                 className="sandbox-setup-hint--conflict"
                 style={{
-                  left: `${conflictBox.left}%`,
-                  top: `${conflictBox.top}%`,
+                  left: `${conflictBox.left + conflictBox.width / 2}%`,
+                  top: `${Math.max(8, conflictBox.top - 16)}%`,
                 }}
               />
             ) : null}
