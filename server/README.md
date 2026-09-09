@@ -48,6 +48,7 @@ Copy `.env.example` to `.env` for local work. `.env` is gitignored.
 |------|---------|
 | `migrations/` | Schema versions applied by `sqlx migrate run` |
 | `data/dev.db` | Local database file (gitignored; created by migrate) |
+| `data/seeds/owned_game.sql` | Dev seed: user `1` + owned sandbox game (id 19); run after migrate on a fresh DB |
 | `.env.example` | Template for `DATABASE_URL` |
 
 ## Prod (notes)
@@ -55,6 +56,7 @@ Copy `.env.example` to `.env` for local work. `.env` is gitignored.
 Typical layout:
 
 - **nginx** serves `client/dist` (static Vite build) and proxies `/games/*` to the Rust binary. Use `client_max_body_size 1m;` to match Axum.
+- Cache static images for 1 year (`location ~* \.(avif|png|jpe?g|webp|gif|svg|ico|woff2)$` with `Cache-Control: public, immutable`). SPA shell (`location /`) stays `no-cache`.
 - **Later:** nginx `limit_req` (and/or Axum rate limits) on `/games/` — especially `/games/save` and `/games/new` — so autosave spam and anon creates cannot hammer SQLite.
 - **Rust** runs as a service (e.g. systemd) on `127.0.0.1:3000` with `APP_ENV=prod` and `DATABASE_URL` pointing at a persistent path such as `/var/lib/my-mentat/data.db`.
 - `APP_ENV=prod` binds `127.0.0.1`, sets Secure cookies, disables CORS (same-origin), and keeps a 1 MiB body limit. Override with `BIND_ADDR` / `CORS_ORIGINS` if needed.

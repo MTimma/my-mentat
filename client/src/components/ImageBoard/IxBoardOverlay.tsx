@@ -1,6 +1,7 @@
 import React from 'react'
 import type { Player, SpaceProps } from '../../types/GameTypes'
 import type { TechTileId } from '../../data/techTiles'
+import { IX_BOARD_OVERLAY_SRC } from '../../data/boardAssets'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import {
   IX_BOARD_HOTSPOTS,
@@ -137,7 +138,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
     >
       <img
         className="ix-board-overlay__img"
-        src="/board/riseofix/riseofix2.png"
+        src={IX_BOARD_OVERLAY_SRC}
         alt="Ix board"
         draggable={false}
       />

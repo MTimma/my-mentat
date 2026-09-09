@@ -707,7 +707,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   {
     id: 1001,
     name: "Arrakis Recruiter",
-    image: "imperium_row/arrakis_recruiter.png",
+    image: "imperium_row/arrakis_recruiter.avif",
     agentIcons: [AgentIcon.CITY],
     cost: 2,
     playEffect: [
@@ -729,7 +729,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   {
     id: 1002,
     name: "Arrakis Recruiter",
-    image: "imperium_row/arrakis_recruiter.png",
+    image: "imperium_row/arrakis_recruiter.avif",
     agentIcons: [AgentIcon.CITY],
     cost: 2,
     playEffect: [
@@ -751,7 +751,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   {
     id: 1004,
     name: "Assassination Mission",
-    image: "imperium_row/assassination_mission.png",
+    image: "imperium_row/assassination_mission.avif",
     agentIcons: [],
     cost: 1,
     trashEffect: [
@@ -773,7 +773,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   {
     id: 1005,
     name: "Assassination Mission",
-    image: "imperium_row/assassination_mission.png",
+    image: "imperium_row/assassination_mission.avif",
     agentIcons: [],
     cost: 1,
     trashEffect: [
@@ -795,7 +795,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   {
     id: 1006,
     name: "Bene Gesserit Initiate",
-    image: "imperium_row/bene_gesserit_initiate.png",
+    image: "imperium_row/bene_gesserit_initiate.avif",
     faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
     cost: 3,
@@ -817,7 +817,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   {
     id: 1007,
     name: "Bene Gesserit Initiate",
-    image: "imperium_row/bene_gesserit_initiate.png",
+    image: "imperium_row/bene_gesserit_initiate.avif",
     faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
     cost: 3,
@@ -839,7 +839,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   {
     id: 1008,
     name: "Bene Gesserit Sister",
-    image: "imperium_row/bene_gesserit_sister.png",
+    image: "imperium_row/bene_gesserit_sister.avif",
     faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.BENE_GESSERIT],
     cost: 3,
@@ -851,7 +851,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   {
     id: 1009,
     name: "Bene Gesserit Sister",
-    image: "imperium_row/bene_gesserit_sister.png",
+    image: "imperium_row/bene_gesserit_sister.avif",
     faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.BENE_GESSERIT],
     cost: 3,
@@ -863,7 +863,7 @@ export const IMPERIUM_ROW_DECK: Card[] = [
   {
     id: 1010,
     name: "Bene Gesserit Sister",
-    image: "imperium_row/bene_gesserit_sister.png",
+    image: "imperium_row/bene_gesserit_sister.avif",
     faction: [FactionType.BENE_GESSERIT],
     agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.BENE_GESSERIT],
     cost: 3,

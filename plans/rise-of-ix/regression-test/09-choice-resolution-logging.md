@@ -1,6 +1,6 @@
 # Choice resolution, gains & game logging
 
-My Mentat records **events** and rebuilds **turn history** from them (`save/buildHistory.ts`, `save/recording.ts`). Rise of Ix adds freighter, tech, dreadnought, and acquire-tech choice types.
+Mentarium records **events** and rebuilds **turn history** from them (`save/buildHistory.ts`, `save/recording.ts`). Rise of Ix adds freighter, tech, dreadnought, and acquire-tech choice types.
 
 ## Choice types (RoI-relevant)
 

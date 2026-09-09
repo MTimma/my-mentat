@@ -8,9 +8,9 @@ export const PLAY_CHROME_THEME_LABELS: Record<PlayChromeTheme, string> = {
 }
 
 export function getPlayChromeTheme(): PlayChromeTheme {
-  if (typeof window === 'undefined') return 'void'
+  if (typeof window === 'undefined') return 'blueish'
   const stored = localStorage.getItem(PLAY_CHROME_THEME_STORAGE_KEY)
-  return stored === 'blueish' ? 'blueish' : 'void'
+  return stored === 'void' ? 'void' : 'blueish'
 }
 
 export function applyPlayChromeTheme(theme: PlayChromeTheme): void {

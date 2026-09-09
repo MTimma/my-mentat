@@ -54,6 +54,33 @@ body {
   padding-right: env(safe-area-inset-right, 0px);
 }
 
+/* Installed PWA: fill the screen. Do not keep the in-browser visualViewport chrome gap. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  :root {
+    --vv-layout-gap-bottom: 0px;
+  }
+
+  html,
+  body {
+    height: 100%;
+    min-height: 100%;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+}
+
+html[data-display-mode='standalone'] {
+  --vv-layout-gap-bottom: 0px;
+}
+
+html[data-display-mode='standalone'],
+html[data-display-mode='standalone'] body {
+  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+}
+
 /*
  * iOS Safari/Chrome zoom the page when focusing inputs with computed font-size under ~16px.
  * Use at least 16px on form controls (search, selects) so the viewport scale stays stable.
@@ -90,5 +117,5 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-/* Arrakis Sun is the default shell; avoid overriding with prefers-color-scheme
+/* Blueish is the default shell; avoid overriding with prefers-color-scheme
    so the game UI stays visually consistent across OS settings. */

@@ -140,7 +140,7 @@
       "agentIcons": [
         "city"
       ],
-      "image": "imperium_row/arrakis_recruiter.png",
+      "image": "imperium_row/arrakis_recruiter.avif",
       "effects": {
         "play": [
           "effect:card:imperium/arrakis-recruiter:play:0"
@@ -160,7 +160,7 @@
       "pool": "imperium",
       "cost": 1,
       "agentIcons": [],
-      "image": "imperium_row/assassination_mission.png",
+      "image": "imperium_row/assassination_mission.avif",
       "effects": {
         "reveal": [
           "effect:card:imperium/assassination-mission:reveal:0"
@@ -187,7 +187,7 @@
         "city",
         "spice-trade"
       ],
-      "image": "imperium_row/bene_gesserit_initiate.png",
+      "image": "imperium_row/bene_gesserit_initiate.avif",
       "effects": {
         "play": [
           "effect:card:imperium/bene-gesserit-initiate:play:0"
@@ -213,7 +213,7 @@
         "landsraad",
         "bene-gesserit"
       ],
-      "image": "imperium_row/bene_gesserit_sister.png",
+      "image": "imperium_row/bene_gesserit_sister.avif",
       "effects": {
         "reveal": [
           "effect:card:imperium/bene-gesserit-sister:reveal:0",
@@ -1188,7 +1188,7 @@
         "spice-trade"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/appropriate.png",
+      "image": "imperium_row/rise_of_ix/appropriate.avif",
       "effects": {
         "play": [
           "effect:card:imperium/appropriate:play:0"
@@ -1212,7 +1212,7 @@
       ],
       "infiltrate": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/bounty_hunter.png",
+      "image": "imperium_row/rise_of_ix/bounty_hunter.avif",
       "effects": {
         "play": [
           "effect:card:imperium/bounty-hunter:play:0"
@@ -1236,7 +1236,7 @@
       "infiltrate": true,
       "unload": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/choam_delegate.png",
+      "image": "imperium_row/rise_of_ix/choam_delegate.avif",
       "effects": {
         "reveal": [
           "effect:card:imperium/choam-delegate:reveal:0"
@@ -1259,7 +1259,7 @@
       ],
       "infiltrate": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/court_intrigue.png",
+      "image": "imperium_row/rise_of_ix/court_intrigue.avif",
       "effects": {
         "play": [
           "effect:card:imperium/court-intrigue:play:0"
@@ -1284,7 +1284,7 @@
         "spice-trade"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/desert_ambush.png",
+      "image": "imperium_row/rise_of_ix/desert_ambush.avif",
       "effects": {
         "reveal": [
           "effect:card:imperium/desert-ambush:reveal:0",
@@ -1308,7 +1308,7 @@
       ],
       "infiltrate": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/embedded_agent.png",
+      "image": "imperium_row/rise_of_ix/embedded_agent.avif",
       "effects": {
         "play": [
           "effect:card:imperium/embedded-agent:play:0"
@@ -1335,7 +1335,7 @@
       ],
       "unload": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/esmar_tuek.png",
+      "image": "imperium_row/rise_of_ix/esmar_tuek.avif",
       "effects": {
         "play": [
           "effect:card:imperium/esmar-tuek:play:0"
@@ -1358,7 +1358,7 @@
       ],
       "unload": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/freighter_fleet.png",
+      "image": "imperium_row/rise_of_ix/freighter_fleet.avif",
       "effects": {
         "reveal": [
           "effect:card:imperium/freighter-fleet:reveal:0"
@@ -1382,7 +1382,7 @@
         "city"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/full_scale_assault.png",
+      "image": "imperium_row/rise_of_ix/full_scale_assault.avif",
       "effects": {
         "play": [
           "effect:card:imperium/full-scale-assault:play:0"
@@ -1411,7 +1411,7 @@
       "infiltrate": true,
       "unload": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/guild_accord.png",
+      "image": "imperium_row/rise_of_ix/guild_accord.avif",
       "effects": {
         "play": [
           "effect:card:imperium/guild-accord:play:0"
@@ -1439,7 +1439,7 @@
         "spice-trade"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/guild_chief_administrator.png",
+      "image": "imperium_row/rise_of_ix/guild_chief_administrator.avif",
       "effects": {
         "play": [
           "effect:card:imperium/guild-chief-administrator:play:0"
@@ -1464,7 +1464,7 @@
         "city"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/imperial_bashar.png",
+      "image": "imperium_row/rise_of_ix/imperial_bashar.avif",
       "effects": {
         "play": [
           "effect:card:imperium/imperial-bashar:play:0",
@@ -1489,7 +1489,7 @@
       ],
       "agentIcons": [],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/imperial_shock_trooper.png",
+      "image": "imperium_row/rise_of_ix/imperial_shock_trooper.avif",
       "effects": {
         "reveal": [
           "effect:card:imperium/imperial-shock-trooper:reveal:0",
@@ -1514,7 +1514,7 @@
       ],
       "unload": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/in_the_shadows.png",
+      "image": "imperium_row/rise_of_ix/in_the_shadows.avif",
       "effects": {
         "play": [
           "effect:card:imperium/in-the-shadows:play:0"
@@ -1541,7 +1541,7 @@
       ],
       "unload": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/ix_guild_compact.png",
+      "image": "imperium_row/rise_of_ix/ix_guild_compact.avif",
       "effects": {
         "play": [
           "effect:card:imperium/ix-guild-compact:play:0"
@@ -1563,7 +1563,7 @@
         "spice-trade"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/ixian_engineer.png",
+      "image": "imperium_row/rise_of_ix/ixian_engineer.avif",
       "effects": {
         "play": [
           "effect:card:imperium/ixian-engineer:play:0"
@@ -1590,7 +1590,7 @@
       ],
       "infiltrate": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/jamis.png",
+      "image": "imperium_row/rise_of_ix/jamis.avif",
       "effects": {
         "play": [
           "effect:card:imperium/jamis:play:0"
@@ -1615,7 +1615,7 @@
         "city"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/landing_rights.png",
+      "image": "imperium_row/rise_of_ix/landing_rights.avif",
       "effects": {
         "play": [
           "effect:card:imperium/landing-rights:play:0"
@@ -1637,7 +1637,7 @@
         "city"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/local_fence.png",
+      "image": "imperium_row/rise_of_ix/local_fence.avif",
       "effects": {
         "play": [
           "effect:card:imperium/local-fence:play:0",
@@ -1662,7 +1662,7 @@
         "city"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/negotiated_withdrawel.png",
+      "image": "imperium_row/rise_of_ix/negotiated_withdrawel.avif",
       "effects": {
         "reveal": [
           "effect:card:imperium/negotiated-withdrawel:reveal:0",
@@ -1689,7 +1689,7 @@
         "fremen"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/satellite_ban.png",
+      "image": "imperium_row/rise_of_ix/satellite_ban.avif",
       "effects": {
         "play": [
           "effect:card:imperium/satellite-ban:play:0"
@@ -1717,7 +1717,7 @@
         "fremen"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/sayyadina.png",
+      "image": "imperium_row/rise_of_ix/sayyadina.avif",
       "effects": {
         "play": [
           "effect:card:imperium/sayyadina:play:0"
@@ -1742,7 +1742,7 @@
         "spice-trade"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/shai_hulud.png",
+      "image": "imperium_row/rise_of_ix/shai_hulud.avif",
       "effects": {
         "play": [
           "effect:card:imperium/shai-hulud:play:0"
@@ -1769,7 +1769,7 @@
         "spice-trade"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/spice_trader.png",
+      "image": "imperium_row/rise_of_ix/spice_trader.avif",
       "effects": {
         "play": [
           "effect:card:imperium/spice-trader:play:0"
@@ -1795,7 +1795,7 @@
       ],
       "unload": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/treachery.png",
+      "image": "imperium_row/rise_of_ix/treachery.avif",
       "effects": {
         "play": [
           "effect:card:imperium/treachery:play:0",
@@ -1825,7 +1825,7 @@
         "landsraad"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/truthsayer.png",
+      "image": "imperium_row/rise_of_ix/truthsayer.avif",
       "effects": {
         "play": [
           "effect:card:imperium/truthsayer:play:0"
@@ -1847,7 +1847,7 @@
       "agentIcons": [],
       "unload": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/water_peddler.png",
+      "image": "imperium_row/rise_of_ix/water_peddler.avif",
       "effects": {
         "reveal": [
           "effect:card:imperium/water-peddler:reveal:0"
@@ -1871,7 +1871,7 @@
       ],
       "infiltrate": true,
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/web_of_power.png",
+      "image": "imperium_row/rise_of_ix/web_of_power.avif",
       "effects": {
         "play": [
           "effect:card:imperium/web-of-power:play:0"
@@ -1898,7 +1898,7 @@
         "spice-trade"
       ],
       "riseOfIx": true,
-      "image": "imperium_row/rise_of_ix/weirding_way.png",
+      "image": "imperium_row/rise_of_ix/weirding_way.avif",
       "effects": {
         "play": [
           "effect:card:imperium/weirding-way:play:0"
@@ -1921,7 +1921,7 @@
         "spice-trade"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/bene_tleilax_lab.png",
+      "image": "imperium_row/immortality/bene_tleilax_lab.avif",
       "effects": {
         "play": [
           "effect:card:imperium/bene-tleilax-lab:play:0"
@@ -1945,7 +1945,7 @@
       ],
       "immortality": true,
       "graft": true,
-      "image": "imperium_row/immortality/bene_tleilax_researcher.png",
+      "image": "imperium_row/immortality/bene_tleilax_researcher.avif",
       "effects": {
         "play": [
           "effect:card:imperium/bene-tleilax-researcher:play:0"
@@ -1971,7 +1971,7 @@
         "spice-trade"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/blank_slate.png",
+      "image": "imperium_row/immortality/blank_slate.avif",
       "effects": {
         "play": [
           "effect:card:imperium/blank-slate:play:0"
@@ -1994,7 +1994,7 @@
       ],
       "agentIcons": [],
       "immortality": true,
-      "image": "imperium_row/immortality/clandestine_meeting.png",
+      "image": "imperium_row/immortality/clandestine_meeting.avif",
       "effects": {
         "play": [
           "effect:card:imperium/clandestine-meeting:play:0"
@@ -2021,7 +2021,7 @@
         "spice-trade"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/corrupt_smuggler.png",
+      "image": "imperium_row/immortality/corrupt_smuggler.avif",
       "effects": {
         "play": [
           "effect:card:imperium/corrupt-smuggler:play:0"
@@ -2045,7 +2045,7 @@
       ],
       "immortality": true,
       "graft": true,
-      "image": "imperium_row/immortality/dissecting_kit.png",
+      "image": "imperium_row/immortality/dissecting_kit.avif",
       "effects": {
         "play": [
           "effect:card:imperium/dissecting-kit:play:0"
@@ -2074,7 +2074,7 @@
         "spice-trade"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/for_humanity.png",
+      "image": "imperium_row/immortality/for_humanity.avif",
       "effects": {
         "play": [
           "effect:card:imperium/for-humanity:play:0"
@@ -2101,7 +2101,7 @@
         "spice-trade"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/high_priority_travel.png",
+      "image": "imperium_row/immortality/high_priority_travel.avif",
       "effects": {
         "play": [
           "effect:card:imperium/high-priority-travel:play:0"
@@ -2130,7 +2130,7 @@
         "landsraad"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/imperium_ceremony.png",
+      "image": "imperium_row/immortality/imperium_ceremony.avif",
       "effects": {
         "play": [
           "effect:card:imperium/imperium-ceremony:play:0"
@@ -2153,7 +2153,7 @@
       ],
       "immortality": true,
       "graft": true,
-      "image": "imperium_row/immortality/interstellar_conspiracy.png",
+      "image": "imperium_row/immortality/interstellar_conspiracy.avif",
       "effects": {
         "play": [
           "effect:card:imperium/interstellar-conspiracy:play:0",
@@ -2182,7 +2182,7 @@
         "landsraad"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/keys_to_power.png",
+      "image": "imperium_row/immortality/keys_to_power.avif",
       "effects": {
         "play": [
           "effect:card:imperium/keys-to-power:play:0"
@@ -2210,7 +2210,7 @@
         "spice-trade"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/lisan_al_gaib.png",
+      "image": "imperium_row/immortality/lisan_al_gaib.avif",
       "effects": {
         "play": [
           "effect:card:imperium/lisan-al-gaib:play:0"
@@ -2234,7 +2234,7 @@
       ],
       "agentIcons": [],
       "immortality": true,
-      "image": "imperium_row/immortality/long_reach.png",
+      "image": "imperium_row/immortality/long_reach.avif",
       "effects": {
         "play": [
           "effect:card:imperium/long-reach:play:0"
@@ -2264,7 +2264,7 @@
         "spice-trade"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/occupation.png",
+      "image": "imperium_row/immortality/occupation.avif",
       "effects": {
         "play": [
           "effect:card:imperium/occupation:play:0"
@@ -2288,7 +2288,7 @@
         "spice-trade"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/organ_merchants.png",
+      "image": "imperium_row/immortality/organ_merchants.avif",
       "effects": {
         "play": [
           "effect:card:imperium/organ-merchants:play:0"
@@ -2314,7 +2314,7 @@
       ],
       "immortality": true,
       "graft": true,
-      "image": "imperium_row/immortality/planned_coupling.png",
+      "image": "imperium_row/immortality/planned_coupling.avif",
       "effects": {
         "play": [
           "effect:card:imperium/planned-coupling:play:0"
@@ -2338,7 +2338,7 @@
       ],
       "immortality": true,
       "graft": true,
-      "image": "imperium_row/immortality/replacement_eyes.png",
+      "image": "imperium_row/immortality/replacement_eyes.avif",
       "effects": {
         "play": [
           "effect:card:imperium/replacement-eyes:play:0"
@@ -2367,7 +2367,7 @@
         "city"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/sarduakar_quartermaster.png",
+      "image": "imperium_row/immortality/sarduakar_quartermaster.avif",
       "effects": {
         "play": [
           "effect:card:imperium/sardukar-quartermaster:play:0"
@@ -2393,7 +2393,7 @@
         "spice-trade"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/shadout_mapes.png",
+      "image": "imperium_row/immortality/shadout_mapes.avif",
       "effects": {
         "reveal": [
           "effect:card:imperium/shadout-mapes:reveal:0",
@@ -2415,7 +2415,7 @@
       ],
       "agentIcons": [],
       "immortality": true,
-      "image": "imperium_row/immortality/show_of_strength.png",
+      "image": "imperium_row/immortality/show_of_strength.avif",
       "effects": {
         "play": [
           "effect:card:imperium/show-of-strength:play:0"
@@ -2437,7 +2437,7 @@
         "spice-trade"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/spiritual_fervor.png",
+      "image": "imperium_row/immortality/spiritual_fervor.avif",
       "effects": {
         "play": [
           "effect:card:imperium/spiritual-fervor:play:0"
@@ -2465,7 +2465,7 @@
         "city"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/stillsuit_manufacturer.png",
+      "image": "imperium_row/immortality/stillsuit_manufacturer.avif",
       "effects": {
         "play": [
           "effect:card:imperium/stillsuit-manufacturer:play:0",
@@ -2492,7 +2492,7 @@
         "emperor"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/throne_room_politics.png",
+      "image": "imperium_row/immortality/throne_room_politics.avif",
       "effects": {
         "play": [
           "effect:card:imperium/throne-room-politics:play:0"
@@ -2515,7 +2515,7 @@
         "spice-trade"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/tleilaxu_master.png",
+      "image": "imperium_row/immortality/tleilaxu_master.avif",
       "effects": {
         "play": [
           "effect:card:imperium/tleilaxu-master:play:0"
@@ -2539,7 +2539,7 @@
         "city"
       ],
       "immortality": true,
-      "image": "imperium_row/immortality/tleilaxu_surgeon.png",
+      "image": "imperium_row/immortality/tleilaxu_surgeon.avif",
       "effects": {
         "play": [
           "effect:card:imperium/tleilaxu-surgeon:play:0"
@@ -2561,7 +2561,7 @@
       "agentIcons": [],
       "immortality": true,
       "tleilaxu": true,
-      "image": "tleilaxu_row/immortality/reclaimed_forces.png",
+      "image": "tleilaxu_row/immortality/reclaimed_forces.avif",
       "effects": {
         "play": [
           "effect:card:imperium/reclaimed-forces:play:0"
@@ -2580,7 +2580,7 @@
       "immortality": true,
       "tleilaxu": true,
       "graft": true,
-      "image": "tleilaxu_row/immortality/usurp.png",
+      "image": "tleilaxu_row/immortality/usurp.avif",
       "effects": {
         "play": [
           "effect:card:imperium/usurp:play:0"
@@ -2605,7 +2605,7 @@
       "immortality": true,
       "tleilaxu": true,
       "graft": true,
-      "image": "tleilaxu_row/immortality/twisted_mentat.png",
+      "image": "tleilaxu_row/immortality/twisted_mentat.avif",
       "effects": {
         "play": [
           "effect:card:imperium/twisted-mentat:play:0"
@@ -2630,7 +2630,7 @@
       "immortality": true,
       "tleilaxu": true,
       "graft": true,
-      "image": "tleilaxu_row/immortality/beguiling_pheromones.png",
+      "image": "tleilaxu_row/immortality/beguiling_pheromones.avif",
       "effects": {
         "play": [
           "effect:card:imperium/beguiling-pheromones:play:0"
@@ -2654,7 +2654,7 @@
       "immortality": true,
       "tleilaxu": true,
       "graft": true,
-      "image": "tleilaxu_row/immortality/stitched_horror.png",
+      "image": "tleilaxu_row/immortality/stitched_horror.avif",
       "effects": {
         "play": [
           "effect:card:imperium/stitched-horror:play:0"
@@ -2678,7 +2678,7 @@
       "immortality": true,
       "tleilaxu": true,
       "graft": true,
-      "image": "tleilaxu_row/immortality/unnatural_reflexes.png",
+      "image": "tleilaxu_row/immortality/unnatural_reflexes.avif",
       "effects": {
         "play": [
           "effect:card:imperium/unnatural-reflexes:play:0"
@@ -2702,7 +2702,7 @@
       "immortality": true,
       "tleilaxu": true,
       "graft": true,
-      "image": "tleilaxu_row/immortality/ghola.png",
+      "image": "tleilaxu_row/immortality/ghola.avif",
       "effects": {
         "play": [
           "effect:card:imperium/ghola:play:0"
@@ -2727,7 +2727,7 @@
       ],
       "immortality": true,
       "tleilaxu": true,
-      "image": "tleilaxu_row/immortality/scientific_breakthrough.png",
+      "image": "tleilaxu_row/immortality/scientific_breakthrough.avif",
       "effects": {
         "play": [
           "effect:card:imperium/scientific-breakthrough:play:0",
@@ -2752,7 +2752,7 @@
       "immortality": true,
       "tleilaxu": true,
       "graft": true,
-      "image": "tleilaxu_row/immortality/slig_farmer.png",
+      "image": "tleilaxu_row/immortality/slig_farmer.avif",
       "effects": {
         "play": [
           "effect:card:imperium/slig-farmer:play:0"
@@ -2775,7 +2775,7 @@
       ],
       "immortality": true,
       "tleilaxu": true,
-      "image": "tleilaxu_row/immortality/from_the_tanks.png",
+      "image": "tleilaxu_row/immortality/from_the_tanks.avif",
       "effects": {
         "play": [
           "effect:card:imperium/from-the-tanks:play:0"
@@ -2806,7 +2806,7 @@
       "immortality": true,
       "tleilaxu": true,
       "graft": true,
-      "image": "tleilaxu_row/immortality/face_dancer.png",
+      "image": "tleilaxu_row/immortality/face_dancer.avif",
       "effects": {
         "play": [
           "effect:card:imperium/face-dancer:play:0"
@@ -2833,7 +2833,7 @@
       "immortality": true,
       "tleilaxu": true,
       "graft": true,
-      "image": "tleilaxu_row/immortality/guild_impersonator.png",
+      "image": "tleilaxu_row/immortality/guild_impersonator.avif",
       "effects": {
         "play": [
           "effect:card:imperium/guild-impersonator:play:0"
@@ -2857,7 +2857,7 @@
       "immortality": true,
       "tleilaxu": true,
       "graft": true,
-      "image": "tleilaxu_row/immortality/chairdog.png",
+      "image": "tleilaxu_row/immortality/chairdog.avif",
       "effects": {
         "play": [
           "effect:card:imperium/chairdog:play:0"
@@ -2882,7 +2882,7 @@
       "immortality": true,
       "tleilaxu": true,
       "graft": true,
-      "image": "tleilaxu_row/immortality/tleilaxu_infiltrator.png",
+      "image": "tleilaxu_row/immortality/tleilaxu_infiltrator.avif",
       "effects": {
         "play": [
           "effect:card:imperium/tleilaxu-infiltrator:play:0",
@@ -2907,7 +2907,7 @@
       ],
       "immortality": true,
       "tleilaxu": true,
-      "image": "tleilaxu_row/immortality/subject_x_137.png",
+      "image": "tleilaxu_row/immortality/subject_x_137.avif",
       "effects": {
         "play": [
           "effect:card:imperium/subject-x-137:play:0"
@@ -2934,7 +2934,7 @@
       ],
       "immortality": true,
       "tleilaxu": true,
-      "image": "tleilaxu_row/immortality/corrino_genes.png",
+      "image": "tleilaxu_row/immortality/corrino_genes.avif",
       "effects": {
         "play": [
           "effect:card:imperium/corrino-genes:play:0"
@@ -2961,7 +2961,7 @@
       ],
       "immortality": true,
       "tleilaxu": true,
-      "image": "tleilaxu_row/immortality/contaminator.png",
+      "image": "tleilaxu_row/immortality/contaminator.avif",
       "effects": {
         "play": [
           "effect:card:imperium/contaminator:play:0"
@@ -2984,7 +2984,7 @@
       ],
       "immortality": true,
       "tleilaxu": true,
-      "image": "tleilaxu_row/immortality/industrial_espionage.png",
+      "image": "tleilaxu_row/immortality/industrial_espionage.avif",
       "effects": {
         "play": [
           "effect:card:imperium/industrial-espionage:play:0",
@@ -3016,7 +3016,7 @@
       "immortality": true,
       "tleilaxu": true,
       "graft": true,
-      "image": "tleilaxu_row/immortality/face_dancer_initiate.png",
+      "image": "tleilaxu_row/immortality/face_dancer_initiate.avif",
       "effects": {
         "reveal": [
           "effect:card:imperium/face-dancer-initiate:reveal:0"
@@ -3034,7 +3034,7 @@
         "landsraad"
       ],
       "immortality": true,
-      "image": "starter_deck/experimentation.png",
+      "image": "starter_deck/experimentation.avif",
       "effects": {
         "play": [
           "effect:card:starting/experimentation:play:0"

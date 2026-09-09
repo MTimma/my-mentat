@@ -1,12 +1,12 @@
 # UI regression (Rise of Ix) — hosted app scenarios
 
-My Mentat is a **manual logging tracker**. These scenarios are for **cloud agents** (or humans) clicking through a **hosted build** or local `npm run dev`. Steps are intentionally **approximate** — use visible labels, roles, and text content, not exact coordinates.
+Mentarium is a **manual logging tracker**. These scenarios are for **cloud agents** (or humans) clicking through a **hosted build** or local `npm run dev`. Steps are intentionally **approximate** — use visible labels, roles, and text content, not exact coordinates.
 
 ## Preconditions
 
 | Item | Value |
 |------|-------|
-| App | My Mentat play view (`/play` or main game route after setup) |
+| App | Mentarium play view (`/play` or main game route after setup) |
 | Expansion | **Rise of Ix** checked on setup screen |
 | Players | 2 players minimum for combat/dividends scenarios; 1 player OK for shipping/tech smoke |
 | Mode | **Sandbox** preferred — faster deck/board seeding |

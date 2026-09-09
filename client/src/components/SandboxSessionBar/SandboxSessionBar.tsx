@@ -3,7 +3,7 @@ import { BoardDialogPanel, BoardScopedModal } from '../BoardScopedModal'
 import GamesList from '../GamesList/GamesList'
 import { getSelectableGamePacks } from '../../gamePacks/registry'
 import { subscribeGamePacks } from '../../gamePacks/customGamePacks'
-import type { LoadSaveFn } from '../../api/gamesApi'
+import type { LoadSaveFn, LoadSaveSource } from '../../api/gamesApi'
 import type { SaveDoc } from '../../save/types'
 import './SandboxSessionBar.css'
 
@@ -54,10 +54,10 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
     onStartNew()
   }
 
-  const handleLoad = (doc: SaveDoc, serverGameId?: number) => {
+  const handleLoad = (doc: SaveDoc, source?: LoadSaveSource) => {
     if (hasProgress && !window.confirm(LOAD_CONFIRM)) return
     setBrowseOpen(false)
-    onLoadSave?.(doc, serverGameId)
+    onLoadSave?.(doc, source)
   }
 
   return (
@@ -121,9 +121,6 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
           showCancel
           cancelLabel="Close"
         >
-          <p className="sandbox-session-bar__browse-note" role="note">
-            Saving is not available yet, but your active game will be stored for 7 days. Loading another game will delete your active game.
-          </p>
           {onLoadSave ? (
             <div className="sandbox-session-bar__browse-list">
               <GamesList onLoad={handleLoad} />

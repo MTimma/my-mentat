@@ -81,7 +81,7 @@ cd client && npx tsx scripts/generate-catalogs.ts
 
 ## Cloud agent hosted-app workflow
 
-1. Open the deployed My Mentat URL (or `npm run dev` locally).
+1. Open the deployed Mentarium URL (or `npm run dev` locally).
 2. Enable **Rise of Ix** on the setup screen (`GameSetup` checkbox).
 3. Prefer **Sandbox** mode for deterministic card/board seeding when available.
 4. Run scenarios in [10-ui-regression.md](./10-ui-regression.md); after each scenario, verify **Turn History** gains and **undo** one step.

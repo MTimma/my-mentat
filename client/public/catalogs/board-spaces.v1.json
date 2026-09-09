@@ -10,7 +10,7 @@
         "solari": 5
       },
       "specialEffect": "highCouncil",
-      "image": "board/high_council.png",
+      "image": "board/high_council.avif",
       "effects": [
         "effect:board-space:9:space:0"
       ]
@@ -20,7 +20,7 @@
       "name": "Hall of Oratory",
       "agentIcon": "landsraad",
       "conflictMarker": false,
-      "image": "board/hall_of_oratory.png",
+      "image": "board/hall_of_oratory.avif",
       "effects": [
         "effect:board-space:12:space:0"
       ]
@@ -34,7 +34,7 @@
         "spice": 2
       },
       "specialEffect": "sellMelange",
-      "image": "board/sell_melange.png",
+      "image": "board/sell_melange.avif",
       "effects": []
     },
     {
@@ -46,7 +46,7 @@
         "faction": "emperor",
         "amount": 1
       },
-      "image": "board/wealth.png",
+      "image": "board/wealth.avif",
       "effects": [
         "effect:board-space:15:space:0"
       ]
@@ -63,7 +63,7 @@
         "faction": "emperor",
         "amount": 1
       },
-      "image": "board/conspire.png",
+      "image": "board/conspire.avif",
       "effects": [
         "effect:board-space:14:space:0"
       ]
@@ -77,7 +77,7 @@
         "solari": 2
       },
       "specialEffect": "mentat",
-      "image": "board/mentat.png",
+      "image": "board/mentat.avif",
       "effects": [
         "effect:board-space:10:space:0"
       ]
@@ -90,7 +90,7 @@
       "cost": {
         "solari": 4
       },
-      "image": "board/rally_troops.png",
+      "image": "board/rally_troops.avif",
       "effects": [
         "effect:board-space:11:space:0"
       ]
@@ -104,7 +104,7 @@
         "solari": 8
       },
       "specialEffect": "swordmaster",
-      "image": "board/swordmaster.png",
+      "image": "board/swordmaster.avif",
       "effects": []
     },
     {
@@ -117,7 +117,7 @@
         "amount": 1
       },
       "specialEffect": "foldspace",
-      "image": "board/foldspace.png",
+      "image": "board/foldspace.avif",
       "effects": []
     },
     {
@@ -132,7 +132,7 @@
         "faction": "spacing-guild",
         "amount": 1
       },
-      "image": "board/heighliner.png",
+      "image": "board/heighliner.avif",
       "effects": [
         "effect:board-space:17:space:0"
       ]
@@ -150,7 +150,7 @@
         "faction": "fremen",
         "amount": 2
       },
-      "image": "board/sietch_tabr.png",
+      "image": "board/sietch_tabr.avif",
       "effects": [
         "effect:board-space:21:space:0"
       ]
@@ -163,7 +163,7 @@
       "cost": {
         "water": 2
       },
-      "image": "board/research_station.png",
+      "image": "board/research_station.avif",
       "effects": [
         "effect:board-space:3:space:0"
       ]
@@ -173,7 +173,7 @@
       "name": "Secure Contract",
       "agentIcon": "spice-trade",
       "conflictMarker": false,
-      "image": "board/secure_contract.png",
+      "image": "board/secure_contract.avif",
       "effects": [
         "effect:board-space:7:space:0"
       ]
@@ -188,7 +188,7 @@
         "amount": 1
       },
       "specialEffect": "secrets",
-      "image": "board/secrets.png",
+      "image": "board/secrets.avif",
       "effects": [
         "effect:board-space:18:space:0",
         "effect:board-space:18:space:1"
@@ -206,7 +206,7 @@
         "faction": "bene-gesserit",
         "amount": 1
       },
-      "image": "board/selective_breeding.png",
+      "image": "board/selective_breeding.avif",
       "effects": [
         "effect:board-space:19:space:0"
       ]
@@ -220,7 +220,7 @@
       "controlBonus": {
         "solari": 1
       },
-      "image": "board/arrakeen.png",
+      "image": "board/arrakeen.avif",
       "effects": [
         "effect:board-space:1:space:0"
       ]
@@ -234,7 +234,7 @@
       "controlBonus": {
         "solari": 1
       },
-      "image": "board/carthag.png",
+      "image": "board/carthag.avif",
       "effects": [
         "effect:board-space:2:space:0"
       ]
@@ -249,7 +249,7 @@
       "controlBonus": {
         "spice": 1
       },
-      "image": "board/imperial_basin.png",
+      "image": "board/imperial_basin.avif",
       "effects": [
         "effect:board-space:4:space:0"
       ]
@@ -263,7 +263,7 @@
         "faction": "fremen",
         "amount": 1
       },
-      "image": "board/stillsuits.png",
+      "image": "board/stillsuits.avif",
       "effects": [
         "effect:board-space:22:space:0"
       ]
@@ -280,7 +280,7 @@
         "faction": "fremen",
         "amount": 1
       },
-      "image": "board/hardy_warriors.png",
+      "image": "board/hardy_warriors.avif",
       "effects": [
         "effect:board-space:20:space:0"
       ]
@@ -294,7 +294,7 @@
         "water": 2
       },
       "makerSpace": "great-flat",
-      "image": "board/the_great_flat.png",
+      "image": "board/the_great_flat.avif",
       "effects": [
         "effect:board-space:5:space:0"
       ]
@@ -308,7 +308,7 @@
         "water": 1
       },
       "makerSpace": "hagga-basin",
-      "image": "board/hagga_basin.png",
+      "image": "board/hagga_basin.avif",
       "effects": [
         "effect:board-space:6:space:0"
       ]
@@ -321,7 +321,7 @@
       "cost": {
         "solari": 3
       },
-      "image": "board/dreadnought.png",
+      "image": "board/dreadnought.avif",
       "riseOfIx": true,
       "effects": [
         "effect:board-space:23:space:0",
@@ -333,7 +333,7 @@
       "name": "Tech Negotiation",
       "agentIcon": "landsraad",
       "conflictMarker": false,
-      "image": "board/tech_negotiation.png",
+      "image": "board/tech_negotiation.avif",
       "riseOfIx": true,
       "effects": [
         "effect:board-space:24:space:0",
@@ -345,7 +345,7 @@
       "name": "Smuggling",
       "agentIcon": "spice-trade",
       "conflictMarker": false,
-      "image": "board/smuggling.png",
+      "image": "board/smuggling.avif",
       "riseOfIx": true,
       "effects": [
         "effect:board-space:25:space:0"
@@ -360,7 +360,7 @@
         "faction": "spacing-guild",
         "amount": 2
       },
-      "image": "board/interstellar_shipping.png",
+      "image": "board/interstellar_shipping.avif",
       "riseOfIx": true,
       "effects": [
         "effect:board-space:26:space:0"

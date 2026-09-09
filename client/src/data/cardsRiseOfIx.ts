@@ -37,7 +37,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Appropriate',
-      image: 'imperium_row/rise_of_ix/appropriate.png',
+      image: 'imperium_row/rise_of_ix/appropriate.avif',
       faction: [FactionType.EMPEROR],
       agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.SPICE_TRADE],
       cost: 5,
@@ -56,7 +56,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Bounty Hunter',
-      image: 'imperium_row/rise_of_ix/bounty_hunter.png',
+      image: 'imperium_row/rise_of_ix/bounty_hunter.avif',
       agentIcons: [AgentIcon.CITY],
       cost: 1,
       riseOfIx: true,
@@ -69,7 +69,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'CHOAM Delegate',
-      image: 'imperium_row/rise_of_ix/choam_delegate.png',
+      image: 'imperium_row/rise_of_ix/choam_delegate.avif',
       agentIcons: [AgentIcon.SPICE_TRADE],
       cost: 1,
       riseOfIx: true,
@@ -82,7 +82,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Court Intrigue',
-      image: 'imperium_row/rise_of_ix/court_intrigue.png',
+      image: 'imperium_row/rise_of_ix/court_intrigue.avif',
       faction: [FactionType.EMPEROR],
       agentIcons: [AgentIcon.EMPEROR],
       cost: 2,
@@ -101,7 +101,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Desert Ambush',
-      image: 'imperium_row/rise_of_ix/desert_ambush.png',
+      image: 'imperium_row/rise_of_ix/desert_ambush.avif',
       faction: [FactionType.FREMEN],
       agentIcons: [AgentIcon.SPICE_TRADE],
       cost: 3,
@@ -116,7 +116,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Embedded Agent',
-      image: 'imperium_row/rise_of_ix/embedded_agent.png',
+      image: 'imperium_row/rise_of_ix/embedded_agent.avif',
       faction: [FactionType.BENE_GESSERIT],
       agentIcons: [AgentIcon.LANDSRAAD],
       cost: 5,
@@ -135,7 +135,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Esmar Tuek',
-      image: 'imperium_row/rise_of_ix/esmar_tuek.png',
+      image: 'imperium_row/rise_of_ix/esmar_tuek.avif',
       faction: [FactionType.SPACING_GUILD],
       agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
       cost: 5,
@@ -157,7 +157,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 2,
     card: {
       name: 'Freighter Fleet',
-      image: 'imperium_row/rise_of_ix/freighter_fleet.png',
+      image: 'imperium_row/rise_of_ix/freighter_fleet.avif',
       agentIcons: [AgentIcon.SPICE_TRADE],
       cost: 2,
       riseOfIx: true,
@@ -169,7 +169,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Full-Scale Assault',
-      image: 'imperium_row/rise_of_ix/full_scale_assault.png',
+      image: 'imperium_row/rise_of_ix/full_scale_assault.avif',
       faction: [FactionType.EMPEROR],
       agentIcons: [AgentIcon.EMPEROR, AgentIcon.CITY],
       cost: 8,
@@ -186,7 +186,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Guild Accord',
-      image: 'imperium_row/rise_of_ix/guild_accord.png',
+      image: 'imperium_row/rise_of_ix/guild_accord.avif',
       faction: [FactionType.SPACING_GUILD],
       agentIcons: [AgentIcon.SPACING_GUILD],
       cost: 6,
@@ -207,7 +207,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Guild Chief Administrator',
-      image: 'imperium_row/rise_of_ix/guild_chief_administrator.png',
+      image: 'imperium_row/rise_of_ix/guild_chief_administrator.avif',
       faction: [FactionType.SPACING_GUILD],
       agentIcons: [AgentIcon.SPACING_GUILD, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
       cost: 4,
@@ -225,7 +225,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Imperial Bashar',
-      image: 'imperium_row/rise_of_ix/imperial_bashar.png',
+      image: 'imperium_row/rise_of_ix/imperial_bashar.avif',
       faction: [FactionType.EMPEROR],
       agentIcons: [AgentIcon.CITY],
       cost: 4,
@@ -244,7 +244,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Imperial Shock Trooper',
-      image: 'imperium_row/rise_of_ix/imperial_shock_trooper.png',
+      image: 'imperium_row/rise_of_ix/imperial_shock_trooper.avif',
       faction: [FactionType.EMPEROR],
       agentIcons: [],
       cost: 3,
@@ -259,7 +259,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 2,
     card: {
       name: 'In the Shadows',
-      image: 'imperium_row/rise_of_ix/in_the_shadows.png',
+      image: 'imperium_row/rise_of_ix/in_the_shadows.avif',
       faction: [FactionType.BENE_GESSERIT],
       agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
       cost: 2,
@@ -285,7 +285,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Ix-Guild Compact',
-      image: 'imperium_row/rise_of_ix/ix_guild_compact.png',
+      image: 'imperium_row/rise_of_ix/ix_guild_compact.avif',
       faction: [FactionType.SPACING_GUILD],
       agentIcons: [AgentIcon.SPACING_GUILD],
       cost: 3,
@@ -304,7 +304,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 2,
     card: {
       name: 'Ixian Engineer',
-      image: 'imperium_row/rise_of_ix/ixian_engineer.png',
+      image: 'imperium_row/rise_of_ix/ixian_engineer.avif',
       agentIcons: [AgentIcon.SPICE_TRADE],
       cost: 5,
       riseOfIx: true,
@@ -316,7 +316,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Jamis',
-      image: 'imperium_row/rise_of_ix/jamis.png',
+      image: 'imperium_row/rise_of_ix/jamis.avif',
       faction: [FactionType.FREMEN],
       agentIcons: [AgentIcon.FREMEN],
       cost: 2,
@@ -330,7 +330,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Landing Rights',
-      image: 'imperium_row/rise_of_ix/landing_rights.png',
+      image: 'imperium_row/rise_of_ix/landing_rights.avif',
       faction: [FactionType.SPACING_GUILD],
       agentIcons: [AgentIcon.CITY],
       cost: 4,
@@ -343,7 +343,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Local Fence',
-      image: 'imperium_row/rise_of_ix/local_fence.png',
+      image: 'imperium_row/rise_of_ix/local_fence.avif',
       agentIcons: [AgentIcon.CITY],
       cost: 3,
       riseOfIx: true,
@@ -366,7 +366,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 2,
     card: {
       name: 'Negotiated Withdrawel',
-      image: 'imperium_row/rise_of_ix/negotiated_withdrawel.png',
+      image: 'imperium_row/rise_of_ix/negotiated_withdrawel.avif',
       agentIcons: [AgentIcon.SPICE_TRADE, AgentIcon.LANDSRAAD, AgentIcon.CITY],
       cost: 4,
       riseOfIx: true,
@@ -381,7 +381,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Satellite Ban',
-      image: 'imperium_row/rise_of_ix/satellite_ban.png',
+      image: 'imperium_row/rise_of_ix/satellite_ban.avif',
       faction: [FactionType.SPACING_GUILD, FactionType.FREMEN],
       agentIcons: [AgentIcon.SPACING_GUILD, AgentIcon.FREMEN],
       cost: 5,
@@ -402,7 +402,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Sayyadina',
-      image: 'imperium_row/rise_of_ix/sayyadina.png',
+      image: 'imperium_row/rise_of_ix/sayyadina.avif',
       faction: [FactionType.BENE_GESSERIT, FactionType.FREMEN],
       agentIcons: [AgentIcon.BENE_GESSERIT, AgentIcon.FREMEN],
       cost: 3,
@@ -425,7 +425,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Shai-Hulud',
-      image: 'imperium_row/rise_of_ix/shai_hulud.png',
+      image: 'imperium_row/rise_of_ix/shai_hulud.avif',
       faction: [FactionType.FREMEN],
       agentIcons: [AgentIcon.SPICE_TRADE],
       cost: 7,
@@ -449,7 +449,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Spice Trader',
-      image: 'imperium_row/rise_of_ix/spice_trader.png',
+      image: 'imperium_row/rise_of_ix/spice_trader.avif',
       faction: [FactionType.FREMEN],
       agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
       cost: 4,
@@ -468,7 +468,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 2,
     card: {
       name: 'Treachery',
-      image: 'imperium_row/rise_of_ix/treachery.png',
+      image: 'imperium_row/rise_of_ix/treachery.avif',
       agentIcons: [
         AgentIcon.EMPEROR,
         AgentIcon.SPACING_GUILD,
@@ -497,7 +497,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 2,
     card: {
       name: 'Truthsayer',
-      image: 'imperium_row/rise_of_ix/truthsayer.png',
+      image: 'imperium_row/rise_of_ix/truthsayer.avif',
       faction: [FactionType.EMPEROR, FactionType.BENE_GESSERIT],
       agentIcons: [AgentIcon.EMPEROR, AgentIcon.BENE_GESSERIT, AgentIcon.LANDSRAAD],
       cost: 3,
@@ -515,7 +515,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Water Peddler',
-      image: 'imperium_row/rise_of_ix/water_peddler.png',
+      image: 'imperium_row/rise_of_ix/water_peddler.avif',
       agentIcons: [],
       cost: 1,
       riseOfIx: true,
@@ -528,7 +528,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Web of Power',
-      image: 'imperium_row/rise_of_ix/web_of_power.png',
+      image: 'imperium_row/rise_of_ix/web_of_power.avif',
       faction: [FactionType.BENE_GESSERIT],
       agentIcons: [AgentIcon.BENE_GESSERIT],
       cost: 4,
@@ -545,7 +545,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     qty: 1,
     card: {
       name: 'Weirding Way',
-      image: 'imperium_row/rise_of_ix/weirding_way.png',
+      image: 'imperium_row/rise_of_ix/weirding_way.avif',
       faction: [FactionType.BENE_GESSERIT],
       agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
       cost: 3,

@@ -185,6 +185,16 @@ body:has(.game-container--play) {
   padding-bottom: 0;
 }
 
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .game-container--play > .imperium-row-container {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+html[data-display-mode='standalone'] .game-container--play > .imperium-row-container {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 .game-container--play > .imperium-row-container {
   flex: 0 0 auto;
 }

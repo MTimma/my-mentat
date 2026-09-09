@@ -56,3 +56,9 @@
 .pwa-prompt__secondary:hover {
   color: var(--chrome-text, #e0d4c0);
 }
+
+@media (min-width: 901px) {
+  .pwa-prompt__card--install {
+    display: none;
+  }
+}

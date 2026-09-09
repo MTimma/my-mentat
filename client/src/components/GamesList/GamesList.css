@@ -65,6 +65,33 @@
   color: #b91c1c;
 }
 
+.games-list-error--copyable {
+  user-select: text;
+  -webkit-user-select: text;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid color-mix(in srgb, #b91c1c 35%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, #b91c1c 6%, #fff);
+  outline: none;
+}
+
+.games-list-error-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.games-list-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
 .games-list-retry {
   margin-top: 0.5rem;
   padding: 0.35rem 0.65rem;
@@ -78,6 +105,12 @@
 
 .games-list-retry:hover {
   background: color-mix(in srgb, var(--color-arrakis-earth) 8%, #fff);
+}
+
+.games-list-cap-note {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  color: #5c5348;
 }
 
 .games-list-table-wrap {

@@ -12,6 +12,7 @@ import { usePlayBoardModalContext } from '../../context/PlayBoardModalContext'
 import { BoardScopedModal } from '../BoardScopedModal'
 import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
+import { cardThumbSrc } from '../../utils/cardThumbSrc'
 import './CardSearch.css'
 
 /** iOS often scrolls the cards grid after the keyboard opens; re-apply scrollTop a few times. */
@@ -118,11 +119,13 @@ const CardGridItem = React.memo(function CardGridItem({
       >
         {card.image && (
           <img
-            src={card.image}
+            src={cardThumbSrc(card.image)}
             alt={card.name}
             title={withImageZoomHint(card.name)}
             className="card-image"
             data-preview-src={card.image}
+            loading="lazy"
+            decoding="async"
           />
         )}
         {!card.image && (
@@ -497,7 +500,14 @@ const CardSearch: React.FC<CardSearchProps> = ({
             }
           >
             {card?.image ? (
-              <img src={card.image} alt="" className="card-search-selection-preview-image" data-preview-src={card.image} />
+              <img
+                src={cardThumbSrc(card.image)}
+                alt=""
+                className="card-search-selection-preview-image"
+                data-preview-src={card.image}
+                loading="lazy"
+                decoding="async"
+              />
             ) : null}
           </button>
         )

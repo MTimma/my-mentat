@@ -73,13 +73,16 @@ import { getEndTurnButtonState } from './utils/endTurnState'
 import { buildSetupBlockFromConfiguration } from './save/buildSetupBlock'
 import { createGameInputDoc } from './save/createGameInput'
 import {
-  adoptLoadedGame,
-  createGameJson,
-  fetchActiveGame,
-  saveGameJson,
   type LoadSaveFn,
 } from './api/gamesApi'
 import { createSandboxGameInput } from './save/createSandboxGame'
+import {
+  deleteLocalGame,
+  getActiveLocalGameId,
+  getLocalGame,
+  persistLocalDraft,
+  setActiveLocalGameId,
+} from './save/localGamesStore'
 import type { SaveDoc } from './save/types'
 import { GAME_PACK_STORAGE_KEY } from './gamePacks/constants'
 import { resolveStoredGamePackId } from './gamePacks/inferGamePack'
@@ -95,6 +98,7 @@ import {
   DESKTOP_PLAY_LAYOUT_MQ,
   DOCKED_HISTORY_LAYOUT_MQ,
 } from './constants/playLayout'
+import { getPlayViewportSize, isStandaloneDisplay } from './pwa/displayMode'
 import {
   countPlayerTurns,
   formatTurnRoundHeader,
@@ -114,9 +118,9 @@ interface GameContentProps {
   gamePackId: string
   onRestartSandbox: (gamePackId: string) => void
   onStartNewSandbox: () => void
-  /** After sandbox Begin — persist a new DB row for the committed game. */
-  onSandboxBegun?: (serverGameId: number) => void
   onLoadSave?: LoadSaveFn
+  /** First IndexedDB write after sandbox setup is committed (Begin). */
+  onSandboxBegun?: (doc: SaveDoc) => void
   /** False while viewing another player's game — undo / Play / Reveal stay off. */
   canEdit?: boolean
 }
@@ -127,8 +131,8 @@ const GameContent = ({
   gamePackId,
   onRestartSandbox,
   onStartNewSandbox,
-  onSandboxBegun,
   onLoadSave,
+  onSandboxBegun,
   canEdit = true,
 }: GameContentProps) => {
   const {
@@ -847,19 +851,6 @@ const GameContent = ({
 
   // Sandbox setup turn: blocking round-start modals are replaced by on-board click targets.
   const inSandboxSetup = Boolean(gameState.sandboxSetup) && !isViewingHistory
-  const sandboxSetupOpenRef = useRef(Boolean(gameState.sandboxSetup))
-  useEffect(() => {
-    const wasOpen = sandboxSetupOpenRef.current
-    const isOpen = Boolean(gameState.sandboxSetup)
-    sandboxSetupOpenRef.current = isOpen
-    if (!wasOpen || isOpen || !onSandboxBegun) return
-    const doc = exportSaveDoc()
-    void createGameJson(doc)
-      .then(onSandboxBegun)
-      .catch(() => {
-        /* draft row still autosaves */
-      })
-  }, [gameState.sandboxSetup, exportSaveDoc, onSandboxBegun])
   const riseOfIx = Boolean(gameState.expansions?.riseOfIx)
   const immortality = Boolean(gameState.expansions?.immortality)
   const sandboxTechSummary = sandboxTechSetupSummary(gameState.players)
@@ -1094,8 +1085,7 @@ const GameContent = ({
     if (!root) return
 
     const getViewportLayoutKey = () => {
-      const w = window.visualViewport?.width ?? window.innerWidth
-      const h = window.visualViewport?.height ?? window.innerHeight
+      const { width: w, height: h } = getPlayViewportSize()
       const docked = window.matchMedia(DOCKED_HISTORY_LAYOUT_MQ).matches
       const desktop = window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
       return `${Math.round(w)}x${Math.round(h)}:${docked ? (desktop ? 'd' : 'w') : 'm'}`
@@ -1130,7 +1120,7 @@ const GameContent = ({
       const topChrome = imperium
         ? Math.max(0, Math.ceil(imperium.getBoundingClientRect().height))
         : 0
-      const viewportH = window.visualViewport?.height ?? window.innerHeight
+      const viewportH = getPlayViewportSize().height
       const playFooterReserved = getPlayFooterReservedPx()
       const isMobileOverlayLayout =
         !desktop && window.matchMedia(COMPACT_PLAY_OVERLAY_MQ).matches
@@ -1253,7 +1243,7 @@ const GameContent = ({
         turnControlsHeightPx
       )
 
-      const viewportH = window.visualViewport?.height ?? window.innerHeight
+      const viewportH = getPlayViewportSize().height
       const gapBottom =
         Number.parseFloat(
           getComputedStyle(document.documentElement).getPropertyValue('--vv-layout-gap-bottom')
@@ -1332,7 +1322,7 @@ const GameContent = ({
       const docked = window.matchMedia(DOCKED_HISTORY_LAYOUT_MQ).matches
       const desktop = window.matchMedia(DESKTOP_PLAY_LAYOUT_MQ).matches
       const { topChrome, bottomChrome } = readBoardLayoutChrome()
-      const viewportW = window.visualViewport?.width ?? window.innerWidth
+      const { width: viewportW, height: viewportH } = getPlayViewportSize()
       const sidebarRaw =
         getComputedStyle(document.documentElement)
           .getPropertyValue('--play-history-sidebar-min-width')
@@ -1353,7 +1343,6 @@ const GameContent = ({
         }
       }
 
-      const viewportH = window.visualViewport?.height ?? window.innerHeight
       const gapBottom =
         Number.parseFloat(
           getComputedStyle(document.documentElement).getPropertyValue('--vv-layout-gap-bottom')
@@ -1925,7 +1914,10 @@ const GameContent = ({
         onSetPosition={(round, playerTurn) =>
           dispatch({ type: 'SANDBOX_SET_POSITION', round, playerTurn })
         }
-        onCommit={() => dispatch({ type: 'SANDBOX_COMMIT_SETUP' })}
+        onCommit={() => {
+          dispatch({ type: 'SANDBOX_COMMIT_SETUP' })
+          onSandboxBegun?.(exportSaveDoc())
+        }}
       />
     ) : null
 
@@ -2317,7 +2309,7 @@ const GameContent = ({
             (turnControlsState.phase !== GamePhase.PLAYER_TURNS &&
               turnControlsState.phase !== GamePhase.COMBAT)
           }
-          inert={showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen ? true : undefined}
+          {...(showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen ? { inert: '' } : {})}
           aria-hidden={showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen}
         >
           <div className="play-area-drawer__inner">
@@ -2734,10 +2726,10 @@ function App() {
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
   const [gameInput, setGameInput] = useState<SaveDoc | null>(null)
   const [gameSessionKey, setGameSessionKey] = useState(0)
-  const [serverGameId, setServerGameId] = useState<number | null>(null)
+  const [localGameId, setLocalGameId] = useState<string | null>(null)
   const [canEdit, setCanEdit] = useState(true)
-  const serverGameIdRef = useRef(serverGameId)
-  serverGameIdRef.current = serverGameId
+  const localGameIdRef = useRef(localGameId)
+  localGameIdRef.current = localGameId
   const loadGenRef = useRef(0)
 
   const applySaveDoc = useCallback((doc: SaveDoc) => {
@@ -2748,57 +2740,70 @@ function App() {
     setScreenState(ScreenState.GAME)
   }, [])
 
-  const handleLoadSaveDoc = useCallback<LoadSaveFn>(
-    (doc, listedGameId) => {
-      const gen = ++loadGenRef.current
-      void (async () => {
-        try {
-          const access = await adoptLoadedGame(doc, listedGameId)
-          if (gen !== loadGenRef.current) return
-          setServerGameId(access.id)
-          setCanEdit(access.canEdit)
-        } catch {
-          if (gen !== loadGenRef.current) return
-          setServerGameId(null)
-          setCanEdit(true)
-        }
-        if (gen !== loadGenRef.current) return
-        applySaveDoc(doc)
-      })()
+  const adoptLocalDraft = useCallback(
+    (draftId: string | null, doc: SaveDoc, editable = true) => {
+      setLocalGameId(draftId)
+      setActiveLocalGameId(draftId)
+      setCanEdit(editable)
+      applySaveDoc(doc)
     },
     [applySaveDoc]
+  )
+
+  const handleLoadSaveDoc = useCallback<LoadSaveFn>(
+    (doc, source) => {
+      const gen = ++loadGenRef.current
+      void (async () => {
+        if (source?.localGameId) {
+          if (gen !== loadGenRef.current) return
+          adoptLocalDraft(source.localGameId, doc, true)
+          return
+        }
+
+        if (source?.serverGameId != null) {
+          if (gen !== loadGenRef.current) return
+          adoptLocalDraft(null, doc, source.canEdit === true)
+          return
+        }
+
+        // Imported JSON → new local draft
+        try {
+          const record = await persistLocalDraft(doc)
+          if (gen !== loadGenRef.current) return
+          if (!record) return
+          adoptLocalDraft(record.id, doc, true)
+        } catch {
+          if (gen !== loadGenRef.current) return
+          adoptLocalDraft(null, doc, true)
+        }
+      })()
+    },
+    [adoptLocalDraft]
   )
 
   useEffect(() => {
     const ac = new AbortController()
     void (async () => {
-      try {
-        const existing = await fetchActiveGame(ac.signal)
-        if (ac.signal.aborted) return
-        if (existing) {
-          setServerGameId(existing.id)
-          setCanEdit(existing.canEdit)
-          applySaveDoc(existing.doc)
-          return
+      const activeLocalId = getActiveLocalGameId()
+      if (activeLocalId) {
+        try {
+          const local = await getLocalGame(activeLocalId)
+          if (ac.signal.aborted) return
+          if (local) {
+            adoptLocalDraft(local.id, local.doc, true)
+            return
+          }
+        } catch {
+          if (ac.signal.aborted) return
         }
-      } catch {
-        if (ac.signal.aborted) return
       }
+
       const created = createSandboxGameInput(resolveStoredGamePackId())
       if (ac.signal.aborted) return
-      try {
-        const id = await saveGameJson(created)
-        if (ac.signal.aborted) return
-        setServerGameId(id)
-        setCanEdit(true)
-      } catch {
-        if (ac.signal.aborted) return
-        setServerGameId(null)
-      }
-      applySaveDoc(created)
+      adoptLocalDraft(null, created, true)
     })()
     return () => ac.abort()
-  }, [applySaveDoc])
+  }, [adoptLocalDraft])
 
   useEffect(() => {
     localStorage.setItem('myMentat.autoApplyMandatoryRewards', autoApplyMandatoryRewards ? 'true' : 'false')
@@ -2812,8 +2817,9 @@ function App() {
     localStorage.setItem(GAME_PACK_STORAGE_KEY, gamePackId)
   }, [gamePackId])
 
-  // iOS Safari: fixed bottom UIs anchor to the layout viewport, which extends below the visible
-  // area when chrome shows. Shift up by this gap so turn controls/modals align with VisualViewport bottom.
+  // iOS Safari (in-browser): fixed bottom UIs anchor to the layout viewport, which extends below
+  // the visible area when chrome shows. Installed PWAs must not apply that gap — it recreates
+  // the browser letterboxing. Shift up only while running in a browser tab.
   useLayoutEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
@@ -2821,6 +2827,10 @@ function App() {
     const sync = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
+        if (isStandaloneDisplay()) {
+          document.documentElement.style.setProperty('--vv-layout-gap-bottom', '0px')
+          return
+        }
         // iOS Chrome sometimes reports transient visualViewport sizes; absurd gaps break fixed footers
         // and can leave the playing area blank after closing a modal.
         if (!vv.height || vv.height < 80) {
@@ -2859,27 +2869,34 @@ function App() {
     }
   }
 
-  const replaceCurrentSandbox = (selectedGamePackId: string) => {
+  const replaceCurrentSandbox = (selectedGamePackId: string, _mode: 'reset' | 'new' = 'reset') => {
     setGamePackId(selectedGamePackId)
     const doc = createSandboxGameInput(selectedGamePackId, {
       id: gameInput?.meta.id,
     })
-    const gen = ++loadGenRef.current
-    const currentId = serverGameIdRef.current
-    void (async () => {
-      try {
-        const id = await saveGameJson(doc, currentId ?? undefined)
-        if (gen !== loadGenRef.current) return
-        setServerGameId(id)
-        setCanEdit(true)
-      } catch {
-        if (gen !== loadGenRef.current) return
-        setCanEdit(true)
-      }
-      if (gen !== loadGenRef.current) return
-      applySaveDoc(doc)
-    })()
+    const previousId = localGameIdRef.current
+    if (previousId) {
+      void deleteLocalGame(previousId).catch(() => {
+        /* ignore */
+      })
+    }
+    adoptLocalDraft(null, doc, true)
   }
+
+  const handleSandboxBegun = useCallback((doc: SaveDoc) => {
+    void (async () => {
+      const gen = ++loadGenRef.current
+      try {
+        const record = await persistLocalDraft(doc, localGameIdRef.current)
+        if (gen !== loadGenRef.current) return
+        if (!record) return
+        setLocalGameId(record.id)
+        setActiveLocalGameId(record.id)
+      } catch {
+        /* quota / private mode: keep playing in memory */
+      }
+    })()
+  }, [])
 
   const handleLeaderChoicesComplete = (leader: Leader) => {
     playerSetups[currentPlayerIndex].leader = leader;
@@ -2904,17 +2921,15 @@ function App() {
     })
     void (async () => {
       const gen = ++loadGenRef.current
-      const currentId = serverGameIdRef.current
       try {
-        const id = await saveGameJson(doc, currentId ?? undefined)
+        const record = await persistLocalDraft(doc, localGameIdRef.current)
         if (gen !== loadGenRef.current) return
-        setServerGameId(id)
-        setCanEdit(true)
+        if (record) adoptLocalDraft(record.id, doc, true)
+        else applySaveDoc(doc)
       } catch {
         if (gen !== loadGenRef.current) return
+        applySaveDoc(doc)
       }
-      if (gen !== loadGenRef.current) return
-      applySaveDoc(doc)
     })()
   }
 
@@ -2978,18 +2993,15 @@ function App() {
 
       {screenState === ScreenState.GAME && gameInput && (
         <GameProvider key={gameSessionKey} gameInput={gameInput} canEdit={canEdit}>
-          <LocalGameAutosave gameId={canEdit ? serverGameId : null} />
+          <LocalGameAutosave localGameId={canEdit ? localGameId : null} />
           <GameContent
             autoApplyMandatoryRewards={autoApplyMandatoryRewards}
             showBoardInfoTips={showBoardInfoTips}
             gamePackId={gamePackId}
-            onRestartSandbox={packId => replaceCurrentSandbox(packId)}
-            onStartNewSandbox={() => replaceCurrentSandbox(gamePackId)}
-            onSandboxBegun={id => {
-              setServerGameId(id)
-              setCanEdit(true)
-            }}
+            onRestartSandbox={packId => replaceCurrentSandbox(packId, 'reset')}
+            onStartNewSandbox={() => replaceCurrentSandbox(gamePackId, 'new')}
             onLoadSave={handleLoadSaveDoc}
+            onSandboxBegun={handleSandboxBegun}
             canEdit={canEdit}
           />
         </GameProvider>

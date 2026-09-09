@@ -7,12 +7,12 @@ CREATE TABLE users (
 
 CREATE TABLE games (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    owner_id   TEXT REFERENCES users(id),
+    owner_id   TEXT NOT NULL REFERENCES users(id),
     json       TEXT NOT NULL,
     name       TEXT NOT NULL DEFAULT ('Dune Imperium game'),
     -- etag       TEXT NOT NULL,
-    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'unixepoch')),
-    created_at TEXT NOT NULL DEFAULT (datetime('now', 'unixepoch'))
+    updated_at TEXT NOT NULL DEFAULT (strftime('%s', 'now')),
+    created_at TEXT NOT NULL DEFAULT (strftime('%s', 'now'))
 );
 
 -- CREATE TABLE session_games {

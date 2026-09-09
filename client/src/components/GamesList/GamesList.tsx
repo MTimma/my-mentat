@@ -1,8 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { fetchGameDoc, fetchGames, type GameDetail, type LoadSaveFn } from '../../api/gamesApi'
+import {
+  deleteLocalGame,
+  getLocalGame,
+  listLocalGames,
+  MAX_LOCAL_GAMES,
+  type LocalGameMeta,
+} from '../../save/localGamesStore'
 import './GamesList.css'
 
-type GamesListTab = 'community' | 'official'
+type GamesListTab = 'local' | 'community' | 'official'
 
 export interface GamesListProps {
   onLoad: LoadSaveFn
@@ -19,15 +26,33 @@ function formatUnixOrIso(raw: string): string {
   return raw
 }
 
+function formatMs(ms: number): string {
+  return new Date(ms).toLocaleString()
+}
+
 const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
   const [activeTab, setActiveTab] = useState<GamesListTab>('community')
   const [games, setGames] = useState<GameDetail[]>([])
+  const [localGames, setLocalGames] = useState<LocalGameMeta[]>([])
   const [listStatus, setListStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('loading')
   const [listError, setListError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [loadingId, setLoadingId] = useState<number | null>(null)
+  const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [copiedError, setCopiedError] = useState(false)
 
-  const loadGames = useCallback(async () => {
+  const copyListError = useCallback(async () => {
+    if (!listError) return
+    try {
+      await navigator.clipboard.writeText(listError)
+      setCopiedError(true)
+      window.setTimeout(() => setCopiedError(false), 1500)
+    } catch {
+      /* selection still works */
+    }
+  }, [listError])
+
+  const loadCommunityGames = useCallback(async () => {
     setListStatus('loading')
     setListError(null)
     try {
@@ -41,21 +66,74 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
     }
   }, [])
 
-  useEffect(() => {
-    if (activeTab !== 'community') return
-    void loadGames()
-  }, [activeTab, loadGames])
-
-  const handleLoadGame = async (game: GameDetail) => {
-    setLoadError(null)
-    setLoadingId(game.id)
+  const loadLocalGames = useCallback(async () => {
+    setListStatus('loading')
+    setListError(null)
     try {
-      const doc = await fetchGameDoc(game.id)
-      onLoad(doc, game.id)
+      const rows = await listLocalGames()
+      setLocalGames(rows)
+      setListStatus('ready')
+    } catch (error) {
+      setLocalGames([])
+      setListStatus('error')
+      setListError(error instanceof Error ? error.message : 'Failed to load drafts')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'community') {
+      void loadCommunityGames()
+      return
+    }
+    if (activeTab === 'local') {
+      void loadLocalGames()
+      return
+    }
+    setListStatus('ready')
+  }, [activeTab, loadCommunityGames, loadLocalGames])
+
+  const handleLoadCommunity = async (game: GameDetail) => {
+    setLoadError(null)
+    setLoadingId(`server:${game.id}`)
+    try {
+      const { doc, canEdit, id } = await fetchGameDoc(game.id)
+      onLoad(doc, { serverGameId: id, canEdit })
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : `Failed to load game #${game.id}`)
     } finally {
       setLoadingId(null)
+    }
+  }
+
+  const handleLoadLocal = async (game: LocalGameMeta) => {
+    setLoadError(null)
+    setLoadingId(`local:${game.id}`)
+    try {
+      const record = await getLocalGame(game.id)
+      if (!record) {
+        setLoadError('Draft no longer exists in this browser.')
+        void loadLocalGames()
+        return
+      }
+      onLoad(record.doc, { localGameId: record.id })
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : `Failed to load draft`)
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  const handleDeleteLocal = async (game: LocalGameMeta) => {
+    if (!window.confirm(`Delete draft "${game.title}" from this browser?`)) return
+    setDeletingId(game.id)
+    setLoadError(null)
+    try {
+      await deleteLocalGame(game.id)
+      await loadLocalGames()
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Failed to delete draft')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -90,21 +168,105 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
         >
           Official
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'local'}
+          className={[
+            'games-list-tab',
+            activeTab === 'local' ? 'games-list-tab--active' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          onClick={() => setActiveTab('local')}
+        >
+          Draft
+        </button>
       </div>
 
       <div className="games-list-panel" role="tabpanel">
         {activeTab === 'official' ? (
           <p className="games-list-empty">No official games yet.</p>
+        ) : activeTab === 'local' ? (
+          listStatus === 'loading' ? (
+            <p className="games-list-status">Loading drafts…</p>
+          ) : listStatus === 'error' ? (
+            <div className="games-list-error-block">
+              <pre className="games-list-error games-list-error--copyable" role="alert" tabIndex={0}>
+                {listError}
+              </pre>
+              <div className="games-list-error-actions">
+                <button type="button" className="games-list-retry" onClick={() => void copyListError()}>
+                  {copiedError ? 'Copied' : 'Copy error'}
+                </button>
+                <button type="button" className="games-list-retry" onClick={() => void loadLocalGames()}>
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : localGames.length === 0 ? (
+            <p className="games-list-empty">No drafts in this browser yet.</p>
+          ) : (
+            <>
+              <p className="games-list-cap-note">
+                {localGames.length}/{MAX_LOCAL_GAMES} drafts (stored on this device)
+              </p>
+              <div className="games-list-table-wrap">
+                <table className="games-list-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Name</th>
+                      <th scope="col">Updated</th>
+                      <th scope="col" aria-label="Actions" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {localGames.map(game => (
+                      <tr key={game.id}>
+                        <td className="games-list-name">{game.title}</td>
+                        <td className="games-list-meta">{formatMs(game.updatedAt)}</td>
+                        <td>
+                          <div className="games-list-actions">
+                            <button
+                              type="button"
+                              className="games-list-load-btn"
+                              disabled={loadingId === `local:${game.id}`}
+                              onClick={() => void handleLoadLocal(game)}
+                            >
+                              {loadingId === `local:${game.id}` ? 'Loading…' : 'Load'}
+                            </button>
+                            <button
+                              type="button"
+                              className="games-list-delete-btn"
+                              disabled={deletingId === game.id}
+                              onClick={() => void handleDeleteLocal(game)}
+                            >
+                              {deletingId === game.id ? 'Deleting…' : 'Delete'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )
         ) : listStatus === 'loading' ? (
           <p className="games-list-status">Loading community games…</p>
         ) : listStatus === 'error' ? (
-          <div>
-            <p className="games-list-error" role="alert">
+          <div className="games-list-error-block">
+            <pre className="games-list-error games-list-error--copyable" role="alert" tabIndex={0}>
               {listError}
-            </p>
-            <button type="button" className="games-list-retry" onClick={() => void loadGames()}>
-              Retry
-            </button>
+            </pre>
+            <div className="games-list-error-actions">
+              <button type="button" className="games-list-retry" onClick={() => void copyListError()}>
+                {copiedError ? 'Copied' : 'Copy error'}
+              </button>
+              <button type="button" className="games-list-retry" onClick={() => void loadCommunityGames()}>
+                Retry
+              </button>
+            </div>
           </div>
         ) : games.length === 0 ? (
           <p className="games-list-empty">No community games yet.</p>
@@ -127,10 +289,10 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
                       <button
                         type="button"
                         className="games-list-load-btn"
-                        disabled={loadingId === game.id}
-                        onClick={() => void handleLoadGame(game)}
+                        disabled={loadingId === `server:${game.id}`}
+                        onClick={() => void handleLoadCommunity(game)}
                       >
-                        {loadingId === game.id ? 'Loading…' : 'Load'}
+                        {loadingId === `server:${game.id}` ? 'Loading…' : 'Load'}
                       </button>
                     </td>
                   </tr>

@@ -14,6 +14,12 @@ import {
 } from '../../types/GameTypes'
 import { BOARD_SPACES, FOLDSPACE_BOARD_SPACE_ID } from '../../data/boardSpaces'
 import {
+  CHOAM_OVERLAY_SRC,
+  DEFAULT_BOARD_IMAGE,
+  MENTAT_TAKEN_ROI_SRC,
+  MENTAT_TAKEN_SRC,
+} from '../../data/boardAssets'
+import {
   BOARD_HOTSPOTS_FOR_EXPANSIONS,
   layoutAgentAnchorPercent,
   layoutHotspotPercent,
@@ -332,7 +338,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   BOARD_SPACES.forEach(s => spaceMap.set(s.id, s))
 
   const boardImageSrc =
-    (import.meta.env.VITE_BOARD_IMAGE as string | undefined)?.trim() || '/board/Board.jpg'
+    (import.meta.env.VITE_BOARD_IMAGE as string | undefined)?.trim() || DEFAULT_BOARD_IMAGE
 
   const hotspotDebug =
     typeof window !== 'undefined' &&
@@ -541,6 +547,8 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
               src={boardImageSrc}
               alt="Dune: Imperium game board"
               draggable={false}
+              fetchPriority="high"
+              decoding="async"
               onError={() => setImgError(true)}
             />
           )}
@@ -548,7 +556,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           {choamOverlayRect && (
             <img
               className="image-board__choam-overlay"
-              src="/board/riseofix/riseofix1.png"
+              src={CHOAM_OVERLAY_SRC}
               alt="CHOAM overlay"
               draggable={false}
               style={percentToStyle(layoutInnerRectPercent(choamOverlayRect))}
@@ -862,11 +870,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   <img src="/icon/mentat.png" alt="" className="image-board__mentat-marker-img" draggable={false} />
                 ) : (
                   <img
-                    src={
-                      riseOfIx
-                        ? '/board/riseofix/mentat_taken_3.png'
-                        : '/board/mentat_taken.png'
-                    }
+                    src={riseOfIx ? MENTAT_TAKEN_ROI_SRC : MENTAT_TAKEN_SRC}
                     alt=""
                     className="image-board__mentat-marker-img image-board__mentat-marker-img--taken"
                     draggable={false}

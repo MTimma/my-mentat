@@ -50,7 +50,7 @@ import {
 import SetupSnapshotPreview from './SetupSnapshotPreview/SetupSnapshotPreview'
 import TurnGainsDisplay from './TurnGainsDisplay/TurnGainsDisplay'
 import { useGame } from './GameContext/GameContext'
-import { saveGameJson, type LoadSaveFn } from '../api/gamesApi'
+import { type LoadSaveFn, type LoadSaveSource } from '../api/gamesApi'
 import SaveDocImportPanel from './SaveDocImportPanel/SaveDocImportPanel'
 import GamesList from './GamesList/GamesList'
 import type { SaveDoc } from '../save/types'
@@ -150,7 +150,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   const [debugView, setDebugView] = useState<'save' | 'runtime' | 'load'>('save')
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null)
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null)
-  const [dbSaveFeedback, setDbSaveFeedback] = useState<string | null>(null)
   const [saveFilename, setSaveFilename] = useState('')
   const [playChromeTheme, setPlayChromeTheme] = useState<PlayChromeTheme>(() => getPlayChromeTheme())
   const listRef = useRef<HTMLDivElement>(null)
@@ -207,19 +206,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     }
   }, [exportSaveDoc, saveFilename])
 
-  const handleSaveToDb = useCallback(async () => {
-    try {
-      const id = await saveGameJson(exportSaveDoc())
-      setDbSaveFeedback(`Saved as #${id}`)
-      window.setTimeout(() => setDbSaveFeedback(null), 3000)
-    } catch (error) {
-      setDbSaveFeedback(error instanceof Error ? error.message : 'Save to DB failed')
-      window.setTimeout(() => setDbSaveFeedback(null), 4000)
-    }
-  }, [exportSaveDoc])
-
   const handleLoadSaveFromPanel = useCallback(
-    (doc: SaveDoc, serverGameId?: number) => {
+    (doc: SaveDoc, source?: LoadSaveSource) => {
       if (!onLoadSave) return
       const current = exportSaveDoc()
       if (current.events.length > 0) {
@@ -228,7 +216,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         )
         if (!ok) return
       }
-      onLoadSave(doc, serverGameId)
+      onLoadSave(doc, source)
       setShowDebugModal(false)
     },
     [exportSaveDoc, onLoadSave]
@@ -1294,9 +1282,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                         </button>
                         <button type="button" className="turn-details-export-btn" onClick={handleSaveJson}>
                           {saveFeedback ?? (canUseSaveFilePicker() ? 'Save as…' : 'Download')}
-                        </button>
-                        <button type="button" className="turn-details-export-btn" onClick={() => void handleSaveToDb()}>
-                          {dbSaveFeedback ?? 'Save to DB'}
                         </button>
                       </div>
                     </div>

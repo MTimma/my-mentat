@@ -46,7 +46,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Bene Tleilax Lab',
-      image: 'imperium_row/immortality/bene_tleilax_lab.png',
+      image: 'imperium_row/immortality/bene_tleilax_lab.avif',
       agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
       cost: 2,
       immortality: true,
@@ -61,7 +61,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Bene Tleilax Researcher',
-      image: 'imperium_row/immortality/bene_tleilax_researcher.png',
+      image: 'imperium_row/immortality/bene_tleilax_researcher.avif',
       agentIcons: [AgentIcon.LANDSRAAD],
       cost: 4,
       immortality: true,
@@ -78,7 +78,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Blank Slate',
-      image: 'imperium_row/immortality/blank_slate.png',
+      image: 'imperium_row/immortality/blank_slate.avif',
       agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
       cost: 1,
       immortality: true,
@@ -92,7 +92,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Clandestine Meeting',
-      image: 'imperium_row/immortality/clandestine_meeting.png',
+      image: 'imperium_row/immortality/clandestine_meeting.avif',
       faction: [FactionType.BENE_GESSERIT],
       agentIcons: [],
       cost: 4,
@@ -114,7 +114,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Corrupt Smuggler',
-      image: 'imperium_row/immortality/corrupt_smuggler.png',
+      image: 'imperium_row/immortality/corrupt_smuggler.avif',
       faction: [FactionType.SPACING_GUILD, FactionType.FREMEN],
       agentIcons: [AgentIcon.SPACING_GUILD, AgentIcon.SPICE_TRADE],
       cost: 3,
@@ -127,7 +127,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 2,
     card: {
       name: 'Dissecting Kit',
-      image: 'imperium_row/immortality/dissecting_kit.png',
+      image: 'imperium_row/immortality/dissecting_kit.avif',
       agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
       cost: 2,
       immortality: true,
@@ -144,7 +144,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'For Humanity',
-      image: 'imperium_row/immortality/for_humanity.png',
+      image: 'imperium_row/immortality/for_humanity.avif',
       faction: [FactionType.BENE_GESSERIT],
       agentIcons: [AgentIcon.BENE_GESSERIT, AgentIcon.LANDSRAAD, AgentIcon.SPICE_TRADE],
       cost: 7,
@@ -165,7 +165,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 2,
     card: {
       name: 'High Priority Travel',
-      image: 'imperium_row/immortality/high_priority_travel.png',
+      image: 'imperium_row/immortality/high_priority_travel.avif',
       faction: [FactionType.SPACING_GUILD],
       agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.SPICE_TRADE],
       cost: 1,
@@ -184,7 +184,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Imperium Ceremony',
-      image: 'imperium_row/immortality/imperium_ceremony.png',
+      image: 'imperium_row/immortality/imperium_ceremony.avif',
       faction: [FactionType.EMPEROR, FactionType.SPACING_GUILD],
       agentIcons: [AgentIcon.EMPEROR, AgentIcon.SPACING_GUILD, AgentIcon.LANDSRAAD],
       cost: 6,
@@ -198,7 +198,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Interstellar Conspiracy',
-      image: 'imperium_row/immortality/interstellar_conspiracy.png',
+      image: 'imperium_row/immortality/interstellar_conspiracy.avif',
       agentIcons: [AgentIcon.CITY],
       cost: 4,
       immortality: true,
@@ -215,7 +215,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Keys to Power',
-      image: 'imperium_row/immortality/keys_to_power.png',
+      image: 'imperium_row/immortality/keys_to_power.avif',
       faction: [FactionType.SPACING_GUILD, FactionType.BENE_GESSERIT],
       agentIcons: [AgentIcon.SPACING_GUILD, AgentIcon.BENE_GESSERIT, AgentIcon.LANDSRAAD],
       cost: 5,
@@ -233,7 +233,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Lisan Al-Gaib',
-      image: 'imperium_row/immortality/lisan_al_gaib.png',
+      image: 'imperium_row/immortality/lisan_al_gaib.avif',
       faction: [FactionType.BENE_GESSERIT, FactionType.FREMEN],
       agentIcons: [AgentIcon.FREMEN, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
       cost: 4,
@@ -248,7 +248,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Long Reach',
-      image: 'imperium_row/immortality/long_reach.png',
+      image: 'imperium_row/immortality/long_reach.avif',
       faction: [FactionType.BENE_GESSERIT],
       agentIcons: [],
       cost: 6,
@@ -262,7 +262,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Occupation',
-      image: 'imperium_row/immortality/occupation.png',
+      image: 'imperium_row/immortality/occupation.avif',
       faction: [FactionType.SPACING_GUILD],
       agentIcons: [
         AgentIcon.EMPEROR,
@@ -284,7 +284,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Organ Merchants',
-      image: 'imperium_row/immortality/organ_merchants.png',
+      image: 'imperium_row/immortality/organ_merchants.avif',
       agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
       cost: 3,
       immortality: true,
@@ -297,7 +297,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 2,
     card: {
       name: 'Planned Coupling',
-      image: 'imperium_row/immortality/planned_coupling.png',
+      image: 'imperium_row/immortality/planned_coupling.avif',
       faction: [FactionType.BENE_GESSERIT],
       agentIcons: [AgentIcon.BENE_GESSERIT],
       cost: 3,
@@ -311,7 +311,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Replacement Eyes',
-      image: 'imperium_row/immortality/replacement_eyes.png',
+      image: 'imperium_row/immortality/replacement_eyes.avif',
       agentIcons: [AgentIcon.CITY],
       cost: 5,
       immortality: true,
@@ -326,7 +326,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Sardukar Quartermaster',
-      image: 'imperium_row/immortality/sarduakar_quartermaster.png',
+      image: 'imperium_row/immortality/sarduakar_quartermaster.avif',
       faction: [FactionType.EMPEROR],
       agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
       cost: 2,
@@ -342,7 +342,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Shadout Mapes',
-      image: 'imperium_row/immortality/shadout_mapes.png',
+      image: 'imperium_row/immortality/shadout_mapes.avif',
       faction: [FactionType.FREMEN],
       agentIcons: [AgentIcon.FREMEN, AgentIcon.SPICE_TRADE],
       cost: 2,
@@ -358,7 +358,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Show of Strength',
-      image: 'imperium_row/immortality/show_of_strength.png',
+      image: 'imperium_row/immortality/show_of_strength.avif',
       faction: [FactionType.EMPEROR, FactionType.FREMEN],
       agentIcons: [],
       cost: 3,
@@ -372,7 +372,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 2,
     card: {
       name: 'Spiritual Fervor',
-      image: 'imperium_row/immortality/spiritual_fervor.png',
+      image: 'imperium_row/immortality/spiritual_fervor.avif',
       agentIcons: [AgentIcon.SPICE_TRADE],
       cost: 3,
       immortality: true,
@@ -385,7 +385,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Stillsuit Manufacturer',
-      image: 'imperium_row/immortality/stillsuit_manufacturer.png',
+      image: 'imperium_row/immortality/stillsuit_manufacturer.avif',
       faction: [FactionType.FREMEN],
       agentIcons: [AgentIcon.FREMEN, AgentIcon.CITY],
       cost: 5,
@@ -405,7 +405,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Throne Room Politics',
-      image: 'imperium_row/immortality/throne_room_politics.png',
+      image: 'imperium_row/immortality/throne_room_politics.avif',
       faction: [FactionType.EMPEROR, FactionType.BENE_GESSERIT],
       agentIcons: [AgentIcon.EMPEROR],
       cost: 4,
@@ -418,7 +418,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 2,
     card: {
       name: 'Tleilaxu Master',
-      image: 'imperium_row/immortality/tleilaxu_master.png',
+      image: 'imperium_row/immortality/tleilaxu_master.avif',
       agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.SPICE_TRADE],
       cost: 5,
       immortality: true,
@@ -433,7 +433,7 @@ const IMMORTALITY_IMPERIUM_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Tleilaxu Surgeon',
-      image: 'imperium_row/immortality/tleilaxu_surgeon.png',
+      image: 'imperium_row/immortality/tleilaxu_surgeon.avif',
       agentIcons: [AgentIcon.EMPEROR, AgentIcon.CITY],
       cost: 3,
       immortality: true,
@@ -454,7 +454,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Reclaimed Forces',
-      image: 'tleilaxu_row/immortality/reclaimed_forces.png',
+      image: 'tleilaxu_row/immortality/reclaimed_forces.avif',
       agentIcons: [],
       cost: 3,
       immortality: true,
@@ -467,7 +467,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Usurp',
-      image: 'tleilaxu_row/immortality/usurp.png',
+      image: 'tleilaxu_row/immortality/usurp.avif',
       agentIcons: [],
       cost: 4,
       immortality: true,
@@ -481,7 +481,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Twisted Mentat',
-      image: 'tleilaxu_row/immortality/twisted_mentat.png',
+      image: 'tleilaxu_row/immortality/twisted_mentat.avif',
       agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY],
       cost: 4,
       immortality: true,
@@ -496,7 +496,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Beguiling Pheromones',
-      image: 'tleilaxu_row/immortality/beguiling_pheromones.png',
+      image: 'tleilaxu_row/immortality/beguiling_pheromones.avif',
       agentIcons: [AgentIcon.CITY, AgentIcon.SPICE_TRADE],
       cost: 3,
       immortality: true,
@@ -510,7 +510,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Stitched Horror',
-      image: 'tleilaxu_row/immortality/stitched_horror.png',
+      image: 'tleilaxu_row/immortality/stitched_horror.avif',
       agentIcons: [AgentIcon.CITY],
       cost: 3,
       immortality: true,
@@ -525,7 +525,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Unnatural Reflexes',
-      image: 'tleilaxu_row/immortality/unnatural_reflexes.png',
+      image: 'tleilaxu_row/immortality/unnatural_reflexes.avif',
       agentIcons: [AgentIcon.SPICE_TRADE],
       cost: 3,
       immortality: true,
@@ -539,7 +539,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Ghola',
-      image: 'tleilaxu_row/immortality/ghola.png',
+      image: 'tleilaxu_row/immortality/ghola.avif',
       agentIcons: [AgentIcon.CITY],
       cost: 3,
       immortality: true,
@@ -554,7 +554,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Scientific Breakthrough',
-      image: 'tleilaxu_row/immortality/scientific_breakthrough.png',
+      image: 'tleilaxu_row/immortality/scientific_breakthrough.avif',
       agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
       cost: 3,
       immortality: true,
@@ -574,7 +574,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Slig Farmer',
-      image: 'tleilaxu_row/immortality/slig_farmer.png',
+      image: 'tleilaxu_row/immortality/slig_farmer.avif',
       agentIcons: [AgentIcon.LANDSRAAD],
       cost: 2,
       immortality: true,
@@ -589,7 +589,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'From the Tanks',
-      image: 'tleilaxu_row/immortality/from_the_tanks.png',
+      image: 'tleilaxu_row/immortality/from_the_tanks.avif',
       agentIcons: [AgentIcon.LANDSRAAD],
       cost: 2,
       immortality: true,
@@ -602,7 +602,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Face Dancer',
-      image: 'tleilaxu_row/immortality/face_dancer.png',
+      image: 'tleilaxu_row/immortality/face_dancer.avif',
       faction: [FactionType.EMPEROR, FactionType.SPACING_GUILD, FactionType.FREMEN],
       agentIcons: [AgentIcon.EMPEROR, AgentIcon.SPACING_GUILD, AgentIcon.FREMEN],
       cost: 2,
@@ -617,7 +617,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Guild Impersonator',
-      image: 'tleilaxu_row/immortality/guild_impersonator.png',
+      image: 'tleilaxu_row/immortality/guild_impersonator.avif',
       faction: [FactionType.SPACING_GUILD],
       agentIcons: [AgentIcon.SPACING_GUILD],
       cost: 2,
@@ -633,7 +633,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Chairdog',
-      image: 'tleilaxu_row/immortality/chairdog.png',
+      image: 'tleilaxu_row/immortality/chairdog.avif',
       agentIcons: [AgentIcon.CITY],
       cost: 2,
       immortality: true,
@@ -648,7 +648,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Tleilaxu Infiltrator',
-      image: 'tleilaxu_row/immortality/tleilaxu_infiltrator.png',
+      image: 'tleilaxu_row/immortality/tleilaxu_infiltrator.avif',
       agentIcons: [AgentIcon.CITY],
       cost: 2,
       immortality: true,
@@ -667,7 +667,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Subject X-137',
-      image: 'tleilaxu_row/immortality/subject_x_137.png',
+      image: 'tleilaxu_row/immortality/subject_x_137.avif',
       agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.SPICE_TRADE],
       cost: 2,
       immortality: true,
@@ -684,7 +684,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Corrino Genes',
-      image: 'tleilaxu_row/immortality/corrino_genes.png',
+      image: 'tleilaxu_row/immortality/corrino_genes.avif',
       faction: [FactionType.EMPEROR],
       agentIcons: [AgentIcon.EMPEROR],
       cost: 1,
@@ -700,7 +700,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Contaminator',
-      image: 'tleilaxu_row/immortality/contaminator.png',
+      image: 'tleilaxu_row/immortality/contaminator.avif',
       faction: [FactionType.FREMEN],
       agentIcons: [AgentIcon.FREMEN],
       cost: 1,
@@ -714,7 +714,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Industrial Espionage',
-      image: 'tleilaxu_row/immortality/industrial_espionage.png',
+      image: 'tleilaxu_row/immortality/industrial_espionage.avif',
       agentIcons: [AgentIcon.LANDSRAAD],
       cost: 1,
       immortality: true,
@@ -731,7 +731,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Face Dancer Initiate',
-      image: 'tleilaxu_row/immortality/face_dancer_initiate.png',
+      image: 'tleilaxu_row/immortality/face_dancer_initiate.avif',
       faction: [FactionType.EMPEROR, FactionType.SPACING_GUILD, FactionType.FREMEN],
       agentIcons: [AgentIcon.EMPEROR, AgentIcon.SPACING_GUILD, AgentIcon.FREMEN],
       cost: 1,
@@ -757,7 +757,7 @@ const IMMORTALITY_STARTING_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
     qty: 1,
     card: {
       name: 'Experimentation',
-      image: 'starter_deck/experimentation.png',
+      image: 'starter_deck/experimentation.avif',
       agentIcons: [AgentIcon.LANDSRAAD],
       immortality: true,
       playEffect: [{ reward: { research: 1 } }],

@@ -14,7 +14,7 @@ describe('cardsRiseOfIx data', () => {
   it('every card is flagged riseOfIx with imperium_row/rise_of_ix image path', () => {
     for (const card of RISE_OF_IX_IMPERIUM_DECK) {
       expect(card.riseOfIx).toBe(true)
-      expect(card.image).toMatch(/^imperium_row\/rise_of_ix\/.+\.png$/)
+      expect(card.image).toMatch(/^imperium_row\/rise_of_ix\/.+\.avif$/)
     }
   })
 

@@ -1,41 +1,39 @@
 import { useEffect, useRef } from 'react'
-import { saveGameJson } from '../../api/gamesApi'
+import { upsertLocalGame } from '../../save/localGamesStore'
 import { useGame } from '../GameContext/gameContextState'
 
 const AUTOSAVE_MS = 500
 
 interface LocalGameAutosaveProps {
-  /** DB row this live session is writing. Null disables writes (no row yet / create failed). */
-  gameId: number | null
+  /** IndexedDB draft id. Null disables writes. */
+  localGameId: string | null
 }
 
-/** Debounced write of the live SaveDoc to this session's game row (`POST /games/save?id=`). */
-const LocalGameAutosave = ({ gameId }: LocalGameAutosaveProps) => {
+/** Debounced SaveDoc write to IndexedDB. */
+const LocalGameAutosave = ({ localGameId }: LocalGameAutosaveProps) => {
   const { exportSaveDoc, gameState } = useGame()
   const exportRef = useRef(exportSaveDoc)
   exportRef.current = exportSaveDoc
-  const gameIdRef = useRef(gameId)
-  gameIdRef.current = gameId
+  const localIdRef = useRef(localGameId)
+  localIdRef.current = localGameId
 
   useEffect(() => {
-    if (gameId == null) return
-    const ac = new AbortController()
+    if (localGameId == null) return
     const timer = window.setTimeout(() => {
-      void saveGameJson(exportRef.current(), gameId, ac.signal).catch(() => {
-        /* server down: keep playing in memory */
+      void upsertLocalGame(localIdRef.current!, exportRef.current()).catch(() => {
+        /* quota / private mode: keep playing in memory */
       })
     }, AUTOSAVE_MS)
     return () => {
       window.clearTimeout(timer)
-      ac.abort()
     }
-  }, [gameState, gameId])
+  }, [gameState, localGameId])
 
   useEffect(() => {
     return () => {
-      const id = gameIdRef.current
-      if (id == null) return
-      void saveGameJson(exportRef.current(), id).catch(() => {
+      const localId = localIdRef.current
+      if (localId == null) return
+      void upsertLocalGame(localId, exportRef.current()).catch(() => {
         /* ignore */
       })
     }

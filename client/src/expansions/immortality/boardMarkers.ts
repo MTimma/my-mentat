@@ -43,7 +43,7 @@ export function immortalityPanelAnchors(boardSet: BoardSetId): ImmortalityPanelA
   return PANEL_ANCHORS[boardSet]
 }
 
-export const BENE_TLEILAX_BOARD_SRC = 'board/immortality/bene_tleilax_board.png'
+export const BENE_TLEILAX_BOARD_SRC = 'board/immortality/bene_tleilax_board.avif'
 
 /** Research hex positions on the bottom grid (shared x/y; lanes add per-player y). */
 export const RESEARCH_NODE_POSITIONS: Record<string, InnerPoint> = {
@@ -112,7 +112,7 @@ export function immortalityBoardLayer(boardSet: BoardSetId): ExpansionBoardLayer
   if (researchRect) {
     overlays.push({
       id: 'immortality-research-station',
-      src: 'board/immortality/research_station.png',
+      src: 'board/immortality/research_station.avif',
       rect: researchRect,
     })
   }

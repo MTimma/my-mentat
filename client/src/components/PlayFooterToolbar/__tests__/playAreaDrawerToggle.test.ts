@@ -20,11 +20,10 @@ describe('Play area drawer toggle', () => {
     expect(toolbar).toContain('aria-controls="play-area-drawer"')
     expect(appTsx).toContain('onPlayAreaDrawerToggle={() =>')
     expect(appTsx).toContain('setPlayAreaDrawerOpen(!isPlayAreaDrawerOpenRef.current)')
-    expect(appTsx).toContain('desktop-play-drawer-toggle')
     expect(appTsx).toContain('play-area-collapse-handle')
     expect(appTsx).toContain('const showPlayAreaDrawerToggle = useImageBoard')
     expect(appTsx).toContain('COMPACT_PLAY_OVERLAY_MQ')
-    expect(appTsx).toContain('inert={showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen ? true : undefined}')
+    expect(appTsx).toContain("...(showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen ? { inert: '' } : {})")
   })
 
   it('closed mobile overlay drawer is clipped, inert, and not visible', () => {

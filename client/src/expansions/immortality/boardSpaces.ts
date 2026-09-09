@@ -8,7 +8,7 @@ export const IMMORTALITY_RESEARCH_STATION: SpaceProps = {
   agentIcon: AgentIcon.CITY,
   cost: { water: 2 },
   effects: [{ reward: { drawCards: 2, research: 1 } }],
-  image: 'board/immortality/research_station.png',
+  image: 'board/immortality/research_station.avif',
   immortality: true,
 }
 

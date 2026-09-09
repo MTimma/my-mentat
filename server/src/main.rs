@@ -1,6 +1,6 @@
 mod dao;
 
-use dao::{activate_game, get_active_game, get_game, get_games, new_game, save_game};
+use dao::{get_game, get_games, save_game};
 use sqlx_sqlite::SqlitePoolOptions;
 use sqlx_sqlite::SqliteConnectOptions;
 use sqlx_sqlite::SqliteJournalMode;
@@ -71,11 +71,8 @@ async fn main() {
 
     let mut app = Router::new()
         .route("/games/save", post(save_game))
-        .route("/games/new", post(new_game))
         .route("/games", get(get_games))
         .route("/games/{id}", get(get_game))
-        .route("/games/{id}/activate", post(activate_game))
-        .route("/games/active", get(get_active_game))
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
         .layer(session_layer)
         .with_state(pool);

@@ -30,16 +30,16 @@ export const LEADER_IMAGES: Record<string, string> = {
   [LEADER_NAMES.DUKE_LETO]: '/leaders/leto.avif',
   [LEADER_NAMES.EARL_MEMNON_THORVALD]: '/leaders/memnon.avif',
   [LEADER_NAMES.PAUL_ATREIDES]: '/leaders/paul.avif',
-  [LEADER_NAMES.PRINCE_RHOMBUR_VERNIUS]: '/leaders/rise_of_ix/prince_rhombur_vernius.jpg',
-  [LEADER_NAMES.VISCOUNT_HUDRO_MORITANI]: '/leaders/rise_of_ix/viscount_hudro_moritani.jpg',
-  [LEADER_NAMES.PRINCESS_YUNA_MORITANI]: '/leaders/rise_of_ix/princess_yuna_moritani.jpg',
-  [LEADER_NAMES.ARCHDUKE_ARMAND_ECAZ]: '/leaders/rise_of_ix/archduke_armand_ecaz.jpg',
-  [LEADER_NAMES.ILESA_ECAZ]: '/leaders/rise_of_ix/ilesa_ecaz.jpg',
-  [LEADER_NAMES.TESSIA_VERNIUS]: '/leaders/rise_of_ix/tessia_vernius.jpg',
+  [LEADER_NAMES.PRINCE_RHOMBUR_VERNIUS]: '/leaders/rise_of_ix/prince_rhombur_vernius.avif',
+  [LEADER_NAMES.VISCOUNT_HUDRO_MORITANI]: '/leaders/rise_of_ix/viscount_hudro_moritani.avif',
+  [LEADER_NAMES.PRINCESS_YUNA_MORITANI]: '/leaders/rise_of_ix/princess_yuna_moritani.avif',
+  [LEADER_NAMES.ARCHDUKE_ARMAND_ECAZ]: '/leaders/rise_of_ix/archduke_armand_ecaz.avif',
+  [LEADER_NAMES.ILESA_ECAZ]: '/leaders/rise_of_ix/ilesa_ecaz.avif',
+  [LEADER_NAMES.TESSIA_VERNIUS]: '/leaders/rise_of_ix/tessia_vernius.avif',
 }
 export const getLeaderImage = (leaderName: string): string | undefined => LEADER_IMAGES[leaderName]
 
-/** Maps leader names to icon file slugs (e.g. ariana, baron). Used for head icons in leaders/icons/{slug}-head.png */
+/** Maps leader names to icon file slugs (e.g. ariana, baron). Used for head icons in leaders/icons/{slug}-head.avif */
 export const LEADER_ICON_SLUGS: Record<string, string> = {
   [LEADER_NAMES.COUNTESS_ARIANA_THORVALD]: 'ariana',
   [LEADER_NAMES.BARON_VLADIMIR]: 'baron',
@@ -65,7 +65,7 @@ export const getLeaderIconPath = (leaderName: string): string | undefined => {
     return basename ? `/leaders/rise_of_ix/icons/${basename}` : undefined
   }
   const slug = LEADER_ICON_SLUGS[leaderName]
-  return slug ? `/leaders/icons/${slug}-head.png` : undefined
+  return slug ? `/leaders/icons/${slug}-head.avif` : undefined
 }
 
 export class Baron extends Leader {

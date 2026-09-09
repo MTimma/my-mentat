@@ -1,5 +1,5 @@
 /**
- * Play chrome themes — void (warm charcoal + sand) and blueish (cool slate + steel).
+ * Play chrome themes — blueish (cool slate + steel, default) and void (warm charcoal + sand).
  * Set data-theme on <html> via playChromeTheme.ts. Layout unchanged; colors only.
  */
 
@@ -16,9 +16,22 @@
   --play-target-highlight: #ffd700;
   --play-target-highlight-glow: rgba(255, 215, 0, 0.55);
   --play-target-highlight-fill: rgba(255, 215, 0, 0.15);
+
+  --color-app-bg: var(--chrome-shell);
+  --color-app-text: var(--chrome-text);
+  --color-app-text-muted: var(--chrome-text-muted);
+  --color-footer-bg: var(--chrome-shell);
+  --color-arrakis-sand: var(--chrome-accent);
+  --color-arrakis-parchment: var(--chrome-text);
+  --color-arrakis-parchment-muted: var(--chrome-text-muted);
+  --color-arrakis-earth: var(--chrome-cta-border);
+  --color-arrakis-parchment-helena: var(--chrome-cta-bg);
+  --color-arrakis-earth-shadow: rgba(0, 0, 0, 0.35);
+  --color-arrakis-earth-glow-soft: var(--chrome-accent-muted);
+  --color-arrakis-earth-footer-glow: var(--chrome-accent-subtle);
+  --color-text-on-parchment: var(--chrome-cta-text);
 }
 
-:root,
 html[data-theme='void'] {
   --chrome-shell: #14110f;
   --chrome-surface: #1e1c1a;
@@ -77,22 +90,9 @@ html[data-theme='void'] {
   --chrome-peek-active-border: var(--chrome-accent-ring);
   --chrome-peek-active-text: var(--chrome-text-strong);
 
-  --color-app-bg: var(--chrome-shell);
-  --color-app-text: var(--chrome-text);
-  --color-app-text-muted: var(--chrome-text-muted);
-  --color-footer-bg: var(--chrome-shell);
-  --color-arrakis-sand: var(--chrome-accent);
-  --color-arrakis-parchment: var(--chrome-text);
-  --color-arrakis-parchment-muted: var(--chrome-text-muted);
-  --color-arrakis-earth: var(--chrome-cta-border);
   --color-arrakis-earth-dark: #2a2218;
   --color-arrakis-earth-hover: #3a3024;
-  --color-arrakis-parchment-helena: var(--chrome-cta-bg);
-  --color-arrakis-earth-shadow: rgba(0, 0, 0, 0.35);
-  --color-arrakis-earth-glow-soft: var(--chrome-accent-muted);
   --color-arrakis-earth-overlay: rgba(20, 17, 15, 0.92);
-  --color-arrakis-earth-footer-glow: var(--chrome-accent-subtle);
-  --color-text-on-parchment: var(--chrome-cta-text);
 
   --player-ring-red: #a85a52;
   --player-ring-green: #6d8f62;
@@ -100,6 +100,7 @@ html[data-theme='void'] {
   --player-ring-blue: #5a7f8f;
 }
 
+:root,
 html[data-theme='blueish'] {
   --chrome-shell: #16181c;
   --chrome-surface: #1e2228;
@@ -160,6 +161,7 @@ html[data-theme='blueish'] {
 
   --color-arrakis-earth-dark: #1a2228;
   --color-arrakis-earth-hover: #243038;
+  --color-arrakis-earth-overlay: rgba(22, 24, 28, 0.92);
 
   --player-ring-red: #9e5a54;
   --player-ring-green: #5f8a68;

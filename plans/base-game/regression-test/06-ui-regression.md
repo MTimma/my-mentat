@@ -1,6 +1,6 @@
 # UI regression (base game)
 
-My Mentat is a **tracker**, not a full digital board game — tests focus on visible chrome matching game state.
+Mentarium is a **tracker**, not a full digital board game — tests focus on visible chrome matching game state.
 
 > **Automated UI tests are deferred.** Scaffolding lives in `client/src/__tests__/deferred/` and is **excluded** from `npm run test` until layout/history contracts stabilize. Use the checklist below for manual QA.
 

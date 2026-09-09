@@ -2,6 +2,7 @@ import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'reac
 import { createPortal } from 'react-dom'
 import type { Leader } from '../../types/GameTypes'
 import { getLeaderImage } from '../../data/leaders'
+import { cardThumbSrc } from '../../utils/cardThumbSrc'
 import './LeaderSelect.css'
 
 export type LeaderSelectVariant = 'setup' | 'sandbox'
@@ -148,7 +149,14 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
             >
               <span className="leader-select__option-img">
                 {image ? (
-                  <img src={image} alt="" draggable={false} />
+                  <img
+                    src={cardThumbSrc(image)}
+                    alt=""
+                    draggable={false}
+                    data-preview-src={image}
+                    loading="lazy"
+                    decoding="async"
+                  />
                 ) : (
                   <span className="leader-select__thumb-fallback" aria-hidden="true">
                     ?
@@ -185,7 +193,13 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
       >
         <span className="leader-select__thumb" aria-hidden="true">
           {selectedImage ? (
-            <img src={selectedImage} alt="" draggable={false} />
+            <img
+              src={cardThumbSrc(selectedImage)}
+              alt=""
+              draggable={false}
+              data-preview-src={selectedImage}
+              decoding="async"
+            />
           ) : (
             <span className="leader-select__thumb-fallback">+</span>
           )}

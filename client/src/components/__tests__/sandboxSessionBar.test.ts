@@ -9,14 +9,17 @@ describe('Sandbox session bar', () => {
   )
   const appTsx = readFileSync(resolve(__dirname, '../../App.tsx'), 'utf8')
   const gamesListTsx = readFileSync(resolve(__dirname, '../GamesList/GamesList.tsx'), 'utf8')
+  const autosaveTsx = readFileSync(
+    resolve(__dirname, '../LocalGameAutosave/LocalGameAutosave.tsx'),
+    'utf8'
+  )
 
   it('exposes kit, start, browse, and a setup slot under the kit row', () => {
     expect(barTsx).toContain('Expansions')
-    expect(barTsx).toContain('New') 
+    expect(barTsx).toContain('New')
     expect(barTsx).toContain('{!showKit ? (')
     expect(barTsx).toContain('Browse')
     expect(barTsx).toContain('sandbox-session-bar__setup')
-    expect(barTsx).toContain('sandbox-session-bar__browse-note')
   })
 
   it('is mounted on the sandbox play shell, not GameSetup', () => {
@@ -24,21 +27,31 @@ describe('Sandbox session bar', () => {
     expect(appTsx).not.toMatch(/screenState === ScreenState\.SETUP && \(/)
   })
 
-  it('boots the session game from the DAO, not localStorage', () => {
-    expect(appTsx).toContain('fetchActiveGame')
-    expect(appTsx).toContain('adoptLoadedGame')
+  it('boots drafts from IndexedDB and lists This browser in Browse', () => {
+    expect(appTsx).toContain('getActiveLocalGameId')
+    expect(appTsx).toContain('persistLocalDraft')
+    expect(appTsx).toContain('handleSandboxBegun')
+    expect(appTsx).toContain('onSandboxBegun')
+    expect(appTsx).toContain('adoptLocalDraft')
+    expect(appTsx).toContain('replaceCurrentSandbox')
+    expect(appTsx).not.toContain('startNewSandbox')
+    expect(appTsx).not.toContain('saveGameJson')
+    expect(appTsx).not.toContain('createGameJson')
+    expect(appTsx).not.toContain('fetchActiveGame')
+    expect(appTsx).not.toContain('adoptLoadedGame')
+    expect(autosaveTsx).toContain('upsertLocalGame')
+    expect(autosaveTsx).toContain('localGameId')
+    expect(autosaveTsx).not.toContain('saveGameJson')
     expect(barTsx).toContain('onStartNew')
     expect(barTsx).toContain('Change expansions? The board will reset.')
     expect(barTsx).toContain('Load this game? The started game will be lost.')
     expect(barTsx).toContain('if (hasProgress && !window.confirm(LOAD_CONFIRM)) return')
-    expect(appTsx).toContain('createGameJson')
-    expect(appTsx).toContain('onSandboxBegun')
-    expect(appTsx).toContain('replaceCurrentSandbox')
-    expect(appTsx).toContain('saveGameJson(created)')
-    expect(appTsx).not.toContain('startNewSandbox')
-    expect(appTsx).not.toContain('localGamesStore')
-    expect(appTsx).not.toContain('upsertLocalGame')
-    expect(gamesListTsx).not.toContain('This browser')
+    expect(gamesListTsx).toContain('Local')
+    expect(gamesListTsx).toContain("useState<GamesListTab>('community')")
+    expect(gamesListTsx).toContain('listLocalGames')
+    expect(gamesListTsx).toContain('deleteLocalGame')
+    expect(gamesListTsx).toContain('Copy error')
+    expect(gamesListTsx).toContain('games-list-error--copyable')
     expect(appTsx).toContain('setupSlot={sandboxSetupControls(true)}')
     expect(appTsx).toContain('showKit={inSandboxSetup}')
   })
