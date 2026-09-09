@@ -24,6 +24,7 @@
   box-sizing: border-box;
   container-type: inline-size;
   container-name: image-board;
+  isolation: isolate;
 }
 
 .image-board__img {
@@ -50,11 +51,11 @@
   z-index: 1;
 }
 
-/* Info tips sit above Ix embed (z-index 2) and the main overlay layer. */
-.image-board__info-tips-layer {
+/* SandboxSetupHint tutorial messages — above Ix embed (z-index 2) and board overlays. */
+.image-board__tutorial-messages-layer {
   position: absolute;
   inset: 0;
-  z-index: var(--z-board-info-tip, 24);
+  z-index: var(--z-board-tutorial-message, 50);
   pointer-events: none;
   overflow: visible;
 }
@@ -251,6 +252,7 @@
   box-sizing: border-box;
   overflow: visible;
   position: relative;
+  z-index: 1;
 }
 
 /* Rise of Ix: Ix + combat stacked under the board (mobile-like), not beside the board. */
@@ -291,6 +293,7 @@
   aspect-ratio: 1;
   align-self: flex-start;
   position: relative;
+  z-index: 0;
 }
 
 .game-container--desktop-play .image-board__expansion-dock-column--below-board {

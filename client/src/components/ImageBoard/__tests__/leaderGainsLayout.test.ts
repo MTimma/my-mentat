@@ -449,4 +449,14 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster--column \.birdseye-seat-play-area__stack \{[\s\S]*?overflow-y:\s*auto/
     )
   })
+
+  it('renders sandbox tutorial messages above the Ix board overlay', () => {
+    const appCss = readFileSync(resolve(root, 'App.css'), 'utf8')
+    expect(imageBoardTsx).toContain('image-board__tutorial-messages-layer')
+    expect(imageBoardTsx).toContain('sandbox-setup-hint--conflict')
+    expect(appCss).toContain('--z-board-tutorial-message')
+    expect(imageBoardCss).toMatch(
+      /\.image-board__tutorial-messages-layer \{[\s\S]*?z-index:\s*var\(--z-board-tutorial-message/
+    )
+  })
 })

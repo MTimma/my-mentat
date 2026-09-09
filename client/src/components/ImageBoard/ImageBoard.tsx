@@ -144,7 +144,7 @@ interface ImageBoardProps {
     prompt?: string | null
     onFactionSelect: (faction: FactionType) => void
   }
-  /** Board info tips (influence selection, sandbox setup hints). */
+  /** Sandbox tutorial messages (SandboxSetupHint callouts on the board). */
   showBoardInfoTips?: boolean
   /** Desktop: Ix panel docked beside board; mobile: embedded on board art. */
   ixBoardPlacement?: IxBoardPlacement
@@ -1325,15 +1325,16 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           )}
           </div>
 
-          <div className="image-board__info-tips-layer" aria-hidden={false}>
+          <div className="image-board__tutorial-messages-layer" aria-hidden={false}>
             {showBoardInfoTips && sandboxSetup && showConflictPanel && !hasConflict ? (
               <SandboxSetupHint
-                anchor="center"
+                anchor="left"
                 placement="above"
                 size={combatAreaDocked ? 'large' : 'default'}
                 label="Pick this round's conflict card"
+                className="sandbox-setup-hint--conflict"
                 style={{
-                  left: `${conflictBox.left + conflictBox.width / 2}%`,
+                  left: `${conflictBox.left}%`,
                   top: `${conflictBox.top}%`,
                 }}
               />

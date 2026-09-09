@@ -1,6 +1,6 @@
 .sandbox-setup-hint {
   position: absolute;
-  z-index: var(--z-board-info-tip, 24);
+  z-index: var(--z-board-tutorial-message, 50);
   display: flex;
   align-items: flex-start;
   gap: 6px;
@@ -99,14 +99,18 @@
   position: absolute;
   right: calc(50% - 130px);
   top: 10%;
-  z-index: var(--z-board-info-tip, 24);
+  z-index: var(--z-board-tutorial-message, 50);
   margin: 0;
   width: max-content;
   max-width: min(28ch, 32vw);
 }
 
+.sandbox-setup-hint--conflict {
+  max-width: min(20ch, 28%);
+}
+
 .sandbox-setup-hint--tech-tiles {
-  z-index: var(--z-board-info-tip, 24);
+  z-index: var(--z-board-tutorial-message, 50);
   width: max-content;
   max-width: min(24ch, 28vw);
   margin-right: 6px;

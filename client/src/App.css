@@ -26,8 +26,8 @@
   --z-modal-overlay-raised: 1300;
   --z-modal-overlay-top: 1320;
   --z-leader-select-menu: 1400;
-  /* Board setup / influence info tips — above Ix embed and board overlays. */
-  --z-board-info-tip: 24;
+  /* SandboxSetupHint tutorial callouts — above Ix embed and board overlays. */
+  --z-board-tutorial-message: 50;
 }
 
 #root {
