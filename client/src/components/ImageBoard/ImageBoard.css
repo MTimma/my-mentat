@@ -50,6 +50,15 @@
   z-index: 1;
 }
 
+/* Info tips sit above Ix embed (z-index 2) and the main overlay layer. */
+.image-board__info-tips-layer {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-board-info-tip, 24);
+  pointer-events: none;
+  overflow: visible;
+}
+
 .image-board__riseofix-overlay {
   position: absolute;
   object-fit: fill;
@@ -525,7 +534,6 @@
 }
 
 .sandbox-setup-hint--influence {
-  z-index: 2;
   max-width: min(24ch, 42%);
 }
 

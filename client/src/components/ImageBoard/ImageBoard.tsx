@@ -1049,18 +1049,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                     >
                       {conflictContent}
                     </button>
-                    {showBoardInfoTips && !hasConflict ? (
-                      <SandboxSetupHint
-                        anchor="center"
-                        placement="above"
-                        size={combatAreaDocked ? 'large' : 'default'}
-                        label="Pick this round's conflict card"
-                        style={{
-                          left: `${conflictBox.left + conflictBox.width / 2}%`,
-                          top: `${conflictBox.top}%`,
-                        }}
-                      />
-                    ) : null}
                   </>
                 ) : (
                   <div
@@ -1082,18 +1070,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
           {influenceSelection ? (
             <div className="image-board__influence-selection-layer" aria-hidden={false}>
-              {showBoardInfoTips && influenceSelection.prompt ? (
-                <div role="status" aria-live="polite">
-                  <SandboxSetupHint
-                    label={`${influenceSelection.prompt}.`}
-                    style={{
-                      left: `${INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].left + INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].width}%`,
-                      top: `${INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].top }%`,
-                    }}
-                    className="sandbox-setup-hint--influence"
-                  />
-                </div>
-              ) : null}
               {FACTIONS.map(faction => {
                 const isSelectable = influenceSelection.selectableFactions.includes(faction)
                 const isDisabled = influenceSelection.disabledFactions.includes(faction)
@@ -1347,6 +1323,33 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
               })()}
             </div>
           )}
+          </div>
+
+          <div className="image-board__info-tips-layer" aria-hidden={false}>
+            {showBoardInfoTips && sandboxSetup && showConflictPanel && !hasConflict ? (
+              <SandboxSetupHint
+                anchor="center"
+                placement="above"
+                size={combatAreaDocked ? 'large' : 'default'}
+                label="Pick this round's conflict card"
+                style={{
+                  left: `${conflictBox.left + conflictBox.width / 2}%`,
+                  top: `${conflictBox.top}%`,
+                }}
+              />
+            ) : null}
+            {showBoardInfoTips && influenceSelection?.prompt ? (
+              <div role="status" aria-live="polite">
+                <SandboxSetupHint
+                  label={`${influenceSelection.prompt}.`}
+                  style={{
+                    left: `${INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].left + INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].width}%`,
+                    top: `${INFLUENCE_TRACK_AREAS[FactionType.EMPEROR].top}%`,
+                  }}
+                  className="sandbox-setup-hint--influence"
+                />
+              </div>
+            ) : null}
           </div>
         </div>
     </div>
