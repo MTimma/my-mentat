@@ -209,17 +209,10 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   const handleLoadSaveFromPanel = useCallback(
     (doc: SaveDoc, source?: LoadSaveSource) => {
       if (!onLoadSave) return
-      const current = exportSaveDoc()
-      if (current.events.length > 0) {
-        const ok = window.confirm(
-          'Load this game? The started game will be lost.'
-        )
-        if (!ok) return
-      }
       onLoadSave(doc, source)
       setShowDebugModal(false)
     },
-    [exportSaveDoc, onLoadSave]
+    [onLoadSave]
   )
 
   const scrollListToBottom = useCallback(() => {

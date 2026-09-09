@@ -24,7 +24,6 @@ export interface SandboxSessionBarProps {
 
 const KIT_CONFIRM = 'Change expansions? The board will reset.'
 const START_NEW_CONFIRM = 'Start a new game? The current board will be replaced.'
-const LOAD_CONFIRM = 'Load this game? The started game will be lost.'
 
 const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
   gamePackId,
@@ -55,7 +54,6 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
   }
 
   const handleLoad = (doc: SaveDoc, source?: LoadSaveSource) => {
-    if (hasProgress && !window.confirm(LOAD_CONFIRM)) return
     setBrowseOpen(false)
     onLoadSave?.(doc, source)
   }
