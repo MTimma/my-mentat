@@ -1963,7 +1963,7 @@ const GameContent = ({
                   ? {
                       onConfigure: () => setSandboxImperiumOpen(true),
                       requiredCount: 5,
-                      showSetupHint: showBoardInfoTips && isDesktopPlayView,
+                      showSetupHint: showBoardInfoTips,
                     }
                   : undefined
               }

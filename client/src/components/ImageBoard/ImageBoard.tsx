@@ -269,7 +269,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const combatAreaDocked = combatAreaPlacement === 'dock'
   const combatAreaBelow = combatAreaPlacement === 'below'
   const sidePanelDocked = ixBoardDocked || immortalityBoardDocked || combatAreaDocked
-  const showSandboxSetupHints = Boolean(showBoardInfoTips && sandboxSetup && combatAreaDocked)
+  const showSandboxSetupHints = Boolean(showBoardInfoTips && sandboxSetup)
   const boardHotspots = BOARD_HOTSPOTS_FOR_EXPANSIONS(gameStateForMarkers.expansions)
   const markerAnchors = markerAnchorsForExpansions(gameStateForMarkers.expansions).filter(
     anchor => !ixBoardDocked || (anchor.spaceId !== 23 && anchor.spaceId !== 24)
@@ -1330,12 +1330,12 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
               <SandboxSetupHint
                 anchor="center"
                 placement="above"
-                size={combatAreaDocked ? 'large' : 'default'}
+                size="large"
                 label="Pick this round's conflict card"
                 className="sandbox-setup-hint--conflict"
                 style={{
                   left: `${conflictBox.left + conflictBox.width / 2}%`,
-                  top: `${Math.max(8, conflictBox.top - 16)}%`,
+                  top: `${Math.max(8, conflictBox.top - 10)}%`,
                 }}
               />
             ) : null}
@@ -1416,6 +1416,14 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           {boardStage}
           {combatAreaBelow && combatAreaCluster ? (
             <div className="image-board__combat-area-below" aria-label="Player leaders">
+              {showSandboxSetupHints && !areAllLeadersAssigned(players) ? (
+                <SandboxSetupHint
+                  label="Pick a leader for each player"
+                  placement="inline"
+                  size="large"
+                  className="sandbox-setup-hint--leaders-mobile"
+                />
+              ) : null}
               {combatAreaCluster}
             </div>
           ) : null}

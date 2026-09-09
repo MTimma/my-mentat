@@ -455,7 +455,10 @@ describe('Leader gains leftover layout', () => {
     expect(imageBoardTsx).toContain('image-board__tutorial-messages-layer')
     expect(imageBoardTsx).toContain('sandbox-setup-hint--conflict')
     expect(imageBoardTsx).toContain("label=\"Pick this round's conflict card\"")
-    expect(imageBoardTsx).toContain('conflictBox.top - 16')
+    expect(imageBoardTsx).toContain('conflictBox.top - 10')
+    expect(imageBoardTsx).toContain('sandbox-setup-hint--leaders-mobile')
+    expect(imageBoardTsx).not.toContain('showBoardInfoTips && sandboxSetup && combatAreaDocked')
+    expect(appTsx).not.toContain('showSetupHint: showBoardInfoTips && isDesktopPlayView')
     expect(appCss).toContain('--z-board-tutorial-message')
     expect(imageBoardCss).toMatch(
       /\.image-board__tutorial-messages-layer \{[\s\S]*?z-index:\s*var\(--z-board-tutorial-message/

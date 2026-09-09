@@ -105,6 +105,14 @@
   max-width: min(28ch, 32vw);
 }
 
+.sandbox-setup-hint--leaders-mobile {
+  position: static;
+  width: fit-content;
+  max-width: min(100%, 36ch);
+  margin: 0 auto 6px;
+  box-sizing: border-box;
+}
+
 .sandbox-setup-hint--conflict {
   max-width: min(22ch, 30%);
 }

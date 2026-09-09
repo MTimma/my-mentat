@@ -64,6 +64,17 @@
   overflow: visible;
 }
 
+.image-board__tutorial-messages-layer .sandbox-setup-hint {
+  font-size: clamp(10px, 2.8cqw, 14px);
+  padding: 8px 10px;
+  max-width: min(26ch, 78%);
+}
+
+.image-board__tutorial-messages-layer .sandbox-setup-hint--large {
+  font-size: clamp(11px, 3.2cqw, 15px);
+  max-width: min(28ch, 82%);
+}
+
 .image-board__riseofix-overlay {
   position: absolute;
   object-fit: fill;
