@@ -1,7 +1,7 @@
 import { isStandaloneDisplay, markStandaloneDisplayMode } from './displayMode'
 
 /** Floor when iOS PWA reports env(safe-area-inset-top) as 0 (status bar / Dynamic Island). */
-const MIN_STANDALONE_TOP_PX = 44
+const MIN_STANDALONE_TOP_PX = 47
 
 function measureSafeAreaTopPx(): number {
   const el = document.createElement('div')

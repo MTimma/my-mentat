@@ -79,7 +79,7 @@ describe('Sandbox session bar', () => {
 
   it('offsets the play shell below the notch in installed PWA', () => {
     const indexCss = readFileSync(resolve(__dirname, '../../index.css'), 'utf8')
-    expect(indexCss).toContain('body.pwa-standalone:has(.game-container--play)')
+    expect(indexCss).toContain('.game-container--play')
     expect(indexCss).toContain('padding-top: var(--pwa-safe-top)')
   })
 })

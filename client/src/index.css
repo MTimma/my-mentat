@@ -58,6 +58,8 @@ body {
 @media (display-mode: standalone), (display-mode: fullscreen) {
   :root {
     --vv-layout-gap-bottom: 0px;
+    /* env() is often 0 in iOS PWA; JS may raise --pwa-safe-top further */
+    --pwa-safe-top: max(47px, env(safe-area-inset-top, 0px), constant(safe-area-inset-top, 0px));
   }
 
   html,
@@ -67,12 +69,16 @@ body {
     min-height: 100dvh;
     min-height: -webkit-fill-available;
   }
+
+  /* Pad the play shell itself — body padding fights App.css height: 100dvh rules. */
+  .game-container--play {
+    padding-top: var(--pwa-safe-top);
+  }
 }
 
 html[data-display-mode='standalone'] {
   --vv-layout-gap-bottom: 0px;
-  /* env() can be 0 in iOS PWA; JS sets --pwa-safe-top, this is the CSS fallback */
-  --pwa-safe-top: max(44px, env(safe-area-inset-top, 0px));
+  --pwa-safe-top: max(47px, env(safe-area-inset-top, 0px), constant(safe-area-inset-top, 0px));
 }
 
 html[data-display-mode='standalone'],
@@ -83,22 +89,8 @@ html[data-display-mode='standalone'] body {
   min-height: -webkit-fill-available;
 }
 
-/* Play shell: top gap below notch; bottom already uses safe-area in footer CSS. */
-html[data-display-mode='standalone'] body.pwa-standalone:has(.game-container--play) {
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-  max-height: 100dvh;
-  overflow: hidden;
+html[data-display-mode='standalone'] .game-container--play {
   padding-top: var(--pwa-safe-top);
-}
-
-html[data-display-mode='standalone'] body.pwa-standalone:has(.game-container--play) #root {
-  flex: 1 1 auto;
-  min-height: 0;
-  height: auto;
-  max-height: none;
 }
 
 /*

@@ -14,10 +14,10 @@ describe('PWA safe area top inset', () => {
     expect(safeArea).toContain('pwa-standalone')
   })
 
-  it('pads the play body below the notch with a minimum gap', () => {
+  it('pads the play shell below the notch with a minimum gap', () => {
     const indexCss = readFileSync(resolve(clientRoot, 'src/index.css'), 'utf8')
-    expect(indexCss).toContain('--pwa-safe-top: max(44px, env(safe-area-inset-top, 0px))')
-    expect(indexCss).toContain('body.pwa-standalone:has(.game-container--play)')
+    expect(indexCss).toContain('--pwa-safe-top: max(47px, env(safe-area-inset-top, 0px)')
+    expect(indexCss).toContain('.game-container--play')
     expect(indexCss).toContain('padding-top: var(--pwa-safe-top)')
   })
 })
