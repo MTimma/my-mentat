@@ -57,12 +57,57 @@ function readCanEdit(body: object): boolean {
   return (body as { can_edit: unknown }).can_edit === true
 }
 
-export async function fetchGames(): Promise<GameDetail[]> {
+let gamesListCache: GameDetail[] | null = null
+let gamesListInflight: Promise<GameDetail[]> | null = null
+
+async function fetchGamesFromNetwork(): Promise<GameDetail[]> {
   const res = await fetch(`${API_BASE}/games`, SESSION_FETCH)
   if (!res.ok) {
     throw new Error(`Failed to load games (${res.status}): ${await readErrorMessage(res)}`)
   }
   return (await res.json()) as GameDetail[]
+}
+
+/** Warm community list before Browse opens (deduped in-flight). */
+export function prefetchGamesList(): void {
+  if (gamesListCache || gamesListInflight) return
+  gamesListInflight = fetchGamesFromNetwork()
+    .then(rows => {
+      gamesListCache = rows
+      return rows
+    })
+    .catch(() => {
+      gamesListCache = null
+      return [] as GameDetail[]
+    })
+    .finally(() => {
+      gamesListInflight = null
+    })
+}
+
+export function getCachedGamesList(): GameDetail[] | null {
+  return gamesListCache
+}
+
+export function invalidateGamesListCache(): void {
+  gamesListCache = null
+  gamesListInflight = null
+}
+
+export async function fetchGames(opts?: { fresh?: boolean }): Promise<GameDetail[]> {
+  if (!opts?.fresh && gamesListCache) return gamesListCache
+  if (!opts?.fresh && gamesListInflight) return gamesListInflight
+
+  const promise = fetchGamesFromNetwork().then(rows => {
+    gamesListCache = rows
+    return rows
+  })
+  gamesListInflight = promise
+  try {
+    return await promise
+  } finally {
+    if (gamesListInflight === promise) gamesListInflight = null
+  }
 }
 
 /** GET `/games/{id}` — save document + whether this session may edit it. */

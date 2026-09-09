@@ -1,5 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { fetchGameDoc, fetchGames, type GameDetail, type LoadSaveFn } from '../../api/gamesApi'
+import {
+  fetchGameDoc,
+  fetchGames,
+  getCachedGamesList,
+  invalidateGamesListCache,
+  type GameDetail,
+  type LoadSaveFn,
+} from '../../api/gamesApi'
 import {
   deleteLocalGame,
   getLocalGame,
@@ -32,9 +39,12 @@ function formatMs(ms: number): string {
 
 const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
   const [activeTab, setActiveTab] = useState<GamesListTab>('community')
-  const [games, setGames] = useState<GameDetail[]>([])
+  const cachedCommunity = getCachedGamesList()
+  const [games, setGames] = useState<GameDetail[]>(cachedCommunity ?? [])
   const [localGames, setLocalGames] = useState<LocalGameMeta[]>([])
-  const [listStatus, setListStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('loading')
+  const [listStatus, setListStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>(
+    () => (cachedCommunity ? 'ready' : 'loading')
+  )
   const [listError, setListError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -52,11 +62,12 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
     }
   }, [listError])
 
-  const loadCommunityGames = useCallback(async () => {
+  const loadCommunityGames = useCallback(async (fresh = false) => {
+    if (fresh) invalidateGamesListCache()
     setListStatus('loading')
     setListError(null)
     try {
-      const rows = await fetchGames()
+      const rows = await fetchGames({ fresh })
       setGames(rows)
       setListStatus('ready')
     } catch (error) {
@@ -263,7 +274,7 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
               <button type="button" className="games-list-retry" onClick={() => void copyListError()}>
                 {copiedError ? 'Copied' : 'Copy error'}
               </button>
-              <button type="button" className="games-list-retry" onClick={() => void loadCommunityGames()}>
+              <button type="button" className="games-list-retry" onClick={() => void loadCommunityGames(true)}>
                 Retry
               </button>
             </div>

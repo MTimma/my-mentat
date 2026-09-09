@@ -3,7 +3,7 @@ import { BoardDialogPanel, BoardScopedModal } from '../BoardScopedModal'
 import GamesList from '../GamesList/GamesList'
 import { getSelectableGamePacks } from '../../gamePacks/registry'
 import { subscribeGamePacks } from '../../gamePacks/customGamePacks'
-import type { LoadSaveFn, LoadSaveSource } from '../../api/gamesApi'
+import { prefetchGamesList, type LoadSaveFn, type LoadSaveSource } from '../../api/gamesApi'
 import type { SaveDoc } from '../../save/types'
 import './SandboxSessionBar.css'
 
@@ -42,6 +42,10 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
 
   useEffect(() => subscribeGamePacks(() => setPackListVersion(v => v + 1)), [])
 
+  useEffect(() => {
+    prefetchGamesList()
+  }, [])
+
   const handleKitChange = (nextPackId: string) => {
     if (nextPackId === gamePackId) return
     if (hasProgress && !window.confirm(KIT_CONFIRM)) return
@@ -73,6 +77,8 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
             type="button"
             className="sandbox-session-bar__btn"
             aria-expanded={browseOpen}
+            onMouseEnter={prefetchGamesList}
+            onFocus={prefetchGamesList}
             onClick={() => setBrowseOpen(open => !open)}
           >
             Browse

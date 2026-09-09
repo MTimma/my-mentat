@@ -1,5 +1,10 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
-import { fetchGameDoc, fetchGames } from '../gamesApi'
+import {
+  fetchGameDoc,
+  fetchGames,
+  invalidateGamesListCache,
+  prefetchGamesList,
+} from '../gamesApi'
 
 const LIST_SAVE_DOC = {
   schemaVersion: 1,
@@ -28,6 +33,7 @@ const LIST_SAVE_DOC = {
 
 describe('fetchGames', () => {
   afterEach(() => {
+    invalidateGamesListCache()
     vi.unstubAllGlobals()
   })
 
@@ -56,6 +62,19 @@ describe('fetchGames', () => {
       },
     ])
     expect(fetchMock.mock.calls[0]?.[0]).toBe('/games')
+  })
+
+  it('prefetchGamesList dedupes network calls', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    prefetchGamesList()
+    prefetchGamesList()
+    await expect(fetchGames()).resolves.toEqual([])
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
 
