@@ -71,8 +71,8 @@ export default defineConfig(({ mode }) => {
       registerType: 'prompt',
       includeAssets: ['pwa-icon.svg', 'apple-touch-icon.png', 'favicon-32x32.png'],
       manifest: {
-        name: 'My Mentat',
-        short_name: 'Mentat',
+        name: 'Mentarium',
+        short_name: 'Mentarium',
         description: 'Dune: Imperium board game companion',
         theme_color: '#16181c',
         background_color: '#16181c',
