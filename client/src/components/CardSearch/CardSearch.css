@@ -356,6 +356,7 @@
   border-radius: 6px;
   padding: 12px;
   cursor: pointer;
+  touch-action: manipulation;
   transition: all 0.2s ease;
   aspect-ratio: 2.5/3.5;
   display: flex;

@@ -62,8 +62,14 @@
 .sandbox-session-bar__actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   width: 100%;
+}
+
+.sandbox-session-bar__actions .sandbox-session-bar__btn {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .sandbox-session-bar__btn {

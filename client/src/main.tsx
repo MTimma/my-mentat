@@ -11,11 +11,11 @@ import { preloadBoardImages } from './bootstrap/preloadBoardImages'
 import { preloadDeckCardImages } from './bootstrap/preloadDeckCardImages'
 import { bootstrapGamePacks } from './bootstrap/bootstrapGamePacks'
 import { preloadIntrigueCardImages } from './bootstrap/preloadIntrigueCardImages'
-import { markStandaloneDisplayMode } from './pwa/displayMode'
+import { installPwaSafeAreaInsets } from './pwa/safeArea'
 import { applyPlayChromeTheme, getPlayChromeTheme } from './utils/playChromeTheme'
 import App from './App.tsx'
 
-markStandaloneDisplayMode()
+installPwaSafeAreaInsets()
 applyPlayChromeTheme(getPlayChromeTheme())
 preloadBoardImages()
 preloadIntrigueCardImages()

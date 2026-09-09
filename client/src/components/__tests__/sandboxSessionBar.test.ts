@@ -19,6 +19,7 @@ describe('Sandbox session bar', () => {
     expect(barTsx).toContain('New')
     expect(barTsx).toContain('{!showKit ? (')
     expect(barTsx).toContain('Browse')
+    expect(barTsx).toContain('sandbox-session-bar__actions')
     expect(barTsx).toContain('sandbox-session-bar__setup')
   })
 
@@ -74,5 +75,11 @@ describe('Sandbox session bar', () => {
     )
     expect(barCss).not.toContain('flex: 1 1 14rem')
     expect(barCss).toContain('.sandbox-session-bar--docked')
+  })
+
+  it('offsets the play shell below the notch in installed PWA', () => {
+    const indexCss = readFileSync(resolve(__dirname, '../../index.css'), 'utf8')
+    expect(indexCss).toContain('body.pwa-standalone:has(.game-container--play)')
+    expect(indexCss).toContain('padding-top: var(--pwa-safe-top)')
   })
 })

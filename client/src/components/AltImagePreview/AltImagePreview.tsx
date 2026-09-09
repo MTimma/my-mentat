@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { splitImageZoomHint, withImageZoomHint } from './imageZoomHint'
+import { isImageZoomHintEnabled, splitImageZoomHint, withImageZoomHint } from './imageZoomHint'
 import './AltImagePreview.css'
 
 type ImagePreviewState = {
@@ -355,6 +355,8 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
   }, [applyPreview, clearZoomHint])
 
   useEffect(() => {
+    if (!isImageZoomHintEnabled()) return
+
     const onMouseMove = (event: MouseEvent) => {
       pointerRef.current = { x: event.clientX, y: event.clientY }
       const altActive = altHeld || event.altKey

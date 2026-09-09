@@ -34,6 +34,7 @@ describe('Alt / Option card zoom', () => {
   })
 
   it('adds a Hold Alt/Option zoom hint to preview image tooltips', () => {
+    expect(tsx).toContain('isImageZoomHintEnabled')
     expect(tsx).toContain('withImageZoomHint')
     expect(tsx).toContain('ensureZoomHintTitle')
     expect(tsx).toContain('findTitleHost')

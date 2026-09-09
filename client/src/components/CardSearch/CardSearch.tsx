@@ -105,16 +105,33 @@ const CardGridItem = React.memo(function CardGridItem({
   onPick,
 }: CardGridItemProps) {
   const isDisabled = !playability.playable
+  const skipClickRef = useRef(false)
 
-  const handleClick = () => {
+  const handleActivate = () => {
     if (isDisabled) return
     onPick(card)
+  }
+
+  const handlePointerDown = (event: React.PointerEvent) => {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+    skipClickRef.current = true
+    event.preventDefault()
+    handleActivate()
+  }
+
+  const handleClick = () => {
+    if (skipClickRef.current) {
+      skipClickRef.current = false
+      return
+    }
+    handleActivate()
   }
 
   return (
     <div className="card-cell">
       <div
         className={`card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+        onPointerDown={handlePointerDown}
         onClick={handleClick}
       >
         {card.image && (

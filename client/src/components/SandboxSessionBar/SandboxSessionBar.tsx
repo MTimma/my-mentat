@@ -73,16 +73,6 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
         .join(' ')}
     >
       <div className="sandbox-session-bar__row">
-      <button
-            type="button"
-            className="sandbox-session-bar__btn"
-            aria-expanded={browseOpen}
-            onMouseEnter={prefetchGamesList}
-            onFocus={prefetchGamesList}
-            onClick={() => setBrowseOpen(open => !open)}
-          >
-            Browse
-          </button>
         {showKit ? (
           <label className="sandbox-session-bar__kit">
             <span className="sandbox-session-bar__label">Expansions</span>
@@ -101,12 +91,27 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
           </label>
         ) : null}
         <div className="sandbox-session-bar__actions">
+          {onLoadSave ? (
+            <button
+              type="button"
+              className="sandbox-session-bar__btn"
+              aria-expanded={browseOpen}
+              onMouseEnter={prefetchGamesList}
+              onFocus={prefetchGamesList}
+              onClick={() => setBrowseOpen(open => !open)}
+            >
+              Browse
+            </button>
+          ) : null}
           {!showKit ? (
-            <button type="button" className="sandbox-session-bar__btn sandbox-session-bar__btn--primary" onClick={handleStartNew}>
+            <button
+              type="button"
+              className="sandbox-session-bar__btn sandbox-session-bar__btn--primary"
+              onClick={handleStartNew}
+            >
               New
             </button>
           ) : null}
-          
         </div>
       </div>
       {setupSlot ? <div className="sandbox-session-bar__setup">{setupSlot}</div> : null}
