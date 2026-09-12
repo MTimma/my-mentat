@@ -3,7 +3,17 @@ import path from 'node:path'
 import { defineConfig, type Plugin } from 'vitest/config'
 
 /** Bump when PWA / tab icons change (cache bust for HTML + manifest). */
-const PWA_ICON_VERSION = '2'
+const PWA_ICON_VERSION = '3'
+
+function pwaIconCacheBustPlugin(): Plugin {
+  return {
+    name: 'pwa-icon-cache-bust',
+    transformIndexHtml(html) {
+      const q = `?v=${PWA_ICON_VERSION}`
+      return html.replace(/\?v=\d+/g, q)
+    },
+  }
+}
 
 function isBrandIconPath(pathname: string): boolean {
   return (
@@ -80,12 +90,14 @@ export default defineConfig(({ mode }) => {
   plugins: [
     react(),
     gamePackDevSavePlugin(),
+    pwaIconCacheBustPlugin(),
     VitePWA({
       registerType: 'prompt',
       includeAssets: [
         'favicon.ico',
         'pwa-icon.svg',
         'apple-touch-icon.png',
+        'favicon-16x16.png',
         'favicon-32x32.png',
         'pwa-192x192.png',
         'pwa-512x512.png',
