@@ -19,3 +19,6 @@ for (const { name, size } of sizes) {
   await sharp(svg).resize(size, size).png().toFile(path.join(publicDir, name))
   console.log(`Wrote public/${name}`)
 }
+
+await sharp(svg).resize(32, 32).png().toFile(path.join(publicDir, 'favicon.ico'))
+console.log('Wrote public/favicon.ico')

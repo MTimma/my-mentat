@@ -1,6 +1,19 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { defineConfig, type Plugin } from 'vitest/config'
+
+/** Bump when PWA / tab icons change (cache bust for HTML + manifest). */
+const PWA_ICON_VERSION = '2'
+
+function isBrandIconPath(pathname: string): boolean {
+  return (
+    /^\/favicon(?:-\d+x\d+)?\.(?:png|ico)$/i.test(pathname) ||
+    /^\/pwa-icon\.svg$/i.test(pathname) ||
+    /^\/pwa-\d+x\d+\.png$/i.test(pathname) ||
+    /^\/apple-touch-icon\.png$/i.test(pathname) ||
+    pathname === '/manifest.webmanifest'
+  )
+}
 import { loadEnv } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -69,7 +82,14 @@ export default defineConfig(({ mode }) => {
     gamePackDevSavePlugin(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['pwa-icon.svg', 'apple-touch-icon.png', 'favicon-32x32.png'],
+      includeAssets: [
+        'favicon.ico',
+        'pwa-icon.svg',
+        'apple-touch-icon.png',
+        'favicon-32x32.png',
+        'pwa-192x192.png',
+        'pwa-512x512.png',
+      ],
       manifest: {
         name: 'Mentarium',
         short_name: 'Mentarium',
@@ -84,17 +104,17 @@ export default defineConfig(({ mode }) => {
         scope: '/',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: `pwa-192x192.png?v=${PWA_ICON_VERSION}`,
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: 'pwa-512x512.png',
+            src: `pwa-512x512.png?v=${PWA_ICON_VERSION}`,
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: 'pwa-512x512.png',
+            src: `pwa-512x512.png?v=${PWA_ICON_VERSION}`,
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
@@ -107,9 +127,13 @@ export default defineConfig(({ mode }) => {
         navigateFallbackDenylist: [/^\/games/, /^\/api\//],
         runtimeCaching: [
           {
-            urlPattern: ({ request, url }) =>
-              request.destination === 'image' ||
-              /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/i.test(url.pathname),
+            urlPattern: ({ request, url }) => {
+              if (isBrandIconPath(url.pathname)) return false
+              return (
+                request.destination === 'image' ||
+                /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/i.test(url.pathname)
+              )
+            },
             handler: 'CacheFirst',
             options: {
               cacheName: 'game-images',

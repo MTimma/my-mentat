@@ -1,0 +1,7 @@
+# Insert in dev.mentarium.pro server block BEFORE the long-cache image regex.
+# Prevents 1y immutable on favicon/PWA assets (Cloudflare kept stale icons after deploy).
+location ~ ^/(favicon\.ico|favicon-32x32\.png|pwa-icon\.svg|apple-touch-icon\.png|pwa-[0-9]+x[0-9]+\.png|manifest\.webmanifest|sw\.js|workbox-[^/]+\.js)$ {
+    add_header Cache-Control "no-cache, must-revalidate";
+    expires off;
+    try_files $uri =404;
+}
