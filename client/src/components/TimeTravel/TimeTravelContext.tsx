@@ -117,7 +117,7 @@ export const TimeTravelProvider: React.FC<TimeTravelProviderProps> = ({
       return 'Setup'
     }
     if (snapshot?.historyEntryKind === 'round-start') {
-      return `Round ${snapshot.currentRound} start`
+      return `Round ${snapshot.currentRound}`
     }
     if (snapshot?.historyEntryKind === 'combat') {
       return 'Combat'

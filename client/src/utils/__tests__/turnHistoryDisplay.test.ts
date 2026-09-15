@@ -160,10 +160,16 @@ describe('turnHistoryDisplay', () => {
 describe('buildBirdseyeTurnHistoryGrid', () => {
   const playerIds = [0, 1, 2, 3]
 
-  function playerTurn(playerId: number, type: TurnType = TurnType.ACTION): GameState {
+  function playerTurn(
+    playerId: number,
+    type: TurnType = TurnType.ACTION,
+    currentRound = 1,
+    firstPlayerMarker?: number
+  ): GameState {
     return row({
       phase: GamePhase.PLAYER_TURNS,
-      currentRound: 1,
+      currentRound,
+      firstPlayerMarker,
       activePlayerId: playerId,
       currTurn: { playerId, type },
     })
@@ -171,7 +177,7 @@ describe('buildBirdseyeTurnHistoryGrid', () => {
 
   it('fills one row in leader-column order', () => {
     const history = [
-      row({ historyEntryKind: 'round-start', currentRound: 1, phase: GamePhase.PLAYER_TURNS }),
+      row({ historyEntryKind: 'round-start', currentRound: 1, phase: GamePhase.PLAYER_TURNS, firstPlayerMarker: 0 }),
       playerTurn(0),
       playerTurn(1),
       playerTurn(2),
@@ -186,14 +192,14 @@ describe('buildBirdseyeTurnHistoryGrid', () => {
     expect(grid[1].cells.map(cell => cell?.historyIndex)).toEqual([1, 2, 3, 4])
   })
 
-  it('starts a fresh row at round end so first-player rotation stays aligned', () => {
+  it('starts the next round in the first player leader column, not packed left', () => {
     const history = [
-      row({ historyEntryKind: 'round-start', currentRound: 1 }),
+      row({ historyEntryKind: 'round-start', currentRound: 1, firstPlayerMarker: 0 }),
       playerTurn(0),
       playerTurn(1),
       playerTurn(2),
-      row({ historyEntryKind: 'round-start', currentRound: 2 }),
-      playerTurn(3),
+      row({ historyEntryKind: 'round-start', currentRound: 2, firstPlayerMarker: 3 }),
+      playerTurn(3, TurnType.ACTION, 2, 3),
     ]
     const grid = buildBirdseyeTurnHistoryGrid(history, playerIds)
     const turnRows = grid.filter(rowItem => rowItem.type === 'turns')
@@ -205,17 +211,17 @@ describe('buildBirdseyeTurnHistoryGrid', () => {
 
   it('keeps round-2 first player in their leader column', () => {
     const history = [
-      row({ historyEntryKind: 'round-start', currentRound: 1 }),
+      row({ historyEntryKind: 'round-start', currentRound: 1, firstPlayerMarker: 0 }),
       playerTurn(0),
       playerTurn(1),
       playerTurn(2),
       playerTurn(3),
       row({ historyEntryKind: 'combat', currentRound: 1 }),
-      row({ historyEntryKind: 'round-start', currentRound: 2 }),
-      playerTurn(1),
-      playerTurn(2),
-      playerTurn(3),
-      playerTurn(0),
+      row({ historyEntryKind: 'round-start', currentRound: 2, firstPlayerMarker: 1 }),
+      playerTurn(1, TurnType.ACTION, 2, 1),
+      playerTurn(2, TurnType.ACTION, 2, 1),
+      playerTurn(3, TurnType.ACTION, 2, 1),
+      playerTurn(0, TurnType.ACTION, 2, 1),
     ]
     const grid = buildBirdseyeTurnHistoryGrid(history, playerIds)
     const turnRows = grid.filter(rowItem => rowItem.type === 'turns')
@@ -223,6 +229,35 @@ describe('buildBirdseyeTurnHistoryGrid', () => {
     if (turnRows[1].type !== 'turns') throw new Error('expected turns')
     expect(turnRows[1].cells.map(cell => cell?.playerId ?? null)).toEqual([0, 1, 2, 3])
     expect(turnRows[1].cells.map(cell => cell?.historyIndex)).toEqual([10, 7, 8, 9])
+  })
+
+  it('places a mid-row first player in their swimlane with empty seats to the left', () => {
+    const history = [
+      row({ historyEntryKind: 'round-start', currentRound: 6, firstPlayerMarker: 1 }),
+      playerTurn(1, TurnType.ACTION, 6, 1),
+      playerTurn(2, TurnType.ACTION, 6, 1),
+    ]
+    const grid = buildBirdseyeTurnHistoryGrid(history, playerIds)
+    const turnRows = grid.filter(rowItem => rowItem.type === 'turns')
+    expect(turnRows).toHaveLength(1)
+    if (turnRows[0].type !== 'turns') throw new Error('expected turns')
+    expect(turnRows[0].cells.map(cell => cell?.playerId ?? null)).toEqual([null, 1, 2, null])
+  })
+
+  it('does not pack the next round into leftover empty seats of the previous round', () => {
+    const history = [
+      row({ historyEntryKind: 'round-start', currentRound: 4, firstPlayerMarker: 0 }),
+      playerTurn(0, TurnType.ACTION, 4, 0),
+      playerTurn(2, TurnType.ACTION, 4, 0),
+      playerTurn(3, TurnType.ACTION, 4, 0),
+      playerTurn(1, TurnType.ACTION, 5, 1),
+    ]
+    const grid = buildBirdseyeTurnHistoryGrid(history, playerIds)
+    const turnRows = grid.filter(rowItem => rowItem.type === 'turns')
+    expect(turnRows).toHaveLength(2)
+    if (turnRows[0].type !== 'turns' || turnRows[1].type !== 'turns') throw new Error('expected turns')
+    expect(turnRows[0].cells.map(cell => cell?.playerId ?? null)).toEqual([0, null, 2, 3])
+    expect(turnRows[1].cells.map(cell => cell?.playerId ?? null)).toEqual([null, 1, null, null])
   })
 
   it('opens a new row when the same player acts twice in a cycle', () => {

@@ -22,7 +22,7 @@ export function isRoundStartHistoryEntry(turn: GameState | undefined): boolean {
 }
 
 export function getRoundStartLabel(turn: GameState): string {
-  return `Round ${turn.currentRound} start`
+  return `Round ${turn.currentRound}`
 }
 
 export function isPlayerTurnHistoryEntry(turn: GameState | undefined): boolean {
@@ -219,9 +219,11 @@ function liveBannerKind(state: GameState): BirdseyeHistoryBannerKind | null {
 }
 
 /**
- * Chess.com-style move grid: one column per leader (player id order).
+ * Chess-style move grid: one column per leader, in seat order (swimlanes).
  * A new row starts when a column would collide, and at every round/combat
- * boundary so a rotating first player does not shift under the wrong seat.
+ * boundary so leftover empty seats are not filled by the next round.
+ * The round's first player stays in their leader column — leading cells
+ * stay empty until that leader acts.
  */
 export function buildBirdseyeTurnHistoryGrid(
   history: GameState[],
@@ -234,6 +236,7 @@ export function buildBirdseyeTurnHistoryGrid(
   const colOf = new Map(playerIds.map((id, index) => [id, index]))
   const rows: BirdseyeHistoryGridRow[] = []
   let cells: Array<BirdseyeHistoryCell | null> = Array(colCount).fill(null)
+  let activeRound: number | undefined
 
   const rowHasTurns = () => cells.some(cell => cell != null)
 
@@ -241,6 +244,20 @@ export function buildBirdseyeTurnHistoryGrid(
     if (!rowHasTurns()) return
     rows.push({ type: 'turns', cells })
     cells = Array(colCount).fill(null)
+  }
+
+  const beginRound = (round: number | undefined) => {
+    flush()
+    if (round != null) activeRound = round
+  }
+
+  const preparePlayerTurnRound = (turn: GameState) => {
+    const round = turn.currentRound
+    if (activeRound != null && round != null && round !== activeRound) {
+      beginRound(round)
+      return
+    }
+    if (round != null) activeRound = round
   }
 
   const placeTurn = (historyIndex: number, playerId: number, isLive: boolean) => {
@@ -254,19 +271,27 @@ export function buildBirdseyeTurnHistoryGrid(
     const turn = history[index]
     if (!turn) continue
     if (isMetaHistoryEntry(turn)) {
-      flush()
+      if (isRoundStartHistoryEntry(turn)) {
+        beginRound(turn.currentRound)
+      } else {
+        flush()
+      }
       rows.push({ type: 'banner', banner: bannerForMeta(turn, index, false) })
       continue
     }
     const playerId = historyPlayerId(turn)
     if (playerId == null) continue
+    preparePlayerTurnRound(turn)
     placeTurn(index, playerId, false)
   }
 
   if (liveState && !shouldHideLiveHistoryEntry(history, liveState)) {
     if (isLivePlayerTurn(liveState)) {
       const playerId = historyPlayerId(liveState)
-      if (playerId != null) placeTurn(history.length, playerId, true)
+      if (playerId != null) {
+        preparePlayerTurnRound(liveState)
+        placeTurn(history.length, playerId, true)
+      }
     } else {
       const kind = liveBannerKind(liveState)
       if (kind) {

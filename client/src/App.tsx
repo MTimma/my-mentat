@@ -2475,7 +2475,7 @@ const GameContent = ({
                     const snapshot = gameState.history[viewingTurnIndex]
                     if (viewingTurnIndex === 0 || snapshot?.historyEntryKind === 'setup') return 'Setup'
                     if (snapshot?.historyEntryKind === 'round-start') {
-                      return `Round ${snapshot.currentRound} start`
+                      return `Round ${snapshot.currentRound}`
                     }
                     if (snapshot?.historyEntryKind === 'combat') return 'Combat'
                     if (snapshot?.historyEntryKind === 'endgame') return 'Endgame'
