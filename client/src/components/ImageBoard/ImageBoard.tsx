@@ -167,6 +167,8 @@ interface ImageBoardProps {
   birdseyeInteractionsHostRef?: (el: HTMLDivElement | null) => void
   /** Desktop: Imperium row sits above the board, board-width only. */
   imperiumRowSlot?: ReactNode
+  /** Horizontal play-area: expansions / setup sit above the right column only. */
+  playAreaTopSlot?: ReactNode
   desktopPlayAreaLayout?: DesktopPlayAreaLayout
   onDesktopPlayAreaLayoutChange?: (layout: DesktopPlayAreaLayout) => void
 }
@@ -240,6 +242,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   birdseyeIsHistoryView = false,
   birdseyeInteractionsHostRef,
   imperiumRowSlot,
+  playAreaTopSlot,
   desktopPlayAreaLayout,
   onDesktopPlayAreaLayoutChange,
 }) => {
@@ -1392,8 +1395,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 {ixBoardOverlay}
               </div>
             ) : null}
-            {combatAreaDocked && combatAreaCluster ? (
+            {combatAreaDocked && (combatAreaCluster || playAreaTopSlot) ? (
               <div className="image-board__combat-area-dock" aria-label="Player leaders">
+                {playAreaTopSlot ? (
+                  <div className="image-board__play-area-top-slot">{playAreaTopSlot}</div>
+                ) : null}
                 {showSandboxSetupHints && !areAllLeadersAssigned(players) ? (
                   <SandboxSetupHint
                     label="Pick a leader for each player"

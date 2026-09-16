@@ -167,6 +167,49 @@
   width: 100%;
 }
 
+.image-board__play-area-top-slot .sandbox-session-bar {
+  padding: 6px 8px;
+  gap: 6px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.22);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.image-board__play-area-top-slot .sandbox-session-bar__row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 6px 8px;
+}
+
+.image-board__play-area-top-slot .sandbox-session-bar__kit {
+  flex: 1 1 12rem;
+  width: auto;
+  min-width: 0;
+}
+
+.image-board__play-area-top-slot .sandbox-session-bar__actions {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.image-board__play-area-top-slot .sandbox-session-bar__actions .sandbox-session-bar__btn {
+  flex: 0 0 auto;
+}
+
+.image-board__play-area-top-slot .sandbox-session-bar__setup .sandbox-setup-controls {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.image-board__play-area-top-slot .sandbox-setup-controls__finish {
+  min-width: 0;
+  flex: 1 1 16rem;
+}
+
+.image-board__play-area-top-slot .sandbox-setup-controls__checklist {
+  flex-wrap: wrap;
+}
+
 .sandbox-session-bar__setup {
   width: 100%;
 }

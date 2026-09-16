@@ -1719,7 +1719,7 @@ const GameContent = ({
 
 
   const renderImageBoard = useCallback(
-    (imperiumRowSlot?: ReactNode) =>
+    (imperiumRowSlot?: ReactNode, playAreaTopSlot?: ReactNode) =>
       useImageBoard ? (
         <ImageBoard
           currentPlayer={displayState.currTurn?.playerId ?? displayState.activePlayerId}
@@ -1852,6 +1852,7 @@ const GameContent = ({
           birdseyeIsHistoryView={isViewingHistory}
           birdseyeInteractionsHostRef={setBirdseyeInteractionsHost}
           imperiumRowSlot={imperiumRowSlot}
+          playAreaTopSlot={playAreaTopSlot}
           desktopPlayAreaLayout={desktopPlayAreaLayout}
           onDesktopPlayAreaLayoutChange={setDesktopPlayAreaLayout}
         />
@@ -1987,6 +1988,7 @@ const GameContent = ({
 
   const sandboxBarInHistoryDock =
     isSandboxGame && isDockedHistoryLayout && showTurnHistoryPanel
+  const sandboxBarInPlayAreaDock = isSandboxGame && hideDockedHistory
   const sandboxSessionBarEl = isSandboxGame ? (
     <SandboxSessionBar
       gamePackId={gamePackId}
@@ -2025,7 +2027,7 @@ const GameContent = ({
         boardContainerRef={mainAreaRef}
         scopeModalsToBoard={isDesktopPlayView}
       >
-      {!sandboxBarInHistoryDock ? sandboxSessionBarEl : null}
+      {!sandboxBarInHistoryDock && !sandboxBarInPlayAreaDock ? sandboxSessionBarEl : null}
       <AltImagePreviewProvider>
       <div ref={playShellMainRef} className="play-shell-main">
         <div className="play-board-column">
@@ -2080,7 +2082,10 @@ const GameContent = ({
             onRevealIntrigue={handleRevealEndgameIntrigue}
           />
           {useImageBoard ? (
-            renderImageBoard(dockImperiumAboveBoard ? imperiumRowEl : undefined)
+            renderImageBoard(
+              dockImperiumAboveBoard ? imperiumRowEl : undefined,
+              sandboxBarInPlayAreaDock ? sandboxSessionBarEl : undefined
+            )
           ) : (
             <GameBoard
               currentPlayer={displayState.activePlayerId}

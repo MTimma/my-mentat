@@ -60,6 +60,13 @@ describe('Sandbox session bar', () => {
   it('docks into the turn-history sidebar on wide layouts', () => {
     expect(appTsx).toContain('sandboxBarInHistoryDock')
     expect(appTsx).toContain('topSlot={sandboxBarInHistoryDock ? sandboxSessionBarEl : undefined}')
+    expect(appTsx).toContain('sandboxBarInPlayAreaDock')
+    expect(appTsx).toContain(
+      'sandboxBarInPlayAreaDock ? sandboxSessionBarEl : undefined'
+    )
+    expect(appTsx).toContain(
+      '{!sandboxBarInHistoryDock && !sandboxBarInPlayAreaDock ? sandboxSessionBarEl : null}'
+    )
     expect(barTsx).toContain('docked')
     const barCss = readFileSync(
       resolve(__dirname, '../SandboxSessionBar/SandboxSessionBar.css'),
@@ -75,6 +82,10 @@ describe('Sandbox session bar', () => {
     )
     expect(barCss).not.toContain('flex: 1 1 14rem')
     expect(barCss).toContain('.sandbox-session-bar--docked')
+    expect(barCss).toContain('.image-board__play-area-top-slot .sandbox-session-bar')
+    expect(barCss).toMatch(
+      /\.image-board__play-area-top-slot \.sandbox-session-bar__row \{[\s\S]*?flex-direction:\s*row/
+    )
   })
 
   it('offsets the play shell below the notch in installed PWA', () => {

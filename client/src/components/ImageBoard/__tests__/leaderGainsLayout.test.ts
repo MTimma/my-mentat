@@ -121,8 +121,8 @@ describe('Leader gains leftover layout', () => {
   })
 
   it('toggles per-seat vertical play area vs a chess-style turn history grid above leaders', () => {
-    expect(cluster).toContain('Play area vertical')
-    expect(cluster).toContain('Play area horizontal')
+    expect(cluster).toContain('Turn log vertical')
+    expect(cluster).toContain('Turn log horizontal')
     expect(cluster).toContain('combat-area-cluster--play-horizontal')
     expect(cluster).toContain('combat-area-cluster-stack--play-horizontal')
     expect(cluster).toContain('BirdseyeTurnHistoryGrid')
@@ -178,7 +178,7 @@ describe('Leader gains leftover layout', () => {
     expect(imageBoardTsx).toContain('image-board__imperium-dock')
     expect(imageBoardTsx).toContain('image-board__board-stack')
     expect(appTsx).toContain('dockImperiumAboveBoard')
-    expect(appTsx).toContain('renderImageBoard(dockImperiumAboveBoard ? imperiumRowEl : undefined)')
+    expect(appTsx).toContain('dockImperiumAboveBoard ? imperiumRowEl : undefined')
     expect(imageBoardCss).toContain('.image-board__board-stack')
     expect(imageBoardCss).toContain('.image-board__imperium-dock')
     expect(imageBoardCss).toMatch(
@@ -208,6 +208,20 @@ describe('Leader gains leftover layout', () => {
     expect(appTsx).toContain('<SandboxSessionBar')
     expect(appTsx).toContain('sandboxBarInHistoryDock')
     expect(appTsx).toContain('topSlot={sandboxBarInHistoryDock ? sandboxSessionBarEl : undefined}')
+    expect(appTsx).toContain('sandboxBarInPlayAreaDock')
+    expect(appTsx).toContain('playAreaTopSlot')
+    expect(imageBoardTsx).toContain('playAreaTopSlot')
+    expect(imageBoardTsx).toContain('image-board__play-area-top-slot')
+    expect(imageBoardCss).toContain('.image-board__play-area-top-slot')
+    expect(imageBoardCss).toMatch(
+      /\.image-board__combat-area-dock \{[\s\S]*?flex-direction:\s*column/
+    )
+    expect(imageBoardCss).toMatch(
+      /\.image-board__combat-area-cluster\.image-board__combat-area-cluster--docked \{[\s\S]*?position:\s*relative/
+    )
+    expect(imageBoardCss).toMatch(
+      /\.image-board__combat-area-cluster--docked \{[\s\S]*?flex:\s*1 1 auto/
+    )
     expect(appTsx).not.toContain('sandbox-setup-mobile-bar--desktop')
     const sessionBarCss = readFileSync(
       resolve(root, 'components/SandboxSessionBar/SandboxSessionBar.css'),
