@@ -39,8 +39,9 @@ export function findPlayerCardsByIds(
 }
 
 /**
- * Play-area cards for turn history: END_TURN snapshots clear playArea into discard
- * but keep currTurn (including revealedCardIds) on the stored state reference.
+ * Play-area cards for turn history. Reveal-turn snapshots keep agent cards in
+ * playArea (under the revealed hand). If playArea was already cleared, restore
+ * from currTurn.cardId / revealedCardIds found in discard.
  */
 export function getPlayAreaCardsForTurnView(gameState: GameState, player: Player): Card[] {
   const fromPlayArea = player.playArea ?? []
@@ -49,6 +50,7 @@ export function getPlayAreaCardsForTurnView(gameState: GameState, player: Player
     return fromPlayArea
   }
 
+  const revealedIds = currTurn.type === TurnType.REVEAL ? currTurn.revealedCardIds ?? [] : []
   const ids = new Set(fromPlayArea.map(c => c.id))
   if (currTurn.cardId) ids.add(currTurn.cardId)
   if (gameState.graftPair?.cardIds) {
@@ -56,20 +58,38 @@ export function getPlayAreaCardsForTurnView(gameState: GameState, player: Player
       ids.add(id)
     }
   }
-  if (currTurn.type === TurnType.REVEAL) {
-    for (const id of currTurn.revealedCardIds ?? []) {
-      ids.add(id)
-    }
+  for (const id of revealedIds) {
+    ids.add(id)
   }
 
   if (ids.size === 0) return fromPlayArea
 
   const trashedIds = new Set((player.trash ?? []).map(c => c.id))
   const idsToResolve = [...ids].filter(id => !trashedIds.has(id))
-  if (idsToResolve.length === 0) return fromPlayArea
+  if (idsToResolve.length === 0) return fromPlayArea.filter(c => !trashedIds.has(c.id))
 
   const resolved = findPlayerCardsByIds(player, idsToResolve)
-  return resolved.length > 0 ? resolved : fromPlayArea.filter(c => !trashedIds.has(c.id))
+  const cards = resolved.length > 0 ? resolved : fromPlayArea.filter(c => !trashedIds.has(c.id))
+  return orderPlayAreaCardsForRevealView(cards, revealedIds)
+}
+
+/** Agent-turn cards first, then revealed-hand cards in reveal order. */
+function orderPlayAreaCardsForRevealView(cards: Card[], revealedIds: number[]): Card[] {
+  if (revealedIds.length === 0) return cards
+  const revealedSet = new Set(revealedIds)
+  const agentCards = cards.filter(card => !revealedSet.has(card.id))
+  const revealedById = new Map(
+    cards.filter(card => revealedSet.has(card.id)).map(card => [card.id, card])
+  )
+  const revealedCards: Card[] = []
+  const seen = new Set<number>()
+  for (const id of revealedIds) {
+    const card = revealedById.get(id)
+    if (!card || seen.has(id)) continue
+    seen.add(id)
+    revealedCards.push(card)
+  }
+  return [...agentCards, ...revealedCards]
 }
 
 function rewardNeedsInteractionHighlight(reward: Reward): boolean {

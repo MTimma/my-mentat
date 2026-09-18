@@ -42,7 +42,7 @@ import { endgameRevealIncomplete } from './utils/endgameResolution'
 import { mergeEndgameHistoryRow } from './utils/endgameHistoryDisplay'
 import { isCombatHistoryEntry, isEndgameHistoryEntry } from './utils/turnGainsDisplay'
 import { COMBAT_STRENGTH_ORIGIN } from './data/boardMarkerAnchors'
-import { getConflictPool } from './data/conflicts'
+import { getConflictPool, isConflictInDiscard } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
 import GameStateSetup from './components/GameStateSetup/GameStateSetup'
 import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
@@ -193,6 +193,8 @@ const GameContent = ({
   const [sandboxImperiumOpen, setSandboxImperiumOpen] = useState(false)
   const [sandboxTechOpen, setSandboxTechOpen] = useState(false)
   const [sandboxConflictOpen, setSandboxConflictOpen] = useState(false)
+  const [sandboxConflictDiscardOpen, setSandboxConflictDiscardOpen] = useState(false)
+  const [conflictDiscardViewOpen, setConflictDiscardViewOpen] = useState(false)
   const [sandboxEditPlayerId, setSandboxEditPlayerId] = useState<number | null>(null)
   const [techAcquireStackIndex, setTechAcquireStackIndex] = useState<number | null>(null)
   const [techAcquireSourceId, setTechAcquireSourceId] = useState<string | null>(null)
@@ -1813,6 +1815,13 @@ const GameContent = ({
                 }
               : undefined
           }
+          onConflictDiscardClick={
+            inSandboxSetup
+              ? () => setSandboxConflictDiscardOpen(true)
+              : displayState.conflictsDiscard.length > 0
+                ? () => setConflictDiscardViewOpen(true)
+                : undefined
+          }
           influenceSelection={
             !isViewingHistory && influenceBoardMeta
               ? {
@@ -2153,7 +2162,7 @@ const GameContent = ({
               conflicts={(() => {
                 const tierForRound = gameState.currentRound === 1 ? 1 : gameState.currentRound <= 6 ? 2 : 3
                 return getConflictPool(gameState.expansions).filter(
-                  c => c.tier === tierForRound && !gameState.conflictsDiscard.includes(c)
+                  c => c.tier === tierForRound && !isConflictInDiscard(gameState.conflictsDiscard, c.id)
                 )
               })()}
               currentRound={gameState.currentRound}
@@ -2221,6 +2230,32 @@ const GameContent = ({
               setSandboxConflictOpen(false)
             }}
             onCancel={() => setSandboxConflictOpen(false)}
+          />
+        )}
+        {inSandboxSetup && sandboxConflictDiscardOpen && (
+          <ConflictSelect
+            conflicts={getConflictPool(gameState.expansions).filter(
+              card => card.id !== gameState.currentConflict.id
+            )}
+            currentRound={gameState.currentRound}
+            title="Select previous conflict cards"
+            multiSelect
+            allowEmptyConfirm
+            initialSelectedIds={gameState.conflictsDiscard.map(card => card.id)}
+            handleConflictsSelect={conflictIds => {
+              dispatch({ type: 'SANDBOX_SET_CONFLICTS_DISCARD', conflictIds })
+              setSandboxConflictDiscardOpen(false)
+            }}
+            onCancel={() => setSandboxConflictDiscardOpen(false)}
+          />
+        )}
+        {conflictDiscardViewOpen && displayState.conflictsDiscard.length > 0 && (
+          <ConflictSelect
+            conflicts={displayState.conflictsDiscard}
+            currentRound={displayState.currentRound}
+            title="Previous conflicts"
+            readOnly
+            onCancel={() => setConflictDiscardViewOpen(false)}
           />
         )}
         {sandboxEditPlayer && (

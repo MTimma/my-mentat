@@ -103,7 +103,7 @@ import {
   boardSpaceById,
   isBoardSpaceAvailableForExpansions,
 } from '../../data/boardSpaceAvailability'
-import { getConflictPool } from '../../data/conflicts'
+import { getConflictPool, isConflictInDiscard, resolveConflictsById } from '../../data/conflicts'
 import { buildIntrigueDeck } from '../../services/IntrigueDeckService'
 import { PLAY_EFFECT_TEXTS } from '../../data/effectTexts'
 import { getIntrigueCardByCustom } from '../../services/IntrigueDeckService'
@@ -393,6 +393,7 @@ export type GameAction =
     | { type: 'REVEAL_ENDGAME_INTRIGUE'; playerId: number; cardIds: number[] }
     | { type: 'SANDBOX_SET_IMPERIUM_ROW'; cardIds: number[] }
     | { type: 'SANDBOX_SET_CONFLICT'; conflictId: number }
+    | { type: 'SANDBOX_SET_CONFLICTS_DISCARD'; conflictIds: number[] }
     | { type: 'SANDBOX_UPDATE_PLAYER'; playerId: number; patch: Partial<Player> }
     | { type: 'SANDBOX_SET_CONTROL_MARKER'; space: ControlMarkerType; playerId: number | null }
     | { type: 'SANDBOX_SET_DREADNOUGHT_CONTROL'; space: ControlMarkerType; playerId: number | null }
@@ -904,7 +905,11 @@ function completeCombatTransition(
   newState = { ...newState, mentatOwner: mentatOwnerNextRound }
   newState.players = newState.players.map(p => drawRoundStartHand(p))
   newState.firstPlayerMarker = (newState.firstPlayerMarker + 1) % newState.players.length
-  const updatedConflictsDiscard = [...state.conflictsDiscard, state.currentConflict]
+  const currentConflictId = state.currentConflict?.id ?? 0
+  const updatedConflictsDiscard =
+    currentConflictId > 0 && !isConflictInDiscard(state.conflictsDiscard, currentConflictId)
+      ? [...state.conflictsDiscard, state.currentConflict]
+      : [...state.conflictsDiscard]
   const endgameTriggered =
     newState.players.some(p => getTotalVictoryPoints(p, newState) >= 10) ||
     state.currentRound >= 10
@@ -3043,6 +3048,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       case 'SELECT_CONFLICT': {
       const conflict = getConflictPool(state.expansions).find(c => c.id === action.conflictId)
       if (!conflict) return state
+      if (isConflictInDiscard(state.conflictsDiscard, conflict.id)) return state
 
       const nextState = {
         ...state,
@@ -3111,6 +3117,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return withSandboxSetupHistory({
         ...state,
         currentConflict: conflict,
+        conflictsDiscard: state.conflictsDiscard.filter(card => card.id !== conflict.id),
+      })
+    }
+    case 'SANDBOX_SET_CONFLICTS_DISCARD': {
+      if (!state.sandboxSetup) return state
+      const currentId = state.currentConflict?.id ?? 0
+      const ids = action.conflictIds.filter(id => id !== currentId)
+      const selected = resolveConflictsById(getConflictPool(state.expansions), ids)
+      if (!selected) return state
+
+      return withSandboxSetupHistory({
+        ...state,
+        conflictsDiscard: selected,
       })
     }
     case 'SANDBOX_SET_CONTROL_MARKER': {
@@ -3395,14 +3414,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const currentTurn = newState.currTurn
       if (!currentTurn) return state
 
-      if(player.revealed) {
-        player.discardPile = [...(player.discardPile || []), ...(player.playArea || [])]
-        player.playArea = []
-        player.persuasion = 0
-        // Clear round-scoped intrigue modifiers/UI for this player once their Reveal turn is complete
-        newState.acquireToTopThisRound = { ...(newState.acquireToTopThisRound || {}), [playerId]: false }
-        newState.scheduledIntrigueOnReveal = { ...(newState.scheduledIntrigueOnReveal || {}), [playerId]: [] }
-        newState.activeIntrigueThisRound = { ...(newState.activeIntrigueThisRound || {}), [playerId]: [] }
+      // Snapshot before cleanup so history still shows in-play agent cards under the reveal.
+      const historySnapshot = snapshotStateForHistory(state)
+
+      if (player.revealed) {
+        newState = {
+          ...newState,
+          players: newState.players.map(p =>
+            p.id === playerId
+              ? {
+                  ...p,
+                  discardPile: [...(p.discardPile || []), ...(p.playArea || [])],
+                  playArea: [],
+                  persuasion: 0,
+                }
+              : p
+          ),
+          // Clear round-scoped intrigue modifiers/UI for this player once their Reveal turn is complete
+          acquireToTopThisRound: { ...(newState.acquireToTopThisRound || {}), [playerId]: false },
+          scheduledIntrigueOnReveal: { ...(newState.scheduledIntrigueOnReveal || {}), [playerId]: [] },
+          activeIntrigueThisRound: { ...(newState.activeIntrigueThisRound || {}), [playerId]: [] },
+        }
       }
 
       if (!newState.players.find(p => !p.revealed)) {
@@ -3425,7 +3457,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 : p
             ),
             activePlayerId: 0,
-            history: [...state.history, snapshotStateForHistory(state)],
+            history: [...state.history, historySnapshot],
             currTurn: null,
             canEndTurn: false,
             canAcquireIR: false,
@@ -3464,7 +3496,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               : p
           ),
           activePlayerId: endTurnCombatActiveId,
-          history: [...state.history, snapshotStateForHistory(state)],
+          history: [...state.history, historySnapshot],
           currTurn: null,
           canEndTurn: false,
           canAcquireIR: false,
@@ -3491,7 +3523,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             p.id === playerId ? { ...p, selectedCard: null } : p
           ),
           activePlayerId: playerId,
-          history: [...state.history, snapshotStateForHistory(state)],
+          history: [...state.history, historySnapshot],
           ...consumeExtraTurn(newState),
           selectedCard: null,
           selectedCardDeckIndex: null,
@@ -3566,7 +3598,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         infiltrateIgnoreOccupancyOnce: clearInfiltrate,
         players: playersAfterGraft,
         activePlayerId: nextPlayer.id,
-        history: [...state.history, snapshotStateForHistory(state)],
+        history: [...state.history, historySnapshot],
         currTurn: null,
         canEndTurn: false,
         selectedCard: null,

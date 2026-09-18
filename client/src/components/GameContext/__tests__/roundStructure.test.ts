@@ -20,6 +20,14 @@ describe('Round structure (base rules)', () => {
     expect(s.currentConflict.id).toBe(conflict.id)
   })
 
+  it('SELECT_CONFLICT ignores a conflict already in the discard pile', () => {
+    let s = getFreshDefaultGameState()
+    const conflict = CONFLICTS[0]
+    s = { ...s, conflictsDiscard: [conflict] }
+    const after = applyGameAction(s, { type: 'SELECT_CONFLICT', conflictId: conflict.id })
+    expect(after).toBe(s)
+  })
+
   it('SELECT_CONFLICT on fresh game merges setup and round 1 start into one row', () => {
     const base = getFreshDefaultGameState()
     const setupBaseline = { ...getFreshDefaultGameState(), history: [] }

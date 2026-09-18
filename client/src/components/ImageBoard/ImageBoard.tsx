@@ -39,6 +39,7 @@ import {
   BOARD_MARKER_VP_MAX_STEPS,
   HIGH_COUNCIL_SLOTS,
   CONFLICT_CARD_RECT,
+  CONFLICT_DISCARD_RECT,
   COMBAT_RANK_STRIP_RECT,
   COMBAT_RING_ANCHORS,
   COMBAT_AREA_BOUNDS,
@@ -98,6 +99,46 @@ interface SellMelangeData {
 
 type ExtraSpaceData = SellMelangeData | undefined
 
+function BoardConflictFace({
+  conflict,
+  imgFailed,
+  onImgError,
+  emptyLabel,
+}: {
+  conflict?: ConflictCard | null
+  imgFailed: boolean
+  onImgError: () => void
+  emptyLabel: string
+}) {
+  const hasConflict = Boolean(conflict && conflict.id > 0)
+  const imgSrc = hasConflict && conflict ? conflictCardImageSrc(conflict.id) : null
+  if (hasConflict && imgSrc && !imgFailed) {
+    return (
+      <img
+        className="image-board__conflict-card-img"
+        src={imgSrc}
+        alt={conflict?.name}
+        draggable={false}
+        data-preview-src={imgSrc}
+        onError={onImgError}
+      />
+    )
+  }
+  if (hasConflict && conflict) {
+    return (
+      <div className="image-board__conflict-fallback">
+        <span className="image-board__conflict-tier">T{conflict.tier}</span>
+        <span className="image-board__conflict-name">{conflict.name}</span>
+      </div>
+    )
+  }
+  return (
+    <div className="image-board__conflict-placeholder">
+      <span>{emptyLabel}</span>
+    </div>
+  )
+}
+
 interface ImageBoardProps {
   currentPlayer: number
   highlightedAreas: AgentIcon[]
@@ -135,6 +176,8 @@ interface ImageBoardProps {
     onTechTilesClick?: () => void
     sandboxTechRequiredFilledStacks?: number
   }
+  /** Open previous-conflict discard (sandbox edit or play viewer). */
+  onConflictDiscardClick?: () => void
   /** Tap faction influence tracks (e.g. Shifting Allegiances). */
   influenceSelection?: {
     mode: InfluenceBoardMode
@@ -226,6 +269,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   dreadnoughtDeploy,
   specimenDeploy,
   sandboxSetup,
+  onConflictDiscardClick,
   influenceSelection,
   showBoardInfoTips = true,
   ixBoardPlacement = 'embedded',
@@ -251,10 +295,18 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
   const [imgError, setImgError] = useState(false)
   const [conflictImgFailed, setConflictImgFailed] = useState(false)
+  const [conflictDiscardImgFailed, setConflictDiscardImgFailed] = useState(false)
 
   useEffect(() => {
     setConflictImgFailed(false)
   }, [currentConflict?.id])
+
+  const discardCards = gameStateForMarkers.conflictsDiscard ?? []
+  const topDiscard = discardCards.length > 0 ? discardCards[discardCards.length - 1] : undefined
+
+  useEffect(() => {
+    setConflictDiscardImgFailed(false)
+  }, [topDiscard?.id])
 
   const blockedSpaceMap = new Map<number, number>()
   blockedSpaces.forEach(entry => blockedSpaceMap.set(entry.spaceId, entry.playerId))
@@ -364,9 +416,8 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   )
 
   const conflictBox = stageRect(CONFLICT_CARD_RECT)
+  const conflictDiscardBox = stageRect(CONFLICT_DISCARD_RECT)
   const rankStripBox = stageRect(COMBAT_RANK_STRIP_RECT)
-  const conflictImgSrc =
-    currentConflict && currentConflict.id > 0 ? conflictCardImageSrc(currentConflict.id) : null
   const hasConflict = Boolean(currentConflict && currentConflict.id > 0)
   const inActivePlay =
     players.length > 0 &&
@@ -1008,30 +1059,18 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           )}
 
           {/* Conflict card: hidden until selected (sandbox shows a picker target).
-              Combat area: also shown during active play after sandbox commit. */}
+              Discard pile sits to the right. Combat area: also shown during active play after sandbox commit. */}
           {showConflictPanel && (
             <>
               {(() => {
-                const conflictContent =
-                  hasConflict && conflictImgSrc && !conflictImgFailed ? (
-                    <img
-                      className="image-board__conflict-card-img"
-                      src={conflictImgSrc}
-                      alt={currentConflict?.name}
-                      draggable={false}
-                      data-preview-src={conflictImgSrc}
-                      onError={() => setConflictImgFailed(true)}
-                    />
-                  ) : hasConflict && currentConflict ? (
-                    <div className="image-board__conflict-fallback">
-                      <span className="image-board__conflict-tier">T{currentConflict.tier}</span>
-                      <span className="image-board__conflict-name">{currentConflict.name}</span>
-                    </div>
-                  ) : (
-                    <div className="image-board__conflict-placeholder">
-                      <span>Select Conflict</span>
-                    </div>
-                  )
+                const conflictContent = (
+                  <BoardConflictFace
+                    conflict={currentConflict}
+                    imgFailed={conflictImgFailed}
+                    onImgError={() => setConflictImgFailed(true)}
+                    emptyLabel="Select Conflict"
+                  />
+                )
 
                 const panelStyle = {
                   left: `${conflictBox.left}%`,
@@ -1041,18 +1080,16 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 }
 
                 return sandboxSetup ? (
-                  <>
-                    <button
-                      type="button"
-                      className="image-board__conflict-panel image-board__conflict-panel--sandbox"
-                      data-marker="conflict-card"
-                      style={panelStyle}
-                      title={withImageZoomHint(hasConflict ? 'Change conflict card' : 'Select conflict card')}
-                      onClick={sandboxSetup.onConflictClick}
-                    >
-                      {conflictContent}
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    className="image-board__conflict-panel image-board__conflict-panel--sandbox"
+                    data-marker="conflict-card"
+                    style={panelStyle}
+                    title={withImageZoomHint(hasConflict ? 'Change conflict card' : 'Select conflict card')}
+                    onClick={sandboxSetup.onConflictClick}
+                  >
+                    {conflictContent}
+                  </button>
                 ) : (
                   <div
                     className="image-board__conflict-panel"
@@ -1061,6 +1098,66 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                     title={withImageZoomHint(currentConflict?.name)}
                   >
                     {conflictContent}
+                  </div>
+                )
+              })()}
+              {(() => {
+                const discardCount = discardCards.length
+                const discardClickable =
+                  Boolean(onConflictDiscardClick) && (Boolean(sandboxSetup) || discardCount > 0)
+                const discardTitle =
+                  discardCount > 0
+                    ? sandboxSetup
+                      ? `Change previous conflicts (${discardCount})`
+                      : `Previous conflicts (${discardCount})`
+                    : 'Select previous conflicts'
+                const discardStyle = {
+                  left: `${conflictDiscardBox.left}%`,
+                  top: `${conflictDiscardBox.top}%`,
+                  width: `${conflictDiscardBox.width}%`,
+                  height: `${conflictDiscardBox.height}%`,
+                }
+                const discardClass = [
+                  'image-board__conflict-panel',
+                  'image-board__conflict-discard',
+                  sandboxSetup ? 'image-board__conflict-panel--sandbox' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')
+                const discardContent = (
+                  <>
+                    <BoardConflictFace
+                      conflict={topDiscard}
+                      imgFailed={conflictDiscardImgFailed}
+                      onImgError={() => setConflictDiscardImgFailed(true)}
+                      emptyLabel="Previous conflicts"
+                    />
+                    {discardCount > 0 ? (
+                      <span className="image-board__conflict-discard-count">{discardCount}</span>
+                    ) : null}
+                  </>
+                )
+
+                return discardClickable ? (
+                  <button
+                    type="button"
+                    className={discardClass}
+                    data-marker="conflict-discard"
+                    style={discardStyle}
+                    title={withImageZoomHint(discardTitle)}
+                    aria-label={discardTitle}
+                    onClick={onConflictDiscardClick}
+                  >
+                    {discardContent}
+                  </button>
+                ) : (
+                  <div
+                    className={discardClass}
+                    data-marker="conflict-discard"
+                    style={discardStyle}
+                    title={withImageZoomHint(topDiscard?.name ?? 'Previous conflicts')}
+                  >
+                    {discardContent}
                   </div>
                 )
               })()}
@@ -1145,6 +1242,15 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   top: `${conflictBox.top}%`,
                   width: `${conflictBox.width}%`,
                   height: `${conflictBox.height}%`,
+                }}
+              />
+              <div
+                className="image-board__marker-debug-rect image-board__marker-debug-rect--conflict-discard"
+                style={{
+                  left: `${conflictDiscardBox.left}%`,
+                  top: `${conflictDiscardBox.top}%`,
+                  width: `${conflictDiscardBox.width}%`,
+                  height: `${conflictDiscardBox.height}%`,
                 }}
               />
               <div

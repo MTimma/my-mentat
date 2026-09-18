@@ -111,6 +111,14 @@ export const CONFLICT_CARD_RECT = {
   height: 13,
 } as const
 
+/** Previous-conflict discard pile, immediately right of the current conflict card. */
+export const CONFLICT_DISCARD_RECT = {
+  left: CONFLICT_CARD_RECT.left + CONFLICT_CARD_RECT.width + 0.35,
+  top: CONFLICT_CARD_RECT.top,
+  width: CONFLICT_CARD_RECT.width,
+  height: CONFLICT_CARD_RECT.height,
+} as const
+
 /**
  * Combat conflict rings (inner %, ring center). 2×2 on crossed swords:
  * Clockwise: red TL, green TR, yellow BR, blue BL. Tune with ?markerDebug=1.

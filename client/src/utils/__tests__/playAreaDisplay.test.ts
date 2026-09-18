@@ -170,6 +170,26 @@ describe('playAreaDisplay', () => {
     ).toEqual([])
   })
 
+  it('getPlayAreaCardsForTurnView keeps previously played agent cards under the revealed hand', () => {
+    const agent = stubCard(1, 'Diplomacy')
+    const revealedA = stubCard(11, 'Dagger')
+    const revealedB = stubCard(12, 'Signet Ring')
+    const player = stubPlayer({
+      playArea: [agent, revealedB, revealedA],
+    })
+    const gameState = {
+      currTurn: {
+        playerId: 0,
+        type: TurnType.REVEAL,
+        revealedCardIds: [11, 12],
+      },
+      players: [player],
+    } as GameState
+
+    expect(getPlayAreaCardsForTurnView(gameState, player).map(c => c.id)).toEqual([1, 11, 12])
+    expect(getRevealedCardIdsForTurnView(gameState, player)).toEqual([11, 12])
+  })
+
   it('playAreaCardIdsWithPendingEffectChoice collects card sources that still need input', () => {
     const gameState = {
       currTurn: {

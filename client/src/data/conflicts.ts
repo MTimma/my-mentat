@@ -311,3 +311,24 @@ import { RISE_OF_IX_CONFLICTS } from './conflictsRiseOfIx'
 export function getConflictPool(expansions: Expansions): ConflictCard[] {
   return expansions.riseOfIx ? [...CONFLICTS, ...RISE_OF_IX_CONFLICTS] : CONFLICTS
 }
+
+export function isConflictInDiscard(discard: ConflictCard[], conflictId: number): boolean {
+  return discard.some(card => card.id === conflictId)
+}
+
+/** Resolve pool cards in `ids` order. Returns null on unknown or duplicate ids. */
+export function resolveConflictsById(
+  pool: ConflictCard[],
+  ids: number[]
+): ConflictCard[] | null {
+  const byId = new Map(pool.map(card => [card.id, card]))
+  const used = new Set<number>()
+  const selected: ConflictCard[] = []
+  for (const id of ids) {
+    const card = byId.get(id)
+    if (!card || used.has(id)) return null
+    selected.push(card)
+    used.add(id)
+  }
+  return selected
+}

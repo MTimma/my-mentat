@@ -969,7 +969,9 @@
   flex-direction: column;
   justify-content: flex-end;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.55);
+  background:
+    linear-gradient(var(--player-tint, transparent), var(--player-tint, transparent)),
+    rgba(0, 0, 0, 0.55);
 }
 
 /* Portrait-only row so all four faces stay aligned. Buttons live under that column's cards. */
@@ -993,7 +995,9 @@
   flex-direction: column;
   align-items: stretch;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.72);
+  background:
+    linear-gradient(var(--player-tint, transparent), var(--player-tint, transparent)),
+    rgba(0, 0, 0, 0.72);
   box-sizing: border-box;
   grid-row: 3;
 }
@@ -1208,13 +1212,17 @@
   overflow: hidden;
   padding: 0.18rem 0.2rem 0.22rem;
   border-top: 1px dashed rgba(255, 248, 232, 0.16);
-  background: rgba(4, 5, 8, 0.42);
+  background:
+    linear-gradient(var(--player-tint, transparent), var(--player-tint, transparent)),
+    rgba(4, 5, 8, 0.42);
   box-sizing: border-box;
   pointer-events: auto;
 }
 
 .combat-area-cluster--column .birdseye-seat-play-area--active {
-  background: rgba(12, 10, 6, 0.5);
+  background:
+    linear-gradient(var(--player-tint, transparent), var(--player-tint, transparent)),
+    rgba(12, 10, 6, 0.5);
   border-top-color: rgba(212, 177, 106, 0.28);
 }
 
@@ -1735,7 +1743,7 @@
 }
 
 .birdseye-turn-history__row:nth-child(even) .birdseye-turn-history__cell:not(.birdseye-turn-history__cell--viewing) {
-  background: rgba(255, 248, 232, 0.03);
+  background-image: linear-gradient(rgba(255, 248, 232, 0.04), rgba(255, 248, 232, 0.04));
 }
 
 .birdseye-turn-history__cell-wrap {
@@ -1756,7 +1764,7 @@
   border: 0;
   border-right: 1px solid rgba(255, 248, 232, 0.08);
   border-bottom: 1px solid rgba(255, 248, 232, 0.06);
-  background: transparent;
+  background-color: var(--player-tint, transparent);
   color: inherit;
   font: inherit;
   font-size: 0.68rem;
@@ -1776,12 +1784,16 @@
   border-right: none;
 }
 
-.birdseye-turn-history__cell:hover {
-  background: var(--chrome-accent-muted, rgba(212, 177, 106, 0.16));
+.birdseye-turn-history__row .birdseye-turn-history__cell:hover:not(.birdseye-turn-history__cell--viewing) {
+  background-image: linear-gradient(
+    var(--chrome-accent-muted, rgba(212, 177, 106, 0.16)),
+    var(--chrome-accent-muted, rgba(212, 177, 106, 0.16))
+  );
 }
 
 .birdseye-turn-history__cell--viewing {
-  background: rgba(255, 215, 0, 0.28);
+  background-color: rgba(255, 215, 0, 0.28);
+  background-image: none;
   outline: 1px solid rgba(255, 215, 0, 0.55);
   outline-offset: -1px;
   color: var(--chrome-text-strong, #fff8e8);
@@ -1815,20 +1827,25 @@
   color: inherit;
 }
 
+/* Invented token `--player-tint`: hinted seat-color wash for swimlanes. */
+.combat-area-cluster__seat--red,
 .birdseye-turn-history__cell--red {
-  box-shadow: inset 2px 0 0 rgba(196, 62, 62, 0.85);
+  --player-tint: rgba(211, 47, 47, 0.16);
 }
 
+.combat-area-cluster__seat--green,
 .birdseye-turn-history__cell--green {
-  box-shadow: inset 2px 0 0 rgba(62, 140, 78, 0.85);
+  --player-tint: rgba(56, 142, 60, 0.16);
 }
 
+.combat-area-cluster__seat--yellow,
 .birdseye-turn-history__cell--yellow {
-  box-shadow: inset 2px 0 0 rgba(196, 164, 62, 0.85);
+  --player-tint: rgba(230, 184, 0, 0.14);
 }
 
+.combat-area-cluster__seat--blue,
 .birdseye-turn-history__cell--blue {
-  box-shadow: inset 2px 0 0 rgba(62, 102, 180, 0.85);
+  --player-tint: rgba(25, 118, 210, 0.16);
 }
 
 .combat-area-cluster--column.combat-area-cluster--birdseye .combat-area-cluster__seat--birdseye {

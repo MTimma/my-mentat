@@ -13,6 +13,7 @@ import {
   type GameState,
 } from '../../../types/GameTypes'
 import { applyGameAction } from '../GameContext'
+import { getPlayAreaCardsForTurnView, getRevealedCardIdsForTurnView } from '../../../utils/playAreaDisplay'
 import { getBaseTestState, stubDeckCard, withCardOnTop } from './_helpers'
 
 const ARRAKEEN_ID = BOARD_SPACES.find(s => s.name === 'Arrakeen')!.id
@@ -632,7 +633,19 @@ describe('END_TURN after reveal', () => {
     expect(s.players[0].persuasion).toBe(2)
     expect(s.players[0].revealed).toBe(true)
 
+    const playAreaBeforeEnd = s.players[0].playArea.map(c => c.id)
+    const stateBeforeEnd = s
     s = applyGameAction(s, { type: 'END_TURN', playerId: 0 })
+
+    expect(stateBeforeEnd.players[0].playArea.map(c => c.id)).toEqual(playAreaBeforeEnd)
+
+    const revealSnap = s.history.find(h => h.currTurn?.type === TurnType.REVEAL)
+    expect(revealSnap?.players[0].playArea.map(c => c.id)).toEqual([9301, 9302])
+    expect(revealSnap?.currTurn?.revealedCardIds).toEqual([9302])
+    expect(getPlayAreaCardsForTurnView(revealSnap!, revealSnap!.players[0]).map(c => c.id)).toEqual([
+      9301, 9302,
+    ])
+    expect(getRevealedCardIdsForTurnView(revealSnap, revealSnap!.players[0])).toEqual([9302])
 
     const p = s.players[0]
     expect(p.discardPile.map(c => c.id)).toEqual([9301, 9302])

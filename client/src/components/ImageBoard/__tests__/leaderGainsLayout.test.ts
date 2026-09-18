@@ -173,6 +173,27 @@ describe('Leader gains leftover layout', () => {
     expect(cluster).not.toContain('Leaders bottom')
   })
 
+  it('washes each leader swimlane with a hinted player color', () => {
+    expect(seatChromeCss).toContain('--player-tint: rgba(211, 47, 47, 0.16)')
+    expect(seatChromeCss).toContain('--player-tint: rgba(56, 142, 60, 0.16)')
+    expect(seatChromeCss).toContain('--player-tint: rgba(230, 184, 0, 0.14)')
+    expect(seatChromeCss).toContain('--player-tint: rgba(25, 118, 210, 0.16)')
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.combat-area-cluster__seat-gains-slot \{[\s\S]*?var\(--player-tint/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.combat-area-cluster__seat-meta \{[\s\S]*?var\(--player-tint/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area \{[\s\S]*?var\(--player-tint/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.birdseye-turn-history__cell \{[\s\S]*?background-color:\s*var\(--player-tint/
+    )
+    expect(seatChromeCss).not.toContain('box-shadow: inset 2px 0 0')
+    expect(historyGridTsx).toContain('birdseye-turn-history__cell--${emptyPlayer.color}')
+  })
+
   it('docks the Imperium row above the board so leaders reach the top', () => {
     expect(imageBoardTsx).toContain('imperiumRowSlot')
     expect(imageBoardTsx).toContain('image-board__imperium-dock')

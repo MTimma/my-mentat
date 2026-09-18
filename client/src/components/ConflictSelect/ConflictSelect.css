@@ -77,6 +77,10 @@
   box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
 
+.conflict-card--readonly {
+  cursor: default;
+}
+
 .conflict-card-image {
   display: block;
   width: 100%;
@@ -142,6 +146,12 @@
   font-size: 1.15rem;
   font-weight: 700;
   line-height: 1.2;
+}
+
+.conflict-select-count {
+  color: #f0e6d4;
+  font-size: 0.95rem;
+  white-space: nowrap;
 }
 
 .conflict-select-actions button {

@@ -80,6 +80,49 @@ describe('Sandbox setup turn', () => {
     expect(s.history[0].currentConflict.id).toBe(conflict.id)
   })
 
+  it('SANDBOX_SET_CONFLICTS_DISCARD stores previous conflicts for sandbox setup', () => {
+    let s = getSandboxSetupState()
+    s = applyGameAction(s, { type: 'SANDBOX_SET_CONFLICT', conflictId: CONFLICTS[2].id })
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_CONFLICTS_DISCARD',
+      conflictIds: [CONFLICTS[0].id, CONFLICTS[1].id],
+    })
+
+    expect(s.conflictsDiscard.map(c => c.id)).toEqual([CONFLICTS[0].id, CONFLICTS[1].id])
+    expect(s.sandboxSetup).toBe(true)
+    expect(s.history).toHaveLength(1)
+    expect(s.history[0].conflictsDiscard.map(c => c.id)).toEqual([CONFLICTS[0].id, CONFLICTS[1].id])
+  })
+
+  it('SANDBOX_SET_CONFLICTS_DISCARD drops the current conflict and rejects unknown ids', () => {
+    let s = getSandboxSetupState()
+    s = applyGameAction(s, { type: 'SANDBOX_SET_CONFLICT', conflictId: CONFLICTS[2].id })
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_CONFLICTS_DISCARD',
+      conflictIds: [CONFLICTS[2].id, CONFLICTS[0].id],
+    })
+
+    expect(s.conflictsDiscard.map(c => c.id)).toEqual([CONFLICTS[0].id])
+
+    const rejected = applyGameAction(s, {
+      type: 'SANDBOX_SET_CONFLICTS_DISCARD',
+      conflictIds: [CONFLICTS[0].id, 99999],
+    })
+    expect(rejected).toBe(s)
+  })
+
+  it('SANDBOX_SET_CONFLICT removes that card from the discard pile', () => {
+    let s = getSandboxSetupState()
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_CONFLICTS_DISCARD',
+      conflictIds: [CONFLICTS[0].id, CONFLICTS[1].id],
+    })
+    s = applyGameAction(s, { type: 'SANDBOX_SET_CONFLICT', conflictId: CONFLICTS[1].id })
+
+    expect(s.currentConflict.id).toBe(CONFLICTS[1].id)
+    expect(s.conflictsDiscard.map(c => c.id)).toEqual([CONFLICTS[0].id])
+  })
+
   it('SANDBOX_UPDATE_PLAYER assigns a leader from an empty seat without swapping other empty seats', () => {
     const paul = LEADERS.find(l => l.name === LEADER_NAMES.PAUL_ATREIDES)!
     let s = getSandboxSetupState()
@@ -575,10 +618,15 @@ describe('Sandbox setup turn', () => {
       type: 'SANDBOX_SET_CONFLICT',
       conflictId: CONFLICTS[0].id,
     })
+    const afterDiscard = applyGameAction(s, {
+      type: 'SANDBOX_SET_CONFLICTS_DISCARD',
+      conflictIds: [CONFLICTS[1].id],
+    })
     const afterCommit = applyGameAction(s, { type: 'SANDBOX_COMMIT_SETUP' })
 
     expect(afterRow).toBe(s)
     expect(afterConflict).toBe(s)
+    expect(afterDiscard).toBe(s)
     expect(afterCommit).toBe(s)
   })
 

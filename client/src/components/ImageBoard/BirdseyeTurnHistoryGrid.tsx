@@ -197,10 +197,17 @@ export function BirdseyeTurnHistoryGrid({
                   >
                     {row.cells.map((cell, colIndex) => {
                       if (!cell) {
+                        const emptyPlayer = playerById.get(playerIds[colIndex])
                         return (
                           <div
                             key={`empty-${group.key}-${rowIndex}-${colIndex}`}
-                            className="birdseye-turn-history__cell birdseye-turn-history__cell--empty"
+                            className={[
+                              'birdseye-turn-history__cell',
+                              'birdseye-turn-history__cell--empty',
+                              emptyPlayer ? `birdseye-turn-history__cell--${emptyPlayer.color}` : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
                             role="gridcell"
                           />
                         )
