@@ -1530,7 +1530,8 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
 }
 
 .end-turn-button:hover:not(:disabled) {
-  background-color: var(--chrome-cta-bg-hover);
+  background-color: var(--chrome-cta-bg);
+  border-color: var(--chrome-cta-border);
 }
 
 .end-turn-button:disabled,

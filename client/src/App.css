@@ -3336,7 +3336,11 @@ body:has(.game-container--play) {
   transition: background-color 0.2s, filter 0.2s;
 }
 
-.footer-end-turn-button:hover:not(:disabled),
+.footer-end-turn-button:hover:not(:disabled) {
+  background-color: var(--chrome-cta-bg);
+  border-color: var(--chrome-cta-border);
+}
+
 .footer-pass-combat-button:hover:not(:disabled) {
   background-color: var(--color-arrakis-parchment-muted, #e8d4a8);
 }

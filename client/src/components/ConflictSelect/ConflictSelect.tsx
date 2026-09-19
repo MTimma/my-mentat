@@ -63,7 +63,7 @@ const ConflictSelect: React.FC<ConflictSelectProps> = ({
     (multiSelect
       ? 'Select previous conflict cards'
       : readOnly
-        ? 'Previous conflicts'
+        ? 'Conflict discard'
         : `Select Conflict Card - Round ${currentRound}`)
 
   return (

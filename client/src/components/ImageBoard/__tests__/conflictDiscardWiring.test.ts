@@ -37,6 +37,10 @@ describe('Conflict discard pile wiring', () => {
     expect(css).toContain('.image-board__conflict-discard--filled')
   })
 
+  it('hides the empty discard slot outside sandbox setup', () => {
+    expect(imageBoard).toContain('if (discardCount === 0 && !sandboxSetup) return null')
+  })
+
   it('resets native button padding so play-mode discard is not a mini thumbnail', () => {
     expect(css).toMatch(/button\.image-board__conflict-panel \{[\s\S]*?padding:\s*0/)
     expect(css).toMatch(/\.image-board__conflict-card-img \{[\s\S]*?position:\s*absolute/)

@@ -483,6 +483,9 @@ describe('Leader gains leftover layout', () => {
     expect(seatChromeCss).toMatch(
       /\.birdseye-seat__primary,\s*\n\s*\.birdseye-seat__utils \{[\s\S]*?grid-template-columns:\s*minmax\(2\.7rem, 1fr\) minmax\(2\.7rem, 1fr\)/
     )
+    expect(seatChromeCss).toMatch(
+      /\.birdseye-seat__utils \.birdseye-seat-btn--intrigue:only-child \{[\s\S]*?grid-column:\s*1 \/ -1/
+    )
     expect(controls).not.toContain('position: absolute')
     expect(seatChromeCss).not.toContain('birdseye-controls-out-left')
     expect(seatChromeCss).not.toContain('birdseye-seat__controls-row--dock')

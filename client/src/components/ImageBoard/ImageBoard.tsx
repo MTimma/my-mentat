@@ -1108,6 +1108,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
               })()}
               {(() => {
                 const discardCount = discardCards.length
+                if (discardCount === 0 && !sandboxSetup) return null
                 const discardClickable =
                   Boolean(onConflictDiscardClick) && (Boolean(sandboxSetup) || discardCount > 0)
                 const discardTitle =
@@ -1136,7 +1137,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                       conflict={topDiscard}
                       imgFailed={conflictDiscardImgFailed}
                       onImgError={() => setConflictDiscardImgFailed(true)}
-                      emptyLabel="Previous conflicts"
+                      emptyLabel="Conflict discard"
                     />
                     {discardCount > 0 ? (
                       <span className="image-board__conflict-discard-count">{discardCount}</span>

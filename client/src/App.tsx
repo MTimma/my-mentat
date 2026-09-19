@@ -2252,7 +2252,7 @@ const GameContent = ({
           <ConflictSelect
             conflicts={displayState.conflictsDiscard}
             currentRound={displayState.currentRound}
-            title="Previous conflicts"
+            title="Conflict discard"
             readOnly
             onCancel={() => setConflictDiscardViewOpen(false)}
           />

@@ -80,6 +80,12 @@
   font-size: 0.58rem;
 }
 
+.birdseye-seat-btn--end-turn:hover:not(:disabled) {
+  background: var(--chrome-cta-bg, #8a6a28);
+  border-color: var(--chrome-cta-border, #d4b16a);
+  color: var(--chrome-cta-text, #fff8e8);
+}
+
 .birdseye-seat-btn--intrigue {
   border-color: rgba(143, 97, 188, 0.55);
 }
@@ -87,6 +93,10 @@
 .birdseye-seat-btn--intrigue,
 .birdseye-seat-btn--tech {
   min-width: 2.7rem;
+}
+
+.birdseye-seat__utils .birdseye-seat-btn--intrigue:only-child {
+  grid-column: 1 / -1;
 }
 
 .birdseye-seat-btn--intrigue img,
@@ -1190,7 +1200,7 @@
   transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
 
-.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn:hover:not(:disabled) {
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn:hover:not(:disabled):not(.birdseye-seat-btn--end-turn) {
   background: rgba(20, 16, 10, 0.88);
   border-color: rgba(255, 215, 0, 0.55);
 }
