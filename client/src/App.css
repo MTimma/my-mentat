@@ -2956,6 +2956,54 @@ body:has(.game-container--play) {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /*
+   * Birds-eye desktop: leader play-area leftover must be the *visible* leftover.
+   * The 4-row history grid sizes row 1 to content, so the dock grows past the
+   * viewport and .play-board-column clips it — intrigue cards sit off-screen
+   * with nothing to scroll.
+   */
+  .game-container--desktop-play.game-container--birdseye-desktop.game-container--history-panel-hidden
+    .play-board-column {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .game-container--desktop-play.game-container--birdseye-desktop.game-container--history-panel-hidden
+    .play-board-scroll {
+    grid-row: 1;
+    grid-column: 1;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .game-container--desktop-play.game-container--birdseye-desktop.game-container--history-panel-hidden
+    .play-shell-footer--docked {
+    grid-row: 2;
+    grid-column: 1;
+  }
+
+  .game-container--desktop-play.game-container--birdseye-desktop .play-board-and-history,
+  .game-container--desktop-play.game-container--birdseye-desktop .play-shell-board--fill {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  .game-container--desktop-play.game-container--birdseye-desktop.game-container--history-docked
+    .play-shell-board--fill
+    .image-board {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
   .game-container--play.play-footer-overlay--desktop {
     --play-footer-reserved-height: 0px;
   }

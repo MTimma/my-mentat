@@ -34,6 +34,7 @@ import {
   isRevealPooledRewardType,
   splitRevealPooledGains,
   getPersuasionSourceContributions,
+  isTechAcquireOfferGain,
 } from '../turnGainsDisplay'
 
 describe('turnGainsDisplay', () => {
@@ -843,9 +844,9 @@ describe('turnGainsDisplay', () => {
     ] as Parameters<typeof groupGainsBySource>[0])
 
     expect(groups).toHaveLength(2)
-    expect(groups[0].title).toBe('Tech: Windtraps')
+    expect(groups[0].title).toBe(ACQUIRE_GROUP_TITLE)
     expect(groups[0].gains).toHaveLength(3)
-    expect(groups[1].title).toBe('Tech: Training Drones')
+    expect(groups[1].title).toBe(ACQUIRE_GROUP_TITLE)
     expect(groups[1].gains).toHaveLength(3)
   })
 
@@ -1178,10 +1179,130 @@ describe('turnGainsDisplay', () => {
       },
     ] as Parameters<typeof groupGainsBySource>[0])
 
-    expect(groups.map(g => g.title)).toEqual(['Shipping 1', 'Shipping 2', 'Shipping 3'])
+    expect(groups.map(g => g.title)).toEqual(['Shipping 1', 'Shipping 2'])
     expect(groups[0].gains).toHaveLength(2)
     expect(groups[1].gains).toHaveLength(2)
-    expect(groups[2].gains).toHaveLength(1)
+  })
+
+  it('omits optional shipping tech when no tile was bought', () => {
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'Acquire Tech (−2)',
+        amount: 1,
+        type: RewardType.TECH,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0])
+
+    expect(groups).toHaveLength(0)
+    expect(
+      isTechAcquireOfferGain({
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'Acquire Tech (−2)',
+        amount: 1,
+        type: RewardType.TECH,
+      })
+    ).toBe(true)
+  })
+
+  it('folds a bought tech onto Shipping 3 instead of a Holoprojectors usage group', () => {
+    const holoprojectorsSourceId = techTileGainSourceId(TechTileId.HOLOPROJECTORS)
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'Acquire Tech (−2)',
+        amount: 1,
+        type: RewardType.TECH,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: holoprojectorsSourceId,
+        round: 1,
+        name: 'Holoprojectors',
+        amount: -1,
+        type: RewardType.SPICE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: holoprojectorsSourceId,
+        round: 1,
+        name: 'Holoprojectors',
+        amount: 1,
+        type: RewardType.TECH,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0])
+
+    expect(groups.map(g => g.title)).toEqual(['Shipping 3'])
+    expect(groups[0].gains).toEqual([
+      expect.objectContaining({ type: RewardType.SPICE, amount: -1, name: 'Holoprojectors' }),
+      expect.objectContaining({ type: RewardType.TECH, amount: 1, name: 'Holoprojectors' }),
+    ])
+  })
+
+  it('keeps Holoprojectors usage as discard → draw, separate from a shipping purchase', () => {
+    const holoprojectorsSourceId = techTileGainSourceId(TechTileId.HOLOPROJECTORS)
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.SHIPPING_TRACK,
+        sourceId: 0,
+        round: 1,
+        name: 'Acquire Tech (−2)',
+        amount: 1,
+        type: RewardType.TECH,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: holoprojectorsSourceId,
+        round: 1,
+        name: 'Holoprojectors',
+        amount: -1,
+        type: RewardType.SPICE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.IX_BOARD,
+        sourceId: holoprojectorsSourceId,
+        round: 1,
+        name: 'Holoprojectors',
+        amount: 1,
+        type: RewardType.TECH,
+      },
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: holoprojectorsSourceId,
+        cardId: 101,
+        round: 1,
+        name: 'Seek Allies',
+        amount: -1,
+        type: RewardType.DISCARD,
+      },
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: 0,
+        round: 1,
+        name: 'Holoprojectors',
+        amount: 1,
+        type: RewardType.DRAW,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0])
+
+    expect(groups.map(g => g.title)).toEqual(['Shipping 3', 'Tech: Holoprojectors'])
+    expect(groups[1].gains.map(g => g.type)).toEqual([RewardType.DISCARD, RewardType.DRAW])
   })
 
   it('maps shipping names and types to recall steps', () => {

@@ -48,6 +48,12 @@ describe('Alt / Option card zoom', () => {
     expect(tsx).toContain("'.birdseye-seat-play-area__card'")
   })
 
+  it('zooms acquired card titles to the full card image', () => {
+    expect(tsx).toContain("'.turn-gain-card-title'")
+    expect(tsx).toContain('CARD_TITLE_ZOOM_SELECTOR')
+    expect(tsx).toContain('findCardTitlePreviewImage')
+  })
+
   it('zooms on Alt / Option keydown without requiring a mouse move', () => {
     expect(tsx).toContain('pointerRef')
     expect(tsx).toContain('document.elementFromPoint')

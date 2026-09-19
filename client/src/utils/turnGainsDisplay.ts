@@ -472,11 +472,75 @@ function shippingStepFromName(name: string): 1 | 2 | 3 | null {
   return null
 }
 
+/** Optional Acquire Tech offer row — not an actual tile purchase. */
+export function isTechAcquireOfferGain(gain: Gain): boolean {
+  if (gain.type !== RewardType.TECH) return false
+  return /^Acquire Tech\b/i.test(gain.name) || gain.name === 'No tech tile available'
+}
+
+/** Ix-board row that actually added a named tech tile. */
+export function isTechTilePurchaseGain(gain: Gain): boolean {
+  return (
+    gain.source === GainSource.IX_BOARD &&
+    gain.type === RewardType.TECH &&
+    gain.amount > 0 &&
+    getTechTileByName(gain.name) != null
+  )
+}
+
+function ixBoardFamilyKey(gain: Gain): string {
+  const tileId = techTileFromGainSourceId(gain.sourceId) ?? getTechTileByName(gain.name)?.id
+  return `${gain.playerId}:${tileId ?? gain.name}`
+}
+
+/**
+ * Pair optional Acquire Tech offer rows with the Ix-board purchase they unlocked.
+ * Unmatched offers are dropped (the buy is optional). Purchases keep their tile name.
+ */
+function techPurchaseFoldTargets(gains: Gain[]): {
+  skipPlaceholders: Set<Gain>
+  foldToPlaceholder: Map<string, Gain>
+} {
+  const skipPlaceholders = new Set<Gain>()
+  const foldToPlaceholder = new Map<string, Gain>()
+  const placeholdersByPlayer = new Map<number, Gain[]>()
+  const purchasesByPlayer = new Map<number, Gain[]>()
+
+  for (const gain of gains) {
+    if (isTechAcquireOfferGain(gain)) {
+      const list = placeholdersByPlayer.get(gain.playerId) ?? []
+      list.push(gain)
+      placeholdersByPlayer.set(gain.playerId, list)
+    } else if (isTechTilePurchaseGain(gain)) {
+      const list = purchasesByPlayer.get(gain.playerId) ?? []
+      list.push(gain)
+      purchasesByPlayer.set(gain.playerId, list)
+    }
+  }
+
+  const playerIds = new Set([...placeholdersByPlayer.keys(), ...purchasesByPlayer.keys()])
+  for (const playerId of playerIds) {
+    const placeholders = placeholdersByPlayer.get(playerId) ?? []
+    const purchases = purchasesByPlayer.get(playerId) ?? []
+    const matched = Math.min(placeholders.length, purchases.length)
+    for (let i = 0; i < matched; i++) {
+      skipPlaceholders.add(placeholders[i]!)
+      foldToPlaceholder.set(ixBoardFamilyKey(purchases[i]!), placeholders[i]!)
+    }
+    for (let i = matched; i < placeholders.length; i++) {
+      skipPlaceholders.add(placeholders[i]!)
+    }
+  }
+
+  return { skipPlaceholders, foldToPlaceholder }
+}
+
 /** Recall/advance shipping-track step for grouping (1 spice/dividends, 2 troops+inf, 3 tech). */
 export function shippingTrackStepFromGain(gain: Gain): 1 | 2 | 3 | null {
   if (gain.source !== GainSource.SHIPPING_TRACK) return null
   const named = shippingStepFromName(gain.name)
   if (named) return named
+  if (isTechAcquireOfferGain(gain) || getTechTileByName(gain.name)) return 3
   switch (gain.type) {
     case RewardType.SPICE:
     case RewardType.SOLARI:
@@ -549,6 +613,9 @@ function boardSpaceTitleForGain(gain: Gain): string | undefined {
   return BOARD_SPACES.find(space => space.id === gain.sourceId)?.name
 }
 
+/** Source-group title for Imperium / reserve / intrigue card acquisitions. */
+export const ACQUIRE_GROUP_TITLE = 'Acquired'
+
 function abilityTitleForGain(gain: Gain): string | undefined {
   switch (gain.source) {
     case GainSource.MASTERSTROKE:
@@ -569,15 +636,12 @@ function abilityTitleForGain(gain: Gain): string | undefined {
     case GainSource.IX_BOARD: {
       const tileId = techTileFromGainSourceId(gain.sourceId)
       const tileName = tileId ? getTechTile(tileId)?.name : getTechTileByName(gain.name)?.name
-      return tileName ? `Tech: ${tileName}` : 'Ix board'
+      return tileName ? ACQUIRE_GROUP_TITLE : 'Ix board'
     }
     default:
       return undefined
   }
 }
-
-/** Source-group title for Imperium / reserve / intrigue card acquisitions. */
-export const ACQUIRE_GROUP_TITLE = 'Acquire'
 
 function isAcquireGainName(name: string): boolean {
   return name.endsWith(' Acquire') || name.endsWith(' Acquire Effect')
@@ -646,41 +710,62 @@ function conflictGainGroupKey(gain: Gain, placementTitles: Map<string, string>):
   return `${gain.source}:${gain.sourceId}:${title}:${gain.playerId}`
 }
 
+function sourceGroupKey(
+  groupingGain: Gain,
+  groupTitle: string,
+  acquiredIds: Set<number>,
+  conflictPlacements: Map<string, string>
+): string {
+  const isAcquire = isAcquireRelatedGain(groupingGain, acquiredIds)
+  if (groupingGain.source === GainSource.CONFLICT) {
+    return conflictGainGroupKey(groupingGain, conflictPlacements)
+  }
+  if (isAcquire) {
+    return `${GainSource.CARD}:acquire:${groupingGain.sourceId}:${groupingGain.playerId}`
+  }
+  if (groupingGain.source === GainSource.TECH) {
+    return `${groupingGain.source}:${techIdentityForGain(groupingGain)}:${groupingGain.playerId}`
+  }
+  if (groupingGain.source === GainSource.SHIPPING_TRACK) {
+    return `${groupingGain.source}:${shippingTrackStepFromGain(groupingGain) ?? 0}:${groupingGain.playerId}`
+  }
+  if (groupingGain.source === GainSource.IX_BOARD) {
+    return `${groupingGain.source}:${groupingGain.sourceId}:${groupingGain.name}:${groupingGain.playerId}`
+  }
+  if (groupingGain.source === GainSource.CARD) {
+    return `${groupingGain.source}:${groupTitle}:${groupingGain.playerId}`
+  }
+  return `${groupingGain.source}:${groupingGain.sourceId}`
+}
+
 /** Group gains by effect source so costs and rewards stay together. */
 export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
   const order: string[] = []
   const map = new Map<string, TurnGainSourceGroup>()
   const conflictPlacements = buildConflictPlacementTitlesByPlayer(gains)
   const acquiredIds = acquiredCardSourceIds(gains)
+  const { skipPlaceholders, foldToPlaceholder } = techPurchaseFoldTargets(gains)
 
   for (const gain of gains) {
-    const isAcquire = isAcquireRelatedGain(gain, acquiredIds)
+    if (skipPlaceholders.has(gain)) continue
+    const groupingGain =
+      gain.source === GainSource.IX_BOARD
+        ? (foldToPlaceholder.get(ixBoardFamilyKey(gain)) ?? gain)
+        : gain
+    const isAcquire = isAcquireRelatedGain(groupingGain, acquiredIds)
     const groupTitle =
-      gain.source === GainSource.CONFLICT
-        ? conflictGainDisplayTitle(gain, conflictPlacements)
-        : titleForGainGroup(gain, acquiredIds)
-    const key =
-      gain.source === GainSource.CONFLICT
-        ? conflictGainGroupKey(gain, conflictPlacements)
-        : isAcquire
-          ? `${GainSource.CARD}:acquire:${gain.sourceId}:${gain.playerId}`
-        : gain.source === GainSource.TECH
-          ? `${gain.source}:${techIdentityForGain(gain)}:${gain.playerId}`
-          : gain.source === GainSource.SHIPPING_TRACK
-            ? `${gain.source}:${shippingTrackStepFromGain(gain) ?? 0}:${gain.playerId}`
-            : gain.source === GainSource.IX_BOARD
-            ? `${gain.source}:${gain.sourceId}:${gain.name}:${gain.playerId}`
-            : gain.source === GainSource.CARD
-              ? `${gain.source}:${groupTitle}:${gain.playerId}`
-              : `${gain.source}:${gain.sourceId}`
+      groupingGain.source === GainSource.CONFLICT
+        ? conflictGainDisplayTitle(groupingGain, conflictPlacements)
+        : titleForGainGroup(groupingGain, acquiredIds)
+    const key = sourceGroupKey(groupingGain, groupTitle, acquiredIds, conflictPlacements)
     const existing = map.get(key)
     if (existing) {
       existing.gains.push(gain)
       if (isAcquire) {
         existing.title = ACQUIRE_GROUP_TITLE
       } else {
-        const abilityTitle = abilityTitleForGain(gain)
-        const spaceTitle = boardSpaceTitleForGain(gain)
+        const abilityTitle = abilityTitleForGain(groupingGain)
+        const spaceTitle = boardSpaceTitleForGain(groupingGain)
         if (abilityTitle) existing.title = abilityTitle
         else if (spaceTitle) existing.title = spaceTitle
       }
@@ -698,9 +783,11 @@ export function aggregateResourceGains(gains: Gain[]): AggregatedResourceGain[] 
 
   gains.forEach(gain => {
     if (gain.type === RewardType.INFLUENCE || gain.amount === 0) return
+    if (isTechAcquireOfferGain(gain)) return
     const isTrashOrDiscard =
       gain.type === RewardType.TRASH || gain.type === RewardType.DISCARD
     const isCardLike = gain.type === RewardType.CARD || isTrashOrDiscard
+    const isTechTile = gain.type === RewardType.TECH
     const trashedCardId = isTrashOrDiscard ? trashedCardIdFromGain(gain) : undefined
     const cardIdForAggregate = isTrashOrDiscard
       ? trashedCardId
@@ -711,7 +798,9 @@ export function aggregateResourceGains(gains: Gain[]): AggregatedResourceGain[] 
       ? `${gain.type}:${cardIdForAggregate ?? gain.sourceId}`
       : gain.type === RewardType.CARD
         ? `${gain.type}:${gain.name || gain.sourceId}`
-        : gain.type
+        : isTechTile
+          ? `${gain.type}:${gain.name}`
+          : gain.type
     const existing = aggregated.get(key)
     if (existing) {
       existing.amount += gain.amount
@@ -719,7 +808,7 @@ export function aggregateResourceGains(gains: Gain[]): AggregatedResourceGain[] 
       aggregated.set(key, {
         type: gain.type,
         amount: gain.amount,
-        name: isCardLike ? gain.name : gain.type === RewardType.CARD ? gain.name : undefined,
+        name: isCardLike || isTechTile ? gain.name : undefined,
         cardId: cardIdForAggregate,
       })
     }
@@ -744,6 +833,7 @@ export function computeTurnGainTotals(gains: Gain[]): TurnGainTotals {
 
   for (const gain of gains) {
     if (gain.amount === 0) continue
+    if (isTechAcquireOfferGain(gain)) continue
 
     if (gain.type === RewardType.INFLUENCE) {
       const factionKey = factionFromInfluenceGainName(gain.name) ?? gain.name

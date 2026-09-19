@@ -220,10 +220,10 @@ function liveBannerKind(state: GameState): BirdseyeHistoryBannerKind | null {
 
 /**
  * Chess-style move grid: one column per leader, in seat order (swimlanes).
- * A new row starts when a column would collide, and at every round/combat
- * boundary so leftover empty seats are not filled by the next round.
- * The round's first player stays in their leader column — leading cells
- * stay empty until that leader acts.
+ * A new row starts when a column would collide, at every round/combat
+ * boundary, and when turn order wraps left of the round's first player.
+ * The wrap-around turn starts the next row; later turns in that cycle
+ * fill the same row (swimlanes), they do not each open a new row.
  */
 export function buildBirdseyeTurnHistoryGrid(
   history: GameState[],
@@ -237,6 +237,8 @@ export function buildBirdseyeTurnHistoryGrid(
   const rows: BirdseyeHistoryGridRow[] = []
   let cells: Array<BirdseyeHistoryCell | null> = Array(colCount).fill(null)
   let activeRound: number | undefined
+  let firstPlayerCol = 0
+  let roundFirstPlayerLocked = false
 
   const rowHasTurns = () => cells.some(cell => cell != null)
 
@@ -246,23 +248,41 @@ export function buildBirdseyeTurnHistoryGrid(
     cells = Array(colCount).fill(null)
   }
 
-  const beginRound = (round: number | undefined) => {
+  const setFirstPlayerCol = (firstPlayerId: number | undefined) => {
+    if (firstPlayerId == null) return
+    const col = colOf.get(firstPlayerId)
+    if (col == null) return
+    firstPlayerCol = col
+    roundFirstPlayerLocked = true
+  }
+
+  const beginRound = (round: number | undefined, firstPlayerId?: number) => {
     flush()
     if (round != null) activeRound = round
+    firstPlayerCol = 0
+    roundFirstPlayerLocked = false
+    setFirstPlayerCol(firstPlayerId)
   }
+
+  const markerId = (turn: GameState): number | undefined =>
+    typeof turn.firstPlayerMarker === 'number' ? turn.firstPlayerMarker : undefined
 
   const preparePlayerTurnRound = (turn: GameState) => {
     const round = turn.currentRound
     if (activeRound != null && round != null && round !== activeRound) {
-      beginRound(round)
+      beginRound(round, markerId(turn))
       return
     }
     if (round != null) activeRound = round
   }
 
+  const rowHasMainSide = () => cells.some((cell, index) => cell != null && index >= firstPlayerCol)
+
   const placeTurn = (historyIndex: number, playerId: number, isLive: boolean) => {
     const col = colOf.get(playerId)
     if (col == null) return
+    if (!roundFirstPlayerLocked) setFirstPlayerCol(playerId)
+    if (col < firstPlayerCol && rowHasMainSide()) flush()
     if (cells[col] != null) flush()
     cells[col] = { historyIndex, playerId, isLive }
   }
@@ -272,7 +292,7 @@ export function buildBirdseyeTurnHistoryGrid(
     if (!turn) continue
     if (isMetaHistoryEntry(turn)) {
       if (isRoundStartHistoryEntry(turn)) {
-        beginRound(turn.currentRound)
+        beginRound(turn.currentRound, markerId(turn))
       } else {
         flush()
       }
@@ -290,6 +310,7 @@ export function buildBirdseyeTurnHistoryGrid(
       const playerId = historyPlayerId(liveState)
       if (playerId != null) {
         preparePlayerTurnRound(liveState)
+        if (!roundFirstPlayerLocked) setFirstPlayerCol(markerId(liveState) ?? playerId)
         placeTurn(history.length, playerId, true)
       }
     } else {

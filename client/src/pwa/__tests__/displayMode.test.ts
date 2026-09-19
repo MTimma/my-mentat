@@ -18,4 +18,17 @@ describe('PWA home-screen fullscreen', () => {
     expect(vite).toMatch(/display:\s*'standalone'/)
     expect(vite).toContain('display_override')
   })
+
+  it('treats desktop fullscreen as fill-screen, not as an installed PWA notch', () => {
+    const displayMode = readFileSync(resolve(clientRoot, 'src/pwa/displayMode.ts'), 'utf8')
+    expect(displayMode).toContain('export function isFullscreenDisplay')
+    expect(displayMode).toContain('export function isFillScreenDisplay')
+    expect(displayMode).toContain('isStandaloneDisplay() || isFullscreenDisplay()')
+    const standaloneFn = displayMode.slice(
+      displayMode.indexOf('export function isStandaloneDisplay'),
+      displayMode.indexOf('export function isFullscreenDisplay')
+    )
+    expect(standaloneFn).toContain("display-mode: standalone")
+    expect(standaloneFn).not.toContain("display-mode: fullscreen")
+  })
 })

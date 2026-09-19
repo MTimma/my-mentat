@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { Card } from '../../types/GameTypes'
 import { getLeaderIconPath, LEADER_NAMES } from '../../data/leaders'
 import { BoardScopedModal } from '../BoardScopedModal'
-import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
 import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './ImperiumRow.css'
 
@@ -29,7 +28,6 @@ interface ImperiumRowProps {
   sandboxSetup?: {
     onConfigure: () => void
     requiredCount: number
-    showSetupHint?: boolean
   }
 }
 
@@ -124,9 +122,6 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
     cards.length === sandboxRequiredCount
       ? 'Change imperium row'
       : `Set imperium row (${cards.length}/${sandboxRequiredCount})`
-  const showSandboxHint = Boolean(
-    sandboxSetup?.showSetupHint && cards.length < sandboxRequiredCount
-  )
 
   return (
     <div
@@ -138,14 +133,6 @@ const ImperiumRow: React.FC<ImperiumRowProps> = ({
         .filter(Boolean)
         .join(' ')}
     >
-      {showSandboxHint ? (
-        <SandboxSetupHint
-          label="Pick 5 cards for the Imperium row"
-          placement="inline"
-          size="large"
-          className="sandbox-setup-hint--imperium-row"
-        />
-      ) : null}
       <div className="imperium-row-layout imperium-row-layout--single">
         <div className="imperium-row-strip no-buttons" aria-label="Imperium row">
           {sandboxSetup ? (

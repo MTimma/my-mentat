@@ -65,6 +65,7 @@ export function getRewardDisplayName(type: RewardType, name?: string): string {
     case RewardType.PERSUASION: return 'Persuasion'
     case RewardType.DREADNOUGHT: return 'Dreadnought'
     case RewardType.FREIGHTER: return name || 'Freighter'
+    case RewardType.TECH: return name || 'Tech'
 
     default: return type
   }

@@ -160,6 +160,33 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
+.turn-gain-tech-title,
+.turn-gain-card-title {
+  max-width: 7.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.2;
+  font-family: var(--font-log);
+  color: var(--chrome-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.turn-gain-card-title {
+  position: relative;
+  display: inline-block;
+}
+
+.turn-gain-card-title-zoom-src {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .turn-gain-card-thumb--fallback {
   padding: 2px 4px;
   border-radius: 3px;
@@ -332,6 +359,12 @@
   gap: 4px;
 }
 
+/* Invisible by default so history / overlay layouts stay a single row. */
+.turn-gain-source-flow__before,
+.turn-gain-source-flow__after {
+  display: contents;
+}
+
 .turn-gain-source-flow__tech-badge {
   flex-shrink: 0;
 }
@@ -472,8 +505,8 @@
 }
 
 .turn-gains-display .gain-multiplier {
-  font-size: 0.72em;
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 800;
   letter-spacing: 0.02em;
   line-height: 1;
   opacity: 0.92;
@@ -548,7 +581,7 @@
 
 .turn-gains-display .gain-persuasion-count {
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .turn-round-gains {

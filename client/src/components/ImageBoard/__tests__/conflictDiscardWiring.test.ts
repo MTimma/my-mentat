@@ -32,6 +32,11 @@ describe('Conflict discard pile wiring', () => {
     expect(imageBoard).toContain('image-board__conflict-discard-count')
   })
 
+  it('tints the previous-conflicts slot when the pile has cards', () => {
+    expect(imageBoard).toContain("discardCount > 0 ? 'image-board__conflict-discard--filled' : ''")
+    expect(css).toContain('.image-board__conflict-discard--filled')
+  })
+
   it('resets native button padding so play-mode discard is not a mini thumbnail', () => {
     expect(css).toMatch(/button\.image-board__conflict-panel \{[\s\S]*?padding:\s*0/)
     expect(css).toMatch(/\.image-board__conflict-card-img \{[\s\S]*?position:\s*absolute/)

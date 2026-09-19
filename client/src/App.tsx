@@ -98,7 +98,7 @@ import {
   DESKTOP_PLAY_LAYOUT_MQ,
   DOCKED_HISTORY_LAYOUT_MQ,
 } from './constants/playLayout'
-import { getPlayViewportSize, isStandaloneDisplay } from './pwa/displayMode'
+import { getPlayViewportSize, isFillScreenDisplay } from './pwa/displayMode'
 import {
   countPlayerTurns,
   formatTurnRoundHeader,
@@ -1550,7 +1550,7 @@ const GameContent = ({
   // Always when image board — includes tablet 601–900 (Chrome half-window / iPad).
   const showPlayAreaDrawerToggle = useImageBoard
   const isCompactPlayOverlay = useImageBoard && !isDesktopPlayView
-  const hideDockedHistory = isDesktopPlayView && desktopPlayAreaLayout === 'horizontal'
+  const hideDockedHistory = isDesktopPlayView
   const showTurnHistoryPanel =
     (isDockedHistoryLayout || isTurnHistoryOpen) && !hideDockedHistory
 
@@ -1973,7 +1973,6 @@ const GameContent = ({
                   ? {
                       onConfigure: () => setSandboxImperiumOpen(true),
                       requiredCount: 5,
-                      showSetupHint: showBoardInfoTips,
                     }
                   : undefined
               }
@@ -2867,7 +2866,7 @@ function App() {
     const sync = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
-        if (isStandaloneDisplay()) {
+        if (isFillScreenDisplay()) {
           document.documentElement.style.setProperty('--vv-layout-gap-bottom', '0px')
           return
         }

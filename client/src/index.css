@@ -54,12 +54,10 @@ body {
   padding-right: env(safe-area-inset-right, 0px);
 }
 
-/* Installed PWA: fill the screen. Do not keep the in-browser visualViewport chrome gap. */
+/* Installed PWA / OS fullscreen: fill the screen. Do not keep the in-browser visualViewport chrome gap. */
 @media (display-mode: standalone), (display-mode: fullscreen) {
   :root {
     --vv-layout-gap-bottom: 0px;
-    /* env() is often 0 in iOS PWA; JS may raise --pwa-safe-top further */
-    --pwa-safe-top: max(47px, env(safe-area-inset-top, 0px), constant(safe-area-inset-top, 0px));
   }
 
   html,
@@ -69,8 +67,27 @@ body {
     min-height: 100dvh;
     min-height: -webkit-fill-available;
   }
+}
+
+/* Installed PWA: iOS often reports env(safe-area-inset-top) as 0 — floor at 47px for notch/status bar. */
+@media (display-mode: standalone) {
+  :root {
+    /* env() is often 0 in iOS PWA; JS may raise --pwa-safe-top further */
+    --pwa-safe-top: max(47px, env(safe-area-inset-top, 0px), constant(safe-area-inset-top, 0px));
+  }
 
   /* Pad the play shell itself — body padding fights App.css height: 100dvh rules. */
+  .game-container--play {
+    padding-top: var(--pwa-safe-top);
+  }
+}
+
+/* Desktop F11 / window fullscreen: use the real inset only. Do not invent an iOS notch. */
+@media (display-mode: fullscreen) {
+  :root {
+    --pwa-safe-top: max(0px, env(safe-area-inset-top, 0px), constant(safe-area-inset-top, 0px));
+  }
+
   .game-container--play {
     padding-top: var(--pwa-safe-top);
   }

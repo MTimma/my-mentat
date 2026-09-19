@@ -325,6 +325,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const combatAreaBelow = combatAreaPlacement === 'below'
   const sidePanelDocked = ixBoardDocked || immortalityBoardDocked || combatAreaDocked
   const showSandboxSetupHints = Boolean(showBoardInfoTips && sandboxSetup)
+  const sandboxImperiumRequiredCount = 5
+  const showImperiumRowSandboxHint = Boolean(
+    showSandboxSetupHints &&
+      gameStateForMarkers.imperiumRow.length < sandboxImperiumRequiredCount
+  )
   const boardHotspots = BOARD_HOTSPOTS_FOR_EXPANSIONS(gameStateForMarkers.expansions)
   const markerAnchors = markerAnchorsForExpansions(gameStateForMarkers.expansions).filter(
     anchor => !ixBoardDocked || (anchor.spaceId !== 23 && anchor.spaceId !== 24)
@@ -1068,7 +1073,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                     conflict={currentConflict}
                     imgFailed={conflictImgFailed}
                     onImgError={() => setConflictImgFailed(true)}
-                    emptyLabel="Select Conflict"
+                    emptyLabel="Current conflict"
                   />
                 )
 
@@ -1121,6 +1126,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   'image-board__conflict-panel',
                   'image-board__conflict-discard',
                   sandboxSetup ? 'image-board__conflict-panel--sandbox' : '',
+                  discardCount > 0 ? 'image-board__conflict-discard--filled' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')
@@ -1435,16 +1441,25 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           </div>
 
           <div className="image-board__tutorial-messages-layer" aria-hidden={false}>
+            {showImperiumRowSandboxHint ? (
+              <SandboxSetupHint
+                anchor="center"
+                size="large"
+                label="Pick 5 cards for the Imperium row"
+                className="sandbox-setup-hint--imperium-row"
+                style={{ left: '50%', top: '3%' }}
+              />
+            ) : null}
             {showBoardInfoTips && sandboxSetup && showConflictPanel && !hasConflict ? (
               <SandboxSetupHint
                 anchor="center"
                 placement="above"
                 size="large"
-                label="Pick this round's conflict card"
+                label="Pick the conflict card"
                 className="sandbox-setup-hint--conflict"
                 style={{
-                  left: `${conflictBox.left + conflictBox.width / 2}%`,
-                  top: `${Math.max(8, conflictBox.top - 10)}%`,
+                  left: `${conflictBox.left + conflictBox.width / 2 + 5}%`,
+                  top: `${Math.max(8, conflictBox.top )}%`,
                 }}
               />
             ) : null}

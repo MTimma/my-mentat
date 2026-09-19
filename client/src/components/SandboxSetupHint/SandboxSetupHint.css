@@ -73,7 +73,8 @@
 }
 
 .sandbox-setup-hint--imperium-row {
-  margin-bottom: 6px;
+  width: max-content;
+  max-width: min(36ch, 52%);
 }
 
 .sandbox-setup-hint--large {
@@ -98,7 +99,7 @@
 .sandbox-setup-hint--leaders {
   position: absolute;
   right: calc(50% - 130px);
-  top: 10%;
+  top: 20%;
   z-index: var(--z-board-tutorial-message, 50);
   margin: 0;
   width: max-content;

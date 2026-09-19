@@ -352,7 +352,8 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   const isLinear = isRow || isColumn
   const birdseyeEnabled =
     Boolean(birdseyeMode) && ((isRow && birdseyeMode === 'mobile3b') || (isColumn && birdseyeMode === 'desktop6'))
-  const playAreaHorizontal = isColumn && birdseyeEnabled && desktopPlayAreaLayout === 'horizontal'
+  /** Desktop birdseye is always the chess-style horizontal log. Mobile stays vertical. */
+  const playAreaHorizontal = isColumn && birdseyeEnabled
   const pendingEffectCardIds = playAreaCardIdsWithPendingEffectChoice(gameState, {
     isHistoryView: birdseyeIsHistoryView,
   })
@@ -584,7 +585,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
             .filter(Boolean)
             .join(' ')}
         >
-          {isColumn && birdseyeEnabled ? (
+          {isRow && birdseyeEnabled ? (
             <div
               className="combat-area-cluster__gains-dir"
               role="group"
@@ -593,18 +594,11 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
               <button
                 type="button"
                 className="combat-area-cluster__gains-dir-btn"
-                aria-pressed={!playAreaHorizontal}
+                aria-pressed
+                hidden={true}
                 onClick={() => setDesktopPlayAreaLayout('vertical')}
               >
                 Turn log vertical
-              </button>
-              <button
-                type="button"
-                className="combat-area-cluster__gains-dir-btn"
-                aria-pressed={playAreaHorizontal}
-                onClick={() => setDesktopPlayAreaLayout('horizontal')}
-              >
-                Turn log horizontal
               </button>
             </div>
           ) : null}

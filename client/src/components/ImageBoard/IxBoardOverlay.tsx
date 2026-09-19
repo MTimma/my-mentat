@@ -151,8 +151,8 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
             size="large"
             className="sandbox-setup-hint--tech-tiles"
             style={{
-              left: `${(IX_TECH_TILE_RECTS[0]?.left ?? 56) + 55}%`,
-              top: `${(IX_TECH_TILE_RECTS[0]?.top ?? 5) - 20}%`,
+              left: `${(IX_TECH_TILE_RECTS[0]?.left ?? 56) + 35}%`,
+              top: `${(IX_TECH_TILE_RECTS[0]?.top ?? 5) - 25}%`,
             }}
           />
         ) : null}

@@ -36,12 +36,16 @@ const TITLE_BACKUP_ATTR = 'data-zoom-title-backup'
 
 const GAIN_ZOOM_GROUP_SELECTOR = '.turn-gain-source-group, .turn-gain-totals-group'
 
+/** Acquired card titles zoom to the full card, even when nested in a gain chip. */
+const CARD_TITLE_ZOOM_SELECTOR = '.turn-gain-card-title, .reveal-turn-acquired-card'
+
 /** Containers where hover may hit padding/chrome but a preview image lives inside. */
 const PREVIEW_FRAME_SELECTOR = [
   '.birdseye-seat-play-area__card',
   '.turn-card-frame',
   '.turn-history-card-thumb',
   '.turn-gain-card-thumb',
+  '.turn-gain-card-title',
   '.reveal-turn-revealed-card',
   '.reveal-turn-acquired-card',
   '.player-tech-tiles__tile',
@@ -90,6 +94,14 @@ function findGainZoomTarget(target: EventTarget | null): HTMLElement | null {
     if (inner instanceof HTMLElement) return inner
   }
   return null
+}
+
+function findCardTitlePreviewImage(target: EventTarget | null): HTMLImageElement | null {
+  if (!(target instanceof Element)) return null
+  const frame = target.closest(CARD_TITLE_ZOOM_SELECTOR)
+  if (!frame) return null
+  const img = frame.querySelector('img[data-preview-src]')
+  return img instanceof HTMLImageElement && isVisiblePreviewTarget(img) ? img : null
 }
 
 function findPreviewImageFromTarget(target: EventTarget | null): HTMLImageElement | null {
@@ -262,6 +274,17 @@ function resolvePreview(
   target: EventTarget | null
 ): PreviewState | null {
   const fromPoint = document.elementFromPoint(x, y)
+  const titleImg = findCardTitlePreviewImage(target) ?? findCardTitlePreviewImage(fromPoint)
+  if (titleImg) {
+    return {
+      kind: 'image',
+      src: titleImg.getAttribute('data-preview-src') ?? titleImg.src,
+      alt: titleImg.alt || 'Preview',
+      x,
+      y,
+    }
+  }
+
   const gainEl = findGainZoomTarget(target) ?? findGainZoomTarget(fromPoint)
   if (gainEl) {
     const rect = gainEl.getBoundingClientRect()

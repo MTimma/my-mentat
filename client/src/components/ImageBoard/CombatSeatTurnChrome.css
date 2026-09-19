@@ -1,5 +1,46 @@
 /* Birds-eye seat chrome — mobile 3b / desktop 6 */
 
+/*
+ * Persistent per-pane thumbs. Native overlay bars hide and only paint on the
+ * active scroller. Invented names `.birdseye-lane-scroll` / `-rail` / `-thumb`.
+ */
+.birdseye-lane-scroll {
+  scrollbar-width: none;
+}
+
+.birdseye-lane-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.birdseye-lane-scroll-rail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  width: 6px;
+  pointer-events: none;
+}
+
+.birdseye-lane-scroll-thumb {
+  position: absolute;
+  left: 0;
+  width: 6px;
+  background: rgba(212, 177, 106, 0.4);
+  border-radius: 999px;
+}
+
+.birdseye-turn-history__scroll-host {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
 .birdseye-seat-btn {
   display: inline-flex;
   flex-direction: column;
@@ -605,7 +646,8 @@
   border-left: none;
   height: auto;
   max-height: 100%;
-  max-width: none;
+  width: 100%;
+  max-width: 100%;
   flex: 0 1 auto;
   min-width: 0;
   min-height: 0;
@@ -619,21 +661,11 @@
 .combat-area-cluster--column .birdseye-seat-gains__scroll {
   flex: 1 1 auto;
   min-height: 0;
+  max-height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0.16rem 0.2rem 0.2rem;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212, 177, 106, 0.4) transparent;
-}
-
-.combat-area-cluster--column .birdseye-seat-gains__scroll::-webkit-scrollbar {
-  width: 6px;
-}
-
-.combat-area-cluster--column .birdseye-seat-gains__scroll::-webkit-scrollbar-thumb {
-  background: rgba(212, 177, 106, 0.4);
-  border-radius: 999px;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains--overflow-start::before,
@@ -641,7 +673,7 @@
   content: '';
   position: absolute;
   left: 0;
-  right: 0;
+  right: 6px;
   z-index: 1;
   height: 1.15rem;
   pointer-events: none;
@@ -662,7 +694,7 @@
   .combat-area-cluster__seat:not(.combat-area-cluster__seat--active)
   .birdseye-seat-gains {
   flex: 0 1 auto;
-  max-width: none;
+  max-width: 100%;
 }
 
 .combat-area-cluster--column
@@ -692,6 +724,9 @@
   align-items: stretch;
   align-content: start;
   gap: 0.22rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   font-size: 0.86em;
 }
 
@@ -700,10 +735,13 @@
   flex-direction: column;
   align-items: stretch;
   gap: 0.12rem;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
   height: auto;
   max-height: none;
   overflow: hidden;
+  box-sizing: border-box;
   padding: 0.1rem 0.22rem 0.12rem;
   border-radius: 5px;
   border: 1px solid rgba(255, 248, 232, 0.14);
@@ -730,10 +768,37 @@
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-flow {
   flex: 0 0 auto;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-content: start;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
   overflow: hidden;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-flow__before {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-flow__after {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: start;
+  gap: 4px;
+  flex: 1 0 auto;
+  max-width: 100%;
+}
+
+.combat-area-cluster--column .birdseye-seat-gains .turn-gains-side {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-card-thumb-img {
@@ -761,8 +826,11 @@
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-resource-amt,
-.combat-area-cluster--column .birdseye-seat-gains .turn-gain-combat-count {
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-combat-count,
+.combat-area-cluster--column .birdseye-seat-gains .gain-multiplier,
+.combat-area-cluster--column .birdseye-seat-gains .gain-persuasion-count {
   font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .combat-area-cluster--column
@@ -1012,6 +1080,11 @@
   border-bottom: 1px solid rgba(255, 248, 232, 0.14);
 }
 
+/* Desktop dock never shows orientation toggles. */
+.combat-area-cluster-stack--column > .combat-area-cluster__gains-dir {
+  display: none;
+}
+
 .combat-area-cluster__gains-dir-btn {
   flex: 1 1 0;
   min-width: 0;
@@ -1203,14 +1276,16 @@
 }
 
 .combat-area-cluster--column .birdseye-seat-play-area {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  flex: 1 1 auto;
-  min-height: 2.4rem;
+  /* 0 basis: leftover lane height, not card-stack height (so the stack can scroll). */
+  flex: 1 1 0;
+  min-height: 0;
   min-width: 0;
   overflow: hidden;
-  padding: 0.18rem 0.2rem 0.22rem;
+  padding: 0;
   border-top: 1px dashed rgba(255, 248, 232, 0.16);
   background:
     linear-gradient(var(--player-tint, transparent), var(--player-tint, transparent)),
@@ -1227,26 +1302,47 @@
 }
 
 .combat-area-cluster--column .birdseye-seat-play-area__well {
-  flex: 1 1 auto;
-  min-height: 2.4rem;
+  position: absolute;
+  inset: 0.18rem 0.2rem 0.22rem;
+  min-height: 0;
   border: 1px dashed rgba(255, 248, 232, 0.1);
   border-radius: 4px;
   background: rgba(255, 248, 232, 0.02);
 }
 
 .combat-area-cluster--column .birdseye-seat-play-area__stack {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1 1 auto;
   min-height: 0;
-  max-height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212, 177, 106, 0.4) transparent;
-  padding-bottom: 0.2rem;
+  padding: 0.18rem 0.2rem 0.22rem;
+  box-sizing: border-box;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area--overflow-start::before,
+.combat-area-cluster--column .birdseye-seat-play-area--overflow-end::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 6px;
+  z-index: 3;
+  height: 1.15rem;
+  pointer-events: none;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area--overflow-start::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.78), transparent);
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area--overflow-end::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78), transparent);
 }
 
 .combat-area-cluster--column .birdseye-seat-play-area__cards {
@@ -1322,17 +1418,11 @@
   flex: 0 0 auto;
   width: 100%;
   isolation: isolate;
-  margin-top: 0.28rem;
-  padding-top: 0.22rem;
-  border-top: 1px dashed rgba(143, 97, 188, 0.38);
 }
 
 .combat-area-cluster--column .birdseye-seat-play-area__card--intrigue {
   --play-card-max-w: 4.6rem;
   --play-card-w-pct: 0.74;
-  box-shadow:
-    0 0 0 1px rgba(143, 97, 188, 0.48),
-    0 3px 8px rgba(0, 0, 0, 0.45);
 }
 
 .combat-area-cluster--column .birdseye-seat-play-area__card--active-intrigue {
@@ -1495,7 +1585,9 @@
 
 .combat-area-cluster--row .birdseye-seat-gains .turn-gain-resource-amt,
 .combat-area-cluster--row .birdseye-seat-gains .turn-gain-combat-count,
-.combat-area-cluster--row .birdseye-seat-gains .turn-gain-total-amt {
+.combat-area-cluster--row .birdseye-seat-gains .turn-gain-total-amt,
+.combat-area-cluster--row .birdseye-seat-gains .gain-multiplier,
+.combat-area-cluster--row .birdseye-seat-gains .gain-persuasion-count {
   font-size: 0.62rem;
   font-weight: 700;
 }
@@ -1613,17 +1705,22 @@
   grid-template-rows: var(--birdseye-gains-slot-height) var(--birdseye-desktop-face-height) minmax(0, 1fr);
   align-items: stretch;
   flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   min-height: 0;
-  height: auto;
+  height: 100%;
   gap: 0;
   overflow: visible;
 }
 
 .combat-area-cluster--column.combat-area-cluster--play-horizontal {
+  /* Fill leftover below the turn log; do not use height: 100% (that includes the log). */
   flex: 1 1 auto;
   min-height: 0;
+  height: auto;
   grid-template-rows:
-    minmax(0, var(--birdseye-gains-slot-height))
+    var(--birdseye-gains-slot-height)
     var(--birdseye-desktop-face-height)
     minmax(0, 1fr);
 }
@@ -1633,8 +1730,7 @@
 }
 
 .combat-area-cluster-stack--play-horizontal .combat-area-cluster--column .combat-area-cluster__seat-gains-slot {
-  height: auto;
-  max-height: var(--birdseye-gains-slot-height);
+  height: 100%;
 }
 
 .combat-area-cluster-stack--play-horizontal .combat-area-cluster--column .combat-area-cluster__seat-meta {
@@ -1704,8 +1800,6 @@
   overscroll-behavior: contain;
   overflow-anchor: none;
   scroll-snap-type: y mandatory;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212, 177, 106, 0.4) transparent;
 }
 
 .birdseye-turn-history__round {

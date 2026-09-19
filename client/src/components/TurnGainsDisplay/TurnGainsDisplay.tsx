@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { Card, Gain, GainSource, PlayerColor, RewardType } from '../../types/GameTypes'
 import {
+  ACQUIRE_GROUP_TITLE,
   aggregateInfluenceGains,
   aggregateResourceGains,
   computeTurnGainTotals,
@@ -258,6 +259,40 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     )
   }
 
+  const renderTechTileGain = (name: string | undefined, key: string) => {
+    const tile = name ? getTechTileByName(name) : undefined
+    const label = tile?.name ?? name ?? 'Tech'
+    return (
+      <span key={key} className="turn-gain-tech-title" title={label}>
+        {label}
+      </span>
+    )
+  }
+
+  const renderAcquiredCardTitle = (cardId: number | undefined, name: string | undefined, key: string) => {
+    const card = cardId != null ? resolveCard?.(cardId, name ?? '') : undefined
+    const label = card?.name ?? name ?? 'Card'
+    const image = card?.image
+    return (
+      <span
+        key={key}
+        className="turn-gain-card-title"
+        title={image ? withImageZoomHint(label) : label}
+      >
+        {image ? (
+          <img
+            src={image}
+            alt=""
+            className="turn-gain-card-title-zoom-src"
+            draggable={false}
+            data-preview-src={image}
+          />
+        ) : null}
+        {label}
+      </span>
+    )
+  }
+
   const renderCardGains = (cardId: number | undefined, name: string | undefined, amount: number, key: string) => {
     if (cardId != null && name && resolveCard) {
       return renderCardThumb(cardId, name, amount, key)
@@ -337,7 +372,8 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   const renderResourceGain = (
     gain: AggregatedResourceGain,
     index: number,
-    side: 'cost' | 'reward'
+    side: 'cost' | 'reward',
+    acquiredCardTitle = false
   ) => {
     const rewardType = gain.type as RewardType
     const iconPath = getRewardIcon(rewardType)
@@ -390,7 +426,11 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
             {renderAgentGainIcon()}
           </span>
         ) : rewardType === RewardType.CARD ? (
-          renderCardGains(gain.cardId, gain.name, gain.amount, `${side}-card-${index}`)
+          acquiredCardTitle
+            ? renderAcquiredCardTitle(gain.cardId, gain.name, `${side}-card-${index}`)
+            : renderCardGains(gain.cardId, gain.name, gain.amount, `${side}-card-${index}`)
+        ) : rewardType === RewardType.TECH ? (
+          renderTechTileGain(gain.name, `${side}-tech-${index}`)
         ) : rewardType === RewardType.TRASH ? (
           renderInlineTrashGain(gain, index)
         ) : rewardType === RewardType.DISCARD ? (
@@ -450,7 +490,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
       return rank(a.type) - rank(b.type)
     })
 
-  const renderGainSide = (sideGains: Gain[], side: 'cost' | 'reward') => {
+  const renderGainSide = (sideGains: Gain[], side: 'cost' | 'reward', acquiredCardTitle = false) => {
     const resourceGains = sortResourceGainsForDisplay(aggregateResourceGains(sideGains))
     const influenceGains = aggregateInfluenceGains(sideGains)
     const trashGains =
@@ -486,7 +526,9 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         ) : null}
         {nonSpecialResourceGains.length > 0 || influenceGains.length > 0 ? (
           <div className={`turn-gains-side turn-gains-side--${side}`}>
-            {nonSpecialResourceGains.map((gain, idx) => renderResourceGain(gain, idx, side))}
+            {nonSpecialResourceGains.map((gain, idx) =>
+              renderResourceGain(gain, idx, side, acquiredCardTitle)
+            )}
             {influenceGains.map((gain, idx) => renderInfluenceGain(gain.name, gain.amount, idx, side))}
           </div>
         ) : null}
@@ -558,21 +600,22 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     const signed = isCost ? `−${absAmount}` : String(absAmount)
     return (
       <>
+      {labeledTotal ? (
+        <span className="turn-gain-total-persuasion-label">{`Revealed:`}</span>
+      ) : null}
         <span
           className="gain-persuasion-badge turn-gain-total-persuasion"
-          title={labeledTotal ? `Persuasion total: ${signed}` : `Persuasion: ${signed}`}
+          title={labeledTotal ? `Persuasion revealed: ${signed}` : `Persuasion: ${signed}`}
           aria-label={
             labeledTotal
-              ? `Persuasion total ${absAmount}`
+              ? `Persuasion revealed: ${absAmount}`
               : `Persuasion ${isCost ? 'spent' : 'gained'} ${absAmount}`
           }
         >
           <span className="gain-persuasion-diamond" aria-hidden="true" />
           <span className="gain-persuasion-count">{signed}</span>
         </span>
-        {labeledTotal ? (
-          <span className="turn-gain-total-persuasion-label">{`total: ${signed}`}</span>
-        ) : null}
+        
       </>
     )
   }
@@ -833,11 +876,12 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         const groupTitle = resolveFreighterMoveGroupTitle(group, cardId =>
           resolveCard?.(cardId, '')?.name
         )
+        const isAcquireGroup = groupTitle === ACQUIRE_GROUP_TITLE
         const { costs, rewards } = splitGainsByCostAndReward(group.gains)
         const { paidCosts, freighterRecalls } = peelFreighterRecallsFromCosts(costs)
-        const costContent = renderGainSide(paidCosts, 'cost')
-        const rewardContent = renderGainSide(rewards, 'reward')
-        const recallContent = renderGainSide(freighterRecalls, 'cost')
+        const costContent = renderGainSide(paidCosts, 'cost', isAcquireGroup)
+        const rewardContent = renderGainSide(rewards, 'reward', isAcquireGroup)
+        const recallContent = renderGainSide(freighterRecalls, 'cost', isAcquireGroup)
         if (!costContent && !rewardContent && !recallContent) return null
         const techTile = techTileFromGroupTitle(groupTitle)
         const copyCount = distinctCardCopyCount(group.gains)
@@ -871,25 +915,33 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
                 costContent
               ) : (
                 <>
-                  {techTile ? (
-                    <TechTileFlipBadge
-                      image={techTile.image}
-                      alt={techTile.name}
-                      size="gain"
-                      className="turn-gain-source-flow__tech-badge"
-                    />
+                  {techTile || showCopyCount || costContent ? (
+                    <div className="turn-gain-source-flow__before">
+                      {techTile ? (
+                        <TechTileFlipBadge
+                          image={techTile.image}
+                          alt={techTile.name}
+                          size="gain"
+                          className="turn-gain-source-flow__tech-badge"
+                        />
+                      ) : null}
+                      {showCopyCount ? (
+                        <span className="gain-multiplier">×{copyCount}</span>
+                      ) : null}
+                      {costContent}
+                      {costContent && (rewardContent || recallContent) ? (
+                        <span className="turn-gain-flow-arrow" aria-hidden="true">
+                          →
+                        </span>
+                      ) : null}
+                    </div>
                   ) : null}
-                  {showCopyCount ? (
-                    <span className="gain-multiplier">×{copyCount}</span>
+                  {rewardContent || recallContent ? (
+                    <div className="turn-gain-source-flow__after">
+                      {rewardContent}
+                      {recallContent}
+                    </div>
                   ) : null}
-                  {costContent}
-                  {costContent && (rewardContent || recallContent) && (
-                    <span className="turn-gain-flow-arrow" aria-hidden="true">
-                      →
-                    </span>
-                  )}
-                  {rewardContent}
-                  {recallContent}
                 </>
               )}
             </div>

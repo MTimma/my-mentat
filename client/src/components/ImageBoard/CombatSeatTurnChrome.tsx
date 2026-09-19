@@ -308,15 +308,17 @@ export function BirdseyeIdleBand({
   )
 }
 
-function useScrollOverflowFades(enabled: boolean, measureKey: string) {
+export function useScrollOverflowFades(enabled: boolean, measureKey: string) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [overflowStart, setOverflowStart] = useState(false)
   const [overflowEnd, setOverflowEnd] = useState(false)
+  const [thumb, setThumb] = useState({ topPct: 0, heightPct: 100 })
 
   useLayoutEffect(() => {
     if (!enabled) {
       setOverflowStart(false)
       setOverflowEnd(false)
+      setThumb({ topPct: 0, heightPct: 100 })
       return
     }
     const el = scrollRef.current
@@ -324,23 +326,65 @@ function useScrollOverflowFades(enabled: boolean, measureKey: string) {
 
     const update = () => {
       const { scrollTop, scrollHeight, clientHeight } = el
-      setOverflowStart(scrollTop > 1)
-      setOverflowEnd(scrollTop + clientHeight < scrollHeight - 1)
+      const overflowPx = scrollHeight - clientHeight
+      const canScroll = overflowPx > 1
+      setOverflowStart(canScroll && scrollTop > 1)
+      setOverflowEnd(canScroll && scrollTop + clientHeight < scrollHeight - 1)
+      const heightPct =
+        scrollHeight <= 0 ? 100 : Math.min(100, Math.max(12, (clientHeight / scrollHeight) * 100))
+      const maxTop = 100 - heightPct
+      const topPct = !canScroll || overflowPx <= 0 ? 0 : (scrollTop / overflowPx) * maxTop
+      setThumb({ topPct, heightPct })
     }
 
-    update()
     const observer = new ResizeObserver(update)
-    observer.observe(el)
-    const child = el.firstElementChild
-    if (child) observer.observe(child)
+    const observeTree = () => {
+      observer.observe(el)
+      el.querySelectorAll('*').forEach(node => observer.observe(node))
+    }
+    observeTree()
+    update()
+    const mutations = new MutationObserver(() => {
+      observeTree()
+      update()
+    })
+    mutations.observe(el, { childList: true, subtree: true })
     el.addEventListener('scroll', update, { passive: true })
+    el.addEventListener('load', update, true)
     return () => {
       observer.disconnect()
+      mutations.disconnect()
       el.removeEventListener('scroll', update)
+      el.removeEventListener('load', update, true)
     }
   }, [enabled, measureKey])
 
-  return { scrollRef, overflowStart, overflowEnd }
+  return {
+    scrollRef,
+    overflowStart,
+    overflowEnd,
+    scrollable: overflowStart || overflowEnd,
+    thumb,
+  }
+}
+
+/** Always-on thumb. Native overlay bars hide and only paint on the active pane. */
+export function BirdseyeLaneScrollbar({
+  visible,
+  thumb,
+}: {
+  visible: boolean
+  thumb: { topPct: number; heightPct: number }
+}) {
+  if (!visible) return null
+  return (
+    <div className="birdseye-lane-scroll-rail" aria-hidden>
+      <div
+        className="birdseye-lane-scroll-thumb"
+        style={{ top: `${thumb.topPct}%`, height: `${thumb.heightPct}%` }}
+      />
+    </div>
+  )
 }
 
 export function BirdseyeSeatGains({
@@ -367,7 +411,7 @@ export function BirdseyeSeatGains({
   resolveCard?: (cardId: number, name: string) => Card | undefined
 }) {
   const hasGains = gains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0
-  const { scrollRef, overflowStart, overflowEnd } = useScrollOverflowFades(
+  const { scrollRef, overflowStart, overflowEnd, scrollable, thumb } = useScrollOverflowFades(
     hasGains,
     `${gains.length}:${troopsDeployed}:${troopsRetreated}`
   )
@@ -379,11 +423,12 @@ export function BirdseyeSeatGains({
         'birdseye-seat-gains',
         overflowStart ? 'birdseye-seat-gains--overflow-start' : '',
         overflowEnd ? 'birdseye-seat-gains--overflow-end' : '',
+        scrollable ? 'birdseye-seat-gains--scrollable' : '',
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      <div className="birdseye-seat-gains__scroll" ref={scrollRef}>
+      <div className="birdseye-seat-gains__scroll birdseye-lane-scroll" ref={scrollRef}>
         <TurnGainsDisplay
           gains={gains}
           playerId={playerId}
@@ -400,6 +445,7 @@ export function BirdseyeSeatGains({
           className="birdseye-seat-gains__display"
         />
       </div>
+      <BirdseyeLaneScrollbar visible={scrollable} thumb={thumb} />
     </div>
   )
 }
@@ -506,6 +552,10 @@ export function BirdseyeSeatPlayArea({
   let revealedOrder = 0
   const hasCards = cards.length > 0
   const hasIntrigues = playedIntrigues.length > 0 || activeIntrigues.length > 0
+  const { scrollRef, overflowStart, overflowEnd, scrollable, thumb } = useScrollOverflowFades(
+    hasCards || hasIntrigues,
+    `${cards.length}:${playedIntrigues.length}:${activeIntrigues.length}`
+  )
   const ariaLabel = [
     names.length > 0 && `Play area: ${names.join(', ')}`,
     playedIntrigues.length > 0 &&
@@ -553,6 +603,9 @@ export function BirdseyeSeatPlayArea({
         'birdseye-seat-play-area',
         isActive ? 'birdseye-seat-play-area--active' : '',
         !hasCards && !hasIntrigues ? 'birdseye-seat-play-area--empty' : '',
+        overflowStart ? 'birdseye-seat-play-area--overflow-start' : '',
+        overflowEnd ? 'birdseye-seat-play-area--overflow-end' : '',
+        scrollable ? 'birdseye-seat-play-area--scrollable' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -561,7 +614,7 @@ export function BirdseyeSeatPlayArea({
       {!hasCards && !hasIntrigues ? (
         <div className="birdseye-seat-play-area__well" />
       ) : (
-        <div className="birdseye-seat-play-area__stack">
+        <div className="birdseye-seat-play-area__stack birdseye-lane-scroll" ref={scrollRef}>
           {hasCards ? (
             <div className="birdseye-seat-play-area__cards">
               {cards.map(card => {
@@ -612,6 +665,7 @@ export function BirdseyeSeatPlayArea({
           ) : null}
         </div>
       )}
+      <BirdseyeLaneScrollbar visible={scrollable} thumb={thumb} />
     </div>
   )
 }

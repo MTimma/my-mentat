@@ -75,6 +75,10 @@
   max-width: min(28ch, 82%);
 }
 
+.image-board__tutorial-messages-layer .sandbox-setup-hint--imperium-row {
+  max-width: min(36ch, 70%);
+}
+
 .image-board__riseofix-overlay {
   position: absolute;
   object-fit: fill;
@@ -182,9 +186,23 @@
   overflow: visible;
 }
 
+.game-container--desktop-play .image-board__combat-area-cluster.image-board__combat-area-cluster--docked {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
 .image-board__combat-area-cluster.image-board__combat-area-cluster--docked .combat-area-cluster-stack {
   height: 100%;
   overflow: visible;
+}
+
+.game-container--desktop-play
+  .image-board__combat-area-cluster.image-board__combat-area-cluster--docked
+  .combat-area-cluster-stack--column {
+  overflow: hidden;
+  max-height: 100%;
+  min-height: 0;
 }
 
 .game-container--desktop-play .image-board__desktop-shell {
@@ -194,12 +212,15 @@
   justify-content: flex-start;
   gap: clamp(6px, 0.8vw, 12px);
   width: 100%;
-  overflow: visible;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 .game-container--desktop-play .image-board--with-side-dock {
-  overflow: visible;
-  overflow-x: visible;
+  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .game-container--desktop-play .image-board__expansion-dock-column {
@@ -208,8 +229,9 @@
   width: clamp(220px, 32vmin, 420px);
   align-self: stretch;
   min-height: 0;
+  max-height: 100%;
   position: relative;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .game-container--desktop-play .image-board__board-stack {
@@ -251,8 +273,8 @@
  * the per-seat play area under stacked gain boxes.
  */
 .game-container--desktop-play.game-container--history-docked .image-board__expansion-dock-column {
-  flex: 1 0 auto;
-  min-width: clamp(26rem, 40vmin, 32rem);
+  flex: 1 1 0%;
+  min-width: 0;
   width: auto;
   max-width: min(52rem, 100%);
 }
@@ -274,12 +296,14 @@
 .game-container--desktop-play .image-board__combat-area-dock {
   width: 100%;
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
+  max-height: 100%;
   align-self: stretch;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  overflow: visible;
+  overflow: hidden;
   position: relative;
   z-index: 1;
 }
@@ -1075,12 +1099,26 @@ button.image-board__conflict-panel {
 /* Sandbox setup: conflict slot is a click target */
 button.image-board__conflict-panel--sandbox {
   border: 2px dashed rgba(255, 215, 0, 0.55);
+  background: rgba(20, 18, 14, 0.28);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
 }
 
 button.image-board__conflict-panel--sandbox:hover,
 button.image-board__conflict-panel--sandbox:focus-visible {
   border-color: #ffd700;
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.45);
+}
+
+button.image-board__conflict-panel--sandbox.image-board__conflict-discard::after {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+button.image-board__conflict-panel--sandbox.image-board__conflict-discard--filled {
+  background: rgba(20, 18, 14, 0.55);
+}
+
+button.image-board__conflict-panel--sandbox.image-board__conflict-discard--filled::after {
+  background: rgba(0, 0, 0, 0.34);
 }
 
 .image-board__conflict-placeholder {
@@ -1095,6 +1133,7 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   font-size: clamp(8px, 1.5%, 12px);
   font-weight: 700;
   line-height: 1.2;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.85), 0 1px 2px #000;
 }
 
 .image-board__conflict-fallback {
@@ -1141,7 +1180,6 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   min-width: 1.15em;
   padding: 0.12em 0.28em;
   border-radius: 999px;
-  background: rgba(12, 10, 8, 0.82);
   color: #fff;
   font-size: clamp(8px, 1.8cqw, 14px);
   font-weight: 800;
@@ -1423,9 +1461,10 @@ button.image-board__conflict-panel--sandbox:focus-visible {
 .combat-area-cluster-stack--column {
   height: 100%;
   min-height: 0;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .combat-area-cluster {
@@ -1580,7 +1619,7 @@ button.image-board__conflict-panel--sandbox:focus-visible {
   flex: 1 1 0;
   height: auto;
   min-width: 0;
-  max-width: none;
+  max-width: 100%;
   width: 100%;
   justify-self: stretch;
   align-self: stretch;

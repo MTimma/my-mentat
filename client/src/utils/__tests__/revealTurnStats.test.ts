@@ -207,12 +207,15 @@ describe('revealTurnStats', () => {
 })
 
 describe('RevealTurnStatsPanel acquire label', () => {
-  it('uses {ACQUIRE_GROUP_TITLE} instead of the card name', () => {
+  it('labels acquired cards {ACQUIRE_GROUP_TITLE} and shows the card title, not a thumbnail', () => {
     const tsx = readFileSync(
       resolve(__dirname, '../../components/RevealTurnStatsPanel/RevealTurnStatsPanel.tsx'),
       'utf8'
     )
     expect(tsx).toContain('className="reveal-turn-acquired-name">{ACQUIRE_GROUP_TITLE}')
+    expect(tsx).toContain('className="reveal-turn-acquired-card-title">{card.name}')
+    expect(tsx).toContain('reveal-turn-acquired-zoom-src')
     expect(tsx).not.toContain('className="reveal-turn-acquired-name">{card.name}')
+    expect(tsx).not.toContain('className="reveal-turn-acquired-thumb"')
   })
 })

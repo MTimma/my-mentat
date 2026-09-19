@@ -7,7 +7,7 @@ export interface SandboxSetupHintProps {
   className?: string
   /** Horizontal alignment at the anchor point. */
   anchor?: 'left' | 'center' | 'right'
-  /** Board overlay: above anchor. Footer: static row below imperium row. */
+  /** Board overlay: above anchor. Inline: static flow in a dock or footer. */
   placement?: 'above' | 'inline'
   /** Desktop sandbox callouts use a larger type size. */
   size?: 'default' | 'large'

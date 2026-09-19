@@ -13,7 +13,7 @@ import './RevealTurnStatsPanel.css'
 interface RevealTurnStatsPanelProps {
   stats: RevealTurnStats
   compact?: boolean
-  /** Hide acquired tech names; acquired cards always use the {ACQUIRE_GROUP_TITLE} label. */
+  /** Hide acquired tech names; acquired cards always use the {ACQUIRE_GROUP_TITLE} label plus the card title. */
   hideAcquiredNames?: boolean
   /** Only render the Acquired section (e.g. agent-turn intrigue acquire). */
   acquiredOnly?: boolean
@@ -75,17 +75,18 @@ const RevealTurnStatsPanel = ({
         const acquireGains = getAcquireEffectGainsForCard(gains, card.id)
         return (
           <span key={card.id} className="reveal-turn-acquired-card" title={card.image ? withImageZoomHint(card.name) : card.name}>
+            {card.image ? (
+              <img
+                src={card.image}
+                alt=""
+                className="reveal-turn-acquired-zoom-src"
+                draggable={false}
+                data-preview-src={card.image}
+              />
+            ) : null}
             <span className="reveal-turn-acquired-name">{ACQUIRE_GROUP_TITLE}</span>
             <span className="reveal-turn-acquired-body">
-              {card.image ? (
-                <img
-                  src={card.image}
-                  alt=""
-                  className="reveal-turn-acquired-thumb"
-                  draggable={false}
-                  data-preview-src={card.image}
-                />
-              ) : null}
+              <span className="reveal-turn-acquired-card-title">{card.name}</span>
               {card.cost != null && card.cost > 0 ? (
                 <span className="reveal-turn-acquired-cost">{card.cost}</span>
               ) : null}

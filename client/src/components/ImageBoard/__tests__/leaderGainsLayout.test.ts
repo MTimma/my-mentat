@@ -41,9 +41,11 @@ describe('Leader gains leftover layout', () => {
       /\.game-container--desktop-play\.game-container--history-docked \.image-board__expansion-dock-column \{[\s\S]*?\}/
     )?.[0]
     expect(docked).toBeTruthy()
-    expect(docked).toContain('flex: 1 0 auto')
+    expect(docked).toContain('flex: 1 1 0%')
+    expect(docked).toContain('min-width: 0')
     expect(docked).toContain('max-width: min(52rem, 100%)')
-    expect(docked).toContain('min-width: clamp(26rem, 40vmin, 32rem)')
+    expect(docked).not.toContain('flex: 1 0 auto')
+    expect(docked).not.toContain('flex: 1 1 auto')
   })
 
   it('stretches the expansion dock to board height so leftover is vertical', () => {
@@ -55,6 +57,27 @@ describe('Leader gains leftover layout', () => {
     )
     expect(imageBoardCss).toMatch(
       /\.game-container--desktop-play \.image-board__combat-area-dock \{[\s\S]*?flex:\s*1 1 auto/
+    )
+    expect(imageBoardCss).toMatch(
+      /\.game-container--desktop-play \.image-board__desktop-shell \{[\s\S]*?overflow:\s*hidden/
+    )
+    expect(imageBoardCss).toMatch(
+      /\.game-container--desktop-play \.image-board__expansion-dock-column \{[\s\S]*?overflow:\s*hidden/
+    )
+    expect(imageBoardCss).toMatch(
+      /\.game-container--desktop-play \.image-board__combat-area-dock \{[\s\S]*?overflow:\s*hidden/
+    )
+  })
+
+  it('keeps the birdseye leader dock inside the visible board column so play-area can scroll', () => {
+    expect(appCss).toMatch(
+      /\.game-container--desktop-play\.game-container--birdseye-desktop\.game-container--history-panel-hidden\s+\.play-board-column \{[\s\S]*?grid-template-rows:\s*minmax\(0, 1fr\) auto/
+    )
+    expect(appCss).toMatch(
+      /\.game-container--desktop-play\.game-container--birdseye-desktop\.game-container--history-panel-hidden\s+\.play-board-scroll \{[\s\S]*?overflow:\s*hidden/
+    )
+    expect(imageBoardCss).toMatch(
+      /\.combat-area-cluster-stack--column \{[\s\S]*?overflow:\s*hidden/
     )
   })
 
@@ -70,8 +93,9 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster--column \.birdseye-seat-gains \{[\s\S]*?\}/
     )?.[0]
     expect(columnGains).toBeTruthy()
-    expect(columnGains).toContain('max-width: none')
+    expect(columnGains).toContain('max-width: 100%')
     expect(columnGains).not.toMatch(/max-width:\s*11rem/)
+    expect(columnGains).not.toMatch(/max-width:\s*none/)
   })
 
   it('keeps desktop leader resources in a fixed 4-col 2-row grid', () => {
@@ -108,7 +132,7 @@ describe('Leader gains leftover layout', () => {
     expect(seatMain).toContain('flex-direction: column')
     expect(seatMain).not.toContain('flex-direction: row')
     expect(imageBoardCss).toMatch(
-      /\.combat-area-cluster--column\.combat-area-cluster--birdseye \.combat-area-cluster__seat \{[\s\S]*?max-width:\s*none/
+      /\.combat-area-cluster--column\.combat-area-cluster--birdseye \.combat-area-cluster__seat \{[\s\S]*?max-width:\s*100%/
     )
     expect(cluster).toContain('combat-area-cluster__seat-leader')
     expect(cluster).toContain('combat-area-cluster__seat-meta')
@@ -122,11 +146,13 @@ describe('Leader gains leftover layout', () => {
 
   it('toggles per-seat vertical play area vs a chess-style turn history grid above leaders', () => {
     expect(cluster).toContain('Turn log vertical')
-    expect(cluster).toContain('Turn log horizontal')
+    expect(cluster).not.toContain('Turn log horizontal')
+    expect(cluster).toContain('isRow && birdseyeEnabled')
+    expect(cluster).not.toContain('isColumn && birdseyeEnabled ?')
     expect(cluster).toContain('combat-area-cluster--play-horizontal')
     expect(cluster).toContain('combat-area-cluster-stack--play-horizontal')
     expect(cluster).toContain('BirdseyeTurnHistoryGrid')
-    expect(cluster).toContain("desktopPlayAreaLayout === 'horizontal'")
+    expect(cluster).toContain('const playAreaHorizontal = isColumn && birdseyeEnabled')
     expect(cluster).not.toContain('orientation="horizontal"')
     expect(historyGridTsx).toContain('export function BirdseyeTurnHistoryGrid')
     expect(historyGridTsx).toContain('buildBirdseyeTurnHistoryGrid')
@@ -135,7 +161,10 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster--column\.combat-area-cluster--birdseye \{[\s\S]*?grid-template-rows:\s*var\(--birdseye-gains-slot-height\) var\(--birdseye-desktop-face-height\) minmax\(0, 1fr\)/
     )
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column\.combat-area-cluster--play-horizontal \{[\s\S]*?grid-template-rows:\s*minmax\(0, var\(--birdseye-gains-slot-height\)\)[\s\S]*?var\(--birdseye-desktop-face-height\)[\s\S]*?minmax\(0, 1fr\)/
+      /\.combat-area-cluster--column\.combat-area-cluster--play-horizontal \{[\s\S]*?grid-template-rows:\s*var\(--birdseye-gains-slot-height\)[\s\S]*?var\(--birdseye-desktop-face-height\)[\s\S]*?minmax\(0, 1fr\)/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column\.combat-area-cluster--play-horizontal \{[\s\S]*?height:\s*auto/
     )
     expect(seatChromeCss).toMatch(
       /\.combat-area-cluster-stack--play-horizontal \.combat-area-cluster--column \.combat-area-cluster__seat-meta \{[\s\S]*?flex:\s*1 1 auto/
@@ -213,7 +242,7 @@ describe('Leader gains leftover layout', () => {
   })
 
   it('hides docked turn history when play area is horizontal', () => {
-    expect(appTsx).toContain("desktopPlayAreaLayout === 'horizontal'")
+    expect(appTsx).toContain('const hideDockedHistory = isDesktopPlayView')
     expect(appTsx).toContain('hideDockedHistory')
     expect(appTsx).toContain('game-container--history-panel-hidden')
     expect(appCss).toContain('game-container--history-panel-hidden')
@@ -221,6 +250,9 @@ describe('Leader gains leftover layout', () => {
       /\.game-container--history-docked\.game-container--history-panel-hidden \.play-board-column \{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/
     )
     expect(cluster).toContain('onDesktopPlayAreaLayoutChange')
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster-stack--column > \.combat-area-cluster__gains-dir \{[\s\S]*?display:\s*none/
+    )
   })
 
   it('keeps sandbox Begin under the session kit bar', () => {
@@ -280,6 +312,15 @@ describe('Leader gains leftover layout', () => {
     )
   })
 
+  it('sizes reward counts the same as cost amounts in desktop column gains', () => {
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-resource-amt,[\s\S]*?\.gain-multiplier,[\s\S]*?font-size:\s*0\.82rem/
+    )
+    expect(gainsCss).toMatch(
+      /\.turn-gains-display \.gain-multiplier \{[\s\S]*?font-size:\s*0\.72rem/
+    )
+  })
+
   it('shows a small source title above desktop column gains', () => {
     expect(seatChromeCss).toMatch(
       /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?font-size:\s*0\.58rem/
@@ -307,8 +348,40 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?max-height:\s*none/
     )
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-flow \{[\s\S]*?flex-wrap:\s*nowrap/
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-flow \{[\s\S]*?flex-wrap:\s*wrap/
     )
+  })
+
+  it('keeps leader lanes fixed and wraps gain contents after the arrow', () => {
+    const columnGains = seatChromeCss.match(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \{[\s\S]*?\}/
+    )?.[0]
+    expect(columnGains).toContain('width: 100%')
+    expect(columnGains).toContain('max-width: 100%')
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?width:\s*100%/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-flow__before \{[\s\S]*?flex:\s*0 0 auto/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-flow__after \{[\s\S]*?flex-wrap:\s*wrap/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-flow__after \{[\s\S]*?flex:\s*1 0 auto/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gains-side \{[\s\S]*?flex-wrap:\s*wrap/
+    )
+    expect(gainsCss).toMatch(
+      /\.turn-gain-source-flow__before,\s*\n\s*\.turn-gain-source-flow__after \{[\s\S]*?display:\s*contents/
+    )
+    const displayTsx = readFileSync(
+      resolve(root, 'components/TurnGainsDisplay/TurnGainsDisplay.tsx'),
+      'utf8'
+    )
+    expect(displayTsx).toContain('turn-gain-source-flow__before')
+    expect(displayTsx).toContain('turn-gain-source-flow__after')
   })
 
   it('scrolls extra gains inside the seat with overflow fades', () => {
@@ -317,6 +390,18 @@ describe('Leader gains leftover layout', () => {
     expect(seatChromeCss).toContain('birdseye-seat-gains--overflow-end')
     expect(seatChromeTsx).toContain('useScrollOverflowFades')
     expect(seatChromeTsx).toContain('ResizeObserver')
+  })
+
+  it('keeps overflow scrollbars visible on play area, gains, and horizontal turn log', () => {
+    expect(seatChromeCss).toContain('.birdseye-lane-scroll-rail')
+    expect(seatChromeCss).toContain('.birdseye-lane-scroll-thumb')
+    expect(seatChromeCss).toContain('scrollbar-width: none')
+    expect(seatChromeCss).toContain('background: rgba(212, 177, 106, 0.4)')
+    expect(seatChromeCss).not.toContain('rgba(212, 177, 106, 0.92)')
+    expect(seatChromeTsx).toContain('export function BirdseyeLaneScrollbar')
+    expect(seatChromeTsx).toContain('<BirdseyeLaneScrollbar visible={scrollable}')
+    expect(historyGridTsx).toContain('BirdseyeLaneScrollbar')
+    expect(historyGridTsx).toContain('birdseye-turn-history__scroll-host')
   })
 
   it('uses IBM Plex Sans and chrome text color for gains and turn history', () => {
@@ -361,6 +446,12 @@ describe('Leader gains leftover layout', () => {
     expect(seatChromeCss).not.toMatch(
       /\.combat-area-cluster--column \.combat-area-cluster__seat-gains-slot \{[\s\S]*?height:\s*max-content/
     )
+    const horizontalSlot = seatChromeCss.match(
+      /\.combat-area-cluster-stack--play-horizontal \.combat-area-cluster--column \.combat-area-cluster__seat-gains-slot \{[\s\S]*?\}/
+    )?.[0]
+    expect(horizontalSlot).toBeTruthy()
+    expect(horizontalSlot).toContain('height: 100%')
+    expect(horizontalSlot).not.toContain('height: auto')
   })
 
   it('stacks desktop gain sources as boxes and does not stretch them into leftover height', () => {
@@ -421,8 +512,28 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster--column\.combat-area-cluster--birdseye \{[\s\S]*?grid-template-rows:\s*var\(--birdseye-gains-slot-height\) var\(--birdseye-desktop-face-height\) minmax\(0, 1fr\)/
     )
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column \.birdseye-seat-play-area \{[\s\S]*?flex:\s*1 1 auto/
+      /\.combat-area-cluster--column \.birdseye-seat-play-area \{[\s\S]*?flex:\s*1 1 0/
     )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area \{[\s\S]*?min-height:\s*0/
+    )
+  })
+
+  it('scrolls overflow play-area cards inside the leader lane', () => {
+    const stack = seatChromeCss.match(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__stack \{[\s\S]*?\}/
+    )?.[0]
+    expect(stack).toBeTruthy()
+    expect(stack).toContain('overflow-y: auto')
+    expect(stack).toContain('min-height: 0')
+    expect(stack).toContain('position: absolute')
+    expect(stack).toContain('inset: 0')
+    expect(stack).not.toContain('max-height: 100%')
+    expect(seatChromeTsx).toContain('birdseye-seat-play-area--overflow-start')
+    expect(seatChromeTsx).toContain('birdseye-seat-play-area--overflow-end')
+    expect(seatChromeCss).toContain('.birdseye-seat-play-area--overflow-end::after')
+    expect(seatChromeTsx).toContain("el.querySelectorAll('*')")
+    expect(seatChromeTsx).toContain("el.addEventListener('load', update, true)")
   })
 
   it('keeps desktop gains above the leader, not in the play-area column', () => {
@@ -477,11 +588,19 @@ describe('Leader gains leftover layout', () => {
     expect(seatChromeTsx).toContain('birdseye-seat-play-area__intrigues')
     expect(seatChromeTsx).toContain('birdseye-seat-play-area__card--intrigue')
     expect(seatChromeTsx).toContain('birdseye-seat-play-area__card--active-intrigue')
+    expect(seatChromeCss).not.toContain('rgba(143, 97, 188, 0.38)')
+    expect(seatChromeCss).not.toContain('rgba(143, 97, 188, 0.48)')
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column \.birdseye-seat-play-area__intrigues \{[\s\S]*?border-top:\s*1px dashed rgba\(143, 97, 188, 0\.38\)/
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__intrigues \{[\s\S]*?isolation:\s*isolate/
     )
     expect(seatChromeCss).toMatch(
       /\.combat-area-cluster--column \.birdseye-seat-play-area__stack \{[\s\S]*?overflow-y:\s*auto/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__stack \{[\s\S]*?position:\s*absolute/
+    )
+    expect(seatChromeCss).toContain(
+      '.combat-area-cluster--column .birdseye-seat-play-area__card:first-child'
     )
   })
 
@@ -491,9 +610,14 @@ describe('Leader gains leftover layout', () => {
     expect(imageBoardTsx).toContain('sandbox-setup-hint--conflict')
     expect(imageBoardTsx).toContain("label=\"Pick this round's conflict card\"")
     expect(imageBoardTsx).toContain('conflictBox.top - 10')
+    expect(imageBoardTsx).toContain('sandbox-setup-hint--imperium-row')
+    expect(imageBoardTsx).toContain('Pick 5 cards for the Imperium row')
+    expect(imageBoardTsx).toContain('imperiumRow.length < sandboxImperiumRequiredCount')
+    expect(imageBoardTsx).toContain("left: '50%', top: '3%'")
     expect(imageBoardTsx).toContain('sandbox-setup-hint--leaders-mobile')
     expect(imageBoardTsx).not.toContain('showBoardInfoTips && sandboxSetup && combatAreaDocked')
     expect(appTsx).not.toContain('showSetupHint: showBoardInfoTips && isDesktopPlayView')
+    expect(appTsx).not.toContain('showSetupHint: showBoardInfoTips,')
     expect(appCss).toContain('--z-board-tutorial-message')
     expect(imageBoardCss).toMatch(
       /\.image-board__tutorial-messages-layer \{[\s\S]*?z-index:\s*var\(--z-board-tutorial-message/

@@ -89,7 +89,7 @@ describe('turnHistoryDisplay', () => {
         currentRound: 1,
       }),
     ]
-    expect(getHistoryRowLabel(turns, 0)).toBe('Round 1 start')
+    expect(getHistoryRowLabel(turns, 0)).toBe('Round 1')
     expect(getHistoryRowBadge(turns[0], 0, turns)).toBe('')
     expect(getLivePlayerTurnNumber(turns)).toBe(1)
   })
@@ -97,7 +97,7 @@ describe('turnHistoryDisplay', () => {
   it('identifies round-start rows and labels them without a left badge', () => {
     const roundStart = row({ historyEntryKind: 'round-start', currentRound: 6 })
     expect(isRoundStartHistoryEntry(roundStart)).toBe(true)
-    expect(getRoundStartLabel(roundStart)).toBe('Round 6 start')
+    expect(getRoundStartLabel(roundStart)).toBe('Round 6')
     expect(getHistoryRowBadge(roundStart, 4, [roundStart])).toBe('')
   })
 
@@ -185,7 +185,7 @@ describe('buildBirdseyeTurnHistoryGrid', () => {
     ]
     const grid = buildBirdseyeTurnHistoryGrid(history, playerIds)
     expect(grid).toHaveLength(2)
-    expect(grid[0]).toMatchObject({ type: 'banner', banner: { kind: 'round-start', label: 'Round 1 start' } })
+    expect(grid[0]).toMatchObject({ type: 'banner', banner: { kind: 'round-start', label: 'Round 1' } })
     expect(grid[1]).toMatchObject({ type: 'turns' })
     if (grid[1].type !== 'turns') throw new Error('expected turns row')
     expect(grid[1].cells.map(cell => cell?.playerId ?? null)).toEqual([0, 1, 2, 3])
@@ -225,10 +225,47 @@ describe('buildBirdseyeTurnHistoryGrid', () => {
     ]
     const grid = buildBirdseyeTurnHistoryGrid(history, playerIds)
     const turnRows = grid.filter(rowItem => rowItem.type === 'turns')
+    expect(turnRows).toHaveLength(3)
+    if (turnRows[1].type !== 'turns' || turnRows[2].type !== 'turns') throw new Error('expected turns')
+    expect(turnRows[1].cells.map(cell => cell?.playerId ?? null)).toEqual([null, 1, 2, 3])
+    expect(turnRows[1].cells.map(cell => cell?.historyIndex ?? null)).toEqual([null, 7, 8, 9])
+    expect(turnRows[2].cells.map(cell => cell?.playerId ?? null)).toEqual([0, null, null, null])
+    expect(turnRows[2].cells[0]?.historyIndex).toBe(10)
+  })
+
+  it('puts the wrap-around 4th turn on the next row with the first-player swimlane empty', () => {
+    const history = [
+      row({ historyEntryKind: 'round-start', currentRound: 2, firstPlayerMarker: 1 }),
+      playerTurn(1, TurnType.ACTION, 2, 1),
+      playerTurn(2, TurnType.ACTION, 2, 1),
+      playerTurn(3, TurnType.ACTION, 2, 1),
+      playerTurn(0, TurnType.ACTION, 2, 1),
+    ]
+    const grid = buildBirdseyeTurnHistoryGrid(history, playerIds)
+    const turnRows = grid.filter(rowItem => rowItem.type === 'turns')
     expect(turnRows).toHaveLength(2)
-    if (turnRows[1].type !== 'turns') throw new Error('expected turns')
-    expect(turnRows[1].cells.map(cell => cell?.playerId ?? null)).toEqual([0, 1, 2, 3])
-    expect(turnRows[1].cells.map(cell => cell?.historyIndex)).toEqual([10, 7, 8, 9])
+    if (turnRows[0].type !== 'turns' || turnRows[1].type !== 'turns') throw new Error('expected turns')
+    expect(turnRows[0].cells.map(cell => cell?.playerId ?? null)).toEqual([null, 1, 2, 3])
+    expect(turnRows[1].cells.map(cell => cell?.playerId ?? null)).toEqual([0, null, null, null])
+  })
+
+  it('keeps the 5th turn on the wrap row after the 4th player', () => {
+    const history = [
+      row({ historyEntryKind: 'round-start', currentRound: 2, firstPlayerMarker: 1 }),
+      playerTurn(1, TurnType.ACTION, 2, 1),
+      playerTurn(2, TurnType.ACTION, 2, 1),
+      playerTurn(3, TurnType.ACTION, 2, 1),
+      playerTurn(0, TurnType.ACTION, 2, 1),
+      playerTurn(1, TurnType.ACTION, 2, 1),
+      playerTurn(2, TurnType.ACTION, 2, 1),
+    ]
+    const grid = buildBirdseyeTurnHistoryGrid(history, playerIds)
+    const turnRows = grid.filter(rowItem => rowItem.type === 'turns')
+    expect(turnRows).toHaveLength(2)
+    if (turnRows[0].type !== 'turns' || turnRows[1].type !== 'turns') throw new Error('expected turns')
+    expect(turnRows[0].cells.map(cell => cell?.playerId ?? null)).toEqual([null, 1, 2, 3])
+    expect(turnRows[1].cells.map(cell => cell?.playerId ?? null)).toEqual([0, 1, 2, null])
+    expect(turnRows[1].cells.map(cell => cell?.historyIndex ?? null)).toEqual([4, 5, 6, null])
   })
 
   it('places a mid-row first player in their swimlane with empty seats to the left', () => {
@@ -324,7 +361,7 @@ describe('groupBirdseyeHistoryRounds', () => {
     expect(groups[0].rows[0]).toMatchObject({ type: 'banner', banner: { kind: 'setup' } })
     expect(groups[1].rows[0]).toMatchObject({
       type: 'banner',
-      banner: { kind: 'round-start', label: 'Round 1 start' },
+      banner: { kind: 'round-start', label: 'Round 1' },
     })
   })
 })

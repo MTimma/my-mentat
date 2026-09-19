@@ -10,6 +10,7 @@ import {
   groupBirdseyeHistoryRounds,
   type BirdseyeHistoryCell,
 } from '../../utils/turnHistoryDisplay'
+import { BirdseyeLaneScrollbar, useScrollOverflowFades } from './CombatSeatTurnChrome'
 
 function turnAtIndex(
   history: GameState[],
@@ -45,8 +46,11 @@ export function BirdseyeTurnHistoryGrid({
     [history, playerIds, gameState, hideLiveTurn]
   )
   const roundGroups = useMemo(() => groupBirdseyeHistoryRounds(rows), [rows])
-  const scrollRef = useRef<HTMLDivElement | null>(null)
   const activeRoundRef = useRef<HTMLDivElement | null>(null)
+  const { scrollRef, scrollable, thumb } = useScrollOverflowFades(
+    roundGroups.length > 0,
+    `${roundGroups.length}:${roundGroups.reduce((n, group) => n + group.rows.length, 0)}`
+  )
 
   const viewingKey = isViewingHistory ? `h-${viewingTurnIndex}` : 'live'
   const viewingHistoryIndex = isViewingHistory ? viewingTurnIndex : history.length
@@ -131,7 +135,9 @@ export function BirdseyeTurnHistoryGrid({
 
   return (
     <div
-      className="birdseye-turn-history"
+      className={['birdseye-turn-history', scrollable ? 'birdseye-turn-history--scrollable' : '']
+        .filter(Boolean)
+        .join(' ')}
       role="grid"
       aria-label="Turn history"
       aria-colcount={playerIds.length}
@@ -149,7 +155,8 @@ export function BirdseyeTurnHistoryGrid({
           hideLiveTurn={hideLiveTurn}
         />
       </div>
-      <div className="birdseye-turn-history__scroll" ref={scrollRef}>
+      <div className="birdseye-turn-history__scroll-host">
+        <div className="birdseye-turn-history__scroll birdseye-lane-scroll" ref={scrollRef}>
         {roundGroups.map(group => {
           const isActiveRound = group.key === activeRoundKey
           return (
@@ -258,6 +265,8 @@ export function BirdseyeTurnHistoryGrid({
             </div>
           )
         })}
+      </div>
+        <BirdseyeLaneScrollbar visible={scrollable} thumb={thumb} />
       </div>
     </div>
   )
