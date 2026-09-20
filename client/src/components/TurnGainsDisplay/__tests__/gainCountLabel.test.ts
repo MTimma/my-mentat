@@ -40,6 +40,7 @@ describe('Gain count labels', () => {
   it('renders bought tech tiles by name, not a thumbnail', () => {
     expect(tsx).toContain('renderTechTileGain')
     expect(tsx).toContain('turn-gain-tech-title')
+    expect(tsx).toContain('turn-gain-tech-title-zoom-src')
     expect(tsx).not.toContain('turn-gain-tech-thumb')
     expect(tsx).toContain('RewardType.TECH')
   })

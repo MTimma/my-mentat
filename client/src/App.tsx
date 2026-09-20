@@ -4,7 +4,6 @@ import './styles/modal.css'
 import './styles/playBoardModal.css'
 import { PlayBoardModalProvider } from './context/PlayBoardModalContext'
 import { AltImagePreviewProvider } from './components/AltImagePreview/AltImagePreview'
-import GameBoard from './components/GameBoard'
 import ImageBoard from './components/ImageBoard/ImageBoard'
 import ImperiumRow from './components/ImperiumRow/ImperiumRow'
 import TurnHistory from './components/TurnHistory'
@@ -14,8 +13,7 @@ import { useTimeTravel } from './components/TimeTravel'
 import LocalGameAutosave from './components/LocalGameAutosave/LocalGameAutosave'
 import SandboxSessionBar from './components/SandboxSessionBar/SandboxSessionBar'
 import PwaPrompt from './components/PwaPrompt/PwaPrompt'
-import LeaderSetupChoices from './components/LeaderSetupChoices/LeaderSetupChoices'
-import { PlayerSetup, Leader, FactionType, GamePhase, ScreenState, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
+import { FactionType, GamePhase, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
 import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
 import { isSoleTrashThisCardReward } from './utils/pendingRewardAutoApply'
 import { isKwisatzHaderachCard, canPlaceAgentOnBoard, isKwisatzSourceChoicePending, isKwisatzRecallMode, isAgentPlacementPending } from './utils/kwisatzHaderach'
@@ -44,12 +42,10 @@ import { isCombatHistoryEntry, isEndgameHistoryEntry } from './utils/turnGainsDi
 import { COMBAT_STRENGTH_ORIGIN } from './data/boardMarkerAnchors'
 import { getConflictPool, isConflictInDiscard } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
-import GameStateSetup from './components/GameStateSetup/GameStateSetup'
 import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
 import ImmortalityRow from './expansions/immortality/components/ImmortalityRow'
 import FamilyAtomicsButton from './expansions/immortality/components/FamilyAtomicsButton'
 import { computeGraftAgentIcons, resolveGraftCards } from './expansions/immortality/graft'
-import TechMarketRow from './components/TechMarketRow/TechMarketRow'
 import TechAcquireModal from './components/TechAcquireModal/TechAcquireModal'
 import TechTileSelect from './components/TechTileSelect/TechTileSelect'
 import { TECH_TILES, getTechTile, type TechTileId } from './data/techTiles'
@@ -62,16 +58,13 @@ import {
   sandboxTechSetupSummary,
 } from './utils/sandboxTechTiles'
 import { findTechAcquireSourceOption, getTechAcquireSourceOptions } from './components/GameContext/riseOfIx/techAcquireOffer'
-import CardCreator from './components/CardCreator/CardCreator'
 import SandboxPlayerEditor from './components/SandboxPlayerEditor/SandboxPlayerEditor'
 import SandboxSetupControls from './components/SandboxSetupControls/SandboxSetupControls'
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
 import UndoConfirmDialog from './components/TimeTravel/UndoConfirmDialog'
-import { LEADER_NAMES, areAllLeadersAssigned, createUnassignedLeader, isUnassignedLeader } from './data/leaders'
+import { areAllLeadersAssigned, isUnassignedLeader } from './data/leaders'
 import { getEndTurnButtonState } from './utils/endTurnState'
-import { buildSetupBlockFromConfiguration } from './save/buildSetupBlock'
-import { createGameInputDoc } from './save/createGameInput'
 import {
   type LoadSaveFn,
 } from './api/gamesApi'
@@ -155,7 +148,6 @@ const GameContent = ({
   const [undoSourceRowIndex, setUndoSourceRowIndex] = useState<number | null>(null)
   const [undoToSetup, setUndoToSetup] = useState(false)
 
-  const [useImageBoard] = useState(true)
   const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(
     () =>
       typeof window !== 'undefined' &&
@@ -954,24 +946,23 @@ const GameContent = ({
       endgameNeedsPlayerInput)
 
   const activeInfluenceBoardChoice = useMemo(() => {
-    if (isViewingHistory || gameState.sandboxSetup || !useImageBoard) return null
+    if (isViewingHistory || gameState.sandboxSetup) return null
     const choice = gameState.currTurn?.pendingChoices?.find(
       pending =>
         pending.type === ChoiceType.FIXED_OPTIONS &&
         isInfluenceBoardChoice(pending as FixedOptionsChoice)
     )
     return (choice as FixedOptionsChoice | undefined) ?? null
-  }, [gameState.currTurn?.pendingChoices, gameState.sandboxSetup, isViewingHistory, useImageBoard])
+  }, [gameState.currTurn?.pendingChoices, gameState.sandboxSetup, isViewingHistory])
 
   const activeConflictInfluenceChoice = useMemo(() => {
-    if (isViewingHistory || !useImageBoard) return null
+    if (isViewingHistory) return null
     if (gameState.phase !== GamePhase.COMBAT_REWARDS) return null
     return findConflictInfluenceBoardChoice(gameState.pendingConflictRewardChoices)
   }, [
     gameState.pendingConflictRewardChoices,
     gameState.phase,
     isViewingHistory,
-    useImageBoard,
   ])
 
   const conflictInfluenceBoardMeta =
@@ -1160,7 +1151,6 @@ const GameContent = ({
       const mainArea = mainAreaRef.current
       const boardAnchor =
         mainArea?.querySelector<HTMLElement>('.image-board__media') ??
-        mainArea?.querySelector<HTMLElement>('.game-board') ??
         mainArea
 
       if (boardAnchor) {
@@ -1528,13 +1518,12 @@ const GameContent = ({
     gameState.sandboxSetup,
     isDockedHistoryLayout,
     desktopPlayAreaLayout,
-    useImageBoard,
   ])
 
   useLayoutEffect(() => {
-    if (!isMobilePlayView || !useImageBoard || isDesktopPlayView) return
+    if (!isMobilePlayView || isDesktopPlayView) return
     remeasurePlayChromeRef.current?.()
-  }, [isPlayAreaDrawerOpen, isMobilePlayView, useImageBoard, isDesktopPlayView])
+  }, [isPlayAreaDrawerOpen, isMobilePlayView, isDesktopPlayView])
 
   useLayoutEffect(() => {
     remeasurePlayChromeRef.current?.()
@@ -1546,19 +1535,18 @@ const GameContent = ({
     viewingTurnIndex,
   ])
 
-  const holdToHidePlayChrome = isMobilePlayView && useImageBoard
-  // Always when image board — includes tablet 601–900 (Chrome half-window / iPad).
-  const showPlayAreaDrawerToggle = useImageBoard
-  const isCompactPlayOverlay = useImageBoard && !isDesktopPlayView
+  const holdToHidePlayChrome = isMobilePlayView
+  // Always on the image board — includes tablet 601–900 (Chrome half-window / iPad).
+  const showPlayAreaDrawerToggle = true
+  const isCompactPlayOverlay = !isDesktopPlayView
   const hideDockedHistory = isDesktopPlayView
   const showTurnHistoryPanel =
     (isDockedHistoryLayout || isTurnHistoryOpen) && !hideDockedHistory
 
-  const birdseyeMode = useMemo<'mobile3b' | 'desktop6' | null>(() => {
-    if (!useImageBoard) return null
+  const birdseyeMode = useMemo<'mobile3b' | 'desktop6'>(() => {
     if (isDesktopPlayView) return 'desktop6'
     return 'mobile3b'
-  }, [useImageBoard, isDesktopPlayView])
+  }, [isDesktopPlayView])
 
   const birdseyeGainsByPlayer = useMemo(
     () => buildBirdseyeGainsByPlayer(displayState),
@@ -1573,13 +1561,9 @@ const GameContent = ({
     null
   )
 
-  useEffect(() => {
-    if (!birdseyeMode) setBirdseyeInteractionsHost(null)
-  }, [birdseyeMode])
-
   const birdseyeActions = useMemo((): BirdseyeSeatActions | null => {
     const player = turnControlsActivePlayer
-    if (!player || !birdseyeMode) return null
+    if (!player) return null
     if (gameState.sandboxSetup) return null
     if (
       !isViewingHistory &&
@@ -1721,8 +1705,7 @@ const GameContent = ({
 
 
   const renderImageBoard = useCallback(
-    (imperiumRowSlot?: ReactNode, playAreaTopSlot?: ReactNode) =>
-      useImageBoard ? (
+    (imperiumRowSlot?: ReactNode, playAreaTopSlot?: ReactNode) => (
         <ImageBoard
           currentPlayer={displayState.currTurn?.playerId ?? displayState.activePlayerId}
           highlightedAreas={isViewingHistory ? [] : getSelectedCardAgentIcons(gameState)}
@@ -1865,9 +1848,8 @@ const GameContent = ({
           desktopPlayAreaLayout={desktopPlayAreaLayout}
           onDesktopPlayAreaLayoutChange={setDesktopPlayAreaLayout}
         />
-      ) : null,
+    ),
     [
-      useImageBoard,
       displayState,
       isViewingHistory,
       gameState,
@@ -1931,7 +1913,7 @@ const GameContent = ({
       />
     ) : null
 
-  const dockImperiumAboveBoard = isDesktopPlayView && useImageBoard
+  const dockImperiumAboveBoard = isDesktopPlayView
   const imperiumRowEl = (
       <div
         ref={imperiumRowRef}
@@ -1979,17 +1961,6 @@ const GameContent = ({
             />
             {gameState.expansions?.immortality ? <ImmortalityRow /> : null}
           </div>
-          {techAcquireOffer && activePlayer && gameState.ixBoard?.stacks && !useImageBoard ? (
-            <TechMarketRow
-              key={`tech-acquire-${techAcquireOffer.playerId}-${techAcquireOffer.discount}`}
-              stacks={gameState.ixBoard.stacks}
-              players={gameState.players}
-              player={activePlayer}
-              discount={techAcquireOffer.discount}
-              paySolariInsteadOfSpice={techAcquireOffer.paySolariInsteadOfSpice}
-              onAcquire={handleAcquireTechTile}
-            />
-          ) : null}
         </div>
       </div>
   )
@@ -2089,38 +2060,10 @@ const GameContent = ({
             containerRef={mainAreaRef}
             onRevealIntrigue={handleRevealEndgameIntrigue}
           />
-          {useImageBoard ? (
-            renderImageBoard(
+          {renderImageBoard(
               dockImperiumAboveBoard ? imperiumRowEl : undefined,
               sandboxBarInPlayAreaDock ? sandboxSessionBarEl : undefined
-            )
-          ) : (
-            <GameBoard
-              currentPlayer={displayState.activePlayerId}
-              highlightedAreas={isViewingHistory ? [] : getSelectedCardAgentIcons(gameState)}
-              infiltrate={isViewingHistory ? false : getInfiltrate(gameState)}
-              onSpaceClick={isViewingHistory ? () => {} : handlePlaceAgent}
-              occupiedSpaces={displayState.occupiedSpaces}
-              canPlaceAgent={
-            isViewingHistory || gameState.sandboxSetup ? false : canPlaceAgentOnBoard(gameState)
-          }
-              combatTroops={displayState.combatTroops}
-              players={displayState.players}
-              factionInfluence={displayState.factionInfluence}
-              currentConflict={displayState.currentConflict}
-              bonusSpice={displayState.bonusSpice}
-              recallMode={isViewingHistory ? false : kwisatzRecallActive}
-              ignoreSpaceRequirements={
-                isViewingHistory
-                  ? false
-                  : isKwisatzHaderachCard(getSelectedCard(gameState))
-              }
-              voiceSelectionActive={isViewingHistory ? false : Boolean(voiceSelectionRewardId)}
-              onVoiceSpaceSelect={handleVoiceSpaceSelect}
-              blockedSpaces={displayState.blockedSpaces || []}
-              expansions={displayState.expansions}
-            />
-          )}
+            )}
         </div>
       </div>
         {showTurnHistoryPanel && isDockedHistoryLayout && (
@@ -2199,8 +2142,7 @@ const GameContent = ({
         )}
         {(isViewingHistory ? turnControlsActivePlayer : activePlayer) &&
           (isViewingHistory ? displayState.ixBoard?.stacks : gameState.ixBoard?.stacks) &&
-          (techAcquireStackIndex != null || techAcquireSourceId != null) &&
-          useImageBoard && (
+          (techAcquireStackIndex != null || techAcquireSourceId != null) && (
             <TechAcquireModal
               isOpen
               stackIndex={techAcquireStackIndex}
@@ -2319,7 +2261,7 @@ const GameContent = ({
           .join(' ')}
         hidden={hidePlayShellFooter}
       >
-      {useImageBoard && !isViewingHistory && !gameState.sandboxSetup && activePlayer && (
+      { !isViewingHistory && !gameState.sandboxSetup && activePlayer && (
         <>
           <div className="effect-retreat-troop-dock" data-marker="effect-retreat-troop-controls">
             <div className="effect-retreat-troop-dock__anchor">
@@ -2713,38 +2655,6 @@ function getSelectedCardAgentIcons(gameState: GameState): AgentIcon[] {
   return base
 }
 
-function resolveFirstPlayer(setups: PlayerSetup[]): number {
-  const baronIndex = setups.findIndex(p => p.leader.name === LEADER_NAMES.BARON_VLADIMIR)
-  return baronIndex >= 0 ? baronIndex : 0
-}
-
-function buildGameInputFromConfiguration(
-  players: Player[],
-  imperiumRowDeck: Card[],
-  options: {
-    firstPlayer: number
-    currentRound?: number
-    sandbox?: boolean
-    title?: string
-    gamePackId: string
-  }
-): SaveDoc {
-  const { setup, unmapped } = buildSetupBlockFromConfiguration({
-    players,
-    firstPlayer: options.firstPlayer,
-    imperiumRowDeck,
-    currentRound: options.currentRound,
-    sandbox: options.sandbox,
-    gamePackId: options.gamePackId,
-  })
-  return createGameInputDoc(setup, {
-    title: options.title ?? (options.sandbox ? 'Sandbox game' : 'New game'),
-    notes: unmapped.length
-      ? `Unmapped catalog entries: ${unmapped.join(', ')}`
-      : undefined,
-  })
-}
-
 function packIdFromSaveDoc(doc: SaveDoc): string | null {
   if (doc.setup.gamePackId) return doc.setup.gamePackId
   if (doc.setup.expansions) {
@@ -2754,15 +2664,11 @@ function packIdFromSaveDoc(doc: SaveDoc): string | null {
 }
 
 function App() {
-  const [screenState, setScreenState] = useState<ScreenState>(ScreenState.GAME)
-  const [autoApplyMandatoryRewards, setAutoApplyMandatoryRewards] = useState(() => {
+  const [autoApplyMandatoryRewards] = useState(() => {
     return localStorage.getItem('myMentat.autoApplyMandatoryRewards') !== 'false'
   })
-  const [showBoardInfoTips, setShowBoardInfoTips] = useState(() => getPlayBoardInfoTipsEnabled())
+  const [showBoardInfoTips] = useState(() => getPlayBoardInfoTipsEnabled())
   const [gamePackId, setGamePackId] = useState<string>(() => resolveStoredGamePackId())
-  const [creatorReturnScreen, setCreatorReturnScreen] = useState<ScreenState>(ScreenState.GAME)
-  const [playerSetups, setPlayerSetups] = useState<PlayerSetup[]>([])
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
   const [gameInput, setGameInput] = useState<SaveDoc | null>(null)
   const [gameSessionKey, setGameSessionKey] = useState(0)
   const [localGameId, setLocalGameId] = useState<string | null>(null)
@@ -2776,7 +2682,6 @@ function App() {
     if (packId) setGamePackId(packId)
     setGameInput(doc)
     setGameSessionKey(k => k + 1)
-    setScreenState(ScreenState.GAME)
   }, [])
 
   const adoptLocalDraft = useCallback(
@@ -2897,17 +2802,6 @@ function App() {
     }
   }, [])
 
-  const handleSetupComplete = (setups: PlayerSetup[], selectedGamePackId: string) => {
-    setGamePackId(selectedGamePackId)
-    setPlayerSetups(setups)
-    if (setups.every(s => !s.leader.sogChoice)) {
-      setScreenState(ScreenState.GAME_STATE_SETUP)
-    } else {
-      setCurrentPlayerIndex(0)
-      setScreenState(ScreenState.LEADER_CHOICES)
-    }
-  }
-
   const replaceCurrentSandbox = (selectedGamePackId: string, _mode: 'reset' | 'new' = 'reset') => {
     setGamePackId(selectedGamePackId)
     const doc = createSandboxGameInput(selectedGamePackId, {
@@ -2937,100 +2831,15 @@ function App() {
     })()
   }, [])
 
-  const handleLeaderChoicesComplete = (leader: Leader) => {
-    playerSetups[currentPlayerIndex].leader = leader;
-    if (currentPlayerIndex < playerSetups.length - 1) {
-      setCurrentPlayerIndex(prev => prev + 1)
-    } else {
-      setScreenState(ScreenState.GAME_STATE_SETUP)
-      setCurrentPlayerIndex(0)
-    }
-  }
-
-  const handleGameStateSetupComplete = (state: {
-    players: Player[]
-    currentRound: number
-    imperiumRowDeck: Card[]
-  }) => {
-    const doc = buildGameInputFromConfiguration(state.players, state.imperiumRowDeck, {
-      firstPlayer: resolveFirstPlayer(playerSetups),
-      currentRound: state.currentRound,
-      title: 'New game',
-      gamePackId,
-    })
-    void (async () => {
-      const gen = ++loadGenRef.current
-      try {
-        const record = await persistLocalDraft(doc, localGameIdRef.current)
-        if (gen !== loadGenRef.current) return
-        if (record) adoptLocalDraft(record.id, doc, true)
-        else applySaveDoc(doc)
-      } catch {
-        if (gen !== loadGenRef.current) return
-        applySaveDoc(doc)
-      }
-    })()
-  }
-
-  const handleOpenCardCreator = () => {
-    setCreatorReturnScreen(screenState)
-    setScreenState(ScreenState.CARD_CREATOR)
-  }
-
-  const handleCloseCardCreator = () => {
-    setScreenState(creatorReturnScreen)
-  }
-
-  const renderLeaderChoices = () => {
-    if (!playerSetups[currentPlayerIndex]) return null;
-
-    const currentPlayer = playerSetups[currentPlayerIndex];
-    
-    if (!currentPlayer.leader.sogChoice) {
-      handleLeaderChoicesComplete(currentPlayer.leader);
-      return null;
-    }
-
-    return (
-      <LeaderSetupChoices
-        selectedLeader={currentPlayer.leader}
-        onComplete={handleLeaderChoicesComplete}
-      />
-    );
-  };
-
-  const baronPlayerIndex = playerSetups.findIndex(p => p.leader.name === LEADER_NAMES.BARON_VLADIMIR)
-  const firstPlayerId = baronPlayerIndex >= 0 ? baronPlayerIndex : 0
-
   return (
     <div className="app">
       <PwaPrompt />
 
-      {screenState === ScreenState.LEADER_CHOICES && renderLeaderChoices()}
-
-      {screenState === ScreenState.CARD_CREATOR && (
-        <CardCreator onBack={handleCloseCardCreator} />
-      )}
-
-      {screenState === ScreenState.GAME_STATE_SETUP && (
-        <GameStateSetup 
-          playerSetups={playerSetups}
-          firstPlayer={firstPlayerId}
-          gamePackId={gamePackId}
-          onComplete={handleGameStateSetupComplete}
-          onOpenCardCreator={handleOpenCardCreator}
-          autoApplyMandatoryRewards={autoApplyMandatoryRewards}
-          onAutoApplyMandatoryRewardsChange={setAutoApplyMandatoryRewards}
-          showBoardInfoTips={showBoardInfoTips}
-          onShowBoardInfoTipsChange={setShowBoardInfoTips}
-        />
-      )}
-
-      {screenState === ScreenState.GAME && !gameInput && (
+      {!gameInput && (
         <p className="app-loading-game">Loading game…</p>
       )}
 
-      {screenState === ScreenState.GAME && gameInput && (
+      {gameInput && (
         <GameProvider key={gameSessionKey} gameInput={gameInput} canEdit={canEdit}>
           <LocalGameAutosave localGameId={canEdit ? localGameId : null} />
           <GameContent

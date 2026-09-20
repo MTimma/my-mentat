@@ -21,7 +21,7 @@ describe('Play area drawer toggle', () => {
     expect(appTsx).toContain('onPlayAreaDrawerToggle={() =>')
     expect(appTsx).toContain('setPlayAreaDrawerOpen(!isPlayAreaDrawerOpenRef.current)')
     expect(appTsx).toContain('play-area-collapse-handle')
-    expect(appTsx).toContain('const showPlayAreaDrawerToggle = useImageBoard')
+    expect(appTsx).toContain('const showPlayAreaDrawerToggle = true')
     expect(appTsx).toContain('COMPACT_PLAY_OVERLAY_MQ')
     expect(appTsx).toContain("...(showPlayAreaDrawerToggle && !isPlayAreaDrawerOpen ? { inert: '' } : {})")
   })

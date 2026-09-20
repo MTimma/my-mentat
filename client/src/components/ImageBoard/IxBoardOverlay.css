@@ -250,6 +250,11 @@
   box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.12);
 }
 
+/* Same history outline as the main board; paint above Ix hotspots, under the agent figure. */
+.ix-board-overlay__layer .image-board__history-space-highlight {
+  z-index: 3;
+}
+
 .image-board--hotspot-debug .ix-board-overlay__hotspot {
   outline: 1px dashed magenta;
   outline-offset: -1px;

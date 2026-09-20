@@ -31,7 +31,7 @@ import {
   dreadnoughtControlPointsFor,
   shippingTrackAnchorsFor,
 } from '../../data/expansionBoardMarkers'
-import { IX_BOARD_HOTSPOTS, layoutIxLocalRectPercent } from '../../data/ixBoardAnchors'
+import { isIxOverlaySpaceId } from '../../data/ixBoardAnchors'
 import { SpiceAmountBadge } from '../SpiceAmountBadge/SpiceAmountBadge'
 import {
   INFLUENCE_TRACKS,
@@ -332,7 +332,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   )
   const boardHotspots = BOARD_HOTSPOTS_FOR_EXPANSIONS(gameStateForMarkers.expansions)
   const markerAnchors = markerAnchorsForExpansions(gameStateForMarkers.expansions).filter(
-    anchor => !ixBoardDocked || (anchor.spaceId !== 23 && anchor.spaceId !== 24)
+    anchor => !ixBoardDocked || !isIxOverlaySpaceId(anchor.spaceId)
   )
 
   const canPayCosts = (space: SpaceProps): boolean => {
@@ -432,25 +432,18 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const showCombatArea = showConflictPanel || inActivePlay
   const combatAreaOffBoard = combatAreaBelow || combatAreaDocked
 
+  const ixHistoryHighlightSpaceId =
+    riseOfIx &&
+    historyHighlightSpaceId != null &&
+    isIxOverlaySpaceId(historyHighlightSpaceId)
+      ? historyHighlightSpaceId
+      : null
   const historyHighlightHotspot =
-    historyHighlightSpaceId != null
-      ? boardHotspots.find(h => h.spaceId === historyHighlightSpaceId) ??
-        (!ixBoardDocked
-          ? IX_BOARD_HOTSPOTS.find(h => h.spaceId === historyHighlightSpaceId)
-          : undefined)
+    historyHighlightSpaceId != null && ixHistoryHighlightSpaceId == null
+      ? boardHotspots.find(h => h.spaceId === historyHighlightSpaceId)
       : undefined
   const historyHighlightBox = historyHighlightHotspot
-    ? boardHotspots.some(h => h.spaceId === historyHighlightHotspot.spaceId)
-      ? layoutHotspotPercent(historyHighlightHotspot)
-      : layoutIxLocalRectPercent(
-          {
-            left: historyHighlightHotspot.left,
-            top: historyHighlightHotspot.top,
-            width: historyHighlightHotspot.width,
-            height: historyHighlightHotspot.height,
-          },
-          ixBoardMobileEmbedded
-        )
+    ? layoutHotspotPercent(historyHighlightHotspot)
     : null
 
   const trackerInspectMode = hotspotDebug || markerDebug
@@ -485,12 +478,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         blockedSpaceMap={blockedSpaceMap}
         placement={ixBoardPlacement}
         mobileEmbeddedOverlay={ixBoardMobileEmbedded}
-        historyHighlightSpaceId={
-          ixBoardDocked &&
-          (historyHighlightSpaceId === 23 || historyHighlightSpaceId === 24)
-            ? historyHighlightSpaceId
-            : null
-        }
+        historyHighlightSpaceId={ixHistoryHighlightSpaceId}
         sandboxTechSetup={
           sandboxSetup?.onTechTilesClick
             ? {
@@ -736,7 +724,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           })}
 
           {markerAnchors.map(anchor => {
-            if (riseOfIx && (anchor.spaceId === 23 || anchor.spaceId === 24)) return null
+            if (riseOfIx && isIxOverlaySpaceId(anchor.spaceId)) return null
             const occupied = occupiedSpaces[anchor.spaceId] || []
             if (occupied.length === 0) return null
 

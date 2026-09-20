@@ -25,7 +25,8 @@ describe('Sandbox session bar', () => {
 
   it('is mounted on the sandbox play shell, not GameSetup', () => {
     expect(appTsx).toContain('<SandboxSessionBar')
-    expect(appTsx).not.toMatch(/screenState === ScreenState\.SETUP && \(/)
+    expect(appTsx).not.toContain('GameSetup')
+    expect(appTsx).not.toContain('ScreenState')
   })
 
   it('boots drafts from IndexedDB and lists This browser in Browse', () => {

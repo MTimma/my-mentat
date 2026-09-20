@@ -54,6 +54,12 @@ describe('Alt / Option card zoom', () => {
     expect(tsx).toContain('findCardTitlePreviewImage')
   })
 
+  it('zooms acquired tech and Shipping 3 titles to the tile image, not the gain chip', () => {
+    expect(tsx).toContain("'.turn-gain-tech-title'")
+    expect(tsx).toContain("group?.querySelector('.turn-gain-tech-title')")
+    expect(tsx).toContain('previewImageIn')
+  })
+
   it('zooms on Alt / Option keydown without requiring a mouse move', () => {
     expect(tsx).toContain('pointerRef')
     expect(tsx).toContain('document.elementFromPoint')

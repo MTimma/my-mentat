@@ -677,17 +677,6 @@ export enum GamePhase {
   END_GAME = 'end-game'
 }
 
-export enum ScreenState {
-  SETUP = 'setup',
-  CARD_CREATOR = 'card-creator',
-  LEADER_CHOICES = 'leader-choices',
-  GAME_STATE_SETUP = 'game-state-setup',
-  IMPERIUM_ROW_SETUP = 'imperium-row-setup',
-  ROUND_START = 'round-start',
-  GAME = 'game',
-  CONFLICT = 'conflict'
-}
-
 export enum RewardType {
   CHOICE = 'multi-choice', //dummmy placeholder
   VICTORY_POINTS = 'VP',
@@ -723,14 +712,6 @@ export enum RewardType {
   SPECIMEN = 'Specimen',
   RESEARCH = 'Research',
   TLEILAXU = 'Tleilaxu',
-}
-
-export interface PlayerSetup {
-  leader: Leader
-  color: PlayerColor
-  playerNumber: number
-  deck: Card[]
-  startingHand: Card[]
 }
 
 export interface GameState {

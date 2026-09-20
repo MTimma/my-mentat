@@ -80,7 +80,6 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
               value={gamePackId}
               onChange={e => handleKitChange(e.target.value)}
               className="sandbox-session-bar__select"
-              aria-label="Expansions"
             >
               {selectablePacks.map(pack => (
                 <option key={pack.ref} value={pack.ref}>

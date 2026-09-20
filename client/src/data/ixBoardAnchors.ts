@@ -31,6 +31,11 @@ export const IX_BOARD_HOTSPOTS: BoardHotspot[] = [
   ixHotspot(23, { left: 6, top: 31, width: 47, height: 27 }, { x: 30, y: 52 }), // Dreadnought
 ]
 
+/** Agent spaces that live on the Ix overlay, not the main Board.jpg hotspot layer. */
+export function isIxOverlaySpaceId(spaceId: number): boolean {
+  return IX_BOARD_HOTSPOTS.some(h => h.spaceId === spaceId)
+}
+
 /** Face-up tech tile slots (right column, top → bottom). */
 export const IX_TECH_TILE_RECTS: Array<{
   stackIndex: number

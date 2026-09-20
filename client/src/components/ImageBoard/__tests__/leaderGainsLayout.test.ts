@@ -285,8 +285,9 @@ describe('Leader gains leftover layout', () => {
 
   it('uses in-game birdseye seats while configuring sandbox leaders', () => {
     expect(appTsx).not.toContain('if (!useImageBoard || gameState.sandboxSetup) return null')
+    expect(appTsx).not.toContain('useImageBoard')
     expect(appTsx).toMatch(
-      /const birdseyeMode = useMemo[\s\S]*?if \(!useImageBoard\) return null/
+      /const birdseyeMode = useMemo[\s\S]*?if \(isDesktopPlayView\) return 'desktop6'/
     )
     expect(imageBoardCss).toMatch(
       /\.combat-area-cluster--column\.combat-area-cluster--birdseye \.combat-area-cluster__leader--unassigned \{[\s\S]*?inset:\s*0/

@@ -162,6 +162,8 @@
 
 .turn-gain-tech-title,
 .turn-gain-card-title {
+  position: relative;
+  display: inline-block;
   max-width: 7.5rem;
   font-size: 0.68rem;
   font-weight: 600;
@@ -173,12 +175,8 @@
   text-overflow: ellipsis;
 }
 
-.turn-gain-card-title {
-  position: relative;
-  display: inline-block;
-}
-
-.turn-gain-card-title-zoom-src {
+.turn-gain-card-title-zoom-src,
+.turn-gain-tech-title-zoom-src {
   position: absolute;
   inset: 0;
   width: 100%;

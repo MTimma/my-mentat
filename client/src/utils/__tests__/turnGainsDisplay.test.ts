@@ -30,6 +30,7 @@ import {
   groupCombatHistoryGainsByPlayer,
   excludeAcquiredGainsFromDisplay,
   ACQUIRE_GROUP_TITLE,
+  TECH_ACQUIRE_GROUP_TITLE,
   getGainGroupIcon,
   isRevealPooledRewardType,
   splitRevealPooledGains,
@@ -844,9 +845,9 @@ describe('turnGainsDisplay', () => {
     ] as Parameters<typeof groupGainsBySource>[0])
 
     expect(groups).toHaveLength(2)
-    expect(groups[0].title).toBe(ACQUIRE_GROUP_TITLE)
+    expect(groups[0].title).toBe(TECH_ACQUIRE_GROUP_TITLE)
     expect(groups[0].gains).toHaveLength(3)
-    expect(groups[1].title).toBe(ACQUIRE_GROUP_TITLE)
+    expect(groups[1].title).toBe(TECH_ACQUIRE_GROUP_TITLE)
     expect(groups[1].gains).toHaveLength(3)
   })
 

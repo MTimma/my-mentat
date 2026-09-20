@@ -616,6 +616,9 @@ function boardSpaceTitleForGain(gain: Gain): string | undefined {
 /** Source-group title for Imperium / reserve / intrigue card acquisitions. */
 export const ACQUIRE_GROUP_TITLE = 'Acquired'
 
+/** Source-group title for Ix tech-tile purchases. */
+export const TECH_ACQUIRE_GROUP_TITLE = 'Tech acquired'
+
 function abilityTitleForGain(gain: Gain): string | undefined {
   switch (gain.source) {
     case GainSource.MASTERSTROKE:
@@ -636,7 +639,7 @@ function abilityTitleForGain(gain: Gain): string | undefined {
     case GainSource.IX_BOARD: {
       const tileId = techTileFromGainSourceId(gain.sourceId)
       const tileName = tileId ? getTechTile(tileId)?.name : getTechTileByName(gain.name)?.name
-      return tileName ? ACQUIRE_GROUP_TITLE : 'Ix board'
+      return tileName ? TECH_ACQUIRE_GROUP_TITLE : 'Ix board'
     }
     default:
       return undefined

@@ -1,8 +1,8 @@
 /**
  * Builds the initial GameState from a SetupBlock (catalog ids → instances).
  * Single shared genesis used by both the recorder (live games) and the loader
- * (replaying saved games). Mirrors the state construction in App.tsx /
- * GameStateSetup so a replayed genesis equals a live one.
+ * (replaying saved games). Mirrors sandbox genesis construction in App.tsx
+ * so a replayed genesis equals a live one.
  *
  * Instance-id assignment is deterministic:
  * - player deck cards reuse the authored copy ids of their template, consumed

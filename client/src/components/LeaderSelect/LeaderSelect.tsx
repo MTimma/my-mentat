@@ -5,15 +5,12 @@ import { getLeaderImage } from '../../data/leaders'
 import { cardThumbSrc } from '../../utils/cardThumbSrc'
 import './LeaderSelect.css'
 
-export type LeaderSelectVariant = 'setup' | 'sandbox'
-
 interface LeaderSelectProps {
   leaders: Leader[]
   value: Leader
   onChange: (leader: Leader) => void
   ariaLabel?: string
   className?: string
-  variant?: LeaderSelectVariant
 }
 
 const LeaderSelect: React.FC<LeaderSelectProps> = ({
@@ -22,7 +19,6 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
   onChange,
   ariaLabel,
   className,
-  variant = 'setup',
 }) => {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -40,12 +36,7 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
       return
     }
     const rect = trigger.getBoundingClientRect()
-    const menuWidth =
-      variant === 'sandbox'
-        ? Math.min(400, Math.max(280, window.innerWidth - rect.left - 16))
-        : variant === 'setup'
-          ? Math.min(240, Math.max(180, window.innerWidth - rect.left - 16))
-        : rect.width
+    const menuWidth = Math.min(400, Math.max(280, window.innerWidth - rect.left - 16))
     setMenuRect({
       top: rect.bottom,
       left: rect.left,
@@ -65,15 +56,13 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
       window.removeEventListener('resize', updateMenuRect)
       window.removeEventListener('scroll', updateMenuRect, true)
     }
-  }, [open, variant])
+  }, [open])
 
   useEffect(() => {
-    const row = rootRef.current?.closest('.player-setup-row, .sandbox-player-editor__leader-row')
+    const row = rootRef.current?.closest('.sandbox-player-editor__leader-row')
     if (!row) return
-    row.classList.toggle('player-setup-row--leader-menu-open', open)
     row.classList.toggle('sandbox-player-editor__leader-row--menu-open', open)
     return () => {
-      row.classList.remove('player-setup-row--leader-menu-open')
       row.classList.remove('sandbox-player-editor__leader-row--menu-open')
     }
   }, [open])
@@ -114,7 +103,7 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
         className={[
           'leader-select__menu',
           'leader-select__menu--portal',
-          variant === 'sandbox' ? 'leader-select__menu--sandbox' : '',
+          'leader-select__menu--sandbox',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -174,7 +163,7 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
       ref={rootRef}
       className={[
         'leader-select',
-        `leader-select--${variant}`,
+        'leader-select--sandbox',
         open ? 'leader-select--open' : '',
         className,
       ]

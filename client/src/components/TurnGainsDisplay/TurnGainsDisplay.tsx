@@ -262,8 +262,22 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   const renderTechTileGain = (name: string | undefined, key: string) => {
     const tile = name ? getTechTileByName(name) : undefined
     const label = tile?.name ?? name ?? 'Tech'
+    const image = tile?.image
     return (
-      <span key={key} className="turn-gain-tech-title" title={label}>
+      <span
+        key={key}
+        className="turn-gain-tech-title"
+        title={image ? withImageZoomHint(label) : label}
+      >
+        {image ? (
+          <img
+            src={image}
+            alt=""
+            className="turn-gain-tech-title-zoom-src"
+            draggable={false}
+            data-preview-src={image}
+          />
+        ) : null}
         {label}
       </span>
     )

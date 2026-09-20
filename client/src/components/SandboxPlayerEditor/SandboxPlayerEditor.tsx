@@ -423,7 +423,6 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
               value={player.leader}
               onChange={handleLeaderChange}
               ariaLabel="Leader"
-              variant="sandbox"
             />
             <div className="sandbox-player-editor__pile-actions">
               <div className="sandbox-player-editor__pile-buttons">
