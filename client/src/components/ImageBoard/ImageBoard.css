@@ -438,19 +438,18 @@
 
 .image-board__dreadnought-control-marker {
   position: absolute;
-  width: 0;
-  height: 0;
+  width: clamp(10px, 2.2%, 21px);
+  aspect-ratio: 11 / 18;
+  height: auto;
+  transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 3;
 }
 
 .image-board__dreadnought-control-marker .image-board__dreadnought-control-icon {
-  position: absolute;
-  left: 0;
-  top: 0;
-  transform: translate(-50%, -50%);
-  width: clamp(11px, 2.2cqw, 16px);
-  height: clamp(18px, 3.6cqw, 26px);
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .image-board__dreadnought-control-marker .image-board__dreadnought-control-icon.dreadnought-icon--control::before {
@@ -700,40 +699,40 @@
   z-index: 4;
 }
 
-/* Zero-size anchor so translate(-50%, -50%) is a point, not half a stretched box */
+/* Scale with board width (overlay %), like .image-board__tracker--cube. Pin is sized; figure fills it. */
 .image-board__marker {
   position: absolute;
-  width: 0;
-  height: 0;
+  width: clamp(12px, 4%, 48px);
+  aspect-ratio: 4 / 5;
+  height: auto;
+  transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 2;
 }
 
-/* Same agent sculpt as BoardSpace; cqw scales with board, not the marker wrapper */
+.image-board__marker:has(> .agent--dreadnought) {
+  width: clamp(10px, 2.8%, 26px);
+  aspect-ratio: 1;
+}
+
 .image-board__marker .image-board__agent-figure.agent:not(.agent--dreadnought) {
-  position: absolute;
-  left: 0;
-  top: 0;
-  transform: translate(-50%, -50%);
-  width: clamp(20px, 4cqw, 32px);
-  height: clamp(25px, 5cqw, 40px);
   display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .image-board__marker .image-board__agent-figure.agent--dreadnought {
-  width: clamp(14px, 2.8cqw, 20px);
-  height: clamp(14px, 2.8cqw, 20px);
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   filter: drop-shadow(1px 2px 1px rgba(0, 0, 0, 0.42));
 }
 
 .image-board__marker:has(> .agent--dreadnought)::after {
   content: '';
   position: absolute;
-  left: 0;
-  top: 0;
-  transform: translate(-50%, -50%);
-  width: clamp(14px, 2.8cqw, 20px);
-  height: clamp(14px, 2.8cqw, 20px);
+  inset: 0;
   background: linear-gradient(
     145deg,
     rgba(255, 255, 255, 0.28) 0%,
@@ -753,31 +752,7 @@
   pointer-events: none;
 }
 
-@media (max-width: 600px) {
-  .image-board__marker .image-board__agent-figure.agent:not(.agent--dreadnought) {
-    width: 18px;
-    height: 22px;
-  }
-
-  .image-board__marker .image-board__agent-figure.agent--dreadnought {
-    width: 14px;
-    height: 14px;
-  }
-
-  .image-board__marker:has(> .agent--dreadnought)::after {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-@media (min-width: 901px) {
-  .image-board__marker .image-board__agent-figure.agent:not(.agent--dreadnought) {
-    width: clamp(32px, 6.4cqw, 51.2px);
-    height: clamp(40px, 8cqw, 64px);
-  }
-}
-
-/* Zero-size anchor; badge centered on BONUS_SPICE_ANCHORS point (same as agent markers). */
+/* Zero-size anchor; badge centered on BONUS_SPICE_ANCHORS point. */
 .image-board__bonus-spice-anchor {
   position: absolute;
   width: 0;

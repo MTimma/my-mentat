@@ -1,5 +1,6 @@
 import { Gain } from '../../types/GameTypes'
 import { RevealTurnStats } from '../../utils/revealTurnStats'
+import { catalogDeckCardImageById } from '../../utils/cardCatalogLookup'
 import {
   ACQUIRE_GROUP_TITLE,
   excludeAcquiredGainsFromDisplay,
@@ -73,15 +74,16 @@ const RevealTurnStatsPanel = ({
     <>
       {stats.acquiredCards.map(card => {
         const acquireGains = getAcquireEffectGainsForCard(gains, card.id)
+        const image = card.image || catalogDeckCardImageById(card.id)
         return (
-          <span key={card.id} className="reveal-turn-acquired-card" title={card.image ? withImageZoomHint(card.name) : card.name}>
-            {card.image ? (
+          <span key={card.id} className="reveal-turn-acquired-card" title={image ? withImageZoomHint(card.name) : card.name}>
+            {image ? (
               <img
-                src={card.image}
+                src={image}
                 alt=""
                 className="reveal-turn-acquired-zoom-src"
                 draggable={false}
-                data-preview-src={card.image}
+                data-preview-src={image}
               />
             ) : null}
             <span className="reveal-turn-acquired-name">{ACQUIRE_GROUP_TITLE}</span>

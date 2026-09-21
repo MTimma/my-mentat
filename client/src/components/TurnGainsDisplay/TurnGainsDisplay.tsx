@@ -36,6 +36,7 @@ import AgentIcon from '../AgentIcon/AgentIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import FreighterIcon from '../FreighterIcon/FreighterIcon'
 import TechTileFlipBadge from '../TechTileFlipBadge/TechTileFlipBadge'
+import { catalogDeckCardImageById } from '../../utils/cardCatalogLookup'
 import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './TurnGainsDisplay.css'
 
@@ -286,7 +287,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   const renderAcquiredCardTitle = (cardId: number | undefined, name: string | undefined, key: string) => {
     const card = cardId != null ? resolveCard?.(cardId, name ?? '') : undefined
     const label = card?.name ?? name ?? 'Card'
-    const image = card?.image
+    const image = card?.image || (cardId != null ? catalogDeckCardImageById(cardId) : undefined)
     return (
       <span
         key={key}

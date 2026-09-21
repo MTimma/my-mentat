@@ -281,18 +281,7 @@
 }
 
 .ix-board-overlay__layer .image-board__marker {
-  position: absolute;
-  width: 0;
-  height: 0;
-  pointer-events: none;
   z-index: 4;
-}
-
-.ix-board-overlay__layer .image-board__marker .image-board__agent-figure {
-  position: absolute;
-  left: 0;
-  top: 0;
-  transform: translate(-50%, -50%);
 }
 
 .image-board--tracker-inspect [data-marker='ix-board'],

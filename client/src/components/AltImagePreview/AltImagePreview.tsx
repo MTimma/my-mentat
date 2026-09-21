@@ -98,18 +98,22 @@ function findGainZoomTarget(target: EventTarget | null): HTMLElement | null {
   return null
 }
 
-function previewImageIn(el: Element | null): HTMLImageElement | null {
+/** Overlay zoom-src images are opacity:0; use data-preview-src even when the img itself has no hit box. */
+function titlePreviewImageIn(el: Element | null): HTMLImageElement | null {
   if (!el) return null
   const img = el.querySelector('img[data-preview-src]')
-  return img instanceof HTMLImageElement && isVisiblePreviewTarget(img) ? img : null
+  if (!(img instanceof HTMLImageElement)) return null
+  return img.getAttribute('data-preview-src') ? img : null
 }
 
 function findCardTitlePreviewImage(target: EventTarget | null): HTMLImageElement | null {
   if (!(target instanceof Element)) return null
-  const fromTitle = previewImageIn(target.closest(CARD_TITLE_ZOOM_SELECTOR))
+  const fromTitle = titlePreviewImageIn(target.closest(CARD_TITLE_ZOOM_SELECTOR))
   if (fromTitle) return fromTitle
   const group = target.closest('.turn-gain-source-group')
-  return previewImageIn(group?.querySelector('.turn-gain-tech-title') ?? null)
+  return titlePreviewImageIn(
+    group?.querySelector('.turn-gain-card-title, .turn-gain-tech-title') ?? null
+  )
 }
 
 function findPreviewImageFromTarget(target: EventTarget | null): HTMLImageElement | null {

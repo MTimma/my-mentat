@@ -63,6 +63,7 @@ import SandboxSetupControls from './components/SandboxSetupControls/SandboxSetup
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
 import UndoConfirmDialog from './components/TimeTravel/UndoConfirmDialog'
+import { TurnHistoryUndoProvider } from './components/TurnHistoryUndoButton'
 import { areAllLeadersAssigned, isUnassignedLeader } from './data/leaders'
 import { getEndTurnButtonState } from './utils/endTurnState'
 import {
@@ -378,6 +379,7 @@ const GameContent = ({
     canUndo,
     undoTitle,
     undoAriaLabel,
+    onLoadSave,
     onOpenPlayerOverview: isDesktopPlayView ? () => setIsPlayerOverviewOpen(true) : undefined,
   }
 
@@ -1983,6 +1985,7 @@ const GameContent = ({
   ) : null
 
   return (
+    <TurnHistoryUndoProvider value={turnHistoryUndoProps}>
     <div
       ref={gameContainerRef}
       className={[
@@ -2605,6 +2608,7 @@ const GameContent = ({
       </AltImagePreviewProvider>
       </PlayBoardModalProvider>
     </div>
+    </TurnHistoryUndoProvider>
   )
 }
 

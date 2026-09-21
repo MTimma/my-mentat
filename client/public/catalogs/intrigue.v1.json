@@ -6,7 +6,7 @@
       "name": "Ambush",
       "type": "combat",
       "description": "Combat: +4 strength.",
-      "image": "/intrigue/base/ambush.png",
+      "image": "/intrigue/base/ambush.avif",
       "effects": {
         "play": [
           "effect:intrigue:1:play:0"
@@ -18,7 +18,7 @@
       "name": "Allied Armada",
       "type": "combat",
       "description": "If you have a faction alliance: pay 2 spice to gain +7 strength.",
-      "image": "/intrigue/base/allied_armada.png",
+      "image": "/intrigue/base/allied_armada.avif",
       "effects": {
         "play": [
           "effect:intrigue:2:play:0"
@@ -30,7 +30,7 @@
       "name": "Bindu Suspension",
       "type": "plot",
       "description": "At the start of your turn: draw 1 card. You may pass your turn (instead of taking an Agent or Reveal turn).",
-      "image": "/intrigue/base/bindu_suspension.png",
+      "image": "/intrigue/base/bindu_suspension.avif",
       "effects": {
         "play": [
           "effect:intrigue:3:play:0"
@@ -42,7 +42,7 @@
       "name": "Bribery",
       "type": "plot",
       "description": "Pay 2 Solari to gain 1 influence with a faction of your choice.",
-      "image": "/intrigue/base/bribery.png",
+      "image": "/intrigue/base/bribery.avif",
       "effects": {
         "play": [
           "effect:intrigue:4:play:0"
@@ -54,7 +54,7 @@
       "name": "Bypass Protocol",
       "type": "plot",
       "description": "Acquire a card that costs 3 or less —OR— pay 2 spice to acquire a card that costs 5 or less to the top of your deck.",
-      "image": "/intrigue/base/bypass_protocol.png",
+      "image": "/intrigue/base/bypass_protocol.avif",
       "effects": {
         "play": [
           "effect:intrigue:5:play:0",
@@ -67,7 +67,7 @@
       "name": "Calculated Hire",
       "type": "plot",
       "description": "Pay 1 spice to take the Mentat from its designated space in the Landsraad.",
-      "image": "/intrigue/base/calculated_hire.png",
+      "image": "/intrigue/base/calculated_hire.avif",
       "effects": {
         "play": [
           "effect:intrigue:6:play:0"
@@ -79,7 +79,7 @@
       "name": "Charisma",
       "type": "plot",
       "description": "Gain 2 persuasion during your Reveal turn this round.",
-      "image": "/intrigue/base/charisma.png",
+      "image": "/intrigue/base/charisma.avif",
       "effects": {
         "play": [
           "effect:intrigue:7:play:0"
@@ -91,7 +91,7 @@
       "name": "CHOAM Shares",
       "type": "plot",
       "description": "Pay 7 Solari to gain 1 VP.",
-      "image": "/intrigue/base/choam_shares.png",
+      "image": "/intrigue/base/choam_shares.avif",
       "effects": {
         "play": [
           "effect:intrigue:8:play:0"
@@ -103,7 +103,7 @@
       "name": "Corner the Market",
       "type": "endgame",
       "description": "Endgame: If you have at least two The Spice Must Flow, gain 1 VP. If you have more The Spice Must Flow than each opponent, gain 1 VP.",
-      "image": "/intrigue/base/corner_the_market.png",
+      "image": "/intrigue/base/corner_the_market.avif",
       "effects": {
         "play": [
           "effect:intrigue:9:play:0"
@@ -115,7 +115,7 @@
       "name": "Councilor’s Dispensation",
       "type": "plot",
       "description": "If you have a seat on the High Council: gain 2 spice.",
-      "image": "/intrigue/base/councilors_dispensation.png",
+      "image": "/intrigue/base/councilors_dispensation.avif",
       "effects": {
         "play": [
           "effect:intrigue:10:play:0"
@@ -127,7 +127,7 @@
       "name": "Dispatch an Envoy",
       "type": "plot",
       "description": "The card you play this turn has the following icons.",
-      "image": "/intrigue/base/dispatch_an_envoy.png",
+      "image": "/intrigue/base/dispatch_an_envoy.avif",
       "effects": {
         "play": [
           "effect:intrigue:11:play:0"
@@ -139,7 +139,7 @@
       "name": "Double Cross",
       "type": "plot",
       "description": "An opponent of your choice loses 1 troop in the Conflict and you deploy 1 troop from your supply to the Conflict.",
-      "image": "/intrigue/base/double_cross.png",
+      "image": "/intrigue/base/double_cross.avif",
       "targetPlayer": true,
       "effects": {
         "play": [
@@ -152,7 +152,7 @@
       "name": "Favored Subject",
       "type": "plot",
       "description": "Gain 1 influence with the Emperor.",
-      "image": "/intrigue/base/favored_subject.png",
+      "image": "/intrigue/base/favored_subject.avif",
       "effects": {
         "play": [
           "effect:intrigue:13:play:0"
@@ -164,7 +164,7 @@
       "name": "Guild Authorization",
       "type": "plot",
       "description": "Gain 1 influence with the Spacing Guild.",
-      "image": "/intrigue/base/guild_authorization.png",
+      "image": "/intrigue/base/guild_authorization.avif",
       "effects": {
         "play": [
           "effect:intrigue:14:play:0"
@@ -176,7 +176,7 @@
       "name": "Infiltrate",
       "type": "plot",
       "description": "Enemy Agents don’t block your next Agent at board spaces this turn.",
-      "image": "/intrigue/base/infiltrate.png",
+      "image": "/intrigue/base/infiltrate.avif",
       "effects": {
         "play": [
           "effect:intrigue:15:play:0"
@@ -188,7 +188,7 @@
       "name": "Know Their Ways",
       "type": "plot",
       "description": "Gain 1 influence with the Fremen.",
-      "image": "/intrigue/base/know_their_ways.png",
+      "image": "/intrigue/base/know_their_ways.avif",
       "effects": {
         "play": [
           "effect:intrigue:16:play:0"
@@ -200,7 +200,7 @@
       "name": "Master Tactician",
       "type": "combat",
       "description": "Combat: +3 strength —OR— Retreat up to three of your troops.",
-      "image": "/intrigue/base/master_tactitian.png",
+      "image": "/intrigue/base/master_tactitian.avif",
       "effects": {
         "play": [
           "effect:intrigue:17:play:0",
@@ -213,7 +213,7 @@
       "name": "Plans Within Plans",
       "type": "endgame",
       "description": "Endgame: If you have 3+ influence on three faction tracks, gain 1 VP —OR— if you have 3+ influence on four faction tracks, gain 2 VP.",
-      "image": "/intrigue/base/plans_within_plans.png",
+      "image": "/intrigue/base/plans_within_plans.avif",
       "effects": {
         "play": [
           "effect:intrigue:18:play:0"
@@ -225,7 +225,7 @@
       "name": "Private Army",
       "type": "combat",
       "description": "Pay 2 spice to gain +5 strength.",
-      "image": "/intrigue/base/private_army.png",
+      "image": "/intrigue/base/private_army.avif",
       "effects": {
         "play": [
           "effect:intrigue:19:play:0"
@@ -237,7 +237,7 @@
       "name": "Rapid Mobilization",
       "type": "plot",
       "description": "Deploy any number of your garrisoned troops to the Conflict.",
-      "image": "/intrigue/base/rapid_mobilization.png",
+      "image": "/intrigue/base/rapid_mobilization.avif",
       "effects": {
         "play": [
           "effect:intrigue:20:play:0"
@@ -249,7 +249,7 @@
       "name": "Recruitment Mission",
       "type": "plot",
       "description": "Gain 1 persuasion during your Reveal turn this round. You may put cards you acquire on top of your deck.",
-      "image": "/intrigue/base/recruitment_mission.png",
+      "image": "/intrigue/base/recruitment_mission.avif",
       "effects": {
         "play": [
           "effect:intrigue:21:play:0",
@@ -262,7 +262,7 @@
       "name": "Refocus",
       "type": "plot",
       "description": "Shuffle your discard pile into your deck, then draw 1 card.",
-      "image": "/intrigue/base/refocus.png",
+      "image": "/intrigue/base/refocus.avif",
       "effects": {
         "play": [
           "effect:intrigue:22:play:0",
@@ -275,7 +275,7 @@
       "name": "Reinforcements",
       "type": "plot",
       "description": "Pay 3 Solari to gain 3 troops. If it’s your Reveal turn, you may deploy any of these troops to the Conflict.",
-      "image": "/intrigue/base/reinforcements.png",
+      "image": "/intrigue/base/reinforcements.avif",
       "effects": {
         "play": [
           "effect:intrigue:23:play:0"
@@ -287,7 +287,7 @@
       "name": "Secret of the Sisterhood",
       "type": "plot",
       "description": "Gain 1 influence with the Bene Gesserit.",
-      "image": "/intrigue/base/secret_of_the_sisterhood.png",
+      "image": "/intrigue/base/secret_of_the_sisterhood.avif",
       "effects": {
         "play": [
           "effect:intrigue:24:play:0"
@@ -299,7 +299,7 @@
       "name": "Staged Incident",
       "type": "combat",
       "description": "Lose three of your troops in the Conflict to gain 1 VP.",
-      "image": "/intrigue/base/staged_incident.png",
+      "image": "/intrigue/base/staged_incident.avif",
       "effects": {
         "play": [
           "effect:intrigue:25:play:0"
@@ -311,7 +311,7 @@
       "name": "The Sleeper Must Awaken",
       "type": "plot",
       "description": "Pay 4 spice to gain 1 VP.",
-      "image": "/intrigue/base/the_sleeper_must_awaken.png",
+      "image": "/intrigue/base/the_sleeper_must_awaken.avif",
       "effects": {
         "play": [
           "effect:intrigue:26:play:0"
@@ -323,7 +323,7 @@
       "name": "Tiebreaker",
       "type": "combat",
       "description": "Combat: +2 strength —OR— Endgame: counts as 10 spice for tiebreakers.",
-      "image": "/intrigue/base/tiebraker.png",
+      "image": "/intrigue/base/tiebraker.avif",
       "effects": {
         "play": [
           "effect:intrigue:27:play:0",
@@ -336,7 +336,7 @@
       "name": "To the Victor…",
       "type": "combat",
       "description": "When you win a Conflict: gain 3 spice.",
-      "image": "/intrigue/base/to_the_victor.png",
+      "image": "/intrigue/base/to_the_victor.avif",
       "effects": {
         "play": [
           "effect:intrigue:28:play:0"
@@ -348,7 +348,7 @@
       "name": "Urgent Mission",
       "type": "plot",
       "description": "Recall one of your Agents.",
-      "image": "/intrigue/base/urgent_mission.png",
+      "image": "/intrigue/base/urgent_mission.avif",
       "effects": {
         "play": [
           "effect:intrigue:29:play:0"
@@ -360,7 +360,7 @@
       "name": "Water of Life",
       "type": "plot",
       "description": "Pay 1 water and 1 spice to draw 3 cards.",
-      "image": "/intrigue/base/water_of_life.png",
+      "image": "/intrigue/base/water_of_life.avif",
       "effects": {
         "play": [
           "effect:intrigue:30:play:0"
@@ -372,7 +372,7 @@
       "name": "Water Peddlers Union",
       "type": "plot",
       "description": "Gain 1 water.",
-      "image": "/intrigue/base/water_peddlers_union.png",
+      "image": "/intrigue/base/water_peddlers_union.avif",
       "effects": {
         "play": [
           "effect:intrigue:31:play:0"
@@ -384,7 +384,7 @@
       "name": "Windfall",
       "type": "plot",
       "description": "Gain 2 Solari.",
-      "image": "/intrigue/base/windfall.png",
+      "image": "/intrigue/base/windfall.avif",
       "effects": {
         "play": [
           "effect:intrigue:32:play:0"
@@ -396,7 +396,7 @@
       "name": "Demand Respect",
       "type": "combat",
       "description": "When you win a Conflict: gain 1 influence with a faction of your choice —OR— pay 2 spice to gain 2 influence with one faction.",
-      "image": "/intrigue/base/demand_respect.webp",
+      "image": "/intrigue/base/demand_respect.avif",
       "effects": {
         "play": [
           "effect:intrigue:33:play:0"
@@ -408,7 +408,7 @@
       "name": "Poison Snooper",
       "type": "plot",
       "description": "Look at the top card of your deck. Draw it —OR— trash it.",
-      "image": "/intrigue/base/poison_snooper.webp",
+      "image": "/intrigue/base/poison_snooper.avif",
       "effects": {
         "play": [
           "effect:intrigue:34:play:0"
@@ -420,7 +420,7 @@
       "name": "Blackmail",
       "type": "combat",
       "description": "Combat: Lose 1 influence (your choice) to gain +5 strength.",
-      "image": "/intrigue/rise_of_ix/blackmail.png",
+      "image": "/intrigue/rise_of_ix/blackmail.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -433,7 +433,7 @@
       "name": "Cannon Turrets",
       "type": "combat",
       "description": "Combat: +2 strength. Each opponent retreats 1 dreadnought from the Conflict.",
-      "image": "/intrigue/rise_of_ix/cannon_turrets.png",
+      "image": "/intrigue/rise_of_ix/cannon_turrets.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -447,7 +447,7 @@
       "name": "Strategic Push",
       "type": "combat",
       "description": "Combat: +2 strength. If you win this Conflict: +2 Solari.",
-      "image": "/intrigue/rise_of_ix/strategic_push.png",
+      "image": "/intrigue/rise_of_ix/strategic_push.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -461,7 +461,7 @@
       "name": "Second Wave",
       "type": "combat",
       "description": "Combat: +2 strength. Deploy up to 2 units from your garrison to the Conflict.",
-      "image": "/intrigue/rise_of_ix/second_wave.png",
+      "image": "/intrigue/rise_of_ix/second_wave.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -475,7 +475,7 @@
       "name": "War Chest",
       "type": "combat",
       "description": "Combat: Pay 2 Solari to gain +4 strength —OR— Endgame: If you have 10+ Solari, gain 1 VP.",
-      "image": "/intrigue/rise_of_ix/war_chest.png",
+      "image": "/intrigue/rise_of_ix/war_chest.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -489,7 +489,7 @@
       "name": "Finesse",
       "type": "combat",
       "description": "Combat: +2 strength —OR— Plot: Lose 1 influence (your choice) to gain 1 influence (your choice).",
-      "image": "/intrigue/rise_of_ix/finesse.png",
+      "image": "/intrigue/rise_of_ix/finesse.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -503,7 +503,7 @@
       "name": "Advanced Weaponry",
       "type": "combat",
       "description": "Combat: If you have 3 tech: +4 strength —OR— Plot: Pay 3 Solari to commission 1 dreadnought.",
-      "image": "/intrigue/rise_of_ix/advanced_weaponry.png",
+      "image": "/intrigue/rise_of_ix/advanced_weaponry.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -517,7 +517,7 @@
       "name": "Grand Conspiracy",
       "type": "endgame",
       "description": "Endgame: If you meet 3 of 4 conditions (2 dreadnoughts, 1 SMF, 4+ influence on 2 tracks, High Council): 1 VP. All 4: 2 VP.",
-      "image": "/intrigue/rise_of_ix/grand_conspiracy.png",
+      "image": "/intrigue/rise_of_ix/grand_conspiracy.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -530,7 +530,7 @@
       "name": "Strongarm",
       "type": "plot",
       "description": "Lose a troop to gain 1 influence on the faction track where you placed an Agent this turn.",
-      "image": "/intrigue/rise_of_ix/strongarm.png",
+      "image": "/intrigue/rise_of_ix/strongarm.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -543,7 +543,7 @@
       "name": "Ixian Probe",
       "type": "plot",
       "description": "Discard 2 cards to draw 2 cards.",
-      "image": "/intrigue/rise_of_ix/ixian_probe.png",
+      "image": "/intrigue/rise_of_ix/ixian_probe.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -556,7 +556,7 @@
       "name": "Cull",
       "type": "plot",
       "description": "Pay 1 Solari to trash 1 card.",
-      "image": "/intrigue/rise_of_ix/cull.png",
+      "image": "/intrigue/rise_of_ix/cull.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -569,7 +569,7 @@
       "name": "Secret Forces",
       "type": "plot",
       "description": "Gain 2 troops if you have a seat on the High Council.",
-      "image": "/intrigue/rise_of_ix/secret_forces.png",
+      "image": "/intrigue/rise_of_ix/secret_forces.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -582,7 +582,7 @@
       "name": "Quid Pro Quo",
       "type": "plot",
       "description": "Pay 2 spice to gain 1 influence on each faction track where you currently have an Agent.",
-      "image": "/intrigue/rise_of_ix/quid_pro_quo.png",
+      "image": "/intrigue/rise_of_ix/quid_pro_quo.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -595,7 +595,7 @@
       "name": "Glimpse the Path",
       "type": "plot",
       "description": "Pay 1 spice to gain 1 water and draw 1 card.",
-      "image": "/intrigue/rise_of_ix/glimpse_the_path.png",
+      "image": "/intrigue/rise_of_ix/glimpse_the_path.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -608,7 +608,7 @@
       "name": "Diversion",
       "type": "plot",
       "description": "When you deploy 4 units to the Conflict in one turn, gain +1 on the Shipping track.",
-      "image": "/intrigue/rise_of_ix/diversion.png",
+      "image": "/intrigue/rise_of_ix/diversion.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -621,7 +621,7 @@
       "name": "Expedite",
       "type": "plot",
       "description": "Pay 1 spice to advance 1 space on the Shipping track.",
-      "image": "/intrigue/rise_of_ix/expedite.png",
+      "image": "/intrigue/rise_of_ix/expedite.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -634,7 +634,7 @@
       "name": "Machine Culture",
       "type": "plot",
       "description": "Plot: Acquire 1 tech tile —OR— Endgame: If you have 3 tech: gain 1 VP.",
-      "image": "/intrigue/rise_of_ix/machine_culture.png",
+      "image": "/intrigue/rise_of_ix/machine_culture.avif",
       "riseOfIx": true,
       "effects": {
         "play": [
@@ -648,7 +648,7 @@
       "name": "Harvest Cells",
       "type": "combat",
       "description": "Combat: When you lose 3+ troops at the end of a Conflict: +2 specimen. You may also acquire a Tleilaxu card (paying its normal cost).",
-      "image": "/intrigue/immortality/harvest_cells.png",
+      "image": "/intrigue/immortality/harvest_cells.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -661,7 +661,7 @@
       "name": "Harvest Cells",
       "type": "combat",
       "description": "Combat: When you lose 3+ troops at the end of a Conflict: +2 specimen. You may also acquire a Tleilaxu card (paying its normal cost).",
-      "image": "/intrigue/immortality/harvest_cells.png",
+      "image": "/intrigue/immortality/harvest_cells.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -674,7 +674,7 @@
       "name": "Vicious Talents",
       "type": "combat",
       "description": "Combat: +2 strength. If research lvl 1: +2 more. If research lvl 2: +2 more (2–6 strength).",
-      "image": "/intrigue/immortality/vicious_talents.png",
+      "image": "/intrigue/immortality/vicious_talents.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -687,7 +687,7 @@
       "name": "Vicious Talents",
       "type": "combat",
       "description": "Combat: +2 strength. If research lvl 1: +2 more. If research lvl 2: +2 more (2–6 strength).",
-      "image": "/intrigue/immortality/vicious_talents.png",
+      "image": "/intrigue/immortality/vicious_talents.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -700,7 +700,7 @@
       "name": "Gruesome Sacrifice",
       "type": "combat",
       "description": "Combat: Lose 2 of your troops in the Conflict to gain +2 specimen and +1 beetle.",
-      "image": "/intrigue/immortality/gruesome_sacrificee.png",
+      "image": "/intrigue/immortality/gruesome_sacrificee.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -713,7 +713,7 @@
       "name": "Gruesome Sacrifice",
       "type": "combat",
       "description": "Combat: Lose 2 of your troops in the Conflict to gain +2 specimen and +1 beetle.",
-      "image": "/intrigue/immortality/gruesome_sacrificee.png",
+      "image": "/intrigue/immortality/gruesome_sacrificee.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -726,7 +726,7 @@
       "name": "Breakthrough",
       "type": "plot",
       "description": "Plot: +1 research.",
-      "image": "/intrigue/immortality/breakthrough.png",
+      "image": "/intrigue/immortality/breakthrough.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -739,7 +739,7 @@
       "name": "Illicit Dealings",
       "type": "plot",
       "description": "Plot: +1 beetle (advance on the Tleilaxu track).",
-      "image": "/intrigue/immortality/illicit_dealings.png",
+      "image": "/intrigue/immortality/illicit_dealings.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -752,7 +752,7 @@
       "name": "Illicit Dealings",
       "type": "plot",
       "description": "Plot: +1 beetle (advance on the Tleilaxu track).",
-      "image": "/intrigue/immortality/illicit_dealings.png",
+      "image": "/intrigue/immortality/illicit_dealings.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -765,7 +765,7 @@
       "name": "Disguised Bureaucrat",
       "type": "plot",
       "description": "Plot: If research lvl 1: +1 spice. If research lvl 2: +1 influence (your choice).",
-      "image": "/intrigue/immortality/disguised_beaurocrat.png",
+      "image": "/intrigue/immortality/disguised_beaurocrat.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -778,7 +778,7 @@
       "name": "Shadowy Bargain",
       "type": "plot",
       "description": "Plot: +1 specimen —OR— Endgame: +1 beetle (advance on the Tleilaxu track).",
-      "image": "/intrigue/immortality/shadowy_bargain.png",
+      "image": "/intrigue/immortality/shadowy_bargain.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -792,7 +792,7 @@
       "name": "Tleilaxu Puppet",
       "type": "plot",
       "description": "Plot: +1 persuasion this round —OR— Endgame: If you have a High Council seat and research lvl 2: +1 VP.",
-      "image": "/intrigue/immortality/tleilaxu_puppet.png",
+      "image": "/intrigue/immortality/tleilaxu_puppet.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -806,7 +806,7 @@
       "name": "Study Melange",
       "type": "plot",
       "description": "Plot: +1 spice —OR— Endgame: If you have 3 spice and research lvl 2: +1 VP.",
-      "image": "/intrigue/immortality/study_melange.png",
+      "image": "/intrigue/immortality/study_melange.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -820,7 +820,7 @@
       "name": "Counterattack",
       "type": "combat",
       "description": "Plot: Deploy up to 2 troops from your garrison —OR— Combat: If an opponent played a combat intrigue: +4 strength.",
-      "image": "/intrigue/immortality/counterattack.png",
+      "image": "/intrigue/immortality/counterattack.avif",
       "immortality": true,
       "effects": {
         "play": [
@@ -834,7 +834,7 @@
       "name": "Economic Positioning",
       "type": "plot",
       "description": "Plot: Retreat 2 troops to gain +3 Solari —OR— Endgame: If you have 10 Solari: +1 VP.",
-      "image": "/intrigue/immortality/economic_positioning.png",
+      "image": "/intrigue/immortality/economic_positioning.avif",
       "immortality": true,
       "effects": {
         "play": [

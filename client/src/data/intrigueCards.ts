@@ -6,7 +6,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Ambush',
     type: IntrigueCardType.COMBAT,
     description: 'Combat: +4 strength.',
-    image: '/intrigue/base/ambush.png',
+    image: '/intrigue/base/ambush.avif',
     agentIcons: [],
     playEffect: [{ reward: { combat: 4 } }]
   },
@@ -15,7 +15,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Allied Armada',
     type: IntrigueCardType.COMBAT,
     description: 'If you have a faction alliance: pay 2 spice to gain +7 strength.',
-    image: '/intrigue/base/allied_armada.png',
+    image: '/intrigue/base/allied_armada.avif',
     agentIcons: [],
     playEffect: [
       {
@@ -38,7 +38,7 @@ export const intrigueCards: IntrigueCard[] = [
     type: IntrigueCardType.PLOT,
     description:
       'At the start of your turn: draw 1 card. You may pass your turn (instead of taking an Agent or Reveal turn).',
-    image: '/intrigue/base/bindu_suspension.png',
+    image: '/intrigue/base/bindu_suspension.avif',
     agentIcons: [],
     playEffect: [{ reward: { custom: CustomEffect.BINDU_SUSPENSION } }]
   },
@@ -47,7 +47,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Bribery',
     type: IntrigueCardType.PLOT,
     description: 'Pay 2 Solari to gain 1 influence with a faction of your choice.',
-    image: '/intrigue/base/bribery.png',
+    image: '/intrigue/base/bribery.avif',
     agentIcons: [],
     playEffect: [
       { 
@@ -69,7 +69,7 @@ export const intrigueCards: IntrigueCard[] = [
     type: IntrigueCardType.PLOT,
     description:
       'Acquire a card that costs 3 or less —OR— pay 2 spice to acquire a card that costs 5 or less to the top of your deck.',
-    image: '/intrigue/base/bypass_protocol.png',
+    image: '/intrigue/base/bypass_protocol.avif',
     agentIcons: [],
     playEffect: [{
       choiceOpt: true,
@@ -93,7 +93,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Calculated Hire',
     type: IntrigueCardType.PLOT,
     description: 'Pay 1 spice to take the Mentat from its designated space in the Landsraad.',
-    image: '/intrigue/base/calculated_hire.png',
+    image: '/intrigue/base/calculated_hire.avif',
     agentIcons: [],
     playEffect: [{
       cost: { spice: 1 },
@@ -107,7 +107,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Charisma',
     type: IntrigueCardType.PLOT,
     description: 'Gain 2 persuasion during your Reveal turn this round.',
-    image: '/intrigue/base/charisma.png',
+    image: '/intrigue/base/charisma.avif',
     agentIcons: [],
     playEffect: [{ timing: EffectTiming.ON_REVEAL_THIS_ROUND, reward: { persuasion: 2 } }]
   },
@@ -116,7 +116,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'CHOAM Shares',
     type: IntrigueCardType.PLOT,
     description: 'Pay 7 Solari to gain 1 VP.',
-    image: '/intrigue/base/choam_shares.png',
+    image: '/intrigue/base/choam_shares.avif',
     agentIcons: [],
     playEffect: [{ cost: { solari: 7 }, reward: { victoryPoints: 1 } }]
   },
@@ -126,7 +126,7 @@ export const intrigueCards: IntrigueCard[] = [
     type: IntrigueCardType.ENDGAME,
     description:
       'Endgame: If you have at least two The Spice Must Flow, gain 1 VP. If you have more The Spice Must Flow than each opponent, gain 1 VP.',
-    image: '/intrigue/base/corner_the_market.png',
+    image: '/intrigue/base/corner_the_market.avif',
     agentIcons: [],
     playEffect: [{ phase: GamePhase.END_GAME, reward: { custom: CustomEffect.CORNER_THE_MARKET } }]
   },
@@ -135,7 +135,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Councilor’s Dispensation',
     type: IntrigueCardType.PLOT,
     description: 'If you have a seat on the High Council: gain 2 spice.',
-    image: '/intrigue/base/councilors_dispensation.png',
+    image: '/intrigue/base/councilors_dispensation.avif',
     agentIcons: [],
     playEffect: [{ requirement: { highCouncil: true }, reward: { spice: 2 } }]
   },
@@ -144,7 +144,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Dispatch an Envoy',
     type: IntrigueCardType.PLOT,
     description: 'The card you play this turn has the following icons.',
-    image: '/intrigue/base/dispatch_an_envoy.png',
+    image: '/intrigue/base/dispatch_an_envoy.avif',
     agentIcons: [],
     playEffect: [{ reward: { custom: CustomEffect.DISPATCH_ENVOY } }]
   },
@@ -154,7 +154,7 @@ export const intrigueCards: IntrigueCard[] = [
     type: IntrigueCardType.PLOT,
     description:
       'An opponent of your choice loses 1 troop in the Conflict and you deploy 1 troop from your supply to the Conflict.',
-    image: '/intrigue/base/double_cross.png',
+    image: '/intrigue/base/double_cross.avif',
     agentIcons: [],
     targetPlayer: true,
     playEffect: [{ cost: { solari: 1 }, reward: { custom: CustomEffect.DOUBLE_CROSS } }]
@@ -164,7 +164,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Favored Subject',
     type: IntrigueCardType.PLOT,
     description: 'Gain 1 influence with the Emperor.',
-    image: '/intrigue/base/favored_subject.png',
+    image: '/intrigue/base/favored_subject.avif',
     agentIcons: [],
     playEffect: [{ reward: { influence: { amounts: [{ faction: FactionType.EMPEROR, amount: 1 }] } } }]
   },
@@ -173,7 +173,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Guild Authorization',
     type: IntrigueCardType.PLOT,
     description: 'Gain 1 influence with the Spacing Guild.',
-    image: '/intrigue/base/guild_authorization.png',
+    image: '/intrigue/base/guild_authorization.avif',
     agentIcons: [],
     playEffect: [{ reward: { influence: { amounts: [{ faction: FactionType.SPACING_GUILD, amount: 1 }] } } }]
   },
@@ -182,7 +182,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Infiltrate',
     type: IntrigueCardType.PLOT,
     description: 'Enemy Agents don’t block your next Agent at board spaces this turn.',
-    image: '/intrigue/base/infiltrate.png',
+    image: '/intrigue/base/infiltrate.avif',
     agentIcons: [],
     playEffect: [{ reward: { custom: CustomEffect.INFILTRATE_INTRIGUE } }]
   },
@@ -191,7 +191,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Know Their Ways',
     type: IntrigueCardType.PLOT,
     description: 'Gain 1 influence with the Fremen.',
-    image: '/intrigue/base/know_their_ways.png',
+    image: '/intrigue/base/know_their_ways.avif',
     agentIcons: [],
     playEffect: [{ reward: { influence: { amounts: [{ faction: FactionType.FREMEN, amount: 1 }] } } }]
   },
@@ -200,7 +200,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Master Tactician',
     type: IntrigueCardType.COMBAT,
     description: 'Combat: +3 strength —OR— Retreat up to three of your troops.',
-    image: '/intrigue/base/master_tactitian.png',
+    image: '/intrigue/base/master_tactitian.avif',
     agentIcons: [],
     playEffect: [
       { reward: { custom: CustomEffect.MASTER_TACTICIAN } },
@@ -213,7 +213,7 @@ export const intrigueCards: IntrigueCard[] = [
     type: IntrigueCardType.ENDGAME,
     description:
       'Endgame: If you have 3+ influence on three faction tracks, gain 1 VP —OR— if you have 3+ influence on four faction tracks, gain 2 VP.',
-    image: '/intrigue/base/plans_within_plans.png',
+    image: '/intrigue/base/plans_within_plans.avif',
     agentIcons: [],
     playEffect: [{ phase: GamePhase.END_GAME, reward: { custom: CustomEffect.PLANS_WITHIN_PLANS } }]
   },
@@ -222,7 +222,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Private Army',
     type: IntrigueCardType.COMBAT,
     description: 'Pay 2 spice to gain +5 strength.',
-    image: '/intrigue/base/private_army.png',
+    image: '/intrigue/base/private_army.avif',
     agentIcons: [],
     playEffect: [{ cost: { spice: 2 }, reward: { combat: 5 } }]
   },
@@ -231,7 +231,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Rapid Mobilization',
     type: IntrigueCardType.PLOT,
     description: 'Deploy any number of your garrisoned troops to the Conflict.',
-    image: '/intrigue/base/rapid_mobilization.png',
+    image: '/intrigue/base/rapid_mobilization.avif',
     agentIcons: [],
     playEffect: [{ reward: { custom: CustomEffect.RAPID_MOBILIZATION } }]
   },
@@ -241,7 +241,7 @@ export const intrigueCards: IntrigueCard[] = [
     type: IntrigueCardType.PLOT,
     description:
       'Gain 1 persuasion during your Reveal turn this round. You may put cards you acquire on top of your deck.',
-    image: '/intrigue/base/recruitment_mission.png',
+    image: '/intrigue/base/recruitment_mission.avif',
     agentIcons: [],
     playEffect: [
       { timing: EffectTiming.ON_REVEAL_THIS_ROUND, reward: { persuasion: 1 } },
@@ -253,7 +253,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Refocus',
     type: IntrigueCardType.PLOT,
     description: 'Shuffle your discard pile into your deck, then draw 1 card.',
-    image: '/intrigue/base/refocus.png',
+    image: '/intrigue/base/refocus.avif',
     agentIcons: [],
     playEffect: [
       { reward: { custom: CustomEffect.SHUFFLE_DISCARD_INTO_DECK } },
@@ -266,7 +266,7 @@ export const intrigueCards: IntrigueCard[] = [
     type: IntrigueCardType.PLOT,
     description:
       'Pay 3 Solari to gain 3 troops. If it’s your Reveal turn, you may deploy any of these troops to the Conflict.',
-    image: '/intrigue/base/reinforcements.png',
+    image: '/intrigue/base/reinforcements.avif',
     agentIcons: [],
     playEffect: [{ cost: { solari: 3 }, reward: { troops: 3 } }]
   },
@@ -275,7 +275,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Secret of the Sisterhood',
     type: IntrigueCardType.PLOT,
     description: 'Gain 1 influence with the Bene Gesserit.',
-    image: '/intrigue/base/secret_of_the_sisterhood.png',
+    image: '/intrigue/base/secret_of_the_sisterhood.avif',
     agentIcons: [],
     playEffect: [{ reward: { influence: { amounts: [{ faction: FactionType.BENE_GESSERIT, amount: 1 }] } } }]
   },
@@ -284,7 +284,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Staged Incident',
     type: IntrigueCardType.COMBAT,
     description: 'Lose three of your troops in the Conflict to gain 1 VP.',
-    image: '/intrigue/base/staged_incident.png',
+    image: '/intrigue/base/staged_incident.avif',
     agentIcons: [],
     playEffect: [{ reward: { custom: CustomEffect.STAGED_INCIDENT } }]
   },
@@ -293,7 +293,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'The Sleeper Must Awaken',
     type: IntrigueCardType.PLOT,
     description: 'Pay 4 spice to gain 1 VP.',
-    image: '/intrigue/base/the_sleeper_must_awaken.png',
+    image: '/intrigue/base/the_sleeper_must_awaken.avif',
     agentIcons: [],
     playEffect: [{ cost: { spice: 4 }, reward: { victoryPoints: 1 } }]
   },
@@ -302,7 +302,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Tiebreaker',
     type: IntrigueCardType.COMBAT,
     description: 'Combat: +2 strength —OR— Endgame: counts as 10 spice for tiebreakers.',
-    image: '/intrigue/base/tiebraker.png',
+    image: '/intrigue/base/tiebraker.avif',
     agentIcons: [],
     playEffect: [
       { phase: GamePhase.COMBAT, reward: { combat: 2 } },
@@ -314,7 +314,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'To the Victor…',
     type: IntrigueCardType.COMBAT,
     description: 'When you win a Conflict: gain 3 spice.',
-    image: '/intrigue/base/to_the_victor.png',
+    image: '/intrigue/base/to_the_victor.avif',
     agentIcons: [],
     playEffect: [{ reward: { custom: CustomEffect.TO_THE_VICTOR } }]
   },
@@ -323,7 +323,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Urgent Mission',
     type: IntrigueCardType.PLOT,
     description: 'Recall one of your Agents.',
-    image: '/intrigue/base/urgent_mission.png',
+    image: '/intrigue/base/urgent_mission.avif',
     agentIcons: [],
     playEffect: [{ reward: { custom: CustomEffect.URGENT_MISSION } }]
   },
@@ -332,7 +332,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Water of Life',
     type: IntrigueCardType.PLOT,
     description: 'Pay 1 water and 1 spice to draw 3 cards.',
-    image: '/intrigue/base/water_of_life.png',
+    image: '/intrigue/base/water_of_life.avif',
     agentIcons: [],
     playEffect: [{ cost: { water: 1, spice: 1 }, reward: { drawCards: 3 } }]
   },
@@ -341,7 +341,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Water Peddlers Union',
     type: IntrigueCardType.PLOT,
     description: 'Gain 1 water.',
-    image: '/intrigue/base/water_peddlers_union.png',
+    image: '/intrigue/base/water_peddlers_union.avif',
     agentIcons: [],
     playEffect: [{ reward: { water: 1 } }]
   },
@@ -350,7 +350,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Windfall',
     type: IntrigueCardType.PLOT,
     description: 'Gain 2 Solari.',
-    image: '/intrigue/base/windfall.png',
+    image: '/intrigue/base/windfall.avif',
     agentIcons: [],
     playEffect: [{ reward: { solari: 2 } }]
   },
@@ -360,7 +360,7 @@ export const intrigueCards: IntrigueCard[] = [
     type: IntrigueCardType.COMBAT,
     description:
       'When you win a Conflict: gain 1 influence with a faction of your choice —OR— pay 2 spice to gain 2 influence with one faction.',
-    image: '/intrigue/base/demand_respect.webp',
+    image: '/intrigue/base/demand_respect.avif',
     agentIcons: [],
     playEffect: [{ reward: { custom: CustomEffect.DEMAND_RESPECT } }]
   },
@@ -369,7 +369,7 @@ export const intrigueCards: IntrigueCard[] = [
     name: 'Poison Snooper',
     type: IntrigueCardType.PLOT,
     description: 'Look at the top card of your deck. Draw it —OR— trash it.',
-    image: '/intrigue/base/poison_snooper.webp',
+    image: '/intrigue/base/poison_snooper.avif',
     agentIcons: [],
     playEffect: [{ reward: { custom: CustomEffect.POISON_SNOOPER } }]
   }

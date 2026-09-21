@@ -50,6 +50,7 @@ describe('Gain count labels', () => {
     expect(tsx).toContain('renderAcquiredCardTitle')
     expect(tsx).toContain('turn-gain-card-title')
     expect(tsx).toContain('turn-gain-card-title-zoom-src')
+    expect(tsx).toContain('catalogDeckCardImageById')
   })
 
   it('shows Interstellar Shipping advance then recall with no cost arrow', () => {

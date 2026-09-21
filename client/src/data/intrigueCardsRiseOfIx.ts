@@ -34,7 +34,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     name: 'Blackmail',
     type: IntrigueCardType.COMBAT,
     description: 'Combat: Lose 1 influence (your choice) to gain +5 strength.',
-    image: '/intrigue/rise_of_ix/blackmail.png',
+    image: '/intrigue/rise_of_ix/blackmail.avif',
     agentIcons: [],
     playEffect: [
       {
@@ -49,7 +49,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     name: 'Cannon Turrets',
     type: IntrigueCardType.COMBAT,
     description: 'Combat: +2 strength. Each opponent retreats 1 dreadnought from the Conflict.',
-    image: '/intrigue/rise_of_ix/cannon_turrets.png',
+    image: '/intrigue/rise_of_ix/cannon_turrets.avif',
     agentIcons: [],
     playEffect: [
       { phase: GamePhase.COMBAT, reward: { combat: 2 } },
@@ -61,7 +61,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     name: 'Strategic Push',
     type: IntrigueCardType.COMBAT,
     description: 'Combat: +2 strength. If you win this Conflict: +2 Solari.',
-    image: '/intrigue/rise_of_ix/strategic_push.png',
+    image: '/intrigue/rise_of_ix/strategic_push.avif',
     agentIcons: [],
     playEffect: [
       { phase: GamePhase.COMBAT, reward: { combat: 2 } },
@@ -73,7 +73,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     name: 'Second Wave',
     type: IntrigueCardType.COMBAT,
     description: 'Combat: +2 strength. Deploy up to 2 units from your garrison to the Conflict.',
-    image: '/intrigue/rise_of_ix/second_wave.png',
+    image: '/intrigue/rise_of_ix/second_wave.avif',
     agentIcons: [],
     playEffect: [
       { phase: GamePhase.COMBAT, reward: { combat: 2 } },
@@ -86,7 +86,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     type: IntrigueCardType.COMBAT,
     description:
       'Combat: Pay 2 Solari to gain +4 strength —OR— Endgame: If you have 10+ Solari, gain 1 VP.',
-    image: '/intrigue/rise_of_ix/war_chest.png',
+    image: '/intrigue/rise_of_ix/war_chest.avif',
     agentIcons: [],
     playEffect: [
       { phase: GamePhase.COMBAT, cost: { solari: 2 }, reward: { combat: 4 } },
@@ -99,7 +99,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     type: IntrigueCardType.COMBAT,
     description:
       'Combat: +2 strength —OR— Plot: Lose 1 influence (your choice) to gain 1 influence (your choice).',
-    image: '/intrigue/rise_of_ix/finesse.png',
+    image: '/intrigue/rise_of_ix/finesse.avif',
     agentIcons: [],
     playEffect: [
       { phase: GamePhase.COMBAT, reward: { combat: 2 } },
@@ -116,7 +116,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     type: IntrigueCardType.COMBAT,
     description:
       'Combat: If you have 3 tech: +4 strength —OR— Plot: Pay 3 Solari to commission 1 dreadnought.',
-    image: '/intrigue/rise_of_ix/advanced_weaponry.png',
+    image: '/intrigue/rise_of_ix/advanced_weaponry.avif',
     agentIcons: [],
     playEffect: [
       { phase: GamePhase.COMBAT, reward: { custom: CustomEffect.ADVANCED_WEAPONRY } },
@@ -129,7 +129,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     type: IntrigueCardType.ENDGAME,
     description:
       'Endgame: If you meet 3 of 4 conditions (2 dreadnoughts, 1 SMF, 4+ influence on 2 tracks, High Council): 1 VP. All 4: 2 VP.',
-    image: '/intrigue/rise_of_ix/grand_conspiracy.png',
+    image: '/intrigue/rise_of_ix/grand_conspiracy.avif',
     agentIcons: [],
     playEffect: [{ phase: GamePhase.END_GAME, reward: { custom: CustomEffect.GRAND_CONSPIRACY } }],
   },
@@ -138,7 +138,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     name: 'Strongarm',
     type: IntrigueCardType.PLOT,
     description: 'Lose a troop to gain 1 influence on the faction track where you placed an Agent this turn.',
-    image: '/intrigue/rise_of_ix/strongarm.png',
+    image: '/intrigue/rise_of_ix/strongarm.avif',
     agentIcons: [],
     playEffect: [{ cost: { troops: 1 }, reward: { custom: CustomEffect.STRONGARM } }],
   },
@@ -147,7 +147,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     name: 'Ixian Probe',
     type: IntrigueCardType.PLOT,
     description: 'Discard 2 cards to draw 2 cards.',
-    image: '/intrigue/rise_of_ix/ixian_probe.png',
+    image: '/intrigue/rise_of_ix/ixian_probe.avif',
     agentIcons: [],
     playEffect: [{ cost: { discard: 2 }, reward: { drawCards: 2 } }],
   },
@@ -156,7 +156,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     name: 'Cull',
     type: IntrigueCardType.PLOT,
     description: 'Pay 1 Solari to trash 1 card.',
-    image: '/intrigue/rise_of_ix/cull.png',
+    image: '/intrigue/rise_of_ix/cull.avif',
     agentIcons: [],
     playEffect: [{ cost: { solari: 1 }, reward: { trash: 1 } }],
   },
@@ -165,7 +165,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     name: 'Secret Forces',
     type: IntrigueCardType.PLOT,
     description: 'Gain 2 troops if you have a seat on the High Council.',
-    image: '/intrigue/rise_of_ix/secret_forces.png',
+    image: '/intrigue/rise_of_ix/secret_forces.avif',
     agentIcons: [],
     playEffect: [{ requirement: { highCouncil: true }, reward: { troops: 2 } }],
   },
@@ -175,7 +175,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     type: IntrigueCardType.PLOT,
     description:
       'Pay 2 spice to gain 1 influence on each faction track where you currently have an Agent.',
-    image: '/intrigue/rise_of_ix/quid_pro_quo.png',
+    image: '/intrigue/rise_of_ix/quid_pro_quo.avif',
     agentIcons: [],
     playEffect: [{ cost: { spice: 2 }, reward: { custom: CustomEffect.QUID_PRO_QUO } }],
   },
@@ -184,7 +184,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     name: 'Glimpse the Path',
     type: IntrigueCardType.PLOT,
     description: 'Pay 1 spice to gain 1 water and draw 1 card.',
-    image: '/intrigue/rise_of_ix/glimpse_the_path.png',
+    image: '/intrigue/rise_of_ix/glimpse_the_path.avif',
     agentIcons: [],
     playEffect: [{ cost: { spice: 1 }, reward: { water: 1, drawCards: 1 } }],
   },
@@ -193,7 +193,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     name: 'Diversion',
     type: IntrigueCardType.PLOT,
     description: 'When you deploy 4 units to the Conflict in one turn, gain +1 on the Shipping track.',
-    image: '/intrigue/rise_of_ix/diversion.png',
+    image: '/intrigue/rise_of_ix/diversion.avif',
     agentIcons: [],
     playEffect: [{ requirement: { unitsInConflict: 4 }, reward: { custom: CustomEffect.DIVERSION } }],
   },
@@ -202,7 +202,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     name: 'Expedite',
     type: IntrigueCardType.PLOT,
     description: 'Pay 1 spice to advance 1 space on the Shipping track.',
-    image: '/intrigue/rise_of_ix/expedite.png',
+    image: '/intrigue/rise_of_ix/expedite.avif',
     agentIcons: [],
     playEffect: [{ cost: { spice: 1 }, reward: { freighter: 1 } }],
   },
@@ -211,7 +211,7 @@ export const RISE_OF_IX_INTRIGUE_CARDS: IntrigueCard[] = [
     name: 'Machine Culture',
     type: IntrigueCardType.PLOT,
     description: 'Plot: Acquire 1 tech tile —OR— Endgame: If you have 3 tech: gain 1 VP.',
-    image: '/intrigue/rise_of_ix/machine_culture.png',
+    image: '/intrigue/rise_of_ix/machine_culture.avif',
     agentIcons: [],
     playEffect: [
       { phase: GamePhase.PLAYER_TURNS, reward: { acquireTech: {} } },

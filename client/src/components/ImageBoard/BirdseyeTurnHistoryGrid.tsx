@@ -3,6 +3,8 @@ import { TurnType, type GameState, type Player } from '../../types/GameTypes'
 import { useGame } from '../GameContext/GameContext'
 import { useTimeTravel } from '../TimeTravel'
 import TurnHistoryNav from '../TurnHistoryNav/TurnHistoryNav'
+import { TurnHistoryUndoButton, useTurnHistoryUndo } from '../TurnHistoryUndoButton'
+import { TurnHistoryDebugButton } from '../TurnHistoryDebugButton'
 import {
   birdseyeRoundGroupContainsIndex,
   buildBirdseyeTurnHistoryGrid,
@@ -37,6 +39,7 @@ export function BirdseyeTurnHistoryGrid({
 }) {
   const { gameState } = useGame()
   const { viewingTurnIndex, isViewingHistory, goToTurn, returnToCurrent, hideLiveTurn } = useTimeTravel()
+  const undo = useTurnHistoryUndo()
   const activeCellRef = useRef<HTMLButtonElement | null>(null)
   const playerById = useMemo(() => new Map(players.map(player => [player.id, player])), [players])
 
@@ -154,6 +157,21 @@ export function BirdseyeTurnHistoryGrid({
           onReturnToCurrent={returnToCurrent}
           hideLiveTurn={hideLiveTurn}
         />
+        <div className="birdseye-turn-history__header-actions">
+          {undo ? (
+            <TurnHistoryUndoButton
+              className="birdseye-turn-history__undo"
+              onUndo={undo.onUndo}
+              canUndo={undo.canUndo}
+              undoTitle={undo.undoTitle}
+              undoAriaLabel={undo.undoAriaLabel}
+            />
+          ) : null}
+          <TurnHistoryDebugButton
+            className="birdseye-turn-history__debug"
+            onLoadSave={undo?.onLoadSave}
+          />
+        </div>
       </div>
       <div className="birdseye-turn-history__scroll-host">
         <div className="birdseye-turn-history__scroll birdseye-lane-scroll" ref={scrollRef}>

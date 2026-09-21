@@ -17,9 +17,10 @@ const ROOTS = [
   'leaders',
   'starter_deck',
   'tleilaxu_row',
+  'intrigue',
 ]
 
-const SOURCE_EXT = new Set(['.png', '.jpg', '.jpeg'])
+const SOURCE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp'])
 const AVIF_QUALITY = 55
 const THUMB_WIDTH = 360
 const THUMB_QUALITY = 45

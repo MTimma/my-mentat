@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Card, Gain, IntrigueCard, Player, GameState, GamePhase, TurnType, AcquiredTechTileSnapshot } from '../types/GameTypes'
 import { getLeaderIconPath } from '../data/leaders'
 import { conflictCardImageSrc } from '../data/conflictCardImages'
@@ -49,17 +48,10 @@ import {
 } from '../utils/playChromeTheme'
 import SetupSnapshotPreview from './SetupSnapshotPreview/SetupSnapshotPreview'
 import TurnGainsDisplay from './TurnGainsDisplay/TurnGainsDisplay'
-import { useGame } from './GameContext/GameContext'
-import { type LoadSaveFn, type LoadSaveSource } from '../api/gamesApi'
-import SaveDocImportPanel from './SaveDocImportPanel/SaveDocImportPanel'
-import GamesList from './GamesList/GamesList'
-import type { SaveDoc } from '../save/types'
-import {
-  canUseSaveFilePicker,
-  saveJsonFile,
-  suggestedSaveFilenameFromTitle,
-} from '../utils/saveJsonFile'
+import { type LoadSaveFn } from '../api/gamesApi'
 import TurnHistoryNav from './TurnHistoryNav/TurnHistoryNav'
+import { TurnHistoryUndoButton } from './TurnHistoryUndoButton'
+import { TurnHistoryDebugButton } from './TurnHistoryDebugButton'
 import './TurnHistory.css'
 
 interface TurnHistoryProps {
@@ -84,15 +76,6 @@ interface TurnHistoryProps {
   hideLiveTurn?: boolean
 }
 
-const DetailsIcon = () => (
-  <svg className="turn-history-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <ellipse cx="12" cy="13.5" rx="5.5" ry="6.5" fill="none" stroke="currentColor" strokeWidth="1.75" />
-    <path d="M7.5 10.5 5.5 6.5M16.5 10.5l2-2M9 8.5 8 4M15 8.5l1-4M6.5 14l-3 .5M17.5 14l3 .5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <circle cx="9.75" cy="13" r="1" fill="currentColor" />
-    <circle cx="14.25" cy="13" r="1" fill="currentColor" />
-  </svg>
-)
-
 const PlayerOverviewIcon = () => (
   <svg className="turn-history-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <circle cx="7.25" cy="7.25" r="2.25" fill="none" stroke="currentColor" strokeWidth="1.75" />
@@ -100,27 +83,6 @@ const PlayerOverviewIcon = () => (
     <circle cx="15.75" cy="6.75" r="1.85" fill="none" stroke="currentColor" strokeWidth="1.75" />
     <path d="M12.85 11.75c.5-1.35 1.5-2 2.9-2s2.4.65 2.9 2" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
     <path d="M5 20v-3.25M11 20v-5.25M17 20v-7.25M3.5 20h16.75" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-  </svg>
-)
-
-const UndoIcon = () => (
-  <svg className="turn-history-action-icon turn-history-action-icon--undo" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path
-      d="M9 14 5 10l4-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M5 10h9.5a5.5 5.5 0 1 1 0 11H12"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
   </svg>
 )
 
@@ -143,14 +105,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   hideLiveTurn = false,
 }) => {
   const isDocked = layout === 'docked'
-  const { exportSaveDoc } = useGame()
-  const [showDebugModal, setShowDebugModal] = useState(false)
   /** Birds-eye: history list gains collapsed by default (dock seats show gains). */
   const [showHistoryGains, setShowHistoryGains] = useState(false)
-  const [debugView, setDebugView] = useState<'save' | 'runtime' | 'load'>('save')
-  const [copyFeedback, setCopyFeedback] = useState<string | null>(null)
-  const [saveFeedback, setSaveFeedback] = useState<string | null>(null)
-  const [saveFilename, setSaveFilename] = useState('')
   const [playChromeTheme, setPlayChromeTheme] = useState<PlayChromeTheme>(() => getPlayChromeTheme())
   const listRef = useRef<HTMLDivElement>(null)
   const liveEntryRef = useRef<HTMLDivElement>(null)
@@ -160,60 +116,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
 
   // Determine which turn is being viewed (null means current/live)
   const isViewingHistory = viewingTurnIndex !== null
-
-  const debugJson = useMemo(() => {
-    if (!showDebugModal) return ''
-    if (debugView === 'save') {
-      return JSON.stringify(exportSaveDoc(), null, 2)
-    }
-    const { history: _history, setupBaseline: _setupBaseline, ...runtime } = currentGameState
-    return JSON.stringify(runtime, null, 2)
-  }, [showDebugModal, debugView, exportSaveDoc, currentGameState])
-
-  const handleCopySave = useCallback(async () => {
-    const text = JSON.stringify(exportSaveDoc(), null, 2)
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopyFeedback('Copied')
-      window.setTimeout(() => setCopyFeedback(null), 2000)
-    } catch {
-      setCopyFeedback('Copy failed')
-      window.setTimeout(() => setCopyFeedback(null), 2000)
-    }
-  }, [exportSaveDoc])
-
-  const openDebugModal = useCallback(
-    (view: 'save' | 'runtime' | 'load' = 'save') => {
-      if (view === 'save') {
-        setSaveFilename(suggestedSaveFilenameFromTitle(exportSaveDoc().meta.title))
-      }
-      setDebugView(view)
-      setShowDebugModal(true)
-    },
-    [exportSaveDoc]
-  )
-
-  const handleSaveJson = useCallback(async () => {
-    const json = JSON.stringify(exportSaveDoc(), null, 2)
-    try {
-      const result = await saveJsonFile(json, saveFilename)
-      if (result === 'cancelled') return
-      setSaveFeedback(canUseSaveFilePicker() ? 'Saved' : 'Downloaded')
-      window.setTimeout(() => setSaveFeedback(null), 2000)
-    } catch {
-      setSaveFeedback('Save failed')
-      window.setTimeout(() => setSaveFeedback(null), 2000)
-    }
-  }, [exportSaveDoc, saveFilename])
-
-  const handleLoadSaveFromPanel = useCallback(
-    (doc: SaveDoc, source?: LoadSaveSource) => {
-      if (!onLoadSave) return
-      onLoadSave(doc, source)
-      setShowDebugModal(false)
-    },
-    [onLoadSave]
-  )
 
   const scrollListToBottom = useCallback(() => {
     const list = listRef.current
@@ -813,10 +715,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         return
       }
       if (e.key === 'Escape') {
-        if (showDebugModal) {
-          setShowDebugModal(false)
-          return
-        }
         if (isViewingHistory) {
           onReturnToCurrent()
         } else if (onClose) {
@@ -826,7 +724,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose, isViewingHistory, onReturnToCurrent, goToPreviousTurn, goToNextTurn, showDebugModal])
+  }, [onClose, isViewingHistory, onReturnToCurrent, goToPreviousTurn, goToNextTurn])
 
   // Handle clicking on a turn row
   const handleTurnClick = (index: number) => {
@@ -901,18 +799,12 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
         >
           {showHistoryGains ? 'Gains' : 'Gains'}
         </button>
-        {onUndo && (
-          <button
-            type="button"
-            className="turn-history-icon-btn turn-history-icon-btn--undo"
-            onClick={onUndo}
-            disabled={!canUndo}
-            title={undoTitle}
-            aria-label={undoAriaLabel ?? undoTitle ?? 'Undo turn'}
-          >
-            <UndoIcon />
-          </button>
-        )}
+        <TurnHistoryUndoButton
+          onUndo={onUndo}
+          canUndo={canUndo}
+          undoTitle={undoTitle}
+          undoAriaLabel={undoAriaLabel}
+        />
         {/* {onOpenPlayerOverview && (
           <button
             type="button"
@@ -935,15 +827,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             {playChromeTheme === 'void' ? 'V' : 'B'}
           </span>
         </button>
-        <button
-          type="button"
-          className="turn-history-icon-btn turn-history-icon-btn--details"
-          onClick={() => openDebugModal('save')}
-          title="View save document (setup + event log) or runtime state"
-          aria-label="View save document debug"
-        >
-          <DetailsIcon />
-        </button>
+        <TurnHistoryDebugButton onLoadSave={onLoadSave} />
         {isViewingHistory && !isDocked && !hideLiveTurn && (
           <button
             type="button"
@@ -1203,92 +1087,6 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           </button>
         </div>
       )}
-
-      {showDebugModal &&
-        createPortal(
-          <div className="turn-details-modal" onClick={() => setShowDebugModal(false)}>
-            <div className="turn-details-content" onClick={e => e.stopPropagation()}>
-              <h3>Game data</h3>
-              <div className="turn-details-tabs" role="tablist" aria-label="Debug view">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={debugView === 'save'}
-                  className={debugView === 'save' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
-                  onClick={() => {
-                    setSaveFilename(suggestedSaveFilenameFromTitle(exportSaveDoc().meta.title))
-                    setDebugView('save')
-                  }}
-                >
-                  Save
-                </button>
-                {onLoadSave && (
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={debugView === 'load'}
-                    className={debugView === 'load' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
-                    onClick={() => setDebugView('load')}
-                  >
-                    Load
-                  </button>
-                )}
-                {/* <button
-                  type="button"
-                  role="tab"
-                  aria-selected={debugView === 'runtime'}
-                  className={debugView === 'runtime' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'}
-                  onClick={() => setDebugView('runtime')}
-                >
-                  Runtime
-                </button> */}
-                
-              </div>
-              {debugView === 'load' && onLoadSave ? (
-                <div className="turn-details-load">
-                  <GamesList className="turn-details-games-list" onLoad={handleLoadSaveFromPanel} />
-                  <SaveDocImportPanel onLoad={handleLoadSaveFromPanel} buttonLabel="Load save" />
-                </div>
-              ) : (
-                <>
-                  {debugView === 'save' && (
-                    <div className="turn-details-export">
-                      <label className="turn-details-filename-field">
-                        <span className="turn-details-filename-label">Filename</span>
-                        <div className="turn-details-filename-row">
-                          <input
-                            type="text"
-                            className="turn-details-filename-input"
-                            value={saveFilename}
-                            onChange={e => setSaveFilename(e.target.value)}
-                            spellCheck={false}
-                            autoComplete="off"
-                          />
-                          <span className="turn-details-filename-suffix" aria-hidden="true">
-                            .json
-                          </span>
-                        </div>
-                      </label>
-                      <div className="turn-details-export-actions">
-                        <button type="button" className="turn-details-export-btn" onClick={handleCopySave}>
-                          {copyFeedback ?? 'Copy to clipboard'}
-                        </button>
-                        <button type="button" className="turn-details-export-btn" onClick={handleSaveJson}>
-                          {saveFeedback ?? (canUseSaveFilePicker() ? 'Save as…' : 'Download')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  <pre>{debugJson}</pre>
-                </>
-              )}
-              {/* <button type="button" className="close-button" onClick={() => setShowDebugModal(false)}>
-                Close
-              </button> */}
-            </div>
-          </div>,
-          document.body
-        )}
 
     </div>
   )

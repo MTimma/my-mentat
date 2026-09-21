@@ -215,6 +215,7 @@ describe('RevealTurnStatsPanel acquire label', () => {
     expect(tsx).toContain('className="reveal-turn-acquired-name">{ACQUIRE_GROUP_TITLE}')
     expect(tsx).toContain('className="reveal-turn-acquired-card-title">{card.name}')
     expect(tsx).toContain('reveal-turn-acquired-zoom-src')
+    expect(tsx).toContain('catalogDeckCardImageById')
     expect(tsx).not.toContain('className="reveal-turn-acquired-name">{card.name}')
     expect(tsx).not.toContain('className="reveal-turn-acquired-thumb"')
   })

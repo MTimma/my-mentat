@@ -81,17 +81,6 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
               ? 'You will return to setup editing. Your board configuration will be kept.'
               : `This will clear all turns to the beginning of ${undoFromLabel}`}
           </p>
-
-          <div className="undo-details">
-            <div className="undo-detail-row">
-              <span className="detail-label">Reverting to:</span>
-              <span className="detail-value">{revertLabel}</span>
-            </div>
-            <div className="undo-detail-row">
-              <span className="detail-label">Undoing from:</span>
-              <span className="detail-value">{currentLabel}</span>
-            </div>
-          </div>
         </div>
 
         <div className="undo-confirm-actions">

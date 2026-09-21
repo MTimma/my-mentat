@@ -1788,6 +1788,25 @@
   border-bottom: 1px solid rgba(255, 248, 232, 0.12);
 }
 
+.birdseye-turn-history__header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.birdseye-turn-history__undo,
+.birdseye-turn-history__debug {
+  width: 24px;
+  height: 24px;
+}
+
+.birdseye-turn-history__undo .turn-history-action-icon--undo,
+.birdseye-turn-history__debug .turn-history-action-icon {
+  width: 14px;
+  height: 14px;
+}
+
 .birdseye-turn-history__nav {
   gap: 3px;
 }

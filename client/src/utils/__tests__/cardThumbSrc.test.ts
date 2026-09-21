@@ -9,5 +9,11 @@ describe('cardThumbSrc', () => {
     expect(cardThumbSrc('/leaders/rise_of_ix/ilesa_ecaz.avif')).toBe(
       '/leaders/rise_of_ix/thumbs/ilesa_ecaz.avif'
     )
+    expect(cardThumbSrc('/intrigue/base/charisma.png')).toBe(
+      '/intrigue/base/thumbs/charisma.avif'
+    )
+    expect(cardThumbSrc('/intrigue/base/poison_snooper.webp')).toBe(
+      '/intrigue/base/thumbs/poison_snooper.avif'
+    )
   })
 })
