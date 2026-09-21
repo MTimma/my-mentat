@@ -92,7 +92,7 @@ export default defineConfig(({ mode }) => {
     gamePackDevSavePlugin(),
     pwaIconCacheBustPlugin(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: [
         'favicon.ico',
         'pwa-icon.svg',
@@ -134,6 +134,9 @@ export default defineConfig(({ mode }) => {
         ],
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,woff2}', '**/pwa-*', '**/apple-touch-icon*', '**/favicon*'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/games/, /^\/api\//],
@@ -146,7 +149,7 @@ export default defineConfig(({ mode }) => {
                 /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/i.test(url.pathname)
               )
             },
-            handler: 'CacheFirst',
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'game-images',
               expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 90 },
