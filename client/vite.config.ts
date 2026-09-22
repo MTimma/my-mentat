@@ -137,16 +137,24 @@ export default defineConfig(({ mode }) => {
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
-        globPatterns: ['**/*.{js,css,html,woff2}', '**/pwa-*', '**/apple-touch-icon*', '**/favicon*'],
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/games/, /^\/api\//],
+        // Do not precache HTML. navigateFallback would trap deploys behind the old SW.
+        globPatterns: ['**/*.{js,css,woff2}', '**/pwa-*', '**/apple-touch-icon*', '**/favicon*'],
         runtimeCaching: [
           {
             urlPattern: ({ request, url }) => {
-              if (isBrandIconPath(url.pathname)) return false
+              const path = url.pathname
+              if (
+                /^\/favicon(?:-\d+x\d+)?\.(?:png|ico)$/i.test(path) ||
+                path === '/pwa-icon.svg' ||
+                /^\/pwa-\d+x\d+\.png$/i.test(path) ||
+                path === '/apple-touch-icon.png' ||
+                path === '/manifest.webmanifest'
+              ) {
+                return false
+              }
               return (
                 request.destination === 'image' ||
-                /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/i.test(url.pathname)
+                /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/i.test(path)
               )
             },
             handler: 'StaleWhileRevalidate',
