@@ -137,8 +137,10 @@ export default defineConfig(({ mode }) => {
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
-        // Do not precache HTML. navigateFallback would trap deploys behind the old SW.
+        // Do not precache HTML. Plugin default navigateFallback is index.html and traps deploys.
         globPatterns: ['**/*.{js,css,woff2}', '**/pwa-*', '**/apple-touch-icon*', '**/favicon*'],
+        globIgnores: ['**/*.html'],
+        navigateFallback: undefined,
         runtimeCaching: [
           {
             urlPattern: ({ request, url }) => {
