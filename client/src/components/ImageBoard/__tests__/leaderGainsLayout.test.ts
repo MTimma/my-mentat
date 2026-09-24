@@ -186,6 +186,8 @@ describe('Leader gains leftover layout', () => {
     )
     expect(historyGridTsx).toContain('birdseye-turn-history__round--current')
     expect(historyGridTsx).toContain('TurnHistoryNav')
+    expect(historyGridTsx).toContain('currentLabel={inSandboxSetup ? undefined : turnLabel}')
+    expect(historyGridTsx).toContain('getHistoryRowLabel')
     expect(historyGridTsx).toContain('TurnHistoryUndoButton')
     expect(historyGridTsx).toContain('TurnHistoryDebugButton')
     expect(historyGridTsx).toContain('birdseye-turn-history__undo')
@@ -339,7 +341,7 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-title \{[\s\S]*?text-transform:\s*none/
     )
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?border:\s*1px solid rgba\(255, 248, 232, 0\.14\)/
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?background:\s*transparent/
     )
     expect(seatChromeCss).toContain(
       '.combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-flow__tech-badge'
@@ -469,7 +471,7 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?height:\s*auto/
     )
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?background:\s*rgba\(10, 9, 8, 0\.72\)/
+      /\.combat-area-cluster--column \.birdseye-seat-gains \.turn-gain-source-group \{[\s\S]*?background:\s*transparent/
     )
   })
 

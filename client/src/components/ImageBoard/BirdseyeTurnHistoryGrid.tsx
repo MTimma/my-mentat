@@ -9,6 +9,7 @@ import {
   birdseyeRoundGroupContainsIndex,
   buildBirdseyeTurnHistoryGrid,
   getBirdseyeHistoryCellParts,
+  getHistoryRowLabel,
   groupBirdseyeHistoryRounds,
   type BirdseyeHistoryCell,
 } from '../../utils/turnHistoryDisplay'
@@ -96,6 +97,9 @@ export function BirdseyeTurnHistoryGrid({
   }
 
   const inSandboxSetup = Boolean(gameState.sandboxSetup)
+  const turnLabelIndex =
+    isViewingHistory && viewingTurnIndex != null ? viewingTurnIndex : history.length
+  const turnLabel = getHistoryRowLabel(history, turnLabelIndex)
   const effectiveViewIndex = viewingTurnIndex ?? history.length
   const lastVisibleIndex = hideLiveTurn ? Math.max(-1, history.length - 1) : history.length
   const canGoToPreviousTurn = !inSandboxSetup && effectiveViewIndex > 0
@@ -156,6 +160,7 @@ export function BirdseyeTurnHistoryGrid({
           onTurnChange={goToTurn}
           onReturnToCurrent={returnToCurrent}
           hideLiveTurn={hideLiveTurn}
+          currentLabel={inSandboxSetup ? undefined : turnLabel}
         />
         <div className="birdseye-turn-history__header-actions">
           {undo ? (

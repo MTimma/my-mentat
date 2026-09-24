@@ -5331,7 +5331,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
         // Ilban: draw 1 card whenever he pays Solari for a board space
         if (shouldGrantIlbanSolariDraw(space, currPlayer)) {
-          addPendingReward({ drawCards: 1 }, { type: GainSource.LEADER_ABILITY, id: 0, name: 'Solari Draw (Ilban)' }, false)
+          addPendingReward({ drawCards: 1 }, { type: GainSource.LEADER_ABILITY, id: 0, name: 'Leader Ability' }, false)
         }
       }
       

@@ -71,6 +71,8 @@ export interface TurnHistoryNavProps {
   lastSlotWidthLabel?: string
   /** Classes applied to the hidden width reference button. */
   lastSlotWidthClassName?: string
+  /** Shown beside the nav buttons, e.g. "Turn 3". */
+  currentLabel?: string
 }
 
 const TurnHistoryNav = ({
@@ -85,6 +87,7 @@ const TurnHistoryNav = ({
   lastSlot,
   lastSlotWidthLabel,
   lastSlotWidthClassName,
+  currentLabel,
 }: TurnHistoryNavProps) => {
   const lastSlotWidthSizerRef = useRef<HTMLButtonElement>(null)
   const [lastSlotWidth, setLastSlotWidth] = useState<number | undefined>()
@@ -228,6 +231,11 @@ const TurnHistoryNav = ({
         <ChevronRightIcon />
       </button>
       {renderLastSlot()}
+      {currentLabel ? (
+        <span className="turn-history-nav-label" aria-live="polite">
+          {currentLabel}
+        </span>
+      ) : null}
     </div>
   )
 }

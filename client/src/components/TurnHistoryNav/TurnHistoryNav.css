@@ -55,6 +55,17 @@
   height: 16px;
 }
 
+.turn-history-nav-label {
+  margin-left: 0.15rem;
+  min-width: 0;
+  font-size: 0.68rem;
+  font-weight: 650;
+  line-height: 1;
+  color: var(--chrome-text-strong);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 600px) {
   .turn-history-nav-btn {
     width: 44px;

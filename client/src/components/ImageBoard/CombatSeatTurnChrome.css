@@ -652,7 +652,7 @@
   display: flex;
   flex-direction: column;
   border-top: none;
-  border-bottom: 1px solid rgba(255, 248, 232, 0.12);
+  border-bottom: none;
   border-left: none;
   height: auto;
   max-height: 100%;
@@ -665,11 +665,11 @@
   box-sizing: border-box;
   padding: 0;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.55);
+  background: transparent;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains__scroll {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
   max-height: 100%;
   overflow-x: hidden;
@@ -753,10 +753,10 @@
   overflow: hidden;
   box-sizing: border-box;
   padding: 0.1rem 0.22rem 0.12rem;
-  border-radius: 5px;
-  border: 1px solid rgba(255, 248, 232, 0.14);
-  background: rgba(10, 9, 8, 0.72);
-  box-shadow: inset 0 1px 0 rgba(255, 248, 232, 0.04);
+  border-radius: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-source-title {
@@ -862,9 +862,9 @@
   .turn-gains-display-root--reveal-pooled
   .turn-gain-totals-row {
   padding: 0.1rem 0.22rem 0.12rem;
-  border-radius: 5px;
-  border: 1px solid rgba(255, 248, 232, 0.14);
-  background: rgba(10, 9, 8, 0.72);
+  border-radius: 0;
+  border: 0;
+  background: transparent;
 }
 
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-total-amt {
@@ -1047,9 +1047,7 @@
   flex-direction: column;
   justify-content: flex-end;
   overflow: hidden;
-  background:
-    linear-gradient(var(--player-tint, transparent), var(--player-tint, transparent)),
-    rgba(0, 0, 0, 0.55);
+  background: var(--player-tint, transparent);
 }
 
 /* Portrait-only row so all four faces stay aligned. Buttons live under that column's cards. */
@@ -1814,11 +1812,21 @@
 .birdseye-turn-history__nav .turn-history-nav-btn {
   width: 24px;
   height: 24px;
+  border-radius: 0;
+}
+
+.birdseye-turn-history__undo.turn-history-icon-btn,
+.birdseye-turn-history__debug.turn-history-icon-btn {
+  border-radius: 0;
 }
 
 .birdseye-turn-history__nav .turn-history-nav-icon {
   width: 14px;
   height: 14px;
+}
+
+.birdseye-turn-history__nav .turn-history-nav-label {
+  font-size: 0.64rem;
 }
 
 .birdseye-turn-history__scroll {
@@ -1843,6 +1851,7 @@
   padding: 0.22rem 0.4rem;
   border: 0;
   border-bottom: 1px solid rgba(255, 248, 232, 0.1);
+  border-radius: 0;
   background: rgba(255, 248, 232, 0.05);
   color: var(--chrome-text-muted, #d4c4a8);
   font: inherit;
@@ -1852,11 +1861,27 @@
   text-transform: uppercase;
   text-align: left;
   cursor: pointer;
+  transition: box-shadow 0.12s ease;
 }
 
 .birdseye-turn-history__banner--viewing {
   background: var(--chrome-accent-muted, rgba(212, 177, 106, 0.22));
   color: var(--chrome-text-strong, #fff8e8);
+}
+
+.birdseye-turn-history__banner:hover {
+  border-color: transparent;
+  border-bottom-color: rgba(255, 248, 232, 0.1);
+}
+
+.birdseye-turn-history__banner:hover:not(.birdseye-turn-history__banner--viewing) {
+  box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.16);
+}
+
+button.birdseye-turn-history__banner,
+button.birdseye-turn-history__cell {
+  appearance: none;
+  border-radius: 0;
 }
 
 .birdseye-turn-history__row {
@@ -1865,18 +1890,17 @@
   align-items: stretch;
 }
 
-.birdseye-turn-history__row:nth-child(even) .birdseye-turn-history__cell:not(.birdseye-turn-history__cell--viewing) {
-  background-image: linear-gradient(rgba(255, 248, 232, 0.04), rgba(255, 248, 232, 0.04));
-}
-
 .birdseye-turn-history__cell-wrap {
   min-width: 0;
+  display: flex;
 }
 
 .birdseye-turn-history__cell {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   align-items: flex-start;
+  align-self: stretch;
   justify-content: center;
   gap: 0.04rem;
   box-sizing: border-box;
@@ -1887,6 +1911,7 @@
   border: 0;
   border-right: 1px solid rgba(255, 248, 232, 0.08);
   border-bottom: 1px solid rgba(255, 248, 232, 0.06);
+  border-radius: 0;
   background-color: var(--player-tint, transparent);
   color: inherit;
   font: inherit;
@@ -1894,6 +1919,7 @@
   line-height: 1.15;
   text-align: left;
   cursor: pointer;
+  transition: box-shadow 0.12s ease;
 }
 
 .birdseye-turn-history__cell--empty {
@@ -1907,11 +1933,26 @@
   border-right: none;
 }
 
-.birdseye-turn-history__row .birdseye-turn-history__cell:hover:not(.birdseye-turn-history__cell--viewing) {
-  background-image: linear-gradient(
-    var(--chrome-accent-muted, rgba(212, 177, 106, 0.16)),
-    var(--chrome-accent-muted, rgba(212, 177, 106, 0.16))
-  );
+.birdseye-turn-history__cell:hover {
+  border-color: transparent;
+  border-right-color: rgba(255, 248, 232, 0.08);
+  border-bottom-color: rgba(255, 248, 232, 0.06);
+}
+
+.birdseye-turn-history__row .birdseye-turn-history__cell:hover:not(.birdseye-turn-history__cell--viewing):not(.birdseye-turn-history__cell--empty) {
+  box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.18);
+}
+
+.birdseye-turn-history__cell:focus,
+.birdseye-turn-history__cell:focus-visible,
+.birdseye-turn-history__banner:focus,
+.birdseye-turn-history__banner:focus-visible {
+  outline: none;
+}
+
+.birdseye-turn-history__cell:focus-visible:not(.birdseye-turn-history__cell--viewing):not(.birdseye-turn-history__cell--empty),
+.birdseye-turn-history__banner:focus-visible:not(.birdseye-turn-history__banner--viewing) {
+  box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.18);
 }
 
 .birdseye-turn-history__cell--viewing {
@@ -1938,6 +1979,7 @@
 
 .birdseye-turn-history__played {
   font-weight: 650;
+  color: #c4b6a6;
 }
 
 .birdseye-turn-history__action {
