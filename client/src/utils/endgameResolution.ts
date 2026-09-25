@@ -1,4 +1,4 @@
-import type { GameState, IntrigueCard } from '../types/GameTypes'
+import type { GameState, IntrigueCard, Player } from '../types/GameTypes'
 import { GamePhase, IntrigueCardType } from '../types/GameTypes'
 import { getTotalVictoryPoints } from './influenceVictoryPoints'
 
@@ -31,28 +31,31 @@ export function drawIntrigueCardsFromDeck(
   return { drawn, remaining }
 }
 
+/** Spice counted at endgame: held spice plus tiebreaker spice (intrigue, Chaumurky). */
+function endgameSpice(state: GameState, player: Player): number {
+  return player.spice + (state.endgameTiebreakerSpice?.[player.id] || 0)
+}
+
+/**
+ * Endgame standing. Negative when `a` ranks ahead of `b`.
+ * Order: total VP, spice, Solari, water, garrison troops.
+ * Returns 0 when those all match (seat order is left to the caller).
+ */
+export function compareEndgameStanding(state: GameState, a: Player, b: Player): number {
+  const byVp = getTotalVictoryPoints(b, state) - getTotalVictoryPoints(a, state)
+  if (byVp !== 0) return byVp
+  const bySpice = endgameSpice(state, b) - endgameSpice(state, a)
+  if (bySpice !== 0) return bySpice
+  if (b.solari !== a.solari) return b.solari - a.solari
+  if (b.water !== a.water) return b.water - a.water
+  return b.troops - a.troops
+}
+
 export function resolveEndgameWinners(state: GameState): number[] {
-  const maxVp = Math.max(...state.players.map(p => getTotalVictoryPoints(p, state)))
-  let contenders = state.players.filter(p => getTotalVictoryPoints(p, state) === maxVp)
-  if (contenders.length <= 1) return contenders.map(p => p.id)
-
-  const spiceWithBonus = (p: (typeof contenders)[number]) =>
-    p.spice + (state.endgameTiebreakerSpice?.[p.id] || 0)
-  const maxSpice = Math.max(...contenders.map(spiceWithBonus))
-  contenders = contenders.filter(p => spiceWithBonus(p) === maxSpice)
-  if (contenders.length <= 1) return contenders.map(p => p.id)
-
-  const maxSolari = Math.max(...contenders.map(p => p.solari))
-  contenders = contenders.filter(p => p.solari === maxSolari)
-  if (contenders.length <= 1) return contenders.map(p => p.id)
-
-  const maxWater = Math.max(...contenders.map(p => p.water))
-  contenders = contenders.filter(p => p.water === maxWater)
-  if (contenders.length <= 1) return contenders.map(p => p.id)
-
-  const maxTroops = Math.max(...contenders.map(p => p.troops))
-  contenders = contenders.filter(p => p.troops === maxTroops)
-  return contenders.map(p => p.id)
+  if (state.players.length === 0) return []
+  const ranked = [...state.players].sort((a, b) => compareEndgameStanding(state, a, b))
+  const best = ranked[0]
+  return ranked.filter(p => compareEndgameStanding(state, p, best) === 0).map(p => p.id)
 }
 
 export function endgameRevealIncomplete(state: GameState): boolean {

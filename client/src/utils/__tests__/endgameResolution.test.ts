@@ -10,6 +10,7 @@ import {
   intrigueCardHasEndgameEffect,
   revealAllEndgameIntrigue,
   revealEndgameIntrigueSelection,
+  compareEndgameStanding,
   resolveEndgameWinners,
 } from '../endgameResolution'
 
@@ -115,6 +116,23 @@ describe('endgameResolution', () => {
     expect(endgameRevealIncomplete(s)).toBe(true)
     s = { ...s, endgameRevealDonePlayers: new Set([0, 1]) }
     expect(endgameRevealIncomplete(s)).toBe(false)
+  })
+
+  it('compareEndgameStanding uses VP, then spice, Solari, water, garrison', () => {
+    let s = getFreshDefaultGameState()
+    s = {
+      ...s,
+      players: [
+        makePlayer(0, { victoryPoints: 5, spice: 1, solari: 1, water: 1, troops: 1 }),
+        makePlayer(1, { id: 1, victoryPoints: 5, spice: 1, solari: 1, water: 1, troops: 4 }),
+        makePlayer(2, { id: 2, victoryPoints: 5, spice: 1, solari: 1, water: 3, troops: 0 }),
+        makePlayer(3, { id: 3, victoryPoints: 5, spice: 1, solari: 4, water: 0, troops: 0 }),
+        makePlayer(4, { id: 4, victoryPoints: 5, spice: 9, solari: 0, water: 0, troops: 0 }),
+        makePlayer(5, { id: 5, victoryPoints: 8, spice: 0, solari: 0, water: 0, troops: 0 }),
+      ],
+    }
+    const ranked = [...s.players].sort((a, b) => compareEndgameStanding(s, a, b))
+    expect(ranked.map(p => p.id)).toEqual([5, 4, 3, 2, 1, 0])
   })
 
   it('resolveEndgameWinners respects tiebreaker spice', () => {

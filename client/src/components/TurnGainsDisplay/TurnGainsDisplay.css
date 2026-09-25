@@ -90,6 +90,8 @@
 .turn-gain-total-item--persuasion-total {
   flex-wrap: nowrap;
   gap: 5px;
+  padding: 0;
+  background: transparent;
 }
 
 .turn-gain-total-persuasion-label {

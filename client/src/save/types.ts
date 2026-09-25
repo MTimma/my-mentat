@@ -99,11 +99,21 @@ export interface SaveMeta {
   notes?: string
 }
 
+/** One player in a list-view summary. `players` is ordered as standings. */
+export interface SaveSummaryPlayer {
+  id: number
+  leaderId: string
+  color: PlayerColor
+  /** Total VP: score track plus influence. */
+  vp: number
+}
+
 export interface SaveSummary {
   rounds: number
   winner: number | null
   finalVp: Record<number, number>
-  players: Array<{ id: number; leaderId: string; color: PlayerColor }>
+  /** Left to right by endgame standing: total VP, then spice, Solari, water, garrison. Full ties keep seat order. */
+  players: SaveSummaryPlayer[]
   eventCount: number
 }
 

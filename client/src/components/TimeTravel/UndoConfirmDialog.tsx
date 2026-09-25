@@ -71,24 +71,23 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
       closeOnOverlayClick
     >
       <div className="undo-confirm-dialog" onClick={event => event.stopPropagation()}>
-        <div className="undo-confirm-header">
-          <h2>Confirm Undo</h2>
-        </div>
-
         <div className="undo-confirm-body">
           <p className="undo-main-warning">
             {isSandboxEditUndo
-              ? 'You will return to setup editing. Your board configuration will be kept.'
-              : `This will clear all turns to the beginning of ${undoFromLabel}`}
+              ? 'This will reset the game to the setup.'
+              : `This will reset the game to turn ${undoFromLabel}.`}
+          </p>
+          <p className="undo-main-warning">
+            Are you sure?
           </p>
         </div>
 
         <div className="undo-confirm-actions">
+          <button className="undo-confirm-submit modal-btn modal-btn--primary" type="button" onClick={onConfirm}>
+            Confirm
+          </button>
           <button className="undo-confirm-cancel modal-btn modal-btn--secondary" type="button" onClick={onCancel}>
             Cancel
-          </button>
-          <button className="undo-confirm-submit modal-btn modal-btn--primary" type="button" onClick={onConfirm}>
-            Undo {turnsToUndo} Turn{turnsToUndo !== 1 ? 's' : ''}
           </button>
         </div>
       </div>

@@ -7,6 +7,8 @@ import type { GameAction } from '../components/GameContext/GameContext'
 import { applyGameAction } from '../components/GameContext/GameContext'
 import { repairLegacyTechDiscardState } from '../components/GameContext/riseOfIxReducer'
 import type { GameState } from '../types/GameTypes'
+import { compareEndgameStanding } from '../utils/endgameResolution'
+import { getTotalVictoryPoints } from '../utils/influenceVictoryPoints'
 import { buildInitialState } from './buildInitialState'
 import {
   assertJsonSerializable,
@@ -70,9 +72,23 @@ export function replaySaveDoc(
 
 export function summarize(doc: SaveDoc): SaveSummary {
   const { state } = replaySaveDoc(doc, 'trunk')
-  const finalVp = Object.fromEntries(
-    state.players.map(p => [p.id, p.victoryPoints])
-  )
+  const players = [...doc.setup.players]
+    .sort((a, b) => {
+      const playerA = state.players.find(p => p.id === a.id)
+      const playerB = state.players.find(p => p.id === b.id)
+      if (!playerA || !playerB) return 0
+      return compareEndgameStanding(state, playerA, playerB)
+    })
+    .map(setupPlayer => {
+      const player = state.players.find(p => p.id === setupPlayer.id)
+      return {
+        id: setupPlayer.id,
+        leaderId: setupPlayer.leaderId,
+        color: setupPlayer.color,
+        vp: player ? getTotalVictoryPoints(player, state) : 0,
+      }
+    })
+  const finalVp = Object.fromEntries(players.map(p => [p.id, p.vp]))
   const winner =
     state.endgameWinners && state.endgameWinners.length === 1
       ? state.endgameWinners[0]
@@ -81,11 +97,7 @@ export function summarize(doc: SaveDoc): SaveSummary {
     rounds: state.currentRound,
     winner,
     finalVp,
-    players: doc.setup.players.map(p => ({
-      id: p.id,
-      leaderId: p.leaderId,
-      color: p.color,
-    })),
+    players,
     eventCount: doc.events.length,
   }
 }
