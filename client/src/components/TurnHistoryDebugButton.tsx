@@ -12,12 +12,31 @@ import {
 } from '../utils/saveJsonFile'
 import './TurnHistory.css'
 
-const DetailsIcon = () => (
+const ShareIcon = () => (
   <svg className="turn-history-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <ellipse cx="12" cy="13.5" rx="5.5" ry="6.5" fill="none" stroke="currentColor" strokeWidth="1.75" />
-    <path d="M7.5 10.5 5.5 6.5M16.5 10.5l2-2M9 8.5 8 4M15 8.5l1-4M6.5 14l-3 .5M17.5 14l3 .5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <circle cx="9.75" cy="13" r="1" fill="currentColor" />
-    <circle cx="14.25" cy="13" r="1" fill="currentColor" />
+    <path
+      d="M12 3v10"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+    />
+    <path
+      d="M8 7 12 3l4 4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M5 13.5V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5.5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 )
 
@@ -102,7 +121,7 @@ export function TurnHistoryDebugButton({
         title="Copy or load save JSON"
         aria-label="Copy or load save JSON"
       >
-        <DetailsIcon />
+        <ShareIcon />
       </button>
       {open &&
         createPortal(

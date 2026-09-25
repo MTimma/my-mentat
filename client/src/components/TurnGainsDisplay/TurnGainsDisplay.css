@@ -23,6 +23,11 @@
   color: var(--chrome-text-muted);
 }
 
+.turn-gain-totals-row--pooled-reveal {
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
 .turn-gain-totals-row {
   display: flex;
   flex-wrap: wrap;
@@ -87,6 +92,7 @@
   font-size: 0.58rem;
 }
 
+.turn-gain-total-item--pooled-reveal,
 .turn-gain-total-item--persuasion-total {
   flex-wrap: nowrap;
   gap: 5px;
@@ -94,6 +100,7 @@
   background: transparent;
 }
 
+.turn-gain-total-pooled-label,
 .turn-gain-total-persuasion-label {
   font-size: 0.62rem;
   font-weight: 650;
@@ -101,6 +108,13 @@
   letter-spacing: 0.01em;
   color: var(--chrome-text-muted);
   white-space: nowrap;
+}
+
+.turn-gains-display-root--reveal-pooled .turn-gain-combat-group .turn-gains-side--deployed,
+.turn-gains-display-root--reveal-pooled .turn-gain-combat-group .turn-gains-side--retreated {
+  padding: 0;
+  background: transparent;
+  border: none;
 }
 
 .turn-gain-persuasion-sources {

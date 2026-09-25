@@ -608,30 +608,28 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
 
   const renderTotalInfluenceAmount = renderTotalIconOnlyAmount
 
-  const renderTotalPersuasionAmount = (value: number, labeledTotal = false) => {
+  const renderPooledRevealLabel = () => (
+    <span className="turn-gain-total-pooled-label">{`Revealed:`}</span>
+  )
+
+  const renderTotalPersuasionAmount = (value: number, revealedTotal = false) => {
     if (value === 0) return null
     const absAmount = Math.abs(value)
     const isCost = value < 0
     const signed = isCost ? `−${absAmount}` : String(absAmount)
     return (
-      <>
-      {labeledTotal ? (
-        <span className="turn-gain-total-persuasion-label">{`Revealed:`}</span>
-      ) : null}
-        <span
-          className="gain-persuasion-badge turn-gain-total-persuasion"
-          title={labeledTotal ? `Persuasion revealed: ${signed}` : `Persuasion: ${signed}`}
-          aria-label={
-            labeledTotal
-              ? `Persuasion revealed: ${absAmount}`
-              : `Persuasion ${isCost ? 'spent' : 'gained'} ${absAmount}`
-          }
-        >
-          <span className="gain-persuasion-diamond" aria-hidden="true" />
-          <span className="gain-persuasion-count">{signed}</span>
-        </span>
-        
-      </>
+      <span
+        className="gain-persuasion-badge turn-gain-total-persuasion"
+        title={revealedTotal ? `Persuasion revealed: ${signed}` : `Persuasion: ${signed}`}
+        aria-label={
+          revealedTotal
+            ? `Persuasion revealed: ${absAmount}`
+            : `Persuasion ${isCost ? 'spent' : 'gained'} ${absAmount}`
+        }
+      >
+        <span className="gain-persuasion-diamond" aria-hidden="true" />
+        <span className="gain-persuasion-count">{signed}</span>
+      </span>
     )
   }
 
@@ -689,6 +687,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     const displayName = getRewardDisplayName(total.type)
     const hasBoth = total.gained > 0 && total.spent > 0
     const isPersuasion = total.type === RewardType.PERSUASION
+    const isPooledRevealTotal = revealPooledTotals && isRevealPooledRewardType(total.type)
     const isFreighter = total.type === RewardType.FREIGHTER
     const isSwordmaster = total.type === RewardType.SWORDMASTER
     const usesIconOnlyForSingleUnit =
@@ -745,7 +744,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         key={total.type}
         className={[
           'turn-gain-total-item',
-          isPersuasion && revealPooledTotals ? 'turn-gain-total-item--persuasion-total' : '',
+          isPooledRevealTotal ? 'turn-gain-total-item--pooled-reveal' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -769,11 +768,11 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
                 →
               </span>
               <span className="turn-gain-total-gained">
-                {renderTotalPersuasionAmount(total.gained, revealPooledTotals)}
+                {renderTotalPersuasionAmount(total.gained, revealPooledTotals && total.gained > 0)}
               </span>
             </span>
           ) : (
-            renderTotalPersuasionAmount(total.net, revealPooledTotals)
+            renderTotalPersuasionAmount(total.net, revealPooledTotals && total.net > 0)
           )
         ) : hasBoth ? (
           <span className="turn-gain-total-flow">
@@ -852,7 +851,15 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         {revealPooledTotals ? null : (
           <span className="turn-gain-source-title turn-gain-source-title--totals">Total</span>
         )}
-        <div className="turn-gain-totals-row">
+        <div
+          className={[
+            'turn-gain-totals-row',
+            revealPooledTotals && resourceTotals.length > 0 ? 'turn-gain-totals-row--pooled-reveal' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {revealPooledTotals && resourceTotals.length > 0 ? renderPooledRevealLabel() : null}
           {resourceTotals.map(renderTotalResource)}
           {influenceTotals.map(renderTotalInfluence)}
           {renderTotalCards(cardTotals)}

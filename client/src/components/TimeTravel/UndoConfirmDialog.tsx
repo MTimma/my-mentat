@@ -74,8 +74,8 @@ const UndoConfirmDialog: React.FC<UndoConfirmDialogProps> = ({
         <div className="undo-confirm-body">
           <p className="undo-main-warning">
             {isSandboxEditUndo
-              ? 'This will reset the game to the setup.'
-              : `This will reset the game to turn ${undoFromLabel}.`}
+              ? 'Clear all turns and return to the setup'
+              : `Revert to the start of ${undoFromLabel}`}
           </p>
           <p className="undo-main-warning">
             Are you sure?

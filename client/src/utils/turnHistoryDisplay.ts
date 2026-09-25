@@ -62,21 +62,21 @@ export function formatTurnRoundHeader(turnNum: number, round: number | null): st
 /** Human-readable label for a history row or the live in-progress turn. */
 export function getHistoryRowLabel(turns: GameState[], index: number): string {
   if (index >= turns.length) {
-    return `Turn ${getLivePlayerTurnNumber(turns)}`
+    return `turn ${getLivePlayerTurnNumber(turns)}`
   }
   const turn = turns[index]
-  if (!turn) return `Turn ${index}`
+  if (!turn) return `turn ${index}`
   if (isRoundStartHistoryEntry(turn)) return getRoundStartLabel(turn)
-  if (index === 0 || turn.historyEntryKind === 'setup') return 'Setup'
-  if (turn.historyEntryKind === 'combat') return 'Combat'
-  if (turn.historyEntryKind === 'endgame') return 'Endgame'
+  if (index === 0 || turn.historyEntryKind === 'setup') return 'setup'
+  if (turn.historyEntryKind === 'combat') return 'combat'
+  if (turn.historyEntryKind === 'endgame') return 'endgame'
   const playerTurnNum = getPlayerTurnNumber(turns, index)
-  return playerTurnNum != null ? `Turn ${playerTurnNum}` : `Turn ${index}`
+  return playerTurnNum != null ? `turn ${playerTurnNum}` : `turn ${index}`
 }
 
 /** Board space name, "Reveal", "Agent", etc. for a player turn row. */
 export function getTurnActionLabel(turn: GameState): string {
-  if (turn.phase === GamePhase.COMBAT) return 'Combat'
+  if (turn.phase === GamePhase.COMBAT) return 'combat'
   const curr = turn.currTurn
   if (!curr) return '—'
   if (curr.type === TurnType.ACTION) {

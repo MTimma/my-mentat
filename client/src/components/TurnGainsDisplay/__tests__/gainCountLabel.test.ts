@@ -62,7 +62,8 @@ describe('Gain count labels', () => {
   it('reveal turns pool persuasion and swords, then title other effects', () => {
     expect(tsx).toContain('revealPooledTotals')
     expect(tsx).toContain('splitRevealPooledGains')
-    expect(tsx).toContain('turn-gain-total-persuasion-label')
+    expect(tsx).toContain('turn-gain-total-pooled-label')
+    expect(tsx).toContain('turn-gain-total-item--pooled-reveal')
     expect(tsx).toContain('turn-gain-persuasion-sources')
     expect(tsx).toContain('total:')
     expect(tsx).not.toContain('data-preview-hover')

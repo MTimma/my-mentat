@@ -127,6 +127,7 @@
   height: 36px;
 }
 
+.alt-gain-preview .turn-gain-total-pooled-label,
 .alt-gain-preview .turn-gain-total-persuasion-label {
   font-size: 1rem;
   font-weight: 700;

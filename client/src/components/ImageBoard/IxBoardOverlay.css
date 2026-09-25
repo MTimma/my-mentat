@@ -282,6 +282,12 @@
 
 .ix-board-overlay__layer .image-board__marker {
   z-index: 4;
+  /* Overlay is ~35% of Board.jpg; 12% local ≈ main-board agent 4%. */
+  width: clamp(14px, 12%, 48px);
+}
+
+.ix-board-overlay__layer .image-board__marker:has(> .agent--dreadnought) {
+  width: clamp(12px, 8.4%, 32px);
 }
 
 .image-board--tracker-inspect [data-marker='ix-board'],
