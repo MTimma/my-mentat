@@ -114,7 +114,7 @@
 }
 
 .games-list-table-wrap {
-  max-height: 14rem;
+  max-height: 22rem;
   overflow: auto;
   border: 2px solid var(--color-arrakis-earth);
   border-radius: 6px;
@@ -162,6 +162,69 @@
 .games-list-meta {
   color: #5c5348;
   white-space: nowrap;
+}
+
+.games-list-name-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 11rem;
+}
+
+.games-list-summary__kit {
+  font-weight: 600;
+}
+
+.games-list-summary__counts {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+}
+
+.games-list-summary__players {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.45rem 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.games-list-player {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.games-list-player__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--player-ring, #8a8074);
+  background: #1c1916;
+}
+
+.games-list-player__icon--fallback {
+  display: inline-block;
+  background: transparent;
+}
+
+.games-list-player__icon--red { --player-ring: var(--player-ring-red); }
+.games-list-player__icon--green { --player-ring: var(--player-ring-green); }
+.games-list-player__icon--yellow { --player-ring: var(--player-ring-yellow); }
+.games-list-player__icon--blue { --player-ring: var(--player-ring-blue); }
+
+.games-list-player__vp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.games-list-player__vp-icon {
+  width: 14px;
+  height: 14px;
 }
 
 .games-list-actions {

@@ -13,20 +13,34 @@ const USER_ID: &str = "user_id";
 #[derive(sqlx::FromRow, serde::Serialize)]
 pub struct GameRow {
     id: i64,
-    owner_id: Option<String>,
+    owner_id: String,
     name: String,
-    json: String,
+    summary: sqlx::types::Json<GameSummary>,
+    content: sqlx::types::Json<GameContent>,
+    version: i64,
     updated_at: String,
     created_at: String,
 }
 
-#[derive(sqlx::FromRow, serde::Serialize)]
-pub struct GameDetail {
+#[derive(sqlx::FromRow, Serialize)]
+pub struct GameListEntry {
     id: i64,
-    owner_id: Option<String>,
+    owner_id: String,
     name: String,
+    summary: sqlx::types::Json<GameSummary>,
     updated_at: String,
     created_at: String,
+}
+
+#[derive(Deserialize, Serialize, sqlx::FromRow)]
+pub struct GameContent {
+    schemaVersion: i32,
+    meta: GameMeta,
+    setup: serde_json::Value,
+    events: serde_json::Value,
+    branches: serde_json::Value,
+    cursor: serde_json::Value,
+    summary: sqlx::types::Json<GameSummary>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -37,16 +51,21 @@ pub struct GameMeta {
     updatedAt: String,
 }
 
-#[derive(Deserialize, Serialize)]
-pub struct GameLog {
-    schemaVersion: i32,
-    meta: GameMeta,
-    setup: serde_json::Value,
-    events: serde_json::Value,
-    branches: serde_json::Value,
-    cursor: serde_json::Value,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    summary: Option<serde_json::Value>,
+#[derive(Deserialize, Serialize, sqlx::FromRow)]
+pub struct GameSummary {
+    gamePackId: String,
+    rounds: i32,
+    turns: i32,
+    players: Vec<GameSummaryPlayer>,
+}
+
+#[derive(Deserialize, Serialize, sqlx::FromRow)]
+pub struct GameSummaryPlayer {
+    id: i32,
+    name: String,
+    leaderId: String,
+    color: String,
+    vp: i32,
 }
 
 #[derive(Deserialize)]
@@ -70,16 +89,18 @@ async fn insert_owned_game(
     pool: &SqlitePool,
     owner_id: &str,
     name: &str,
-    json: &str,
+    content: &sqlx::types::Json<GameContent>,
+    summary: &sqlx::types::Json<GameSummary>,
 ) -> Result<i64, sqlx::Error> {
     let id = sqlx::query!(
         r#"
-INSERT INTO games ( owner_id, name, json, updated_at, created_at )
-VALUES ( ?1, ?2, ?3, strftime('%s', 'now'), strftime('%s', 'now') )
+INSERT INTO games ( owner_id, name, content, summary, updated_at, created_at )
+VALUES ( ?1, ?2, jsonb(?3), jsonb(?4), strftime('%s', 'now'), strftime('%s', 'now') )
         "#,
         owner_id,
         name,
-        json
+        content,
+        summary
     )
     .execute(pool)
     .await?
@@ -92,16 +113,18 @@ async fn update_owned_game(
     id: i64,
     owner_id: &str,
     name: &str,
-    json: &str,
+    content: &sqlx::types::Json<GameContent>,
+    summary: &sqlx::types::Json<GameSummary>,
 ) -> Result<u64, sqlx::Error> {
     let result = sqlx::query!(
         r#"
 UPDATE games
-SET name = ?1, json = ?2, updated_at = strftime('%s', 'now')
-WHERE id = ?3 AND owner_id = ?4
+SET name = ?1, content = jsonb(?2), summary = jsonb(?3), updated_at = strftime('%s', 'now')
+WHERE id = ?4 AND owner_id = ?5
         "#,
         name,
-        json,
+        content,
+        summary,
         id,
         owner_id
     )
@@ -114,31 +137,22 @@ pub async fn save_game(
     State(pool): State<SqlitePool>,
     session: Session,
     Query(query): Query<SaveGameQuery>,
-    Json(game_log): Json<GameLog>,
+    Json(game_log): Json<GameContent>,
 ) -> ApiResult<Json<i64>> {
     let user_id = require_user_id(&session).await?;
+    let game_log = sqlx::types::Json(game_log);
     let name = &game_log.meta.title;
-    let json = serde_json::to_string(&game_log)?;
 
     if let Some(game_id) = query.id {
         let game = game_by_id(&pool, game_id).await?;
-        match &game.owner_id {
-            Some(owner_id) if owner_id == &user_id => {}
-            Some(_) => {
-                return Err(ApiError::builder()
-                    .status(StatusCode::FORBIDDEN)
-                    .title("You are not the author of this game")
-                    .build());
-            }
-            None => {
-                return Err(ApiError::builder()
-                    .status(StatusCode::FORBIDDEN)
-                    .title("Game has no owner")
-                    .build());
-            }
+        if game.owner_id != user_id {
+            return Err(ApiError::builder()
+                .status(StatusCode::FORBIDDEN)
+                .title("You are not the author of this game")
+                .build());
         }
-
-        let rows = update_owned_game(&pool, game_id, &user_id, name, &json).await?;
+        // TODO update same as branching, except with same name and increment version
+        let rows = update_owned_game(&pool, game_id, &user_id, name, &game_log, &game_log.summary).await?;
         if rows == 0 {
             return Err(ApiError::builder()
                 .status(StatusCode::NOT_FOUND)
@@ -148,7 +162,7 @@ pub async fn save_game(
         return Ok(Json(game_id));
     }
 
-    let id = insert_owned_game(&pool, &user_id, name, &json).await?;
+    let id = insert_owned_game(&pool, &user_id, name, &game_log, &game_log.summary).await?;
     Ok(Json(id))
 }
 
@@ -156,7 +170,11 @@ async fn game_by_id(pool: &SqlitePool, id: i64) -> ApiResult<GameRow> {
     let game = sqlx::query_as!(
         GameRow,
         r#"
-SELECT id, owner_id, name, json, updated_at, created_at FROM games
+SELECT id, owner_id, name,
+       json(content) AS "content!: sqlx::types::Json<GameContent>",
+       json(summary) AS "summary!: sqlx::types::Json<GameSummary>",
+       version, updated_at, created_at
+FROM games
         WHERE id = ?1"#,
         id
     )
@@ -169,24 +187,23 @@ SELECT id, owner_id, name, json, updated_at, created_at FROM games
 #[derive(Serialize)]
 pub struct GameResponse {
     id: i64,
-    doc: serde_json::Value,
+    doc: sqlx::types::Json<GameContent>,
     can_edit: bool,
 }
 
-fn session_can_edit(user_id: &Option<String>, owner_id: &Option<String>) -> bool {
-    match (user_id, owner_id) {
-        (Some(uid), Some(oid)) => uid == oid,
-        _ => false,
-    }
+fn session_can_edit(user_id: &Option<String>, owner_id: &str) -> bool {
+    matches!(user_id, Some(uid) if uid == owner_id)
 }
 
 #[axum::debug_handler]
-pub async fn get_games(State(pool): State<SqlitePool>) -> ApiResult<Json<Vec<GameDetail>>> {
-    let games: Vec<GameDetail> = sqlx::query_as!(
-        GameDetail,
+pub async fn get_games(State(pool): State<SqlitePool>) -> ApiResult<Json<Vec<GameListEntry>>> {
+    let games: Vec<GameListEntry> = sqlx::query_as!(
+        GameListEntry,
         r#"
-SELECT id, owner_id, name, updated_at, created_at FROM games
-WHERE owner_id IS NOT NULL
+SELECT id, owner_id, name,
+       json(summary) AS "summary!: sqlx::types::Json<GameSummary>",
+       updated_at, created_at
+FROM games
 ORDER BY updated_at DESC
         "#,
     )
@@ -203,10 +220,10 @@ pub async fn get_game(
 ) -> ApiResult<Json<GameResponse>> {
     let game = game_by_id(&pool, id).await?;
     let user_id = session.get::<String>(USER_ID).await?;
-    let doc: serde_json::Value = serde_json::from_str(&game.json)?;
+    let doc = game.content;
     Ok(Json(GameResponse {
         id: game.id,
         doc,
-        can_edit: session_can_edit(&user_id, &game.owner_id),
+        can_edit: session_can_edit(&user_id, &game.owner_id), //TODO refactor into new game from published with new version instead of editing existing
     }))
 }

@@ -229,6 +229,7 @@ already tolerate.
 | 4 | `06-test-plan.md` — missing TS reducer tests + golden logs (**do before the port**) | 2 |
 | 5 | `04-rust-engine.md` — crate layout, type mapping, port order; **WASM last** | 2, 3, 6 |
 | 6 | `05-server-api-and-catalogs.md` — axum service, security, published id catalogs | 3, 4 |
+| — | `08-shared-reducer-wip.md` — short WIP: why one Rust reducer, native + WASM, summary on save, search later | 4, 5 |
 
 Recommended order of execution:
 

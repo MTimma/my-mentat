@@ -1,5 +1,5 @@
 import { parseSaveDocJson } from '../save/parseSaveDoc'
-import type { SaveDoc } from '../save/types'
+import type { SaveDoc, SaveSummary } from '../save/types'
 
 /** Base URL for the Rust games server (`server/src/main.rs`). Empty string uses same origin / Vite proxy. */
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ?? ''
@@ -9,8 +9,9 @@ const SESSION_FETCH: RequestInit = { credentials: 'include' }
 /** GET `/games` row — metadata only; document is `GET /games/{id}`. */
 export interface GameDetail {
   id: number
-  owner_id: string | null
+  owner_id: string
   name: string
+  summary?: SaveSummary
   updated_at: string
   created_at: string
 }

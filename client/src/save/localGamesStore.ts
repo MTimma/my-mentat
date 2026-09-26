@@ -398,10 +398,13 @@ export function setActiveLocalGameId(id: string | null): void {
 }
 
 export async function listLocalGames(): Promise<LocalGameMeta[]> {
+  const rows = await listLocalGameRecords()
+  return rows.map(({ id, title, createdAt, updatedAt }) => ({ id, title, createdAt, updatedAt }))
+}
+
+export async function listLocalGameRecords(): Promise<LocalGameRecord[]> {
   const rows = await getBackend().list()
-  return rows
-    .map(({ id, title, createdAt, updatedAt }) => ({ id, title, createdAt, updatedAt }))
-    .sort((a, b) => b.updatedAt - a.updatedAt)
+  return [...rows].sort((a, b) => b.updatedAt - a.updatedAt)
 }
 
 export async function getLocalGame(id: string): Promise<LocalGameRecord | undefined> {

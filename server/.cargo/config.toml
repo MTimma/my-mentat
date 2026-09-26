@@ -1,0 +1,6 @@
+# Link Homebrew SQLite instead of the 3.46 copy bundled with sqlx.
+# libsqlite3-sys checks these variables in its build script.
+[env]
+LIBSQLITE3_SYS_USE_PKG_CONFIG = { value = "1", force = true }
+SQLITE3_LIB_DIR = { value = "/opt/homebrew/opt/sqlite/lib", force = true }
+SQLITE3_INCLUDE_DIR = { value = "/opt/homebrew/opt/sqlite/include", force = true }

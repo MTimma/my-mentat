@@ -27,6 +27,17 @@ const DEFAULT_DEV_CORS_ORIGIN: &str = "http://localhost:5173";
 async fn main() {
     dotenvy::dotenv().ok();
 
+    axum_anyhow::on_error(|err| {
+        match err.error() {
+            Some(source) => eprintln!("api error {}: {source:#}", err.status()),
+            None => eprintln!(
+                "api error {}: {}",
+                err.status(),
+                err.detail().unwrap_or(err.title())
+            ),
+        }
+    });
+
     let app_env = std::env::var("APP_ENV").unwrap_or_else(|_| "dev".to_string());
     let is_prod = app_env.eq_ignore_ascii_case("prod");
 

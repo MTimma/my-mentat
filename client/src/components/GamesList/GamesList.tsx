@@ -7,10 +7,17 @@ import {
   type GameDetail,
   type LoadSaveFn,
 } from '../../api/gamesApi'
+import { getLeaderIconPath, LEADER_ICON_SLUGS } from '../../data/leaders'
+import { inferGamePackId } from '../../gamePacks/inferGamePack'
+import { getSelectableGamePacks } from '../../gamePacks/registry'
+import { replaySaveDoc } from '../../save/replay'
+import type { SaveDoc, SaveSummary, SaveSummaryPlayer } from '../../save/types'
+import { compareEndgameStanding } from '../../utils/endgameResolution'
+import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import {
   deleteLocalGame,
   getLocalGame,
-  listLocalGames,
+  listLocalGameRecords,
   MAX_LOCAL_GAMES,
   type LocalGameMeta,
 } from '../../save/localGamesStore'
@@ -23,25 +30,188 @@ export interface GamesListProps {
   className?: string
 }
 
-function formatUnixOrIso(raw: string): string {
-  const seconds = Number(raw)
-  if (Number.isFinite(seconds) && raw.trim() !== '') {
-    return new Date(seconds * 1000).toLocaleString()
-  }
-  const parsed = Date.parse(raw)
-  if (Number.isFinite(parsed)) return new Date(parsed).toLocaleString()
-  return raw
+function gameKitLabel(gamePackId: string): string {
+  return getSelectableGamePacks().find(pack => pack.ref === gamePackId)?.label ?? gamePackId
 }
 
-function formatMs(ms: number): string {
-  return new Date(ms).toLocaleString()
+function leaderName(leaderId: string): string {
+  return Object.entries(LEADER_ICON_SLUGS).find(([, slug]) => slug === leaderId)?.[0] ?? leaderId
+}
+
+function summaryForDraft(doc: SaveDoc): SaveSummary | undefined {
+  const setup = doc.setup
+  if (!setup?.players?.length) return undefined
+  const turns = (doc.events ?? []).filter(entry => entry.a?.type === 'END_TURN').length
+  try {
+    const { state } = replaySaveDoc(doc)
+    const players = [...setup.players]
+      .sort((a, b) => {
+        const playerA = state.players.find(p => p.id === a.id)
+        const playerB = state.players.find(p => p.id === b.id)
+        if (!playerA || !playerB) return 0
+        return compareEndgameStanding(state, playerA, playerB)
+      })
+      .map(setupPlayer => {
+        const player = state.players.find(p => p.id === setupPlayer.id)
+        const leaderId = player
+          ? (LEADER_ICON_SLUGS[player.leader.name] ?? setupPlayer.leaderId)
+          : setupPlayer.leaderId
+        return {
+          id: setupPlayer.id,
+          name: player?.leader.name ?? leaderName(leaderId),
+          leaderId,
+          color: player?.color ?? setupPlayer.color,
+          vp: player ? getTotalVictoryPoints(player, state) : 0,
+        }
+      })
+    return {
+      gamePackId: inferGamePackId(setup),
+      rounds: state.currentRound,
+      turns,
+      players,
+    }
+  } catch {
+    return {
+      gamePackId: inferGamePackId(setup),
+      rounds: setup.currentRound ?? 1,
+      turns,
+      players: setup.players.map(player => ({
+        id: player.id,
+        name: leaderName(player.leaderId),
+        leaderId: player.leaderId,
+        color: player.color,
+        vp: player.startingResources?.victoryPoints ?? 0,
+      })),
+    }
+  }
+}
+
+function leaderIconSrc(leaderId: string): string | undefined {
+  const leaderName = Object.entries(LEADER_ICON_SLUGS).find(([, slug]) => slug === leaderId)?.[0]
+  return leaderName ? getLeaderIconPath(leaderName) : undefined
+}
+
+function GameNameBlock({ name, summary }: { name: string; summary?: SaveSummary }) {
+  return (
+    <div className="games-list-name-block">
+      <div className="games-list-name">{name}</div>
+      {summary ? (
+        <>
+          <div className="games-list-summary__kit">{gameKitLabel(summary.gamePackId)}</div>
+          <div className="games-list-summary__counts">
+            <span>Rounds: {summary.rounds}</span>
+            <span>Turns: {summary.turns}</span>
+          </div>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+function PlayerList({ summary }: { summary?: SaveSummary }) {
+  if (!summary?.players.length) return <>—</>
+  return (
+    <ul className="games-list-summary__players">
+      {summary.players.map(player => (
+        <SummaryPlayer key={player.id} player={player} />
+      ))}
+    </ul>
+  )
+}
+
+function SummaryPlayer({ player }: { player: SaveSummaryPlayer }) {
+  const iconSrc = leaderIconSrc(player.leaderId)
+  return (
+    <li className="games-list-player" aria-label={`${player.name}, ${player.vp} victory points`}>
+      {iconSrc ? (
+        <img
+          src={iconSrc}
+          alt=""
+          className={`games-list-player__icon games-list-player__icon--${player.color}`}
+          draggable={false}
+        />
+      ) : (
+        <span
+          className={`games-list-player__icon games-list-player__icon--fallback games-list-player__icon--${player.color}`}
+          aria-hidden="true"
+        />
+      )}
+      <span className="games-list-player__vp">
+        <img src="/icon/vp.png" alt="" className="games-list-player__vp-icon" draggable={false} />
+        {player.vp}
+      </span>
+    </li>
+  )
+}
+
+interface BrowseGameRow {
+  key: string
+  name: string
+  summary?: SaveSummary
+  loading: boolean
+  onLoad: () => void
+  deleting?: boolean
+  onDelete?: () => void
+}
+
+function BrowseGameTable({ rows, emptyLabel }: { rows: BrowseGameRow[]; emptyLabel?: string }) {
+  if (rows.length === 0) {
+    return <p className="games-list-empty">{emptyLabel ?? 'No games yet.'}</p>
+  }
+  return (
+    <div className="games-list-table-wrap">
+      <table className="games-list-table">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Players</th>
+            <th scope="col" aria-label="Actions" />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(row => (
+            <tr key={row.key}>
+              <td>
+                <GameNameBlock name={row.name} summary={row.summary} />
+              </td>
+              <td>
+                <PlayerList summary={row.summary} />
+              </td>
+              <td>
+                <div className="games-list-actions">
+                  <button
+                    type="button"
+                    className="games-list-load-btn"
+                    disabled={row.loading}
+                    onClick={row.onLoad}
+                  >
+                    {row.loading ? 'Loading…' : 'Load'}
+                  </button>
+                  {row.onDelete ? (
+                    <button
+                      type="button"
+                      className="games-list-delete-btn"
+                      disabled={row.deleting}
+                      onClick={row.onDelete}
+                    >
+                      {row.deleting ? 'Deleting…' : 'Delete'}
+                    </button>
+                  ) : null}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }
 
 const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
   const [activeTab, setActiveTab] = useState<GamesListTab>('community')
   const cachedCommunity = getCachedGamesList()
   const [games, setGames] = useState<GameDetail[]>(cachedCommunity ?? [])
-  const [localGames, setLocalGames] = useState<LocalGameMeta[]>([])
+  const [localGames, setLocalGames] = useState<Array<LocalGameMeta & { summary?: SaveSummary }>>([])
   const [listStatus, setListStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>(
     () => (cachedCommunity ? 'ready' : 'loading')
   )
@@ -81,8 +251,16 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
     setListStatus('loading')
     setListError(null)
     try {
-      const rows = await listLocalGames()
-      setLocalGames(rows)
+      const records = await listLocalGameRecords()
+      setLocalGames(
+        records.map(record => ({
+          id: record.id,
+          title: record.title,
+          createdAt: record.createdAt,
+          updatedAt: record.updatedAt,
+          summary: summaryForDraft(record.doc),
+        }))
+      )
       setListStatus('ready')
     } catch (error) {
       setLocalGames([])
@@ -197,7 +375,7 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
 
       <div className="games-list-panel" role="tabpanel">
         {activeTab === 'official' ? (
-          <p className="games-list-empty">No official games yet.</p>
+          <BrowseGameTable rows={[]} emptyLabel="No official games yet." />
         ) : activeTab === 'local' ? (
           listStatus === 'loading' ? (
             <p className="games-list-status">Loading drafts…</p>
@@ -222,45 +400,17 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
               <p className="games-list-cap-note">
                 {localGames.length}/{MAX_LOCAL_GAMES} drafts (stored on this device)
               </p>
-              <div className="games-list-table-wrap">
-                <table className="games-list-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Name</th>
-                      <th scope="col">Updated</th>
-                      <th scope="col" aria-label="Actions" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {localGames.map(game => (
-                      <tr key={game.id}>
-                        <td className="games-list-name">{game.title}</td>
-                        <td className="games-list-meta">{formatMs(game.updatedAt)}</td>
-                        <td>
-                          <div className="games-list-actions">
-                            <button
-                              type="button"
-                              className="games-list-load-btn"
-                              disabled={loadingId === `local:${game.id}`}
-                              onClick={() => void handleLoadLocal(game)}
-                            >
-                              {loadingId === `local:${game.id}` ? 'Loading…' : 'Load'}
-                            </button>
-                            <button
-                              type="button"
-                              className="games-list-delete-btn"
-                              disabled={deletingId === game.id}
-                              onClick={() => void handleDeleteLocal(game)}
-                            >
-                              {deletingId === game.id ? 'Deleting…' : 'Delete'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <BrowseGameTable
+                rows={localGames.map(game => ({
+                  key: game.id,
+                  name: game.title,
+                  summary: game.summary,
+                  loading: loadingId === `local:${game.id}`,
+                  onLoad: () => void handleLoadLocal(game),
+                  deleting: deletingId === game.id,
+                  onDelete: () => void handleDeleteLocal(game),
+                }))}
+              />
             </>
           )
         ) : listStatus === 'loading' ? (
@@ -282,35 +432,15 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
         ) : games.length === 0 ? (
           <p className="games-list-empty">No community games yet.</p>
         ) : (
-          <div className="games-list-table-wrap">
-            <table className="games-list-table">
-              <thead>
-                <tr>
-                  <th scope="col">Name</th>
-                  <th scope="col">Updated</th>
-                  <th scope="col" aria-label="Actions" />
-                </tr>
-              </thead>
-              <tbody>
-                {games.map(game => (
-                  <tr key={game.id}>
-                    <td className="games-list-name">{game.name || `Game #${game.id}`}</td>
-                    <td className="games-list-meta">{formatUnixOrIso(game.updated_at)}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="games-list-load-btn"
-                        disabled={loadingId === `server:${game.id}`}
-                        onClick={() => void handleLoadCommunity(game)}
-                      >
-                        {loadingId === `server:${game.id}` ? 'Loading…' : 'Load'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <BrowseGameTable
+            rows={games.map(game => ({
+              key: String(game.id),
+              name: game.name || `Game #${game.id}`,
+              summary: game.summary,
+              loading: loadingId === `server:${game.id}`,
+              onLoad: () => void handleLoadCommunity(game),
+            }))}
+          />
         )}
       </div>
 

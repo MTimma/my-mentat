@@ -50,7 +50,7 @@ describe('Sandbox session bar', () => {
     expect(barTsx).not.toContain('LOAD_CONFIRM')
     expect(gamesListTsx).toContain('Local')
     expect(gamesListTsx).toContain("useState<GamesListTab>('community')")
-    expect(gamesListTsx).toContain('listLocalGames')
+    expect(gamesListTsx).toContain('listLocalGameRecords')
     expect(gamesListTsx).toContain('deleteLocalGame')
     expect(gamesListTsx).toContain('Copy error')
     expect(gamesListTsx).toContain('games-list-error--copyable')

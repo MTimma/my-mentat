@@ -230,7 +230,7 @@
 }
 
 .sandbox-session-bar__browse-dialog {
-  width: min(36rem, 92vw);
+  width: min(56rem, 96vw);
   max-height: min(70vh, 32rem);
   overflow: auto;
 }
