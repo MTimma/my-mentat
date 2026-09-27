@@ -1,6 +1,14 @@
-# Link Homebrew SQLite instead of the 3.46 copy bundled with sqlx.
-# libsqlite3-sys checks these variables in its build script.
+# Use system/Homebrew SQLite for sqlx (needs 3.53+ for JSONB).
+# macOS (Homebrew): paths below.
+# Linux VPS: install SQLite to /usr/local (ops/install-sqlite-353.sh) and set in
+#   /etc/my-mentat.env: SQLITE3_LIB_DIR, SQLITE3_INCLUDE_DIR, PKG_CONFIG_PATH
 [env]
 LIBSQLITE3_SYS_USE_PKG_CONFIG = { value = "1", force = true }
+
+[target.aarch64-apple-darwin.env]
 SQLITE3_LIB_DIR = { value = "/opt/homebrew/opt/sqlite/lib", force = true }
 SQLITE3_INCLUDE_DIR = { value = "/opt/homebrew/opt/sqlite/include", force = true }
+
+[target.x86_64-apple-darwin.env]
+SQLITE3_LIB_DIR = { value = "/usr/local/opt/sqlite/lib", force = true }
+SQLITE3_INCLUDE_DIR = { value = "/usr/local/opt/sqlite/include", force = true }

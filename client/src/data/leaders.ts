@@ -5,7 +5,7 @@ export const LEADER_NAMES = {
   COUNT_ILBAN_RICHESE: "Count Ilban Richese",
   COUNTESS_ARIANA_THORVALD: "Countess Ariana Thorvald",
   HELENA_RICHESE: "Helena Richese",
-  BARON_VLADIMIR: "BARON VLADIMIR HARKONNEN",
+  BARON_VLADIMIR: "Baron Vladimir Harkonnen",
   BEAST_RABBAN: 'Glossu "The Beast" Rabban',
   DUKE_LETO: "Duke Leto Atreides",
   PAUL_ATREIDES: "Paul Atreides",
@@ -19,6 +19,15 @@ export const LEADER_NAMES = {
 
 /** Sandbox setup placeholder until the user picks a real leader. */
 export const UNASSIGNED_LEADER_NAME = 'Unassigned'
+
+/** Older saves stored this leader in all caps. */
+const LEGACY_LEADER_NAMES: Record<string, string> = {
+  'BARON VLADIMIR HARKONNEN': LEADER_NAMES.BARON_VLADIMIR,
+}
+
+export function canonicalLeaderName(name: string): string {
+  return LEGACY_LEADER_NAMES[name] ?? name
+}
 
 /** Maps leader names to full image paths. Returns undefined if no image exists. */
 export const LEADER_IMAGES: Record<string, string> = {

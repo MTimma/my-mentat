@@ -34,6 +34,7 @@ describe('buildSetupBlockFromConfiguration', () => {
           persuasion: 0,
           victoryPoints: 1,
           revealed: false,
+          name: '  Ada  ',
         },
       ],
       firstPlayer: 0,
@@ -46,6 +47,7 @@ describe('buildSetupBlockFromConfiguration', () => {
     expect(setup.gamePackId).toBe(OFFICIAL_BASE_PACK)
     expect(setup.players[0].deckCardIds[0]).toMatch(/^starting\//)
     expect(setup.players[0].startingResources?.spice).toBe(2)
+    expect(setup.players[0].name).toBe('Ada')
 
     const doc = createGameInputDoc(setup)
     expect(doc.events).toEqual([])
@@ -54,5 +56,6 @@ describe('buildSetupBlockFromConfiguration', () => {
     const state = buildInitialState(setup)
     expect(state.currentRound).toBe(3)
     expect(state.players[0].spice).toBe(2)
+    expect(state.players[0].name).toBe('Ada')
   })
 })

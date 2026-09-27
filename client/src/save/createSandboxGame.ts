@@ -10,6 +10,7 @@ import { applyStarterDeckReservationToImperium, buildStartingDeck } from '../ser
 import { DEFAULT_PLAYER_COLORS } from '../utils/playerColors'
 import { buildSetupBlockFromConfiguration } from './buildSetupBlock'
 import { createGameInputDoc } from './createGameInput'
+import { DEFAULT_SANDBOX_GAME_TITLE } from './gameTitle'
 import type { SaveDoc } from './types'
 
 const DEFAULT_SANDBOX_PLAYER_COUNT = 4
@@ -69,7 +70,7 @@ export function createSandboxGameInput(
   })
   return createGameInputDoc(setup, {
     id: options.id,
-    title: options.title?.trim() || 'Sandbox game',
+    title: options.title?.trim() || DEFAULT_SANDBOX_GAME_TITLE,
     notes: unmapped.length ? `Unmapped catalog entries: ${unmapped.join(', ')}` : undefined,
   })
 }

@@ -62,7 +62,8 @@ Typical layout:
 - **Rust** runs as a service (e.g. systemd) on `127.0.0.1:3000` with `APP_ENV=prod` and `DATABASE_URL` pointing at a persistent path such as `/var/lib/my-mentat/data.db`.
 - `APP_ENV=prod` binds `127.0.0.1`, sets Secure cookies, disables CORS (same-origin), and keeps a 1 MiB body limit. Override with `BIND_ADDR` / `CORS_ORIGINS` if needed.
 - `APP_ENV=dev` (default) binds `0.0.0.0`, allows CORS from `http://localhost:5173` (or `CORS_ORIGINS`), Secure=false.
-- Run `sqlx migrate run` on deploy (or from the app on startup when you wire that up).
+- **SQLite ≥ 3.53** for JSONB (`jsonb()`, `JSONB` columns). macOS: `brew install sqlite`. VPS: `ops/install-sqlite-353.sh`, then set `SQLITE3_LIB_DIR` / `SQLITE3_INCLUDE_DIR` / `PKG_CONFIG_PATH` when building the server.
+- Migrations run on server startup (`sqlx::migrate!` in `main.rs`); you can also run `sqlx migrate run` from `server/` before deploy.
 - Back up the `.db` file periodically, e.g. `sqlite3 /var/lib/my-mentat/data.db ".backup /backups/mentat-latest.db"`.
 
 ## When you wire up Rust

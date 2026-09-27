@@ -16,6 +16,10 @@
   z-index: 20;
 }
 
+.sandbox-session-bar__game-name {
+  width: 100%;
+}
+
 .sandbox-session-bar__row {
   display: flex;
   flex-direction: column;
@@ -23,13 +27,72 @@
   gap: 8px;
 }
 
+.sandbox-session-bar__kit-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
 .sandbox-session-bar__kit {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  width: 100%;
+  flex: 1 1 auto;
+  width: auto;
   max-width: 100%;
   min-width: 0;
+}
+
+.sandbox-session-bar__round {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+
+.sandbox-session-bar__round-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 2rem;
+}
+
+.sandbox-session-bar__round-btn,
+.sandbox-session-bar__round-value {
+  box-sizing: border-box;
+  min-height: 2rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 248, 232, 0.28);
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff8e8;
+  font-size: 0.82rem;
+}
+
+.sandbox-session-bar__round-btn {
+  width: 2rem;
+  padding: 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sandbox-session-bar__round-btn:hover:not(:disabled) {
+  border-color: rgba(255, 215, 0, 0.55);
+  color: #ffd700;
+}
+
+.sandbox-session-bar__round-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.sandbox-session-bar__round-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0 0.45rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .sandbox-session-bar__label {
@@ -69,6 +132,29 @@
 
 .sandbox-session-bar__actions .sandbox-session-bar__btn {
   flex: 1 1 0;
+  min-width: 0;
+}
+
+.sandbox-session-bar__play-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.sandbox-session-bar__play-row .sandbox-session-bar__actions {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.sandbox-session-bar__play-row .sandbox-session-bar__actions .sandbox-session-bar__btn {
+  flex: 0 0 auto;
+}
+
+.sandbox-session-bar__play-row .sandbox-session-bar__game-name {
+  flex: 1 1 auto;
+  width: auto;
   min-width: 0;
 }
 
@@ -115,8 +201,16 @@
   width: 100%;
 }
 
+.sandbox-session-bar--compact .sandbox-session-bar__play-row .sandbox-session-bar__actions {
+  width: auto;
+}
+
 .sandbox-session-bar--compact .sandbox-session-bar__btn {
   flex: 1 1 auto;
+}
+
+.sandbox-session-bar--compact .sandbox-session-bar__play-row .sandbox-session-bar__btn {
+  flex: 0 0 auto;
 }
 
 .sandbox-session-bar--docked {
@@ -137,6 +231,10 @@
   max-width: 100%;
 }
 
+.sandbox-session-bar--docked .sandbox-session-bar__kit-row .sandbox-session-bar__kit {
+  width: auto;
+}
+
 .sandbox-session-bar--docked .sandbox-session-bar__select {
   width: 100%;
 }
@@ -145,11 +243,20 @@
   width: 100%;
 }
 
+.sandbox-session-bar--docked .sandbox-session-bar__play-row .sandbox-session-bar__actions {
+  width: auto;
+}
+
 .sandbox-session-bar--docked .sandbox-session-bar__btn {
   flex: 1 1 0;
   font-size: 0.72rem;
   padding: 6px 8px;
   white-space: normal;
+}
+
+.sandbox-session-bar--docked .sandbox-session-bar__play-row .sandbox-session-bar__btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .sandbox-session-bar--docked .sandbox-session-bar__setup .sandbox-setup-controls {
@@ -230,8 +337,10 @@
 }
 
 .sandbox-session-bar__browse-dialog {
-  width: min(56rem, 96vw);
-  max-height: min(70vh, 32rem);
+  box-sizing: border-box;
+  width: min(92rem, 96vw);
+  max-width: 96vw;
+  max-height: min(80vh, 40rem);
   overflow: auto;
 }
 

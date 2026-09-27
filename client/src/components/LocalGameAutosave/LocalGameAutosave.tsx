@@ -11,7 +11,7 @@ interface LocalGameAutosaveProps {
 
 /** Debounced SaveDoc write to IndexedDB. */
 const LocalGameAutosave = ({ localGameId }: LocalGameAutosaveProps) => {
-  const { exportSaveDoc, gameState } = useGame()
+  const { exportSaveDoc, gameState, gameTitle } = useGame()
   const exportRef = useRef(exportSaveDoc)
   exportRef.current = exportSaveDoc
   const localIdRef = useRef(localGameId)
@@ -27,7 +27,7 @@ const LocalGameAutosave = ({ localGameId }: LocalGameAutosaveProps) => {
     return () => {
       window.clearTimeout(timer)
     }
-  }, [gameState, localGameId])
+  }, [gameState, gameTitle, localGameId])
 
   useEffect(() => {
     return () => {

@@ -7,6 +7,7 @@ import { LEADER_ICON_SLUGS } from '../data/leaders'
 import { slugify } from '../catalog/buildCatalog'
 import { catalogIdForCard, catalogIdsForCards } from './catalogIds'
 import { expansionsForGamePack } from '../gamePacks/resolveGamePack'
+import { normalizeStoredPlayerName } from '../utils/playerName'
 import type { PlayerSetupBlock, SetupBlock } from './types'
 
 export interface BuildSetupBlockInput {
@@ -50,6 +51,7 @@ export function buildSetupBlockFromConfiguration(
       troops: player.troops,
       victoryPoints: player.victoryPoints,
     }
+    const name = player.name ? normalizeStoredPlayerName(player.name) : ''
 
     return {
       id: player.id,
@@ -57,6 +59,7 @@ export function buildSetupBlockFromConfiguration(
       color: player.color,
       deckCardIds,
       startingResources,
+      ...(name ? { name } : {}),
     }
   })
 

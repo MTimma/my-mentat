@@ -1,0 +1,41 @@
+.quiet-name-field {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 1px;
+  border: none;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+  caret-color: #fff8e8;
+  box-sizing: border-box;
+}
+
+.quiet-name-field:hover {
+  border-bottom-color: rgba(255, 248, 232, 0.28);
+}
+
+.quiet-name-field:focus {
+  outline: none;
+  border-bottom-color: rgba(255, 248, 232, 0.5);
+}
+
+.quiet-name-field::placeholder {
+  color: rgba(255, 248, 232, 0.35);
+  font-weight: 700;
+}
+
+.quiet-name-field:read-only {
+  cursor: default;
+}
+
+.quiet-name-field:read-only:hover,
+.quiet-name-field:read-only:focus {
+  border-bottom-color: transparent;
+}

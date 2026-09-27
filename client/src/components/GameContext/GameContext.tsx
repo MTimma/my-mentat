@@ -56,6 +56,7 @@ import {
   syncSpaceportAcquireToTop,
 } from './riseOfIxReducer'
 import { SAVE_SCHEMA_VERSION, type EventEntry, type SaveDoc, type SetupBlock } from '../../save/types'
+import { normalizeGameTitle } from '../../save/gameTitle'
 import {
   GameState,
   FactionType,
@@ -188,7 +189,7 @@ import { shouldGrantIlbanSolariDraw } from '../../data/leaderAbilities/ilbanSola
 import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraadDiscount'
 import { shouldGrantMemnonInfluence, buildMemnonInfluenceReward } from '../../data/leaderAbilities/memnonHighCouncilInfluence'
 import { applyLeaderStartingResourceDelta } from '../../data/leaderAbilities/beastSetup'
-import { isUnassignedLeader } from '../../data/leaders'
+import { canonicalLeaderName, isUnassignedLeader } from '../../data/leaders'
 import {
   shouldGrantYunaSolariBonus,
   applyYunaSolariBonus,
@@ -210,6 +211,7 @@ import {
 import { seedTessiaSnoopers, tryTessiaSnooperClaim } from '../../data/leaderAbilities/tessiaSnoopers'
 import { countSpiceMustFlowCards } from '../../utils/spiceMustFlow'
 import { applySandboxDeckEdit } from '../../utils/sandboxDeckPools'
+import { normalizeStoredPlayerName } from '../../utils/playerName'
 import { getOpponentDiscardableCards, validateDiscardCostSelection, isCardInHand } from '../../utils/playAreaDisplay'
 import { normalizeChoiceOptEffects } from '../../utils/choiceOptEffects'
 import { drawCardsFromDeck, drawRoundStartHand, applyDrawCardsToPlayer } from '../../utils/deckDraw'
@@ -3192,14 +3194,25 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const player = state.players.find(p => p.id === action.playerId)
       if (!player) return state
 
+      const rawPatch = action.patch
+      const patch: Partial<Player> =
+        rawPatch.leader && canonicalLeaderName(rawPatch.leader.name) !== rawPatch.leader.name
+          ? {
+              ...rawPatch,
+              leader: { ...rawPatch.leader, name: canonicalLeaderName(rawPatch.leader.name) },
+            }
+          : rawPatch
+
       // Swap leaders with another player when picking an already-assigned leader.
       if (
-        action.patch.leader !== undefined &&
-        action.patch.leader.name !== player.leader.name &&
-        !isUnassignedLeader(action.patch.leader)
+        patch.leader !== undefined &&
+        patch.leader.name !== canonicalLeaderName(player.leader.name) &&
+        !isUnassignedLeader(patch.leader)
       ) {
         const other = state.players.find(
-          p => p.id !== action.playerId && p.leader.name === action.patch.leader!.name
+          p =>
+            p.id !== action.playerId &&
+            canonicalLeaderName(p.leader.name) === patch.leader!.name
         )
         if (other) {
           const updatedPlayers = state.players.map(p => {
@@ -3224,13 +3237,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       // Swap colors with another player when picking an already-assigned color.
-      if (action.patch.color !== undefined && action.patch.color !== player.color) {
+      if (patch.color !== undefined && patch.color !== player.color) {
         const other = state.players.find(
-          p => p.id !== action.playerId && p.color === action.patch.color
+          p => p.id !== action.playerId && p.color === patch.color
         )
         if (other) {
           const updatedPlayers = state.players.map(p => {
-            if (p.id === player.id) return { ...p, color: action.patch.color! }
+            if (p.id === player.id) return { ...p, color: patch.color! }
             if (p.id === other.id) return { ...p, color: player.color }
             return p
           })
@@ -3240,15 +3253,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       // Card pile edits swap with imperium + reserve pools only when cards enter/leave the player.
       const touchesCardPiles =
-        action.patch.deck !== undefined ||
-        action.patch.discardPile !== undefined ||
-        action.patch.trash !== undefined
+        patch.deck !== undefined ||
+        patch.discardPile !== undefined ||
+        patch.trash !== undefined
 
       let poolUpdate: ReturnType<typeof applySandboxDeckEdit> | null = null
       if (touchesCardPiles) {
-        const newDeck = action.patch.deck ?? player.deck
-        const newDiscard = action.patch.discardPile ?? player.discardPile
-        const newTrash = action.patch.trash ?? player.trash
+        const newDeck = patch.deck ?? player.deck
+        const newDiscard = patch.discardPile ?? player.discardPile
+        const newTrash = patch.trash ?? player.trash
         poolUpdate = applySandboxDeckEdit(
           {
             imperiumRowDeck: state.imperiumRowDeck,
@@ -3262,13 +3275,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const leaderResourceAdjust =
-        action.patch.leader && action.patch.leader.name !== player.leader.name
-          ? applyLeaderStartingResourceDelta(player, action.patch.leader)
+        patch.leader && patch.leader.name !== canonicalLeaderName(player.leader.name)
+          ? applyLeaderStartingResourceDelta(player, patch.leader)
           : null
 
       let highCouncilSeatOrder = state.highCouncilSeatOrder ?? []
-      if (action.patch.hasHighCouncilSeat !== undefined) {
-        if (action.patch.hasHighCouncilSeat) {
+      if (patch.hasHighCouncilSeat !== undefined) {
+        if (patch.hasHighCouncilSeat) {
           if (!highCouncilSeatOrder.includes(action.playerId)) {
             highCouncilSeatOrder = [...highCouncilSeatOrder, action.playerId]
           }
@@ -3278,20 +3291,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const leaderChanged =
-        action.patch.leader !== undefined && action.patch.leader.name !== player.leader.name
+        patch.leader !== undefined &&
+        patch.leader.name !== canonicalLeaderName(player.leader.name)
 
       const updatedPlayers = state.players.map(p => {
         if (p.id !== action.playerId) return p
         let next: Player = {
           ...p,
-          ...action.patch,
+          ...patch,
           ...(leaderResourceAdjust ?? {}),
-          deck: action.patch.deck !== undefined ? [...action.patch.deck] : p.deck,
+          deck: patch.deck !== undefined ? [...patch.deck] : p.deck,
           discardPile:
-            action.patch.discardPile !== undefined
-              ? [...action.patch.discardPile]
+            patch.discardPile !== undefined
+              ? [...patch.discardPile]
               : p.discardPile,
-          trash: action.patch.trash !== undefined ? [...action.patch.trash] : p.trash,
+          trash: patch.trash !== undefined ? [...patch.trash] : p.trash,
+        }
+        if (patch.name !== undefined) {
+          next = { ...next, name: normalizeStoredPlayerName(patch.name) }
         }
         if (leaderChanged) {
           next = seedTessiaSnoopers(next, state.expansions.riseOfIx)
@@ -3300,7 +3317,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       })
 
       let ixBoard = state.ixBoard
-      if (action.patch.tech !== undefined) {
+      if (patch.tech !== undefined) {
         if (tilesAvailableForBoard(updatedPlayers) === 0) {
           ixBoard = buildIxBoardFromSandboxStackTops(
             [null, null, null],
@@ -9216,7 +9233,14 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
       ? gameInput.meta.notes.replace(/^Unmapped catalog entries:\s*/, '').split(', ')
       : [],
   })
-  const metaRef = useRef(gameInput.meta)
+  const initialTitle = normalizeGameTitle(gameInput.meta.title ?? '')
+  const [gameTitle, setGameTitleState] = useState(initialTitle)
+  const metaRef = useRef({ ...gameInput.meta, title: initialTitle })
+  const setGameTitle = useCallback((title: string) => {
+    const next = normalizeGameTitle(title)
+    metaRef.current = { ...metaRef.current, title: next }
+    setGameTitleState(next)
+  }, [])
 
   const recordingDispatch = useCallback(
     (action: GameAction) => {
@@ -9376,7 +9400,9 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
     intrigueDeck: gameState.intrigueDeck,
     dispatch: recordingDispatch,
     exportSaveDoc,
-    getRecordedEventCount
+    getRecordedEventCount,
+    gameTitle,
+    setGameTitle,
   }
 
   return (

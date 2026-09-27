@@ -28,6 +28,7 @@ import { seedTessiaSnoopers } from '../data/leaderAbilities/tessiaSnoopers'
 import { applyStarterDeckReservationToImperium } from '../services/starterDeckSetup'
 import { buildIntrigueDeck } from '../services/IntrigueDeckService'
 import { seedImmortalitySetup } from '../expansions/immortality/setup'
+import { normalizeStoredPlayerName } from '../utils/playerName'
 import { defaultDreadnoughtsForExpansions } from '../utils/dreadnoughts'
 import { seedTroopSupply } from '../utils/troops'
 import { buildInitialIxBoard } from '../components/GameContext/riseOfIxReducer'
@@ -103,10 +104,12 @@ export function buildInitialState(setup: SetupBlock): GameState {
     const leader = resolveLeader(playerSetup.leaderId, expansions)
     const deck = resolveCards(runtime, playerSetup.deckCardIds)
     const res = playerSetup.startingResources
+    const setupName = playerSetup.name ? normalizeStoredPlayerName(playerSetup.name) : ''
     const basePlayer: Player = {
       id: playerSetup.id,
       leader,
       color: playerSetup.color,
+      ...(setupName ? { name: setupName } : {}),
       spice: res?.spice ?? getStartingSpice(leader),
       // Yuna always starts with 0 water (leader ability); ignore a mistaken saved default of 1.
       water: isYunaLeader(leader) ? 0 : (res?.water ?? getStartingWater(leader)),

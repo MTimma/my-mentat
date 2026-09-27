@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   fetchGameDoc,
   fetchGames,
@@ -7,12 +7,13 @@ import {
   type GameDetail,
   type LoadSaveFn,
 } from '../../api/gamesApi'
-import { getLeaderIconPath, LEADER_ICON_SLUGS } from '../../data/leaders'
+import { canonicalLeaderName, getLeaderIconPath, LEADER_ICON_SLUGS } from '../../data/leaders'
 import { inferGamePackId } from '../../gamePacks/inferGamePack'
 import { getSelectableGamePacks } from '../../gamePacks/registry'
 import { replaySaveDoc } from '../../save/replay'
 import type { SaveDoc, SaveSummary, SaveSummaryPlayer } from '../../save/types'
 import { compareEndgameStanding } from '../../utils/endgameResolution'
+import { displayPlayerName, listedPlayerName } from '../../utils/playerName'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import {
   deleteLocalGame,
@@ -28,6 +29,71 @@ type GamesListTab = 'local' | 'community' | 'official'
 export interface GamesListProps {
   onLoad: LoadSaveFn
   className?: string
+}
+
+function formatGameDate(value: string | number): { day: string; year: string } | null {
+  const ms = typeof value === 'number'
+    ? (value < 1e12 ? value * 1000 : value)
+    : (() => {
+        const asNumber = Number(value)
+        if (Number.isFinite(asNumber) && value.trim() !== '') {
+          return asNumber < 1e12 ? asNumber * 1000 : asNumber
+        }
+        const parsed = Date.parse(value)
+        return Number.isFinite(parsed) ? parsed : NaN
+      })()
+  if (!Number.isFinite(ms)) return null
+  const date = new Date(ms)
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  return {
+    day: `${date.getDate()} ${months[date.getMonth()]}`,
+    year: String(date.getFullYear()),
+  }
+}
+
+function fitLabel(text: string, maxWidth: number, font: string): string {
+  if (maxWidth <= 0) return text
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return text
+  ctx.font = font
+  if (ctx.measureText(text).width <= maxWidth) return text
+  const ellipsis = '..'
+  let lo = 0
+  let hi = text.length
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2)
+    if (ctx.measureText(`${text.slice(0, mid)}${ellipsis}`).width <= maxWidth) lo = mid
+    else hi = mid - 1
+  }
+  if (lo <= 0) return ellipsis
+  return `${text.slice(0, lo)}${ellipsis}`
+}
+
+function FitText({ text, className }: { text: string; className?: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const [shown, setShown] = useState(text)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = () => {
+      const style = getComputedStyle(el)
+      const font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
+      const next = fitLabel(text, el.clientWidth, font)
+      setShown(prev => (prev === next ? prev : next))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [text])
+
+  return (
+    <span ref={ref} className={className} title={shown === text ? undefined : text}>
+      {shown}
+    </span>
+  )
 }
 
 function gameKitLabel(gamePackId: string): string {
@@ -58,7 +124,9 @@ function summaryForDraft(doc: SaveDoc): SaveSummary | undefined {
           : setupPlayer.leaderId
         return {
           id: setupPlayer.id,
-          name: player?.leader.name ?? leaderName(leaderId),
+          name: player
+            ? listedPlayerName(player)
+            : displayPlayerName(setupPlayer.name?.trim() || leaderName(leaderId)),
           leaderId,
           color: player?.color ?? setupPlayer.color,
           vp: player ? getTotalVictoryPoints(player, state) : 0,
@@ -77,7 +145,7 @@ function summaryForDraft(doc: SaveDoc): SaveSummary | undefined {
       turns,
       players: setup.players.map(player => ({
         id: player.id,
-        name: leaderName(player.leaderId),
+        name: displayPlayerName(player.name?.trim() || leaderName(player.leaderId)),
         leaderId: player.leaderId,
         color: player.color,
         vp: player.startingResources?.victoryPoints ?? 0,
@@ -94,16 +162,18 @@ function leaderIconSrc(leaderId: string): string | undefined {
 function GameNameBlock({ name, summary }: { name: string; summary?: SaveSummary }) {
   return (
     <div className="games-list-name-block">
-      <div className="games-list-name">{name}</div>
-      {summary ? (
-        <>
-          <div className="games-list-summary__kit">{gameKitLabel(summary.gamePackId)}</div>
-          <div className="games-list-summary__counts">
-            <span>Rounds: {summary.rounds}</span>
-            <span>Turns: {summary.turns}</span>
-          </div>
-        </>
-      ) : null}
+      <FitText className="games-list-name" text={name} />
+      {summary ? <FitText className="games-list-summary__kit" text={gameKitLabel(summary.gamePackId)} /> : null}
+    </div>
+  )
+}
+
+function GameProgress({ summary }: { summary?: SaveSummary }) {
+  if (!summary) return <>—</>
+  return (
+    <div className="games-list-summary__counts">
+      <span>Rounds: {summary.rounds}</span>
+      <span>Turns: {summary.turns}</span>
     </div>
   )
 }
@@ -121,25 +191,30 @@ function PlayerList({ summary }: { summary?: SaveSummary }) {
 
 function SummaryPlayer({ player }: { player: SaveSummaryPlayer }) {
   const iconSrc = leaderIconSrc(player.leaderId)
+  const fullName = canonicalLeaderName(player.name)
+  const shownName = displayPlayerName(fullName)
   return (
-    <li className="games-list-player" aria-label={`${player.name}, ${player.vp} victory points`}>
-      {iconSrc ? (
-        <img
-          src={iconSrc}
-          alt=""
-          className={`games-list-player__icon games-list-player__icon--${player.color}`}
-          draggable={false}
-        />
-      ) : (
-        <span
-          className={`games-list-player__icon games-list-player__icon--fallback games-list-player__icon--${player.color}`}
-          aria-hidden="true"
-        />
-      )}
-      <span className="games-list-player__vp">
-        <img src="/icon/vp.png" alt="" className="games-list-player__vp-icon" draggable={false} />
-        {player.vp}
+    <li className="games-list-player" aria-label={`${shownName}, ${player.vp} victory points`}>
+      <span className="games-list-player__row">
+        {iconSrc ? (
+          <img
+            src={iconSrc}
+            alt=""
+            className={`games-list-player__icon games-list-player__icon--${player.color}`}
+            draggable={false}
+          />
+        ) : (
+          <span
+            className={`games-list-player__icon games-list-player__icon--fallback games-list-player__icon--${player.color}`}
+            aria-hidden="true"
+          />
+        )}
+        <span className="games-list-player__vp">
+          <img src="/icon/vp.png" alt="" className="games-list-player__vp-icon" draggable={false} />
+          {player.vp}
+        </span>
       </span>
+      <FitText className="games-list-player__name" text={shownName} />
     </li>
   )
 }
@@ -147,6 +222,7 @@ function SummaryPlayer({ player }: { player: SaveSummaryPlayer }) {
 interface BrowseGameRow {
   key: string
   name: string
+  date?: { day: string; year: string } | null
   summary?: SaveSummary
   loading: boolean
   onLoad: () => void
@@ -161,21 +237,32 @@ function BrowseGameTable({ rows, emptyLabel }: { rows: BrowseGameRow[]; emptyLab
   return (
     <div className="games-list-table-wrap">
       <table className="games-list-table">
-        <thead>
-          <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Players</th>
-            <th scope="col" aria-label="Actions" />
-          </tr>
-        </thead>
+        <colgroup>
+          <col className="games-list-col-name" />
+          <col className="games-list-col-players" />
+          <col className="games-list-col-progress" />
+          <col className="games-list-col-date" />
+          <col className="games-list-col-actions" />
+        </colgroup>
         <tbody>
           {rows.map(row => (
             <tr key={row.key}>
               <td>
                 <GameNameBlock name={row.name} summary={row.summary} />
               </td>
-              <td>
+              <td className="games-list-players-cell">
                 <PlayerList summary={row.summary} />
+              </td>
+              <td>
+                <GameProgress summary={row.summary} />
+              </td>
+              <td className="games-list-date">
+                {row.date ? (
+                  <span className="games-list-date__stack">
+                    <span>{row.date.day}</span>
+                    <span>{row.date.year}</span>
+                  </span>
+                ) : null}
               </td>
               <td>
                 <div className="games-list-actions">
@@ -404,6 +491,7 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
                 rows={localGames.map(game => ({
                   key: game.id,
                   name: game.title,
+                  date: formatGameDate(game.updatedAt),
                   summary: game.summary,
                   loading: loadingId === `local:${game.id}`,
                   onLoad: () => void handleLoadLocal(game),
@@ -436,6 +524,7 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
             rows={games.map(game => ({
               key: String(game.id),
               name: game.name || `Game #${game.id}`,
+              date: formatGameDate(game.updated_at),
               summary: game.summary,
               loading: loadingId === `server:${game.id}`,
               onLoad: () => void handleLoadCommunity(game),

@@ -49,10 +49,9 @@
   flex-shrink: 0;
 }
 
-.sandbox-player-editor__header h3 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 800;
+.sandbox-player-editor__header .quiet-name-field {
+  flex: 1;
+  width: auto;
 }
 
 .sandbox-player-editor__close {

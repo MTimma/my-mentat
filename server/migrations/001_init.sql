@@ -8,10 +8,9 @@ CREATE TABLE users (
 CREATE TABLE games (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     owner_id   TEXT NOT NULL REFERENCES users(id),
-    summary    JSONB NOT NULL,
-    content    JSONB NOT NULL,
-    name       TEXT PRIMARY KEY NOT NULL,
-    version    INTEGER PRIMARY KEY DEFAULT 1,
+    json       TEXT NOT NULL,
+    name       TEXT NOT NULL DEFAULT ('Dune Imperium game'),
+    -- etag       TEXT NOT NULL,
     updated_at TEXT NOT NULL DEFAULT (strftime('%s', 'now')),
     created_at TEXT NOT NULL DEFAULT (strftime('%s', 'now'))
 );
@@ -22,7 +21,7 @@ CREATE TABLE games (
 --     PRIMARY KEY (session_id, game_id)
 -- };
 -- // TODOO
--- // 
+-- //
 -- // 2. limit 3 created games per session
 -- // 3. limit n sessions or till some size
 -- // 4. delete expired sessions and games

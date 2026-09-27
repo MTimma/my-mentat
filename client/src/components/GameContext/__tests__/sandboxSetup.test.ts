@@ -364,6 +364,27 @@ describe('Sandbox setup turn', () => {
     expect(s.currentConflict.id).toBe(CONFLICTS[0].id)
   })
 
+  it('SANDBOX_UPDATE_PLAYER stores a custom name and clears it back to the leader name', () => {
+    let s = getSandboxSetupState()
+    const leaderName = s.players[0].leader.name
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 0,
+      patch: { name: '  Ada   Lovelace \n' },
+    })
+    expect(s.players[0].name).toBe('Ada Lovelace')
+    expect(s.players[1].name).toBeUndefined()
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 0,
+      patch: { name: '   ' },
+    })
+    expect(s.players[0].name).toBe('')
+    expect(s.players[0].leader.name).toBe(leaderName)
+  })
+
   it('SANDBOX_SET_PLAYER_INFLUENCE patches faction influence for one player', () => {
     let s = getSandboxSetupState()
     s = applyGameAction(s, {

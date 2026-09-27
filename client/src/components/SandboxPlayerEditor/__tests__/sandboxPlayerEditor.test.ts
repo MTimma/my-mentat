@@ -8,6 +8,17 @@ describe('Sandbox player editor leader row', () => {
   const editorCss = readFileSync(resolve(root, 'SandboxPlayerEditor.css'), 'utf8')
   const leaderCss = readFileSync(resolve(root, '../LeaderSelect/LeaderSelect.css'), 'utf8')
 
+  it('shows the saved player name in an editable header', () => {
+    const fieldTsx = readFileSync(resolve(root, '../QuietNameField/QuietNameField.tsx'), 'utf8')
+    const fieldCss = readFileSync(resolve(root, '../QuietNameField/QuietNameField.css'), 'utf8')
+    expect(editorTsx).toContain('savedPlayerName(player)')
+    expect(editorTsx).toContain('ariaLabel="Player name"')
+    expect(editorTsx).toContain('<QuietNameField')
+    expect(editorTsx).not.toContain('Player {player.id + 1} setup')
+    expect(fieldTsx).toContain('quiet-name-field')
+    expect(fieldCss).toContain('background: transparent')
+  })
+
   it('assigns a default leader when the editor opens unassigned', () => {
     expect(editorTsx).toContain('isUnassignedLeader(player.leader)')
     expect(editorTsx).toContain('availableLeaders.find(leader => !usedLeaderNames.includes(leader.name))')

@@ -53,6 +53,11 @@ async fn main() {
         .await
         .expect("failed to connect sqlite pool");
 
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("database migrations failed");
+
     let session_store = SqliteStore::new(pool.clone());
     session_store.migrate().await.expect("session store migrate");
     let deletion_task = tokio::task::spawn(

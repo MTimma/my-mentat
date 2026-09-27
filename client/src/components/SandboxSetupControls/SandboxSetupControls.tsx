@@ -1,48 +1,33 @@
 import React from 'react'
-import type { SandboxSetupPosition } from '../../types/GameTypes'
 import './SandboxSetupControls.css'
 
 export interface SandboxSetupControlsProps {
-  position: SandboxSetupPosition | undefined
   ready: boolean
   riseOfIx?: boolean
   leadersDone: boolean
   imperiumRowDone: boolean
   techTilesDone: boolean
   conflictDone: boolean
-  onSetPosition: (round: number | null, playerTurn: number | null) => void
   onCommit: () => void
+  onBrowse?: () => void
   /** Mobile footer bar: tighter horizontal layout. */
   compact?: boolean
 }
 
 const SandboxSetupControls: React.FC<SandboxSetupControlsProps> = ({
-  position,
   ready,
   riseOfIx = false,
   leadersDone,
   imperiumRowDone,
   techTilesDone,
   conflictDone,
-  onSetPosition,
   onCommit,
+  onBrowse,
   compact = false,
 }) => {
   const commitBlockedHint = riseOfIx
     ? 'Pick a leader for each player, 5 imperium row cards, 3 tech tiles, and a conflict card first'
     : 'Pick a leader for each player, 5 imperium row cards, and a conflict card first'
-
-  const currentRound = position?.round ?? null
-
-  const displayRound = currentRound ?? 1
-
-  const incrementRound = () => {
-    onSetPosition(displayRound + 1, null)
-  }
-
-  const clearRound = () => {
-    onSetPosition(null, null)
-  }
 
   const setupSteps = [
     { key: 'leaders', label: 'Leaders', done: leadersDone },
@@ -89,31 +74,15 @@ const SandboxSetupControls: React.FC<SandboxSetupControlsProps> = ({
       >
         Begin
       </button>
-      <div className="sandbox-setup-controls__field sandbox-setup-controls__field--round">
-        <span>Round</span>
-        <span className="sandbox-setup-controls__round-value" aria-live="polite">
-          {displayRound}
-        </span>
+      {onBrowse ? (
         <button
           type="button"
-          className="sandbox-setup-controls__round-increase"
-          title="Increase round"
-          aria-label="Increase round"
-          onClick={incrementRound}
+          className="sandbox-session-bar__btn"
+          onClick={onBrowse}
         >
-          +
+          Browse
         </button>
-        <button
-          type="button"
-          className="sandbox-setup-controls__clear"
-          title="Reset round to 1"
-          aria-label="Reset round to 1"
-          disabled={currentRound == null}
-          onClick={clearRound}
-        >
-          ×
-        </button>
-      </div>
+      ) : null}
     </div>
   </div>
   )

@@ -44,6 +44,11 @@ export enum PlayerColor {
 export interface Player {
   id: number
   color: PlayerColor
+  /**
+   * Games-list name. Empty or omitted uses the leader name,
+   * or "Player N" while the leader is still unassigned.
+   */
+  name?: string
   leader: Leader
   troops: number
   /** Troops in the bank (not garrison, conflict, or on Ix). Max 12 total pieces per player. */

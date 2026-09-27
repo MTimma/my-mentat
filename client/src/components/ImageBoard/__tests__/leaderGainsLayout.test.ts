@@ -261,7 +261,7 @@ describe('Leader gains leftover layout', () => {
   })
 
   it('keeps sandbox Begin under the session kit bar', () => {
-    expect(appTsx).toContain('setupSlot={sandboxSetupControls(true)}')
+    expect(appTsx).toContain('setupSlot={openBrowse => sandboxSetupControls(true, openBrowse)}')
     expect(appTsx).toContain('showKit={inSandboxSetup}')
     expect(appTsx).toContain('<SandboxSessionBar')
     expect(appTsx).toContain('sandboxBarInHistoryDock')

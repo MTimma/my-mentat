@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import QuietNameField, { type QuietNameFieldHandle } from '../QuietNameField/QuietNameField'
 import { Card, ControlMarkerType, Expansions, FactionType, Player, PlayerColor } from '../../types/GameTypes'
 import { applyLeaderStartingResourceDelta } from '../../data/leaderAbilities/beastSetup'
 import {
@@ -11,6 +12,7 @@ import { getLeaderPool, isUnassignedLeader } from '../../data/leaders'
 import LeaderSelect from '../LeaderSelect/LeaderSelect'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
+import FreighterIcon from '../FreighterIcon/FreighterIcon'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import { defaultDreadnoughtsForExpansions } from '../../utils/dreadnoughts'
 import { seedTroopSupply } from '../../utils/troops'
@@ -19,6 +21,12 @@ import ValueStepper from '../ValueStepper/ValueStepper'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
 import { splitCardPool } from '../../utils/sandboxDeckPools'
 import { MAX_INFLUENCE } from '../../utils/influenceVictoryPoints'
+import {
+  defaultSavedPlayerName,
+  PLAYER_NAME_MAX_LENGTH,
+  savedPlayerName,
+  storedPlayerName,
+} from '../../utils/playerName'
 import type { TechTileId } from '../../data/techTiles'
 import { TECH_TILES } from '../../data/techTiles'
 import SandboxPlayerTechSelect from '../SandboxPlayerTechSelect/SandboxPlayerTechSelect'
@@ -125,6 +133,9 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   onSetMentatOwner,
   onClose,
 }) => {
+  const savedName = savedPlayerName(player)
+  const fallbackName = defaultSavedPlayerName(player)
+  const nameFieldRef = useRef<QuietNameFieldHandle>(null)
   const [pileEditor, setPileEditor] = useState<PileEditor | null>(null)
   const [techEditorOpen, setTechEditorOpen] = useState(false)
   const [selectedPileCards, setSelectedPileCards] = useState<Card[]>([])
@@ -257,6 +268,13 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
 
   if (waitForBoardTarget) return null
 
+  const commitNameDraft = (draft: string) => {
+    const stored = storedPlayerName(draft, player)
+    const current = storedPlayerName(player.name ?? '', player)
+    if (stored !== current) onUpdate({ name: stored })
+    return stored || fallbackName
+  }
+
   const handleColorChange = (color: PlayerColor) => {
     if (color === player.color) return
     onUpdate({ color })
@@ -323,6 +341,7 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   }
 
   const handleClose = () => {
+    nameFieldRef.current?.commit()
     commitNumericDraft()
     commitInfluenceDraft()
     onClose()
@@ -402,10 +421,19 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
         onClick={event => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="sandbox-player-editor-title"
+        aria-label={`${savedName} setup`}
       >
         <header className="sandbox-player-editor__header">
-          <h3 id="sandbox-player-editor-title">Player {player.id + 1} setup</h3>
+          <QuietNameField
+            ref={nameFieldRef}
+            id="sandbox-player-editor-title"
+            value={savedName}
+            resetKey={player.id}
+            maxLength={PLAYER_NAME_MAX_LENGTH}
+            ariaLabel="Player name"
+            placeholder={fallbackName}
+            onCommit={commitNameDraft}
+          />
           <button
             type="button"
             className="sandbox-player-editor__close"
@@ -587,13 +615,13 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
             {expansions.riseOfIx ? (
               <ValueStepper
                 compact
-                label="shipping"
                 min={0}
                 max={3}
                 value={player.freighterStep ?? 0}
                 onChange={value =>
                   onUpdate({ freighterStep: Math.max(0, Math.min(3, value)) as 0 | 1 | 2 | 3 })
                 }
+                icon={<FreighterIcon size="lg" title="Shipping track" />}
                 decreaseLabel="Decrease shipping track position"
                 increaseLabel="Increase shipping track position"
               />
@@ -601,7 +629,6 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
             {expansions.riseOfIx ? (
               <ValueStepper
                 compact
-                label="techneg"
                 max={12}
                 value={player.negotiatorsOnIx ?? 0}
                 onChange={value => {

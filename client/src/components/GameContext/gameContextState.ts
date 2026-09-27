@@ -12,6 +12,9 @@ export interface GameContextType {
   dispatch: Dispatch<GameAction>
   exportSaveDoc: (meta?: { id?: string; title?: string }) => SaveDoc
   getRecordedEventCount: () => number
+  /** Title stored on the save document and shown in the draft list. */
+  gameTitle: string
+  setGameTitle: (title: string) => void
 }
 
 export const GameContext = createContext<GameContextType | undefined>(undefined)

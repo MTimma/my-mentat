@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { BoardDialogPanel, BoardScopedModal } from '../BoardScopedModal'
 import GamesList from '../GamesList/GamesList'
+import QuietNameField from '../QuietNameField/QuietNameField'
+import { useGame } from '../GameContext/gameContextState'
+import { GAME_TITLE_MAX_LENGTH, normalizeGameTitle } from '../../save/gameTitle'
 import { getSelectableGamePacks } from '../../gamePacks/registry'
 import { subscribeGamePacks } from '../../gamePacks/customGamePacks'
 import { prefetchGamesList, type LoadSaveFn, type LoadSaveSource } from '../../api/gamesApi'
@@ -14,12 +17,17 @@ export interface SandboxSessionBarProps {
   onRestart: (gamePackId: string) => void
   onStartNew: () => void
   onLoadSave?: LoadSaveFn
-  /** Sandbox finish-setup row (checklists, Begin, round). */
-  setupSlot?: ReactNode
+  /** Starting round while sandbox setup is open. */
+  round?: number | null
+  onSetRound?: (round: number | null) => void
+  /** Sandbox finish-setup row (checklists, Begin). */
+  setupSlot?: ReactNode | ((openBrowse: () => void) => ReactNode)
   /** Kit dropdown — only during sandbox setup. Hidden after Begin. */
   showKit?: boolean
   /** Packed into the docked turn-history sidebar. */
   docked?: boolean
+  /** False in view-only games. The name stays visible and cannot be edited. */
+  canEdit?: boolean
 }
 
 const KIT_CONFIRM = 'Change expansions? The board will reset.'
@@ -32,10 +40,14 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
   onRestart,
   onStartNew,
   onLoadSave,
+  round = null,
+  onSetRound,
   setupSlot,
   showKit = true,
   docked = false,
+  canEdit = true,
 }) => {
+  const { gameTitle, setGameTitle } = useGame()
   const [packListVersion, setPackListVersion] = useState(0)
   const [browseOpen, setBrowseOpen] = useState(false)
   const selectablePacks = useMemo(() => getSelectableGamePacks(), [packListVersion])
@@ -62,6 +74,25 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
     onLoadSave?.(doc, source)
   }
 
+  const openBrowse = () => setBrowseOpen(true)
+  const displayRound = round ?? 1
+  const setup = typeof setupSlot === 'function' ? setupSlot(openBrowse) : setupSlot
+
+  const gameNameField = (
+    <QuietNameField
+      className="sandbox-session-bar__game-name"
+      value={gameTitle}
+      ariaLabel="Game name"
+      maxLength={GAME_TITLE_MAX_LENGTH}
+      readOnly={!canEdit}
+      onCommit={draft => {
+        const title = normalizeGameTitle(draft)
+        if (canEdit && title !== gameTitle) setGameTitle(title)
+        return title
+      }}
+    />
+  )
+
   return (
     <div
       className={[
@@ -72,48 +103,81 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
         .filter(Boolean)
         .join(' ')}
     >
+      {showKit ? gameNameField : null}
       <div className="sandbox-session-bar__row">
         {showKit ? (
-          <label className="sandbox-session-bar__kit">
-            <span className="sandbox-session-bar__label">Expansions</span>
-            <select
-              value={gamePackId}
-              onChange={e => handleKitChange(e.target.value)}
-              className="sandbox-session-bar__select"
-            >
-              {selectablePacks.map(pack => (
-                <option key={pack.ref} value={pack.ref}>
-                  {pack.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="sandbox-session-bar__kit-row">
+            <label className="sandbox-session-bar__kit">
+              <span className="sandbox-session-bar__label">Expansions</span>
+              <select
+                value={gamePackId}
+                onChange={e => handleKitChange(e.target.value)}
+                className="sandbox-session-bar__select"
+              >
+                {selectablePacks.map(pack => (
+                  <option key={pack.ref} value={pack.ref}>
+                    {pack.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {onSetRound ? (
+              <div className="sandbox-session-bar__round">
+                <span className="sandbox-session-bar__label">Round</span>
+                <div className="sandbox-session-bar__round-controls">
+                  <span className="sandbox-session-bar__round-value" aria-live="polite">
+                    {displayRound}
+                  </span>
+                  <button
+                    type="button"
+                    className="sandbox-session-bar__round-btn"
+                    aria-label="Decrease round"
+                    disabled={displayRound <= 1}
+                    onClick={() => onSetRound(displayRound - 1 <= 1 ? null : displayRound - 1)}
+                  >
+                    −
+                  </button>
+                  <button
+                    type="button"
+                    className="sandbox-session-bar__round-btn"
+                    aria-label="Increase round"
+                    onClick={() => onSetRound(displayRound + 1)}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
         ) : null}
-        <div className="sandbox-session-bar__actions">
-          {onLoadSave ? (
-            <button
-              type="button"
-              className="sandbox-session-bar__btn"
-              aria-expanded={browseOpen}
-              onMouseEnter={prefetchGamesList}
-              onFocus={prefetchGamesList}
-              onClick={() => setBrowseOpen(open => !open)}
-            >
-              Browse
-            </button>
-          ) : null}
-          {!showKit ? (
-            <button
-              type="button"
-              className="sandbox-session-bar__btn sandbox-session-bar__btn--primary"
-              onClick={handleStartNew}
-            >
-              New
-            </button>
-          ) : null}
-        </div>
+        {!showKit ? (
+          <div className="sandbox-session-bar__play-row">
+            {gameNameField}
+            <div className="sandbox-session-bar__actions">
+              {onLoadSave ? (
+                <button
+                  type="button"
+                  className="sandbox-session-bar__btn"
+                  aria-expanded={browseOpen}
+                  onMouseEnter={prefetchGamesList}
+                  onFocus={prefetchGamesList}
+                  onClick={() => setBrowseOpen(open => !open)}
+                >
+                  Browse
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="sandbox-session-bar__btn"
+                onClick={handleStartNew}
+              >
+                New
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
-      {setupSlot ? <div className="sandbox-session-bar__setup">{setupSlot}</div> : null}
+      {setup ? <div className="sandbox-session-bar__setup">{setup}</div> : null}
 
       <BoardScopedModal
         isOpen={browseOpen}

@@ -1894,20 +1894,17 @@ const GameContent = ({
     }
   }, [inSandboxSetup, isDockedHistoryLayout])
 
-  const sandboxSetupControls = (compact = false) =>
+  const sandboxSetupControls = (compact = false, onBrowse?: () => void) =>
     inSandboxSetup ? (
       <SandboxSetupControls
         compact={compact}
-        position={gameState.sandboxSetupPosition}
         ready={sandboxReady}
         riseOfIx={riseOfIx}
         leadersDone={sandboxLeadersDone}
         imperiumRowDone={gameState.imperiumRow.length === 5}
         techTilesDone={ixBoardReady}
         conflictDone={gameState.currentConflict.id > 0}
-        onSetPosition={(round, playerTurn) =>
-          dispatch({ type: 'SANDBOX_SET_POSITION', round, playerTurn })
-        }
+        onBrowse={onBrowse}
         onCommit={() => {
           dispatch({ type: 'SANDBOX_COMMIT_SETUP' })
           onSandboxBegun?.(exportSaveDoc())
@@ -1979,8 +1976,15 @@ const GameContent = ({
       onRestart={onRestartSandbox}
       onStartNew={onStartNewSandbox}
       onLoadSave={onLoadSave}
-      setupSlot={sandboxSetupControls(true)}
+      round={inSandboxSetup ? (gameState.sandboxSetupPosition?.round ?? null) : null}
+      onSetRound={
+        inSandboxSetup
+          ? round => dispatch({ type: 'SANDBOX_SET_POSITION', round, playerTurn: null })
+          : undefined
+      }
+      setupSlot={openBrowse => sandboxSetupControls(true, openBrowse)}
       showKit={inSandboxSetup}
+      canEdit={canEdit}
     />
   ) : null
 

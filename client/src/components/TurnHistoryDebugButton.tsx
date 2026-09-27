@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom'
 import { useGame } from './GameContext/GameContext'
 import { type LoadSaveFn, type LoadSaveSource } from '../api/gamesApi'
 import SaveDocImportPanel from './SaveDocImportPanel/SaveDocImportPanel'
-import GamesList from './GamesList/GamesList'
 import type { SaveDoc } from '../save/types'
 import {
   canUseSaveFilePicker,
@@ -52,7 +51,6 @@ export function TurnHistoryDebugButton({
   const [debugView, setDebugView] = useState<'save' | 'load'>('save')
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null)
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null)
-  const [saveFilename, setSaveFilename] = useState('')
 
   const debugJson = useMemo(() => {
     if (!open) return ''
@@ -60,10 +58,9 @@ export function TurnHistoryDebugButton({
   }, [open, exportSaveDoc])
 
   const openModal = useCallback(() => {
-    setSaveFilename(suggestedSaveFilenameFromTitle(exportSaveDoc().meta.title))
     setDebugView('save')
     setOpen(true)
-  }, [exportSaveDoc])
+  }, [])
 
   const handleCopySave = useCallback(async () => {
     const text = JSON.stringify(exportSaveDoc(), null, 2)
@@ -78,9 +75,10 @@ export function TurnHistoryDebugButton({
   }, [exportSaveDoc])
 
   const handleSaveJson = useCallback(async () => {
-    const json = JSON.stringify(exportSaveDoc(), null, 2)
+    const doc = exportSaveDoc()
+    const json = JSON.stringify(doc, null, 2)
     try {
-      const result = await saveJsonFile(json, saveFilename)
+      const result = await saveJsonFile(json, suggestedSaveFilenameFromTitle(doc.meta.title))
       if (result === 'cancelled') return
       setSaveFeedback(canUseSaveFilePicker() ? 'Saved' : 'Downloaded')
       window.setTimeout(() => setSaveFeedback(null), 2000)
@@ -88,7 +86,7 @@ export function TurnHistoryDebugButton({
       setSaveFeedback('Save failed')
       window.setTimeout(() => setSaveFeedback(null), 2000)
     }
-  }, [exportSaveDoc, saveFilename])
+  }, [exportSaveDoc])
 
   const handleLoad = useCallback(
     (doc: SaveDoc, source?: LoadSaveSource) => {
@@ -136,12 +134,9 @@ export function TurnHistoryDebugButton({
                   className={
                     debugView === 'save' ? 'turn-details-tab turn-details-tab--active' : 'turn-details-tab'
                   }
-                  onClick={() => {
-                    setSaveFilename(suggestedSaveFilenameFromTitle(exportSaveDoc().meta.title))
-                    setDebugView('save')
-                  }}
+                  onClick={() => setDebugView('save')}
                 >
-                  Save
+                  Export
                 </button>
                 {onLoadSave ? (
                   <button
@@ -159,28 +154,11 @@ export function TurnHistoryDebugButton({
               </div>
               {debugView === 'load' && onLoadSave ? (
                 <div className="turn-details-load">
-                  <GamesList className="turn-details-games-list" onLoad={handleLoad} />
                   <SaveDocImportPanel onLoad={handleLoad} buttonLabel="Load save" />
                 </div>
               ) : (
                 <>
                   <div className="turn-details-export">
-                    <label className="turn-details-filename-field">
-                      <span className="turn-details-filename-label">Filename</span>
-                      <div className="turn-details-filename-row">
-                        <input
-                          type="text"
-                          className="turn-details-filename-input"
-                          value={saveFilename}
-                          onChange={e => setSaveFilename(e.target.value)}
-                          spellCheck={false}
-                          autoComplete="off"
-                        />
-                        <span className="turn-details-filename-suffix" aria-hidden="true">
-                          .json
-                        </span>
-                      </div>
-                    </label>
                     <div className="turn-details-export-actions">
                       <button type="button" className="turn-details-export-btn" onClick={handleCopySave}>
                         {copyFeedback ?? 'Copy to clipboard'}

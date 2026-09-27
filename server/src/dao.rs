@@ -40,7 +40,23 @@ pub struct GameContent {
     events: serde_json::Value,
     branches: serde_json::Value,
     cursor: serde_json::Value,
-    summary: sqlx::types::Json<GameSummary>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    summary: Option<sqlx::types::Json<GameSummary>>,
+}
+
+fn summary_for_persist(log: &GameContent) -> sqlx::types::Json<GameSummary> {
+    log.summary
+        .clone()
+        .unwrap_or_else(|| sqlx::types::Json(default_summary_placeholder()))
+}
+
+fn default_summary_placeholder() -> GameSummary {
+    GameSummary {
+        gamePackId: "official/base".to_string(),
+        rounds: 1,
+        turns: 0,
+        players: vec![],
+    }
 }
 
 #[derive(Deserialize, Serialize)]
@@ -152,7 +168,8 @@ pub async fn save_game(
                 .build());
         }
         // TODO update same as branching, except with same name and increment version
-        let rows = update_owned_game(&pool, game_id, &user_id, name, &game_log, &game_log.summary).await?;
+        let summary = summary_for_persist(&game_log.0);
+        let rows = update_owned_game(&pool, game_id, &user_id, name, &game_log, &summary).await?;
         if rows == 0 {
             return Err(ApiError::builder()
                 .status(StatusCode::NOT_FOUND)
@@ -162,7 +179,8 @@ pub async fn save_game(
         return Ok(Json(game_id));
     }
 
-    let id = insert_owned_game(&pool, &user_id, name, &game_log, &game_log.summary).await?;
+    let summary = summary_for_persist(&game_log.0);
+    let id = insert_owned_game(&pool, &user_id, name, &game_log, &summary).await?;
     Ok(Json(id))
 }
 

@@ -38,6 +38,11 @@ export interface PlayerSetupBlock {
   /** Catalog leader id (slug, e.g. "paul") — see public/catalogs/leaders.v1.json. */
   leaderId: string
   color: PlayerColor
+  /**
+   * Games-list name. Omitted means the leader name
+   * (or "Player N" while the leader is still unassigned).
+   */
+  name?: string
   /** Catalog card ids (pool/slug), ordered; duplicates allowed for copies. */
   deckCardIds: string[]
   /** Starting resources when set in game-creation UI (omitted = leader defaults). */
