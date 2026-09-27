@@ -12,7 +12,7 @@ cd "$WORKDIR"
 curl -fsSL "https://www.sqlite.org/2026/sqlite-autoconf-${VERSION}.tar.gz" -o sqlite.tar.gz
 tar xzf sqlite.tar.gz
 cd sqlite-autoconf-${VERSION}
-CFLAGS="-DSQLITE_ENABLE_COLUMN_METADATA -O2" ./configure --prefix="$PREFIX"
+CFLAGS="-DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_ENABLE_UNLOCK_NOTIFY -O2" ./configure --prefix="$PREFIX"
 make -j"$(nproc)"
 make install
 ldconfig 2>/dev/null || true
