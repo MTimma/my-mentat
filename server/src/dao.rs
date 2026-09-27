@@ -67,7 +67,7 @@ pub struct GameMeta {
     updatedAt: String,
 }
 
-#[derive(Deserialize, Serialize, sqlx::FromRow)]
+#[derive(Clone, Deserialize, Serialize, sqlx::FromRow)]
 pub struct GameSummary {
     gamePackId: String,
     rounds: i32,
