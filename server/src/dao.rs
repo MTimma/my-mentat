@@ -75,7 +75,7 @@ pub struct GameSummary {
     players: Vec<GameSummaryPlayer>,
 }
 
-#[derive(Deserialize, Serialize, sqlx::FromRow)]
+#[derive(Clone, Deserialize, Serialize, sqlx::FromRow)]
 pub struct GameSummaryPlayer {
     id: i32,
     name: String,
