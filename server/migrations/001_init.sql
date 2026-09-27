@@ -19,9 +19,9 @@ CREATE TABLE games (
 --     session_id TEXT REFERENCES tower_sessions(id),
 --     game_id    INTEGER REFERENCES games(id),
 --     PRIMARY KEY (session_id, game_id)
--- };
+-- );
 -- // TODOO
--- //
+-- // 
 -- // 2. limit 3 created games per session
 -- // 3. limit n sessions or till some size
 -- // 4. delete expired sessions and games
