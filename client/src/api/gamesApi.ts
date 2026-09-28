@@ -1,4 +1,5 @@
 import { parseSaveDocJson } from '../save/parseSaveDoc'
+import { summarizeSaveForList, summaryNeedsPlayerList } from '../save/summarizeForList'
 import type { SaveDoc, SaveSummary } from '../save/types'
 
 /** Base URL for the Rust games server (`server/src/main.rs`). Empty string uses same origin / Vite proxy. */
@@ -93,6 +94,31 @@ export function getCachedGamesList(): GameDetail[] | null {
 export function invalidateGamesListCache(): void {
   gamesListCache = null
   gamesListInflight = null
+}
+
+/** Fill empty `summary.players` (legacy JSONB migration) by replaying each save. */
+export async function enrichCommunityGameSummaries(rows: GameDetail[]): Promise<GameDetail[]> {
+  if (!rows.some(row => summaryNeedsPlayerList(row.summary))) return rows
+  return Promise.all(
+    rows.map(async row => {
+      if (!summaryNeedsPlayerList(row.summary)) return row
+      try {
+        const { doc } = await fetchGameDoc(row.id)
+        const computed = summarizeSaveForList(doc)
+        if (!computed) return row
+        return {
+          ...row,
+          summary: {
+            ...row.summary,
+            ...computed,
+            players: computed.players,
+          },
+        }
+      } catch {
+        return row
+      }
+    })
+  )
 }
 
 export async function fetchGames(opts?: { fresh?: boolean }): Promise<GameDetail[]> {
