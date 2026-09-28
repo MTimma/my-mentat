@@ -374,17 +374,18 @@
   .imperium-section--sandbox-setup .imperium-row-sandbox-slots .imperium-card {
     flex: 0 0 auto;
     min-width: 0;
-    max-width: 45px;
-    height: 59px;
-    min-height: 59px;
-    max-height: 59px;
+    width: min(42px, 9.5vw);
+    max-width: min(42px, 9.5vw);
+    height: auto;
+    min-height: 0;
+    max-height: none;
     aspect-ratio: var(--ir-card-aspect);
     align-self: center;
   }
 
   .imperium-section--sandbox-setup .imperium-card--sandbox-empty {
-    min-height: 59px;
-    max-height: 59px;
+    min-height: 0;
+    max-height: none;
   }
 
   .imperium-section--sandbox-setup .imperium-row-sandbox-slots .card-image-ir {

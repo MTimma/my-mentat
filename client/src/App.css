@@ -111,10 +111,6 @@
   min-width: 0;
 }
 
-.imperium-row-container__main > .family-atomics-button {
-  flex: 0 0 auto;
-}
-
 /* Playing surface: keep the board at its natural image size so marker coordinates stay aligned. */
 html:has(.game-container--play) {
   height: 100dvh;
@@ -1017,13 +1013,17 @@ body:has(.game-container--play) {
   }
 
   .imperium-row-container__main {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
     width: 100%;
+    gap: 4px;
   }
 
   .imperium-row-container__main > .immortality-row {
-    width: 100%;
-    max-width: 100%;
+    width: auto;
+    max-width: none;
+    flex: 0 0 auto;
   }
   
   .game-container--play .play-shell-footer .turn-controls-container {

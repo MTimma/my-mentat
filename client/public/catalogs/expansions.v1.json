@@ -123,6 +123,7 @@
             "imperium/face-dancer-initiate"
           ],
           "starting": [
+            "starting/experimentation",
             "starting/experimentation"
           ]
         }

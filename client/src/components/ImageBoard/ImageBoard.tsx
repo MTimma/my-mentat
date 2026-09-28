@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, type ReactNode } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import {
   SpaceProps,
   AgentIcon,
@@ -291,6 +291,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   onDesktopPlayAreaLayoutChange,
 }) => {
   const boardMediaRef = useRef<HTMLDivElement>(null)
+  const boardStageRef = useRef<HTMLDivElement>(null)
   const [showSellMelangePopup, setShowSellMelangePopup] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
   const [imgError, setImgError] = useState(false)
@@ -330,6 +331,82 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     showSandboxSetupHints &&
       gameStateForMarkers.imperiumRow.length < sandboxImperiumRequiredCount
   )
+  const showTleilaxuRowSandboxHint = Boolean(
+    showSandboxSetupHints &&
+      immortality &&
+      (gameStateForMarkers.tleilaxuRow?.length ?? 0) < 2
+  )
+  /** Immortality: hints sit under each row, not the full board. */
+  const alignRowHintsToCards = immortality
+  const [rowHintLayout, setRowHintLayout] = useState<{
+    imperiumLeft: string
+    imperiumMaxWidth: string
+    tleilaxuLeft: string
+    tleilaxuMaxWidth: string
+    tleilaxuOneLine: boolean
+  } | null>(null)
+
+  useLayoutEffect(() => {
+    if (!alignRowHintsToCards) {
+      setRowHintLayout(null)
+      return
+    }
+    const stage = boardStageRef.current
+    if (!stage) return
+
+    const measure = () => {
+      const root = stage.closest('.game-container') ?? document
+      const layer = stage.querySelector('.image-board__tutorial-messages-layer')
+      const imperium = root.querySelector('.imperium-section:not(.immortality-row)')
+      const tleilaxu = root.querySelector('.immortality-row')
+      if (!imperium || !layer) return
+      const layerRect = layer.getBoundingClientRect()
+      if (layerRect.width <= 0) return
+      const visibleRight = Math.min(layerRect.right, window.innerWidth)
+      const imperiumRect = imperium.getBoundingClientRect()
+      const tleilaxuRect = tleilaxu?.getBoundingClientRect()
+      const rowLeft = tleilaxuRect ? tleilaxuRect.left : visibleRight
+      const roomFromRow = Math.max(0, visibleRight - rowLeft)
+      const tleilaxuOneLine = roomFromRow >= 240
+      const tleilaxuRoom = tleilaxuOneLine ? roomFromRow : Math.min(148, Math.max(roomFromRow, 132))
+      const tleilaxuLeftPx = tleilaxuOneLine
+        ? rowLeft
+        : Math.max(layerRect.left, visibleRight - tleilaxuRoom - 4)
+      const pct = (px: number) => `${((px - layerRect.left) / layerRect.width) * 100}%`
+      const next = {
+        imperiumLeft: pct(imperiumRect.left + imperiumRect.width / 2),
+        imperiumMaxWidth: `${Math.max(0, imperiumRect.width)}px`,
+        tleilaxuLeft: pct(tleilaxuLeftPx),
+        tleilaxuMaxWidth: `${tleilaxuRoom}px`,
+        tleilaxuOneLine,
+      }
+      setRowHintLayout(prev =>
+        prev?.imperiumLeft === next.imperiumLeft &&
+        prev.imperiumMaxWidth === next.imperiumMaxWidth &&
+        prev.tleilaxuLeft === next.tleilaxuLeft &&
+        prev.tleilaxuMaxWidth === next.tleilaxuMaxWidth &&
+        prev.tleilaxuOneLine === next.tleilaxuOneLine
+          ? prev
+          : next
+      )
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(stage)
+    const root = stage.closest('.game-container') ?? document
+    const imperium = root.querySelector('.imperium-section:not(.immortality-row)')
+    const tleilaxu = root.querySelector('.immortality-row')
+    if (imperium) observer.observe(imperium)
+    if (tleilaxu) observer.observe(tleilaxu)
+    const tleilaxuHint = stage.querySelector('.sandbox-setup-hint--tleilaxu-row')
+    if (tleilaxuHint) observer.observe(tleilaxuHint)
+    window.addEventListener('resize', measure)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [alignRowHintsToCards, showImperiumRowSandboxHint, showTleilaxuRowSandboxHint])
   const boardHotspots = BOARD_HOTSPOTS_FOR_EXPANSIONS(gameStateForMarkers.expansions)
   const markerAnchors = markerAnchorsForExpansions(gameStateForMarkers.expansions).filter(
     anchor => !ixBoardDocked || !isIxOverlaySpaceId(anchor.spaceId)
@@ -580,7 +657,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     ) : null
 
   const boardStage = (
-    <div className="image-board__stage">
+    <div className="image-board__stage" ref={boardStageRef}>
       <div className="image-board__media" ref={boardMediaRef}>
           {imgError ? (
             <div
@@ -1436,7 +1513,35 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 size="large"
                 label="Pick 5 cards for the Imperium row"
                 className="sandbox-setup-hint--imperium-row"
-                style={{ left: '50%', top: '3%' }}
+                style={
+                  alignRowHintsToCards && rowHintLayout
+                    ? { left: rowHintLayout.imperiumLeft, top: '3%', maxWidth: rowHintLayout.imperiumMaxWidth }
+                    : { left: '50%', top: '3%' }
+                }
+              />
+            ) : null}
+            {showTleilaxuRowSandboxHint ? (
+              <SandboxSetupHint
+                size="large"
+                label="Pick 2 cards for the Tleilaxu row"
+                className={[
+                  'sandbox-setup-hint--tleilaxu-row',
+                  alignRowHintsToCards && rowHintLayout?.tleilaxuOneLine ? 'sandbox-setup-hint--oneline' : '',
+                  alignRowHintsToCards && rowHintLayout && !rowHintLayout.tleilaxuOneLine
+                    ? 'sandbox-setup-hint--stacked'
+                    : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                style={
+                  alignRowHintsToCards && rowHintLayout
+                    ? {
+                        left: rowHintLayout.tleilaxuLeft,
+                        top: '3%',
+                        maxWidth: rowHintLayout.tleilaxuMaxWidth,
+                      }
+                    : { left: 'calc(50% + 19ch)', top: '3%' }
+                }
               />
             ) : null}
             {showBoardInfoTips && sandboxSetup && showConflictPanel && !hasConflict ? (

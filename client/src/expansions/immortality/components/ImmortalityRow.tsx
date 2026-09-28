@@ -1,29 +1,32 @@
 import React, { useMemo, useState } from 'react'
 import { useGame } from '../../../components/GameContext/gameContextState'
+import { withImageZoomHint } from '../../../components/AltImagePreview/imageZoomHint'
 import type { Card } from '../../../types/GameTypes'
 import { buildTleilaxuPool } from '../../../catalog/runtime'
-import { nextResearchNodes, researchNode } from '../researchTrack'
+import { hasFirstGeneticMarker, nextResearchNodes } from '../researchTrack'
+import BeneTleilaxBoardPanel from '../../../components/ImageBoard/BeneTleilaxBoardPanel'
 import '../../../components/ImperiumRow/ImperiumRow.css'
 import './ImmortalityRow.css'
 
 const RECLAIMED_FORCES_NAME = 'Reclaimed Forces'
 const PURCHASABLE_SLOT_COUNT = 2
 
-/** Compact reward label for branch/track tooltips (logging tool — approximate). */
-function rewardLabel(reward: Record<string, unknown> | undefined): string {
-  if (!reward) return '—'
-  return Object.entries(reward)
-    .map(([k, v]) => `${k}:${typeof v === 'number' ? v : '✓'}`)
-    .join(', ')
+interface ImmortalityRowProps {
+  /** Sandbox setup: two empty slots open the Tleilaxu card picker. Reclaimed Forces stays hidden until play. */
+  sandboxSetup?: {
+    onConfigure: () => void
+    requiredCount: number
+  }
 }
 
 /**
  * Immortality Tleilaxu shop: two purchasable slots + Reclaimed Forces reserve,
  * mounted to the right of the Imperium Row at the same height.
  */
-const ImmortalityRow: React.FC = () => {
+const ImmortalityRow: React.FC<ImmortalityRowProps> = ({ sandboxSetup }) => {
   const { gameState, dispatch } = useGame()
   const [refillOpen, setRefillOpen] = useState(false)
+  const [deckTopChoice, setDeckTopChoice] = useState<Card | null>(null)
 
   const reclaimedForces = useMemo(
     () => buildTleilaxuPool().find(card => card.name === RECLAIMED_FORCES_NAME),
@@ -49,9 +52,25 @@ const ImmortalityRow: React.FC = () => {
     return (card.cost ?? 0) <= specimens
   }
 
-  const acquire = (card: Card) => {
+  const canPlaceOnDeck = activePlayer ? hasFirstGeneticMarker(activePlayer.researchNodeId) : false
+
+  const acquire = (card: Card, acquireToTop?: boolean) => {
     if (!activePlayer || !canAcquire(card)) return
-    dispatch({ type: 'ACQUIRE_TLEILAXU', playerId: activePlayer.id, cardId: card.id })
+    dispatch({
+      type: 'ACQUIRE_TLEILAXU',
+      playerId: activePlayer.id,
+      cardId: card.id,
+      acquireToTop,
+    })
+  }
+
+  const requestAcquire = (card: Card) => {
+    if (!activePlayer || !canAcquire(card)) return
+    if (card.name !== RECLAIMED_FORCES_NAME && canPlaceOnDeck) {
+      setDeckTopChoice(card)
+      return
+    }
+    acquire(card)
   }
 
   const pickRefill = (card: Card) => {
@@ -67,6 +86,51 @@ const ImmortalityRow: React.FC = () => {
 
   const branchOptions = activePlayer ? nextResearchNodes(activePlayer.researchNodeId) : []
 
+  if (sandboxSetup) {
+    const requiredCount = sandboxSetup.requiredCount
+    const emptySlots = Math.max(0, requiredCount - purchasableRow.length)
+    const sandboxRowLabel =
+      purchasableRow.length === requiredCount
+        ? 'Change Tleilaxu row'
+        : `Set Tleilaxu row (${purchasableRow.length}/${requiredCount})`
+
+    return (
+      <div
+        className="immortality-row imperium-section immortality-row--sandbox imperium-section--sandbox-setup"
+        data-testid="immortality-row"
+      >
+        <div className="imperium-row-layout imperium-row-layout--single">
+          <div className="imperium-row-strip no-buttons immortality-row__strip" aria-label="Bene Tleilax row">
+            <button
+              type="button"
+              className="imperium-row-sandbox-area"
+              onClick={sandboxSetup.onConfigure}
+              title={withImageZoomHint(sandboxRowLabel)}
+              aria-label={sandboxRowLabel}
+            >
+              <div className="imperium-row-sandbox-slots" aria-hidden="true">
+                {purchasableRow.slice(0, requiredCount).map(card => (
+                  <div
+                    key={card.id}
+                    className="imperium-card imperium-card--sandbox-slot imperium-card--sandbox-display"
+                  >
+                    <img src={card.image} alt="" className="card-image-ir" data-preview-src={card.image} />
+                  </div>
+                ))}
+                {Array.from({ length: emptySlots }, (_, index) => (
+                  <div
+                    key={`sandbox-empty-${index}`}
+                    className="imperium-card imperium-card--sandbox-slot imperium-card--sandbox-empty imperium-card--sandbox-display"
+                  />
+                ))}
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const renderPurchasableSlot = (card: Card | undefined, slotIndex: number) => {
     if (card) {
       return (
@@ -81,11 +145,16 @@ const ImmortalityRow: React.FC = () => {
           ]
             .filter(Boolean)
             .join(' ')}
-          title={`${card.name} — ${card.cost ?? 0} specimen`}
-          onClick={() => acquire(card)}
+          title={withImageZoomHint(`${card.name} — ${card.cost ?? 0} specimen`)}
+          onClick={() => requestAcquire(card)}
           disabled={!canAcquire(card)}
         >
-          <img src={card.image} alt={card.name} className="card-image-ir" />
+          <img
+            src={card.image}
+            alt={card.name}
+            className="card-image-ir"
+            data-preview-src={card.image}
+          />
           <span className="immortality-row__cost">
             <img src="icon/specimen.png" alt="" className="immortality-row__icon" />
             {card.cost ?? 0}
@@ -138,11 +207,18 @@ const ImmortalityRow: React.FC = () => {
               ]
                 .filter(Boolean)
                 .join(' ')}
-              title={`${reclaimedForces.name} — ${reclaimedForces.cost ?? 0} specimen (permanent reserve)`}
+              title={withImageZoomHint(
+                `${reclaimedForces.name} — ${reclaimedForces.cost ?? 0} specimen (permanent reserve)`
+              )}
               onClick={() => acquire(reclaimedForces)}
               disabled={!canAcquire(reclaimedForces)}
             >
-              <img src={reclaimedForces.image} alt={reclaimedForces.name} className="card-image-ir" />
+              <img
+                src={reclaimedForces.image}
+                alt={reclaimedForces.name}
+                className="card-image-ir"
+                data-preview-src={reclaimedForces.image}
+              />
               <span className="immortality-row__cost">
                 <img src="icon/specimen.png" alt="" className="immortality-row__icon" />
                 {reclaimedForces.cost ?? 0}
@@ -162,9 +238,15 @@ const ImmortalityRow: React.FC = () => {
                   key={card.id}
                   type="button"
                   className="immortality-modal__option"
+                  title={withImageZoomHint(card.name)}
                   onClick={() => pickRefill(card)}
                 >
-                  <img src={card.image} alt={card.name} className="immortality-row__card-img" />
+                  <img
+                    src={card.image}
+                    alt={card.name}
+                    className="immortality-row__card-img"
+                    data-preview-src={card.image}
+                  />
                   <span>{card.name}</span>
                 </button>
               ))}
@@ -176,28 +258,50 @@ const ImmortalityRow: React.FC = () => {
         </div>
       ) : null}
 
-      {pendingResearch ? (
-        <div className="immortality-modal" role="dialog" aria-label="Choose research branch">
+      {pendingResearch && activePlayer ? (
+        <div className="immortality-modal" role="dialog" aria-label="">
+          <div className="immortality-modal__panel immortality-modal__panel--board">
+            <BeneTleilaxBoardPanel
+              players={gameState.players}
+              currentPlayerId={activePlayer.id}
+              tleilaxuTrackBonusSpice={gameState.tleilaxuTrackBonusSpice}
+              tleilaxuTrackBonusClaimed={gameState.tleilaxuTrackBonusClaimed}
+              choiceNodeIds={branchOptions}
+              onResearchNodeSelect={(_playerId, nodeId) => chooseBranch(nodeId)}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {deckTopChoice ? (
+        <div className="immortality-modal" role="dialog" aria-label="Where to place the Tleilaxu card">
           <div className="immortality-modal__panel">
-            <div className="immortality-modal__title">Choose research branch</div>
-            <div className="immortality-modal__grid">
-              {branchOptions.map(nodeId => {
-                const node = researchNode(nodeId)
-                return (
-                  <button
-                    key={nodeId}
-                    type="button"
-                    className="immortality-modal__option immortality-modal__option--branch"
-                    onClick={() => chooseBranch(nodeId)}
-                  >
-                    <span className="immortality-modal__branch-id">{nodeId}</span>
-                    <span className="immortality-modal__branch-bonus">
-                      {rewardLabel(node.bonus as Record<string, unknown> | undefined)}
-                    </span>
-                  </button>
-                )
-              })}
+            <div className="immortality-modal__title">{deckTopChoice.name}</div>
+            <div className="immortality-modal__actions">
+              <button
+                type="button"
+                className="immortality-modal__option immortality-modal__option--wide"
+                onClick={() => {
+                  acquire(deckTopChoice, true)
+                  setDeckTopChoice(null)
+                }}
+              >
+                Top of deck
+              </button>
+              <button
+                type="button"
+                className="immortality-modal__option immortality-modal__option--wide"
+                onClick={() => {
+                  acquire(deckTopChoice, false)
+                  setDeckTopChoice(null)
+                }}
+              >
+                Discard pile
+              </button>
             </div>
+            <button type="button" className="immortality-modal__cancel" onClick={() => setDeckTopChoice(null)}>
+              Cancel
+            </button>
           </div>
         </div>
       ) : null}

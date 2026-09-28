@@ -35,6 +35,10 @@ export interface BirdseyeSeatActions {
   techDisabled: boolean
   techTitle?: string
   showTech: boolean
+  showFamilyAtomics?: boolean
+  familyAtomicsUsed?: boolean
+  familyAtomicsDisabled?: boolean
+  onUseFamilyAtomics?: () => void
   /** When true, End Turn is available. Desktop swaps Play/Reveal; the rim keeps both. */
   showEndTurn: boolean
   endTurnDisabled: boolean
@@ -205,7 +209,15 @@ export function BirdseyeUtilControls({
   onToggleDeploy?: () => void
 }) {
   return (
-    <div className="birdseye-seat__utils" onClick={stop}>
+    <div
+      className={[
+        'birdseye-seat__utils',
+        actions.showFamilyAtomics && actions.showTech ? 'birdseye-seat__utils--with-atomics' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      onClick={stop}
+    >
       <button
         type="button"
         className="birdseye-seat-btn birdseye-seat-btn--intrigue"
@@ -235,6 +247,29 @@ export function BirdseyeUtilControls({
         >
           <img src="/icon/tech.png" alt="" />
           <span className="birdseye-seat-btn__badge">{actions.techCount}</span>
+        </button>
+      ) : null}
+      {actions.showFamilyAtomics ? (
+        <button
+          type="button"
+          className="birdseye-seat-btn birdseye-seat-btn--atomics"
+          onClick={e => {
+            stop(e)
+            actions.onUseFamilyAtomics?.()
+          }}
+          disabled={actions.familyAtomicsDisabled}
+          title={
+            actions.familyAtomicsUsed
+              ? 'Family Atomics already used this game'
+              : 'Family Atomics: refresh the Imperium Row (once per game)'
+          }
+          aria-label={
+            actions.familyAtomicsUsed
+              ? 'Family Atomics already used this game'
+              : 'Family Atomics: refresh the Imperium Row (once per game)'
+          }
+        >
+          <img src="/icon/atomic.png" alt="" />
         </button>
       ) : null}
       {showDeploy && onToggleDeploy ? (

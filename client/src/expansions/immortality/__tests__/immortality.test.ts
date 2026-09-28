@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GamePhase, NO_EXPANSIONS, AgentIcon, type Card, type GameState, type Reward } from '../../../types/GameTypes'
-import { getBaseTestState } from '../../../components/GameContext/__tests__/_helpers'
+import { getBaseTestState, stubDeckCard } from '../../../components/GameContext/__tests__/_helpers'
 import { applyGameAction } from '../../../components/GameContext/GameContext'
 import { playRequirementSatisfied } from '../../../components/GameContext/requirements'
 import {
@@ -13,7 +13,7 @@ import {
   setTleilaxuStep,
   spendSpecimens,
 } from '../reducer'
-import { RESEARCH_START_NODE_ID } from '../researchTrack'
+import { RESEARCH_NODES, RESEARCH_START_NODE_ID } from '../researchTrack'
 import { resolveGamePack } from '../../../gamePacks/resolveGamePack'
 import {
   OFFICIAL_BASE_IMMORTALITY_PACK,
@@ -23,6 +23,8 @@ import { buildStartingDeck } from '../../../services/starterDeckSetup'
 import { createCatalogRuntime } from '../../../catalog/runtime'
 import { boardSpaceById } from '../../../data/boardSpaceAvailability'
 import { computeGraftAgentIcons, canConfirmGraftHandSelection, graftHandSelectionPreviewSlots, shouldPickGraftPartnerSlot } from '../graft'
+import { canPlaceAgentOnBoard } from '../../../utils/kwisatzHaderach'
+import { IMMORTALITY_INTRIGUE_CARDS } from '../../../data/intrigueCardsImmortality'
 
 const IMMORTALITY_EXPANSIONS = { ...NO_EXPANSIONS, immortality: true }
 
@@ -77,7 +79,7 @@ describe('Immortality — Tleilaxu track', () => {
     let state = immortalityState()
     state = advanceTleilaxuTrack(state, 0, 1, applyPrimitiveReward)
     expect(state.players[0].tleilaxuStep).toBe(1)
-    expect(state.players[0].spice).toBe(11) // base 10 + step-1 bonus spice
+    expect(state.players[0].spice).toBe(10) // first space has no bonus
   })
 
   it('claims the 2-spice first-player bonus when first reaching the VP space', () => {
@@ -93,9 +95,9 @@ describe('Immortality — Tleilaxu track', () => {
     let state = immortalityState({ tleilaxuTrackBonusClaimed: true, tleilaxuTrackBonusSpice: 0 })
     const before = state.players[0].spice
     state = advanceTleilaxuTrack(state, 0, 4, applyPrimitiveReward)
-    // step bonuses still apply (spice + solari + troops), but no extra 2-spice setup bonus
+    // later spaces still pay; the first space does not, and the setup spice is not paid again
     expect(state.tleilaxuTrackBonusSpice).toBe(0)
-    expect(state.players[0].spice).toBe(before + 1) // only the step-1 spice bonus
+    expect(state.players[0].spice).toBe(before)
   })
 })
 
@@ -104,7 +106,7 @@ describe('Immortality — research track', () => {
     let state = immortalityState()
     state = advanceResearch(state, 0, 1, applyPrimitiveReward)
     expect(state.players[0].researchNodeId).toBe('r1')
-    expect(state.players[0].water).toBe(4) // base 3 + r1 bonus water
+    expect(state.players[0].specimens).toBe(1) // first research space: 1 specimen
     expect(state.pendingResearchAdvance).toBeNull()
   })
 
@@ -133,6 +135,20 @@ describe('Immortality — research track', () => {
     state = advanceResearch(state, 0, 1, applyPrimitiveReward)
     expect(state.players[0].researchNodeId).toBe('r6') // stays at end
     expect(state.players[0].handCount).toBe(before + 1)
+  })
+
+  it('draws instead of moving on any gene level 2 node, even if it still lists a next node', () => {
+    RESEARCH_NODES.rEnd = { id: 'rEnd', next: ['r6'], geneLevel: 2 }
+    try {
+      let state = immortalityState()
+      state = { ...state, players: state.players.map(p => (p.id === 0 ? { ...p, researchNodeId: 'rEnd' } : p)) }
+      const before = state.players[0].handCount
+      state = advanceResearch(state, 0, 1, applyPrimitiveReward)
+      expect(state.players[0].researchNodeId).toBe('rEnd')
+      expect(state.players[0].handCount).toBe(before + 1)
+    } finally {
+      delete RESEARCH_NODES.rEnd
+    }
   })
 
   it('SET_RESEARCH_NODE sets position without applying bonuses', () => {
@@ -180,12 +196,66 @@ describe('Immortality — reducer actions', () => {
   it('ACQUIRE_TLEILAXU keeps Reclaimed Forces in the row (permanent reserve)', () => {
     const row = [tleilaxuCard(3001, 'Reclaimed Forces', 3)]
     let state = immortalityState({ tleilaxuRow: row, tleilaxuRowDeck: [] })
-    state = { ...state, players: state.players.map(p => (p.id === 0 ? { ...p, specimens: 3 } : p)) }
+    state = {
+      ...state,
+      players: state.players.map(p =>
+        p.id === 0 ? { ...p, specimens: 3, researchNodeId: 'r6' } : p
+      ),
+    }
 
-    state = applyGameAction(state, { type: 'ACQUIRE_TLEILAXU', playerId: 0, cardId: 3001 })
-    expect(state.players[0].discardPile.some(c => c.name === 'Reclaimed Forces')).toBe(true)
+    state = applyGameAction(state, {
+      type: 'ACQUIRE_TLEILAXU',
+      playerId: 0,
+      cardId: 3001,
+      acquireToTop: true,
+    })
+    expect(state.players[0].discardPile.some(c => c.name === 'Reclaimed Forces')).toBe(false)
+    expect(state.players[0].deck.some(c => c.name === 'Reclaimed Forces')).toBe(false)
     expect(state.tleilaxuRow?.some(c => c.id === 3001)).toBe(true) // never leaves the row
     expect(state.pendingTleilaxuRowReplacement ?? null).toBeNull()
+  })
+
+  it('before the first genetic marker, a Tleilaxu card goes to the discard pile', () => {
+    const row = [tleilaxuCard(3002, 'From the Tanks', 2)]
+    let state = immortalityState({ tleilaxuRow: row })
+    state = {
+      ...state,
+      players: state.players.map(p =>
+        p.id === 0 ? { ...p, specimens: 3, researchNodeId: 'r2b' } : p
+      ),
+    }
+    state = applyGameAction(state, {
+      type: 'ACQUIRE_TLEILAXU',
+      playerId: 0,
+      cardId: 3002,
+      acquireToTop: true,
+    })
+    expect(state.players[0].discardPile.map(c => c.id)).toEqual([3002])
+    expect(state.players[0].deck.some(c => c.id === 3002)).toBe(false)
+  })
+
+  it('on r3 or later, the player can put the acquired Tleilaxu card on top of the draw pile', () => {
+    const row = [tleilaxuCard(3002, 'From the Tanks', 2)]
+    let state = immortalityState({ tleilaxuRow: row })
+    const hand = tleilaxuCard(1, 'Hand', 0)
+    const draw = tleilaxuCard(2, 'Draw', 0)
+    state = {
+      ...state,
+      players: state.players.map(p =>
+        p.id === 0
+          ? { ...p, specimens: 3, researchNodeId: 'r5a', handCount: 1, deck: [hand, draw] }
+          : p
+      ),
+    }
+    state = applyGameAction(state, {
+      type: 'ACQUIRE_TLEILAXU',
+      playerId: 0,
+      cardId: 3002,
+      acquireToTop: true,
+    })
+    expect(state.players[0].deck.map(c => c.id)).toEqual([1, 3002, 2])
+    expect(state.players[0].discardPile).toEqual([])
+    expect(state.players[0].handCount).toBe(1)
   })
 
   it('ACQUIRE_TLEILAXU is rejected when specimens are insufficient', () => {
@@ -212,19 +282,36 @@ describe('Immortality — reducer actions', () => {
     expect(state.pendingTleilaxuRowReplacement ?? null).toBeNull()
   })
 
-  it('USE_FAMILY_ATOMICS marks the player and clears the Imperium Row once', () => {
-    const rowCard = { id: 2001, name: 'Some Imperium Card', image: '', agentIcons: [] } as Card
-    let state = immortalityState({ imperiumRow: [rowCard], imperiumRowDeck: [] })
+  it('USE_FAMILY_ATOMICS moves the current row onto the discard pile and leaves the deck', () => {
+    const row = [2001, 2002, 2003, 2004, 2005].map(
+      id => ({ id, name: `Row ${id}`, image: '', agentIcons: [] }) as Card
+    )
+    const deckCard = { id: 2006, name: 'Deck Card', image: '', agentIcons: [] } as Card
+    let state = immortalityState({ imperiumRow: row, imperiumRowDeck: [deckCard] })
 
     state = applyGameAction(state, { type: 'USE_FAMILY_ATOMICS', playerId: 0 })
     expect(state.players[0].familyAtomicsUsed).toBe(true)
     expect(state.imperiumRow).toHaveLength(0)
-    expect(state.imperiumRowDeck.some(c => c.id === 2001)).toBe(true)
+    expect(state.imperiumRowDeck.map(card => card.id)).toEqual([2006])
+    expect(state.imperiumRowDiscard?.map(card => card.id)).toEqual([2001, 2002, 2003, 2004, 2005])
+    expect(state.pendingFamilyAtomicsRefresh).toBe(true)
+
+    state = applyGameAction(state, { type: 'RESET_IMPERIUM_ROW', cardIds: [2006] })
+    expect(state.imperiumRow.map(card => card.id)).toEqual([2006])
+    expect(state.imperiumRowDiscard?.map(card => card.id)).toEqual([2001, 2002, 2003, 2004, 2005])
+    expect(state.pendingFamilyAtomicsRefresh).toBe(false)
 
     // Second use is a no-op (once per game).
-    const afterRefill = { ...state, imperiumRow: [rowCard], imperiumRowDeck: [] as Card[] }
+    const afterRefill = {
+      ...state,
+      imperiumRow: [row[0]],
+      imperiumRowDeck: [] as Card[],
+      pendingFamilyAtomicsRefresh: false,
+    }
     const next = applyGameAction(afterRefill, { type: 'USE_FAMILY_ATOMICS', playerId: 0 })
     expect(next.imperiumRow).toHaveLength(1)
+    expect(next.imperiumRowDiscard?.map(card => card.id)).toEqual([2001, 2002, 2003, 2004, 2005])
+    expect(next.pendingFamilyAtomicsRefresh).toBe(false)
   })
 })
 
@@ -311,11 +398,102 @@ describe('Immortality — graft hand selection', () => {
   })
 })
 
+describe('Immortality — track rewards from cards', () => {
+  it('Illicit Dealings advances the beetle track and pays the entered space', () => {
+    const card = IMMORTALITY_INTRIGUE_CARDS.find(c => c.name === 'Illicit Dealings')!
+    let state = getBaseTestState({
+      intrigueCount: 1,
+      spice: 10,
+      tleilaxuStep: 0,
+      researchNodeId: RESEARCH_START_NODE_ID,
+    })
+    state = {
+      ...state,
+      expansions: IMMORTALITY_EXPANSIONS,
+      intrigueDeck: [card],
+      tleilaxuTrackBonusSpice: 2,
+      tleilaxuTrackBonusClaimed: false,
+    }
+    state = applyGameAction(state, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
+    expect(state.players[0].tleilaxuStep).toBe(1)
+    expect(state.players[0].spice).toBe(10)
+  })
+
+  it('Experimentation advances research when its agent reward is claimed', () => {
+    const card = buildStartingDeck(OFFICIAL_BASE_IMMORTALITY_PACK).find(c => c.name === 'Experimentation')!
+    let state = getBaseTestState({
+      deck: [card],
+      agents: 2,
+      water: 3,
+      researchNodeId: RESEARCH_START_NODE_ID,
+      tleilaxuStep: 0,
+    })
+    state = { ...state, expansions: IMMORTALITY_EXPANSIONS }
+    state = applyGameAction(state, { type: 'PLAY_CARD', playerId: 0, cardId: card.id, deckIndex: 0 })
+    state = applyGameAction(state, { type: 'PLACE_AGENT', playerId: 0, spaceId: 12 })
+    expect(state.pendingRewards.some(reward => reward.reward.research === 1)).toBe(true)
+    state = applyGameAction(state, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+    expect(state.players[0].researchNodeId).toBe('r1')
+    expect(state.players[0].specimens).toBe(1)
+    expect(state.players[0].water).toBe(3)
+  })
+
+  it('Experimentation reveal grants a specimen when claimed', () => {
+    const card = buildStartingDeck(OFFICIAL_BASE_IMMORTALITY_PACK).find(c => c.name === 'Experimentation')!
+    let state = getBaseTestState({
+      deck: [card],
+      handCount: 1,
+      specimens: 0,
+      researchNodeId: RESEARCH_START_NODE_ID,
+    })
+    state = { ...state, expansions: IMMORTALITY_EXPANSIONS }
+    state = applyGameAction(state, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [card.id] })
+    expect(state.pendingRewards.some(reward => reward.reward.specimen === 1)).toBe(true)
+    state = applyGameAction(state, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+    expect(state.players[0].specimens).toBe(1)
+  })
+})
+
 describe('Immortality — catalog and game packs', () => {
   it('replaces the two Dune starter cards with Experimentation', () => {
     const deck = buildStartingDeck(OFFICIAL_BASE_IMMORTALITY_PACK)
     expect(deck.filter(c => c.name === 'Experimentation')).toHaveLength(2)
     expect(deck.some(c => c.name === 'Dune, the Desert Planet')).toBe(false)
+  })
+
+  it('gives both Experimentation copies a Spice Trade icon and ids that do not collide with Convincing Argument', () => {
+    const deck = buildStartingDeck(OFFICIAL_BASE_IMMORTALITY_PACK)
+    const experimentation = deck.filter(c => c.name === 'Experimentation')
+    const convincingIds = new Set(deck.filter(c => c.name === 'Convincing Argument').map(c => c.id))
+    expect(experimentation.map(c => c.id)).toEqual([11, 12])
+    expect(experimentation.every(c => c.agentIcons.includes(AgentIcon.SPICE_TRADE))).toBe(true)
+    expect(experimentation.some(c => convincingIds.has(c.id))).toBe(false)
+  })
+
+  it('allows agent placement for either Experimentation copy, including a legacy id of 0', () => {
+    const deck = buildStartingDeck(OFFICIAL_BASE_IMMORTALITY_PACK)
+    const copies = [
+      ...deck.filter(c => c.name === 'Experimentation'),
+      stubDeckCard(0, {
+        name: 'Experimentation',
+        agentIcons: [AgentIcon.SPICE_TRADE],
+        immortality: true,
+      }),
+    ]
+    for (const card of copies) {
+      let state = getBaseTestState({ deck: [card], agents: 2 })
+      state = { ...state, expansions: IMMORTALITY_EXPANSIONS }
+      state = applyGameAction(state, {
+        type: 'PLAY_CARD',
+        playerId: 0,
+        cardId: card.id,
+        deckIndex: 0,
+      })
+      expect(canPlaceAgentOnBoard(state)).toBe(true)
+      state = applyGameAction(state, { type: 'PLACE_AGENT', playerId: 0, spaceId: 7 })
+      expect(state.currTurn?.agentSpaceId).toBe(7)
+      expect(state.occupiedSpaces[7]).toContain(0)
+    }
   })
 
   it('applies the Experimentation swap on the Rise of Ix + Immortality pack too', () => {

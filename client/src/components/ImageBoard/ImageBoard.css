@@ -79,6 +79,21 @@
   max-width: min(36ch, 70%);
 }
 
+.image-board__tutorial-messages-layer .sandbox-setup-hint--tleilaxu-row {
+  max-width: min(32ch, calc(46% - 18ch));
+}
+
+.image-board__tutorial-messages-layer .sandbox-setup-hint--tleilaxu-row.sandbox-setup-hint--oneline {
+  width: max-content;
+  max-width: none;
+  white-space: nowrap;
+}
+
+.image-board__tutorial-messages-layer .sandbox-setup-hint--oneline .sandbox-setup-hint__text {
+  white-space: nowrap;
+  min-width: max-content;
+}
+
 .image-board__riseofix-overlay {
   position: absolute;
   object-fit: fill;

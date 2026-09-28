@@ -273,6 +273,8 @@ import {
   queueImmortalityPendingCustom,
   type ImmortalityPlayContext,
 } from '../../expansions/immortality/customEffects'
+import { TLEILAXU_PURCHASABLE_SLOT_COUNT } from '../../expansions/immortality/setup'
+import { hasFirstGeneticMarker } from '../../expansions/immortality/researchTrack'
 
 /** Merge RoI unit fields without clobbering resources already adjusted this placement. */
 function mergeRoiUnitFieldsFromRefreshed(target: Player, refreshed: Player): void {
@@ -394,6 +396,7 @@ export type GameAction =
     | { type: 'RESOLVE_ENDGAME' }
     | { type: 'REVEAL_ENDGAME_INTRIGUE'; playerId: number; cardIds: number[] }
     | { type: 'SANDBOX_SET_IMPERIUM_ROW'; cardIds: number[] }
+    | { type: 'SANDBOX_SET_TLEILAXU_ROW'; cardIds: number[] }
     | { type: 'SANDBOX_SET_CONFLICT'; conflictId: number }
     | { type: 'SANDBOX_SET_CONFLICTS_DISCARD'; conflictIds: number[] }
     | { type: 'SANDBOX_UPDATE_PLAYER'; playerId: number; patch: Partial<Player> }
@@ -421,7 +424,7 @@ export type GameAction =
     | { type: 'ADVANCE_RESEARCH'; playerId: number; nodeId: string }
     | { type: 'SET_RESEARCH_NODE'; playerId: number; nodeId: string }
     | { type: 'SET_TLEILAXU_STEP'; playerId: number; step: number }
-    | { type: 'ACQUIRE_TLEILAXU'; playerId: number; cardId: number; freeAcquire?: boolean }
+    | { type: 'ACQUIRE_TLEILAXU'; playerId: number; cardId: number; freeAcquire?: boolean; acquireToTop?: boolean }
     | { type: 'SET_TLEILAXU_ROW'; cardIds: number[] }
     | { type: 'USE_FAMILY_ATOMICS'; playerId: number }
     | { type: 'SET_GRAFT_PAIR'; cardIds: number[] }
@@ -1765,6 +1768,30 @@ function applyChoiceReward(
   return newState
 }
 
+function hasImmortalityTrackReward(reward: Reward): boolean {
+  return Boolean(reward.specimen || reward.research || reward.tleilaxu)
+}
+
+/** Specimen, research, and Tleilaxu advances (and the bonus on the space entered). */
+function applyImmortalityTrackReward(
+  state: GameState,
+  playerId: number,
+  reward: Reward,
+  source: GainAttribution
+): GameState {
+  if (!state.expansions?.immortality || !hasImmortalityTrackReward(reward)) return state
+  return applyChoiceReward(
+    state,
+    {
+      specimen: reward.specimen,
+      research: reward.research,
+      tleilaxu: reward.tleilaxu,
+    },
+    playerId,
+    source
+  )
+}
+
 function activatePlayerForTurn(state: GameState, playerId: number): GameState {
   let players = state.players.map(p => {
     if (p.id !== playerId) return p
@@ -1963,6 +1990,21 @@ function handleIntrigueEffect(
       newState.mentatOwner = playerId
       updatedPlayer.agents += 1
       pushGain(1, RewardType.MENTAT)
+    }
+    if (hasImmortalityTrackReward(reward)) {
+      updatedPlayers[playerIndex] = updatedPlayer
+      newState = {
+        ...newState,
+        players: updatedPlayers,
+      }
+      newState = applyImmortalityTrackReward(newState, playerId, reward, {
+        type: GainSource.INTRIGUE,
+        id: card.id,
+        name: card.name,
+      })
+      updatedPlayers = newState.players.map(p => ({ ...p }))
+      const refreshed = updatedPlayers[playerIndex]
+      if (refreshed) updatedPlayer = { ...refreshed }
     }
     if (reward.custom === CustomEffect.SHUFFLE_DISCARD_INTO_DECK) {
       updatedPlayer.deck = [...updatedPlayer.deck, ...updatedPlayer.discardPile]
@@ -3044,7 +3086,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         imperiumRow: selected,
-        imperiumRowDeck: remaining
+        imperiumRowDeck: remaining,
+        pendingFamilyAtomicsRefresh: false,
       }
     }
       case 'SELECT_CONFLICT': {
@@ -3111,6 +3154,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         imperiumRowDeck: pool.filter(card => !usedIds.has(card.id)),
       })
     }
+    case 'SANDBOX_SET_TLEILAXU_ROW':
+      return handleSandboxSetTleilaxuRow(state, action.cardIds)
     case 'SANDBOX_SET_CONFLICT': {
       if (!state.sandboxSetup) return state
       const conflict = getConflictPool(state.expansions).find(c => c.id === action.conflictId)
@@ -3351,8 +3396,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!state.sandboxSetup) return state
 
       const position = state.sandboxSetupPosition ?? { round: null, playerTurn: null }
+      const committedBase = fillLegacyUnpickedTleilaxuRow(state)
       const nextState = {
-        ...state,
+        ...committedBase,
         sandboxSetup: false,
         sandboxSetupPosition: undefined,
         phase: GamePhase.PLAYER_TURNS,
@@ -3397,6 +3443,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (state.pendingRewards.some((r) => !r.disabled)) return state
         if (state.currTurn?.pendingChoices?.length) return state
         if (state.currTurn?.opponentDiscardState) return state
+        if (state.pendingResearchAdvance) return state
       }
 
       // Endgame uses a simpler “done” turn rotation (no agent/reveal structure).
@@ -3427,7 +3474,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
 
-      if (!state.selectedCard && state.currTurn?.type !== TurnType.REVEAL) return state
+      if (state.selectedCard == null && state.currTurn?.type !== TurnType.REVEAL) return state
       const currentTurn = newState.currTurn
       if (!currentTurn) return state
 
@@ -5203,7 +5250,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return newState
     }
 
-      if (!currPlayer || !card || !space || playerId !== newState.activePlayerId || !newState.selectedCard) return state
+      if (!currPlayer || !card || !space || playerId !== newState.activePlayerId || newState.selectedCard == null) return state
       
       const isKwisatzPlacement = isKwisatzHaderachCard(card)
       const kwisatzFromBoard =
@@ -5925,6 +5972,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             }
             if(effect.reward?.drawCards) {
               addPendingReward({ drawCards: effect.reward.drawCards }, { type: GainSource.CARD, id: card.id, name: card.name })
+            }
+            if (state.expansions?.immortality && effect.reward?.specimen) {
+              addPendingReward({ specimen: effect.reward.specimen }, { type: GainSource.CARD, id: card.id, name: card.name })
+            }
+            if (state.expansions?.immortality && effect.reward?.research) {
+              addPendingReward({ research: effect.reward.research }, { type: GainSource.CARD, id: card.id, name: card.name })
+            }
+            if (state.expansions?.immortality && effect.reward?.tleilaxu) {
+              addPendingReward({ tleilaxu: effect.reward.tleilaxu }, { type: GainSource.CARD, id: card.id, name: card.name })
             }
             if (effect.reward?.influence) {
               if (effect.reward.influence.chooseOne) {
@@ -8121,7 +8177,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       let newState = { ...state }
       const baselinePlayer = { ...player }
       let newPlayer = { ...player }
-      const newGains = [...state.gains]
+      let newGains = [...state.gains]
       
       // If this is a trash reward, remove all pending rewards from the same card source
       if (reward.isTrash) {
@@ -8276,13 +8332,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           source: reward.source.type,
         })
       }
-      
+
+      newState.players = newState.players.map(p => (p.id === playerId ? newPlayer : p))
+      newState.gains = newGains
+      newState = applyImmortalityTrackReward(newState, playerId, rewardToApply, reward.source)
+      newPlayer = newState.players.find(p => p.id === playerId) ?? newPlayer
+      newGains = newState.gains
+
       // Update player
       newState.players = newState.players.map(p => p.id === playerId ? newPlayer : p)
       newState.gains = newGains
       
       // Update canEndTurn based on remaining pendingRewards and pendingChoices
-      newState.canEndTurn = (newState.pendingRewards.filter(r => !r.disabled).length === 0 && (!newState.currTurn?.pendingChoices?.length))
+      newState.canEndTurn = (
+        newState.pendingRewards.filter(r => !r.disabled).length === 0 &&
+        !newState.currTurn?.pendingChoices?.length &&
+        !newState.pendingResearchAdvance
+      )
       
       return resolveMandatoryTroopDeploy(
         withUnloadForNewlyTrashedCards(
@@ -8326,7 +8392,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       let newState = { ...state }
       const baselinePlayer = { ...player }
       let newPlayer = { ...player }
-      const newGains = [...state.gains]
+      let newGains = [...state.gains]
       const milestoneMeta: InfluenceMilestoneMeta = { troopsRecruited: 0 }
       const tessiaChoices: PendingChoice[] = []
       
@@ -8375,6 +8441,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             source: reward.source.type,
           })
         }
+
+        newState.players = newState.players.map(p => (p.id === playerId ? newPlayer : p))
+        newState.gains = newGains
+        newState = applyImmortalityTrackReward(newState, playerId, rewardToApply, reward.source)
+        newPlayer = newState.players.find(p => p.id === playerId) ?? newPlayer
+        newGains = newState.gains
       })
 
       if (milestoneMeta.troopsRecruited > 0) {
@@ -8396,7 +8468,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       newState.gains = newGains
       
       // Update canEndTurn based on remaining pendingRewards and pendingChoices (excluding disabled rewards)
-      newState.canEndTurn = (newState.pendingRewards.filter(r => !r.disabled).length === 0 && (!newState.currTurn?.pendingChoices?.length))
+      newState.canEndTurn = (
+        newState.pendingRewards.filter(r => !r.disabled).length === 0 &&
+        !newState.currTurn?.pendingChoices?.length &&
+        !newState.pendingResearchAdvance
+      )
       
       return resolveMandatoryTroopDeploy(newState, playerId)
     }
@@ -8799,7 +8875,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!state.expansions?.immortality) return state
       return setTleilaxuStep(state, action.playerId, action.step)
     case 'ACQUIRE_TLEILAXU':
-      return handleAcquireTleilaxu(state, action.playerId, action.cardId, action.freeAcquire)
+      return handleAcquireTleilaxu(
+        state,
+        action.playerId,
+        action.cardId,
+        action.freeAcquire,
+        action.acquireToTop
+      )
     case 'SET_TLEILAXU_ROW':
       return handleSetTleilaxuRow(state, action.cardIds)
     case 'USE_FAMILY_ATOMICS':
@@ -8957,11 +9039,18 @@ const RECLAIMED_FORCES_NAME = 'Reclaimed Forces'
  * never empties a row slot); other cards leave a slot that the user refills via
  * SET_TLEILAXU_ROW (no shuffle).
  */
+/** Next card drawn is `deck[handCount]`. Insert there so the acquire is on top of the draw pile. */
+function insertOnDrawPile(deck: Card[], handCount: number, card: Card): Card[] {
+  const at = Math.max(0, Math.min(handCount, deck.length))
+  return [...deck.slice(0, at), card, ...deck.slice(at)]
+}
+
 function handleAcquireTleilaxu(
   state: GameState,
   playerId: number,
   cardId: number,
-  freeAcquire?: boolean
+  freeAcquire?: boolean,
+  acquireToTop?: boolean
 ): GameState {
   if (!state.expansions?.immortality) return state
   const player = state.players.find(p => p.id === playerId)
@@ -8993,10 +9082,25 @@ function handleAcquireTleilaxu(
     gains.push({ round: state.currentRound, playerId, sourceId: card.id, name: `${card.name} Acquire`, amount: -cost, type: RewardType.SPECIMEN, source: GainSource.CARD })
   }
 
+  // Reclaimed Forces stays in the row. It is not a card the player takes.
+  const placeOnDeck =
+    !isReclaimedForces &&
+    acquireToTop === true &&
+    hasFirstGeneticMarker(player.researchNodeId)
+  const acquired = { ...card }
+  const deck = placeOnDeck
+    ? insertOnDrawPile(player.deck, player.handCount, acquired)
+    : player.deck
+  const discardPile =
+    isReclaimedForces || placeOnDeck
+      ? player.discardPile
+      : [...player.discardPile, acquired]
+
   const updatedPlayer: Player = {
     ...player,
     specimens: Math.max(0, (player.specimens ?? 0) - cost),
-    discardPile: [...player.discardPile, { ...card }],
+    deck,
+    discardPile,
   }
 
   let nextRow = row
@@ -9012,6 +9116,52 @@ function handleAcquireTleilaxu(
     players: state.players.map(p => (p.id === playerId ? updatedPlayer : p)),
     tleilaxuRow: nextRow,
     pendingTleilaxuRowReplacement,
+  }
+}
+
+/**
+ * Sandbox setup pick for the two purchasable Tleilaxu slots.
+ * Reclaimed Forces is not in this pool; it appears when play starts.
+ */
+function handleSandboxSetTleilaxuRow(state: GameState, cardIds: number[]): GameState {
+  if (!state.sandboxSetup || !state.expansions?.immortality) return state
+  if (cardIds.length !== TLEILAXU_PURCHASABLE_SLOT_COUNT) return state
+
+  const pool = [...(state.tleilaxuRow ?? []), ...(state.tleilaxuRowDeck ?? [])]
+  const poolMap = new Map(pool.map(card => [card.id, card] as const))
+  const selected: Card[] = []
+  const usedIds = new Set<number>()
+
+  for (const id of cardIds) {
+    const card = poolMap.get(id)
+    if (!card || usedIds.has(id) || card.name === RECLAIMED_FORCES_NAME) return state
+    selected.push(card)
+    usedIds.add(id)
+  }
+
+  return withSandboxSetupHistory({
+    ...state,
+    tleilaxuRow: selected,
+    tleilaxuRowDeck: pool.filter(card => !usedIds.has(card.id)),
+    pendingTleilaxuRowReplacement: null,
+  })
+}
+
+/**
+ * Older sandbox games stored no Tleilaxu pick. On Begin, keep the previous
+ * default (first two pool cards) so those saves still have a row.
+ */
+function fillLegacyUnpickedTleilaxuRow(state: GameState): GameState {
+  if (!state.expansions?.immortality) return state
+  const row = state.tleilaxuRow ?? []
+  if (row.length >= TLEILAXU_PURCHASABLE_SLOT_COUNT) return state
+  const deck = [...(state.tleilaxuRowDeck ?? [])]
+  const fill = deck.splice(0, TLEILAXU_PURCHASABLE_SLOT_COUNT - row.length)
+  if (fill.length === 0) return state
+  return {
+    ...state,
+    tleilaxuRow: [...row, ...fill],
+    tleilaxuRowDeck: deck,
   }
 }
 
@@ -9033,8 +9183,8 @@ function handleSetTleilaxuRow(state: GameState, cardIds: number[]): GameState {
 
 /**
  * Immortality — Family Atomics (once per game): refresh the Imperium Row only.
- * Current row cards return to the deck pool and the user re-picks 5 via the
- * existing Imperium Row selection flow.
+ * Current row cards go to the Imperium Row discard. The user re-picks 5 from
+ * the remaining deck.
  */
 function handleUseFamilyAtomics(state: GameState, playerId: number): GameState {
   if (!state.expansions?.immortality) return state
@@ -9044,9 +9194,10 @@ function handleUseFamilyAtomics(state: GameState, playerId: number): GameState {
   return {
     ...state,
     players: state.players.map(p => (p.id === playerId ? { ...p, familyAtomicsUsed: true } : p)),
-    imperiumRowDeck: [...state.imperiumRow, ...state.imperiumRowDeck],
+    imperiumRowDiscard: [...(state.imperiumRowDiscard ?? []), ...state.imperiumRow],
     imperiumRow: [],
     pendingImperiumRowReplacement: null,
+    pendingFamilyAtomicsRefresh: true,
   }
 }
 
@@ -9146,6 +9297,9 @@ function deepCopyGameState(state: GameState): GameState {
     })),
     imperiumRow: [...state.imperiumRow],
     imperiumRowDeck: [...state.imperiumRowDeck],
+    imperiumRowDiscard: state.imperiumRowDiscard ? [...state.imperiumRowDiscard] : undefined,
+    tleilaxuRow: state.tleilaxuRow ? [...state.tleilaxuRow] : undefined,
+    tleilaxuRowDeck: state.tleilaxuRowDeck ? [...state.tleilaxuRowDeck] : undefined,
     spiceMustFlowDeck: [...state.spiceMustFlowDeck],
     arrakisLiaisonDeck: [...state.arrakisLiaisonDeck],
     foldspaceDeck: [...state.foldspaceDeck],

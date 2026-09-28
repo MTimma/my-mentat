@@ -13,6 +13,8 @@ interface ImperiumRowSelectProps {
   /** When provided, the cancel control closes the dialog instead of clearing the selection. */
   onCancel?: () => void
   initialSelectedCards?: Card[]
+  /** Dialog title. Defaults to the Imperium Row picker label. */
+  title?: string
 }
 
 const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({
@@ -21,7 +23,9 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({
   onConfirm,
   onCancel,
   initialSelectedCards,
+  title,
 }) => {
+  const titleText = title ?? `Select ${requiredCount} Imperium Row Cards`
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const overlayRef = useRef<HTMLDivElement>(null)
   const { scopeModalsToBoard } = usePlayBoardModalContext()
@@ -48,7 +52,7 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({
 
   return (
     <PickerModalShell
-      title={`Select ${requiredCount} Imperium Row Cards`}
+      title={titleText}
       countLabel={`Selected ${selectedCards.length} / ${requiredCount}`}
       overlayRef={overlayRef}
     >
@@ -59,7 +63,7 @@ const ImperiumRowSelect: React.FC<ImperiumRowSelectProps> = ({
         onCancel={handleCancel}
         isRevealTurn={requiredCount > 1}
         selectionCount={requiredCount}
-        text={`Select ${requiredCount} Imperium Row Cards`}
+        text={titleText}
         onSelectionChange={handleSelectionChange}
         hideTitle={true}
         initialSelectedCards={initialSelectedCards}

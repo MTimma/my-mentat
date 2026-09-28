@@ -26,6 +26,26 @@ function expandCopies(templates: Array<{ card: Omit<Card, 'id'>; qty: number }>)
   return deck
 }
 
+/**
+ * Starting-deck copies keep these ids at runtime (imperium cards are re-id'd
+ * from 2000). They must be non-zero and must not overlap base starter ids 1–10:
+ * id 0 is treated as "no card" by placement checks, and the overflow id 1
+ * collides with Convincing Argument.
+ */
+const EXPERIMENTATION_COPY_IDS = [11, 12] as const
+
+function expandStartingCopies(
+  templates: Array<{ card: Omit<Card, 'id'>; ids: readonly number[] }>
+): Card[] {
+  const deck: Card[] = []
+  for (const { card, ids } of templates) {
+    for (const id of ids) {
+      deck.push({ ...clone(card), id })
+    }
+  }
+  return deck
+}
+
 const inf = (faction: FactionType, amount = 1): InfluenceAmounts => ({
   amounts: [{ faction, amount }],
 })
@@ -749,16 +769,16 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
  * deck patch — not a hardcoded swap in base setup).
  *
  * Card text / art: https://www.duneimperiumassets.com/assets/imperium_card/Experimentation
- * - Agent (Landsraad): +1 Research
+ * - Agent (Spice Trade, yellow triangle): +1 Research
  * - Reveal: +1 Persuasion, +1 Specimen
  */
-const IMMORTALITY_STARTING_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> = [
+const IMMORTALITY_STARTING_TEMPLATES: Array<{ card: Omit<Card, 'id'>; ids: readonly number[] }> = [
   {
-    qty: 1,
+    ids: EXPERIMENTATION_COPY_IDS,
     card: {
       name: 'Experimentation',
       image: 'starter_deck/experimentation.avif',
-      agentIcons: [AgentIcon.LANDSRAAD],
+      agentIcons: [AgentIcon.SPICE_TRADE],
       immortality: true,
       playEffect: [{ reward: { research: 1 } }],
       revealEffect: [{ reward: { persuasion: 1, specimen: 1 } }],
@@ -768,4 +788,4 @@ const IMMORTALITY_STARTING_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
 
 export const IMMORTALITY_IMPERIUM_DECK: Card[] = expandCopies(IMMORTALITY_IMPERIUM_TEMPLATES)
 export const IMMORTALITY_TLEILAXU_DECK: Card[] = expandCopies(IMMORTALITY_TLEILAXU_TEMPLATES)
-export const IMMORTALITY_STARTING_DECK: Card[] = expandCopies(IMMORTALITY_STARTING_TEMPLATES)
+export const IMMORTALITY_STARTING_DECK: Card[] = expandStartingCopies(IMMORTALITY_STARTING_TEMPLATES)

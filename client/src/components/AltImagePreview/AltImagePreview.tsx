@@ -61,6 +61,9 @@ const PREVIEW_FRAME_SELECTOR = [
   '.tech-stacks-modal__column',
   '.tech-acquire-modal__stack-slot',
   '.image-board__conflict-panel',
+  '.immortality-modal__option',
+  '.bene-tleilax-board',
+  '.bene-tleilax-board__open',
 ].join(', ')
 
 function isVisiblePreviewTarget(img: HTMLImageElement): boolean {

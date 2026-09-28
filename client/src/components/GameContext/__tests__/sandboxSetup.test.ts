@@ -13,6 +13,7 @@ import {
   TurnType,
   type GameState,
 } from '../../../types/GameTypes'
+import { OFFICIAL_BASE_IMMORTALITY_PACK } from '../../../gamePacks/constants'
 import { buildInitialState } from '../../../save/buildInitialState'
 import { makePlayer, stubDeckCard } from './_helpers'
 
@@ -865,5 +866,96 @@ describe('Sandbox setup turn', () => {
       imperiumRowDeckCardIds: [],
     })
     expect(state.players[0].intrigueCount).toBe(1)
+  })
+
+  it('sandbox immortality starts with an empty purchasable Tleilaxu row', () => {
+    const state = buildInitialState({
+      firstPlayer: 0,
+      gamePackId: OFFICIAL_BASE_IMMORTALITY_PACK,
+      sandbox: true,
+      players: [
+        {
+          id: 0,
+          leaderId: 'unassigned',
+          color: PlayerColor.RED,
+          deckCardIds: [],
+        },
+      ],
+    })
+    expect(state.tleilaxuRow).toEqual([])
+    expect((state.tleilaxuRowDeck ?? []).length).toBeGreaterThan(2)
+    expect(state.tleilaxuRowDeck?.some(card => card.name === 'Reclaimed Forces')).toBe(false)
+  })
+
+  it('non-sandbox immortality pre-fills two Tleilaxu cards', () => {
+    const state = buildInitialState({
+      firstPlayer: 0,
+      gamePackId: OFFICIAL_BASE_IMMORTALITY_PACK,
+      players: [
+        {
+          id: 0,
+          leaderId: 'unassigned',
+          color: PlayerColor.RED,
+          deckCardIds: [],
+        },
+      ],
+    })
+    expect(state.tleilaxuRow).toHaveLength(2)
+    expect(state.tleilaxuRow?.some(card => card.name === 'Reclaimed Forces')).toBe(false)
+  })
+
+  it('SANDBOX_SET_TLEILAXU_ROW picks two cards and keeps a single setup history row', () => {
+    let s: GameState = {
+      ...getSandboxSetupState(),
+      expansions: { ...NO_EXPANSIONS, immortality: true },
+      tleilaxuRow: [],
+      tleilaxuRowDeck: [
+        stubDeckCard(3001, { name: 'Contaminator' }),
+        stubDeckCard(3002, { name: 'Ghola' }),
+        stubDeckCard(3003, { name: 'Face Dancer' }),
+      ],
+    }
+    s = applyGameAction(s, { type: 'SANDBOX_SET_TLEILAXU_ROW', cardIds: [3003, 3002] })
+
+    expect(s.tleilaxuRow?.map(card => card.id)).toEqual([3003, 3002])
+    expect(s.tleilaxuRowDeck?.map(card => card.id)).toEqual([3001])
+    expect(s.sandboxSetup).toBe(true)
+    expect(s.history).toHaveLength(1)
+    expect(s.history[0].tleilaxuRow?.map(card => card.id)).toEqual([3003, 3002])
+
+    const rejectedCount = applyGameAction(s, { type: 'SANDBOX_SET_TLEILAXU_ROW', cardIds: [3001] })
+    expect(rejectedCount).toBe(s)
+    const rejectedId = applyGameAction(s, { type: 'SANDBOX_SET_TLEILAXU_ROW', cardIds: [3001, 9999] })
+    expect(rejectedId).toBe(s)
+  })
+
+  it('SANDBOX_SET_TLEILAXU_ROW is ignored when immortality is off', () => {
+    const s = getSandboxSetupState()
+    expect(applyGameAction(s, { type: 'SANDBOX_SET_TLEILAXU_ROW', cardIds: [3001, 3002] })).toBe(s)
+  })
+
+  it('SANDBOX_COMMIT_SETUP keeps a picked Tleilaxu row and fills an unpicked one', () => {
+    const deck = [
+      stubDeckCard(3001, { name: 'Contaminator' }),
+      stubDeckCard(3002, { name: 'Ghola' }),
+      stubDeckCard(3003, { name: 'Face Dancer' }),
+    ]
+    const base: GameState = {
+      ...getSandboxSetupState(),
+      expansions: { ...NO_EXPANSIONS, immortality: true },
+      tleilaxuRow: [],
+      tleilaxuRowDeck: deck,
+    }
+
+    const picked = applyGameAction(
+      applyGameAction(base, { type: 'SANDBOX_SET_TLEILAXU_ROW', cardIds: [3003, 3001] }),
+      { type: 'SANDBOX_COMMIT_SETUP' }
+    )
+    expect(picked.tleilaxuRow?.map(card => card.id)).toEqual([3003, 3001])
+    expect(picked.sandboxSetup).toBe(false)
+
+    const legacy = applyGameAction(base, { type: 'SANDBOX_COMMIT_SETUP' })
+    expect(legacy.tleilaxuRow?.map(card => card.id)).toEqual([3001, 3002])
+    expect(legacy.tleilaxuRowDeck?.map(card => card.id)).toEqual([3003])
   })
 })

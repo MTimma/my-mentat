@@ -3031,7 +3031,7 @@
       "name": "Experimentation",
       "pool": "starting",
       "agentIcons": [
-        "landsraad"
+        "spice-trade"
       ],
       "immortality": true,
       "image": "starter_deck/experimentation.avif",
@@ -3044,7 +3044,8 @@
         ]
       },
       "authorIds": [
-        0
+        11,
+        12
       ]
     },
     {

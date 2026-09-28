@@ -5,16 +5,25 @@ import { RESEARCH_START_NODE_ID } from './researchTrack'
 /** Reclaimed Forces is a permanent reserve, never part of the purchasable row pool. */
 const RECLAIMED_FORCES_NAME = 'Reclaimed Forces'
 
+/** Purchasable Tleilaxu Row slots chosen during sandbox setup. Reclaimed Forces is separate. */
+export const TLEILAXU_PURCHASABLE_SLOT_COUNT = 2
+
 /**
- * Seed Immortality-specific state on a freshly built GameState. No randomization:
- * the Tleilaxu Row is pre-filled with the first two pool cards as a sensible
- * default; the user can swap them via the Tleilaxu Row UI (same as Imperium Row).
+ * Seed Immortality-specific state on a freshly built GameState.
+ * Sandbox setup leaves the two purchasable slots empty so the user picks them
+ * (same idea as the Imperium Row). Other games keep the first two pool cards,
+ * because this app does not shuffle.
  */
 export function seedImmortalitySetup(state: GameState): void {
   const pool = buildTleilaxuPool().filter(card => card.name !== RECLAIMED_FORCES_NAME)
 
-  state.tleilaxuRow = pool.slice(0, 2)
-  state.tleilaxuRowDeck = pool.slice(2)
+  if (state.sandboxSetup) {
+    state.tleilaxuRow = []
+    state.tleilaxuRowDeck = pool
+  } else {
+    state.tleilaxuRow = pool.slice(0, TLEILAXU_PURCHASABLE_SLOT_COUNT)
+    state.tleilaxuRowDeck = pool.slice(TLEILAXU_PURCHASABLE_SLOT_COUNT)
+  }
   state.tleilaxuTrackBonusSpice = 2
   state.tleilaxuTrackBonusClaimed = false
   state.pendingResearchAdvance = null

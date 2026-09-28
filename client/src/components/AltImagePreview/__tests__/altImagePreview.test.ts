@@ -62,6 +62,19 @@ describe('Alt / Option card zoom', () => {
     expect(tsx).toContain('titlePreviewImageIn')
   })
 
+  it('zooms Tleilaxu row cards and the Bene Tleilax board', () => {
+    const row = readFileSync(resolve(root, 'expansions/immortality/components/ImmortalityRow.tsx'), 'utf8')
+    const board = readFileSync(resolve(root, 'components/ImageBoard/BeneTleilaxBoardPanel.tsx'), 'utf8')
+    const overlay = readFileSync(resolve(root, 'components/ImageBoard/BeneTleilaxBoardOverlay.tsx'), 'utf8')
+    expect(row).toContain('data-preview-src={card.image}')
+    expect(row).toContain('data-preview-src={reclaimedForces.image}')
+    expect(board).toContain('data-preview-src={boardSrc}')
+    expect(overlay).toContain('withImageZoomHint')
+    expect(tsx).toContain("'.immortality-modal__option'")
+    expect(tsx).toContain("'.bene-tleilax-board'")
+    expect(tsx).toContain("'.bene-tleilax-board__open'")
+  })
+
   it('zooms on Alt / Option keydown without requiring a mouse move', () => {
     expect(tsx).toContain('pointerRef')
     expect(tsx).toContain('document.elementFromPoint')

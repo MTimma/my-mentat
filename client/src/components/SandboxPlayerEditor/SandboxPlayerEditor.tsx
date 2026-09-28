@@ -15,7 +15,7 @@ import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import FreighterIcon from '../FreighterIcon/FreighterIcon'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import { defaultDreadnoughtsForExpansions } from '../../utils/dreadnoughts'
-import { seedTroopSupply } from '../../utils/troops'
+import { MAX_TROOPS_PER_PLAYER, seedTroopSupply } from '../../utils/troops'
 import CardSearch from '../CardSearch/CardSearch'
 import ValueStepper from '../ValueStepper/ValueStepper'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
@@ -30,7 +30,12 @@ import {
 import type { TechTileId } from '../../data/techTiles'
 import { TECH_TILES } from '../../data/techTiles'
 import SandboxPlayerTechSelect from '../SandboxPlayerTechSelect/SandboxPlayerTechSelect'
+import BeneTleilaxBoardPanel from '../ImageBoard/BeneTleilaxBoardPanel'
+import { clampTleilaxuStep, TLEILAXU_TRACK_MAX_STEP } from '../../expansions/immortality/tleilaxuTrack'
+import { RESEARCH_NODES, RESEARCH_START_NODE_ID } from '../../expansions/immortality/researchTrack'
 import './SandboxPlayerEditor.css'
+
+const RESEARCH_NODE_IDS = Object.keys(RESEARCH_NODES)
 
 const CONTROL_SPACES: Array<{ type: ControlMarkerType; label: string }> = [
   { type: ControlMarkerType.ARRAKIN, label: 'Arrakeen' },
@@ -53,6 +58,10 @@ interface SandboxPlayerEditorProps {
   dreadnoughtCover?: Record<ControlMarkerType, number | null>
   mentatOwner: number | null
   playerInfluence: Record<FactionType, number>
+  /** All seats, so research-track cubes for other leaders stay visible. */
+  players: Player[]
+  tleilaxuTrackBonusSpice?: number
+  tleilaxuTrackBonusClaimed?: boolean
   /** Tech tiles on the Ix board or other players — unavailable for this player. */
   blockedTechTileIds?: TechTileId[]
   onUpdate: (patch: Partial<Player>) => void
@@ -125,6 +134,9 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   dreadnoughtCover,
   mentatOwner,
   playerInfluence,
+  players,
+  tleilaxuTrackBonusSpice = 0,
+  tleilaxuTrackBonusClaimed = false,
   blockedTechTileIds = [],
   onUpdate,
   onInfluenceUpdate,
@@ -138,6 +150,7 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   const nameFieldRef = useRef<QuietNameFieldHandle>(null)
   const [pileEditor, setPileEditor] = useState<PileEditor | null>(null)
   const [techEditorOpen, setTechEditorOpen] = useState(false)
+  const [researchPickerOpen, setResearchPickerOpen] = useState(false)
   const [selectedPileCards, setSelectedPileCards] = useState<Card[]>([])
   const [numericDraft, setNumericDraft] = useState(() => pickNumericDraft(player))
   const [influenceDraft, setInfluenceDraft] = useState(() => ({ ...playerInfluence }))
@@ -644,6 +657,51 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                 increaseLabel="Increase tech negotiators on Ix"
               />
             ) : null}
+            {expansions.immortality ? (
+              <ValueStepper
+                compact
+                max={MAX_TROOPS_PER_PLAYER}
+                value={player.specimens ?? 0}
+                onChange={value => {
+                  const next = Math.max(0, Math.min(MAX_TROOPS_PER_PLAYER, value))
+                  const seeded = seedTroopSupply({ ...player, specimens: next })
+                  onUpdate({
+                    specimens: next,
+                    troopSupply: seeded.troopSupply,
+                  })
+                }}
+                icon={<img src="/icon/specimen.png" alt="" aria-hidden="true" />}
+                decreaseLabel="Decrease specimens"
+                increaseLabel="Increase specimens"
+              />
+            ) : null}
+            {expansions.immortality ? (
+              <ValueStepper
+                compact
+                max={TLEILAXU_TRACK_MAX_STEP}
+                value={player.tleilaxuStep ?? 0}
+                onChange={value => onUpdate({ tleilaxuStep: clampTleilaxuStep(value) })}
+                icon={<img src="/icon/tleilaxu.png" alt="" aria-hidden="true" />}
+                decreaseLabel="Decrease Tleilaxu track"
+                increaseLabel="Increase Tleilaxu track"
+              />
+            ) : null}
+            {expansions.immortality ? (
+              <button
+                type="button"
+                className="sandbox-player-editor__research-pick"
+                onClick={() => setResearchPickerOpen(true)}
+                aria-label="Set research track"
+                title="Set research track"
+              >
+                <span className="sandbox-player-editor__research-pick-icon">
+                  <img src="/icon/research.png" alt="" aria-hidden="true" />
+                </span>
+                <span className="sandbox-player-editor__research-pick-value">
+                  {player.researchNodeId ?? RESEARCH_START_NODE_ID}
+                </span>
+              </button>
+            ) : null}
             {INFLUENCE_FIELDS.map(field => (
               <ValueStepper
                 key={field.faction}
@@ -733,6 +791,45 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
           </div>
         </div>
       )}
+
+      {researchPickerOpen && expansions.immortality ? (
+        <div
+          className="sandbox-player-editor__deck-overlay"
+          onClick={event => {
+            event.stopPropagation()
+            setResearchPickerOpen(false)
+          }}
+        >
+          <div
+            className="sandbox-player-editor__research-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Place research tracker"
+            onClick={event => event.stopPropagation()}
+          >
+            <h3>Place research tracker</h3>
+            <BeneTleilaxBoardPanel
+              players={players}
+              currentPlayerId={player.id}
+              tleilaxuTrackBonusSpice={tleilaxuTrackBonusSpice}
+              tleilaxuTrackBonusClaimed={tleilaxuTrackBonusClaimed}
+              choiceNodeIds={RESEARCH_NODE_IDS}
+              showChoiceLabels={false}
+              onResearchNodeSelect={(_playerId, nodeId) => {
+                if (!RESEARCH_NODES[nodeId]) return
+                onUpdate({ researchNodeId: nodeId })
+              }}
+            />
+            <button
+              type="button"
+              className="sandbox-player-editor__research-close"
+              onClick={() => setResearchPickerOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {techEditorOpen && expansions.riseOfIx ? (
         <div

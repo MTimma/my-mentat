@@ -46,7 +46,13 @@ describe('buildCatalog Rise of Ix', () => {
     expect(catalog.expansions.available).toContain('immortality')
     expect(meta.decks.imperium).toHaveLength(30)
     expect(meta.decks.tleilaxu).toHaveLength(19)
-    expect(meta.decks.starting).toEqual(['starting/experimentation'])
+    expect(meta.decks.starting).toEqual([
+      'starting/experimentation',
+      'starting/experimentation',
+    ])
+    expect(catalog.cards.find(c => c.id === 'starting/experimentation')?.authorIds).toEqual([
+      11, 12,
+    ])
     expect(meta.counts.intrigue).toBe(15)
     expect(catalog.intrigue.filter(i => i.immortality)).toHaveLength(15)
     expect(catalog.cards.some(c => c.id === 'starting/experimentation')).toBe(true)

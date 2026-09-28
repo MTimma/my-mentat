@@ -32,7 +32,7 @@ export function isKwisatzSourceChoicePending(
 export function isAgentPlacementPending(
   state: Pick<GameState, 'selectedCard' | 'currTurn'>
 ): boolean {
-  if (!state.selectedCard) return false
+  if (state.selectedCard == null) return false
   if (state.currTurn?.type !== TurnType.ACTION) return false
   if (state.currTurn?.agentSpaceId != null) return false
   if (state.currTurn?.agentSpace) return false

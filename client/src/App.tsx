@@ -44,7 +44,7 @@ import { getConflictPool, isConflictInDiscard } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
 import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
 import ImmortalityRow from './expansions/immortality/components/ImmortalityRow'
-import FamilyAtomicsButton from './expansions/immortality/components/FamilyAtomicsButton'
+import ImperiumRowDiscardPile from './expansions/immortality/components/ImperiumRowDiscardPile'
 import { computeGraftAgentIcons, resolveGraftCards } from './expansions/immortality/graft'
 import TechAcquireModal from './components/TechAcquireModal/TechAcquireModal'
 import TechTileSelect from './components/TechTileSelect/TechTileSelect'
@@ -184,6 +184,7 @@ const GameContent = ({
   const [masterstrokeSelectionRewardId, setMasterstrokeSelectionRewardId] = useState<string | null>(null)
   const [memnonHighCouncilRewardId, setMemnonHighCouncilRewardId] = useState<string | null>(null)
   const [sandboxImperiumOpen, setSandboxImperiumOpen] = useState(false)
+  const [sandboxTleilaxuOpen, setSandboxTleilaxuOpen] = useState(false)
   const [sandboxTechOpen, setSandboxTechOpen] = useState(false)
   const [sandboxConflictOpen, setSandboxConflictOpen] = useState(false)
   const [sandboxConflictDiscardOpen, setSandboxConflictDiscardOpen] = useState(false)
@@ -853,11 +854,13 @@ const GameContent = ({
   const ixBoardReady =
     !riseOfIx || isSandboxIxBoardReady(gameState.players, gameState.ixBoard)
   const sandboxLeadersDone = areAllLeadersAssigned(gameState.players)
+  const tleilaxuRowDone = !immortality || (gameState.tleilaxuRow?.length ?? 0) >= 2
   const sandboxReady =
     sandboxLeadersDone &&
     gameState.imperiumRow.length === 5 &&
     gameState.currentConflict.id > 0 &&
-    ixBoardReady
+    ixBoardReady &&
+    tleilaxuRowDone
   const sandboxEditPlayer =
     inSandboxSetup && sandboxEditPlayerId !== null
       ? gameState.players.find(p => p.id === sandboxEditPlayerId) ?? null
@@ -866,8 +869,13 @@ const GameContent = ({
   const imperiumSelectionCount = Math.min(Math.max(0, 5 - gameState.imperiumRow.length), gameState.imperiumRowDeck.length)
   const needsImperiumSelection =
     gameState.phase === GamePhase.ROUND_START && imperiumSelectionCount > 0 && !gameState.sandboxSetup
+  const needsFamilyAtomicsSelection =
+    Boolean(gameState.pendingFamilyAtomicsRefresh) &&
+    gameState.phase !== GamePhase.ROUND_START &&
+    !gameState.sandboxSetup &&
+    imperiumSelectionCount > 0
   const needsReplacementSelection = gameState.pendingImperiumRowReplacement !== null && gameState.imperiumRowDeck.length > 0
-  const hidePlayShellFooter = needsImperiumSelection || needsReplacementSelection
+  const hidePlayShellFooter = needsImperiumSelection || needsFamilyAtomicsSelection || needsReplacementSelection
 
   const gameContainerRef = useRef<HTMLDivElement>(null)
   const playShellMainRef = useRef<HTMLDivElement>(null)
@@ -1647,6 +1655,9 @@ const GameContent = ({
       techDisabled: techCount === 0,
       techTitle: techCount === 0 ? 'No tech tiles.' : undefined,
       showTech,
+      showFamilyAtomics: Boolean(gameState.expansions?.immortality),
+      familyAtomicsUsed: Boolean(player.familyAtomicsUsed),
+      familyAtomicsDisabled: !canEdit || Boolean(player.familyAtomicsUsed),
       showEndTurn,
       endTurnDisabled: endTurnButtonState.disabled,
       endTurnTitle: endTurnButtonState.title,
@@ -1665,6 +1676,9 @@ const GameContent = ({
         if (activePlayer) handleEndTurn(activePlayer.id)
       },
       onActivateTech: isViewingHistory ? undefined : handleActivateTech,
+      onUseFamilyAtomics: () => {
+        if (player) handleUseFamilyAtomics(player.id)
+      },
     }
     if (!isViewingHistory) return liveActions
     return {
@@ -1673,6 +1687,7 @@ const GameContent = ({
       revealDisabled: true,
       intrigueDisabled: true,
       techDisabled: true,
+      familyAtomicsDisabled: true,
       showEndTurn: false,
       endTurnDisabled: true,
       onPlay: () => {},
@@ -1680,6 +1695,7 @@ const GameContent = ({
       onIntrigue: () => {},
       onEndTurn: () => {},
       onActivateTech: undefined,
+      onUseFamilyAtomics: () => {},
     }
   }, [
     turnControlsActivePlayer,
@@ -1690,6 +1706,8 @@ const GameContent = ({
     gameState.sandboxSetup,
     gameState.canEndTurn,
     gameState.expansions?.riseOfIx,
+    gameState.expansions?.immortality,
+    turnControlsActivePlayer?.familyAtomicsUsed,
     turnControlsState.phase,
     turnControlsState.currTurn?.agentSpace,
     turnControlsState.currTurn?.type,
@@ -1703,6 +1721,7 @@ const GameContent = ({
     activePlayer,
     handleEndTurn,
     handleActivateTech,
+    handleUseFamilyAtomics,
   ])
 
 
@@ -1900,8 +1919,10 @@ const GameContent = ({
         compact={compact}
         ready={sandboxReady}
         riseOfIx={riseOfIx}
+        immortality={immortality}
         leadersDone={sandboxLeadersDone}
         imperiumRowDone={gameState.imperiumRow.length === 5}
+        tleilaxuRowDone={tleilaxuRowDone}
         techTilesDone={ixBoardReady}
         conflictDone={gameState.currentConflict.id > 0}
         onBrowse={onBrowse}
@@ -1927,13 +1948,7 @@ const GameContent = ({
             .join(' ')}
         >
           <div className="imperium-row-container__main">
-            {!isViewingHistory && gameState.expansions?.immortality && activePlayer ? (
-              <FamilyAtomicsButton
-                used={Boolean(activePlayer.familyAtomicsUsed)}
-                disabled={Boolean(inSandboxSetup || activePlayer.familyAtomicsUsed)}
-                onClick={() => handleUseFamilyAtomics(activePlayer.id)}
-              />
-            ) : null}
+            <ImperiumRowDiscardPile cards={displayState.imperiumRowDiscard ?? []} />
             <ImperiumRow
               canAcquire={isViewingHistory ? false : gameState.canAcquireIR}
               canAcquireToTop={
@@ -1958,7 +1973,18 @@ const GameContent = ({
                   : undefined
               }
             />
-            {gameState.expansions?.immortality ? <ImmortalityRow /> : null}
+            {gameState.expansions?.immortality ? (
+              <ImmortalityRow
+                sandboxSetup={
+                  inSandboxSetup
+                    ? {
+                        onConfigure: () => setSandboxTleilaxuOpen(true),
+                        requiredCount: 2,
+                      }
+                    : undefined
+                }
+              />
+            ) : null}
           </div>
         </div>
       </div>
@@ -2095,6 +2121,13 @@ const GameContent = ({
             onConfirm={handleImperiumRowSetup}
           />
         )}
+        {needsFamilyAtomicsSelection && (
+          <ImperiumRowSelect
+            cards={gameState.imperiumRowDeck}
+            requiredCount={imperiumSelectionCount}
+            onConfirm={handleImperiumRowSetup}
+          />
+        )}
         {needsReplacementSelection && (
           <ImperiumRowSelect
             cards={gameState.imperiumRowDeck}
@@ -2129,6 +2162,19 @@ const GameContent = ({
               setSandboxImperiumOpen(false)
             }}
             onCancel={() => setSandboxImperiumOpen(false)}
+          />
+        )}
+        {inSandboxSetup && sandboxTleilaxuOpen && immortality && (
+          <ImperiumRowSelect
+            cards={[...(gameState.tleilaxuRow ?? []), ...(gameState.tleilaxuRowDeck ?? [])]}
+            requiredCount={2}
+            title="Select 2 Tleilaxu Row Cards"
+            initialSelectedCards={gameState.tleilaxuRow}
+            onConfirm={(cardIds) => {
+              dispatch({ type: 'SANDBOX_SET_TLEILAXU_ROW', cardIds })
+              setSandboxTleilaxuOpen(false)
+            }}
+            onCancel={() => setSandboxTleilaxuOpen(false)}
           />
         )}
         {inSandboxSetup && sandboxTechOpen && riseOfIx && (
@@ -2230,6 +2276,9 @@ const GameContent = ({
               [FactionType.FREMEN]:
                 gameState.factionInfluence[FactionType.FREMEN]?.[sandboxEditPlayer.id] ?? 0,
             }}
+            players={gameState.players}
+            tleilaxuTrackBonusSpice={gameState.tleilaxuTrackBonusSpice}
+            tleilaxuTrackBonusClaimed={gameState.tleilaxuTrackBonusClaimed}
             onUpdate={(patch) =>
               dispatch({ type: 'SANDBOX_UPDATE_PLAYER', playerId: sandboxEditPlayer.id, patch })
             }
@@ -2384,6 +2433,7 @@ const GameContent = ({
                 passCombatLabel={combatFooterActionLabel}
                 onActivateTech={isViewingHistory ? undefined : handleActivateTech}
                 onOpenTechAcquire={isViewingHistory ? undefined : handleOpenTechAcquire}
+                onUseFamilyAtomics={isViewingHistory ? undefined : handleUseFamilyAtomics}
               />
             </div>
           </div>

@@ -36,6 +36,19 @@ describe('Sandbox player editor leader row', () => {
     expect(editorCss).toContain('grid-template-columns: repeat(2, minmax(0, 1fr))')
   })
 
+  it('adds Immortality Tleilaxu and research controls in leader setup', () => {
+    expect(editorTsx).toContain('expansions.immortality')
+    expect(editorTsx).toContain('TLEILAXU_TRACK_MAX_STEP')
+    expect(editorTsx).toContain('/icon/tleilaxu.png')
+    expect(editorTsx).toContain('/icon/specimen.png')
+    expect(editorTsx).toContain('MAX_TROOPS_PER_PLAYER')
+    expect(editorTsx).toContain('aria-label="Set research track"')
+    expect(editorTsx).toContain('choiceNodeIds={RESEARCH_NODE_IDS}')
+    expect(editorTsx).toContain('showChoiceLabels={false}')
+    expect(editorTsx).toContain('researchNodeId: nodeId')
+    expect(editorCss).toContain('.sandbox-player-editor__research-pick')
+  })
+
   it('uses a wider sandbox leader trigger', () => {
     expect(leaderCss).toContain('.leader-select--sandbox .leader-select__trigger')
     expect(leaderCss).toMatch(/\.leader-select--sandbox \.leader-select__trigger \{[\s\S]*?width:\s*8rem/)

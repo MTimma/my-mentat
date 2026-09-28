@@ -287,7 +287,8 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
 }
 
 .selected-card-action-placeholder--intrigue,
-.selected-card-action-placeholder--tech {
+.selected-card-action-placeholder--tech,
+.selected-card-action-placeholder--atomics {
   width: 64px;
   height: 84px;
   min-width: 64px;
@@ -1322,7 +1323,8 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   }
 
   .selected-card-action-placeholder--intrigue,
-  .selected-card-action-placeholder--tech {
+  .selected-card-action-placeholder--tech,
+  .selected-card-action-placeholder--atomics {
     min-width: 72px;
     min-height: 96px;
   }
@@ -3419,7 +3421,8 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   }
 
   .selected-card-inline-slot.selected-card-action-placeholder--intrigue,
-  .selected-card-inline-slot.selected-card-action-placeholder--tech {
+  .selected-card-inline-slot.selected-card-action-placeholder--tech,
+  .selected-card-inline-slot.selected-card-action-placeholder--atomics {
     width: 45px;
     min-height: 55px;
     height: 55px;
@@ -3478,7 +3481,8 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   }
 
   .selected-card-action-placeholder--intrigue,
-  .selected-card-action-placeholder--tech {
+  .selected-card-action-placeholder--tech,
+  .selected-card-action-placeholder--atomics {
     width: 45px;
     height: 59px;
     min-width: 45px;
@@ -3486,7 +3490,8 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   }
 
   .selected-card-action-placeholder--intrigue .selected-card-action-intrigue-icon,
-  .selected-card-action-placeholder--tech .selected-card-action-tech-icon {
+  .selected-card-action-placeholder--tech .selected-card-action-tech-icon,
+  .selected-card-action-placeholder--atomics .family-atomics-button__icon {
     width: 94%;
     max-width: none;
     height: auto;

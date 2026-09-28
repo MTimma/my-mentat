@@ -1,0 +1,62 @@
+.imperium-row-discard {
+  position: relative;
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: clamp(52px, 7vw, 78px);
+  margin: 0;
+  padding: 2px;
+  border: 1px solid var(--chrome-imperium-card-border, rgba(255, 255, 255, 0.2));
+  border-radius: 8px;
+  background: var(--card-art-backing, #0f0d0a);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.imperium-row-discard__face {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  pointer-events: none;
+}
+
+.imperium-row-discard__count {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 1.2em;
+  padding: 0.1em 0.28em;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.imperium-row-discard__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px;
+}
+
+.imperium-row-discard__card {
+  width: min(140px, 28vw);
+  height: auto;
+  border-radius: 8px;
+}
+
+.imperium-row-discard__close {
+  display: block;
+  margin: 8px auto 4px;
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}

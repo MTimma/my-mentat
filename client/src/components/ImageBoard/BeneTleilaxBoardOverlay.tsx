@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import { useGame } from '../../components/GameContext/gameContextState'
 import BeneTleilaxBoardPanel, { type BeneTleilaxBoardPlacement } from './BeneTleilaxBoardPanel'
 import BeneTleilaxBoardModal from './BeneTleilaxBoardModal'
@@ -40,7 +41,7 @@ const BeneTleilaxBoardOverlay: React.FC<BeneTleilaxBoardOverlayProps> = ({
         ].join(' ')}
         onClick={() => setModalOpen(true)}
         aria-label="Open Bene Tleilax board"
-        title="Click to open Bene Tleilax board"
+        title={withImageZoomHint('Click to open Bene Tleilax board')}
       >
         <BeneTleilaxBoardPanel
           players={players}

@@ -1,14 +1,12 @@
 # Use system/Homebrew SQLite for sqlx (needs 3.53+ for JSONB).
-# macOS (Homebrew): paths below.
-# Linux VPS: install SQLite to /usr/local (ops/install-sqlite-353.sh) and set in
-#   /etc/my-mentat.env: SQLITE3_LIB_DIR, SQLITE3_INCLUDE_DIR, PKG_CONFIG_PATH
-[env]
-LIBSQLITE3_SYS_USE_PKG_CONFIG = { value = "1", force = true }
-
+# macOS (Homebrew): explicit paths — pkg-config only returns -lsqlite3 and links the wrong lib.
+# Linux VPS: ops/install-sqlite-353.sh + /etc/my-mentat.env (PKG_CONFIG_PATH, SQLITE3_*).
 [target.aarch64-apple-darwin.env]
-SQLITE3_LIB_DIR = { value = "/opt/homebrew/opt/sqlite/lib", force = true }
-SQLITE3_INCLUDE_DIR = { value = "/opt/homebrew/opt/sqlite/include", force = true }
+LIBSQLITE3_SYS_USE_PKG_CONFIG = "0"
+SQLITE3_LIB_DIR = "/opt/homebrew/opt/sqlite/lib"
+SQLITE3_INCLUDE_DIR = "/opt/homebrew/opt/sqlite/include"
 
 [target.x86_64-apple-darwin.env]
-SQLITE3_LIB_DIR = { value = "/usr/local/opt/sqlite/lib", force = true }
-SQLITE3_INCLUDE_DIR = { value = "/usr/local/opt/sqlite/include", force = true }
+LIBSQLITE3_SYS_USE_PKG_CONFIG = "0"
+SQLITE3_LIB_DIR = "/usr/local/opt/sqlite/lib"
+SQLITE3_INCLUDE_DIR = "/usr/local/opt/sqlite/include"

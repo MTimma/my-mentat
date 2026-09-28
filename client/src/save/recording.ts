@@ -89,6 +89,7 @@ export const REPLAYABLE_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
   'CLAIM_ALL_REWARDS',
   'RESET_IMPERIUM_ROW',
   'SELECT_IMPERIUM_REPLACEMENT',
+  'USE_FAMILY_ATOMICS',
   'OPPONENT_DISCARD_CHOICE',
   'OPPONENT_DISCARD_CARD',
   'OPPONENT_DISCARD_CARDS',
@@ -99,6 +100,7 @@ export const REPLAYABLE_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
   'SANDBOX_SET_CONFLICT',
   'SANDBOX_SET_CONFLICTS_DISCARD',
   'SANDBOX_SET_IMPERIUM_ROW',
+  'SANDBOX_SET_TLEILAXU_ROW',
   'SANDBOX_SET_IX_BOARD_TOP',
   'SANDBOX_UPDATE_PLAYER',
   'SANDBOX_SET_CONTROL_MARKER',
@@ -119,6 +121,7 @@ export function isReplayable(action: GameAction): boolean {
 /** Sandbox setup edits maintain history[0] in the reducer; event replay only snapshots on commit. */
 export const SANDBOX_SETUP_HISTORY_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
   'SANDBOX_SET_IMPERIUM_ROW',
+  'SANDBOX_SET_TLEILAXU_ROW',
   'SANDBOX_SET_CONFLICT',
   'SANDBOX_SET_CONFLICTS_DISCARD',
   'SANDBOX_SET_CONTROL_MARKER',

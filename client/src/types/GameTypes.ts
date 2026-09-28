@@ -728,6 +728,8 @@ export interface GameState {
   foldspaceDeck: Card[]
   imperiumRowDeck: Card[]
   imperiumRow: Card[]
+  /** Imperium Row cards removed from play (Family Atomics). Not available to refill the row. */
+  imperiumRowDiscard?: Card[]
   intrigueDeck: IntrigueCard[]
   intrigueDiscard: IntrigueCard[]
   conflictsDiscard: ConflictCard[]
@@ -777,6 +779,8 @@ export interface GameState {
   blockedSpaces?: Array<{ spaceId: number; playerId: number }> // Spaces blocked by The Voice
   // Pending Imperium Row replacement: when a card is acquired, track the index where replacement is needed
   pendingImperiumRowReplacement: { cardIndex: number } | null
+  /** Immortality — Family Atomics emptied the Imperium Row; the player must pick the new row. */
+  pendingFamilyAtomicsRefresh?: boolean
   // Pending conflict reward choices: when a conflict reward requires player choice (e.g. Cloak and Dagger 3rd, Machinations 1st)
   pendingConflictRewardChoices?: Array<{
     id: string

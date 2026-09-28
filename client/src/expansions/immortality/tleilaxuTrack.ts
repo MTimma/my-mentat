@@ -10,7 +10,7 @@ import type { TleilaxuTrackSpace } from './types'
  */
 export const TLEILAXU_TRACK: TleilaxuTrackSpace[] = [
   { step: 0 },
-  { step: 1, bonus: { spice: 1 } },
+  { step: 1 },
   { step: 2, bonus: { solari: 2 } },
   { step: 3, bonus: { troops: 1 } },
   // VP space — first player to reach it also takes the 2 setup spice.

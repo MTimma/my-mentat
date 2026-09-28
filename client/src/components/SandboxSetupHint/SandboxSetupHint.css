@@ -77,6 +77,21 @@
   max-width: min(36ch, 52%);
 }
 
+.sandbox-setup-hint--tleilaxu-row {
+  width: max-content;
+  max-width: min(32ch, calc(46% - 18ch));
+}
+
+.sandbox-setup-hint--tleilaxu-row.sandbox-setup-hint--oneline {
+  max-width: none;
+  white-space: nowrap;
+}
+
+.sandbox-setup-hint--stacked .sandbox-setup-hint__text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .sandbox-setup-hint--large {
   max-width: min(36ch, 42vw);
   padding: 10px 12px;

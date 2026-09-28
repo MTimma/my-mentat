@@ -261,6 +261,85 @@
   cursor: not-allowed;
 }
 
+.sandbox-player-editor__research-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.sandbox-player-editor__research-pick-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 18px;
+}
+
+.sandbox-player-editor__research-pick-icon img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.sandbox-player-editor__research-pick-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 3px 4px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 248, 232, 0.12);
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #fff8e8;
+}
+
+.sandbox-player-editor__research-pick:hover .sandbox-player-editor__research-pick-value,
+.sandbox-player-editor__research-pick:focus-visible .sandbox-player-editor__research-pick-value {
+  border-color: rgba(212, 177, 106, 0.65);
+}
+
+.sandbox-player-editor__research-dialog {
+  background: #2a1f33;
+  border: 1px solid rgba(200, 170, 220, 0.5);
+  border-radius: 10px;
+  padding: 12px 14px 14px;
+  width: min(96vw, 760px);
+  max-height: min(94dvh, 100%);
+  overflow: auto;
+  box-sizing: border-box;
+  color: #e8dcf0;
+}
+
+.sandbox-player-editor__research-dialog h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.sandbox-player-editor__research-dialog .bene-tleilax-board--stacked {
+  max-width: 100%;
+}
+
+.sandbox-player-editor__research-close {
+  margin-top: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(200, 170, 220, 0.4);
+  background: transparent;
+  color: #e8dcf0;
+  cursor: pointer;
+}
+
 /* Deck editor overlay sits on top of the player editor */
 .sandbox-player-editor__deck-overlay {
   position: absolute;

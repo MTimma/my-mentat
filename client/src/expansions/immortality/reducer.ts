@@ -99,7 +99,7 @@ export function advanceTleilaxuTrack(
  * Advance the research token by `count`. Moves automatically through single
  * branches (applying node bonuses); when a branch fork is reached, records a
  * `pendingResearchAdvance` for the UI to resolve via ADVANCE_RESEARCH. Once the
- * track is complete, each further advance draws a card (gene-unlock 2 rule).
+ * token is on a gene level 2 node, each further advance draws a card.
  */
 export function advanceResearch(
   state: GameState,
@@ -117,7 +117,7 @@ export function advanceResearch(
     const nodeId = player.researchNodeId
 
     if (isResearchComplete(nodeId)) {
-      // Gene unlock 2: Research draws a card instead of advancing.
+      // Gene level 2: Research draws a card instead of advancing.
       next = applyReward(next, { drawCards: 1 }, playerId, IMMORTALITY_SOURCE.research)
       remaining -= 1
       continue

@@ -4,8 +4,10 @@ import './SandboxSetupControls.css'
 export interface SandboxSetupControlsProps {
   ready: boolean
   riseOfIx?: boolean
+  immortality?: boolean
   leadersDone: boolean
   imperiumRowDone: boolean
+  tleilaxuRowDone?: boolean
   techTilesDone: boolean
   conflictDone: boolean
   onCommit: () => void
@@ -14,24 +16,36 @@ export interface SandboxSetupControlsProps {
   compact?: boolean
 }
 
+function commitBlockedHintText(riseOfIx: boolean, immortality: boolean): string {
+  const pieces = [
+    'a leader for each player',
+    '5 imperium row cards',
+    ...(immortality ? ['2 Tleilaxu row cards'] : []),
+    ...(riseOfIx ? ['3 tech tiles'] : []),
+    'a conflict card',
+  ]
+  return `Pick ${pieces.slice(0, -1).join(', ')}, and ${pieces[pieces.length - 1]} first`
+}
+
 const SandboxSetupControls: React.FC<SandboxSetupControlsProps> = ({
   ready,
   riseOfIx = false,
+  immortality = false,
   leadersDone,
   imperiumRowDone,
+  tleilaxuRowDone = false,
   techTilesDone,
   conflictDone,
   onCommit,
   onBrowse,
   compact = false,
 }) => {
-  const commitBlockedHint = riseOfIx
-    ? 'Pick a leader for each player, 5 imperium row cards, 3 tech tiles, and a conflict card first'
-    : 'Pick a leader for each player, 5 imperium row cards, and a conflict card first'
+  const commitBlockedHint = commitBlockedHintText(riseOfIx, immortality)
 
   const setupSteps = [
     { key: 'leaders', label: 'Leaders', done: leadersDone },
     { key: 'imperium-row', label: 'Imperium row', done: imperiumRowDone },
+    ...(immortality ? [{ key: 'tleilaxu-row', label: 'Tleilaxu row', done: tleilaxuRowDone }] : []),
     ...(riseOfIx ? [{ key: 'tech-tiles', label: 'Tech tiles', done: techTilesDone }] : []),
     { key: 'conflict', label: 'Conflict', done: conflictDone },
   ] as const

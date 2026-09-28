@@ -13,7 +13,7 @@ export const RESEARCH_START_NODE_ID = 'r0'
 
 export const RESEARCH_NODES: Record<string, ResearchNode> = {
   r0: { id: 'r0', next: ['r1'] },
-  r1: { id: 'r1', bonus: { water: 1 }, next: ['r2a', 'r2b'] },
+  r1: { id: 'r1', bonus: { specimen: 1 }, next: ['r2a', 'r2b'] },
   r2a: { id: 'r2a', bonus: { spice: 1 }, next: ['r3'] },
   r2b: { id: 'r2b', bonus: { solari: 2 }, next: ['r3'] },
   // First genetic marker.
@@ -39,7 +39,29 @@ export function nextResearchNodes(nodeId: string | undefined): string[] {
   return researchNode(nodeId).next
 }
 
-/** True once the token has reached the final (level-2) node. */
+/** True while the token sits on a second genetic marker. Further Research draws a card. */
 export function isResearchComplete(nodeId: string | undefined): boolean {
-  return nextResearchNodes(nodeId).length === 0
+  return geneLevelForNode(nodeId) >= 2
+}
+
+/** First genetic marker. Nodes from here forward (following `next`) have reached it. */
+export const FIRST_GENETIC_MARKER_NODE_ID = 'r3'
+
+/** True when the token is on `targetId` or on a node reached by moving forward from it. */
+export function isResearchAtOrAfter(nodeId: string | undefined, targetId: string): boolean {
+  const current = nodeId ?? RESEARCH_START_NODE_ID
+  const seen = new Set<string>()
+  const pending = [targetId]
+  while (pending.length > 0) {
+    const id = pending.pop()!
+    if (id === current) return true
+    if (seen.has(id)) continue
+    seen.add(id)
+    pending.push(...researchNode(id).next)
+  }
+  return false
+}
+
+export function hasFirstGeneticMarker(nodeId: string | undefined): boolean {
+  return isResearchAtOrAfter(nodeId, FIRST_GENETIC_MARKER_NODE_ID)
 }
