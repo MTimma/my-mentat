@@ -246,7 +246,7 @@ describe('playAreaDisplay', () => {
     } as GameState
 
     expect([...playAreaCardIdsWithPendingEffectChoice(gameState)].sort((a, b) => a - b)).toEqual([
-      9, 11, 42,
+      9, 42,
     ])
     expect(playAreaCardIdsWithPendingEffectChoice(gameState, { isHistoryView: true }).size).toBe(0)
     expect(playAreaCardIdsWithPendingEffectChoice(undefined).size).toBe(0)

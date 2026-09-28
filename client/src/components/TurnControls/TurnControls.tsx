@@ -35,6 +35,7 @@ import {
 } from '../GameContext/riseOfIx/techTurnControlsUi'
 import { canPlayDiversion, canPlayStrongarm } from '../GameContext/riseOfIx/intrigue'
 import PlayerTechModal from '../PlayerTechModal/PlayerTechModal'
+import FamilyAtomicsButton from '../../expansions/immortality/components/FamilyAtomicsButton'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import FreighterIcon, { freighterArrowDirectionFromCustom } from '../FreighterIcon/FreighterIcon'
@@ -156,6 +157,7 @@ interface TurnControlsProps {
   onPassCombat?: () => void
   onActivateTech?: (playerId: number, tileId: TechTileId) => void
   onOpenTechAcquire?: (sourceId: string) => void
+  onUseFamilyAtomics?: (playerId: number) => void
   endTurnDisabled?: boolean
   endTurnTitle?: string
   passCombatLabel?: string
@@ -235,6 +237,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
   onPassCombat,
   onActivateTech,
   onOpenTechAcquire,
+  onUseFamilyAtomics,
   endTurnDisabled = false,
   endTurnTitle,
   passCombatLabel = 'Pass Combat',
@@ -1773,9 +1776,6 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     return rewardNeedsInteractionHighlight(reward.reward)
   }
 
-  const optionalEffectNeedsPlayerInput = (effect: OptionalEffect): boolean =>
-    isAffordable(effect.cost, effect.reward)
-
   const effectCardHasPendingInput = (effectCard: EffectCard | undefined): boolean => {
     if (!effectCard) return false
     if (riseOfIx && activePlayer && gameState && !isHistoryView) {
@@ -1784,11 +1784,11 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
         activePlayer.id,
         effectCard.source
       )
-      if (techAcquire) return true
+      // Optional acquire (e.g. signet pay-cost) must not glow the played card.
+      if (techAcquire && !techAcquire.pendingOptionalEffectId) return true
     }
     return (
       effectCard.rewards.some(pendingRewardNeedsPlayerInput) ||
-      effectCard.optional.some(optionalEffectNeedsPlayerInput) ||
       effectCard.choices.some(c => !c.disabled)
     )
   }
@@ -2830,6 +2830,19 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     )
   }
 
+  const renderFamilyAtomicsButton = () => {
+    if (!gameState?.expansions?.immortality || !activePlayer) return null
+    const used = Boolean(activePlayer.familyAtomicsUsed)
+    return (
+      <FamilyAtomicsButton
+        variant="turn"
+        used={used}
+        disabled={!canEdit || isSandboxSetup || isHistoryView || used}
+        onClick={() => onUseFamilyAtomics?.(activePlayer.id)}
+      />
+    )
+  }
+
   const renderIntegratedEffects = (
     effectCards: EffectCard[],
     visibleCardIds: Set<number>,
@@ -3731,6 +3744,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 )}
                 {!isHistoryView && !isEndGame && renderIntrigueActionButton()}
                 {renderTechActionButton()}
+                {renderFamilyAtomicsButton()}
               </div>
             )}
           </div>

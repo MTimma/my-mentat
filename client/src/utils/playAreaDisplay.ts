@@ -110,7 +110,8 @@ function pendingRewardNeedsPlayerInput(reward: PendingReward): boolean {
 }
 
 /**
- * Play-area card ids that still need a player choice (OR, optional, interactive reward).
+ * Play-area card ids that still need a mandatory player resolution (OR choice, interactive reward).
+ * Optional arrow-cost effects (e.g. Baron signet) do not highlight the played card.
  * Same highlight gate as TurnControls `turn-card-frame--has-effects`.
  *
  * Ids are catalog ids, not per-player instance ids — every Signet Ring is `10`.
@@ -130,9 +131,6 @@ function playAreaSourceIdsWithPendingEffectChoice(
 
   for (const choice of gameState.currTurn?.pendingChoices ?? []) {
     if (!choice.disabled) addMatchingSource(choice.source)
-  }
-  for (const effect of gameState.currTurn?.optionalEffects ?? []) {
-    addMatchingSource(effect.source)
   }
   for (const reward of gameState.pendingRewards ?? []) {
     if (pendingRewardNeedsPlayerInput(reward)) addMatchingSource(reward.source)
