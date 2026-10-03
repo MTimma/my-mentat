@@ -22,6 +22,13 @@ function placeOrdinal(place: number): string {
   return `${place}th`
 }
 
+function placeSuffix(place: number): string {
+  if (place === 1) return 'st'
+  if (place === 2) return 'nd'
+  if (place === 3) return 'rd'
+  return 'th'
+}
+
 export const CombatRankChip: React.FC<{
   entry: CombatRankEntry
   riseOfIx: boolean
@@ -84,6 +91,95 @@ export const CombatRankChip: React.FC<{
   )
 }
 
+function memberForcesLabel(entry: CombatRankEntry, riseOfIx: boolean): string {
+  return `${entry.troops} troops${riseOfIx ? `, ${entry.dreadnoughts} dreadnoughts` : ''}`
+}
+
+/** One reward box. Tied players stack inside it and share one strength. */
+const BoardRankBox: React.FC<{
+  entries: CombatRankEntry[]
+  riseOfIx: boolean
+  activePlayerId: number
+}> = ({ entries, riseOfIx, activePlayerId }) => {
+  const place = entries[0]?.place ?? 0
+  const total = entries[0]?.strength ?? 0
+  const tied = entries.length > 1
+  const solo = entries.length === 1 ? entries[0] : null
+  const title = entries
+    .map(entry => `${entry.player.leader.name}: ${memberForcesLabel(entry, riseOfIx)}`)
+    .join('; ')
+  return (
+    <div
+      className={[
+        'combat-rank-strip__chip',
+        solo ? `combat-rank-strip__chip--${solo.player.color}` : '',
+        tied ? 'combat-rank-strip__chip--tied' : '',
+        entries.some(entry => entry.player.id === activePlayerId)
+          ? 'combat-rank-strip__chip--active'
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      title={`${place}. ${title}, ${total} strength`}
+      data-place={place}
+      data-tie-count={entries.length}
+    >
+      <span className="combat-rank-strip__strength" aria-hidden="true">
+        <img src="/icon/sword.png" alt="" className="combat-rank-strip__icon" />
+        <span className="combat-rank-strip__value combat-rank-strip__value--strength">{total}</span>
+      </span>
+      <span className="combat-rank-strip__members">
+        {entries.map(entry => {
+          const iconPath = getLeaderIconPath(entry.player.leader.name)
+          return (
+            <span
+              key={entry.player.id}
+              className={[
+                'combat-rank-strip__member',
+                `combat-rank-strip__member--${entry.player.color}`,
+                entry.player.id === activePlayerId ? 'combat-rank-strip__member--active' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              data-player-id={entry.player.id}
+            >
+              <span className={`combat-rank-strip__leader leader-avatar-btn ${entry.player.color}`}>
+                {iconPath ? (
+                  <img
+                    src={iconPath}
+                    alt=""
+                    className="combat-rank-strip__leader-icon"
+                    draggable={false}
+                  />
+                ) : (
+                  <span className="combat-rank-strip__leader-fallback">
+                    {entry.player.leader.name.charAt(0)}
+                  </span>
+                )}
+              </span>
+              <span className="combat-rank-strip__forces" aria-hidden="true">
+                <span className="combat-rank-strip__stat">
+                  <img src="/icon/troop.png" alt="" className="combat-rank-strip__icon" />
+                  <span className="combat-rank-strip__value">{entry.troops}</span>
+                </span>
+                {riseOfIx ? (
+                  <span className="combat-rank-strip__stat">
+                    <DreadnoughtIcon
+                      playerId={entry.player.id}
+                      className="combat-rank-strip__icon combat-rank-strip__icon--dreadnought"
+                    />
+                    <span className="combat-rank-strip__value">{entry.dreadnoughts}</span>
+                  </span>
+                ) : null}
+              </span>
+            </span>
+          )
+        })}
+      </span>
+    </div>
+  )
+}
+
 const CombatRankStrip: React.FC<CombatRankStripProps> = ({
   players,
   troops,
@@ -98,8 +194,8 @@ const CombatRankStrip: React.FC<CombatRankStripProps> = ({
     [players, troops, strength, riseOfIx]
   )
 
-  const occupied = slots.some(slot => slot.entry != null)
-  if (!occupied) return null
+  // Slot data is place 4 → place 1. The column reads top → bottom, place 1 first.
+  const slotsTopFirst = [...slots].reverse()
 
   return (
     <div
@@ -112,34 +208,41 @@ const CombatRankStrip: React.FC<CombatRankStripProps> = ({
       role="list"
       aria-label="Combat rankings"
     >
-      {slots.map(slot => {
-        const { slotPlace, entry } = slot
-        const labelPlace = entry?.place ?? slotPlace
-        const occupiedLabel = entry
-          ? `${placeOrdinal(entry.place)} place, ${entry.player.leader.name}, ${entry.troops} troops${
-              riseOfIx ? `, ${entry.dreadnoughts} dreadnoughts` : ''
-            }, ${entry.strength} strength`
-          : `${placeOrdinal(slotPlace)} place, empty`
+      {slotsTopFirst.map(slot => {
+        const { slotPlace, entries } = slot
+        const occupiedLabel =
+          entries.length > 0
+            ? `${placeOrdinal(entries[0].place)} place, ${entries
+                .map(entry => `${entry.player.leader.name}, ${memberForcesLabel(entry, riseOfIx)}`)
+                .join('; ')}, ${entries[0].strength} strength`
+            : `${placeOrdinal(slotPlace)} place, empty`
         return (
           <div
             key={slotPlace}
             className={`combat-rank-strip__slot combat-rank-strip__slot--place-${slotPlace}`}
             data-slot-place={slotPlace}
-            data-reward-place={entry?.place ?? undefined}
+            data-reward-place={entries[0]?.place ?? undefined}
             role="listitem"
             aria-label={occupiedLabel}
           >
             <span
-              className={`combat-rank-strip__slot-label combat-rank-strip__slot-label--${labelPlace}`}
+              className={`combat-rank-strip__corner combat-rank-strip__corner--${slotPlace}`}
               aria-hidden="true"
             >
-              {labelPlace}
+              {slotPlace}
+              <sup>{placeSuffix(slotPlace)}</sup>
             </span>
-            {entry ? (
-              <CombatRankChip
-                entry={entry}
+            {entries.length > 1 ? (
+              <BoardRankBox
+                entries={entries}
                 riseOfIx={riseOfIx}
-                isActive={entry.player.id === activePlayerId}
+                activePlayerId={activePlayerId}
+              />
+            ) : entries.length === 1 ? (
+              <CombatRankChip
+                entry={entries[0]}
+                riseOfIx={riseOfIx}
+                isActive={entries[0].player.id === activePlayerId}
               />
             ) : (
               <div className="combat-rank-strip__chip combat-rank-strip__chip--empty" />

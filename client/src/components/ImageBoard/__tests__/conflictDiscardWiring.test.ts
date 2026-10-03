@@ -9,14 +9,10 @@ describe('Conflict discard pile wiring', () => {
   const appTsx = readFileSync(resolve(root, 'App.tsx'), 'utf8')
   const css = readFileSync(resolve(root, 'components/ImageBoard/ImageBoard.css'), 'utf8')
 
-  it('places the discard pile to the right of the current conflict card', () => {
-    expect(anchors).toContain('CONFLICT_DISCARD_RECT')
-    expect(anchors).toMatch(/CONFLICT_CARD_RECT\.left \+ CONFLICT_CARD_RECT\.width/)
-    expect(imageBoard).toContain('CONFLICT_DISCARD_RECT')
-    expect(imageBoard).toContain('data-marker="conflict-discard"')
-    expect(imageBoard).toContain('onConflictDiscardClick')
-    expect(anchors).toMatch(/width:\s*CONFLICT_CARD_RECT\.width/)
-    expect(anchors).toMatch(/height:\s*CONFLICT_CARD_RECT\.height/)
+  it('does not render a conflict discard pile on the board', () => {
+    expect(imageBoard).not.toContain('data-marker="conflict-discard"')
+    expect(imageBoard).not.toContain('image-board__conflict-discard')
+    expect(imageBoard).not.toContain('CONFLICT_DISCARD_RECT')
   })
 
   it('sandbox setup can edit the discard pile and play can view it', () => {
@@ -27,21 +23,7 @@ describe('Conflict discard pile wiring', () => {
     expect(appTsx).toContain('isConflictInDiscard')
   })
 
-  it('shows a count badge on the discard pile', () => {
-    expect(css).toContain('.image-board__conflict-discard-count')
-    expect(imageBoard).toContain('image-board__conflict-discard-count')
-  })
-
-  it('tints the previous-conflicts slot when the pile has cards', () => {
-    expect(imageBoard).toContain("discardCount > 0 ? 'image-board__conflict-discard--filled' : ''")
-    expect(css).toContain('.image-board__conflict-discard--filled')
-  })
-
-  it('hides the empty discard slot outside sandbox setup', () => {
-    expect(imageBoard).toContain('if (discardCount === 0 && !sandboxSetup) return null')
-  })
-
-  it('resets native button padding so play-mode discard is not a mini thumbnail', () => {
+  it('resets native button padding so the conflict panel is not a mini thumbnail', () => {
     expect(css).toMatch(/button\.image-board__conflict-panel \{[\s\S]*?padding:\s*0/)
     expect(css).toMatch(/\.image-board__conflict-card-img \{[\s\S]*?position:\s*absolute/)
   })

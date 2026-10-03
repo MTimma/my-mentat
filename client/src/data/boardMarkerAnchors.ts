@@ -120,6 +120,12 @@ export const CONFLICT_DISCARD_RECT = {
 } as const
 
 /**
+ * Center of the "Board decks & discards" button (inner %).
+ * Tune with `?markerDebug=1`.
+ */
+export const BOARD_DECKS_BUTTON_ANCHOR = { x: 44, y: 23 } as const
+
+/**
  * Combat conflict rings (inner %, ring center). 2×2 on crossed swords:
  * Clockwise: red TL, green TR, yellow BR, blue BL. Tune with ?markerDebug=1.
  *
@@ -160,28 +166,49 @@ export const COMBAT_DEPLOY_DOCK_RECT = {
     (CONFLICT_CARD_RECT.top + CONFLICT_CARD_RECT.height),
 } as const
 
+/** Right edge of the current conflict card + discard pile (inner %). */
+const CONFLICT_CARDS_RIGHT = CONFLICT_DISCARD_RECT.left + CONFLICT_DISCARD_RECT.width
+
 /**
- * Ranked combat strip on the board stage (desktop + mobile).
- * Baseline mid-size was left 47 / top 93 / width 42 / height 7.
- * Widened so 4 chips fit with no scroll (cap 1.5× width = 63, 2× height = 14).
- * left 40 sits 1% right of conflict card (ends 39); width 60 meets the board edge.
- * Height 12 (cap 14) for 2-zone chips + podium labels; top 88 keeps bottom at 100.
+ * Vertical combat rank column, in the sand gap right of the conflict cards
+ * and left of the Ix panel (left 60). Discard ends at 48.35; column is
+ * 49.95–58.95 so it clears both. Top 58 is below Hagga / Sietch.
  * Tune with ?markerDebug=1.
  */
 export const COMBAT_RANK_STRIP_RECT = {
-  left: 40,
-  top: 88,
-  width: 60,
-  height: 12,
+  left: CONFLICT_CARDS_RIGHT + 1.6,
+  top: 58,
+  width: 9,
+  height: 40,
+} as const
+
+/**
+ * Logging layout. One conflict card covers both piles, the sand above them,
+ * and the Round Start … Recall text. Stops just before the Ix panel (left 60).
+ * 1st/2nd/3rd placements share that height on the card's right edge;
+ * 4th is the same band below the card.
+ */
+export const PLAY_CONFLICT_CARD_RECT = {
+  left: CONFLICT_CARD_RECT.left,
+  top: 64,
+  width: 29.5,
+  height: 27,
+} as const
+
+export const PLAY_COMBAT_RANK_STRIP_RECT = {
+  left: PLAY_CONFLICT_CARD_RECT.left + PLAY_CONFLICT_CARD_RECT.width - 10,
+  top: PLAY_CONFLICT_CARD_RECT.top,
+  width: 10,
+  height: 36,
 } as const
 
 /** Effect-retreat dock vertical anchor (inner % Y); X is in App.css `.effect-retreat-troop-dock__anchor`. */
 export const COMBAT_STRENGTH_ORIGIN = { x: 58, y: 72 }
 
 export const CONTROL_MARKER_POINTS: Record<ControlMarkerType, { x: number; y: number }> = {
-  [ControlMarkerType.ARRAKIN]: { x: 78.1, y: 33.7 },
-  [ControlMarkerType.CARTHAG]: { x: 60.8, y: 36.9 },
-  [ControlMarkerType.IMPERIAL_BASIN]: { x: 76.8, y: 48.7 },
+  [ControlMarkerType.ARRAKIN]: { x: 78.2, y: 34 },
+  [ControlMarkerType.CARTHAG]: { x: 60.9, y: 37.2 },
+  [ControlMarkerType.IMPERIAL_BASIN]: { x: 76.9, y: 49 },
 }
 
 /**

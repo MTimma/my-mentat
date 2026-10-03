@@ -39,8 +39,10 @@ import {
   BOARD_MARKER_VP_MAX_STEPS,
   HIGH_COUNCIL_SLOTS,
   CONFLICT_CARD_RECT,
-  CONFLICT_DISCARD_RECT,
+  BOARD_DECKS_BUTTON_ANCHOR,
   COMBAT_RANK_STRIP_RECT,
+  PLAY_CONFLICT_CARD_RECT,
+  PLAY_COMBAT_RANK_STRIP_RECT,
   COMBAT_RING_ANCHORS,
   COMBAT_AREA_BOUNDS,
   CONTROL_MARKER_POINTS,
@@ -60,6 +62,8 @@ import {
   stageRect,
 } from '../../data/boardMarkerAnchors'
 import { isTessiaLeader, hasOnTrackSnooper } from '../../data/leaderAbilities/tessiaSnoopers'
+import { listBoardDeckPiles } from '../../utils/boardDeckPiles'
+import BoardDecksModal from './BoardDecksModal'
 import type { InfluenceBoardMode } from '../../utils/influenceBoardChoice'
 import SellMelangePopup from '../SellMelangePopup/SellMelangePopup'
 import BoardAgentFigure from '../AgentIcon/AgentIcon'
@@ -90,6 +94,7 @@ import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
 import { expansionOverlaysFor } from '../../expansions/registry'
 import { DEFAULT_PLAYER_COLORS, playerColorHex, playerMarkerHex } from '../../utils/playerColors'
 import { areAllLeadersAssigned } from '../../data/leaders'
+import '../SandboxSessionBar/SandboxSessionBar.css'
 import './ImageBoard.css'
 
 interface SellMelangeData {
@@ -191,8 +196,6 @@ interface ImageBoardProps {
   showBoardInfoTips?: boolean
   /** Desktop: Ix panel docked beside board; mobile: embedded on board art. */
   ixBoardPlacement?: IxBoardPlacement
-  /** Mobile embedded RoI board rect on Board.jpg. */
-  ixBoardMobileEmbedded?: boolean
   /** Desktop: Bene Tleilax panel docked beside board; mobile: stacked below. */
   immortalityBoardPlacement?: BeneTleilaxBoardPlacement
   /** Desktop: leader cluster on board; mobile: horizontal strip below the board; desktop dock: under Ix. */
@@ -269,11 +272,9 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   dreadnoughtDeploy,
   specimenDeploy,
   sandboxSetup,
-  onConflictDiscardClick,
   influenceSelection,
   showBoardInfoTips = true,
   ixBoardPlacement = 'embedded',
-  ixBoardMobileEmbedded = false,
   immortalityBoardPlacement = 'stacked',
   combatAreaPlacement = 'overlay',
   pendingAcquireTech,
@@ -296,18 +297,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null)
   const [imgError, setImgError] = useState(false)
   const [conflictImgFailed, setConflictImgFailed] = useState(false)
-  const [conflictDiscardImgFailed, setConflictDiscardImgFailed] = useState(false)
+  const [boardDecksOpen, setBoardDecksOpen] = useState(false)
 
   useEffect(() => {
     setConflictImgFailed(false)
   }, [currentConflict?.id])
-
-  const discardCards = gameStateForMarkers.conflictsDiscard ?? []
-  const topDiscard = discardCards.length > 0 ? discardCards[discardCards.length - 1] : undefined
-
-  useEffect(() => {
-    setConflictDiscardImgFailed(false)
-  }, [topDiscard?.id])
 
   const blockedSpaceMap = new Map<number, number>()
   blockedSpaces.forEach(entry => blockedSpaceMap.set(entry.spaceId, entry.playerId))
@@ -497,9 +491,10 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     gameStateForMarkers.highCouncilSeatOrder
   )
 
-  const conflictBox = stageRect(CONFLICT_CARD_RECT)
-  const conflictDiscardBox = stageRect(CONFLICT_DISCARD_RECT)
-  const rankStripBox = stageRect(COMBAT_RANK_STRIP_RECT)
+  const loggingLayout = !sandboxSetup
+  const boardDecksPoint = stagePoint(BOARD_DECKS_BUTTON_ANCHOR.x, BOARD_DECKS_BUTTON_ANCHOR.y)
+  const conflictBox = stageRect(loggingLayout ? PLAY_CONFLICT_CARD_RECT : CONFLICT_CARD_RECT)
+  const rankStripBox = stageRect(loggingLayout ? PLAY_COMBAT_RANK_STRIP_RECT : COMBAT_RANK_STRIP_RECT)
   const hasConflict = Boolean(currentConflict && currentConflict.id > 0)
   const inActivePlay =
     players.length > 0 &&
@@ -554,7 +549,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         hotspotDebug={hotspotDebug}
         blockedSpaceMap={blockedSpaceMap}
         placement={ixBoardPlacement}
-        mobileEmbeddedOverlay={ixBoardMobileEmbedded}
         historyHighlightSpaceId={ixHistoryHighlightSpaceId}
         sandboxTechSetup={
           sandboxSetup?.onTechTilesClick
@@ -646,9 +640,9 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     riseOfIx,
   }
 
-  // Desktop + mobile: same board-stage overlay under RoI (COMBAT_RANK_STRIP_RECT).
+  // Ranking boxes start once logging begins. Setup keeps the conflict picker only.
   const combatRankStrip =
-    showCombatArea ? (
+    showCombatArea && loggingLayout ? (
       <CombatRankStrip
         {...combatRankStripProps}
         className="image-board__combat-rank-strip"
@@ -701,6 +695,24 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           ))}
 
           <div className="image-board__overlay">
+          <button
+            type="button"
+            className="sandbox-session-bar__btn image-board__board-decks-btn"
+            data-marker="board-decks"
+            style={{ left: `${boardDecksPoint.x}%`, top: `${boardDecksPoint.y}%` }}
+            onClick={event => {
+              event.stopPropagation()
+              setBoardDecksOpen(true)
+            }}
+          >
+            Board decks & discards
+          </button>
+          {boardDecksOpen ? (
+            <BoardDecksModal
+              piles={listBoardDeckPiles(gameStateForMarkers)}
+              onClose={() => setBoardDecksOpen(false)}
+            />
+          ) : null}
           {boardHotspots.map(hotspot => {
             const space = spaceMap.get(hotspot.spaceId)
             if (!space) return null
@@ -1171,68 +1183,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   </div>
                 )
               })()}
-              {(() => {
-                const discardCount = discardCards.length
-                if (discardCount === 0 && !sandboxSetup) return null
-                const discardClickable =
-                  Boolean(onConflictDiscardClick) && (Boolean(sandboxSetup) || discardCount > 0)
-                const discardTitle =
-                  discardCount > 0
-                    ? sandboxSetup
-                      ? `Change previous conflicts (${discardCount})`
-                      : `Previous conflicts (${discardCount})`
-                    : 'Select previous conflicts'
-                const discardStyle = {
-                  left: `${conflictDiscardBox.left}%`,
-                  top: `${conflictDiscardBox.top}%`,
-                  width: `${conflictDiscardBox.width}%`,
-                  height: `${conflictDiscardBox.height}%`,
-                }
-                const discardClass = [
-                  'image-board__conflict-panel',
-                  'image-board__conflict-discard',
-                  sandboxSetup ? 'image-board__conflict-panel--sandbox' : '',
-                  discardCount > 0 ? 'image-board__conflict-discard--filled' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')
-                const discardContent = (
-                  <>
-                    <BoardConflictFace
-                      conflict={topDiscard}
-                      imgFailed={conflictDiscardImgFailed}
-                      onImgError={() => setConflictDiscardImgFailed(true)}
-                      emptyLabel="Conflict discard"
-                    />
-                    {discardCount > 0 ? (
-                      <span className="image-board__conflict-discard-count">{discardCount}</span>
-                    ) : null}
-                  </>
-                )
-
-                return discardClickable ? (
-                  <button
-                    type="button"
-                    className={discardClass}
-                    data-marker="conflict-discard"
-                    style={discardStyle}
-                    title={withImageZoomHint(discardTitle)}
-                    aria-label={discardTitle}
-                    onClick={onConflictDiscardClick}
-                  >
-                    {discardContent}
-                  </button>
-                ) : (
-                  <div
-                    className={discardClass}
-                    data-marker="conflict-discard"
-                    style={discardStyle}
-                    title={withImageZoomHint(topDiscard?.name ?? 'Previous conflicts')}
-                  >
-                    {discardContent}
-                  </div>
-                )
-              })()}
             </>
           )}
 
@@ -1308,21 +1258,16 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
           {markerDebug && (
             <div className="image-board__marker-debug-layer" aria-hidden>
               <div
+                className="image-board__marker-debug-dot image-board__marker-debug-dot--board-decks"
+                style={{ left: `${boardDecksPoint.x}%`, top: `${boardDecksPoint.y}%` }}
+              />
+              <div
                 className="image-board__marker-debug-rect"
                 style={{
                   left: `${conflictBox.left}%`,
                   top: `${conflictBox.top}%`,
                   width: `${conflictBox.width}%`,
                   height: `${conflictBox.height}%`,
-                }}
-              />
-              <div
-                className="image-board__marker-debug-rect image-board__marker-debug-rect--conflict-discard"
-                style={{
-                  left: `${conflictDiscardBox.left}%`,
-                  top: `${conflictDiscardBox.top}%`,
-                  width: `${conflictDiscardBox.width}%`,
-                  height: `${conflictDiscardBox.height}%`,
                 }}
               />
               <div

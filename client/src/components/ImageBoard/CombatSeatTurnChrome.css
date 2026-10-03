@@ -106,6 +106,15 @@
   display: block;
 }
 
+.birdseye-seat-btn--atomics img {
+  width: 1rem;
+  height: 1rem;
+  max-width: 1rem;
+  max-height: 1rem;
+  object-fit: contain;
+  display: block;
+}
+
 .birdseye-seat-btn--tech img {
   width: 1.1rem;
 }
@@ -290,6 +299,19 @@
   width: 100%;
 }
 
+/* Compact once-per-game control. The source PNG is 256px and would stretch the seat row. */
+.birdseye-seat__utils--with-atomics {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+
+.birdseye-seat__utils .birdseye-seat-btn.birdseye-seat-btn--atomics {
+  width: 1.65rem;
+  min-width: 1.65rem;
+  max-width: 1.65rem;
+  padding: 0;
+  overflow: hidden;
+}
+
 .birdseye-seat__controls-row {
   display: flex;
   flex-direction: column;
@@ -471,6 +493,13 @@
 .birdseye-seat__overlay-actions .birdseye-seat-btn--intrigue img,
 .birdseye-seat__overlay-actions .birdseye-seat-btn--tech img {
   width: 1.05rem;
+}
+
+.birdseye-seat__overlay-actions .birdseye-seat-btn--atomics img {
+  width: 1.05rem;
+  height: 1.05rem;
+  max-width: 1.05rem;
+  max-height: 1.05rem;
 }
 
 .birdseye-seat-tech-panel {
@@ -1214,6 +1243,13 @@
   min-width: 2.7rem;
 }
 
+.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn.birdseye-seat-btn--atomics {
+  width: 1.65rem;
+  min-width: 1.65rem;
+  max-width: 1.65rem;
+  height: 2.35rem;
+}
+
 .combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn--play,
 .combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-btn--reveal {
   height: 2.85rem;
@@ -1827,6 +1863,10 @@
 
 .birdseye-turn-history__nav .turn-history-nav-label {
   font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--chrome-text-muted);
 }
 
 .birdseye-turn-history__scroll {
@@ -1994,22 +2034,30 @@ button.birdseye-turn-history__cell {
 
 /* Invented token `--player-tint`: hinted seat-color wash for swimlanes. */
 .combat-area-cluster__seat--red,
-.birdseye-turn-history__cell--red {
+.birdseye-turn-history__cell--red,
+.combat-rank-strip__chip--red,
+.combat-rank-strip__member--red {
   --player-tint: rgba(211, 47, 47, 0.16);
 }
 
 .combat-area-cluster__seat--green,
-.birdseye-turn-history__cell--green {
+.birdseye-turn-history__cell--green,
+.combat-rank-strip__chip--green,
+.combat-rank-strip__member--green {
   --player-tint: rgba(56, 142, 60, 0.16);
 }
 
 .combat-area-cluster__seat--yellow,
-.birdseye-turn-history__cell--yellow {
+.birdseye-turn-history__cell--yellow,
+.combat-rank-strip__chip--yellow,
+.combat-rank-strip__member--yellow {
   --player-tint: rgba(230, 184, 0, 0.14);
 }
 
 .combat-area-cluster__seat--blue,
-.birdseye-turn-history__cell--blue {
+.birdseye-turn-history__cell--blue,
+.combat-rank-strip__chip--blue,
+.combat-rank-strip__member--blue {
   --player-tint: rgba(25, 118, 210, 0.16);
 }
 
@@ -2108,6 +2156,13 @@ button.birdseye-turn-history__cell {
 .birdseye-rim .birdseye-seat-btn--tech img,
 .birdseye-rim .birdseye-seat-btn--deploy img {
   width: 1.15rem;
+}
+
+.birdseye-rim .birdseye-seat-btn--atomics img {
+  width: 1.15rem;
+  height: 1.15rem;
+  max-width: 1.15rem;
+  max-height: 1.15rem;
 }
 
 .birdseye-rim .birdseye-seat-btn--deploy {

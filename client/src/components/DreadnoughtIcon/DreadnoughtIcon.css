@@ -35,10 +35,66 @@
   -webkit-mask-position: center;
   mask-position: center;
   transform: rotate(-90deg);
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
+  /* Darker same-color line border around the silhouette. */
+  filter:
+    drop-shadow(0 -1.5px 0 #8a6410)
+    drop-shadow(0 1.5px 0 #8a6410)
+    drop-shadow(1.5px 0 0 #8a6410)
+    drop-shadow(-1.5px 0 0 #8a6410)
+    drop-shadow(1px 1px 0 #8a6410)
+    drop-shadow(-1px 1px 0 #8a6410)
+    drop-shadow(1px -1px 0 #8a6410)
+    drop-shadow(-1px -1px 0 #8a6410);
 }
 
-.dreadnought-icon--control.player-red::before { background-color: #d32f2f; }
-.dreadnought-icon--control.player-green::before { background-color: #388e3c; }
-.dreadnought-icon--control.player-yellow::before { background-color: #fbc02d; }
-.dreadnought-icon--control.player-blue::before { background-color: #1976d2; }
+.dreadnought-icon--control.player-red::before {
+  background-color: #d32f2f;
+  filter:
+    drop-shadow(0 -1.5px 0 #7a1515)
+    drop-shadow(0 1.5px 0 #7a1515)
+    drop-shadow(1.5px 0 0 #7a1515)
+    drop-shadow(-1.5px 0 0 #7a1515)
+    drop-shadow(1px 1px 0 #7a1515)
+    drop-shadow(-1px 1px 0 #7a1515)
+    drop-shadow(1px -1px 0 #7a1515)
+    drop-shadow(-1px -1px 0 #7a1515);
+}
+
+.dreadnought-icon--control.player-green::before {
+  background-color: #388e3c;
+  filter:
+    drop-shadow(0 -1.5px 0 #1b5e20)
+    drop-shadow(0 1.5px 0 #1b5e20)
+    drop-shadow(1.5px 0 0 #1b5e20)
+    drop-shadow(-1.5px 0 0 #1b5e20)
+    drop-shadow(1px 1px 0 #1b5e20)
+    drop-shadow(-1px 1px 0 #1b5e20)
+    drop-shadow(1px -1px 0 #1b5e20)
+    drop-shadow(-1px -1px 0 #1b5e20);
+}
+
+.dreadnought-icon--control.player-yellow::before {
+  background-color: #fbc02d;
+  filter:
+    drop-shadow(0 -1.5px 0 #9a6b00)
+    drop-shadow(0 1.5px 0 #9a6b00)
+    drop-shadow(1.5px 0 0 #9a6b00)
+    drop-shadow(-1.5px 0 0 #9a6b00)
+    drop-shadow(1px 1px 0 #9a6b00)
+    drop-shadow(-1px 1px 0 #9a6b00)
+    drop-shadow(1px -1px 0 #9a6b00)
+    drop-shadow(-1px -1px 0 #9a6b00);
+}
+
+.dreadnought-icon--control.player-blue::before {
+  background-color: #1976d2;
+  filter:
+    drop-shadow(0 -1.5px 0 #0d3d75)
+    drop-shadow(0 1.5px 0 #0d3d75)
+    drop-shadow(1.5px 0 0 #0d3d75)
+    drop-shadow(-1.5px 0 0 #0d3d75)
+    drop-shadow(1px 1px 0 #0d3d75)
+    drop-shadow(-1px 1px 0 #0d3d75)
+    drop-shadow(1px -1px 0 #0d3d75)
+    drop-shadow(-1px -1px 0 #0d3d75);
+}

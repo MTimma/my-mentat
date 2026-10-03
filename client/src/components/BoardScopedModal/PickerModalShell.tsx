@@ -40,7 +40,10 @@ export function PickerModalShell({
       overlayRef={overlayRef}
       forceViewport={forceViewport}
     >
-      <div className={['picker-modal-shell', 'imperium-select-dialog', className].filter(Boolean).join(' ')}>
+      <div
+        className={['picker-modal-shell', 'imperium-select-dialog', className].filter(Boolean).join(' ')}
+        onClick={event => event.stopPropagation()}
+      >
         <header className="picker-modal-shell__header imperium-select-header">
           <h2>{title}</h2>
           {lead ? <p>{lead}</p> : null}

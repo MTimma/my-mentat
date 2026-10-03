@@ -19,26 +19,53 @@ describe('Combat rank strip wiring', () => {
     expect(imageBoard).toContain('COMBAT_RANK_STRIP_RECT')
     expect(imageBoard).toContain('image-board__combat-rank-strip')
     expect(imageBoard).toContain('percentToStyle(rankStripBox)')
+    expect(imageBoard).toContain('showCombatArea && loggingLayout')
     // No beneath-board / mobile-only strip mount.
     expect(imageBoard).not.toContain('variant="mobile"')
     expect(imageBoard).not.toContain('mobileCombatRankStrip')
     expect(imageBoard).not.toContain('image-board__combat-deploy-dock')
   })
 
-  it('defines COMBAT_RANK_STRIP_RECT under RoI, capped vs mid-size 47/93/42/7', () => {
+  it('anchors the rank column to the right of the conflict cards', () => {
     expect(anchors).toContain('COMBAT_RANK_STRIP_RECT')
-    expect(anchors).toMatch(/left:\s*40/)
-    expect(anchors).toMatch(/top:\s*88/)
-    expect(anchors).toMatch(/width:\s*60/)
-    expect(anchors).toMatch(/height:\s*12/)
+    expect(anchors).toContain('CONFLICT_CARDS_RIGHT')
+    expect(anchors).toContain('CONFLICT_DISCARD_RECT.left + CONFLICT_DISCARD_RECT.width')
     const rect = anchors.match(
-      /export const COMBAT_RANK_STRIP_RECT = \{[\s\S]*?width:\s*(\d+)[\s\S]*?height:\s*(\d+)/
+      /export const COMBAT_RANK_STRIP_RECT = \{[\s\S]*?top:\s*(\d+)[\s\S]*?width:\s*(\d+)[\s\S]*?height:\s*(\d+)/
     )
-    expect(Number(rect?.[1])).toBeLessThanOrEqual(63)
-    expect(Number(rect?.[2])).toBeLessThanOrEqual(14)
+    const top = Number(rect?.[1])
+    const width = Number(rect?.[2])
+    const height = Number(rect?.[3])
+    expect(top).toBe(58)
+    expect(width).toBe(9)
+    expect(height).toBe(40)
+    expect(height).toBeGreaterThan(width)
+    const strip = readFileSync(
+      resolve(root, 'components/ImageBoard/CombatRankStrip.tsx'),
+      'utf8'
+    )
+    expect(strip).toContain('slotsTopFirst')
+    const css = readFileSync(
+      resolve(root, 'components/ImageBoard/CombatRankStrip.css'),
+      'utf8'
+    )
+    expect(css).toMatch(/\.combat-rank-strip--board \{[\s\S]*?flex-direction:\s*column/)
+    expect(css).toMatch(/\.combat-rank-strip--board \{[\s\S]*?justify-content:\s*flex-start/)
+    expect(css).toMatch(
+      /\.combat-rank-strip--board \.combat-rank-strip__slot \{[\s\S]*?height:\s*calc\(\(100% - 0\.36em\) \/ 4\)/
+    )
+    expect(css).not.toMatch(
+      /\.combat-rank-strip--board \.combat-rank-strip__slot:has\(\.combat-rank-strip__chip--empty\)/
+    )
+    expect(strip).not.toMatch(/if \(!occupied\) return null/)
+    expect(imageBoard).toContain('loggingLayout')
+    expect(imageBoard).toContain('PLAY_CONFLICT_CARD_RECT')
+    expect(imageBoard).toContain('PLAY_COMBAT_RANK_STRIP_RECT')
+    expect(anchors).toContain('height: 27')
+    expect(anchors).toContain('height: 36')
   })
 
-  it('uses a constant 4-slot frame with podium labels above the boxes', () => {
+  it('uses a constant 4-slot frame with shadow boxes and a superscript corner ordinal', () => {
     const css = readFileSync(
       resolve(root, 'components/ImageBoard/CombatRankStrip.css'),
       'utf8'
@@ -52,17 +79,23 @@ describe('Combat rank strip wiring', () => {
     expect(util).toContain('COMBAT_RANK_SLOT_COUNT = 4')
     expect(strip).toContain('buildCombatRankSlots')
     expect(strip).toContain('combat-rank-strip__slot')
-    expect(strip).toContain('combat-rank-strip__slot-label')
+    expect(strip).not.toContain('combat-rank-strip__slot-label')
     expect(strip).toContain('combat-rank-strip__chip--empty')
+    expect(strip).toContain('combat-rank-strip__member')
+    expect(strip).toContain('combat-rank-strip__chip--tied')
     expect(strip).toContain('data-slot-place')
+    expect(strip).toContain('combat-rank-strip__corner')
+    expect(strip).toContain('<sup>{placeSuffix(slotPlace)}</sup>')
     expect(strip).not.toContain('combat-rank-strip__place')
-    expect(css).toContain('.combat-rank-strip__slot-label--1')
-    expect(css).toContain('.combat-rank-strip__slot-label--2')
-    expect(css).toContain('.combat-rank-strip__slot-label--3')
-    expect(css).toContain('#f0d078')
-    expect(css).toContain('#c5cdd6')
-    expect(css).toContain('#d09258')
+    expect(css).toContain('.combat-rank-strip__corner sup')
+    expect(css).not.toContain('.combat-rank-strip__slot-label')
     expect(css).toContain('.combat-rank-strip__chip--empty')
+    expect(css).toContain('.combat-rank-strip__member--red')
+    expect(css).toContain('linear-gradient(var(--player-tint, transparent), var(--player-tint, transparent))')
+    expect(css).toContain('rgba(0, 0, 0, 0.38)')
+    expect(strip).toContain('entries.length === 1')
+    expect(strip).toContain('<CombatRankChip')
+    expect(util).toContain('entries: CombatRankEntry[]')
     expect(css).not.toContain('.combat-rank-strip__place')
     expect(strip).toContain('combat-rank-strip__body')
     expect(strip).toContain('combat-rank-strip__forces')

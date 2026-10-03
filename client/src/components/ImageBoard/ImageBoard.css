@@ -467,10 +467,6 @@
   height: 100%;
 }
 
-.image-board__dreadnought-control-marker .image-board__dreadnought-control-icon.dreadnought-icon--control::before {
-  filter: drop-shadow(1px 2px 1px rgba(0, 0, 0, 0.42));
-}
-
 .image-board__dreadnought-control-marker .image-board__dreadnought-control-icon.dreadnought-icon--control::after {
   content: '';
   position: absolute;
@@ -887,8 +883,8 @@
 }
 
 .image-board__tracker--portrait {
-  /* Color ring extends past the head icon */
-  width: clamp(38px, 2.5%, 56px);
+  /* Color ring extends past the head icon. VP score markers: 70% of the previous size. */
+  width: clamp(26.6px, 1.75%, 39.2px);
   aspect-ratio: 1;
   height: auto;
   display: flex;
@@ -907,8 +903,8 @@
   position: relative;
   z-index: 1;
   display: block;
-  width: clamp(28px, 1.85%, 44px);
-  height: clamp(28px, 1.85%, 44px);
+  width: clamp(19.6px, 1.295%, 30.8px);
+  height: clamp(19.6px, 1.295%, 30.8px);
   border-radius: 50%;
   object-fit: cover;
   object-position: center;
@@ -1000,7 +996,6 @@
 .image-board__control-marker-icon.control-marker-icon::after {
   content: '';
   position: absolute;
-  transform: scale(1.75);
   inset: 0;
   background: linear-gradient(
     145deg,
@@ -1050,6 +1045,15 @@
 .image-board__marker-debug-dot--swordmaster {
   background: #7b68ee;
   box-shadow: 0 0 0 1px #1a1a1a;
+}
+
+.image-board__board-decks-btn {
+  position: absolute;
+  z-index: 6;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  pointer-events: auto;
+  white-space: nowrap;
 }
 
 .image-board__conflict-panel {
@@ -1515,7 +1519,8 @@ button.image-board__conflict-panel--sandbox.image-board__conflict-discard--fille
 }
 
 .combat-area-cluster--row .combat-area-cluster__first-player-badge,
-.combat-area-cluster--row .combat-area-cluster__mentat-badge {
+.combat-area-cluster--row .combat-area-cluster__mentat-badge,
+.combat-area-cluster--row .combat-area-cluster__atomics-badge {
   width: 14px;
   height: 14px;
 }
@@ -1883,6 +1888,18 @@ button.image-board__conflict-panel--sandbox.image-board__conflict-discard--fille
   z-index: 2;
   width: clamp(22px, 2.35em, 34px);
   height: clamp(22px, 2.35em, 34px);
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.72));
+  pointer-events: none;
+}
+
+.combat-area-cluster__atomics-badge {
+  position: absolute;
+  top: 0.06em;
+  right: 0.06em;
+  z-index: 2;
+  width: clamp(18px, 1.85em, 26px);
+  height: clamp(18px, 1.85em, 26px);
   object-fit: contain;
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.72));
   pointer-events: none;

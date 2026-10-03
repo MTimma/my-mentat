@@ -91,11 +91,18 @@ type GridItemPlayability = { playable: boolean; reason?: string }
 
 const PLAYABLE_CARD: GridItemPlayability = { playable: true }
 
+function cardHoverLabel(card: Card): string {
+  const description = (card as { description?: string }).description
+  return description ? `${card.name}. ${description}` : card.name
+}
+
 type CardGridItemProps = {
   card: Card
   isSelected: boolean
   playability: GridItemPlayability
   onPick: (card: Card) => void
+  /** View-only cards stay in the grid and can zoom, but do not select. */
+  selectable?: boolean
 }
 
 const CardGridItem = React.memo(function CardGridItem({
@@ -103,9 +110,12 @@ const CardGridItem = React.memo(function CardGridItem({
   isSelected,
   playability,
   onPick,
+  selectable = true,
 }: CardGridItemProps) {
   const isDisabled = !playability.playable
+  const [useFullImage, setUseFullImage] = useState(false)
   const skipClickRef = useRef(false)
+  const label = cardHoverLabel(card)
 
   const handleActivate = () => {
     if (isDisabled) return
@@ -130,19 +140,20 @@ const CardGridItem = React.memo(function CardGridItem({
   return (
     <div className="card-cell">
       <div
-        className={`card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
-        onPointerDown={handlePointerDown}
-        onClick={handleClick}
+        className={`card ${selectable && isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+        onPointerDown={selectable ? handlePointerDown : undefined}
+        onClick={selectable ? handleClick : undefined}
       >
         {card.image && (
           <img
-            src={cardThumbSrc(card.image)}
-            alt={card.name}
-            title={withImageZoomHint(card.name)}
+            src={useFullImage ? card.image : cardThumbSrc(card.image)}
+            alt={label}
+            title={withImageZoomHint(label)}
             className="card-image"
             data-preview-src={card.image}
             loading="lazy"
             decoding="async"
+            onError={() => setUseFullImage(true)}
           />
         )}
         {!card.image && (
@@ -213,6 +224,13 @@ interface CardSearchProps {
   playabilityInvalidateKey?: unknown
   /** When true, render inline inside a parent dialog instead of a full-screen portal overlay. */
   embedded?: boolean
+  /**
+   * View the cards with search. Cards are not selectable, and the selection
+   * controls and empty preview slots are omitted.
+   */
+  browseOnly?: boolean
+  /** Rendered under the card grid, in the pile-tab slot (for example deck tabs). */
+  belowGrid?: React.ReactNode
   /** Allow confirming without filling every selection slot (for open-ended pile picks). */
   allowPartialSelection?: boolean
   /** Immortality — agent turn: pick a graft card plus optional partner from hand. */
@@ -242,6 +260,8 @@ const CardSearch: React.FC<CardSearchProps> = ({
   embedded = false,
   allowPartialSelection = false,
   graftPairSelection = false,
+  browseOnly = false,
+  belowGrid,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectionSlots, setSelectionSlots] = useState<(Card | null)[]>([])
@@ -253,7 +273,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
   getCardPlayabilityRef.current = getCardPlayability
 
   const showPreview =
-    showSelectionPreview ?? (selectionCount > 1 || graftPairSelection)
+    !browseOnly && (showSelectionPreview ?? (selectionCount > 1 || graftPairSelection))
   const multiSelect = selectionCount > 1
   const slotCapacity = graftPairSelection ? 2 : selectionCount
   const previewSlotCount = graftPairSelection
@@ -629,19 +649,27 @@ const CardSearch: React.FC<CardSearchProps> = ({
               getCardPlayability ? playabilityByCardId.get(card.id) ?? PLAYABLE_CARD : PLAYABLE_CARD
             }
             onPick={handleCardPick}
+            selectable={!browseOnly}
           />
         ))}
       </div>
       {selectionPreview}
       {slotBetweenCardsAndSearch}
       {pileTabBar}
+      {belowGrid}
       <div
         className={`dialog-actions${
           useCompactBoardLayout ? ' dialog-actions--buttons-only' : ''
         }`}
       >
         {!useCompactBoardLayout ? searchInput : null}
-        {actionButtons}
+        {browseOnly ? (
+          <button type="button" className="header-cancel-button" onClick={handleCancel}>
+            Close
+          </button>
+        ) : (
+          actionButtons
+        )}
       </div>
     </div>
   )

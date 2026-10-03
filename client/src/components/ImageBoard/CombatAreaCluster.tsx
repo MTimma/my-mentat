@@ -130,12 +130,15 @@ function ResourceGrid({
 function LeaderPortrait({
   player,
   isFirstPlayer,
+  showFamilyAtomics,
 }: {
   player: Player
   isFirstPlayer: boolean
+  showFamilyAtomics: boolean
 }) {
   const unassigned = isUnassignedLeader(player.leader)
   const leaderImage = unassigned ? undefined : getLeaderImage(player.leader.name)
+  const hasFamilyAtomics = showFamilyAtomics && player.familyAtomicsUsed !== true
 
   return (
     <div
@@ -169,6 +172,15 @@ function LeaderPortrait({
           draggable={false}
         />
       ) : null}
+      {hasFamilyAtomics ? (
+        <img
+          src="/icon/atomic.png"
+          alt=""
+          className="combat-area-cluster__atomics-badge"
+          title="Family Atomics"
+          draggable={false}
+        />
+      ) : null}
     </div>
   )
 }
@@ -179,6 +191,7 @@ function PlayerQuadrant({
   isFirstPlayer,
   hasMentat,
   riseOfIx,
+  showFamilyAtomics,
   onSelect,
   showResources = true,
 }: {
@@ -187,12 +200,15 @@ function PlayerQuadrant({
   isFirstPlayer: boolean
   hasMentat: boolean
   riseOfIx: boolean
+  showFamilyAtomics: boolean
   onSelect: () => void
   showResources?: boolean
 }) {
   const unassigned = isUnassignedLeader(player.leader)
   const mentatSuffix = hasMentat ? ', mentat holder' : ''
   const firstPlayerSuffix = isFirstPlayer ? ' (first player)' : ''
+  const atomicsSuffix =
+    showFamilyAtomics && player.familyAtomicsUsed !== true ? ', Family Atomics' : ''
   const playerLabel = unassigned ? `Player ${player.id + 1}` : player.leader.name
   const actionLabel = unassigned ? 'Select leader' : 'View player details'
 
@@ -208,11 +224,15 @@ function PlayerQuadrant({
         .filter(Boolean)
         .join(' ')}
       data-player-id={player.id}
-      title={`${playerLabel}${firstPlayerSuffix}${mentatSuffix}: ${actionLabel}`}
-      aria-label={`${playerLabel}${firstPlayerSuffix}${mentatSuffix}. ${actionLabel}.`}
+      title={`${playerLabel}${firstPlayerSuffix}${mentatSuffix}${atomicsSuffix}: ${actionLabel}`}
+      aria-label={`${playerLabel}${firstPlayerSuffix}${mentatSuffix}${atomicsSuffix}. ${actionLabel}.`}
       onClick={onSelect}
     >
-      <LeaderPortrait player={player} isFirstPlayer={isFirstPlayer} />
+      <LeaderPortrait
+        player={player}
+        isFirstPlayer={isFirstPlayer}
+        showFamilyAtomics={showFamilyAtomics}
+      />
       <div className="combat-area-cluster__quadrant-body">
         {hasMentat ? (
           <img
@@ -354,6 +374,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
     Boolean(birdseyeMode) && ((isRow && birdseyeMode === 'mobile3b') || (isColumn && birdseyeMode === 'desktop6'))
   /** Desktop birdseye is always the chess-style horizontal log. Mobile stays vertical. */
   const playAreaHorizontal = isColumn && birdseyeEnabled
+  const showFamilyAtomics = gameState?.expansions?.immortality === true
   const pendingEffectCardIds = playAreaCardIdsWithPendingEffectChoice(gameState, {
     isHistoryView: birdseyeIsHistoryView,
   })
@@ -406,6 +427,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
         isFirstPlayer={player.id === firstPlayerMarker}
         hasMentat={player.id === mentatOwner}
         riseOfIx={riseOfIx}
+        showFamilyAtomics={showFamilyAtomics}
         onSelect={() =>
           onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
         }
@@ -450,6 +472,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 isFirstPlayer={player.id === firstPlayerMarker}
                 hasMentat={player.id === mentatOwner}
                 riseOfIx={riseOfIx}
+                showFamilyAtomics={showFamilyAtomics}
                 showResources={false}
                 onSelect={() =>
                   onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
@@ -517,6 +540,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                     isFirstPlayer={player.id === firstPlayerMarker}
                     hasMentat={player.id === mentatOwner}
                     riseOfIx={riseOfIx}
+                    showFamilyAtomics={showFamilyAtomics}
                     showResources={false}
                     onSelect={() =>
                       onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)

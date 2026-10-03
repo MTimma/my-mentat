@@ -54,3 +54,19 @@ export function storedPlayerName(draft: string, player: NamedSeat): string {
   if (cleaned === '' || cleaned === defaultSavedPlayerName(player)) return ''
   return cleaned.slice(0, PLAYER_NAME_MAX_LENGTH)
 }
+
+/**
+ * Name written when sandbox setup Begin is clicked.
+ * A custom name stays. An empty name becomes the leader name.
+ */
+export function playerNameOnBegin(player: NamedSeat): string {
+  const custom = storedPlayerName(player.name ?? '', player)
+  return custom || defaultSavedPlayerName(player)
+}
+
+/** Text shown in the setup name field. A stored leader name stays whole. */
+export function playerNameFieldValue(player: NamedSeat): string {
+  const raw = player.name ? cleanPlayerName(player.name) : ''
+  if (!raw || raw === defaultSavedPlayerName(player)) return raw
+  return normalizeStoredPlayerName(raw)
+}

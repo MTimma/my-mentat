@@ -36,7 +36,7 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
       return
     }
     const rect = trigger.getBoundingClientRect()
-    const menuWidth = Math.min(400, Math.max(280, window.innerWidth - rect.left - 16))
+    const menuWidth = Math.min(rect.width, window.innerWidth - rect.left - 8)
     setMenuRect({
       top: rect.bottom,
       left: rect.left,
@@ -183,7 +183,7 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
         <span className="leader-select__thumb" aria-hidden="true">
           {selectedImage ? (
             <img
-              src={cardThumbSrc(selectedImage)}
+              src={selectedImage}
               alt=""
               draggable={false}
               data-preview-src={selectedImage}

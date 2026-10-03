@@ -13,12 +13,13 @@ export type CombatRankEntry = {
   place: number
 }
 
-/** Positional podium slot. 1 = rightmost. Independent of reward `place` on ties. */
+/** Positional podium slot. 1 is the top of the board column. */
 export type CombatRankSlotPlace = 1 | 2 | 3 | 4
 
 export type CombatRankSlot = {
   slotPlace: CombatRankSlotPlace
-  entry: CombatRankEntry | null
+  /** Everyone who shares this reward place. Empty = shadow box. */
+  entries: CombatRankEntry[]
 }
 
 type CombatRankArgs = {
@@ -31,26 +32,14 @@ type CombatRankArgs = {
 function emptySlots(): CombatRankSlot[] {
   return Array.from({ length: COMBAT_RANK_SLOT_COUNT }, (_, i) => ({
     slotPlace: (COMBAT_RANK_SLOT_COUNT - i) as CombatRankSlotPlace,
-    entry: null,
+    entries: [],
   }))
-}
-
-function packRightAligned(entries: CombatRankEntry[]): CombatRankSlot[] {
-  const occupied = entries.slice(-COMBAT_RANK_SLOT_COUNT)
-  const pad = COMBAT_RANK_SLOT_COUNT - occupied.length
-  return emptySlots().map((slot, i) => {
-    const entryIndex = i - pad
-    return {
-      ...slot,
-      entry: entryIndex >= 0 ? occupied[entryIndex] ?? null : null,
-    }
-  })
 }
 
 /**
  * In-combat players only (≥1 troop or dreadnought). Sorted strength ascending
- * (left → right) so the strongest sit rightmost. Ties drop one reward place;
- * id breaks left/right order.
+ * so the strongest sit in the higher slot. Ties drop one reward place;
+ * lower player id comes first inside a tied group.
  */
 export function buildCombatRankEntries({
   players,
@@ -88,35 +77,20 @@ export function buildCombatRankEntries({
 }
 
 /**
- * Constant 4-position frame. Players sit in the slot matching their reward
- * place (ties spill left). If that would overflow, pack right-aligned.
+ * Always 4 slots, including when nobody has deployed.
+ * Each player goes in the slot for their reward place. A tie shares that one
+ * box; the rank the tie skipped stays an empty shadow above them.
+ * Lower player id is first inside a tied box (display order, not a rulebook layout).
  */
 export function buildCombatRankSlots(args: CombatRankArgs): CombatRankSlot[] {
-  const entries = buildCombatRankEntries(args)
-  if (entries.length === 0) return emptySlots()
-
   const slots = emptySlots()
-  // Higher id first among a tied group so lower id ends up further left when spilling.
-  const placeOrder = [...entries].sort(
-    (a, b) => b.strength - a.strength || b.player.id - a.player.id
-  )
-
-  const unplaced: CombatRankEntry[] = []
-  for (const entry of placeOrder) {
+  for (const entry of buildCombatRankEntries(args)) {
     const place = Math.min(Math.max(entry.place, 1), COMBAT_RANK_SLOT_COUNT)
-    let i = COMBAT_RANK_SLOT_COUNT - place
-    while (i >= 0 && slots[i].entry) i -= 1
-    if (i >= 0) slots[i].entry = entry
-    else unplaced.push(entry)
+    const index = COMBAT_RANK_SLOT_COUNT - place
+    slots[index]?.entries.push(entry)
   }
-
-  if (unplaced.length > 0) return omitUnclaimedFirstSlot(packRightAligned(entries))
-  return omitUnclaimedFirstSlot(slots)
-}
-
-/** No unique winner: drop the vacant gold 1 box. */
-function omitUnclaimedFirstSlot(slots: CombatRankSlot[]): CombatRankSlot[] {
-  if (slots.some(slot => slot.entry?.place === 1)) return slots
-  if (!slots.some(slot => slot.entry != null)) return slots
-  return slots.filter(slot => !(slot.slotPlace === 1 && slot.entry == null))
+  for (const slot of slots) {
+    slot.entries.sort((a, b) => a.player.id - b.player.id)
+  }
+  return slots
 }

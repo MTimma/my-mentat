@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import {
+  OFFICIAL_BASE_IMMORTALITY_PACK,
   OFFICIAL_BASE_PACK,
+  OFFICIAL_BASE_RISE_OF_IX_IMMORTALITY_PACK,
   OFFICIAL_BASE_RISE_OF_IX_PACK,
 } from '../constants'
-import { parseGamePackRef } from '../registry'
+import { getSelectableGamePacks, parseGamePackRef } from '../registry'
 import { resolveGamePack, GamePackResolutionError } from '../resolveGamePack'
 
 describe('resolveGamePack', () => {
@@ -31,5 +35,23 @@ describe('resolveGamePack', () => {
 
   it('throws for unknown pack ref', () => {
     expect(() => resolveGamePack('official/nope@1')).toThrow(GamePackResolutionError)
+  })
+
+  it('offers immortality packs in the expansions list only during local dev', () => {
+    const index = JSON.parse(
+      readFileSync(resolve(__dirname, '../../../public/game-packs/index.json'), 'utf8')
+    ) as { selectable: Array<{ ref: string }> }
+    const published = index.selectable.map(entry => entry.ref)
+    expect(published).not.toContain(OFFICIAL_BASE_IMMORTALITY_PACK)
+    expect(published).not.toContain(OFFICIAL_BASE_RISE_OF_IX_IMMORTALITY_PACK)
+
+    const refs = getSelectableGamePacks().map(pack => pack.ref)
+    if (import.meta.env.DEV) {
+      expect(refs).toContain(OFFICIAL_BASE_IMMORTALITY_PACK)
+      expect(refs).toContain(OFFICIAL_BASE_RISE_OF_IX_IMMORTALITY_PACK)
+    } else {
+      expect(refs).not.toContain(OFFICIAL_BASE_IMMORTALITY_PACK)
+      expect(refs).not.toContain(OFFICIAL_BASE_RISE_OF_IX_IMMORTALITY_PACK)
+    }
   })
 })

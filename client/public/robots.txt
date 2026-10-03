@@ -1,0 +1,11 @@
+# Meta AI search indexer (meta-webindexer/1.1)
+# https://developers.facebook.com/docs/sharing/webmasters/crawler
+User-agent: Meta-WebIndexer
+Disallow: /
+
+# Meta foundation-model / product crawler
+User-agent: meta-externalagent
+Disallow: /
+
+User-agent: *
+Allow: /

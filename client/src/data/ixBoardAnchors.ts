@@ -2,8 +2,7 @@
  * Rise of Ix — `riseofix2.png` overlay (full Ix board panel).
  *
  * All rects/points below use **local 0–100** coordinates within the panel.
- * Embedded play (desktop + mobile) uses `IX_BOARD_OVERLAY_RECT_MOBILE` on Board.jpg.
- * `IX_BOARD_OVERLAY_RECT` is the legacy desktop-only anchor (kept for reference/tuning).
+ * Embedded play (desktop + mobile) uses `IX_BOARD_OVERLAY_RECT` on Board.jpg.
  * Tune with `?hotspotDebug=1` / `?markerDebug=1`.
  */
 import {
@@ -11,11 +10,8 @@ import {
   type BoardHotspot,
 } from './boardHotspots'
 
-/** Legacy desktop-only Ix overlay on `Board.jpg` (inner %). Prefer mobile rect for play. */
-export const IX_BOARD_OVERLAY_RECT = { left: 4, top: 20, width: 28, height: 28 }
-
-/** Embedded RoI overlay on `Board.jpg` (inner %) — used on mobile and desktop play. */
-export const IX_BOARD_OVERLAY_RECT_MOBILE = { left: 50, top: 55, width: 35, height: 35 }
+/** Embedded RoI overlay on `Board.jpg` (inner %). */
+export const IX_BOARD_OVERLAY_RECT = { left: 60, top: 66, width: 33, height: 33 }
 
 function ixHotspot(
   spaceId: number,
@@ -57,34 +53,22 @@ export const IX_NEGOTIATOR_LANE_ANCHORS: Array<{ x: number; y: number }> = [
   { x: 49, y: 90 },
 ]
 
-export function getIxBoardOverlayRect(mobileEmbedded = false): {
+export function layoutIxBoardOnStage(): {
   left: number
   top: number
   width: number
   height: number
 } {
-  return mobileEmbedded ? IX_BOARD_OVERLAY_RECT_MOBILE : IX_BOARD_OVERLAY_RECT
+  return layoutInnerRectPercent(IX_BOARD_OVERLAY_RECT)
 }
 
-export function layoutIxBoardOnStage(mobileEmbedded = false): {
+export function layoutIxLocalRectPercent(rect: {
   left: number
   top: number
   width: number
   height: number
-} {
-  return layoutInnerRectPercent(getIxBoardOverlayRect(mobileEmbedded))
-}
-
-export function layoutIxLocalRectPercent(
-  rect: {
-    left: number
-    top: number
-    width: number
-    height: number
-  },
-  mobileEmbedded = false
-): { left: number; top: number; width: number; height: number } {
-  const board = layoutIxBoardOnStage(mobileEmbedded)
+}): { left: number; top: number; width: number; height: number } {
+  const board = layoutIxBoardOnStage()
   return {
     left: board.left + (rect.left / 100) * board.width,
     top: board.top + (rect.top / 100) * board.height,
@@ -93,42 +77,30 @@ export function layoutIxLocalRectPercent(
   }
 }
 
-export function layoutIxLocalPointPercent(
-  x: number,
-  y: number,
-  mobileEmbedded = false
-): { x: number; y: number } {
-  const board = layoutIxBoardOnStage(mobileEmbedded)
+export function layoutIxLocalPointPercent(x: number, y: number): { x: number; y: number } {
+  const board = layoutIxBoardOnStage()
   return {
     x: board.left + (x / 100) * board.width,
     y: board.top + (y / 100) * board.height,
   }
 }
 
-export function layoutIxAgentAnchorPercent(
-  h: BoardHotspot,
-  mobileEmbedded = false
-): { x: number; y: number } {
-  const box = layoutIxLocalRectPercent(
-    {
-      left: h.left,
-      top: h.top,
-      width: h.width,
-      height: h.height,
-    },
-    mobileEmbedded
-  )
+export function layoutIxAgentAnchorPercent(h: BoardHotspot): { x: number; y: number } {
+  const box = layoutIxLocalRectPercent({
+    left: h.left,
+    top: h.top,
+    width: h.width,
+    height: h.height,
+  })
   return {
     x: box.left + box.width * (h.agentX / 100),
     y: box.top + box.height * (h.agentY / 100),
   }
 }
 
-export function ixBoardMarkerAnchors(
-  mobileEmbedded = false
-): Array<{ spaceId: number; x: number; y: number }> {
+export function ixBoardMarkerAnchors(): Array<{ spaceId: number; x: number; y: number }> {
   return IX_BOARD_HOTSPOTS.map(h => {
-    const p = layoutIxAgentAnchorPercent(h, mobileEmbedded)
+    const p = layoutIxAgentAnchorPercent(h)
     return { spaceId: h.spaceId, x: p.x, y: p.y }
   })
 }

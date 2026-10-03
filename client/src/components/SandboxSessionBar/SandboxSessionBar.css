@@ -51,15 +51,19 @@
   flex: 0 0 auto;
 }
 
+.sandbox-session-bar__round-label {
+  font-variant-numeric: tabular-nums;
+}
+
 .sandbox-session-bar__round-controls {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   min-height: 2rem;
 }
 
-.sandbox-session-bar__round-btn,
-.sandbox-session-bar__round-value {
+.sandbox-session-bar__round-btn {
   box-sizing: border-box;
   min-height: 2rem;
   border-radius: 6px;
@@ -84,15 +88,6 @@
 .sandbox-session-bar__round-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
-}
-
-.sandbox-session-bar__round-value {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2rem;
-  padding: 0 0.45rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .sandbox-session-bar__label {

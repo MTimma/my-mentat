@@ -303,6 +303,36 @@ describe('Sandbox setup turn', () => {
     expect(s.history[0].historyEntryKind).toBe('setup')
     expect(s.history[0].imperiumRow).toHaveLength(5)
     expect(s.history[0].currentConflict.id).toBe(CONFLICTS[0].id)
+    expect(s.players[0].name).toBe(s.players[0].leader.name)
+    expect(s.history[0].players[0].name).toBe(s.players[0].leader.name)
+  })
+
+  it('SANDBOX_COMMIT_SETUP keeps a custom player name and fills an empty one', () => {
+    let s = getSandboxSetupState()
+    s = applyGameAction(s, {
+      type: 'SANDBOX_UPDATE_PLAYER',
+      playerId: 0,
+      patch: { name: 'Ada' },
+    })
+    s = applyGameAction(s, { type: 'SANDBOX_COMMIT_SETUP' })
+
+    expect(s.players[0].name).toBe('Ada')
+    expect(s.players[1].name).toBe(s.players[1].leader.name)
+    expect(s.history[0].players[0].name).toBe('Ada')
+    expect(s.history[0].players[1].name).toBe(s.players[1].leader.name)
+  })
+
+  it('SANDBOX_COMMIT_SETUP keeps a long leader name whole', () => {
+    let s = getSandboxSetupState()
+    const longName = 'Baron Vladimir Harkonnen'
+    s = {
+      ...s,
+      players: s.players.map((player, index) =>
+        index === 1 ? { ...player, leader: { ...player.leader, name: longName }, name: '' } : player
+      ),
+    }
+    s = applyGameAction(s, { type: 'SANDBOX_COMMIT_SETUP' })
+    expect(s.players[1].name).toBe(longName)
   })
 
   it('UNDO_TO_SETUP after commit reopens sandbox setup with the committed configuration', () => {

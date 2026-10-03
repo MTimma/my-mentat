@@ -19,6 +19,9 @@
 .combat-rank-strip--board {
   position: absolute;
   z-index: 3;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
   height: 100%;
   padding: 0.02em 0.04em;
   background: transparent;
@@ -30,6 +33,46 @@
   line-height: 1.05;
   color: var(--chrome-text, #e0d4c0);
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 2px #000;
+}
+
+/* Four equal boxes, including empty shadows. Place 1 is the top slot. */
+.combat-rank-strip--board .combat-rank-strip__slot {
+  position: relative;
+  container-type: size;
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: none;
+  height: calc((100% - 0.36em) / 4);
+  max-height: calc((100% - 0.36em) / 4);
+  min-height: 0;
+}
+
+/* Upper-left ordinal, same reading as a conflict card: 1ˢᵗ / 2ⁿᵈ / 3ʳᵈ. */
+.combat-rank-strip__corner {
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  z-index: 2;
+  font-weight: 800;
+  font-size: clamp(8px, 24cqh, 13px);
+  line-height: 1;
+  letter-spacing: 0;
+  color: #fff;
+  text-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.9),
+    0 0 2px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+  user-select: none;
+}
+
+.combat-rank-strip__corner sup {
+  font-size: 0.62em;
+  line-height: 0;
+  position: relative;
+  top: -0.45em;
+  margin-left: 0.5px;
+  font-weight: 800;
 }
 
 .combat-rank-strip__slot {
@@ -45,53 +88,94 @@
   box-sizing: border-box;
 }
 
-.combat-rank-strip__slot-label {
+/* Same wash as the gains column: player tint over the gains panel (0.38 black). */
+.combat-rank-strip--board .combat-rank-strip__chip--red,
+.combat-rank-strip--board .combat-rank-strip__member--red,
+.combat-rank-strip--board .combat-rank-strip__chip--green,
+.combat-rank-strip--board .combat-rank-strip__member--green,
+.combat-rank-strip--board .combat-rank-strip__chip--yellow,
+.combat-rank-strip--board .combat-rank-strip__member--yellow,
+.combat-rank-strip--board .combat-rank-strip__chip--blue,
+.combat-rank-strip--board .combat-rank-strip__member--blue {
+  background:
+    linear-gradient(var(--player-tint, transparent), var(--player-tint, transparent)),
+    rgba(0, 0, 0, 0.38);
+  color: var(--chrome-text, #e0d4c0);
+  border-color: var(--chrome-border-accent-strong, rgba(156, 120, 78, 0.45));
+}
+
+/* Short band: face + strength on top, troops underneath, clear of the corner mark. */
+.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied):not(.combat-rank-strip__chip--empty) {
+  padding: 14cqh 0.1em 2cqh;
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__forces {
+  flex-basis: 28cqh;
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__strength .combat-rank-strip__icon {
+  width: 20cqh;
+  height: 20cqh;
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip--tied {
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  padding: 1px 2px;
+  gap: 1px;
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__strength {
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 2px;
+  color: #fff;
+}
+
+.combat-rank-strip--board .combat-rank-strip__members {
   display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  gap: 1px;
+}
+
+.combat-rank-strip--board .combat-rank-strip__member {
+  display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  flex: 0 0 30cqh;
-  height: 30cqh;
-  font-weight: 900;
-  font-size: 26cqh;
-  line-height: 1;
-  letter-spacing: 0.04em;
-  pointer-events: none;
-  user-select: none;
+  gap: 0.08em;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 2px;
+  padding: 0 1px;
+  container-type: size;
 }
 
-/* Podium 1/2/3 stay gold/silver/bronze regardless of void/blueish theme. */
-.combat-rank-strip__slot-label--1 {
-  color: #f0d078;
-  font-size: 28cqh;
-  text-shadow:
-    0 0 8px rgba(212, 177, 106, 0.95),
-    0 0 2px #000,
-    0 1px 2px #000;
+.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__member {
+  background: transparent;
 }
 
-.combat-rank-strip__slot-label--2 {
-  color: #c5cdd6;
-  font-size: 26cqh;
-  text-shadow:
-    0 0 7px rgba(180, 190, 205, 0.75),
-    0 0 2px #000,
-    0 1px 2px #000;
+.combat-rank-strip--board .combat-rank-strip__member .combat-rank-strip__leader {
+  width: 78cqh;
+  height: 78cqh;
+  min-width: 78cqh;
+  min-height: 78cqh;
 }
 
-.combat-rank-strip__slot-label--3 {
-  color: #d09258;
-  font-size: 26cqh;
-  text-shadow:
-    0 0 7px rgba(196, 122, 58, 0.75),
-    0 0 2px #000,
-    0 1px 2px #000;
+.combat-rank-strip--board .combat-rank-strip__member .combat-rank-strip__forces {
+  flex: 0 1 auto;
+  flex-basis: auto;
+  height: auto;
+  padding: 0;
+  gap: 0.06em;
 }
 
-.combat-rank-strip__slot-label--4 {
-  color: var(--chrome-text-muted, rgba(224, 212, 192, 0.72));
-  font-size: 26cqh;
-  font-weight: 900;
-  text-shadow: 0 1px 2px #000;
+.combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__strength .combat-rank-strip__icon {
+  width: 22cqh;
+  height: 22cqh;
 }
 
 .combat-rank-strip__chip {
@@ -134,6 +218,12 @@
   pointer-events: none;
 }
 
+.combat-rank-strip--board .combat-rank-strip__chip--empty {
+  background: rgba(8, 10, 14, 0.42);
+  border: 1px dashed rgba(224, 212, 192, 0.62);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.28);
+}
+
 /* Top zone: square portrait (main) + total combat to the right. */
 .combat-rank-strip__body {
   display: flex;
@@ -164,6 +254,13 @@
   border-width: 1.5px;
   box-shadow: none;
   pointer-events: none;
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__leader {
+  width: 34cqh;
+  height: 34cqh;
+  min-width: 34cqh;
+  min-height: 34cqh;
 }
 
 .combat-rank-strip__leader-icon,
@@ -217,6 +314,14 @@
   flex-shrink: 0;
 }
 
+.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__value--strength {
+  font-size: clamp(10px, 28cqh, 16px);
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__value--strength {
+  font-size: clamp(10px, 28cqh, 20px);
+}
+
 .combat-rank-strip__rule {
   flex: 0 0 1px;
   height: 1px;
@@ -254,6 +359,11 @@
   object-fit: contain;
   flex-shrink: 0;
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__forces .combat-rank-strip__icon {
+  width: 22cqh;
+  height: 22cqh;
 }
 
 /* Beat DreadnoughtIcon --card clamp(14px) so RoI dreads fit a 4-chip ~360px row. */

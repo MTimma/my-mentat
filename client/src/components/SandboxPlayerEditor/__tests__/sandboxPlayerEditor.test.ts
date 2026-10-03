@@ -8,15 +8,14 @@ describe('Sandbox player editor leader row', () => {
   const editorCss = readFileSync(resolve(root, 'SandboxPlayerEditor.css'), 'utf8')
   const leaderCss = readFileSync(resolve(root, '../LeaderSelect/LeaderSelect.css'), 'utf8')
 
-  it('shows the saved player name in an editable header', () => {
-    const fieldTsx = readFileSync(resolve(root, '../QuietNameField/QuietNameField.tsx'), 'utf8')
-    const fieldCss = readFileSync(resolve(root, '../QuietNameField/QuietNameField.css'), 'utf8')
-    expect(editorTsx).toContain('savedPlayerName(player)')
-    expect(editorTsx).toContain('ariaLabel="Player name"')
-    expect(editorTsx).toContain('<QuietNameField')
-    expect(editorTsx).not.toContain('Player {player.id + 1} setup')
-    expect(fieldTsx).toContain('quiet-name-field')
-    expect(fieldCss).toContain('background: transparent')
+  it('shows a labeled player name field that stays empty until Begin', () => {
+    expect(editorTsx).toContain('Player name')
+    expect(editorTsx).toContain('placeholder="Empty will use leader name"')
+    expect(editorTsx).toContain('htmlFor="sandbox-player-name"')
+    expect(editorTsx).not.toContain('<QuietNameField')
+    expect(editorTsx).not.toContain('sandbox-player-editor-title')
+    expect(editorCss).toContain('.sandbox-player-editor__name-label')
+    expect(editorCss).toContain('.sandbox-player-editor__name-input::placeholder')
   })
 
   it('assigns a default leader when the editor opens unassigned', () => {
@@ -24,16 +23,25 @@ describe('Sandbox player editor leader row', () => {
     expect(editorTsx).toContain('availableLeaders.find(leader => !usedLeaderNames.includes(leader.name))')
   })
 
-  it('puts color in the 2x2 pile grid with deck buttons', () => {
+  it('puts color beside the player name and deck buttons in the pile grid', () => {
+    const nameRow = editorTsx.slice(
+      editorTsx.indexOf('sandbox-player-editor__name-row'),
+      editorTsx.indexOf('sandbox-player-editor__leader-row')
+    )
+    expect(nameRow).toContain('aria-label="Player color"')
+    expect(nameRow).not.toContain('>Color<')
     const buttonsBlock = editorTsx.slice(
       editorTsx.indexOf('sandbox-player-editor__pile-buttons'),
-      editorTsx.indexOf('sandbox-player-editor__pile-count')
+      editorTsx.indexOf('sandbox-player-editor__control-row')
     )
-    expect(buttonsBlock).toContain('aria-label="Player color"')
-    expect(buttonsBlock).toContain('Edit deck')
-    expect(buttonsBlock).toContain('Edit discard')
-    expect(buttonsBlock).toContain('Edit trash')
-    expect(editorCss).toContain('grid-template-columns: repeat(2, minmax(0, 1fr))')
+    expect(buttonsBlock).not.toContain('aria-label="Player color"')
+    expect(buttonsBlock).toContain('Edit deck {player.deck.length}')
+    expect(buttonsBlock).toContain('Edit discard {player.discardPile.length}')
+    expect(buttonsBlock).toContain('Edit trash {player.trash.length}')
+    expect(buttonsBlock).not.toContain('sandbox-player-editor__pile-count')
+    expect(editorTsx).toContain('Board control')
+    expect(editorCss).toContain('.sandbox-player-editor__pile-buttons')
+    expect(editorCss).toContain('display: flex')
   })
 
   it('adds Immortality Tleilaxu and research controls in leader setup', () => {
@@ -51,6 +59,6 @@ describe('Sandbox player editor leader row', () => {
 
   it('uses a wider sandbox leader trigger', () => {
     expect(leaderCss).toContain('.leader-select--sandbox .leader-select__trigger')
-    expect(leaderCss).toMatch(/\.leader-select--sandbox \.leader-select__trigger \{[\s\S]*?width:\s*8rem/)
+    expect(leaderCss).toMatch(/\.leader-select--sandbox \.leader-select__trigger \{[\s\S]*?width:\s*100%/)
   })
 })

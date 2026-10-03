@@ -1840,7 +1840,6 @@ const GameContent = ({
           }
           showBoardInfoTips={showBoardInfoTips}
           ixBoardPlacement="embedded"
-          ixBoardMobileEmbedded={Boolean(gameState.expansions?.riseOfIx)}
           immortalityBoardPlacement={
             isDesktopPlayView && gameState.expansions?.immortality ? 'docked' : 'stacked'
           }

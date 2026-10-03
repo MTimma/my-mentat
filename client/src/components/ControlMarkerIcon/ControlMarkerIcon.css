@@ -1,15 +1,16 @@
 .control-marker-icon {
   display: inline-block;
   position: relative;
-  width: clamp(8px, 1.6cqw, 14px);
-  height: clamp(10px, 2cqw, 16px);
+  /* Single size knob — height follows aspect. Raise the max to let cqw grow. */
+  width: clamp(22px, 4cqw, 36px);
+  aspect-ratio: 65 / 67;
+  height: auto;
   flex-shrink: 0;
 }
 
 .control-marker-icon::before {
   content: '';
   position: absolute;
-  transform: scale(1.75);
   inset: 0;
   background-color: #d32f2f;
   -webkit-mask-image: url(/icon/control.png);

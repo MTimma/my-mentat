@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import QuietNameField, { type QuietNameFieldHandle } from '../QuietNameField/QuietNameField'
 import { Card, ControlMarkerType, Expansions, FactionType, Player, PlayerColor } from '../../types/GameTypes'
 import { applyLeaderStartingResourceDelta } from '../../data/leaderAbilities/beastSetup'
 import {
@@ -24,7 +23,7 @@ import { MAX_INFLUENCE } from '../../utils/influenceVictoryPoints'
 import {
   defaultSavedPlayerName,
   PLAYER_NAME_MAX_LENGTH,
-  savedPlayerName,
+  playerNameFieldValue,
   storedPlayerName,
 } from '../../utils/playerName'
 import type { TechTileId } from '../../data/techTiles'
@@ -145,12 +144,13 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   onSetMentatOwner,
   onClose,
 }) => {
-  const savedName = savedPlayerName(player)
-  const fallbackName = defaultSavedPlayerName(player)
-  const nameFieldRef = useRef<QuietNameFieldHandle>(null)
+  const nameFocusedRef = useRef(false)
+  const [nameDraft, setNameDraft] = useState(() => playerNameFieldValue(player))
   const [pileEditor, setPileEditor] = useState<PileEditor | null>(null)
   const [techEditorOpen, setTechEditorOpen] = useState(false)
   const [researchPickerOpen, setResearchPickerOpen] = useState(false)
+  const [colorMenuOpen, setColorMenuOpen] = useState(false)
+  const colorMenuRef = useRef<HTMLDivElement>(null)
   const [selectedPileCards, setSelectedPileCards] = useState<Card[]>([])
   const [numericDraft, setNumericDraft] = useState(() => pickNumericDraft(player))
   const [influenceDraft, setInfluenceDraft] = useState(() => ({ ...playerInfluence }))
@@ -188,6 +188,35 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   useEffect(() => {
     setDreadnoughtGarrisonDraft(player.dreadnoughts?.garrison ?? 0)
   }, [player.id, player.dreadnoughts?.garrison])
+
+  useEffect(() => {
+    nameFocusedRef.current = false
+    setNameDraft(playerNameFieldValue(player))
+  }, [player.id])
+
+  useEffect(() => {
+    if (nameFocusedRef.current) return
+    setNameDraft(playerNameFieldValue(player))
+  }, [player.name, player.leader.name])
+
+  useEffect(() => {
+    if (!colorMenuOpen) return
+    const handlePointer = (event: MouseEvent | TouchEvent) => {
+      if (colorMenuRef.current?.contains(event.target as Node)) return
+      setColorMenuOpen(false)
+    }
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setColorMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handlePointer)
+    document.addEventListener('touchstart', handlePointer)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handlePointer)
+      document.removeEventListener('touchstart', handlePointer)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [colorMenuOpen])
 
   const availableLeaders = useMemo(() => {
     const pool = getLeaderPool(expansions)
@@ -281,11 +310,12 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
 
   if (waitForBoardTarget) return null
 
-  const commitNameDraft = (draft: string) => {
-    const stored = storedPlayerName(draft, player)
-    const current = storedPlayerName(player.name ?? '', player)
+  const commitNameDraft = () => {
+    const leaderName = defaultSavedPlayerName(player)
+    const stored = nameDraft.trim() === leaderName ? leaderName : storedPlayerName(nameDraft, player)
+    const current = playerNameFieldValue(player)
     if (stored !== current) onUpdate({ name: stored })
-    return stored || fallbackName
+    setNameDraft(stored)
   }
 
   const handleColorChange = (color: PlayerColor) => {
@@ -354,7 +384,7 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   }
 
   const handleClose = () => {
-    nameFieldRef.current?.commit()
+    commitNameDraft()
     commitNumericDraft()
     commitInfluenceDraft()
     onClose()
@@ -430,34 +460,94 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
       onClick={handleClose}
     >
       <div
-        className={`sandbox-player-editor sandbox-player-editor--${player.color}`}
+        className="sandbox-player-editor"
         onClick={event => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label={`${savedName} setup`}
+        aria-label="Player setup"
       >
-        <header className="sandbox-player-editor__header">
-          <QuietNameField
-            ref={nameFieldRef}
-            id="sandbox-player-editor-title"
-            value={savedName}
-            resetKey={player.id}
-            maxLength={PLAYER_NAME_MAX_LENGTH}
-            ariaLabel="Player name"
-            placeholder={fallbackName}
-            onCommit={commitNameDraft}
-          />
-          <button
-            type="button"
-            className="sandbox-player-editor__close"
-            onClick={handleClose}
-            aria-label="Close player setup"
-          >
-            ×
-          </button>
-        </header>
-
         <div className="sandbox-player-editor__body">
+          <div className="sandbox-player-editor__name-row">
+            <label className="sandbox-player-editor__name" htmlFor="sandbox-player-name">
+              <span className="sandbox-player-editor__name-label">Player name</span>
+              <input
+                id="sandbox-player-name"
+                className="sandbox-player-editor__name-input"
+                value={nameDraft}
+                placeholder="Empty will use leader name"
+                maxLength={Math.max(PLAYER_NAME_MAX_LENGTH, nameDraft.length)}
+                autoComplete="off"
+                spellCheck={false}
+                onFocus={() => {
+                  nameFocusedRef.current = true
+                }}
+                onBlur={() => {
+                  nameFocusedRef.current = false
+                  commitNameDraft()
+                }}
+                onChange={event => {
+                  const next = event.target.value
+                  const leaderName = defaultSavedPlayerName(player)
+                  setNameDraft(
+                    next === leaderName || next.length <= PLAYER_NAME_MAX_LENGTH
+                      ? next
+                      : next.slice(0, PLAYER_NAME_MAX_LENGTH)
+                  )
+                }}
+                onKeyDown={event => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    event.currentTarget.blur()
+                  }
+                }}
+              />
+            </label>
+            <div className="sandbox-player-editor__color" ref={colorMenuRef}>
+              <button
+                type="button"
+                className="sandbox-player-editor__color-select"
+                aria-label="Player color"
+                aria-haspopup="listbox"
+                aria-expanded={colorMenuOpen}
+                onClick={() => setColorMenuOpen(open => !open)}
+              >
+                <AgentIcon
+                  playerId={player.id}
+                  color={player.color}
+                  className="sandbox-player-editor__color-agent"
+                />
+              </button>
+              {colorMenuOpen ? (
+                <div className="sandbox-player-editor__color-menu" role="listbox" aria-label="Player color">
+                  {Object.values(PlayerColor).map(color => (
+                    <button
+                      key={color}
+                      type="button"
+                      role="option"
+                      aria-selected={color === player.color}
+                      aria-label={color}
+                      className={[
+                        'sandbox-player-editor__color-option',
+                        color === player.color ? 'sandbox-player-editor__color-option--selected' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      onClick={() => {
+                        handleColorChange(color)
+                        setColorMenuOpen(false)
+                      }}
+                    >
+                      <AgentIcon
+                        playerId={player.id}
+                        color={color}
+                        className="sandbox-player-editor__color-agent"
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
           <div className="sandbox-player-editor__leader-row">
             <LeaderSelect
               leaders={availableLeaders}
@@ -465,65 +555,43 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
               onChange={handleLeaderChange}
               ariaLabel="Leader"
             />
-            <div className="sandbox-player-editor__pile-actions">
-              <div className="sandbox-player-editor__pile-buttons">
-                <select
-                  value={player.color}
-                  onChange={event => handleColorChange(event.target.value as PlayerColor)}
-                  className={`sandbox-player-editor__color-select color-select ${player.color}`}
-                  aria-label="Player color"
-                >
-                  {Object.values(PlayerColor).map(color => (
-                    <option key={color} value={color}>
-                      {color}
-                    </option>
-                  ))}
-                </select>
+            <div className="sandbox-player-editor__pile-buttons">
+              <button
+                type="button"
+                className="sandbox-player-editor__deck-button"
+                onClick={() => openPileEditor('deck')}
+              >
+                Edit deck {player.deck.length}
+              </button>
+              <button
+                type="button"
+                className="sandbox-player-editor__deck-button"
+                onClick={() => openPileEditor('discard')}
+                disabled={discardEditorPool.length === 0}
+              >
+                Edit discard {player.discardPile.length}
+              </button>
+              <button
+                type="button"
+                className="sandbox-player-editor__deck-button"
+                onClick={() => openPileEditor('trash')}
+                disabled={trashEditorPool.length === 0}
+              >
+                Edit trash {player.trash.length}
+              </button>
+              {expansions.riseOfIx ? (
                 <button
                   type="button"
                   className="sandbox-player-editor__deck-button"
-                  onClick={() => openPileEditor('deck')}
+                  onClick={() => setTechEditorOpen(true)}
                 >
-                  Edit deck
+                  Edit tech {player.tech?.length ?? 0}
                 </button>
-                <button
-                  type="button"
-                  className="sandbox-player-editor__deck-button"
-                  onClick={() => openPileEditor('discard')}
-                  disabled={discardEditorPool.length === 0}
-                >
-                  Edit discard
-                </button>
-                <button
-                  type="button"
-                  className="sandbox-player-editor__deck-button"
-                  onClick={() => openPileEditor('trash')}
-                  disabled={trashEditorPool.length === 0}
-                >
-                  Edit trash
-                </button>
-                {expansions.riseOfIx ? (
-                  <button
-                    type="button"
-                    className="sandbox-player-editor__deck-button"
-                    onClick={() => setTechEditorOpen(true)}
-                  >
-                    Edit tech
-                  </button>
-                ) : null}
-              </div>
-              <span className="sandbox-player-editor__pile-count">
-                {player.deck.length} deck · {player.discardPile.length} discard ·{' '}
-                {player.trash.length} trash
-                {expansions.riseOfIx
-                  ? ` · ${player.tech?.length ?? 0} tech tile${(player.tech?.length ?? 0) === 1 ? '' : 's'}`
-                  : ''}
-              </span>
+              ) : null}
             </div>
           </div>
 
           <div className="sandbox-player-editor__control-row">
-            <span className="sandbox-player-editor__control-heading">Board</span>
             <div className="sandbox-player-editor__control-toggles">
               <label className="sandbox-player-editor__control-toggle">
                 <input
@@ -545,32 +613,33 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                 />
                 <span>Mentat</span>
               </label>
+            </div>
+          </div>
+
+          <div className="sandbox-player-editor__control-row">
+            <span className="sandbox-player-editor__control-heading">Board control</span>
+            <div className="sandbox-player-editor__control-spaces">
               {CONTROL_SPACES.map(space => {
                 const held = controlMarkers[space.type] === player.id
+                const dreadnoughtHeld = dreadnoughtCover?.[space.type] === player.id
                 return (
-                  <label key={space.type} className="sandbox-player-editor__control-toggle">
-                    <input
-                      type="checkbox"
-                      checked={held}
-                      onChange={() => onSetControl(space.type, held ? null : player.id)}
-                    />
-                    <span>{space.label}</span>
-                  </label>
-                )
-              })}
-              {expansions.riseOfIx
-                ? CONTROL_SPACES.map(space => {
-                    const held = dreadnoughtCover?.[space.type] === player.id
-                    return (
-                      <label
-                        key={`dread-${space.type}`}
-                        className="sandbox-player-editor__control-toggle sandbox-player-editor__control-toggle--dreadnought"
-                      >
+                  <div key={space.type} className="sandbox-player-editor__control-space">
+                    <label className="sandbox-player-editor__control-toggle">
+                      <input
+                        type="checkbox"
+                        checked={held}
+                        onChange={() => onSetControl(space.type, held ? null : player.id)}
+                      />
+                      <span>{space.label}</span>
+                    </label>
+                    {expansions.riseOfIx ? (
+                      <label className="sandbox-player-editor__control-toggle sandbox-player-editor__control-toggle--dreadnought">
                         <input
                           type="checkbox"
-                          checked={held}
+                          checked={dreadnoughtHeld}
+                          aria-label={`${space.label} dreadnought`}
                           onChange={() =>
-                            onSetDreadnoughtControl(space.type, held ? null : player.id)
+                            onSetDreadnoughtControl(space.type, dreadnoughtHeld ? null : player.id)
                           }
                         />
                         <DreadnoughtIcon
@@ -579,11 +648,11 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                           appearance="control"
                           className="sandbox-player-editor__dreadnought-control-icon"
                         />
-                        <span>{space.label}</span>
                       </label>
-                    )
-                  })
-                : null}
+                    ) : null}
+                  </div>
+                )
+              })}
             </div>
           </div>
 
@@ -746,6 +815,9 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
             ) : null}
           </div>
 
+          <button type="button" className="sandbox-player-editor__close" onClick={handleClose}>
+            Close
+          </button>
         </div>
       </div>
 

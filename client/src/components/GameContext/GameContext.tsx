@@ -211,7 +211,7 @@ import {
 import { seedTessiaSnoopers, tryTessiaSnooperClaim } from '../../data/leaderAbilities/tessiaSnoopers'
 import { countSpiceMustFlowCards } from '../../utils/spiceMustFlow'
 import { applySandboxDeckEdit } from '../../utils/sandboxDeckPools'
-import { normalizeStoredPlayerName } from '../../utils/playerName'
+import { defaultSavedPlayerName, normalizeStoredPlayerName, playerNameOnBegin } from '../../utils/playerName'
 import { getOpponentDiscardableCards, validateDiscardCostSelection, isCardInHand } from '../../utils/playAreaDisplay'
 import { normalizeChoiceOptEffects } from '../../utils/choiceOptEffects'
 import { drawCardsFromDeck, drawRoundStartHand, applyDrawCardsToPlayer } from '../../utils/deckDraw'
@@ -3353,7 +3353,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           trash: patch.trash !== undefined ? [...patch.trash] : p.trash,
         }
         if (patch.name !== undefined) {
-          next = { ...next, name: normalizeStoredPlayerName(patch.name) }
+          const leaderName = defaultSavedPlayerName(next)
+          const cleaned = patch.name.trim()
+          next = {
+            ...next,
+            name: cleaned === leaderName ? leaderName : normalizeStoredPlayerName(patch.name),
+          }
         }
         if (leaderChanged) {
           next = seedTessiaSnoopers(next, state.expansions.riseOfIx)
@@ -3397,8 +3402,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       const position = state.sandboxSetupPosition ?? { round: null, playerTurn: null }
       const committedBase = fillLegacyUnpickedTleilaxuRow(state)
+      const players = committedBase.players.map(player => {
+        const name = playerNameOnBegin(player)
+        return player.name === name ? player : { ...player, name }
+      })
       const nextState = {
         ...committedBase,
+        players,
         sandboxSetup: false,
         sandboxSetupPosition: undefined,
         phase: GamePhase.PLAYER_TURNS,

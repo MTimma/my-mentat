@@ -41,8 +41,6 @@ export interface IxBoardOverlayProps {
   blockedSpaceMap: Map<number, number>
   /** `embedded` = overlay on Board.jpg; `docked` = standalone panel beside board (desktop). */
   placement?: IxBoardPlacement
-  /** Mobile embedded overlay uses `IX_BOARD_OVERLAY_RECT_MOBILE` on Board.jpg. */
-  mobileEmbeddedOverlay?: boolean
   historyHighlightSpaceId?: number | null
   /** Sandbox setup: tech stack slots become click targets to pick face-up tiles. */
   sandboxTechSetup?: {
@@ -76,7 +74,6 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
   hotspotDebug = false,
   blockedSpaceMap,
   placement = 'embedded',
-  mobileEmbeddedOverlay = false,
   historyHighlightSpaceId = null,
   sandboxTechSetup,
   currentPlayerId,
@@ -84,7 +81,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
   onTechTileAcquire,
 }) => {
   const isDocked = placement === 'docked'
-  const stageRect = isDocked ? null : layoutIxBoardOnStage(mobileEmbeddedOverlay)
+  const stageRect = isDocked ? null : layoutIxBoardOnStage()
   const spaceMap = new Map<number, SpaceProps>()
   BOARD_SPACES.forEach(s => spaceMap.set(s.id, s))
 

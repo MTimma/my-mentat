@@ -81,27 +81,31 @@ describe('buildCombatRankEntries', () => {
   })
 })
 
+function idsIn(slots: ReturnType<typeof buildCombatRankSlots>): number[][] {
+  return slots.map(slot => slot.entries.map(entry => entry.player.id))
+}
+
 describe('buildCombatRankSlots', () => {
-  it('always returns 4 positional slots, place 1 rightmost', () => {
+  it('always returns 4 positional slots, place 1 last in the array', () => {
     const slots = buildCombatRankSlots({
       players: [stubPlayer(0), stubPlayer(1)],
       troops: { 0: 2, 1: 1 },
       strength: { 0: 6, 1: 10 },
     })
     expect(slots.map(s => s.slotPlace)).toEqual([4, 3, 2, 1])
-    expect(slots.map(s => s.entry?.player.id ?? null)).toEqual([null, null, 0, 1])
-    expect(slots[3]?.entry?.place).toBe(1)
-    expect(slots[2]?.entry?.place).toBe(2)
+    expect(idsIn(slots)).toEqual([[], [], [0], [1]])
+    expect(slots[3]?.entries[0]?.place).toBe(1)
+    expect(slots[2]?.entries[0]?.place).toBe(2)
   })
 
-  it('pads empty frames on the left when fewer than 4 are in combat', () => {
+  it('keeps empty shadow slots when fewer than 4 are in combat', () => {
     const slots = buildCombatRankSlots({
       players: [stubPlayer(0)],
       troops: { 0: 1 },
       strength: { 0: 4 },
     })
-    expect(slots.filter(s => s.entry == null).map(s => s.slotPlace)).toEqual([4, 3, 2])
-    expect(slots[3]?.entry?.player.id).toBe(0)
+    expect(slots.filter(s => s.entries.length === 0).map(s => s.slotPlace)).toEqual([4, 3, 2])
+    expect(slots[3]?.entries[0]?.player.id).toBe(0)
   })
 
   it('returns 4 empty slots when nobody is in combat', () => {
@@ -111,48 +115,51 @@ describe('buildCombatRankSlots', () => {
       strength: { 0: 0 },
     })
     expect(slots).toHaveLength(4)
-    expect(slots.every(s => s.entry == null)).toBe(true)
+    expect(slots.every(s => s.entries.length === 0)).toBe(true)
   })
 
-  it('hides the empty 1st box when two tie for first', () => {
+  it('puts a first-place tie together in the 2nd box and leaves 1st empty', () => {
     const slots = buildCombatRankSlots({
       players: [stubPlayer(0), stubPlayer(1)],
       troops: { 0: 1, 1: 1 },
       strength: { 0: 8, 1: 8 },
     })
-    expect(slots.map(s => s.slotPlace)).toEqual([4, 3, 2])
-    expect(slots.map(s => s.entry?.player.id ?? null)).toEqual([null, 0, 1])
-    expect(slots.map(s => s.entry?.place ?? null)).toEqual([null, 2, 2])
+    expect(slots.map(s => s.slotPlace)).toEqual([4, 3, 2, 1])
+    expect(idsIn(slots)).toEqual([[], [], [0, 1], []])
+    expect(slots[2]?.entries.map(e => e.place)).toEqual([2, 2])
   })
 
-  it('hides the empty 1st box when two tie for first and a third sits in 3rd', () => {
+  it('keeps the empty 1st box when two tie for first and a third sits in 3rd', () => {
     const slots = buildCombatRankSlots({
       players: [stubPlayer(0), stubPlayer(1), stubPlayer(2)],
       troops: { 0: 1, 1: 1, 2: 1 },
       strength: { 0: 8, 1: 8, 2: 4 },
     })
-    expect(slots.map(s => s.slotPlace)).not.toContain(1)
-    expect(slots.map(s => s.entry?.player.id ?? null)).toEqual([2, 0, 1])
-    expect(slots.map(s => s.entry?.place ?? null)).toEqual([3, 2, 2])
+    expect(slots.map(s => s.slotPlace)).toEqual([4, 3, 2, 1])
+    expect(idsIn(slots)).toEqual([[], [2], [0, 1], []])
+    expect(slots[1]?.entries[0]?.place).toBe(3)
+    expect(slots[2]?.entries.map(e => e.place)).toEqual([2, 2])
   })
 
-  it('sits a 2nd-place tie in 3rd and leaves 2nd empty', () => {
+  it('puts a 2nd-place tie together in 3rd and leaves 2nd empty', () => {
     const slots = buildCombatRankSlots({
       players: [stubPlayer(0), stubPlayer(1), stubPlayer(2)],
       troops: { 0: 1, 1: 1, 2: 1 },
       strength: { 0: 8, 1: 4, 2: 4 },
     })
-    expect(slots.map(s => s.entry?.player.id ?? null)).toEqual([1, 2, null, 0])
-    expect(slots.map(s => s.entry?.place ?? null)).toEqual([3, 3, null, 1])
+    expect(idsIn(slots)).toEqual([[], [1, 2], [], [0]])
+    expect(slots[1]?.entries.map(e => e.place)).toEqual([3, 3])
+    expect(slots[3]?.entries[0]?.place).toBe(1)
   })
 
-  it('packs a 2+2 tie as 2nd and 3rd', () => {
+  it('packs a 2+2 tie into the 2nd and 3rd boxes', () => {
     const slots = buildCombatRankSlots({
       players: [stubPlayer(0), stubPlayer(1), stubPlayer(2), stubPlayer(3)],
       troops: { 0: 1, 1: 1, 2: 1, 3: 1 },
       strength: { 0: 8, 1: 8, 2: 4, 3: 4 },
     })
-    expect(slots.map(s => s.entry?.player.id ?? null)).toEqual([2, 3, 0, 1])
-    expect(slots.map(s => s.entry?.place ?? null)).toEqual([3, 3, 2, 2])
+    expect(idsIn(slots)).toEqual([[], [2, 3], [0, 1], []])
+    expect(slots[2]?.entries.map(e => e.place)).toEqual([2, 2])
+    expect(slots[1]?.entries.map(e => e.place)).toEqual([3, 3])
   })
 })

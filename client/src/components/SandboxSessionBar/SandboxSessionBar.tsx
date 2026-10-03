@@ -123,15 +123,14 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
             </label>
             {onSetRound ? (
               <div className="sandbox-session-bar__round">
-                <span className="sandbox-session-bar__label">Round</span>
+                <span className="sandbox-session-bar__label sandbox-session-bar__round-label" aria-live="polite">
+                  Round {displayRound}
+                </span>
                 <div className="sandbox-session-bar__round-controls">
-                  <span className="sandbox-session-bar__round-value" aria-live="polite">
-                    {displayRound}
-                  </span>
                   <button
                     type="button"
                     className="sandbox-session-bar__round-btn"
-                    aria-label="Decrease round"
+                    aria-label={`Decrease round (currently ${displayRound})`}
                     disabled={displayRound <= 1}
                     onClick={() => onSetRound(displayRound - 1 <= 1 ? null : displayRound - 1)}
                   >
@@ -140,7 +139,7 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
                   <button
                     type="button"
                     className="sandbox-session-bar__round-btn"
-                    aria-label="Increase round"
+                    aria-label={`Increase round (currently ${displayRound})`}
                     onClick={() => onSetRound(displayRound + 1)}
                   >
                     +

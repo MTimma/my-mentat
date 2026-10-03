@@ -4,6 +4,7 @@ import officialBaseRiseOfIx from '../../public/game-packs/official-base-riseOfIx
 import officialBaseImmortality from '../../public/game-packs/official-base-immortality.v1.json'
 import officialBaseRiseOfIxImmortality from '../../public/game-packs/official-base-riseOfIx-immortality.v1.json'
 import type { GamePackIndex, GamePackManifest, GamePackRef, SelectableGamePackEntry } from './types'
+import { OFFICIAL_BASE_IMMORTALITY_PACK, OFFICIAL_BASE_RISE_OF_IX_IMMORTALITY_PACK } from './constants'
 import { customSelectableEntries } from './customGamePacks'
 
 const index = indexFile as GamePackIndex
@@ -31,8 +32,23 @@ export function getGamePackIndex(): GamePackIndex {
   return index
 }
 
+/** Not listed in `game-packs/index.json`. Vite drops this branch from production builds. */
+const LOCAL_DEV_IMMORTALITY_PACKS: SelectableGamePackEntry[] = [
+  {
+    ref: OFFICIAL_BASE_IMMORTALITY_PACK,
+    label: 'Base + Immortality',
+    file: 'official-base-immortality.v1.json',
+  },
+  {
+    ref: OFFICIAL_BASE_RISE_OF_IX_IMMORTALITY_PACK,
+    label: 'Base + Rise of Ix + Immortality',
+    file: 'official-base-riseOfIx-immortality.v1.json',
+  },
+]
+
 export function getSelectableGamePacks(): SelectableGamePackEntry[] {
-  return [...index.selectable, ...customSelectableEntries()]
+  const devPacks = import.meta.env.DEV ? LOCAL_DEV_IMMORTALITY_PACKS : []
+  return [...index.selectable, ...devPacks, ...customSelectableEntries()]
 }
 
 export function getGamePackManifest(ref: GamePackRef): GamePackManifest | undefined {

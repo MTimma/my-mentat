@@ -4,6 +4,8 @@ import {
   defaultSavedPlayerName,
   displayPlayerName,
   PLAYER_NAME_MAX_LENGTH,
+  playerNameFieldValue,
+  playerNameOnBegin,
   savedPlayerName,
   storedPlayerName,
 } from '../playerName'
@@ -35,6 +37,24 @@ describe('saved player name', () => {
     const player = { id: 0, leader: { name: 'BARON VLADIMIR HARKONNEN' } }
     expect(savedPlayerName(player)).toBe(LEADER_NAMES.BARON_VLADIMIR)
     expect(LEADER_NAMES.BARON_VLADIMIR).toBe('Baron Vladimir Harkonnen')
+  })
+
+  it('uses the leader name on Begin only when the player name is empty', () => {
+    const player = { id: 0, leader, name: 'Ada' }
+    expect(playerNameOnBegin(player)).toBe('Ada')
+    expect(playerNameOnBegin({ ...player, name: '' })).toBe(leader.name)
+    expect(playerNameOnBegin({ id: 0, leader })).toBe(leader.name)
+    expect(playerNameOnBegin({ id: 0, leader, name: leader.name })).toBe(leader.name)
+  })
+
+  it('shows a stored leader name in full, including names over 20 characters', () => {
+    const longLeader = { name: 'Baron Vladimir Harkonnen' }
+    expect(longLeader.name.length).toBeGreaterThan(PLAYER_NAME_MAX_LENGTH)
+    expect(playerNameFieldValue({ id: 0, leader: longLeader })).toBe('')
+    expect(playerNameFieldValue({ id: 0, leader: longLeader, name: longLeader.name })).toBe(
+      longLeader.name
+    )
+    expect(playerNameFieldValue({ id: 0, leader: longLeader, name: 'Ada' })).toBe('Ada')
   })
 
   it('stores at most 20 characters and keeps the full name for the list label', () => {
