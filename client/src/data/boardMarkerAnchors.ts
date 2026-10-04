@@ -172,13 +172,13 @@ const CONFLICT_CARDS_RIGHT = CONFLICT_DISCARD_RECT.left + CONFLICT_DISCARD_RECT.
 /**
  * Vertical combat rank column, in the sand gap right of the conflict cards
  * and left of the Ix panel (left 60). Discard ends at 48.35; column is
- * 49.95–58.95 so it clears both. Top 58 is below Hagga / Sietch.
+ * ~11% wide so double-digit strength fits. Top 58 is below Hagga / Sietch.
  * Tune with ?markerDebug=1.
  */
 export const COMBAT_RANK_STRIP_RECT = {
   left: CONFLICT_CARDS_RIGHT + 1.6,
   top: 58,
-  width: 9,
+  width: 11,
   height: 40,
 } as const
 
@@ -189,16 +189,16 @@ export const COMBAT_RANK_STRIP_RECT = {
  * 4th is the same band below the card.
  */
 export const PLAY_CONFLICT_CARD_RECT = {
-  left: CONFLICT_CARD_RECT.left,
-  top: 64,
-  width: 29.5,
+  left: CONFLICT_CARD_RECT.left -3,
+  top: 66,
+  width: 20,
   height: 27,
 } as const
 
 export const PLAY_COMBAT_RANK_STRIP_RECT = {
-  left: PLAY_CONFLICT_CARD_RECT.left + PLAY_CONFLICT_CARD_RECT.width - 10,
+  left: PLAY_CONFLICT_CARD_RECT.left + PLAY_CONFLICT_CARD_RECT.width,
   top: PLAY_CONFLICT_CARD_RECT.top,
-  width: 10,
+  width: 12,
   height: 36,
 } as const
 

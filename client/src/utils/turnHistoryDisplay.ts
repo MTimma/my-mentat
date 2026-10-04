@@ -25,6 +25,12 @@ export function getRoundStartLabel(turn: GameState): string {
   return `Round ${turn.currentRound}`
 }
 
+/** Turn-history / banner title for a combat resolution row. */
+export function getCombatHistoryLabel(turn: GameState): string {
+  const name = turn.currentConflict?.name?.trim()
+  return name ? `Combat: ${name}` : 'Combat'
+}
+
 export function isPlayerTurnHistoryEntry(turn: GameState | undefined): boolean {
   return turn != null && !isMetaHistoryEntry(turn)
 }
@@ -68,7 +74,7 @@ export function getHistoryRowLabel(turns: GameState[], index: number): string {
   if (!turn) return `turn ${index}`
   if (isRoundStartHistoryEntry(turn)) return getRoundStartLabel(turn)
   if (index === 0 || turn.historyEntryKind === 'setup') return 'setup'
-  if (turn.historyEntryKind === 'combat') return 'combat'
+  if (turn.historyEntryKind === 'combat') return getCombatHistoryLabel(turn)
   if (turn.historyEntryKind === 'endgame') return 'endgame'
   const playerTurnNum = getPlayerTurnNumber(turns, index)
   return playerTurnNum != null ? `turn ${playerTurnNum}` : `turn ${index}`
@@ -188,7 +194,13 @@ function historyPlayerId(turn: GameState): number | undefined {
 
 function bannerForMeta(turn: GameState, historyIndex: number, isLive: boolean): BirdseyeHistoryBanner {
   if (turn.historyEntryKind === 'combat') {
-    return { kind: 'combat', historyIndex, isLive, label: 'Combat', round: turn.currentRound }
+    return {
+      kind: 'combat',
+      historyIndex,
+      isLive,
+      label: getCombatHistoryLabel(turn),
+      round: turn.currentRound,
+    }
   }
   if (turn.historyEntryKind === 'endgame') {
     return { kind: 'endgame', historyIndex, isLive, label: 'Endgame' }

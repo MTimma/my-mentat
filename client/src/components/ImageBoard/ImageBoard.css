@@ -467,30 +467,6 @@
   height: 100%;
 }
 
-.image-board__dreadnought-control-marker .image-board__dreadnought-control-icon.dreadnought-icon--control::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.32) 0%,
-    rgba(255, 255, 255, 0.08) 38%,
-    transparent 58%
-  );
-  -webkit-mask-image: url(/icon/dreadnought.png);
-  mask-image: url(/icon/dreadnought.png);
-  -webkit-mask-mode: alpha;
-  mask-mode: alpha;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  transform: rotate(-90deg);
-  pointer-events: none;
-}
-
 /*
  * Hotspots stay clickable (pointer-events: auto on buttons).
  * Tracker nodes are normally pointer-events: none so clicks reach hotspots beneath.

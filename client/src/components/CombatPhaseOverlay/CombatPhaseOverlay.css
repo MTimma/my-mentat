@@ -67,8 +67,13 @@
   margin: 0 0 8px;
 }
 
-.combat-phase-modal-heading .turn-history-action-kind {
+.combat-phase-modal-title {
   font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #a0a0a0;
+  line-height: 1.2;
 }
 
 .combat-phase-active-player {

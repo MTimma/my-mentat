@@ -6,6 +6,7 @@ import {
 } from '../../utils/endgameHistoryDisplay'
 import {
   countPlayerTurns,
+  getCombatHistoryLabel,
   getPlayerTurnNumber,
 } from '../../utils/turnHistoryDisplay'
 
@@ -120,7 +121,7 @@ export const TimeTravelProvider: React.FC<TimeTravelProviderProps> = ({
       return `Round ${snapshot.currentRound}`
     }
     if (snapshot?.historyEntryKind === 'combat') {
-      return 'Combat'
+      return getCombatHistoryLabel(snapshot)
     }
     if (snapshot?.historyEntryKind === 'endgame') {
       return 'Endgame'

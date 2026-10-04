@@ -34,6 +34,8 @@ export interface CombatPhaseOverlayProps {
   containerRef?: RefObject<HTMLElement | null>
   /** Round conflict card shown on the left of the resolution / phase modal. */
   currentConflict?: ConflictCard | null
+  /** Current game round (for the modal heading). */
+  currentRound?: number
   /**
    * Combat resolution snapshot (`historyEntryKind === 'combat'`), or the live
    * in-progress view built by `buildCombatResolutionView`.
@@ -179,6 +181,7 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
   readOnly = false,
   containerRef,
   currentConflict = null,
+  currentRound,
   resolutionState = null,
   onConfirm,
 }) => {
@@ -202,6 +205,16 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
 
   const hasParticipants = rankEntries.length > 0
   const showConflictCard = Boolean(currentConflict && currentConflict.id > 0)
+  const roundNumber = currentRound ?? resolutionState?.currentRound
+  const conflictName = currentConflict?.name?.trim()
+  const headingLabel =
+    roundNumber != null && conflictName
+      ? `Round ${roundNumber} conflict: ${conflictName}`
+      : conflictName
+        ? `Conflict: ${conflictName}`
+        : roundNumber != null
+          ? `Round ${roundNumber} conflict`
+          : 'Combat'
 
   const activePlayer = players.find(player => player.id === activePlayerId)
 
@@ -218,7 +231,7 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
         .join(' ')}
       role="dialog"
       aria-modal="true"
-      aria-label="Combat phase"
+      aria-label={headingLabel}
     >
       <div
         className={[
@@ -229,7 +242,7 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
           .join(' ')}
       >
         <div className="combat-phase-modal-heading">
-          <span className="turn-history-action-kind turn-history-action-kind--combat">Combat</span>
+          <span className="combat-phase-modal-title">{headingLabel}</span>
         </div>
         {!readOnly && activePlayer && (
           <p className="combat-phase-active-player">

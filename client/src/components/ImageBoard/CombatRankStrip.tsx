@@ -22,13 +22,6 @@ function placeOrdinal(place: number): string {
   return `${place}th`
 }
 
-function placeSuffix(place: number): string {
-  if (place === 1) return 'st'
-  if (place === 2) return 'nd'
-  if (place === 3) return 'rd'
-  return 'th'
-}
-
 export const CombatRankChip: React.FC<{
   entry: CombatRankEntry
   riseOfIx: boolean
@@ -225,13 +218,6 @@ const CombatRankStrip: React.FC<CombatRankStripProps> = ({
             role="listitem"
             aria-label={occupiedLabel}
           >
-            <span
-              className={`combat-rank-strip__corner combat-rank-strip__corner--${slotPlace}`}
-              aria-hidden="true"
-            >
-              {slotPlace}
-              <sup>{placeSuffix(slotPlace)}</sup>
-            </span>
             {entries.length > 1 ? (
               <BoardRankBox
                 entries={entries}

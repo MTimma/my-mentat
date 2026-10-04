@@ -96,6 +96,7 @@ import { getPlayViewportSize, isFillScreenDisplay } from './pwa/displayMode'
 import {
   countPlayerTurns,
   formatTurnRoundHeader,
+  getCombatHistoryLabel,
   getDisplayRound,
   getHistoryRowLabel,
   getLivePlayerTurnNumber,
@@ -1912,7 +1913,7 @@ const GameContent = ({
     }
   }, [inSandboxSetup, isDockedHistoryLayout])
 
-  const sandboxSetupControls = (compact = false, onBrowse?: () => void) =>
+  const sandboxSetupControls = (compact = false) =>
     inSandboxSetup ? (
       <SandboxSetupControls
         compact={compact}
@@ -1924,7 +1925,6 @@ const GameContent = ({
         tleilaxuRowDone={tleilaxuRowDone}
         techTilesDone={ixBoardReady}
         conflictDone={gameState.currentConflict.id > 0}
-        onBrowse={onBrowse}
         onCommit={() => {
           dispatch({ type: 'SANDBOX_COMMIT_SETUP' })
           onSandboxBegun?.(exportSaveDoc())
@@ -2007,7 +2007,7 @@ const GameContent = ({
           ? round => dispatch({ type: 'SANDBOX_SET_POSITION', round, playerTurn: null })
           : undefined
       }
-      setupSlot={openBrowse => sandboxSetupControls(true, openBrowse)}
+      setupSlot={sandboxSetupControls(true)}
       showKit={inSandboxSetup}
       canEdit={canEdit}
     />
@@ -2076,6 +2076,7 @@ const GameContent = ({
             isVisible={showCombatOverlay}
             readOnly={viewingCombatHistory || liveCombatRewardsPhase}
             currentConflict={combatOverlayState.currentConflict}
+            currentRound={combatOverlayState.currentRound}
             resolutionState={combatResolutionState}
             onConfirm={
               liveCombatRewardsPhase && !pendingCombatRewardChoices
@@ -2514,7 +2515,9 @@ const GameContent = ({
                     if (snapshot?.historyEntryKind === 'round-start') {
                       return `Round ${snapshot.currentRound}`
                     }
-                    if (snapshot?.historyEntryKind === 'combat') return 'Combat'
+                    if (snapshot?.historyEntryKind === 'combat') {
+                      return getCombatHistoryLabel(snapshot)
+                    }
                     if (snapshot?.historyEntryKind === 'endgame') return 'Endgame'
                     const turnNum = getPlayerTurnNumber(gameState.history, viewingTurnIndex)
                     const totalPlayerTurns = countPlayerTurns(gameState.history)

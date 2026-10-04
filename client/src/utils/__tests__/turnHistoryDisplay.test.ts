@@ -4,6 +4,7 @@ import {
   countPlayerTurns,
   formatTurnRoundHeader,
   getDisplayRound,
+  getCombatHistoryLabel,
   getHistoryRowBadge,
   getHistoryRowLabel,
   getLivePlayerTurnNumber,
@@ -71,14 +72,20 @@ describe('turnHistoryDisplay', () => {
       row({ historyEntryKind: 'setup', currentRound: 1 }),
       row({ phase: GamePhase.PLAYER_TURNS, currTurn: { playerId: 0, type: 'action' } }),
       row({ phase: GamePhase.PLAYER_TURNS, currTurn: { playerId: 1, type: 'action' } }),
-      row({ historyEntryKind: 'combat', currentRound: 1 }),
+      row({
+        historyEntryKind: 'combat',
+        currentRound: 1,
+        currentConflict: { id: 1, tier: 1, name: 'Siege of Carthag', rewards: { first: [], second: [], third: [] } },
+      }),
     ]
 
-    expect(getHistoryRowLabel(turns, 0)).toBe('Setup')
-    expect(getHistoryRowLabel(turns, 1)).toBe('Turn 1')
-    expect(getHistoryRowLabel(turns, 2)).toBe('Turn 2')
-    expect(getHistoryRowLabel(turns, 3)).toBe('Combat')
-    expect(getHistoryRowLabel(turns, 4)).toBe('Turn 3')
+    expect(getHistoryRowLabel(turns, 0)).toBe('setup')
+    expect(getHistoryRowLabel(turns, 1)).toBe('turn 1')
+    expect(getHistoryRowLabel(turns, 2)).toBe('turn 2')
+    expect(getHistoryRowLabel(turns, 3)).toBe('Combat: Siege of Carthag')
+    expect(getHistoryRowLabel(turns, 4)).toBe('turn 3')
+    expect(getCombatHistoryLabel(turns[3])).toBe('Combat: Siege of Carthag')
+    expect(getCombatHistoryLabel(row({ historyEntryKind: 'combat' }))).toBe('Combat')
   })
 
   it('labels merged opening round-start at index 0 as round start, not setup', () => {

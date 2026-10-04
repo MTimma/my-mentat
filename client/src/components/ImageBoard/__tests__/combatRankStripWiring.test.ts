@@ -37,7 +37,7 @@ describe('Combat rank strip wiring', () => {
     const width = Number(rect?.[2])
     const height = Number(rect?.[3])
     expect(top).toBe(58)
-    expect(width).toBe(9)
+    expect(width).toBe(11)
     expect(height).toBe(40)
     expect(height).toBeGreaterThan(width)
     const strip = readFileSync(
@@ -65,7 +65,7 @@ describe('Combat rank strip wiring', () => {
     expect(anchors).toContain('height: 36')
   })
 
-  it('uses a constant 4-slot frame with shadow boxes and a superscript corner ordinal', () => {
+  it('uses a constant 4-slot frame with shadow boxes (no corner place digits)', () => {
     const css = readFileSync(
       resolve(root, 'components/ImageBoard/CombatRankStrip.css'),
       'utf8'
@@ -84,10 +84,11 @@ describe('Combat rank strip wiring', () => {
     expect(strip).toContain('combat-rank-strip__member')
     expect(strip).toContain('combat-rank-strip__chip--tied')
     expect(strip).toContain('data-slot-place')
-    expect(strip).toContain('combat-rank-strip__corner')
-    expect(strip).toContain('<sup>{placeSuffix(slotPlace)}</sup>')
+    expect(strip).not.toContain('combat-rank-strip__corner')
+    expect(strip).not.toContain('placeSuffix')
+    expect(strip).not.toContain('<sup>')
     expect(strip).not.toContain('combat-rank-strip__place')
-    expect(css).toContain('.combat-rank-strip__corner sup')
+    expect(css).not.toContain('.combat-rank-strip__corner')
     expect(css).not.toContain('.combat-rank-strip__slot-label')
     expect(css).toContain('.combat-rank-strip__chip--empty')
     expect(css).toContain('.combat-rank-strip__member--red')
@@ -183,7 +184,7 @@ describe('Combat rank strip wiring', () => {
     const troopIcon = css.match(
       /\.combat-rank-strip__forces \.combat-rank-strip__icon \{[\s\S]*?width:\s*(\d+)cqh/
     )
-    expect(Number(troopNum?.[1])).toBeGreaterThan(24)
+    expect(Number(troopNum?.[1])).toBeGreaterThan(18)
     expect(Number(troopIcon?.[1])).toBeGreaterThan(32)
     expect(Number(strengthNum?.[1])).toBeGreaterThan(Number(troopNum?.[1]))
     expect(css).toContain('dreadnought-icon--card')

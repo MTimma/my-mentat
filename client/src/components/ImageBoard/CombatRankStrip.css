@@ -48,33 +48,6 @@
   min-height: 0;
 }
 
-/* Upper-left ordinal, same reading as a conflict card: 1ˢᵗ / 2ⁿᵈ / 3ʳᵈ. */
-.combat-rank-strip__corner {
-  position: absolute;
-  top: 1px;
-  left: 2px;
-  z-index: 2;
-  font-weight: 800;
-  font-size: clamp(8px, 24cqh, 13px);
-  line-height: 1;
-  letter-spacing: 0;
-  color: #fff;
-  text-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.9),
-    0 0 2px rgba(0, 0, 0, 0.85);
-  pointer-events: none;
-  user-select: none;
-}
-
-.combat-rank-strip__corner sup {
-  font-size: 0.62em;
-  line-height: 0;
-  position: relative;
-  top: -0.45em;
-  margin-left: 0.5px;
-  font-weight: 800;
-}
-
 .combat-rank-strip__slot {
   display: flex;
   flex-direction: column;
@@ -104,18 +77,35 @@
   border-color: var(--chrome-border-accent-strong, rgba(156, 120, 78, 0.45));
 }
 
-/* Short band: face + strength on top, troops underneath, clear of the corner mark. */
+/* Short band: face + strength on top, troops underneath. */
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied):not(.combat-rank-strip__chip--empty) {
-  padding: 14cqh 0.1em 2cqh;
+  padding: 2px 2px 1px;
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__body {
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0;
+  gap: 0.06em;
+  /* Portrait + sword size against this row, not the full chip. */
+  container-type: size;
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__forces {
-  flex-basis: 28cqh;
+  flex: 0 0 20cqh;
+  flex-basis: 20cqh;
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__strength {
+  gap: 0;
+  margin-left: 0;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__strength .combat-rank-strip__icon {
-  width: 20cqh;
-  height: 20cqh;
+  width: 42cqh;
+  height: 42cqh;
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip--tied {
@@ -257,10 +247,13 @@
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__leader {
-  width: 34cqh;
-  height: 34cqh;
-  min-width: 34cqh;
-  min-height: 34cqh;
+  /* Fill upper-left of the body row. */
+  width: 92cqh;
+  height: 92cqh;
+  min-width: 92cqh;
+  min-height: 92cqh;
+  margin: 0;
+  align-self: flex-start;
 }
 
 .combat-rank-strip__leader-icon,
@@ -315,7 +308,14 @@
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__value--strength {
-  font-size: clamp(10px, 28cqh, 16px);
+  font-size: clamp(12px, 45cqh, 30px);
+  min-width: 0;
+  padding: 0;
+  letter-spacing: -0.02em;
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__rule {
+  margin: 1cqh 0;
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__value--strength {
@@ -362,7 +362,7 @@
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__forces .combat-rank-strip__icon {
-  width: 22cqh;
+  width: 20cqh;
   height: 22cqh;
 }
 
@@ -378,7 +378,7 @@
 .combat-rank-strip__forces .combat-rank-strip__value {
   min-width: 1ch;
   text-align: center;
-  font-size: 28cqh;
+  font-size: 22cqh;
   line-height: 1;
   flex-shrink: 0;
 }

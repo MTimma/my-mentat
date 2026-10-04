@@ -21,7 +21,7 @@ export interface SandboxSessionBarProps {
   round?: number | null
   onSetRound?: (round: number | null) => void
   /** Sandbox finish-setup row (checklists, Begin). */
-  setupSlot?: ReactNode | ((openBrowse: () => void) => ReactNode)
+  setupSlot?: ReactNode
   /** Kit dropdown — only during sandbox setup. Hidden after Begin. */
   showKit?: boolean
   /** Packed into the docked turn-history sidebar. */
@@ -74,9 +74,7 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
     onLoadSave?.(doc, source)
   }
 
-  const openBrowse = () => setBrowseOpen(true)
   const displayRound = round ?? 1
-  const setup = typeof setupSlot === 'function' ? setupSlot(openBrowse) : setupSlot
 
   const gameNameField = (
     <QuietNameField
@@ -93,6 +91,19 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
     />
   )
 
+  const browseButton = onLoadSave ? (
+    <button
+      type="button"
+      className="sandbox-session-bar__btn"
+      aria-expanded={browseOpen}
+      onMouseEnter={prefetchGamesList}
+      onFocus={prefetchGamesList}
+      onClick={() => setBrowseOpen(open => !open)}
+    >
+      Browse
+    </button>
+  ) : null
+
   return (
     <div
       className={[
@@ -103,9 +114,25 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
         .filter(Boolean)
         .join(' ')}
     >
-      {showKit ? gameNameField : null}
-      <div className="sandbox-session-bar__row">
-        {showKit ? (
+      <div className="sandbox-session-bar__play-row">
+        {gameNameField}
+        {browseButton || !showKit ? (
+          <div className="sandbox-session-bar__actions">
+            {browseButton}
+            {!showKit ? (
+              <button
+                type="button"
+                className="sandbox-session-bar__btn"
+                onClick={handleStartNew}
+              >
+                New
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+      {showKit ? (
+        <div className="sandbox-session-bar__row">
           <div className="sandbox-session-bar__kit-row">
             <label className="sandbox-session-bar__kit">
               <span className="sandbox-session-bar__label">Expansions</span>
@@ -148,35 +175,9 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
               </div>
             ) : null}
           </div>
-        ) : null}
-        {!showKit ? (
-          <div className="sandbox-session-bar__play-row">
-            {gameNameField}
-            <div className="sandbox-session-bar__actions">
-              {onLoadSave ? (
-                <button
-                  type="button"
-                  className="sandbox-session-bar__btn"
-                  aria-expanded={browseOpen}
-                  onMouseEnter={prefetchGamesList}
-                  onFocus={prefetchGamesList}
-                  onClick={() => setBrowseOpen(open => !open)}
-                >
-                  Browse
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className="sandbox-session-bar__btn"
-                onClick={handleStartNew}
-              >
-                New
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </div>
-      {setup ? <div className="sandbox-session-bar__setup">{setup}</div> : null}
+        </div>
+      ) : null}
+      {setupSlot ? <div className="sandbox-session-bar__setup">{setupSlot}</div> : null}
 
       <BoardScopedModal
         isOpen={browseOpen}

@@ -51,9 +51,9 @@ export const RISE_OF_IX_BOARD_MARKERS_LAYER: ExpansionBoardMarkersLayer = {
     { player: 3, x: 90, laneCenterY: [18, 13, 9, 5] },
   ],
   dreadnoughtControlPoints: {
-    [ControlMarkerType.ARRAKIN]: { x: 78, y: 33.5 },
-    [ControlMarkerType.CARTHAG]: { x: 61, y: 36.5 },
-    [ControlMarkerType.IMPERIAL_BASIN]: { x: 77, y: 48.5 },
+    [ControlMarkerType.ARRAKIN]: { x: 78, y: 33.7 },
+    [ControlMarkerType.CARTHAG]: { x: 60.8, y: 37 },
+    [ControlMarkerType.IMPERIAL_BASIN]: { x: 76.8, y: 48.8 },
   },
 }
 

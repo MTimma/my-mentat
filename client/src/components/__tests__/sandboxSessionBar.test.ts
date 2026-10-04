@@ -21,6 +21,7 @@ describe('Sandbox session bar', () => {
     expect(barTsx).toContain('Browse')
     expect(barTsx).toContain('sandbox-session-bar__actions')
     expect(barTsx).toContain('sandbox-session-bar__setup')
+    expect(barTsx).toContain('browseButton')
   })
 
   it('is mounted on the sandbox play shell, not GameSetup', () => {
@@ -54,11 +55,10 @@ describe('Sandbox session bar', () => {
     expect(gamesListTsx).toContain('deleteLocalGame')
     expect(gamesListTsx).toContain('Copy error')
     expect(gamesListTsx).toContain('games-list-error--copyable')
-    expect(appTsx).toContain('setupSlot={openBrowse => sandboxSetupControls(true, openBrowse)}')
+    expect(appTsx).toContain('setupSlot={sandboxSetupControls(true)}')
     expect(appTsx).toContain('showKit={inSandboxSetup}')
     expect(appTsx).toContain('canEdit={canEdit}')
     expect(barTsx).toContain('ariaLabel="Game name"')
-    expect(barTsx).toContain('{showKit ? gameNameField : null}')
     expect(barTsx).toContain('sandbox-session-bar__play-row')
     expect(barTsx).toContain('{!showKit ? (')
     expect(barTsx).toContain('readOnly={!canEdit}')

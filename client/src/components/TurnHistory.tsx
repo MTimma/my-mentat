@@ -15,6 +15,7 @@ import {
   getTroopsRetreatedFromConflict,
 } from '../utils/turnGainsDisplay'
 import {
+  getCombatHistoryLabel,
   getHistoryRowBadge,
   getLivePlayerTurnNumber,
   getPlayerTurnNumber,
@@ -308,7 +309,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
 
   const getHistoryRowTitle = (turn: GameState, index: number): string => {
     if (turn.historyEntryKind === 'endgame') return 'Endgame'
-    if (turn.historyEntryKind === 'combat') return 'Combat'
+    if (turn.historyEntryKind === 'combat') return getCombatHistoryLabel(turn)
     if (isRoundStartHistoryEntry(turn)) return getRoundStartLabel(turn)
     if (index === 0 || turn.historyEntryKind === 'setup') return 'Setup'
     return getTurnActionLabel(turn)
@@ -609,7 +610,9 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       </div>
     ) : isCombatEntry ? (
       <div className="turn-history-action-band turn-history-action-band--meta">
-        <span className="turn-history-action-kind turn-history-action-kind--combat">Combat</span>
+        <span className="turn-history-action-kind turn-history-action-kind--combat">
+          {getCombatHistoryLabel(turn)}
+        </span>
       </div>
     ) : isRevealTurn ? (
       renderRevealActionBand(turn)
@@ -755,7 +758,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             return inSandboxSetup ? 'Setup' : `Turn ${getLivePlayerTurnNumber(turns)} (Current)`
           }
           const snapshot = turns[viewingTurnIndex]
-          if (snapshot?.historyEntryKind === 'combat') return 'Combat'
+          if (snapshot?.historyEntryKind === 'combat') return getCombatHistoryLabel(snapshot)
           if (snapshot?.historyEntryKind === 'endgame') return 'Endgame'
           if (snapshot && isRoundStartHistoryEntry(snapshot)) {
             return getRoundStartLabel(snapshot)

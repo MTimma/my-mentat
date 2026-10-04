@@ -11,7 +11,7 @@ import {
 } from './boardHotspots'
 
 /** Embedded RoI overlay on `Board.jpg` (inner %). */
-export const IX_BOARD_OVERLAY_RECT = { left: 60, top: 66, width: 33, height: 33 }
+export const IX_BOARD_OVERLAY_RECT = { left: 59, top: 66, width: 33, height: 33 }
 
 function ixHotspot(
   spaceId: number,

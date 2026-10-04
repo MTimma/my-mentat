@@ -11,19 +11,59 @@
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
 }
 
-/* Physical dreadnought on a control bonus space (board overlay only). */
+/* Physical dreadnought on a control bonus space — same depth recipe as agents/cubes. */
 .dreadnought-icon--control {
   display: inline-block;
   position: relative;
   width: clamp(11px, 2.2cqw, 16px);
   height: clamp(18px, 3.6cqw, 26px);
+  /* Darker same-color outline + soft cast shadow (half thickness). */
+  filter:
+    drop-shadow(0 -0.75px 0 #8a6410)
+    drop-shadow(0 0.75px 0 #8a6410)
+    drop-shadow(0.75px 0 0 #8a6410)
+    drop-shadow(-0.75px 0 0 #8a6410)
+    drop-shadow(0.5px 0.5px 0 #8a6410)
+    drop-shadow(-0.5px 0.5px 0 #8a6410)
+    drop-shadow(0.5px -0.5px 0 #8a6410)
+    drop-shadow(-0.5px -0.5px 0 #8a6410)
+    drop-shadow(0.5px 1px 0.75px rgba(0, 0, 0, 0.35));
 }
 
+/* Soft depth rim (behind), same idea as .agent::before */
 .dreadnought-icon--control::before {
   content: '';
   position: absolute;
   inset: 0;
+  z-index: 0;
+  background-color: rgba(26, 20, 16, 0.45);
+  -webkit-mask-image: url(/icon/dreadnought.png);
+  mask-image: url(/icon/dreadnought.png);
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  /* Screen-space offset after rotation (rightmost transform applies first). */
+  transform: translate(0.75px, 0.75px) rotate(-90deg);
+}
+
+/* Player-colored face (front) + highlight, same idea as .agent::after */
+.dreadnought-icon--control::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   background-color: #e5b13a;
+  background-image: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.32) 0%,
+    rgba(255, 255, 255, 0.08) 40%,
+    transparent 62%
+  );
   -webkit-mask-image: url(/icon/dreadnought.png);
   mask-image: url(/icon/dreadnought.png);
   -webkit-mask-mode: alpha;
@@ -35,66 +75,62 @@
   -webkit-mask-position: center;
   mask-position: center;
   transform: rotate(-90deg);
-  /* Darker same-color line border around the silhouette. */
-  filter:
-    drop-shadow(0 -1.5px 0 #8a6410)
-    drop-shadow(0 1.5px 0 #8a6410)
-    drop-shadow(1.5px 0 0 #8a6410)
-    drop-shadow(-1.5px 0 0 #8a6410)
-    drop-shadow(1px 1px 0 #8a6410)
-    drop-shadow(-1px 1px 0 #8a6410)
-    drop-shadow(1px -1px 0 #8a6410)
-    drop-shadow(-1px -1px 0 #8a6410);
+  pointer-events: none;
 }
 
-.dreadnought-icon--control.player-red::before {
-  background-color: #d32f2f;
+.dreadnought-icon--control.player-red {
   filter:
-    drop-shadow(0 -1.5px 0 #7a1515)
-    drop-shadow(0 1.5px 0 #7a1515)
-    drop-shadow(1.5px 0 0 #7a1515)
-    drop-shadow(-1.5px 0 0 #7a1515)
-    drop-shadow(1px 1px 0 #7a1515)
-    drop-shadow(-1px 1px 0 #7a1515)
-    drop-shadow(1px -1px 0 #7a1515)
-    drop-shadow(-1px -1px 0 #7a1515);
+    drop-shadow(0 -0.75px 0 #7a1515)
+    drop-shadow(0 0.75px 0 #7a1515)
+    drop-shadow(0.75px 0 0 #7a1515)
+    drop-shadow(-0.75px 0 0 #7a1515)
+    drop-shadow(0.5px 0.5px 0 #7a1515)
+    drop-shadow(-0.5px 0.5px 0 #7a1515)
+    drop-shadow(0.5px -0.5px 0 #7a1515)
+    drop-shadow(-0.5px -0.5px 0 #7a1515)
+    drop-shadow(0.5px 1px 0.75px rgba(0, 0, 0, 0.35));
 }
 
-.dreadnought-icon--control.player-green::before {
-  background-color: #388e3c;
+.dreadnought-icon--control.player-green {
   filter:
-    drop-shadow(0 -1.5px 0 #1b5e20)
-    drop-shadow(0 1.5px 0 #1b5e20)
-    drop-shadow(1.5px 0 0 #1b5e20)
-    drop-shadow(-1.5px 0 0 #1b5e20)
-    drop-shadow(1px 1px 0 #1b5e20)
-    drop-shadow(-1px 1px 0 #1b5e20)
-    drop-shadow(1px -1px 0 #1b5e20)
-    drop-shadow(-1px -1px 0 #1b5e20);
+    drop-shadow(0 -0.75px 0 #1b5e20)
+    drop-shadow(0 0.75px 0 #1b5e20)
+    drop-shadow(0.75px 0 0 #1b5e20)
+    drop-shadow(-0.75px 0 0 #1b5e20)
+    drop-shadow(0.5px 0.5px 0 #1b5e20)
+    drop-shadow(-0.5px 0.5px 0 #1b5e20)
+    drop-shadow(0.5px -0.5px 0 #1b5e20)
+    drop-shadow(-0.5px -0.5px 0 #1b5e20)
+    drop-shadow(0.5px 1px 0.75px rgba(0, 0, 0, 0.35));
 }
 
-.dreadnought-icon--control.player-yellow::before {
-  background-color: #fbc02d;
+.dreadnought-icon--control.player-yellow {
   filter:
-    drop-shadow(0 -1.5px 0 #9a6b00)
-    drop-shadow(0 1.5px 0 #9a6b00)
-    drop-shadow(1.5px 0 0 #9a6b00)
-    drop-shadow(-1.5px 0 0 #9a6b00)
-    drop-shadow(1px 1px 0 #9a6b00)
-    drop-shadow(-1px 1px 0 #9a6b00)
-    drop-shadow(1px -1px 0 #9a6b00)
-    drop-shadow(-1px -1px 0 #9a6b00);
+    drop-shadow(0 -0.75px 0 #9a6b00)
+    drop-shadow(0 0.75px 0 #9a6b00)
+    drop-shadow(0.75px 0 0 #9a6b00)
+    drop-shadow(-0.75px 0 0 #9a6b00)
+    drop-shadow(0.5px 0.5px 0 #9a6b00)
+    drop-shadow(-0.5px 0.5px 0 #9a6b00)
+    drop-shadow(0.5px -0.5px 0 #9a6b00)
+    drop-shadow(-0.5px -0.5px 0 #9a6b00)
+    drop-shadow(0.5px 1px 0.75px rgba(0, 0, 0, 0.35));
 }
 
-.dreadnought-icon--control.player-blue::before {
-  background-color: #1976d2;
+.dreadnought-icon--control.player-blue {
   filter:
-    drop-shadow(0 -1.5px 0 #0d3d75)
-    drop-shadow(0 1.5px 0 #0d3d75)
-    drop-shadow(1.5px 0 0 #0d3d75)
-    drop-shadow(-1.5px 0 0 #0d3d75)
-    drop-shadow(1px 1px 0 #0d3d75)
-    drop-shadow(-1px 1px 0 #0d3d75)
-    drop-shadow(1px -1px 0 #0d3d75)
-    drop-shadow(-1px -1px 0 #0d3d75);
+    drop-shadow(0 -0.75px 0 #0d3d75)
+    drop-shadow(0 0.75px 0 #0d3d75)
+    drop-shadow(0.75px 0 0 #0d3d75)
+    drop-shadow(-0.75px 0 0 #0d3d75)
+    drop-shadow(0.5px 0.5px 0 #0d3d75)
+    drop-shadow(-0.5px 0.5px 0 #0d3d75)
+    drop-shadow(0.5px -0.5px 0 #0d3d75)
+    drop-shadow(-0.5px -0.5px 0 #0d3d75)
+    drop-shadow(0.5px 1px 0.75px rgba(0, 0, 0, 0.35));
 }
+
+.dreadnought-icon--control.player-red::after { background-color: #d32f2f; }
+.dreadnought-icon--control.player-green::after { background-color: #388e3c; }
+.dreadnought-icon--control.player-yellow::after { background-color: #fbc02d; }
+.dreadnought-icon--control.player-blue::after { background-color: #1976d2; }

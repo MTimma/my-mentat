@@ -11,7 +11,6 @@ export interface SandboxSetupControlsProps {
   techTilesDone: boolean
   conflictDone: boolean
   onCommit: () => void
-  onBrowse?: () => void
   /** Mobile footer bar: tighter horizontal layout. */
   compact?: boolean
 }
@@ -37,7 +36,6 @@ const SandboxSetupControls: React.FC<SandboxSetupControlsProps> = ({
   techTilesDone,
   conflictDone,
   onCommit,
-  onBrowse,
   compact = false,
 }) => {
   const commitBlockedHint = commitBlockedHintText(riseOfIx, immortality)
@@ -88,15 +86,6 @@ const SandboxSetupControls: React.FC<SandboxSetupControlsProps> = ({
       >
         Begin
       </button>
-      {onBrowse ? (
-        <button
-          type="button"
-          className="sandbox-session-bar__btn"
-          onClick={onBrowse}
-        >
-          Browse
-        </button>
-      ) : null}
     </div>
   </div>
   )
