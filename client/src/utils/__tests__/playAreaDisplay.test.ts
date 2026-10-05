@@ -3,6 +3,7 @@ import {
   AgentIcon,
   ChoiceType,
   CustomEffect,
+  FactionType,
   GainSource,
   IntrigueCardType,
   TurnType,
@@ -218,6 +219,20 @@ describe('playAreaDisplay', () => {
             prompt: 'Board',
             options: [],
             source: { type: GainSource.BOARD_SPACE, id: 3, name: 'Wealth' },
+          },
+          {
+            id: 'influence-gain-50',
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Choose a faction to gain 1 influence',
+            options: [
+              { reward: { influence: { amounts: [{ faction: FactionType.EMPEROR, amount: 1 }] } } },
+              {
+                reward: {
+                  influence: { amounts: [{ faction: FactionType.SPACING_GUILD, amount: 1 }] },
+                },
+              },
+            ],
+            source: { type: GainSource.CARD, id: 50, name: 'In the Shadows' },
           },
         ],
         optionalEffects: [

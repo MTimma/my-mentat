@@ -107,11 +107,14 @@ describe('Play area action buttons', () => {
     )
   })
 
-  it('keeps pending-gain chip groups equal height and shows a disabled shipping influence bump', () => {
+  it('keeps pending-gain chip groups equal height and hides influence board choices from play area', () => {
     expect(turnCss).toMatch(/\.effects-inline-panel \{[\s\S]*?align-items:\s*stretch/)
     expect(turnCss).toMatch(/\.effect-chip-group \{[\s\S]*?align-self:\s*stretch/)
-    expect(turnControls).toContain('influenceBoardChoiceDisplayReward')
-    expect(turnControls).toContain('influenceBoardSelectionActive && isInfluenceBoardChoice(fixedChoice)')
+    expect(turnControls).not.toContain('influenceBoardChoiceDisplayReward')
+    expect(turnControls).toContain(
+      'Influence gain/lose is chosen on the board tracks, not in the play area.'
+    )
+    expect(turnControls).toContain('return !isInfluenceBoardChoice(choice as FixedOptionsChoice)')
   })
 
   it('opens owned techs in PlayerTechModal instead of inline tiles', () => {

@@ -59,10 +59,7 @@ import {
   getLackingOptionalCostResources,
   requiresInfluenceChoices,
 } from '../../utils/influenceChoices'
-import {
-  influenceBoardChoiceDisplayReward,
-  isInfluenceBoardChoice,
-} from '../../utils/influenceBoardChoice'
+import { isInfluenceBoardChoice } from '../../utils/influenceBoardChoice'
 import { isSoleTrashThisCardReward } from '../../utils/pendingRewardAutoApply'
 import { effectSourceGroupKey } from '../../utils/turnGainsDisplay'
 import {
@@ -1821,11 +1818,16 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
       sourceMap.get(key)!.optional.push(effect)
     })
     
-    // Pending OR choices (full list — acquire-tech branches filtered at render time)
+    // Pending OR choices (full list — acquire-tech branches filtered at render time).
+    // Influence gain/lose is chosen on the board tracks, not in the play area.
     pendingChoices
       .filter(
         choice =>
-          !(choice.type === ChoiceType.FIXED_OPTIONS && isKwisatzAgentSourceChoice(choice.id))
+          !(choice.type === ChoiceType.FIXED_OPTIONS && isKwisatzAgentSourceChoice(choice.id)) &&
+          !(
+            choice.type === ChoiceType.FIXED_OPTIONS &&
+            isInfluenceBoardChoice(choice as FixedOptionsChoice)
+          )
       )
       .forEach(choice => {
       const key = effectSourceGroupKey(choice.source)
@@ -1998,9 +2000,8 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
         : filterAcquireTechFromChoices(
             card.choices.filter(choice => {
               if (choice.type !== ChoiceType.FIXED_OPTIONS) return true
-              if (!isInfluenceBoardChoice(choice as FixedOptionsChoice)) return true
-              // Compact chips keep a disabled bump; overlay still defers to the board.
-              return variant === 'compact' || !influenceBoardSelectionActive
+              // Influence gain/lose is chosen on the board tracks, not in the play area.
+              return !isInfluenceBoardChoice(choice as FixedOptionsChoice)
             })
           )
     const techAcquireOption =
@@ -2215,21 +2216,6 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
           const useInlineFixedChoice =
             variant === 'compact' || isPlayAreaInlineTechOrSignetChoice(fixedChoice)
           if (useInlineFixedChoice) {
-            if (influenceBoardSelectionActive && isInfluenceBoardChoice(fixedChoice)) {
-              const displayReward = influenceBoardChoiceDisplayReward(fixedChoice)
-              return (
-                <button
-                  key={choice.id}
-                  type="button"
-                  className="effect-btn effect-btn--compact choice"
-                  disabled
-                  title={fixedChoice.prompt}
-                  aria-label={fixedChoice.prompt}
-                >
-                  {displayReward ? renderLabel({ reward: displayReward }) : null}
-                </button>
-              )
-            }
             const isInlineOrChoice = fixedChoice.options.length > 1
             const defaultOrPrompt =
               fixedChoice.prompt === 'Choose one reward' || fixedChoice.prompt === 'Choose one option'
@@ -2392,17 +2378,10 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
       ),
     }
     const modalChoices = filterAcquireTechFromChoices(
-      nonOverlayCard.choices.filter(
-        choice =>
-          !influenceBoardSelectionActive ||
-          choice.type !== ChoiceType.FIXED_OPTIONS ||
-          !isInfluenceBoardChoice(choice as FixedOptionsChoice)
-      )
-    ).filter(
-      choice =>
-        !influenceBoardSelectionActive ||
-        choice.type !== ChoiceType.FIXED_OPTIONS ||
-        !isInfluenceBoardChoice(choice as FixedOptionsChoice)
+      nonOverlayCard.choices.filter(choice => {
+        if (choice.type !== ChoiceType.FIXED_OPTIONS) return true
+        return !isInfluenceBoardChoice(choice as FixedOptionsChoice)
+      })
     )
     const overlayChoicePlacements = isRevealed
       ? modalChoices.flatMap(choice => {

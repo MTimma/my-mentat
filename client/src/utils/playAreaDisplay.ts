@@ -1,15 +1,18 @@
 import {
   AUTO_APPLIED_CUSTOM_EFFECTS,
   Card,
+  ChoiceType,
   GainSource,
   GameState,
   Player,
   TurnType,
+  type FixedOptionsChoice,
   type IntrigueCard,
   type PendingReward,
   type Reward,
 } from '../types/GameTypes'
 import { resolveGraftCards } from '../expansions/immortality/graft'
+import { isInfluenceBoardChoice } from './influenceBoardChoice'
 
 /** Find card objects by id across a player's in-round piles (play area, deck, discard; optionally trash). */
 export function findPlayerCardsByIds(
@@ -130,7 +133,15 @@ function playAreaSourceIdsWithPendingEffectChoice(
   }
 
   for (const choice of gameState.currTurn?.pendingChoices ?? []) {
-    if (!choice.disabled) addMatchingSource(choice.source)
+    if (choice.disabled) continue
+    // Influence gain/lose is chosen on the board tracks — do not ring the play-area card.
+    if (
+      choice.type === ChoiceType.FIXED_OPTIONS &&
+      isInfluenceBoardChoice(choice as FixedOptionsChoice)
+    ) {
+      continue
+    }
+    addMatchingSource(choice.source)
   }
   for (const reward of gameState.pendingRewards ?? []) {
     if (pendingRewardNeedsPlayerInput(reward)) addMatchingSource(reward.source)
