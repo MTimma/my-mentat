@@ -594,7 +594,10 @@ function getPlacements4p(entries: { id: number; strength: number }[]): Placement
         placementRank = 4
       }
     } else if (placementRank === 3) {
-      placements.third.push(...tier.ids)
+      // Unique 3rd gets third reward; tie for 3rd gets nothing
+      if (tier.ids.length === 1) {
+        placements.third = [...tier.ids]
+      }
       placementRank = 4
     }
   }

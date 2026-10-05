@@ -38,8 +38,8 @@ function emptySlots(): CombatRankSlot[] {
 
 /**
  * In-combat players only (≥1 troop or dreadnought). Sorted strength ascending
- * so the strongest sit in the higher slot. Ties drop one reward place;
- * lower player id comes first inside a tied group.
+ * so the strongest sit in the higher slot. Ties drop one reward place
+ * (1st→2nd, 2nd→3rd, 3rd→4th/none); lower player id comes first inside a tied group.
  */
 export function buildCombatRankEntries({
   players,

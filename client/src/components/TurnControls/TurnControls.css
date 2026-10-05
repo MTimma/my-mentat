@@ -622,18 +622,28 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   }
 }
 
+/* Mandatory choices / pending gains sit on the card art (agent box), not below it. */
 .turn-card-frame__pending-effects {
   position: absolute;
-  left: 50%;
-  bottom: -0.15rem;
-  transform: translate(-50%, 100%);
+  left: 3%;
+  right: 3%;
+  top: 64%;
+  bottom: 3%;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.2rem;
+  gap: 0.15rem;
   justify-content: center;
+  align-items: center;
+  align-content: center;
   z-index: 5;
-  min-width: max-content;
-  max-width: 12rem;
+  min-width: 0;
+  max-width: none;
+  padding: 0.12rem 0.15rem;
+  border-radius: 4px;
+  background: rgba(15, 13, 10, 0.78);
+  border: 1px solid rgba(212, 177, 106, 0.28);
+  box-sizing: border-box;
+  pointer-events: auto;
 }
 
 .turn-card-frame__pending-effects .effect-btn--compact {
@@ -3247,6 +3257,10 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  padding: 0.2rem 0.28rem;
+  border-radius: 4px;
+  background: #000;
+  box-sizing: border-box;
 }
 
 .card-effects-inline-choice--or .fixed-choice-options--or {

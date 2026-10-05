@@ -24,16 +24,23 @@ describe('combatRewardPlace', () => {
     expect(combatRewardPlace(2, field)).toBe(4)
   })
 
-  it('after a first-place tie, a remaining tie still gets 3rd', () => {
+  it('after a first-place tie, a remaining tie for 3rd gets nothing', () => {
     const field = [8, 8, 4, 4]
     expect(combatRewardPlace(8, field)).toBe(2)
-    expect(combatRewardPlace(4, field)).toBe(3)
+    expect(combatRewardPlace(4, field)).toBe(4)
   })
 
-  it('unique 1st and 2nd: a remaining tie is still competing for 3rd', () => {
+  it('unique 1st and 2nd: a remaining tie for 3rd gets nothing', () => {
     const field = [10, 6, 2, 2]
     expect(combatRewardPlace(10, field)).toBe(1)
     expect(combatRewardPlace(6, field)).toBe(2)
-    expect(combatRewardPlace(2, field)).toBe(3)
+    expect(combatRewardPlace(2, field)).toBe(4)
+  })
+
+  it('after a first-place tie, a unique remaining player gets 3rd', () => {
+    const field = [8, 8, 4, 2]
+    expect(combatRewardPlace(8, field)).toBe(2)
+    expect(combatRewardPlace(4, field)).toBe(3)
+    expect(combatRewardPlace(2, field)).toBe(4)
   })
 })

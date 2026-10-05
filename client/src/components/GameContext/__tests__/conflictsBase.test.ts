@@ -75,7 +75,7 @@ describe('Base conflicts — resolution', () => {
     expect(s.players[3].spice).toBe(0)
   })
 
-  it('tie for first then tie for second: third-place players share third reward', () => {
+  it('tie for first then tie for 3rd: tied 3rd players get nothing', () => {
     let s = getBaseTestState(undefined, { players: 4 })
     s = {
       ...s,
@@ -90,8 +90,25 @@ describe('Base conflicts — resolution', () => {
     expect(s.players[1].victoryPoints).toBe(0)
     expect(s.players[0].water).toBe(1)
     expect(s.players[1].water).toBe(1)
-    expect(s.players[2].spice).toBe(1)
-    expect(s.players[3].spice).toBe(1)
+    expect(s.players[2].spice).toBe(0)
+    expect(s.players[3].spice).toBe(0)
+  })
+
+  it('unique 1st and 2nd then tie for 3rd: tied players get nothing', () => {
+    let s = getBaseTestState(undefined, { players: 4 })
+    s = {
+      ...s,
+      currentConflict: skirmish901,
+      phase: GamePhase.COMBAT_REWARDS,
+      combatTroops: { 0: 3, 1: 2, 2: 1, 3: 1 },
+      combatStrength: { 0: 10, 1: 6, 2: 2, 3: 2 },
+      players: s.players.map(p => ({ ...p, spice: 0, water: 0, victoryPoints: 0 })),
+    }
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(s.players[0].victoryPoints).toBe(1)
+    expect(s.players[1].water).toBe(1)
+    expect(s.players[2].spice).toBe(0)
+    expect(s.players[3].spice).toBe(0)
   })
   it.todo('0 strength receives no reward')
   it.todo('after combat, troops return to supply and combat markers reset')

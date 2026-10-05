@@ -242,6 +242,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
   const openIntriguePickerRef = useRef<() => void>(() => {})
   const openCombatIntriguePickerRef = useRef<() => void>(() => {})
   const activateTechRef = useRef<(playerId: number, tileId: TechTileId) => void>(() => {})
+  /** Birdseye play-area card hosts for on-card mandatory choice portals. */
+  const birdseyeCardEffectHostsRef = useRef<Record<string, HTMLElement>>({})
+  const [birdseyeCardEffectHostVersion, setBirdseyeCardEffectHostVersion] = useState(0)
 
   useImperativeHandle(
     ref,
@@ -559,6 +562,45 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
       setActiveCardEffectSource(null)
     }
   }, [activeIntriguePreviewCard, isHistoryView, playAreaIntriguePreviewIdsKeyEarly])
+
+  useLayoutEffect(() => {
+    if (!birdseyeInteractionsHost || isHistoryView || !activePlayer) {
+      if (Object.keys(birdseyeCardEffectHostsRef.current).length > 0) {
+        birdseyeCardEffectHostsRef.current = {}
+        setBirdseyeCardEffectHostVersion(v => v + 1)
+      }
+      return
+    }
+    const next: Record<string, HTMLElement> = {}
+    document.querySelectorAll<HTMLElement>('[data-birdseye-card-effects]').forEach(el => {
+      const key = el.dataset.birdseyeCardEffects
+      if (key) next[key] = el
+    })
+    const prev = birdseyeCardEffectHostsRef.current
+    const prevKeys = Object.keys(prev)
+    const nextKeys = Object.keys(next)
+    let changed = prevKeys.length !== nextKeys.length
+    if (!changed) {
+      for (const key of nextKeys) {
+        if (prev[key] !== next[key]) {
+          changed = true
+          break
+        }
+      }
+    }
+    if (!changed) return
+    birdseyeCardEffectHostsRef.current = next
+    setBirdseyeCardEffectHostVersion(v => v + 1)
+  }, [
+    birdseyeInteractionsHost,
+    isHistoryView,
+    activePlayer,
+    pendingChoices,
+    pendingRewards,
+    turnControlOptionalEffects,
+    playAreaPreviewIdsKeyEarly,
+    playAreaIntriguePreviewIdsKeyEarly,
+  ])
 
   if (!activePlayer) return null
   const isKwisatzHaderach = (card: Card) => isKwisatzHaderachCard(card)
@@ -2129,7 +2171,38 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
           )
         })}
 
-        {choices.map(choice => {
+        {(() => {
+          const techAcquireButton =
+            techAcquireOption && onOpenTechAcquire ? (
+              <button
+                key={`tech-acquire-${techAcquireOption.id}`}
+                type="button"
+                className={[
+                  `effect-btn effect-btn--${variant} tech-acquire-btn`,
+                  canAffordAnyTech ? 'effect-btn--needs-input' : 'effect-btn--unaffordable',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                disabled={selectionActive || !canAffordAnyTech}
+                onClick={() => onOpenTechAcquire(techAcquireOption.id)}
+                title={
+                  canAffordAnyTech
+                    ? 'Buy tech from the market'
+                    : 'Cannot afford any face-up tech tile'
+                }
+              >
+                <img
+                  src={techAcquireOption.icon}
+                  alt=""
+                  className="effect-token-icon effect-token-icon--tech"
+                  aria-hidden
+                />
+                {techAcquireOption.discount > 0 ? (
+                  <span className="effect-token-amt">−{techAcquireOption.discount}</span>
+                ) : null}
+              </button>
+            ) : null
+          const choiceNodes = choices.map(choice => {
           if (isKwisatzAgentSourceChoice(choice.id)) return null
 
           if (choice.type === ChoiceType.CARD_SELECT) {
@@ -2263,38 +2336,35 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
               {fixedChoice.prompt || 'Choose one'}
             </button>
           )
-        })}
-
-        {techAcquireOption && onOpenTechAcquire ? (
-          <button
-            key={`tech-acquire-${techAcquireOption.id}`}
-            type="button"
-            className={[
-              `effect-btn effect-btn--${variant} tech-acquire-btn`,
-              canAffordAnyTech ? 'effect-btn--needs-input' : 'effect-btn--unaffordable',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            disabled={selectionActive || !canAffordAnyTech}
-            onClick={() => onOpenTechAcquire(techAcquireOption.id)}
-            title={
-              canAffordAnyTech
-                ? 'Buy tech from the market'
-                : 'Cannot afford any face-up tech tile'
-            }
-          >
-            <img
-              src={techAcquireOption.icon}
-              alt=""
-              className="effect-token-icon effect-token-icon--tech"
-              aria-hidden
-            />
-            <span>Buy tech</span>
-            {techAcquireOption.discount > 0 ? (
-              <span className="effect-token-amt">−{techAcquireOption.discount}</span>
-            ) : null}
-          </button>
-        ) : null}
+        })
+          const techOrSignetPair =
+            Boolean(techAcquireButton) &&
+            choices.some(
+              choice =>
+                choice.type === ChoiceType.FIXED_OPTIONS &&
+                isPlayAreaInlineTechOrSignetChoice(choice as FixedOptionsChoice)
+            )
+          if (techOrSignetPair) {
+            return (
+              <div
+                key="tech-or-signet-pair"
+                className="card-effects-inline-choice card-effects-inline-choice--or card-effects-inline-choice--tech-signet"
+              >
+                {techAcquireButton}
+                <span className="or-separator" aria-hidden="true">
+                  OR
+                </span>
+                {choiceNodes}
+              </div>
+            )
+          }
+          return (
+            <>
+              {choiceNodes}
+              {techAcquireButton}
+            </>
+          )
+        })()}
       </>
     )
   }
@@ -3069,6 +3139,24 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     playedIntrigueStripCards.length > 0 ||
     hasActiveIntrigueThisRound
   const visibleCardIds = new Set(playAreaCards.map(card => card.id))
+
+  const birdseyeCardEffectHostKeys = new Set(Object.keys(birdseyeCardEffectHostsRef.current))
+  void birdseyeCardEffectHostVersion
+  const birdseyeOnCardEffectKeys = new Set<string>()
+  for (const card of effectCards) {
+    if (card.source.type === GainSource.CARD && visibleCardIds.has(card.source.id)) {
+      const key = `card:${card.source.id}`
+      if (birdseyeCardEffectHostKeys.has(key) && effectCardHasPendingInput(card)) {
+        birdseyeOnCardEffectKeys.add(key)
+      }
+    }
+    if (card.source.type === GainSource.INTRIGUE) {
+      const key = `intrigue:${card.source.id}`
+      if (birdseyeCardEffectHostKeys.has(key) && effectCardHasPendingInput(card)) {
+        birdseyeOnCardEffectKeys.add(key)
+      }
+    }
+  }
   const gainToReward = (gain: Gain): Reward => {
     switch (gain.type) {
       case RewardType.PERSUASION:
@@ -3212,14 +3300,52 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                   Auto{simpleAutoApplyCount > 0 ? ` ${simpleAutoApplyCount}` : ''}
                 </button>
               ) : null}
-              {renderIntegratedEffects(effectCards, visibleCardIds, playAreaIntrigueCards, {
-                compactBirdseye: true,
-                includeAll: true,
-              })}
+              {renderIntegratedEffects(
+                effectCards.filter(card => {
+                  if (card.source.type === GainSource.CARD) {
+                    return !birdseyeOnCardEffectKeys.has(`card:${card.source.id}`)
+                  }
+                  if (card.source.type === GainSource.INTRIGUE) {
+                    return !birdseyeOnCardEffectKeys.has(`intrigue:${card.source.id}`)
+                  }
+                  return true
+                }),
+                visibleCardIds,
+                playAreaIntrigueCards,
+                {
+                  compactBirdseye: true,
+                  includeAll: true,
+                }
+              )}
             </div>,
             birdseyeInteractionsHost
           )
         : null}
+      {birdseyeInteractionsHost &&
+        !isHistoryView &&
+        effectCards.flatMap(card => {
+          const key =
+            card.source.type === GainSource.CARD
+              ? `card:${card.source.id}`
+              : card.source.type === GainSource.INTRIGUE
+                ? `intrigue:${card.source.id}`
+                : null
+          if (!key || !birdseyeOnCardEffectKeys.has(key)) return []
+          const host = birdseyeCardEffectHostsRef.current[key]
+          if (!host) return []
+          return [
+            createPortal(
+              <div
+                key={key}
+                className="birdseye-seat-play-area__card-effects-inner"
+                onClick={event => event.stopPropagation()}
+              >
+                {renderEffectActions(card, 'compact')}
+              </div>,
+              host
+            ),
+          ]
+        })}
       {renderOpponentDiscardPanel()}
       {!influenceBoardSelectionActive && placementPrompt ? (
         <div className="placement-prompt-banner" role="status" aria-live="polite">

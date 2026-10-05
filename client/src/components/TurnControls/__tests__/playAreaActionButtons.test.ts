@@ -117,6 +117,22 @@ describe('Play area action buttons', () => {
     expect(turnControls).toContain('return !isInfluenceBoardChoice(choice as FixedOptionsChoice)')
   })
 
+  it('renders mandatory card choices on top of the glowing play-area card', () => {
+    expect(turnCss).toMatch(
+      /\.turn-card-frame__pending-effects \{[\s\S]*?top:\s*64%/
+    )
+    expect(turnCss).toMatch(
+      /\.turn-card-frame__pending-effects \{[\s\S]*?bottom:\s*3%/
+    )
+    expect(turnControls).toContain('[data-birdseye-card-effects]')
+    expect(turnControls).toContain('birdseyeOnCardEffectKeys')
+    expect(turnControls).toContain('birdseye-seat-play-area__card-effects-inner')
+    expect(seatChrome).toContain('data-birdseye-card-effects={effectsHostKey}')
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__stack \{[\s\S]*?overflow-y:\s*auto/
+    )
+  })
+
   it('opens owned techs in PlayerTechModal instead of inline tiles', () => {
     expect(turnControls).toContain('renderTechActionButton')
     expect(turnControls).toContain('selected-card-action-placeholder--tech')

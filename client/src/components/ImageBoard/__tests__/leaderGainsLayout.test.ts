@@ -581,9 +581,41 @@ describe('Leader gains leftover layout', () => {
     )
     expect(seatChromeTsx).toContain('playAreaCardHasPendingEffectHighlight')
     expect(seatChromeTsx).toContain("hasPendingEffects ? 'turn-card-frame--has-effects' : ''")
+    expect(seatChromeTsx).toContain('data-birdseye-card-effects')
+    expect(seatChromeTsx).toContain('effectsHostKey={hasPendingEffects ? `card:${card.id}` : undefined}')
     expect(seatChromeCss).toMatch(
-      /\.birdseye-seat-play-area__card\.turn-card-frame--has-effects \{[\s\S]*?box-shadow:\s*var\(--pending-ring\)/
+      /\.birdseye-seat-play-area__card\.turn-card-frame--has-effects \{[\s\S]*?box-shadow:\s*none/
     )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__card\.turn-card-frame--has-effects::before/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects \{[\s\S]*?position:\s*absolute/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects \{[\s\S]*?width:\s*max-content/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects \.tech-acquire-btn[\s\S]*?\{[\s\S]*?height:\s*1\.85rem/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects \.or-separator \{[\s\S]*?color:\s*#fff/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects \.card-effects-inline-choice--tech-signet \{[\s\S]*?background:\s*#000/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects \.effect-btn--compact:hover:not\(:disabled\)/
+    )
+    expect(seatChromeCss).not.toContain('birdseye-seat-play-area__card-effects-title')
+    const turnControls = readFileSync(
+      resolve(root, 'components/TurnControls/TurnControls.tsx'),
+      'utf8'
+    )
+    const leaders = readFileSync(resolve(root, 'data/leaders.ts'), 'utf8')
+    expect(turnControls).toContain('card-effects-inline-choice--tech-signet')
+    expect(turnControls).not.toContain('birdseye-seat-play-area__card-effects-title')
+    expect(leaders).toContain("signetRingTitle: 'Ixian Technology'")
   })
 
   it('renders played and active intrigues below play-area cards', () => {

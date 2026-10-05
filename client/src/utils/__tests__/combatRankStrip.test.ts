@@ -152,14 +152,26 @@ describe('buildCombatRankSlots', () => {
     expect(slots[3]?.entries[0]?.place).toBe(1)
   })
 
-  it('packs a 2+2 tie into the 2nd and 3rd boxes', () => {
+  it('packs a first-place tie into 2nd; remaining 3rd-place tie into 4th', () => {
     const slots = buildCombatRankSlots({
       players: [stubPlayer(0), stubPlayer(1), stubPlayer(2), stubPlayer(3)],
       troops: { 0: 1, 1: 1, 2: 1, 3: 1 },
       strength: { 0: 8, 1: 8, 2: 4, 3: 4 },
     })
-    expect(idsIn(slots)).toEqual([[], [2, 3], [0, 1], []])
+    expect(idsIn(slots)).toEqual([[2, 3], [], [0, 1], []])
     expect(slots[2]?.entries.map(e => e.place)).toEqual([2, 2])
-    expect(slots[1]?.entries.map(e => e.place)).toEqual([3, 3])
+    expect(slots[0]?.entries.map(e => e.place)).toEqual([4, 4])
+  })
+
+  it('puts a 3rd-place tie into 4th and leaves 3rd empty', () => {
+    const slots = buildCombatRankSlots({
+      players: [stubPlayer(0), stubPlayer(1), stubPlayer(2), stubPlayer(3)],
+      troops: { 0: 1, 1: 1, 2: 1, 3: 1 },
+      strength: { 0: 10, 1: 6, 2: 2, 3: 2 },
+    })
+    expect(idsIn(slots)).toEqual([[2, 3], [], [1], [0]])
+    expect(slots[0]?.entries.map(e => e.place)).toEqual([4, 4])
+    expect(slots[2]?.entries[0]?.place).toBe(2)
+    expect(slots[3]?.entries[0]?.place).toBe(1)
   })
 })

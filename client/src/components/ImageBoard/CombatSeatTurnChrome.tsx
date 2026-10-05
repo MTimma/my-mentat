@@ -538,11 +538,14 @@ function PlayAreaThumb({
   className,
   title,
   style,
+  effectsHostKey,
 }: {
   card: Card
   className: string
   title: string
   style?: React.CSSProperties
+  /** TurnControls portals mandatory choice chips into this host (on top of the card). */
+  effectsHostKey?: string
 }) {
   return (
     <div className={className} title={card.image ? withImageZoomHint(title) : title} style={style}>
@@ -551,6 +554,14 @@ function PlayAreaThumb({
       ) : (
         <span className="birdseye-seat-play-area__card-name">{card.name}</span>
       )}
+      {effectsHostKey ? (
+        <div
+          className="birdseye-seat-play-area__card-effects"
+          data-birdseye-card-effects={effectsHostKey}
+          onClick={stop}
+          aria-label={`Pending effects for ${card.name}`}
+        />
+      ) : null}
     </div>
   )
 }
@@ -589,7 +600,7 @@ export function BirdseyeSeatPlayArea({
   const hasIntrigues = playedIntrigues.length > 0 || activeIntrigues.length > 0
   const { scrollRef, overflowStart, overflowEnd, scrollable, thumb } = useScrollOverflowFades(
     hasCards || hasIntrigues,
-    `${cards.length}:${playedIntrigues.length}:${activeIntrigues.length}`
+    `${cards.length}:${playedIntrigues.length}:${activeIntrigues.length}:${pendingIds.size}:${pendingIntrigueIdSet.size}`
   )
   const ariaLabel = [
     names.length > 0 && `Play area: ${names.join(', ')}`,
@@ -628,6 +639,7 @@ export function BirdseyeSeatPlayArea({
               : card.name
         }
         style={hasPendingEffects ? { zIndex: 8 } : undefined}
+        effectsHostKey={hasPendingEffects ? `intrigue:${card.id}` : undefined}
       />
     )
   }
@@ -683,6 +695,7 @@ export function BirdseyeSeatPlayArea({
                           ? { zIndex: revealZ }
                           : undefined
                     }
+                    effectsHostKey={hasPendingEffects ? `card:${card.id}` : undefined}
                   />
                 )
               })}

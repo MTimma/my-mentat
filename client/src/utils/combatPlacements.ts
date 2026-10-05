@@ -1,7 +1,9 @@
 /**
  * Display place for the live combat rank strip.
- * Same walk as `getPlacements4p` in GameContext: ties for 1st/2nd drop one
- * rank; whoever is left competing for 3rd keeps 3rd even if they tie.
+ * Same walk as `getPlacements4p` in GameContext:
+ * - tie for 1st → 2nd reward (no unique winner)
+ * - tie for 2nd → 3rd reward
+ * - tie for 3rd → nothing (place 4)
  *
  * `fieldStrengths` is every in-combat strength (same field for each call).
  */
@@ -19,7 +21,7 @@ export function combatRewardPlace(strength: number, fieldStrengths: readonly num
       place = tied ? 3 : 2
       next = tied ? 4 : 3
     } else if (contested === 3) {
-      place = 3
+      place = tied ? 4 : 3
       next = 4
     } else {
       place = 4

@@ -1424,15 +1424,231 @@
   z-index: 2;
 }
 
+/* Keep pending CSS vars on the card, but no card-level ring/hover — highlights live on each choice. */
 .combat-area-cluster--column .birdseye-seat-play-area__card.turn-card-frame--has-effects {
   overflow: visible;
   z-index: 8;
-  box-shadow: var(--pending-ring);
+  box-shadow: none;
+  cursor: default;
+  transform: none;
 }
 
-.combat-area-cluster--column .birdseye-seat-play-area__card.turn-card-frame--has-effects img {
+.combat-area-cluster--column .birdseye-seat-play-area__card.turn-card-frame--has-effects::before,
+.combat-area-cluster--column .birdseye-seat-play-area__card.turn-card-frame--has-effects:hover:not(:disabled)::before,
+.combat-area-cluster--column .birdseye-seat-play-area__card.turn-card-frame--has-effects:focus-visible::before {
+  content: none;
+  display: none;
+  animation: none;
+  border: none;
+  box-shadow: none;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card.turn-card-frame--has-effects:hover:not(:disabled),
+.combat-area-cluster--column .birdseye-seat-play-area__card.turn-card-frame--has-effects:focus-visible {
+  transform: none;
+  box-shadow: none;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card.turn-card-frame--has-effects > img {
   border-radius: inherit;
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--pending-accent) 82%, white);
+  box-shadow: none;
+}
+
+/*
+ * Mandatory choice chips: compact row on the card.
+ * Black fill + pending highlight on the choice group; hover stays per choice button.
+ */
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects {
+  position: absolute;
+  left: 50%;
+  right: auto;
+  top: auto;
+  bottom: 1%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0;
+  width: max-content;
+  max-width: calc(100% + 1.2rem);
+  min-width: calc(100% + 0.6rem);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects:empty {
+  display: none;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects-inner {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.1rem;
+  width: max-content;
+  max-width: none;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice--or,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice--tech-signet {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.14rem;
+  width: auto;
+  margin: 0;
+  padding: 0.1rem 0.12rem;
+  min-width: 0;
+  border-radius: 4px;
+  background: #000;
+  border: 1.5px solid var(--pending-accent-bright, var(--play-target-highlight, #ffd700));
+  box-shadow:
+    0 0 0 1px rgba(10, 8, 6, 0.58),
+    0 0 12px color-mix(in srgb, var(--pending-accent, #ffd700) 48%, transparent);
+  animation: pending-effect-pulse 2.2s ease-in-out infinite;
+  box-sizing: border-box;
+}
+
+/* Nested wrappers inside an OR group — panel already surrounds them. */
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice .card-effects-inline-choice,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice .fixed-choice-options,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice .fixed-choice-options--or,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice .fixed-choice-options--compact {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.14rem;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice-title,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .effect-chip-source {
+  display: none;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .or-separator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #fff;
+  font-size: 0.42rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  padding: 0 0.04rem;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .effect-btn--compact,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .tech-acquire-btn,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .fixed-choice-option {
+  min-width: 2.25rem;
+  width: 2.25rem;
+  height: 1.85rem;
+  padding: 0.06rem;
+  font-size: 0.48rem;
+  white-space: nowrap;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.08rem;
+  border-radius: 3px;
+  border: 1px solid rgba(212, 177, 106, 0.42);
+  background: #000;
+  color: #fff8e8;
+  box-shadow: none;
+  animation: none;
+  cursor: pointer;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .effect-btn.choice,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .fixed-choice-option,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .tech-acquire-btn.effect-btn--needs-input:not(:disabled) {
+  border: 1px solid rgba(212, 177, 106, 0.42);
+  background: #000;
+  color: #fff8e8;
+  box-shadow: none;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .effect-btn--compact:hover:not(:disabled),
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .tech-acquire-btn:hover:not(:disabled),
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .fixed-choice-option:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--pending-accent, #ffd700) 55%, white);
+  box-shadow:
+    0 0 0 1px rgba(10, 8, 6, 0.45),
+    0 0 18px color-mix(in srgb, var(--pending-accent, #ffd700) 72%, transparent);
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .effect-btn--compact:focus-visible,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .tech-acquire-btn:focus-visible,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .fixed-choice-option:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--pending-accent, #ffd700) 45%, white);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--pending-accent, #ffd700) 40%, transparent),
+    0 0 16px color-mix(in srgb, var(--pending-accent, #ffd700) 70%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice,
+  .combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice--or,
+  .combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice--tech-signet {
+    animation: none;
+  }
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .effect-token-icon,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .effect-token-icon--tech,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .negotiator-icon,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .negotiator-icon__img {
+  width: 1rem;
+  height: 1rem;
+  max-width: 1rem;
+  max-height: 1.2rem;
+  object-fit: contain;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .negotiator-icon--lg,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .effect-token-icon.negotiator-icon--lg {
+  width: 1rem;
+  height: 1.2rem;
+  background: #000;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .effect-token-amt {
+  font-size: 0.45rem;
 }
 
 .combat-area-cluster--column .birdseye-seat-play-area__card img {
