@@ -163,7 +163,7 @@ describe('tech tile activation', () => {
     expect(after.gains.some(g => g.type === RewardType.DRAW && g.amount === 1)).toBe(true)
   })
 
-  it('Holoprojectors rejects discarding a draw-pile card', () => {
+  it('Holoprojectors allows discarding a draw-pile-index card and treats it as from hand', () => {
     const hand1 = stubDeckCard(111)
     const drawTop = stubDeckCard(112)
     const before = roiState({
@@ -178,7 +178,12 @@ describe('tech tile activation', () => {
       ],
     })
     const after = applyHoloprojectorsDiscard(before, 0, [drawTop.id])
-    expect(after).toBe(before)
+    const p = after.players[0]
+    expect(p.discardPile.map(c => c.id)).toEqual([drawTop.id])
+    // Discarded 1 from hand, then drew 1 back.
+    expect(p.handCount).toBe(1)
+    expect(p.deck.map(c => c.id)).toEqual([hand1.id])
+    expect(p.tech[0]?.faceUp).toBe(false)
   })
 
   it('repairLegacyTechDiscardState clears old pending choices and restores face-up tile', () => {
@@ -213,7 +218,7 @@ describe('tech tile activation', () => {
     })
     const after = repairLegacyTechDiscardState(before)
     expect(after.currTurn?.pendingChoices).toEqual([])
-    expect(after.canEndTurn).toBe(true)
+    expect(after.canEndTurn).toBe(false)
     expect(after.players[0].tech[0]?.faceUp).toBe(true)
     expect(after.players[0].activatedTechThisRound ?? []).not.toContain(TechTileId.HOLOPROJECTORS)
   })

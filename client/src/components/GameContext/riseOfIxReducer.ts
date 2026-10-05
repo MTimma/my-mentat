@@ -40,6 +40,7 @@ import {
   returnNegotiatorsToSupply,
 } from '../../utils/troops'
 import { validateDiscardCostSelection } from '../../utils/playAreaDisplay'
+import { computeCanEndTurn } from '../../utils/endTurnState'
 import { applyDrawCardsToPlayer } from '../../utils/deckDraw'
 import { createCountChoice } from '../../utils/choices'
 
@@ -1153,8 +1154,10 @@ export function repairLegacyTechDiscardState(state: GameState): GameState {
   let next: GameState = {
     ...state,
     currTurn: { ...currTurn, pendingChoices: remaining },
-    canEndTurn:
-      remaining.length === 0 && state.pendingRewards.filter(r => !r.disabled).length === 0,
+    canEndTurn: computeCanEndTurn({
+      ...state,
+      currTurn: { ...currTurn, pendingChoices: remaining },
+    }),
   }
 
   for (const choice of legacyChoices) {
@@ -1192,7 +1195,8 @@ function applyTrainingDronesActivation(
   return updatePlayer({ ...state, gains }, playerId, p => recruitTroopsToGarrison(p, 1).player)
 }
 
-function discardFromHand(
+/** Discard a deck card (hand composition unknown), then draw `drawCards`. */
+function discardToDraw(
   state: GameState,
   playerId: number,
   cardId: number,
@@ -1211,10 +1215,8 @@ function discardFromHand(
   const [removed] = deck.splice(idx, 1)
   discardPile.push(removed)
 
-  let handCount = player.handCount
-  if (idx < handCount) {
-    handCount = Math.max(0, handCount - 1)
-  }
+
+  let handCount = Math.max(0, player.handCount - 1)
   const drawResult = applyDrawCardsToPlayer({ deck, discardPile, handCount }, drawCards)
   deck.splice(0, deck.length, ...drawResult.deck)
   discardPile.splice(0, discardPile.length, ...drawResult.discardPile)
@@ -1369,7 +1371,7 @@ export function applyHoloprojectorsDiscard(
   if (!tilesActivatableNow(state, playerId).some(t => t.id === TechTileId.HOLOPROJECTORS)) return state
   const player = state.players.find(p => p.id === playerId)
   if (!player || !validateDiscardCostSelection(player, 1, cardIds)) return state
-  const applied = discardFromHand(
+  const applied = discardToDraw(
     state,
     playerId,
     cardIds[0],
@@ -1389,7 +1391,7 @@ export function applyInvasionShipsDiscard(
   if (!tilesActivatableNow(state, playerId).some(t => t.id === TechTileId.INVASION_SHIPS)) return state
   const player = state.players.find(p => p.id === playerId)
   if (!player || !validateDiscardCostSelection(player, 1, cardIds)) return state
-  const applied = discardFromHand(
+  const applied = discardToDraw(
     state,
     playerId,
     cardIds[0],

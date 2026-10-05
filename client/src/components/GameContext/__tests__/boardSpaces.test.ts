@@ -70,10 +70,30 @@ describe('Board spaces — base game', () => {
     expect(conspire?.cost?.spice).toBe(4)
   })
 
-  it('Sietch Tabr requires Fremen influence 2+', () => {
+  it('Sietch Tabr is City and requires Fremen influence 2+', () => {
     const sietch = BOARD_SPACES.find(s => s.name === 'Sietch Tabr')
+    expect(sietch?.agentIcon).toBe(AgentIcon.CITY)
     expect(sietch?.requiresInfluence?.amount).toBeGreaterThanOrEqual(2)
     expect(sietch?.requiresInfluence?.faction).toBe(FactionType.FREMEN)
+  })
+
+  it('City card with 2 Fremen influence can place on Sietch Tabr', () => {
+    const sietchId = BOARD_SPACES.find(s => s.name === 'Sietch Tabr')!.id
+    const card = stubDeckCard(5210, { agentIcons: [AgentIcon.CITY] })
+    let s = getBaseTestState(undefined, { players: 2 })
+    s = {
+      ...s,
+      factionInfluence: {
+        ...s.factionInfluence,
+        [FactionType.FREMEN]: { 0: 2, 1: 0 },
+      },
+      players: s.players.map((p, i) =>
+        i === 0 ? { ...p, deck: [card], handCount: 1 } : p
+      ),
+    }
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+    const placed = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: sietchId })
+    expect(placed.occupiedSpaces[sietchId]).toEqual([0])
   })
 
   it('High Council costs 5 Solari', () => {

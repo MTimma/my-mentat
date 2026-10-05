@@ -264,11 +264,16 @@ export function getOpponentDiscardableCards(player: Player): Card[] {
   return getSelectableDeckCards(player)
 }
 
-/** True when the player can pay a discard cost from hand. */
+/** True when the player can pay a discard cost (hand size gate only). */
 export function canPayDiscardCost(player: Player, discardCount: number): boolean {
   return player.handCount >= discardCount
 }
 
+/**
+ * Mentarium does not track which deck cards are in hand — only `handCount`.
+ * Any distinct cards currently in `player.deck` may be chosen for a discard cost
+ * as long as hand size covers the cost.
+ */
 export function validateDiscardCostSelection(
   player: Player,
   discardCount: number,
@@ -277,10 +282,16 @@ export function validateDiscardCostSelection(
   if (player.handCount < discardCount) return false
   if (cardIds.length !== discardCount) return false
   if (new Set(cardIds).size !== cardIds.length) return false
-  return true
+  return cardIds.every(id => player.deck.some(c => c.id === id))
 }
 
-/** Card picker rules for discard costs: hand cards only. */
+/** True when `cardId` is among the player's current hand (`deck[0..handCount)`). */
+export function isCardInHand(player: Player, cardId: number): boolean {
+  const idx = player.deck.findIndex(c => c.id === cardId)
+  return idx >= 0 && idx < player.handCount
+}
+
+/** Card picker rules for discard costs: any deck card (hand composition unknown). */
 export function getDiscardCostPlayability(
   player: Player,
   discardCount: number,

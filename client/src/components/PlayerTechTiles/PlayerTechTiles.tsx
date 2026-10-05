@@ -67,8 +67,10 @@ const PlayerTechTiles: React.FC<PlayerTechTilesProps> = ({
                 .filter(Boolean)
                 .join(' ')}
               title={withImageZoomHint(title)}
-              disabled={!activatable && variant === 'compact'}
-              onClick={() => onTileClick(owned.id)}
+              disabled={!activatable}
+              onClick={() => {
+                if (activatable) onTileClick(owned.id)
+              }}
             >
               {content}
             </button>

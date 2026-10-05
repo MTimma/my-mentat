@@ -109,9 +109,8 @@ export const BOARD_SPACES: SpaceProps[] = [
     id: 21,
     name: "Sietch Tabr",
     conflictMarker: true,
-    agentIcon: AgentIcon.FREMEN,
+    agentIcon: AgentIcon.CITY,
     requiresInfluence: { faction: FactionType.FREMEN, amount: 2 },
-    influence: { faction: FactionType.FREMEN, amount: 1 },
     effects: [{ reward: { troops: 1, water: 1 } }],
     image: "board/sietch_tabr.avif"
   },

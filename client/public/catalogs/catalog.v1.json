@@ -8870,7 +8870,7 @@
     {
       "id": 21,
       "name": "Sietch Tabr",
-      "agentIcon": "fremen",
+      "agentIcon": "city",
       "conflictMarker": true,
       "influence": {
         "faction": "fremen",

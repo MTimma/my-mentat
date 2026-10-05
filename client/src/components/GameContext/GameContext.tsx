@@ -212,7 +212,8 @@ import { seedTessiaSnoopers, tryTessiaSnooperClaim } from '../../data/leaderAbil
 import { countSpiceMustFlowCards } from '../../utils/spiceMustFlow'
 import { applySandboxDeckEdit } from '../../utils/sandboxDeckPools'
 import { defaultSavedPlayerName, normalizeStoredPlayerName, playerNameOnBegin } from '../../utils/playerName'
-import { getOpponentDiscardableCards, validateDiscardCostSelection, isCardInHand } from '../../utils/playAreaDisplay'
+import { getOpponentDiscardableCards, validateDiscardCostSelection } from '../../utils/playAreaDisplay'
+import { computeCanEndTurn, hasCompletedRequiredTurnAction } from '../../utils/endTurnState'
 import { normalizeChoiceOptEffects } from '../../utils/choiceOptEffects'
 import { drawCardsFromDeck, drawRoundStartHand, applyDrawCardsToPlayer } from '../../utils/deckDraw'
 import { collectLiveIds, mintId, nextSemanticId } from '../../utils/semanticIds'
@@ -3485,6 +3486,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       if (state.selectedCard == null && state.currTurn?.type !== TurnType.REVEAL) return state
+      if (state.phase === GamePhase.PLAYER_TURNS && !hasCompletedRequiredTurnAction(state)) {
+        return state
+      }
       const currentTurn = newState.currTurn
       if (!currentTurn) return state
 
@@ -6684,9 +6688,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               let handCount = player.handCount
               for (const id of cardIds) {
                 const idx = deck.findIndex(c => c.id === id)
-                if (idx === -1 || idx >= handCount) return state
+                if (idx === -1) return state
                 const [removed] = deck.splice(idx, 1)
                 discardPile.push(removed)
+                // Mentarium: chosen deck card is treated as having been in hand.
                 handCount = Math.max(0, handCount - 1)
                 newGains.push(makeDiscardGain(state, playerId, removed, source))
               }
@@ -7151,8 +7156,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const after = {
           ...afterAdvance,
           currTurn: newTurn,
-          canEndTurn:
-            newPending.length === 0 && state.pendingRewards.filter(r => !r.disabled).length === 0,
+          canEndTurn: computeCanEndTurn({
+            ...afterAdvance,
+            currTurn: newTurn,
+          }),
         }
         return state.phase === GamePhase.END_GAME
           ? afterEndgamePlayerAction(after)
@@ -7189,9 +7196,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           gains: recall.gains,
           pendingRewards: recall.pendingRewards,
           currTurn: newTurn,
-          canEndTurn:
-            refreshedPending.length === 0 &&
-            recall.pendingRewards.filter(r => !r.disabled).length === 0,
+          canEndTurn: computeCanEndTurn({
+            ...state,
+            players: recall.players,
+            gains: recall.gains,
+            pendingRewards: recall.pendingRewards,
+            currTurn: newTurn,
+          }),
         }
         return state.phase === GamePhase.END_GAME
           ? afterEndgamePlayerAction(after)
@@ -7539,7 +7550,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       )
       newTurn.pendingChoices = [...(newTurn.pendingChoices || []), ...rewardFollowUps]
       newState.currTurn = newTurn
-      newState.canEndTurn = newTurn.pendingChoices.length === 0
+      newState.canEndTurn = computeCanEndTurn(newState)
       if (state.phase === GamePhase.COMBAT) {
         return finishCombatIntrigueAction(newState, playerId)
       }
@@ -7865,9 +7876,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             const [removed] = deck.splice(idx, 1)
             discardPile.push(removed)
             discardedCards.push(removed)
-            if (idx < handCount) {
-              handCount = Math.max(0, handCount - 1)
-            }
+            // Mentarium: chosen deck card is treated as having been in hand.
+            handCount = Math.max(0, handCount - 1)
           }
 
           const drawResult = drawCardsFromDeck(
@@ -8354,11 +8364,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       newState.gains = newGains
       
       // Update canEndTurn based on remaining pendingRewards and pendingChoices
-      newState.canEndTurn = (
-        newState.pendingRewards.filter(r => !r.disabled).length === 0 &&
-        !newState.currTurn?.pendingChoices?.length &&
-        !newState.pendingResearchAdvance
-      )
+      newState.canEndTurn = computeCanEndTurn(newState)
       
       return resolveMandatoryTroopDeploy(
         withUnloadForNewlyTrashedCards(
@@ -8478,11 +8484,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       newState.gains = newGains
       
       // Update canEndTurn based on remaining pendingRewards and pendingChoices (excluding disabled rewards)
-      newState.canEndTurn = (
-        newState.pendingRewards.filter(r => !r.disabled).length === 0 &&
-        !newState.currTurn?.pendingChoices?.length &&
-        !newState.pendingResearchAdvance
-      )
+      newState.canEndTurn = computeCanEndTurn(newState)
       
       return resolveMandatoryTroopDeploy(newState, playerId)
     }

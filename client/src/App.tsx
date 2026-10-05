@@ -1676,7 +1676,11 @@ const GameContent = ({
       onEndTurn: () => {
         if (activePlayer) handleEndTurn(activePlayer.id)
       },
-      onActivateTech: isViewingHistory ? undefined : handleActivateTech,
+      onActivateTech: isViewingHistory
+        ? undefined
+        : (playerId, tileId) => {
+            turnControlsRef.current?.activateTech(playerId, tileId)
+          },
       onUseFamilyAtomics: () => {
         if (player) handleUseFamilyAtomics(player.id)
       },
@@ -1721,7 +1725,6 @@ const GameContent = ({
     endTurnButtonState.title,
     activePlayer,
     handleEndTurn,
-    handleActivateTech,
     handleUseFamilyAtomics,
   ])
 

@@ -134,7 +134,7 @@ describe('playAreaDisplay', () => {
     expect(getOpponentDiscardableCards(player).map(c => c.id)).toEqual([1, 2, 3, 4])
   })
 
-  it('discard cost helpers require hand cards only', () => {
+  it('discard cost helpers allow any deck cards when handCount covers the cost', () => {
     const player = stubPlayer({
       deck: [stubCard(1), stubCard(2), stubCard(3), stubCard(4)],
       handCount: 1,
@@ -143,11 +143,13 @@ describe('playAreaDisplay', () => {
     expect(canPayDiscardCost({ ...player, handCount: 2 }, 2)).toBe(true)
     expect(validateDiscardCostSelection({ ...player, handCount: 2 }, 2, [1, 2])).toBe(true)
     expect(validateDiscardCostSelection(player, 2, [1, 2])).toBe(false)
-    expect(validateDiscardCostSelection({ ...player, handCount: 2 }, 2, [2, 3])).toBe(false)
+    // Mentarium: hand composition unknown — draw-pile-index cards are selectable.
+    expect(validateDiscardCostSelection({ ...player, handCount: 2 }, 2, [2, 3])).toBe(true)
+    expect(validateDiscardCostSelection({ ...player, handCount: 2 }, 2, [2, 999])).toBe(false)
 
     const playability = getDiscardCostPlayability({ ...player, handCount: 2 }, 2, [])
     expect(playability(stubCard(1)).playable).toBe(true)
-    expect(playability(stubCard(3)).playable).toBe(false)
+    expect(playability(stubCard(3)).playable).toBe(true)
   })
 
   it('getRevealedCardIdsForTurnView returns ids only for that player\'s reveal turn', () => {

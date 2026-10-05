@@ -1,4 +1,11 @@
-import type { GameTurn, PendingChoice, PendingReward } from '../types/GameTypes'
+import {
+  GamePhase,
+  TurnType,
+  type GameState,
+  type GameTurn,
+  type PendingChoice,
+  type PendingReward,
+} from '../types/GameTypes'
 
 export interface EndTurnButtonStateInput {
   isHistoryView: boolean
@@ -12,6 +19,34 @@ export interface EndTurnButtonStateInput {
   influenceBoardSelectionActive?: boolean
   /** Card selected for an agent turn but agent not placed yet. */
   agentPlacementPending?: boolean
+}
+
+/**
+ * During Player Turns, End Turn requires either an Agent placement or a Reveal turn.
+ * Tech / intrigue / unload side effects alone must not unlock ending the turn.
+ */
+export function hasCompletedRequiredTurnAction(
+  state: Pick<GameState, 'phase' | 'currTurn'>
+): boolean {
+  if (state.phase !== GamePhase.PLAYER_TURNS) return true
+  const turn = state.currTurn
+  if (!turn) return false
+  if (turn.type === TurnType.REVEAL) return true
+  return turn.agentSpaceId != null
+}
+
+/** True when mandatory pending work is clear and the turn action (agent/reveal) is done. */
+export function computeCanEndTurn(
+  state: Pick<GameState, 'phase' | 'currTurn' | 'pendingRewards'> & {
+    pendingResearchAdvance?: GameState['pendingResearchAdvance']
+  }
+): boolean {
+  if (state.pendingRewards.some(r => !r.disabled)) return false
+  if ((state.currTurn?.pendingChoices?.length ?? 0) > 0) return false
+  if (state.currTurn?.opponentDiscardState) return false
+  if (state.pendingResearchAdvance) return false
+  if (!hasCompletedRequiredTurnAction(state)) return false
+  return true
 }
 
 export function getEndTurnButtonState({

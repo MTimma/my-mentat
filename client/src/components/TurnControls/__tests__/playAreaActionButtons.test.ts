@@ -125,4 +125,12 @@ describe('Play area action buttons', () => {
     expect(techModal).toContain('TurnControlsTechRow')
     expect(seatChrome).toContain('<PlayerTechModal')
   })
+
+  it('routes birdseye tech activation through TurnControls discard-aware activateTech', () => {
+    const app = readFileSync(resolve(root, 'App.tsx'), 'utf8')
+    expect(turnControls).toContain('activateTech:')
+    expect(turnControls).toContain('activateTechRef.current = handlePlayAreaActivateTech')
+    expect(turnControls).toContain('techActivationRequiresDiscard')
+    expect(app).toContain('turnControlsRef.current?.activateTech(playerId, tileId)')
+  })
 })

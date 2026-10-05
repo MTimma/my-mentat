@@ -127,10 +127,14 @@ export function tilesActivatableNow(state: GameState, playerId: number): TechTil
   const player = state.players.find(p => p.id === playerId)
   if (!player) return []
 
+  const turnType = state.currTurn?.type
+
   return (player.tech ?? [])
     .filter(t => t.faceUp)
     .map(t => tileById(t.id))
     .filter((tile): tile is TechTile => tile != null)
     .filter(tile => !isActivatedThisRound(state, playerId, tile.id))
     .filter(tile => canAffordActivation(state, playerId, tile.id))
+    // Invasion Ships is Agent-only (blocks enemy agents for the agent placement this turn).
+    .filter(tile => tile.id !== TechTileId.INVASION_SHIPS || turnType === TurnType.ACTION)
 }

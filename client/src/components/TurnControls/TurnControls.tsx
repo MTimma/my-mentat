@@ -163,6 +163,7 @@ export type TurnControlsHandle = {
   openRevealPicker: () => void
   openIntriguePicker: () => void
   openCombatIntriguePicker: () => void
+  activateTech: (playerId: number, tileId: TechTileId) => void
 }
 
 /** Rewards that require a tap / modal / board step (not plain +resource claims), e.g. The Voice. */
@@ -240,6 +241,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
   const openRevealPickerRef = useRef<() => void>(() => {})
   const openIntriguePickerRef = useRef<() => void>(() => {})
   const openCombatIntriguePickerRef = useRef<() => void>(() => {})
+  const activateTechRef = useRef<(playerId: number, tileId: TechTileId) => void>(() => {})
 
   useImperativeHandle(
     ref,
@@ -248,6 +250,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
       openRevealPicker: () => openRevealPickerRef.current(),
       openIntriguePicker: () => openIntriguePickerRef.current(),
       openCombatIntriguePicker: () => openCombatIntriguePickerRef.current(),
+      activateTech: (playerId, tileId) => activateTechRef.current(playerId, tileId),
     }),
     []
   )
@@ -456,6 +459,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     }
     onActivateTech?.(playerId, tileId)
   }
+  activateTechRef.current = handlePlayAreaActivateTech
 
   useLayoutEffect(() => {
     if (isHistoryView || !pendingPlayInputKey) return

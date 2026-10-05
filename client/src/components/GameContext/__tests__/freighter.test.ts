@@ -172,7 +172,7 @@ describe('freighter shipping track', () => {
       choiceId: freighterOnlyChoice.id,
       optionIndex: 1,
     })
-    expect(s.canEndTurn).toBe(true)
+    expect(s.canEndTurn).toBe(false)
     expect(s.currTurn?.pendingChoices ?? []).toHaveLength(0)
     expect(s.pendingRewards.filter(r => !r.disabled)).toHaveLength(0)
   })
