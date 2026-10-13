@@ -96,23 +96,26 @@ function makeSetup(): SetupBlock {
 }
 
 describe('upsertCombatHistoryEntry', () => {
-  const combatRow = (round: number): GameState =>
+  const rewardsRow = (round: number): GameState =>
     ({
       currentRound: round,
-      historyEntryKind: 'combat',
-    }) as GameState
+      historyEntryKind: 'conflict-rewards',
+      gains: [{ amount: 1 }],
+    }) as unknown as GameState
 
-  it('dedupes combat rows for the same round but keeps earlier rounds', () => {
+  it('dedupes conflict-rewards rows for the same round but keeps earlier rounds', () => {
     const setup = { historyEntryKind: 'setup' } as GameState
-    let history = upsertCombatHistoryEntry([setup], combatRow(1))
-    history = upsertCombatHistoryEntry(history, combatRow(1))
+    const banner = { historyEntryKind: 'combat', currentRound: 1, gains: [] } as GameState
+    let history = upsertCombatHistoryEntry([setup, banner], rewardsRow(1))
+    history = upsertCombatHistoryEntry(history, rewardsRow(1))
+    expect(history.filter(h => h.historyEntryKind === 'conflict-rewards')).toHaveLength(1)
     expect(history.filter(h => h.historyEntryKind === 'combat')).toHaveLength(1)
-    expect(history.filter(h => h.historyEntryKind === 'combat')[0].currentRound).toBe(1)
+    expect(history.filter(h => h.historyEntryKind === 'conflict-rewards')[0].currentRound).toBe(1)
 
-    history = upsertCombatHistoryEntry(history, combatRow(2))
-    const combats = history.filter(h => h.historyEntryKind === 'combat')
-    expect(combats).toHaveLength(2)
-    expect(combats.map(c => c.currentRound)).toEqual([1, 2])
+    history = upsertCombatHistoryEntry(history, rewardsRow(2))
+    const rewards = history.filter(h => h.historyEntryKind === 'conflict-rewards')
+    expect(rewards).toHaveLength(2)
+    expect(rewards.map(c => c.currentRound)).toEqual([1, 2])
   })
 })
 
@@ -200,9 +203,11 @@ describe('buildHistoryFromEvents', () => {
     finishPlayerTurnsAndCombat()
 
     const history = buildHistoryFromEvents(setup, events)
-    const combats = history.filter(h => h.historyEntryKind === 'combat')
-    expect(combats).toHaveLength(2)
-    expect(combats.map(c => c.currentRound)).toEqual([1, 2])
+    const banners = history.filter(h => h.historyEntryKind === 'combat')
+    const rewards = history.filter(h => h.historyEntryKind === 'conflict-rewards')
+    expect(banners.length).toBeGreaterThanOrEqual(2)
+    expect(rewards).toHaveLength(2)
+    expect(rewards.map(c => c.currentRound)).toEqual([1, 2])
   })
 
   it('keeps 2nd-influence VP in reducer snapshot and event-rebuilt history', () => {

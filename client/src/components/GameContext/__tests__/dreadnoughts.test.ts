@@ -139,7 +139,7 @@ describe('dreadnought lifecycle (GameContext)', () => {
         supply: 0,
         conflict: 1,
       }),
-    ], { combatTroops: { 0: 2 } })
+    ], { phase: GamePhase.COMBAT, combatTroops: { 0: 2 } })
     expect(computeStrength(s, 0)).toBe(11)
   })
 
@@ -150,7 +150,7 @@ describe('dreadnought lifecycle (GameContext)', () => {
         supply: 0,
         conflict: 1,
       }),
-    ])
+    ], { phase: GamePhase.COMBAT })
     expect(computeStrength(s, 0)).toBe(4)
     expect(dreadnoughtStrengthEach(leader)).toBe(4)
   })
@@ -161,7 +161,7 @@ describe('dreadnought lifecycle (GameContext)', () => {
         supply: 0,
         conflict: 1,
       }),
-    ])
+    ], { phase: GamePhase.COMBAT })
     expect(computeStrength(s, 0)).toBe(5)
   })
 

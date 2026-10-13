@@ -265,3 +265,27 @@
   line-height: 1.2;
   text-align: center;
 }
+
+.combat-results--inline {
+  max-width: none;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.combat-results-container--inline {
+  position: relative;
+  z-index: 2;
+  padding: 0 8px 8px;
+  max-width: min(720px, 100%);
+  margin: 0 auto;
+}
+
+.combat-results--inline .conflict-reward-choices {
+  margin-top: 0;
+}
+
+.combat-results--inline .conflict-choice-block {
+  margin-bottom: 8px;
+}

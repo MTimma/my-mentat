@@ -8,7 +8,7 @@ import ImageBoard from './components/ImageBoard/ImageBoard'
 import ImperiumRow from './components/ImperiumRow/ImperiumRow'
 import TurnHistory from './components/TurnHistory'
 import TurnHistoryNav from './components/TurnHistoryNav/TurnHistoryNav'
-import { GameProvider, useGame, buildCombatResolutionView } from './components/GameContext/GameContext'
+import { GameProvider, useGame } from './components/GameContext/GameContext'
 import { useTimeTravel } from './components/TimeTravel'
 import LocalGameAutosave from './components/LocalGameAutosave/LocalGameAutosave'
 import SandboxSessionBar from './components/SandboxSessionBar/SandboxSessionBar'
@@ -24,7 +24,6 @@ import {
   type DesktopPlayAreaLayout,
 } from './components/ImageBoard/CombatAreaCluster'
 import PlayFooterToolbar from './components/PlayFooterToolbar/PlayFooterToolbar'
-import RetreatTroopControls from './components/RetreatTroopControls/RetreatTroopControls'
 import { getEffectRetreatRemaining } from './utils/turnGainsDisplay'
 import {
   buildBirdseyeGainsByPlayer,
@@ -34,11 +33,11 @@ import {
 import { getRemainingDeploySlots } from './utils/dreadnoughtLifecycle'
 import { getRemainingTroopDeploySlots } from './utils/troops'
 import CombatResults from './components/CombatResults/CombatResults'
-import CombatPhaseOverlay from './components/CombatPhaseOverlay/CombatPhaseOverlay'
 import EndgameOverlay from './components/EndgameOverlay/EndgameOverlay'
 import { endgameRevealIncomplete } from './utils/endgameResolution'
 import { mergeEndgameHistoryRow } from './utils/endgameHistoryDisplay'
-import { isCombatHistoryEntry, isEndgameHistoryEntry } from './utils/turnGainsDisplay'
+import { isEndgameHistoryEntry } from './utils/turnGainsDisplay'
+import { getConflictRewardsHistoryLabel } from './utils/turnHistoryDisplay'
 import { COMBAT_STRENGTH_ORIGIN } from './data/boardMarkerAnchors'
 import { getConflictPool, isConflictInDiscard } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
@@ -97,10 +96,12 @@ import {
   countPlayerTurns,
   formatTurnRoundHeader,
   getCombatHistoryLabel,
+  getCombatIntrigueCardsLabel,
   getDisplayRound,
   getHistoryRowLabel,
   getLivePlayerTurnNumber,
   getPlayerTurnNumber,
+  isCombatIntrigueHistoryEntry,
 } from './utils/turnHistoryDisplay'
 import {
   getPlayBoardInfoTipsEnabled,
@@ -897,8 +898,6 @@ const GameContent = ({
   /** Extra space above the leader row for the open play-area sheet (invented). */
   const MOBILE_PLAY_SHEET_RESERVE_PX = 120
 
-  const viewingCombatHistory =
-    isViewingHistory && isCombatHistoryEntry(displayState)
   const viewingEndgameHistory =
     isViewingHistory && isEndgameHistoryEntry(displayState)
 
@@ -907,24 +906,9 @@ const GameContent = ({
   const pendingCombatRewardChoices =
     (gameState.pendingConflictRewardChoices?.length ?? 0) > 0
 
-  const showCombatOverlay =
-    (gameState.phase === GamePhase.COMBAT && !isViewingHistory) ||
-    liveCombatRewardsPhase ||
-    viewingCombatHistory
   const showEndgameOverlay =
     (gameState.phase === GamePhase.END_GAME && !isViewingHistory) || viewingEndgameHistory
 
-  const combatOverlayState = viewingCombatHistory ? displayState : gameState
-  const combatResolutionState = useMemo(() => {
-    if (viewingCombatHistory) return displayState
-    if (
-      gameState.phase !== GamePhase.COMBAT &&
-      gameState.phase !== GamePhase.COMBAT_REWARDS
-    ) {
-      return gameState
-    }
-    return buildCombatResolutionView(gameState)
-  }, [viewingCombatHistory, displayState, gameState])
   const endgameOverlayState = useMemo(() => {
     if (viewingEndgameHistory && viewingTurnIndex != null) {
       return mergeEndgameHistoryRow(
@@ -954,6 +938,7 @@ const GameContent = ({
     (gameState.sandboxSetup ||
       gameState.phase === GamePhase.PLAYER_TURNS ||
       gameState.phase === GamePhase.COMBAT ||
+      liveCombatRewardsPhase ||
       endgameNeedsPlayerInput)
 
   const activeInfluenceBoardChoice = useMemo(() => {
@@ -1074,7 +1059,30 @@ const GameContent = ({
     activePlayer != null &&
     gameState.currTurn?.playerId === activePlayer.id &&
     (gameState.currTurn?.playedIntrigueCard?.length ?? 0) > 0
-  const combatFooterActionLabel = hasPlayedCombatIntrigueThisVisit ? 'Continue' : 'Pass Combat'
+  const combatFooterActionLabel = hasPlayedCombatIntrigueThisVisit ? 'Continue' : 'Pass'
+
+  // Auto-apply conflict rewards when intrigue passes finish (no Confirm modal).
+  useEffect(() => {
+    if (isViewingHistory) return
+    if (gameState.phase !== GamePhase.COMBAT_REWARDS) return
+    if ((gameState.pendingConflictRewardChoices?.length ?? 0) > 0) return
+    if (gameState.combatResolutionDeferred) return
+    if (
+      gameState.currentConflict &&
+      gameState.combatRewardsResolvedConflictId === gameState.currentConflict.id
+    ) {
+      return
+    }
+    dispatch({ type: 'RESOLVE_COMBAT' })
+  }, [
+    isViewingHistory,
+    gameState.phase,
+    gameState.pendingConflictRewardChoices,
+    gameState.combatResolutionDeferred,
+    gameState.combatRewardsResolvedConflictId,
+    gameState.currentConflict,
+    dispatch,
+  ])
 
   const showPlayFooterToolbar = Boolean(
     !gameState.sandboxSetup &&
@@ -1591,8 +1599,14 @@ const GameContent = ({
       selectedCard && !agentPlaced && !player.revealed && !isRevealTurn
     )
     const canEnd = Boolean(gameState.canEndTurn)
+    const isCombatPhase = turnControlsState.phase === GamePhase.COMBAT
     const showEndTurn =
-      turnControlsState.phase === GamePhase.PLAYER_TURNS && (canEnd || agentPlaced)
+      (turnControlsState.phase === GamePhase.PLAYER_TURNS && (canEnd || agentPlaced)) ||
+      isCombatPhase
+    const combatVisitPlayedIntrigue =
+      isCombatPhase && (turnControlsState.currTurn?.playedIntrigueCard?.length ?? 0) > 0
+    const combatHasPendingChoices =
+      isCombatPhase && (turnControlsState.currTurn?.pendingChoices?.length ?? 0) > 0
     const techCount = birdseyeTechCount(player)
     const showTech =
       Boolean(gameState.expansions?.riseOfIx) && turnControlsState.phase !== GamePhase.COMBAT
@@ -1649,8 +1663,15 @@ const GameContent = ({
           : hasOpponentDiscard
             ? 'Resolve opponent discard before taking new actions.'
             : undefined,
-      intrigueDisabled: intrigueCount === 0,
-      intrigueTitle: intrigueCount === 0 ? 'No intrigue cards.' : undefined,
+      intrigueDisabled:
+        intrigueCount === 0 || combatVisitPlayedIntrigue || combatHasPendingChoices,
+      intrigueTitle: combatHasPendingChoices
+        ? 'Resolve the pending intrigue choice first.'
+        : combatVisitPlayedIntrigue
+          ? 'One intrigue per combat turn — Continue when done.'
+          : intrigueCount === 0
+            ? 'No intrigue cards.'
+            : undefined,
       intrigueCount,
       techCount,
       techDisabled: techCount === 0,
@@ -1660,8 +1681,17 @@ const GameContent = ({
       familyAtomicsUsed: Boolean(player.familyAtomicsUsed),
       familyAtomicsDisabled: !canEdit || Boolean(player.familyAtomicsUsed),
       showEndTurn,
-      endTurnDisabled: endTurnButtonState.disabled,
-      endTurnTitle: endTurnButtonState.title,
+      endTurnDisabled: isCombatPhase
+        ? combatHasPendingChoices
+        : endTurnButtonState.disabled,
+      endTurnTitle: isCombatPhase
+        ? combatHasPendingChoices
+          ? 'Resolve pending intrigue choices first.'
+          : hasPlayedCombatIntrigueThisVisit
+            ? 'Continue to the next combat seat'
+            : 'Pass combat intrigue'
+        : endTurnButtonState.title,
+      endTurnLabel: isCombatPhase ? combatFooterActionLabel : 'End Turn',
       agents: player.agents,
       handCount: player.handCount,
       isChangingSelectedCard,
@@ -1674,7 +1704,12 @@ const GameContent = ({
           ? turnControlsRef.current?.openCombatIntriguePicker()
           : turnControlsRef.current?.openIntriguePicker(),
       onEndTurn: () => {
-        if (activePlayer) handleEndTurn(activePlayer.id)
+        if (!activePlayer) return
+        if (isCombatPhase) {
+          handlePassCombat(activePlayer.id)
+          return
+        }
+        handleEndTurn(activePlayer.id)
       },
       onActivateTech: isViewingHistory
         ? undefined
@@ -1717,6 +1752,8 @@ const GameContent = ({
     turnControlsState.currTurn?.agentSpace,
     turnControlsState.currTurn?.type,
     turnControlsState.currTurn?.opponentDiscardState,
+    turnControlsState.currTurn?.playedIntrigueCard?.length,
+    turnControlsState.currTurn?.pendingChoices?.length,
     gameState.selectedCard,
     gameState.selectedCardDeckIndex,
     turnControlsState.pendingRewards,
@@ -1725,7 +1762,10 @@ const GameContent = ({
     endTurnButtonState.title,
     activePlayer,
     handleEndTurn,
+    handlePassCombat,
     handleUseFamilyAtomics,
+    combatFooterActionLabel,
+    hasPlayedCombatIntrigueThisVisit,
   ])
 
 
@@ -1762,17 +1802,32 @@ const GameContent = ({
           troopDeploy={
             isViewingHistory || gameState.sandboxSetup || !activePlayer
               ? undefined
-              : {
-                  canDeploy: Boolean(gameState.currTurn?.canDeployTroops),
-                  deployableTroops: Math.min(
-                    getRemainingTroopDeploySlots(gameState),
-                    activePlayer.troops || 0
-                  ),
-                  deployedThisTurn: gameState.currTurn?.removableTroops || 0,
-                  garrisonTroops: activePlayer.troops || 0,
-                  onDeploy: () => handleAddTroop(activePlayer.id),
-                  onUndeploy: () => handleUndeployTroop(activePlayer.id),
-                }
+              : (() => {
+                  const canDeployTroops = Boolean(gameState.currTurn?.canDeployTroops)
+                  const garrisonTroops = activePlayer.troops || 0
+                  const retreatable = Math.min(
+                    getEffectRetreatRemaining(gameState.currTurn),
+                    gameState.combatTroops[activePlayer.id] || 0
+                  )
+                  const retreatOnly = !canDeployTroops && retreatable > 0
+                  return {
+                    canDeploy: canDeployTroops || retreatOnly,
+                    deployableTroops: canDeployTroops
+                      ? Math.min(getRemainingTroopDeploySlots(gameState), garrisonTroops)
+                      : 0,
+                    deployedThisTurn: retreatOnly
+                      ? retreatable
+                      : gameState.currTurn?.removableTroops || 0,
+                    garrisonTroops,
+                    onDeploy: () => {
+                      if (canDeployTroops) handleAddTroop(activePlayer.id)
+                    },
+                    onUndeploy: () =>
+                      retreatOnly
+                        ? handleEffectRetreatTroop(activePlayer.id)
+                        : handleUndeployTroop(activePlayer.id),
+                  }
+                })()
           }
           dreadnoughtDeploy={
             isViewingHistory ||
@@ -2066,28 +2121,6 @@ const GameContent = ({
             .filter(Boolean)
             .join(' ')}
         >
-          <CombatPhaseOverlay
-            players={combatOverlayState.players}
-            combatStrength={combatOverlayState.combatStrength}
-            combatPasses={combatOverlayState.combatPasses}
-            activePlayerId={combatOverlayState.activePlayerId}
-            activePlayerPlayedCombatIntrigue={
-              viewingCombatHistory || liveCombatRewardsPhase
-                ? false
-                : hasPlayedCombatIntrigueThisVisit
-            }
-            isVisible={showCombatOverlay}
-            readOnly={viewingCombatHistory || liveCombatRewardsPhase}
-            currentConflict={combatOverlayState.currentConflict}
-            currentRound={combatOverlayState.currentRound}
-            resolutionState={combatResolutionState}
-            onConfirm={
-              liveCombatRewardsPhase && !pendingCombatRewardChoices
-                ? handleConfirmCombat
-                : undefined
-            }
-            containerRef={mainAreaRef}
-          />
           <EndgameOverlay
             gameState={endgameOverlayState}
             analyticsSourceState={gameState}
@@ -2320,19 +2353,6 @@ const GameContent = ({
           .join(' ')}
         hidden={hidePlayShellFooter}
       >
-      { !isViewingHistory && !gameState.sandboxSetup && activePlayer && (
-        <>
-          <div className="effect-retreat-troop-dock" data-marker="effect-retreat-troop-controls">
-            <div className="effect-retreat-troop-dock__anchor">
-              <RetreatTroopControls
-                effectRetreatRemaining={getEffectRetreatRemaining(gameState.currTurn)}
-                troopsInConflict={gameState.combatTroops[activePlayer.id] || 0}
-                onRetreat={() => handleEffectRetreatTroop(activePlayer.id)}
-              />
-            </div>
-          </div>
-        </>
-      )}
         <div
           id="play-area-drawer"
           ref={turnControlsFooterRef}
@@ -2521,6 +2541,12 @@ const GameContent = ({
                     if (snapshot?.historyEntryKind === 'combat') {
                       return getCombatHistoryLabel(snapshot)
                     }
+                    if (snapshot && isCombatIntrigueHistoryEntry(snapshot)) {
+                      return getCombatIntrigueCardsLabel()
+                    }
+                    if (snapshot?.historyEntryKind === 'conflict-rewards') {
+                      return getConflictRewardsHistoryLabel()
+                    }
                     if (snapshot?.historyEntryKind === 'endgame') return 'Endgame'
                     const turnNum = getPlayerTurnNumber(gameState.history, viewingTurnIndex)
                     const totalPlayerTurns = countPlayerTurns(gameState.history)
@@ -2606,9 +2632,10 @@ const GameContent = ({
           {...turnHistoryUndoProps}
         />
       )}
-      {gameState.phase === GamePhase.COMBAT_REWARDS && pendingCombatRewardChoices && (
-        <div className="combat-results-container">
+      {liveCombatRewardsPhase && pendingCombatRewardChoices && (
+        <div className="combat-results-container combat-results-container--inline">
           <CombatResults
+            variant="inline"
             players={gameState.players}
             combatStrength={gameState.combatStrength}
             history={gameState.history}

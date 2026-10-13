@@ -144,7 +144,7 @@ describe('Base conflicts — resolution', () => {
     }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
     expect(s.history.length).toBe(historyLength + 1)
-    expect(s.history[s.history.length - 1].historyEntryKind).toBe('combat')
+    expect(s.history[s.history.length - 1].historyEntryKind).toBe('conflict-rewards')
     expect(s.players[0].victoryPoints).toBe(1)
     const vpAfterFirst = s.players[0].victoryPoints
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })

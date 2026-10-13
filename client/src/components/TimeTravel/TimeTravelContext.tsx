@@ -7,7 +7,9 @@ import {
 import {
   countPlayerTurns,
   getCombatHistoryLabel,
+  getCombatIntrigueCardsLabel,
   getPlayerTurnNumber,
+  isCombatIntrigueHistoryEntry,
 } from '../../utils/turnHistoryDisplay'
 
 interface TimeTravelContextType {
@@ -122,6 +124,9 @@ export const TimeTravelProvider: React.FC<TimeTravelProviderProps> = ({
     }
     if (snapshot?.historyEntryKind === 'combat') {
       return getCombatHistoryLabel(snapshot)
+    }
+    if (snapshot && isCombatIntrigueHistoryEntry(snapshot)) {
+      return getCombatIntrigueCardsLabel()
     }
     if (snapshot?.historyEntryKind === 'endgame') {
       return 'Endgame'

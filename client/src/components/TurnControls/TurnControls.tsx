@@ -1270,6 +1270,20 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     if(reward.combat) right.push(<React.Fragment key="combat">{renderIconValue('sword', reward.combat, 'Combat', '+')}</React.Fragment>)
     right.push(renderRepeatedIconReward('draw', 'draw', reward.drawCards, 'Draw'))
     if(reward.troops) right.push(<React.Fragment key="troops">{renderIconValue('troop', reward.troops, 'Troops')}</React.Fragment>)
+    if (reward.retreatFromConflict) {
+      right.push(
+        <React.Fragment key="retreat-from-conflict">
+          {renderIconValue('troop', reward.retreatFromConflict, 'Retreat from Conflict')}
+        </React.Fragment>
+      )
+    }
+    if (reward.retreatTroops) {
+      right.push(
+        <React.Fragment key="retreat-troops">
+          {renderIconValue('troop', reward.retreatTroops, 'Retreat')}
+        </React.Fragment>
+      )
+    }
     if(reward.techNegotiator) {
       right.push(
         <span key="tech-negotiator" className="effect-icon-token" title={`Tech Negotiator +${reward.techNegotiator}`}>
@@ -1400,7 +1414,12 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
         right.push(<span key="custom">{customText}</span>)
       }
     }
-    if (rewardLabel && !freighterArrowDirectionFromCustom(reward.custom)) {
+    if (
+      rewardLabel &&
+      !freighterArrowDirectionFromCustom(reward.custom) &&
+      reward.retreatFromConflict === undefined &&
+      !reward.retreatTroops
+    ) {
       right.push(<span key="reward">{rewardLabel}</span>)
     }
 
@@ -1616,21 +1635,23 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     }
   }
 
+  const isMasterTacticianChoice = (fixedChoice: FixedOptionsChoice) =>
+    fixedChoice.options.some(option => option.reward.combat !== undefined) &&
+    fixedChoice.options.some(
+      option =>
+        (option.reward.retreatTroops ?? 0) > 0 ||
+        option.reward.retreatFromConflict !== undefined
+    )
+
   const renderMasterTacticianOptions = (
     fixedChoice: FixedOptionsChoice,
     variant: 'dialog' | 'compact',
     onResolvedCompactOption?: (option: { reward: Reward; cost?: Cost }) => void
   ) => {
     const combatOption = fixedChoice.options.find(option => option.reward.combat !== undefined)
-    const retreatOptions = fixedChoice.options
-      .filter(
-        option =>
-          option.reward.retreatFromConflict !== undefined &&
-          (option.reward.retreatFromConflict ?? 0) > 0
-      )
-      .sort(
-        (a, b) => (a.reward.retreatFromConflict ?? 0) - (b.reward.retreatFromConflict ?? 0)
-      )
+    const retreatOption = fixedChoice.options.find(
+      option => (option.reward.retreatTroops ?? 0) > 0 || option.reward.retreatFromConflict !== undefined
+    )
 
     return (
       <div
@@ -1644,7 +1665,14 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
         {combatOption && (
           <button
             type="button"
-            className={`effect-btn choice fixed-choice-option master-tactician-strength fixed-choice-option--${variant}`}
+            className={[
+              'effect-btn',
+              `effect-btn--${variant}`,
+              'choice',
+              'fixed-choice-option',
+              'master-tactician-strength',
+              `fixed-choice-option--${variant}`,
+            ].join(' ')}
             disabled={
               combatOption.disabled ||
               voiceSelectionActive ||
@@ -1663,46 +1691,42 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
             {renderLabel(combatOption)}
           </button>
         )}
-        {combatOption && retreatOptions.length > 0 && (
+        {combatOption && retreatOption && (
           <span className="or-separator master-tactician-or" aria-hidden="true">
             OR
           </span>
         )}
-        {retreatOptions.length > 0 && (
-          <div className="master-tactician-retreat" role="group" aria-label="Retreat troops from Conflict">
-            <span className="master-tactician-retreat-label">Retreat</span>
-            <div className="master-tactician-retreat-counts">
-              {retreatOptions.map((option, optionIndex) => {
-                const count = option.reward.retreatFromConflict ?? 0
-                const retreatOptionIndex = fixedChoice.options.indexOf(option)
-                return (
-                  <button
-                    key={count}
-                    type="button"
-                    className="master-tactician-retreat-count"
-                    disabled={
-                      isFixedChoiceOptionDisabled(option) ||
-                      voiceSelectionActive ||
-                      masterstrokeSelectionActive ||
-                      !isAffordable(option.cost, option.reward)
-                    }
-                    onClick={() =>
-                      resolveFixedChoiceOption(
-                        fixedChoice,
-                        retreatOptionIndex >= 0 ? retreatOptionIndex : optionIndex,
-                        variant,
-                        onResolvedCompactOption
-                      )
-                    }
-                    title={count === 0 ? 'Retreat no troops' : `Retreat ${count} troop${count === 1 ? '' : 's'}`}
-                    aria-label={`Retreat ${count} troop${count === 1 ? '' : 's'}`}
-                  >
-                    {count}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+        {retreatOption && (
+          <button
+            type="button"
+            className={[
+              'effect-btn',
+              `effect-btn--${variant}`,
+              'choice',
+              'fixed-choice-option',
+              'master-tactician-retreat-btn',
+              `fixed-choice-option--${variant}`,
+            ].join(' ')}
+            disabled={
+              isFixedChoiceOptionDisabled(retreatOption) ||
+              voiceSelectionActive ||
+              masterstrokeSelectionActive ||
+              influenceBoardSelectionActive ||
+              !isAffordable(retreatOption.cost, retreatOption.reward)
+            }
+            onClick={() =>
+              resolveFixedChoiceOption(
+                fixedChoice,
+                fixedChoice.options.indexOf(retreatOption),
+                variant,
+                onResolvedCompactOption
+              )
+            }
+            title="Retreat up to 3 troops from the Conflict"
+            aria-label="Retreat troops from the Conflict"
+          >
+            Retreat
+          </button>
         )}
       </div>
     )
@@ -1725,10 +1749,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     variant: 'dialog' | 'compact',
     onResolvedCompactOption?: (option: { reward: Reward; cost?: Cost }) => void
   ) => {
-    const retreatOptions = fixedChoice.options.filter(
-      option => option.reward.retreatFromConflict !== undefined
-    )
-    if (retreatOptions.length > 1) {
+    if (isMasterTacticianChoice(fixedChoice)) {
       return renderMasterTacticianOptions(fixedChoice, variant, onResolvedCompactOption)
     }
 
@@ -2802,14 +2823,24 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
   }
 
   const renderIntrigueActionButton = () => {
+    const combatVisitAlreadyPlayed =
+      isCombatPhase && (gameState?.currTurn?.playedIntrigueCard?.length ?? 0) > 0
+    const combatPendingChoice =
+      isCombatPhase && (gameState?.currTurn?.pendingChoices?.length ?? 0) > 0
     const disabled =
       isSandboxSetup ||
       activePlayer.intrigueCount === 0 ||
       playableIntrigueCards.length === 0 ||
-      !hasPlayableIntrigue
+      !hasPlayableIntrigue ||
+      combatVisitAlreadyPlayed ||
+      combatPendingChoice
     const title =
       isSandboxSetup
         ? sandboxSetupBlockedTitle
+        : combatPendingChoice
+        ? 'Resolve the pending intrigue choice first.'
+        : combatVisitAlreadyPlayed
+        ? 'One intrigue per combat turn — Continue when done.'
         : activePlayer.intrigueCount === 0
         ? 'No intrigue cards.'
         : playableIntrigueCards.length === 0
@@ -3622,6 +3653,12 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                     type="button"
                     className="pass-combat-button play-bar-pass-combat-button"
                     onClick={onPassCombat}
+                    disabled={(gameState?.currTurn?.pendingChoices?.length ?? 0) > 0}
+                    title={
+                      (gameState?.currTurn?.pendingChoices?.length ?? 0) > 0
+                        ? 'Resolve pending intrigue choices first.'
+                        : undefined
+                    }
                     aria-label={passCombatLabel}
                   >
                     {passCombatLabel}
@@ -3669,6 +3706,22 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                         }
                       >
                         Auto Take{simpleAutoApplyCount > 0 ? ` (${simpleAutoApplyCount})` : ''}
+                      </button>
+                    )}
+                    {!isHistoryView && showPassCombatButton && onPassCombat && (
+                      <button
+                        type="button"
+                        className="pass-combat-button"
+                        onClick={onPassCombat}
+                        disabled={(gameState?.currTurn?.pendingChoices?.length ?? 0) > 0}
+                        title={
+                          (gameState?.currTurn?.pendingChoices?.length ?? 0) > 0
+                            ? 'Resolve pending intrigue choices first.'
+                            : undefined
+                        }
+                        aria-label={passCombatLabel}
+                      >
+                        {passCombatLabel}
                       </button>
                     )}
                   </div>

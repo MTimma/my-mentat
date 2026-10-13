@@ -246,6 +246,15 @@ export function isCombatHistoryEntry(turn: GameState): boolean {
   return turn.historyEntryKind === 'combat'
 }
 
+export function isConflictRewardsHistoryEntry(turn: GameState): boolean {
+  return turn.historyEntryKind === 'conflict-rewards'
+}
+
+/** Combat banner, conflict-rewards section, or legacy combined combat row. */
+export function isCombatPhaseHistoryEntry(turn: GameState): boolean {
+  return isCombatHistoryEntry(turn) || isConflictRewardsHistoryEntry(turn)
+}
+
 export function isEndgameHistoryEntry(turn: GameState): boolean {
   return turn.historyEntryKind === 'endgame'
 }
@@ -292,9 +301,13 @@ export function groupCombatHistoryGainsByPlayer(gains: Gain[]): OtherPlayerTurnG
     .map(([playerId, playerGains]) => ({ playerId, gains: playerGains }))
 }
 
-/** Gains shown on a turn-history row (combat rows include all players' conflict/intrigue gains). */
+/** Gains shown on a turn-history row (conflict-rewards / legacy combat / endgame are multi-player). */
 export function getGainsForHistoryRow(turn: GameState): Gain[] {
-  if (isCombatHistoryEntry(turn) || isEndgameHistoryEntry(turn)) {
+  if (
+    isConflictRewardsHistoryEntry(turn) ||
+    isEndgameHistoryEntry(turn) ||
+    (isCombatHistoryEntry(turn) && (turn.gains ?? []).length > 0)
+  ) {
     return turn.gains ?? []
   }
   return getGainsForTurnState(turn)

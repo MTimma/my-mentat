@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { computeStrength } from '../combatStrength'
+import { syncCombatStrengthAfterUnitDelta } from '../dreadnoughtLifecycle'
 import { dreadnoughtStrengthEach } from '../../data/leaderAbilities/rhomburDreadnoughtStrength'
 import {
   ControlMarkerType,
@@ -110,6 +111,26 @@ describe('computeStrength', () => {
       { 0: 2 }
     )
     expect(computeStrength(state, 0)).toBe(5)
+  })
+
+  it('prefers combatStrength over stale combatValue during combat', () => {
+    const state = {
+      ...stubState([stubPlayer(0, { combatValue: 2 })], { 0: 1 }, false),
+      phase: GamePhase.COMBAT,
+      combatStrength: { 0: 4 },
+    }
+    expect(computeStrength(state, 0)).toBe(4)
+  })
+
+  it('unit delta during combat preserves intrigue swords', () => {
+    const before = {
+      ...stubState([stubPlayer(0, { combatValue: 2 })], { 0: 2 }, false),
+      phase: GamePhase.COMBAT,
+      combatStrength: { 0: 4 },
+    }
+    const after = syncCombatStrengthAfterUnitDelta(before, 0, 2)
+    expect(after.combatStrength[0]).toBe(6)
+    expect(after.players[0].combatValue).toBe(6)
   })
 
   it('agent turn ignores stale combatValue and uses units only', () => {

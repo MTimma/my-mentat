@@ -25,6 +25,8 @@ interface CombatResultsProps {
   pendingConflictRewardChoices?: GameState['pendingConflictRewardChoices'];
   influenceBoardChoiceActive?: boolean;
   onResolveConflictChoice?: (choiceId: string, optionIndex: number) => void;
+  /** Inline turn-gains panel (no modal). Default modal kept for legacy callers. */
+  variant?: 'modal' | 'inline';
 }
 
 const FACTION_LABELS: Record<FactionType, string> = {
@@ -58,9 +60,11 @@ const CombatResults: React.FC<CombatResultsProps> = ({
   onConfirm,
   pendingConflictRewardChoices = [],
   influenceBoardChoiceActive = false,
-  onResolveConflictChoice
+  onResolveConflictChoice,
+  variant = 'modal',
 }) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const inline = variant === 'inline'
 
   const calculateResults = (): PlayerResult[] => {
     const results: PlayerResult[] = [];
@@ -99,6 +103,104 @@ const CombatResults: React.FC<CombatResultsProps> = ({
   const getPlayerCombatGains = (playerId: number) => {
     return history.map(state => state.gains).flatMap(gain => gain?.filter(g => g.playerId === playerId && g.source === GainSource.CONFLICT) || []) || [];
   };
+
+  const choicePanel =
+    pendingConflictRewardChoices && pendingConflictRewardChoices.length > 0 ? (
+      <div className="conflict-reward-choices">
+        {!inline ? <h3>Choose your conflict rewards</h3> : null}
+        {pendingConflictRewardChoices.map((choice) => {
+          const blockedByDistinctFaction = isBlockedSequentialConflictChoice(
+            choice,
+            pendingConflictRewardChoices
+          )
+          const influenceChoice = isConflictInfluenceChoice(choice)
+          const useBoardForChoice =
+            influenceChoice && influenceBoardChoiceActive && !blockedByDistinctFaction
+          return (
+            <div key={choice.id} className="conflict-choice-block">
+              <span className="choice-player">
+                {players[choice.playerId]?.leader.name || `Player ${choice.playerId + 1}`} ({choice.placement}):
+              </span>
+              {blockedByDistinctFaction ? (
+                <p className="conflict-choice-board-hint">
+                  Resolve the previous influence choice first.
+                </p>
+              ) : useBoardForChoice ? (
+                <p className="conflict-choice-board-hint">
+                  Click a highlighted influence track on the board.
+                </p>
+              ) : (
+                <div className="choice-options">
+                  {choice.options.map((opt, oidx) => {
+                    const faction = opt.reward.influence?.amounts?.[0]?.faction
+                    const amount = opt.reward.influence?.amounts?.[0]?.amount
+                    if (influenceChoice && faction && amount != null && amount > 0) {
+                      return (
+                        <button
+                          key={oidx}
+                          type="button"
+                          className="conflict-choice-faction-btn"
+                          title={`${FACTION_LABELS[faction]} +${amount} influence`}
+                          onClick={() => onResolveConflictChoice?.(choice.id, oidx)}
+                        >
+                          <img
+                            src={getFactionBumpIcon(faction)}
+                            alt=""
+                            className="conflict-choice-faction-icon"
+                            aria-hidden="true"
+                          />
+                          <span className="conflict-choice-faction-label">{FACTION_LABELS[faction]}</span>
+                        </button>
+                      )
+                    }
+                    const freighterDirection = freighterArrowDirectionFromCustom(opt.reward.custom)
+                    if (freighterDirection) {
+                      return (
+                        <button
+                          key={oidx}
+                          type="button"
+                          className="effect-btn choice conflict-choice-freighter-btn"
+                          title={opt.rewardLabel ?? (freighterDirection === 'up' ? 'Advance' : 'Recall')}
+                          onClick={() => onResolveConflictChoice?.(choice.id, oidx)}
+                        >
+                          <FreighterIcon
+                            direction={freighterDirection}
+                            size="lg"
+                            title={opt.rewardLabel ?? (freighterDirection === 'up' ? 'Advance' : 'Recall')}
+                          />
+                        </button>
+                      )
+                    }
+                    return (
+                      <button
+                        key={oidx}
+                        className="effect-btn choice"
+                        onClick={() => onResolveConflictChoice?.(choice.id, oidx)}
+                      >
+                        {opt.rewardLabel ?? formatRewardLabel(opt.reward)}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    ) : null
+
+  if (inline) {
+    return (
+      <div className="combat-results combat-results--inline" aria-label="Conflict reward choices">
+        {choicePanel}
+        {!choicePanel ? (
+          <button type="button" className="confirm-button" onClick={onConfirm}>
+            Confirm rewards
+          </button>
+        ) : null}
+      </div>
+    )
+  }
 
   const overlayClassName = [
     'combat-results-overlay',
@@ -152,89 +254,7 @@ const CombatResults: React.FC<CombatResultsProps> = ({
           </tbody>
         </table>
       )}
-      {pendingConflictRewardChoices && pendingConflictRewardChoices.length > 0 ? (
-        <div className="conflict-reward-choices">
-          <h3>Choose your conflict rewards</h3>
-          {pendingConflictRewardChoices.map((choice) => {
-            const blockedByDistinctFaction = isBlockedSequentialConflictChoice(
-              choice,
-              pendingConflictRewardChoices
-            )
-            const influenceChoice = isConflictInfluenceChoice(choice)
-            const useBoardForChoice =
-              influenceChoice && influenceBoardChoiceActive && !blockedByDistinctFaction
-            return (
-              <div key={choice.id} className="conflict-choice-block">
-                <span className="choice-player">
-                  {players[choice.playerId]?.leader.name || `Player ${choice.playerId + 1}`} ({choice.placement}):
-                </span>
-                {blockedByDistinctFaction ? (
-                  <p className="conflict-choice-board-hint">
-                    Resolve the previous influence choice first.
-                  </p>
-                ) : useBoardForChoice ? (
-                  <p className="conflict-choice-board-hint">
-                    Click a highlighted influence track on the board.
-                  </p>
-                ) : (
-                  <div className="choice-options">
-                    {choice.options.map((opt, oidx) => {
-                      const faction = opt.reward.influence?.amounts?.[0]?.faction
-                      const amount = opt.reward.influence?.amounts?.[0]?.amount
-                      if (influenceChoice && faction && amount != null && amount > 0) {
-                        return (
-                          <button
-                            key={oidx}
-                            type="button"
-                            className="conflict-choice-faction-btn"
-                            title={`${FACTION_LABELS[faction]} +${amount} influence`}
-                            onClick={() => onResolveConflictChoice?.(choice.id, oidx)}
-                          >
-                            <img
-                              src={getFactionBumpIcon(faction)}
-                              alt=""
-                              className="conflict-choice-faction-icon"
-                              aria-hidden="true"
-                            />
-                            <span className="conflict-choice-faction-label">{FACTION_LABELS[faction]}</span>
-                          </button>
-                        )
-                      }
-                      const freighterDirection = freighterArrowDirectionFromCustom(opt.reward.custom)
-                      if (freighterDirection) {
-                        return (
-                          <button
-                            key={oidx}
-                            type="button"
-                            className="effect-btn choice conflict-choice-freighter-btn"
-                            title={opt.rewardLabel ?? (freighterDirection === 'up' ? 'Advance' : 'Recall')}
-                            onClick={() => onResolveConflictChoice?.(choice.id, oidx)}
-                          >
-                            <FreighterIcon
-                              direction={freighterDirection}
-                              size="lg"
-                              title={opt.rewardLabel ?? (freighterDirection === 'up' ? 'Advance' : 'Recall')}
-                            />
-                          </button>
-                        )
-                      }
-                      return (
-                        <button
-                          key={oidx}
-                          className="effect-btn choice"
-                          onClick={() => onResolveConflictChoice?.(choice.id, oidx)}
-                        >
-                          {opt.rewardLabel ?? formatRewardLabel(opt.reward)}
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      ) : (
+      {choicePanel ?? (
         <button className="confirm-button" onClick={onConfirm}>
           Confirm
         </button>

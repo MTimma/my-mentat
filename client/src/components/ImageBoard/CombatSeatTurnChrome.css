@@ -1532,7 +1532,9 @@
 .combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice .card-effects-inline-choice,
 .combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice .fixed-choice-options,
 .combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice .fixed-choice-options--or,
-.combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice .fixed-choice-options--compact {
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice .fixed-choice-options--compact,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice .master-tactician-choice,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice .master-tactician-choice--compact {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
@@ -1548,6 +1550,58 @@
   border-radius: 0;
   box-shadow: none;
   animation: none;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .master-tactician-strength.fixed-choice-option {
+  min-width: 2.25rem;
+  width: 2.25rem;
+  height: 1.85rem;
+  padding: 0.06rem;
+  font-size: 0.48rem;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .master-tactician-retreat {
+  flex: 0 0 auto;
+  max-width: none;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .master-tactician-retreat-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.06rem;
+  min-width: 2.25rem;
+  width: auto;
+  height: 1.85rem;
+  padding: 0 0.12rem;
+  font-size: 0.48rem;
+  border-radius: 3px;
+  border: 1px solid rgba(212, 177, 106, 0.42);
+  background: #000;
+  color: #fff8e8;
+  box-shadow: none;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .master-tactician-retreat-count .effect-token-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+  object-fit: contain;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .master-tactician-retreat-count .effect-token-amt {
+  font-size: 0.48rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .master-tactician-retreat-count:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--pending-accent, #ffd700) 55%, white);
+}
+
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects .master-tactician-retreat-label {
+  font-size: 0.42rem;
+  line-height: 1;
 }
 
 .combat-area-cluster--column .birdseye-seat-play-area__card-effects .card-effects-inline-choice-title,
@@ -2120,9 +2174,25 @@
   transition: box-shadow 0.12s ease;
 }
 
+/* Keep Round / Setup / Endgame title visible while scrolling within the block. */
+.birdseye-turn-history__banner--round-start,
+.birdseye-turn-history__banner--setup,
+.birdseye-turn-history__banner--endgame {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: rgba(14, 12, 10, 0.96);
+}
+
 .birdseye-turn-history__banner--viewing {
   background: var(--chrome-accent-muted, rgba(212, 177, 106, 0.22));
   color: var(--chrome-text-strong, #fff8e8);
+}
+
+.birdseye-turn-history__banner--round-start.birdseye-turn-history__banner--viewing,
+.birdseye-turn-history__banner--setup.birdseye-turn-history__banner--viewing,
+.birdseye-turn-history__banner--endgame.birdseye-turn-history__banner--viewing {
+  background: rgba(48, 40, 22, 0.98);
 }
 
 .birdseye-turn-history__banner:hover {

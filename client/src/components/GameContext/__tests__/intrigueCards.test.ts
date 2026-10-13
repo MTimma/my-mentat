@@ -578,15 +578,16 @@ describe('Intrigue cards — combat phase', () => {
     expect(s.combatPasses.has(0)).toBe(false)
     expect(s.combatPasses.has(1)).toBe(false)
     expect(s.combatPasses.has(2)).toBe(false)
+    // Stay on the actor until Continue/Pass.
+    expect(s.activePlayerId).toBe(3)
+    expect(s.currTurn?.playerId).toBe(3)
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 3 })
+    expect(s.phase).toBe(GamePhase.COMBAT)
     expect(s.activePlayerId).toBe(0)
     expect(s.currTurn?.playerId).toBe(0)
-    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 0 })
-    expect(s.phase).toBe(GamePhase.COMBAT)
-    expect(s.activePlayerId).toBe(1)
-    expect(s.currTurn?.playerId).toBe(1)
   })
 
-  it('playing combat intrigue advances to next seat so earlier passers can act again', () => {
+  it('playing combat intrigue then Continue advances so earlier passers can act again', () => {
     let s = combatFourPlayerState()
     s = {
       ...s,
@@ -596,6 +597,8 @@ describe('Intrigue cards — combat phase', () => {
     s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 2, cardId: 1 })
     expect(s.combatPasses.has(0)).toBe(false)
     expect(s.combatPasses.has(1)).toBe(false)
+    expect(s.activePlayerId).toBe(2)
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 2 })
     expect(s.activePlayerId).toBe(3)
     expect(s.currTurn?.playerId).toBe(3)
     s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 3 })
@@ -603,7 +606,7 @@ describe('Intrigue cards — combat phase', () => {
     expect(s.currTurn?.playerId).toBe(0)
   })
 
-  it('player with multiple combat intrigue cards may play again before passing', () => {
+  it('one intrigue per combat visit — second play blocked until Continue', () => {
     let s = combatFourPlayerState()
     s = {
       ...s,
@@ -613,13 +616,12 @@ describe('Intrigue cards — combat phase', () => {
     expect(s.combatStrength[0]).toBe(8)
     expect(s.players[0].intrigueCount).toBe(1)
     expect(s.activePlayerId).toBe(0)
-    expect(s.currTurn?.playerId).toBe(0)
     expect(s.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toEqual([1])
-    s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 27 })
-    expect(s.players[0].intrigueCount).toBe(0)
-    expect(s.combatStrength[0]).toBe(10)
+    const blocked = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 27 })
+    expect(blocked.players[0].intrigueCount).toBe(1)
+    expect(blocked.combatStrength[0]).toBe(8)
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 0 })
     expect(s.activePlayerId).toBe(1)
-    expect(s.currTurn?.playerId).toBe(1)
   })
 
   it('START_COMBAT_PHASE auto-passes players without intrigue', () => {
@@ -686,37 +688,40 @@ describe('Intrigue cards — combat phase', () => {
     expect(s.combatStrength[0]).toBe(6)
   })
 
-  it('keeps played combat intrigue names on the live view and history snapshot', () => {
+  it('keeps played combat intrigue on visit history rows (not conflict-rewards)', () => {
     let s = combatFourPlayerState()
     s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: 1 })
+    expect(s.activePlayerId).toBe(0)
     expect(s.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toContain(1)
     expect(
       s.gains?.some(g => g.source === GainSource.INTRIGUE && g.sourceId === 1 && g.playerId === 0)
     ).toBe(true)
-
-    const liveView = buildCombatResolutionView(s)
-    expect(
-      liveView.gains?.some(g => g.source === GainSource.INTRIGUE && g.sourceId === 1 && g.playerId === 0)
-    ).toBe(true)
-    expect(liveView.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toContain(1)
 
     let guard = 0
     while (s.phase === GamePhase.COMBAT && guard++ < 12) {
       s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: s.activePlayerId })
     }
     expect(s.phase).toBe(GamePhase.COMBAT_REWARDS)
-    expect(s.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toContain(1)
+
+    const visitAfterPass = [...s.history]
+      .reverse()
+      .find(h => h.currTurn?.playedIntrigueCard?.some(p => p.cardId === 1))
+    expect(visitAfterPass).toBeDefined()
+    expect(
+      visitAfterPass?.gains?.some(
+        g => g.source === GainSource.INTRIGUE && g.sourceId === 1 && g.playerId === 0
+      )
+    ).toBe(true)
 
     const rewardsView = buildCombatResolutionView(s)
-    expect(rewardsView.historyEntryKind).toBe('combat')
-    expect(rewardsView.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toContain(1)
+    expect(rewardsView.historyEntryKind).toBe('conflict-rewards')
 
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
-    const combat = s.history.find(h => h.historyEntryKind === 'combat')
-    expect(combat?.currTurn?.playedIntrigueCard?.map(p => p.cardId)).toContain(1)
+    const rewards = s.history.find(h => h.historyEntryKind === 'conflict-rewards')
+    expect(rewards).toBeDefined()
     expect(
-      combat?.gains?.some(g => g.source === GainSource.INTRIGUE && g.sourceId === 1)
-    ).toBe(true)
+      rewards?.gains?.some(g => g.source === GainSource.INTRIGUE && g.sourceId === 1)
+    ).toBe(false)
   })
 
   it('Master Tactician (17): choose +3 strength', () => {
@@ -732,6 +737,8 @@ describe('Intrigue cards — combat phase', () => {
       source: { type: GainSource.INTRIGUE, id: 17, name: 'Master Tactician' },
     })
     expect(s.combatStrength[0]).toBe(7)
+    expect(s.activePlayerId).toBe(0)
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 0 })
     expect(s.activePlayerId).toBe(1)
   })
 
@@ -753,9 +760,13 @@ describe('Intrigue cards — combat phase', () => {
       type: 'RESOLVE_CHOICE',
       playerId: 1,
       choiceId: ch!.id,
-      reward: { retreatFromConflict: 3 },
+      optionIndex: 1,
       source: { type: GainSource.INTRIGUE, id: 17, name: 'Master Tactician' },
     })
+    expect(s.currTurn?.effectRetreatAllowance).toBe(3)
+    for (let i = 0; i < 3; i++) {
+      s = applyGameAction(s, { type: 'RETREAT_TROOP', playerId: 1, fromEffect: true })
+    }
     expect(s.combatTroops[1]).toBe(0)
     expect(s.combatPasses.has(1)).toBe(true)
     expect(s.activePlayerId).toBe(0)

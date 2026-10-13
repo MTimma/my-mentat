@@ -13,8 +13,8 @@ function shouldUseCachedCombatValue(state: GameState, playerId: number): boolean
   )
 }
 
-/** Total combat strength for a player (troops×2 + dreadnoughts×N + swords). */
-export function computeStrength(state: GameState, playerId: number): number {
+/** Unit-only strength (no swords). */
+export function computeUnitStrength(state: GameState, playerId: number): number {
   const player = state.players.find(p => p.id === playerId)
   if (!player) return 0
 
@@ -30,16 +30,35 @@ export function computeStrength(state: GameState, playerId: number): number {
     return 0
   }
 
-  if (shouldUseCachedCombatValue(state, playerId) && player.combatValue) {
-    return player.combatValue
-  }
-  if (shouldUseCachedCombatValue(state, playerId) && state.combatStrength[playerId]) {
-    return state.combatStrength[playerId]
-  }
-
   let total = (troops + specimens) * 2
   if (riseOfIx && dCount > 0) {
     total += dCount * dreadnoughtStrengthEach(player.leader)
   }
   return total
 }
+
+/**
+ * Authoritative cached total during reveal/combat.
+ * Prefer combatStrength (intrigue updates this) over combatValue.
+ */
+export function getCachedCombatTotal(state: GameState, playerId: number): number {
+  const player = state.players.find(p => p.id === playerId)
+  if (!player) return 0
+  if (state.combatStrength[playerId] != null) return state.combatStrength[playerId]
+  return player.combatValue || 0
+}
+
+/** Total combat strength for a player (troops×2 + dreadnoughts×N + swords). */
+export function computeStrength(state: GameState, playerId: number): number {
+  const unitStrength = computeUnitStrength(state, playerId)
+  if (unitStrength === 0) return 0
+
+  if (shouldUseCachedCombatValue(state, playerId)) {
+    const cached = getCachedCombatTotal(state, playerId)
+    if (cached > 0) return cached
+  }
+
+  return unitStrength
+}
+
+export { shouldUseCachedCombatValue }

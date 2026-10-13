@@ -8,6 +8,7 @@ import {
   getGainsForHistoryRow,
   getGainsForTurnState,
   isCombatHistoryEntry,
+  isConflictRewardsHistoryEntry,
   isEndgameHistoryEntry,
   groupCombatHistoryGainsByPlayer,
   getOtherPlayersGainsForTurnState,
@@ -16,11 +17,15 @@ import {
 } from '../utils/turnGainsDisplay'
 import {
   getCombatHistoryLabel,
+  getCombatIntrigueCardsLabel,
+  getConflictRewardsHistoryLabel,
   getHistoryRowBadge,
   getLivePlayerTurnNumber,
   getPlayerTurnNumber,
+  isCombatIntrigueHistoryEntry,
   getRoundStartLabel,
   getTurnActionLabel,
+  isLegacyCombinedCombatHistoryEntry,
   isMetaHistoryEntry,
   isRoundStartHistoryEntry,
 } from '../utils/turnHistoryDisplay'
@@ -39,6 +44,7 @@ import {
   resolvePlayedCardsForTurn,
   revealTurnStatsHasContent,
 } from '../utils/revealTurnStats'
+import { buildCombatResolutionView } from './GameContext/GameContext'
 import RevealTurnStatsPanel from './RevealTurnStatsPanel/RevealTurnStatsPanel'
 import { withImageZoomHint } from './AltImagePreview/imageZoomHint'
 import {
@@ -135,9 +141,11 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           ? liveEntryRef.current
           : listRef.current?.querySelector<HTMLElement>(`[data-turn-index="${turnIndex}"]`)
       if (scrollEl) {
-        scrollEl.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+        // Live row: pin to the bottom of the list so the active turn isn't clipped.
+        const block = turnIndex === 'live' ? 'end' : 'nearest'
+        scrollEl.scrollIntoView({ block, behavior: 'auto' })
         requestAnimationFrame(() => {
-          scrollEl.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+          scrollEl.scrollIntoView({ block, behavior: 'auto' })
         })
         return
       }
@@ -164,9 +172,12 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   }, [isViewingHistory])
 
   const liveTurnSignature = [
+    currentGameState.phase,
+    currentGameState.activePlayerId,
     currentGameState.currTurn?.type,
     currentGameState.currTurn?.playerId,
     currentGameState.currTurn?.agentSpaceId,
+    currentGameState.currTurn?.playedIntrigueCard?.length,
     currentGameState.gains?.length,
   ].join(':')
 
@@ -309,6 +320,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
 
   const getHistoryRowTitle = (turn: GameState, index: number): string => {
     if (turn.historyEntryKind === 'endgame') return 'Endgame'
+    if (turn.historyEntryKind === 'conflict-rewards') return getConflictRewardsHistoryLabel()
     if (turn.historyEntryKind === 'combat') return getCombatHistoryLabel(turn)
     if (isRoundStartHistoryEntry(turn)) return getRoundStartLabel(turn)
     if (index === 0 || turn.historyEntryKind === 'setup') return 'Setup'
@@ -316,7 +328,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   }
 
   const getPlayedIntrigueForTurn = (turn: GameState): IntrigueCard[] => {
-    if (isCombatHistoryEntry(turn)) return []
+    // Banner / rewards meta rows do not own intrigue plays.
+    if (isCombatHistoryEntry(turn) || isConflictRewardsHistoryEntry(turn)) return []
     const cardIds = turn.currTurn?.playedIntrigueCard?.map(entry => entry.cardId) ?? []
     if (cardIds.length === 0) return []
     const piles = [...(turn.intrigueDeck ?? []), ...(turn.intrigueDiscard ?? [])]
@@ -516,12 +529,15 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     turnPlayer: Player | undefined
     badge: React.ReactNode
     isCombatEntry: boolean
+    isConflictRewardsEntry: boolean
     isEndgameEntry: boolean
     isMetaEntry: boolean
     isRoundStartEntry: boolean
     isSetupEntry: boolean
     isRevealTurn: boolean
     isAgentTurn: boolean
+    isCombatVisit: boolean
+    isPassTurn: boolean
     playedIntrigue: IntrigueCard[]
     title: string
     gains: Gain[]
@@ -541,12 +557,15 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     turnPlayer,
     badge,
     isCombatEntry,
+    isConflictRewardsEntry,
     isEndgameEntry,
     isMetaEntry,
     isRoundStartEntry,
     isSetupEntry,
     isRevealTurn,
     isAgentTurn,
+    isCombatVisit,
+    isPassTurn,
     playedIntrigue,
     title,
     gains,
@@ -560,15 +579,18 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     troopsDeployed,
     troopsRetreated,
   }: PlayerTurnRowContentProps) => {
+    const groupGainsByPlayer =
+      isConflictRewardsEntry || isLegacyCombinedCombatHistoryEntry(turn) || isEndgameEntry
     const outcomes = (
       <>
         {isSetupEntry ? (
           <SetupSnapshotPreview imperiumRow={turn.imperiumRow} currentConflict={turn.currentConflict} />
         ) : null}
         {isEndgameEntry && renderEndgameRevealsByPlayer(turn)}
-        {showHistoryGains && showStandardGains &&
+        {(showHistoryGains || isConflictRewardsEntry || isLegacyCombinedCombatHistoryEntry(turn)) &&
+          showStandardGains &&
           renderStandardGainsBlock(turn, {
-            groupGainsByPlayer: isCombatEntry || isEndgameEntry,
+            groupGainsByPlayer,
             gains,
             gainsForDisplay,
             troopsDeployed,
@@ -608,6 +630,12 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           {turn.endgameWinners?.length ? 'Endgame' : 'Endgame intrigue reveal'}
         </span>
       </div>
+    ) : isConflictRewardsEntry ? (
+      <div className="turn-history-action-band turn-history-action-band--meta">
+        <span className="turn-history-action-kind turn-history-action-kind--conflict-rewards">
+          {getConflictRewardsHistoryLabel()}
+        </span>
+      </div>
     ) : isCombatEntry ? (
       <div className="turn-history-action-band turn-history-action-band--meta">
         <span className="turn-history-action-kind turn-history-action-kind--combat">
@@ -616,11 +644,13 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       </div>
     ) : isRevealTurn ? (
       renderRevealActionBand(turn)
-    ) : isAgentTurn ? (
+    ) : isCombatVisit && playedIntrigue.length > 0 ? (
+      renderAgentActionBand(turn, title, playedIntrigue)
+    ) : isAgentTurn && !isCombatVisit ? (
       renderAgentActionBand(turn, title, playedIntrigue)
     ) : (
       <div className="turn-history-action-band turn-history-action-band--meta">
-        <span className="turn-history-action-kind">{title}</span>
+        <span className="turn-history-action-kind">{isPassTurn ? 'Pass' : title}</span>
       </div>
     )
 
@@ -656,16 +686,26 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               </span>
             )}
             {!isMetaEntry && <span className="turn-label">{title}</span>}
-            {isCombatEntry && <span className="turn-label turn-label--combat">{
-            conflictCardImageSrc(turn.currentConflict.id) && <img style={{ width: '30px', height: '42px' }}
-            src={conflictCardImageSrc(turn.currentConflict.id)?? undefined}
-            alt={turn.currentConflict.name}
-            title={withImageZoomHint(turn.currentConflict.name)}
-            className="conflict-card-image"
-            draggable={false}
-            data-preview-src={conflictCardImageSrc(turn.currentConflict.id) ?? undefined}
-          />
-            }</span>}
+            {isCombatEntry && (
+              <span className="turn-label turn-label--combat">
+                {conflictCardImageSrc(turn.currentConflict.id) && (
+                  <img
+                    style={{ width: '30px', height: '42px' }}
+                    src={conflictCardImageSrc(turn.currentConflict.id) ?? undefined}
+                    alt={turn.currentConflict.name}
+                    title={withImageZoomHint(turn.currentConflict.name)}
+                    className="conflict-card-image"
+                    draggable={false}
+                    data-preview-src={conflictCardImageSrc(turn.currentConflict.id) ?? undefined}
+                  />
+                )}
+              </span>
+            )}
+            {isConflictRewardsEntry && (
+              <span className="turn-label turn-label--conflict-rewards">
+                {getConflictRewardsHistoryLabel()}
+              </span>
+            )}
             {isEndgameEntry && (
               <span className="turn-label turn-label--endgame">
                 {turn.endgameWinners?.length ? 'Endgame' : 'Endgame intrigue reveal'}
@@ -741,7 +781,9 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
 
     const turn = turns[index]
     const isReplayMetaRow =
-      turn.historyEntryKind === 'combat' || turn.historyEntryKind === 'endgame'
+      turn.historyEntryKind === 'combat' ||
+      turn.historyEntryKind === 'conflict-rewards' ||
+      turn.historyEntryKind === 'endgame'
     if (isReplayMetaRow && viewingTurnIndex === index) {
       if (!hideLiveTurn) onReturnToCurrent()
       return
@@ -755,21 +797,29 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     : isViewingHistory
       ? (() => {
           if (viewingTurnIndex === null) {
-            return inSandboxSetup ? 'Setup' : `Turn ${getLivePlayerTurnNumber(turns)} (Current)`
+            if (inSandboxSetup) return 'Setup'
+            if (isCombatIntrigueHistoryEntry(currentGameState)) return getCombatIntrigueCardsLabel()
+            return `Turn ${getLivePlayerTurnNumber(turns)} (Current)`
           }
           const snapshot = turns[viewingTurnIndex]
           if (snapshot?.historyEntryKind === 'combat') return getCombatHistoryLabel(snapshot)
+          if (snapshot?.historyEntryKind === 'conflict-rewards') {
+            return getConflictRewardsHistoryLabel()
+          }
           if (snapshot?.historyEntryKind === 'endgame') return 'Endgame'
           if (snapshot && isRoundStartHistoryEntry(snapshot)) {
             return getRoundStartLabel(snapshot)
           }
           if (viewingTurnIndex === 0 || snapshot?.historyEntryKind === 'setup') return 'Setup'
+          if (snapshot && isCombatIntrigueHistoryEntry(snapshot)) return getCombatIntrigueCardsLabel()
           const turnNum = getPlayerTurnNumber(turns, viewingTurnIndex)
           return turnNum != null ? `Turn ${turnNum}` : `Turn ${viewingTurnIndex}`
         })()
       : inSandboxSetup
         ? 'Setup'
-        : `Turn ${getLivePlayerTurnNumber(turns)} (Current)`
+        : isCombatIntrigueHistoryEntry(currentGameState)
+          ? getCombatIntrigueCardsLabel()
+          : `Turn ${getLivePlayerTurnNumber(turns)} (Current)`
 
   const renderHeader = () => (
     <div className="turn-history-header">
@@ -876,12 +926,15 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
 
           const turnPlayer = getTurnPlayer(displayTurn)
           const isCombatEntry = isCombatHistoryEntry(displayTurn)
+          const isConflictRewardsEntry = isConflictRewardsHistoryEntry(displayTurn)
           const isEndgameEntry = isEndgameHistoryEntry(displayTurn)
           const isMetaEntry = isMetaHistoryEntry(displayTurn)
           const isRoundStartEntry = isRoundStartHistoryEntry(displayTurn)
           const gains = getGainsForHistoryRow(displayTurn)
           const otherPlayerGains =
-            isCombatEntry || isEndgameEntry ? [] : getOtherPlayersGainsForTurnState(displayTurn)
+            isCombatEntry || isConflictRewardsEntry || isEndgameEntry
+              ? []
+              : getOtherPlayersGainsForTurnState(displayTurn)
           const playedIntrigue = getPlayedIntrigueForTurn(displayTurn)
           const isViewing = viewingTurnIndex === index
           const revealStats =
@@ -891,12 +944,17 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           const isSetupEntry = index === 0 || displayTurn.historyEntryKind === 'setup'
           const isRevealTurn = displayTurn.currTurn?.type === TurnType.REVEAL
           const isAgentTurn = displayTurn.currTurn?.type === TurnType.ACTION
+          const isCombatVisit =
+            !isMetaEntry && displayTurn.phase === GamePhase.COMBAT
+          const isPassTurn =
+            displayTurn.currTurn?.type === TurnType.PASS ||
+            (isCombatVisit && (displayTurn.currTurn?.playedIntrigueCard?.length ?? 0) === 0)
           const acquiredCards =
-            isAgentTurn && displayTurn.currTurn?.playerId != null
+            isAgentTurn && !isCombatVisit && displayTurn.currTurn?.playerId != null
               ? getAcquiredCardsForTurn(displayTurn, displayTurn.currTurn.playerId)
               : []
           const acquiredTechTiles =
-            isAgentTurn && displayTurn.currTurn?.playerId != null
+            isAgentTurn && !isCombatVisit && displayTurn.currTurn?.playerId != null
               ? getAcquiredTechTilesForTurn(displayTurn, displayTurn.currTurn.playerId)
               : []
           const gainsForDisplay =
@@ -910,14 +968,15 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           const showRevealSummary = revealStats != null && revealTurnStatsHasContent(revealStats)
           const troopsDeployed = getTroopsDeployedToConflict(displayTurn)
           const troopsRetreated = getTroopsRetreatedFromConflict(displayTurn)
-          const showStandardGains = isEndgameEntry
-            ? gains.length > 0
-            : !isRevealTurn &&
-              (gainsForDisplay.length > 0 ||
-                troopsDeployed > 0 ||
-                troopsRetreated > 0 ||
-                acquiredCards.length > 0 ||
-                acquiredTechTiles.length > 0)
+          const showStandardGains =
+            isEndgameEntry || isConflictRewardsEntry || isLegacyCombinedCombatHistoryEntry(displayTurn)
+              ? gains.length > 0
+              : !isRevealTurn &&
+                (gainsForDisplay.length > 0 ||
+                  troopsDeployed > 0 ||
+                  troopsRetreated > 0 ||
+                  acquiredCards.length > 0 ||
+                  acquiredTechTiles.length > 0)
           const showRevealGains =
             isRevealTurn &&
             (showRevealSummary || gains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0)
@@ -931,12 +990,14 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                 'turn-history-row',
                 isViewing ? 'viewing' : '',
                 isCombatEntry ? 'turn-history-row--combat' : '',
+                isConflictRewardsEntry ? 'turn-history-row--conflict-rewards' : '',
                 isEndgameEntry ? 'turn-history-row--endgame' : '',
                 isSetupEntry ? 'turn-history-row--setup' : '',
                 isRoundStartEntry ? 'turn-history-row--round-start' : '',
                 isMetaEntry ? 'turn-history-row--meta' : '',
                 isRevealTurn ? 'turn-history-row--reveal' : '',
                 isAgentTurn ? 'turn-history-row--agent' : '',
+                isCombatVisit ? 'turn-history-row--combat-visit' : '',
                 isDocked ? 'turn-history-row--docked-layout' : '',
                 !isRowClickable ? 'turn-history-row--static' : '',
               ]
@@ -956,12 +1017,15 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                 turnPlayer,
                 badge: getHistoryRowBadge(displayTurn, index, turns),
                 isCombatEntry,
+                isConflictRewardsEntry,
                 isEndgameEntry,
                 isMetaEntry,
                 isRoundStartEntry,
                 isSetupEntry,
                 isRevealTurn,
                 isAgentTurn,
+                isCombatVisit,
+                isPassTurn,
                 playedIntrigue,
                 title: getHistoryRowTitle(displayTurn, index),
                 gains,
@@ -984,8 +1048,17 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           !hideLiveTurn &&
           !shouldHideLiveHistoryEntry(turns, currentGameState) && (() => {
           const liveIsEndgame = isLiveEndgameEntry(currentGameState)
-          const liveGains = getGainsForTurnState(currentGameState)
-          const liveOtherPlayerGains = getOtherPlayersGainsForTurnState(currentGameState)
+          const liveIsConflictRewards = currentGameState.phase === GamePhase.COMBAT_REWARDS
+          const liveIsCombatVisit = currentGameState.phase === GamePhase.COMBAT
+          const liveConflictRewardsView = liveIsConflictRewards
+            ? buildCombatResolutionView(currentGameState)
+            : null
+          const liveGains = liveConflictRewardsView
+            ? getGainsForHistoryRow(liveConflictRewardsView)
+            : getGainsForTurnState(currentGameState)
+          const liveOtherPlayerGains = liveIsCombatVisit || liveIsConflictRewards
+            ? []
+            : getOtherPlayersGainsForTurnState(currentGameState)
           const livePlayedIntrigue = getPlayedIntrigueForTurn(currentGameState)
           const liveRevealStats =
             currentGameState.currTurn?.type === TurnType.REVEAL &&
@@ -994,12 +1067,14 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               : null
           const liveIsRevealTurn = currentGameState.currTurn?.type === TurnType.REVEAL
           const liveIsAgentTurn = currentGameState.currTurn?.type === TurnType.ACTION
+          // Live combat seat is not a Pass until PASS_COMBAT commits the visit.
+          const liveIsPassTurn = currentGameState.currTurn?.type === TurnType.PASS
           const liveAcquiredCards =
-            liveIsAgentTurn && currentGameState.currTurn?.playerId != null
+            liveIsAgentTurn && !liveIsCombatVisit && currentGameState.currTurn?.playerId != null
               ? getAcquiredCardsForTurn(currentGameState, currentGameState.currTurn.playerId)
               : []
           const liveAcquiredTechTiles =
-            liveIsAgentTurn && currentGameState.currTurn?.playerId != null
+            liveIsAgentTurn && !liveIsCombatVisit && currentGameState.currTurn?.playerId != null
               ? getAcquiredTechTilesForTurn(currentGameState, currentGameState.currTurn.playerId)
               : []
           const liveGainsForDisplay =
@@ -1015,12 +1090,14 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           const liveTroopsDeployed = getTroopsDeployedToConflict(currentGameState)
           const liveTroopsRetreated = getTroopsRetreatedFromConflict(currentGameState)
           const liveShowStandardGains =
-            !liveIsRevealTurn &&
-            (liveGainsForDisplay.length > 0 ||
-              liveTroopsDeployed > 0 ||
-              liveTroopsRetreated > 0 ||
-              liveAcquiredCards.length > 0 ||
-              liveAcquiredTechTiles.length > 0)
+            liveIsConflictRewards
+              ? liveGains.length > 0
+              : !liveIsRevealTurn &&
+                (liveGainsForDisplay.length > 0 ||
+                  liveTroopsDeployed > 0 ||
+                  liveTroopsRetreated > 0 ||
+                  liveAcquiredCards.length > 0 ||
+                  liveAcquiredTechTiles.length > 0)
           const liveShowRevealGains =
             liveIsRevealTurn &&
             (liveShowRevealSummary ||
@@ -1036,6 +1113,8 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             'current-turn-entry',
             !isViewingHistory ? 'viewing' : '',
             liveIsEndgame ? 'turn-history-row--endgame turn-history-row--meta' : '',
+            liveIsConflictRewards ? 'turn-history-row--conflict-rewards turn-history-row--meta' : '',
+            liveIsCombatVisit ? 'turn-history-row--combat-visit' : '',
             liveIsRevealTurn ? 'turn-history-row--reveal' : '',
             liveIsAgentTurn ? 'turn-history-row--agent' : '',
             isDocked ? 'turn-history-row--docked-layout' : '',
@@ -1050,16 +1129,27 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           {renderPlayerTurnRowContent({
             turn: currentGameState,
             turnPlayer: players.find(p => p.id === currentGameState.activePlayerId),
-            badge: liveIsEndgame ? 'Endgame' : getLivePlayerTurnNumber(turns, turnNumberOffset),
-            isCombatEntry: currentGameState.phase === GamePhase.COMBAT,
+            badge: liveIsEndgame
+              ? 'Endgame'
+              : liveIsConflictRewards
+                ? 'Rewards'
+                : liveIsCombatVisit
+                  ? ''
+                  : getLivePlayerTurnNumber(turns, turnNumberOffset),
+            isCombatEntry: false,
+            isConflictRewardsEntry: liveIsConflictRewards,
             isEndgameEntry: liveIsEndgame,
-            isMetaEntry: liveIsEndgame,
+            isMetaEntry: liveIsEndgame || liveIsConflictRewards,
             isRoundStartEntry: false,
             isSetupEntry: false,
             isRevealTurn: liveIsRevealTurn,
             isAgentTurn: liveIsAgentTurn,
+            isCombatVisit: liveIsCombatVisit,
+            isPassTurn: liveIsPassTurn,
             playedIntrigue: livePlayedIntrigue,
-            title: getTurnActionLabel(currentGameState),
+            title: liveIsConflictRewards
+              ? getConflictRewardsHistoryLabel()
+              : getTurnActionLabel(currentGameState),
             gains: liveGains,
             gainsForDisplay: liveGainsForDisplay,
             otherPlayerGains: liveOtherPlayerGains,

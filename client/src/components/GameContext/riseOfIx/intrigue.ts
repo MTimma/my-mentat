@@ -216,12 +216,19 @@ export function applyRiseOfIxIntrigueCustomInEffect(
       const player = state.players.find(p => p.id === playerId)
       const techCount = player?.tech?.length ?? 0
       if (techCount < 3 || !playerHasUnitsInCombatLocal(state, playerId)) return state
+      const nextVal = (state.combatStrength[playerId] ?? player?.combatValue ?? 0) + 4
       const nextStrength = {
         ...state.combatStrength,
-        [playerId]: (state.combatStrength[playerId] ?? 0) + 4,
+        [playerId]: nextVal,
       }
       pushGain(4, RewardType.COMBAT)
-      return { ...state, combatStrength: nextStrength }
+      return {
+        ...state,
+        combatStrength: nextStrength,
+        players: state.players.map(p =>
+          p.id === playerId ? { ...p, combatValue: nextVal } : p
+        ),
+      }
     }
     case CustomEffect.DIVERSION:
       return {

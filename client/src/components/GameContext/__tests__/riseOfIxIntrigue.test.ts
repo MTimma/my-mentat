@@ -143,9 +143,60 @@ describe('Rise of Ix intrigue cards', () => {
     ])
     s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: card.id })
     expect(s.pendingSecondWave).toBe(0)
+    expect(s.activePlayerId).toBe(0)
+    expect(s.currTurn?.canDeployTroops).toBe(true)
+    expect(s.currTurn?.troopLimit).toBeGreaterThanOrEqual(2)
+    expect(s.combatStrength[0]).toBe(6)
+    expect(s.players[0].combatValue).toBe(6)
     s = applyGameAction(s, { type: 'MOBILIZE_SECOND_WAVE', playerId: 0, troops: 1, dreadnoughts: 1 })
     expect(s.combatTroops[0]).toBe(3)
     expect(s.players[0].dreadnoughts?.conflict).toBe(1)
+    expect(s.activePlayerId).toBe(0)
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 0 })
+    expect(s.pendingSecondWave).toBeNull()
+  })
+
+  it('Second Wave: DEPLOY_TROOP keeps intrigue swords (does not reset to stale combatValue)', () => {
+    const card = cardByName('Second Wave')
+    let s = combatState([
+      makePlayer(0, {
+        intrigueCount: 1,
+        troops: 4,
+        combatValue: 2,
+      }),
+      makePlayer(1),
+    ])
+    // Reveal left combatValue at 2 while combatStrength is 4 (1 troop + 2 swords mismatch).
+    s = {
+      ...s,
+      combatTroops: { 0: 1, 1: 2 },
+      combatStrength: { 0: 4, 1: 4 },
+    }
+    s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: card.id })
+    expect(s.combatStrength[0]).toBe(6)
+    expect(s.players[0].combatValue).toBe(6)
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(s.combatTroops[0]).toBe(2)
+    expect(s.combatStrength[0]).toBe(8)
+    expect(s.players[0].combatValue).toBe(8)
+  })
+
+  it('Second Wave: optional deploy — Continue without mobilizing clears pending', () => {
+    const card = cardByName('Second Wave')
+    let s = combatState([
+      makePlayer(0, {
+        intrigueCount: 1,
+        troops: 4,
+        dreadnoughts: { supply: 0, garrison: 2, conflict: 0, control: [] },
+      }),
+      makePlayer(1),
+    ])
+    s = applyGameAction(s, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: card.id })
+    expect(s.pendingSecondWave).toBe(0)
+    expect(s.currTurn?.canDeployTroops).toBe(true)
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 0 })
+    expect(s.pendingSecondWave).toBeNull()
+    expect(s.combatTroops[0]).toBe(2)
   })
 
   it('War Chest: combat cost and endgame VP at 10+ solari', () => {

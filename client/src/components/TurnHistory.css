@@ -102,7 +102,8 @@
 .turn-history-list {
   flex: 1;
   overflow-y: auto;
-  padding: 6px 0;
+  padding: 6px 0 16px;
+  scroll-padding-bottom: 20px;
   scrollbar-width: thin;
   scrollbar-color: var(--chrome-border-accent-strong) transparent;
 }
@@ -437,6 +438,7 @@
 
 .current-turn-entry {
   margin-bottom: 8px;
+  scroll-margin-bottom: 20px;
 }
 
 /* Docked desktop: identity column + action band + source-attributed outcomes */
@@ -523,6 +525,11 @@
 }
 
 .turn-history-action-kind--combat {
+  color: rgba(255, 183, 77, 0.9);
+}
+
+.turn-history-action-kind--conflict-rewards,
+.turn-label--conflict-rewards {
   color: rgba(255, 183, 77, 0.9);
 }
 
@@ -1006,9 +1013,9 @@
     border-left: 1px solid var(--chrome-success-border);
   }
 
-  .turn-history-overlay--docked .turn-history-row:not(.turn-history-row--combat):not(.turn-history-row--setup):not(.turn-history-row--meta) .turn-history-gains,
-  .turn-history-overlay--docked .turn-history-row:not(.turn-history-row--combat):not(.turn-history-row--setup):not(.turn-history-row--meta) .turn-history-reveal-stats,
-  .turn-history-overlay--docked .turn-history-row:not(.turn-history-row--combat):not(.turn-history-row--setup):not(.turn-history-row--meta) .turn-history-other-gains {
+  .turn-history-overlay--docked .turn-history-row:not(.turn-history-row--combat):not(.turn-history-row--conflict-rewards):not(.turn-history-row--setup):not(.turn-history-row--meta) .turn-history-gains,
+  .turn-history-overlay--docked .turn-history-row:not(.turn-history-row--combat):not(.turn-history-row--conflict-rewards):not(.turn-history-row--setup):not(.turn-history-row--meta) .turn-history-reveal-stats,
+  .turn-history-overlay--docked .turn-history-row:not(.turn-history-row--combat):not(.turn-history-row--conflict-rewards):not(.turn-history-row--setup):not(.turn-history-row--meta) .turn-history-other-gains {
     margin-top: 0;
   }
 

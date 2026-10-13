@@ -63,14 +63,30 @@ export function BirdseyeTurnHistoryGrid({
       birdseyeRoundGroupContainsIndex(group, viewingHistoryIndex ?? history.length, !isViewingHistory)
     )?.key ?? roundGroups[roundGroups.length - 1]?.key
 
+  const historyRowCount = roundGroups.reduce((n, group) => n + group.rows.length, 0)
+
   useLayoutEffect(() => {
-    const roundEl = activeRoundRef.current
     const scrollEl = scrollRef.current
-    if (!roundEl || !scrollEl) return
-    const delta =
-      roundEl.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top
-    if (delta !== 0) scrollEl.scrollTop += delta
-  }, [viewingKey, activeRoundKey, roundGroups.length])
+    const roundEl = activeRoundRef.current
+    if (!scrollEl || !roundEl) return
+
+    // Pin the active Round X / Setup / Endgame block to the top of the scrollport.
+    const scrollRect = scrollEl.getBoundingClientRect()
+    const roundTop = roundEl.getBoundingClientRect().top
+    const deltaToRound = roundTop - scrollRect.top
+    if (deltaToRound !== 0) scrollEl.scrollTop += deltaToRound
+
+    // If the viewing/live cell is still below the fold, nudge down so it shows.
+    // Sticky Round banners keep the title visible while scrolling within the round.
+    const cellEl = activeCellRef.current
+    if (!cellEl) return
+    const pad = 4
+    const nextScrollRect = scrollEl.getBoundingClientRect()
+    const cellRect = cellEl.getBoundingClientRect()
+    if (cellRect.bottom > nextScrollRect.bottom - pad) {
+      scrollEl.scrollTop += cellRect.bottom - nextScrollRect.bottom + pad
+    }
+  }, [viewingKey, activeRoundKey, roundGroups.length, historyRowCount])
 
   const handleCellClick = (cell: BirdseyeHistoryCell) => {
     if (gameState.sandboxSetup) return
@@ -99,7 +115,7 @@ export function BirdseyeTurnHistoryGrid({
   const inSandboxSetup = Boolean(gameState.sandboxSetup)
   const turnLabelIndex =
     isViewingHistory && viewingTurnIndex != null ? viewingTurnIndex : history.length
-  const turnLabel = getHistoryRowLabel(history, turnLabelIndex)
+  const turnLabel = getHistoryRowLabel(history, turnLabelIndex, gameState)
   const effectiveViewIndex = viewingTurnIndex ?? history.length
   const lastVisibleIndex = hideLiveTurn ? Math.max(-1, history.length - 1) : history.length
   const canGoToPreviousTurn = !inSandboxSetup && effectiveViewIndex > 0

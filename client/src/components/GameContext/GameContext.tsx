@@ -160,8 +160,10 @@ import {
   resolveNonWinnerDreadnoughts,
   returnExpiredDreadnoughtControls,
   getRemainingDeploySlots,
+  syncCombatStrengthAfterUnitDelta,
   syncCombatStrengthForPlayer,
 } from '../../utils/dreadnoughtLifecycle'
+import { getCachedCombatTotal } from '../../utils/combatStrength'
 import { controlBonusOwner, playerHasUnitsInCombat } from '../../utils/dreadnoughts'
 import {
   applyDeployTroopsAllowance,
@@ -628,30 +630,6 @@ function dedupeGains(gains: Gain[]): Gain[] {
   return result
 }
 
-/** Keep combat intrigue plays (and retreats) on the combat-scoped currTurn. */
-function combatIntrigueHistoryTurn(state: GameState, playerId: number): GameTurn | null {
-  const ct = state.currTurn
-  const plays = ct?.playedIntrigueCard
-  const retreated = ct?.troopsRetreatedFromConflict ?? 0
-  if ((!plays || plays.length === 0) && retreated <= 0) return null
-  return {
-    playerId,
-    type: retreated > 0 ? TurnType.PASS : TurnType.ACTION,
-    playedIntrigueCard: plays && plays.length > 0 ? plays.map(p => ({ ...p })) : undefined,
-    ...(retreated > 0
-      ? {
-          troopsRetreatedFromConflict: retreated,
-          removableTroops: 0,
-          troopsDeployedToConflict: 0,
-        }
-      : {}),
-  }
-}
-
-function isCombatResolutionIntrigueGain(gain: Gain, combatRound: number): boolean {
-  return gain.round === combatRound && gain.source === GainSource.INTRIGUE
-}
-
 /** Name row for a combat intrigue that produced no gain (so history/live overlay can still list it). */
 function ensureCombatIntriguePlayRecorded(
   state: GameState,
@@ -683,18 +661,75 @@ function ensureCombatIntriguePlayRecorded(
   }
 }
 
-function collectCombatResolutionGains(state: GameState, combatRound: number): Gain[] {
+function collectConflictRewardGains(state: GameState, combatRound: number): Gain[] {
   const conflictId = state.currentConflict?.id
   return dedupeGains(
     (state.gains ?? []).filter(gain => {
       if (gain.round !== combatRound) return false
-      if (gain.source === GainSource.CONFLICT) {
-        return gain.amount !== 0 && conflictId != null && gain.sourceId === conflictId
-      }
-      // Include amount-0 intrigue rows so played names survive when the card created no effect.
-      return isCombatResolutionIntrigueGain(gain, combatRound)
+      if (gain.source !== GainSource.CONFLICT) return false
+      return gain.amount !== 0 && conflictId != null && gain.sourceId === conflictId
     })
   )
+}
+
+/** Section banner: Combat: {conflict name}. Intrigue visits follow as normal turn rows. */
+function snapshotCombatBannerForHistory(state: GameState): GameState {
+  return deepCopyGameState({
+    ...state,
+    historyEntryKind: 'combat',
+    gains: [],
+    currTurn: null,
+    selectedCard: null,
+    selectedCardDeckIndex: null,
+    pendingRewards: [],
+    pendingConflictRewardChoices: undefined,
+    combatResolutionDeferred: undefined,
+    history: [],
+  })
+}
+
+function combatVisitTurn(state: GameState, playerId: number): GameTurn {
+  const ct = state.currTurn
+  const sameSeat = ct?.playerId === playerId
+  const plays = sameSeat ? ct?.playedIntrigueCard : undefined
+  const retreated = sameSeat ? (ct?.troopsRetreatedFromConflict ?? 0) : 0
+  const gainsStartIndex =
+    sameSeat && ct?.gainsStartIndex != null ? ct.gainsStartIndex : state.gains.length
+  const passed = (!plays || plays.length === 0) && retreated <= 0
+  return {
+    playerId,
+    type: passed ? TurnType.PASS : TurnType.ACTION,
+    gainsStartIndex,
+    playedIntrigueCard: plays && plays.length > 0 ? plays.map(p => ({ ...p })) : undefined,
+    ...(retreated > 0
+      ? {
+          troopsRetreatedFromConflict: retreated,
+          removableTroops: 0,
+          troopsDeployedToConflict: 0,
+        }
+      : {}),
+  }
+}
+
+function snapshotCombatVisitForHistory(state: GameState, playerId: number): GameState {
+  return snapshotStateForHistory({
+    ...state,
+    historyEntryKind: undefined,
+    phase: GamePhase.COMBAT,
+    activePlayerId: playerId,
+    currTurn: combatVisitTurn(state, playerId),
+    selectedCard: null,
+    selectedCardDeckIndex: null,
+    pendingRewards: [],
+  })
+}
+
+function freshCombatVisitTurn(state: GameState, playerId: number): GameTurn {
+  return {
+    playerId,
+    type: TurnType.ACTION,
+    gainsStartIndex: state.gains.length,
+  }
 }
 
 function snapshotCombatResolutionForHistory(
@@ -702,19 +737,16 @@ function snapshotCombatResolutionForHistory(
   transitionedState: GameState,
   combatRound: number
 ): GameState {
-  const combatGains = collectCombatResolutionGains(stateAfterRewards, combatRound)
+  const combatGains = collectConflictRewardGains(stateAfterRewards, combatRound)
   const copy = deepCopyGameState({
     ...transitionedState,
     currentRound: combatRound,
     currentConflict: stateAfterRewards.currentConflict,
     combatStrength: { ...stateAfterRewards.combatStrength },
     combatTroops: { ...stateAfterRewards.combatTroops },
-    historyEntryKind: 'combat',
+    historyEntryKind: 'conflict-rewards',
     gains: combatGains,
-    currTurn: combatIntrigueHistoryTurn(
-      stateAfterRewards,
-      stateAfterRewards.currTurn?.playerId ?? stateAfterRewards.activePlayerId
-    ),
+    currTurn: null,
     selectedCard: null,
     selectedCardDeckIndex: null,
     pendingRewards: [],
@@ -1641,8 +1673,10 @@ function applyChoiceReward(
   if (reward.persuasion) { player.persuasion += reward.persuasion; pushGain(reward.persuasion, RewardType.PERSUASION) }
   if (reward.combat) {
     if (playerHasUnitsInCombat(newState, playerId)) {
-      const current = newState.combatStrength[playerId] || 0
-      newState.combatStrength[playerId] = current + reward.combat
+      const current = newState.combatStrength[playerId] ?? player.combatValue ?? 0
+      const next = current + reward.combat
+      newState.combatStrength[playerId] = next
+      player.combatValue = next
       pushGain(reward.combat, RewardType.COMBAT)
     }
   }
@@ -1965,7 +1999,10 @@ function handleIntrigueEffect(
     }
     if (reward.combat) {
       if (playerHasUnitsInCombat(newState, playerId)) {
-        newState.combatStrength[playerId] = (newState.combatStrength[playerId] || 0) + reward.combat
+        const current = newState.combatStrength[playerId] ?? updatedPlayer.combatValue ?? 0
+        const next = current + reward.combat
+        newState.combatStrength[playerId] = next
+        updatedPlayer.combatValue = next
         pushGain(reward.combat, RewardType.COMBAT)
       }
     }
@@ -2158,6 +2195,9 @@ function handleIntrigueEffect(
       if (effect.cost) {
         // Cost + custom (Strongarm, Quid Pro Quo) — pay cost below, then resolve custom.
       } else {
+        // Flush prior reward mutations (e.g. +combat) before custom overwrites players.
+        updatedPlayers[playerIndex] = updatedPlayer
+        newState = { ...newState, players: [...updatedPlayers] }
         const applied = applyRiseOfIxIntrigueCustomInEffect(
           newState,
           playerId,
@@ -2896,65 +2936,105 @@ function mergeCombatIntriguePasses(state: GameState): GameState {
   }
 }
 
+/** Combat intrigue still waiting on player input (choices, Second Wave deploy, etc.). */
+function combatIntrigueInputPending(state: GameState): boolean {
+  if ((state.currTurn?.pendingChoices?.length ?? 0) > 0) return true
+  if (state.pendingSecondWave != null) return true
+  if (state.pendingRapidMobilization != null) return true
+  return false
+}
+
+/** End the active combat intrigue visit and advance (or move to rewards). */
+function endCombatIntrigueVisit(state: GameState, playerId: number): GameState {
+  const clearedPending = {
+    ...state,
+    pendingSecondWave: state.pendingSecondWave === playerId ? null : state.pendingSecondWave,
+    pendingRapidMobilization:
+      state.pendingRapidMobilization === playerId ? null : state.pendingRapidMobilization,
+  }
+  const visitSnapshot = snapshotCombatVisitForHistory(clearedPending, playerId)
+  const combatPasses = new Set([
+    ...clearedPending.combatPasses,
+    ...getAutoCombatPassPlayerIds(clearedPending),
+    playerId,
+  ])
+
+  if (combatIntrigueShouldEnd({ ...clearedPending, combatPasses })) {
+    return {
+      ...clearedPending,
+      combatPasses: new Set(),
+      phase: GamePhase.COMBAT_REWARDS,
+      history: [...state.history, visitSnapshot],
+      currTurn: null,
+    }
+  }
+
+  const nextIndex = findNextCombatIntriguePlayer({ ...clearedPending, combatPasses }, playerId)
+  if (nextIndex === null) {
+    return {
+      ...clearedPending,
+      combatPasses: new Set(),
+      phase: GamePhase.COMBAT_REWARDS,
+      history: [...state.history, visitSnapshot],
+      currTurn: null,
+    }
+  }
+
+  return {
+    ...clearedPending,
+    combatPasses,
+    activePlayerId: nextIndex,
+    history: [...state.history, visitSnapshot],
+    currTurn: freshCombatVisitTurn(clearedPending, nextIndex),
+  }
+}
+
 /**
- * After a combat intrigue is fully resolved: merge auto-passes, then advance clockwise
- * from the player who acted so everyone (including earlier passers) may play or pass again.
+ * After a combat intrigue effect resolves: keep the seat for optional deploy / Continue.
+ * One intrigue per visit — further plays wait until Pass, then a later visit if passes reset.
+ * If the actor is forced out of combat (e.g. retreated all troops), end the visit immediately.
  */
 function finishCombatIntrigueAction(state: GameState, actedPlayerId: number): GameState {
   if (state.phase !== GamePhase.COMBAT) return state
 
-  if ((state.currTurn?.pendingChoices?.length ?? 0) > 0) {
-    return mergeCombatIntriguePasses(state)
+  if (combatIntrigueInputPending(state)) {
+    const combatPasses = new Set([
+      ...state.combatPasses,
+      ...getAutoCombatPassPlayerIds(state),
+    ])
+    combatPasses.delete(actedPlayerId)
+    return {
+      ...state,
+      combatPasses,
+      activePlayerId: actedPlayerId,
+      currTurn: state.currTurn
+        ? { ...state.currTurn, playerId: actedPlayerId }
+        : combatVisitTurn(state, actedPlayerId),
+    }
+  }
+
+  // Retreated out of the Conflict — cannot Continue; auto-end the visit.
+  if (
+    (state.currTurn?.playedIntrigueCard?.length ?? 0) > 0 &&
+    !playerCanParticipateInCombat(state, actedPlayerId)
+  ) {
+    return endCombatIntrigueVisit(state, actedPlayerId)
   }
 
   const combatPasses = new Set([
     ...state.combatPasses,
     ...getAutoCombatPassPlayerIds(state),
   ])
-  const preserveCombatTurn = combatIntrigueHistoryTurn(state, actedPlayerId)
-  const withPasses = { ...state, combatPasses, currTurn: preserveCombatTurn }
+  combatPasses.delete(actedPlayerId)
 
-  // Actor may play another combat intrigue while they still have cards and troops in the Conflict.
-  if (isCombatIntrigueEligible(withPasses, actedPlayerId)) {
-    combatPasses.delete(actedPlayerId)
-    return {
-      ...withPasses,
-      combatPasses,
-      activePlayerId: actedPlayerId,
-    }
-  }
-
-  // No troops in combat (or no intrigue left) — auto-pass this seat.
-  combatPasses.add(actedPlayerId)
-
-  if (combatIntrigueShouldEnd({ ...withPasses, combatPasses })) {
-    return {
-      ...withPasses,
-      combatPasses: new Set(),
-      phase: GamePhase.COMBAT_REWARDS,
-      currTurn: preserveCombatTurn,
-    }
-  }
-
-  const nextIndex = findNextCombatIntriguePlayer({ ...withPasses, combatPasses }, actedPlayerId)
-  if (nextIndex === null) {
-    return {
-      ...withPasses,
-      combatPasses: new Set(),
-      phase: GamePhase.COMBAT_REWARDS,
-      currTurn: preserveCombatTurn,
-    }
-  }
-
+  // Keep full currTurn (canDeployTroops, troopLimit, plays) until Pass/Continue.
   return {
-    ...withPasses,
+    ...state,
     combatPasses,
-    activePlayerId: nextIndex,
-    // Keep intrigue/retreat history on currTurn, but stamp the seat that now acts.
-    // Chrome and getGainsForTurnState read currTurn.playerId as the active leader.
-    currTurn: preserveCombatTurn
-      ? { ...preserveCombatTurn, playerId: nextIndex }
-      : { playerId: nextIndex, type: TurnType.ACTION },
+    activePlayerId: actedPlayerId,
+    currTurn: state.currTurn
+      ? { ...state.currTurn, playerId: actedPlayerId }
+      : combatVisitTurn(state, actedPlayerId),
   }
 }
 
@@ -3524,8 +3604,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const playersWithIntrigueAndUnits = playersWithUnits.filter(p => p.intrigueCount > 0)
         
         if (playersWithIntrigueAndUnits.length === 0) {
-          // Skip combat phase - no one can participate
-          return {
+          // Skip combat intrigue — banner then conflict rewards.
+          const skipCombatBase = {
             ...newState,
             phase: GamePhase.COMBAT_REWARDS,
             combatPasses: new Set(),
@@ -3538,7 +3618,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 : p
             ),
             activePlayerId: 0,
-            history: [...state.history, historySnapshot],
             currTurn: null,
             canEndTurn: false,
             canAcquireIR: false,
@@ -3546,6 +3625,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             selectedCardDeckIndex: null,
             gains: [],
             pendingRewards: []
+          }
+          return {
+            ...skipCombatBase,
+            history: [
+              ...state.history,
+              historySnapshot,
+              snapshotCombatBannerForHistory(skipCombatBase),
+            ],
           }
         }
         
@@ -3564,7 +3651,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           endTurnCombatActivePlayer = newState.players[endTurnCombatActiveId]
           endTurnCombatFindAttempts++
         }
-        return {
+        const combatEnterBase = {
           ...newState,
           phase: GamePhase.COMBAT,
           combatPasses: endTurnCombatPasses,
@@ -3577,14 +3664,25 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               : p
           ),
           activePlayerId: endTurnCombatActiveId,
-          history: [...state.history, historySnapshot],
-          currTurn: null,
+          gains: [],
+          pendingRewards: [],
+          currTurn: {
+            playerId: endTurnCombatActiveId,
+            type: TurnType.ACTION,
+            gainsStartIndex: 0,
+          },
           canEndTurn: false,
           canAcquireIR: false,
           selectedCard: null,
           selectedCardDeckIndex: null,
-          gains: [],
-          pendingRewards: []
+        }
+        return {
+          ...combatEnterBase,
+          history: [
+            ...state.history,
+            historySnapshot,
+            snapshotCombatBannerForHistory(combatEnterBase),
+          ],
         }
       }
       
@@ -3733,9 +3831,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         currTurn: currentTurn
       }
 
-      return syncCombatStrengthForPlayer(
+      return syncCombatStrengthAfterUnitDelta(
         checkAndApplyDiversion(checkAndApplyMasterstroke(newState, action.playerId), action.playerId),
-        action.playerId
+        action.playerId,
+        2
       )
     }
     case 'UNDEPLOY_TROOP': {
@@ -3774,9 +3873,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ),
       }
 
-      return syncCombatStrengthForPlayer(
+      return syncCombatStrengthAfterUnitDelta(
         checkAndApplyDiversion(revertMasterstrokeIfNeeded(newState, action.playerId), action.playerId),
-        action.playerId
+        action.playerId,
+        -2
       )
     }
     case 'DEPLOY_DREADNOUGHT': {
@@ -3805,7 +3905,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!currentTurn) return state
 
       const each = dreadnoughtStrengthEach(player.leader)
-      const updatedCombat = player.combatValue ? player.combatValue + each : each
+      const prev = getCachedCombatTotal(state, action.playerId)
+      const updatedCombat = prev > 0 ? prev + each : each
 
       const newState = {
         ...state,
@@ -3925,9 +4026,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         currTurn: currentTurn,
       }
 
-      return syncCombatStrengthForPlayer(
+      return syncCombatStrengthAfterUnitDelta(
         checkAndApplyDiversion(checkAndApplyMasterstroke(newState, action.playerId), action.playerId),
-        action.playerId
+        action.playerId,
+        2
       )
     }
     case 'UNDEPLOY_SPECIMEN': {
@@ -3967,9 +4069,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ),
       }
 
-      return syncCombatStrengthForPlayer(
+      return syncCombatStrengthAfterUnitDelta(
         checkAndApplyDiversion(revertMasterstrokeIfNeeded(newState, action.playerId), action.playerId),
-        action.playerId
+        action.playerId,
+        -2
       )
     }
     case 'RETREAT_TROOP': {
@@ -4033,17 +4136,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ),
       }
 
-      return revertMasterstrokeIfNeeded(newState, action.playerId)
+      const afterRetreat = revertMasterstrokeIfNeeded(newState, action.playerId)
+      if (afterRetreat.phase === GamePhase.COMBAT && afterRetreat.activePlayerId === action.playerId) {
+        return finishCombatIntrigueAction(afterRetreat, action.playerId)
+      }
+      return afterRetreat
     }
     case 'START_COMBAT_PHASE': {
       const newState = {...state}
       newState.combatPasses = getAutoCombatPassPlayerIds(newState)
 
       if(newState.combatPasses.size === newState.players.length) {
-        return {
+        const rewardsState = {
           ...newState,
           combatPasses: new Set(),
           phase: GamePhase.COMBAT_REWARDS,
+          currTurn: null,
+        }
+        return {
+          ...rewardsState,
+          history: [...state.history, snapshotCombatBannerForHistory(rewardsState)],
         }
       }
       let nextIndex = newState.firstPlayerMarker
@@ -4052,76 +4164,38 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         nextIndex = (nextIndex + 1) % newState.players.length
         nextPlayer = newState.players[nextIndex]
       }
-      return {
+      const combatState = {
         ...newState,
         phase: GamePhase.COMBAT,
         activePlayerId: nextIndex,
+        currTurn: freshCombatVisitTurn(newState, nextIndex),
         pendingVictorSpiceThisCombat: {},
         pendingVictorSolariThisCombat: {},
         pendingDemandRespectReward: {},
       }
+      return {
+        ...combatState,
+        history: [...state.history, snapshotCombatBannerForHistory(combatState)],
+      }
     }
     case 'PASS_COMBAT': {
       const { playerId } = action
-      const newState = {...state}
-      newState.combatPasses.add(playerId)
-      const eligiblePlayerIds = getCombatIntrigueEligiblePlayerIds(newState)
-
-      // Check if combat should end
-      if (
-        newState.combatPasses.size === newState.players.length ||
-        newState.players.every(p => p.intrigueCount < 1 || newState.combatTroops[p.id] < 1) ||
-        (eligiblePlayerIds.length > 0 &&
-          eligiblePlayerIds.every(id => newState.combatPasses.has(id)))
-      ) {
-        return {
-          ...newState,
-          combatPasses: new Set(),
-          phase: GamePhase.COMBAT_REWARDS,
-        }
+      if (state.phase !== GamePhase.COMBAT) return state
+      if (playerId !== state.activePlayerId) return state
+      // Mandatory intrigue choices must be resolved before Continue.
+      if ((state.currTurn?.pendingChoices?.length ?? 0) > 0) {
+        return state
       }
-
-      // Find next eligible player
-      let nextIndex = (playerId + 1) % newState.players.length
-      let attempts = 0
-      const maxAttempts = newState.players.length
-      
-      while(attempts < maxAttempts && 
-            (newState.combatPasses.has(nextIndex) || 
-             newState.players[nextIndex].intrigueCount < 1 || 
-             newState.combatTroops[nextIndex] < 1)) {
-        if (
-          newState.players[nextIndex].intrigueCount < 1 ||
-          newState.combatTroops[nextIndex] < 1
-        ) {
-          newState.combatPasses.add(nextIndex)
-        }
-        nextIndex = (nextIndex + 1) % newState.players.length
-        attempts++
-      }
-      
-      // If we couldn't find an eligible player, end combat
-      if(attempts >= maxAttempts) {
-        return {
-          ...newState,
-          combatPasses: new Set(),
-          phase: GamePhase.COMBAT_REWARDS,
-        }
-      }
-    
-      return {
-        ...newState,
-        activePlayerId: nextIndex,
-        currTurn: combatIntrigueHistoryTurn(newState, nextIndex) ?? {
-          playerId: nextIndex,
-          type: TurnType.ACTION,
-        },
-      }
+      // Optional deploy (Second Wave, etc.) — Pass/Continue skips remaining units.
+      return endCombatIntrigueVisit(state, playerId)
     }
     case 'PLAY_COMBAT_INTRIGUE': {
       const { playerId, cardId } = action
       if (playerId !== state.activePlayerId) return state
       if (state.phase !== GamePhase.COMBAT) return state
+      // One intrigue card per combat visit; Pass/Continue ends the visit.
+      if ((state.currTurn?.playedIntrigueCard?.length ?? 0) > 0) return state
+      if (combatIntrigueInputPending(state)) return state
 
       const player = state.players.find(p => p.id === playerId)
       if (!player || player.intrigueCount < 1) return state
@@ -4142,6 +4216,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (!canPlayIntrigueCardNow(state, player, card)) return state
 
+      // Capture before effects so visit history includes this intrigue's gains.
+      const visitGainsStartIndex =
+        state.currTurn?.playerId === playerId && state.currTurn.gainsStartIndex != null
+          ? state.currTurn.gainsStartIndex
+          : state.gains.length
+
       const updatedState = ensureCombatIntriguePlayRecorded(
         handleIntrigueEffect(state, card, playerId),
         playerId,
@@ -4150,6 +4230,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const pendingCombatChoices: PendingChoice[] = []
       if (intrigueCardHasCustom(card, CustomEffect.MASTER_TACTICIAN)) {
         const ct = state.combatTroops[playerId] || 0
+        const retreatAllowance = Math.min(3, ct)
         pendingCombatChoices.push({
           id: mintId(
             state,
@@ -4160,10 +4241,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           type: ChoiceType.FIXED_OPTIONS,
           prompt: 'Master Tactician: choose one',
           options: [
-            { reward: { combat: 3 }, rewardLabel: '+3 strength' },
-            { reward: { retreatFromConflict: 1 }, rewardLabel: 'Retreat 1 troop', disabled: ct < 1 },
-            { reward: { retreatFromConflict: 2 }, rewardLabel: 'Retreat 2 troops', disabled: ct < 2 },
-            { reward: { retreatFromConflict: 3 }, rewardLabel: 'Retreat 3 troops', disabled: ct < 3 },
+            { reward: { combat: 3 }, rewardLabel: '' },
+            {
+              reward: { retreatTroops: retreatAllowance },
+              rewardLabel: 'Retreat',
+              disabled: retreatAllowance < 1,
+            },
           ],
           source: { type: GainSource.INTRIGUE, id: card.id, name: card.name }
         })
@@ -4264,6 +4347,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           source: { type: GainSource.INTRIGUE, id: card.id, name: card.name }
         })
       })
+      const priorPlays =
+        updatedState.currTurn?.playerId === playerId
+          ? updatedState.currTurn.playedIntrigueCard || []
+          : []
       const newState = {
         ...updatedState,
         // Playing intrigue breaks the pass chain — eligible players may act again (rules).
@@ -4275,24 +4362,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ),
         intrigueDeck: updatedState.intrigueDeck.filter(c => c.id !== cardId),
         intrigueDiscard: [...updatedState.intrigueDiscard, card],
-        currTurn:
-          pendingCombatChoices.length > 0
-            ? {
-                playerId,
-                type: TurnType.ACTION,
-                playedIntrigueCard: [
-                  ...(updatedState.currTurn?.playedIntrigueCard || []),
-                  { cardId }
-                ],
-                pendingChoices: pendingCombatChoices
-              }
-            : {
-                ...(updatedState.currTurn || { playerId, type: TurnType.ACTION }),
-                playedIntrigueCard: [
-                  ...(updatedState.currTurn?.playedIntrigueCard || []),
-                  { cardId }
-                ]
-              },
+        currTurn: {
+          ...(updatedState.currTurn?.playerId === playerId
+            ? updatedState.currTurn
+            : { playerId, type: TurnType.ACTION }),
+          playerId,
+          type: TurnType.ACTION,
+          gainsStartIndex: visitGainsStartIndex,
+          playedIntrigueCard: [...priorPlays, { cardId }],
+          ...(pendingCombatChoices.length > 0 ? { pendingChoices: pendingCombatChoices } : {}),
+        },
         canEndTurn: pendingCombatChoices.length > 0 ? false : updatedState.canEndTurn
       }
 
@@ -8754,7 +8833,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const playersWithIntrigueAndUnits = playersWithUnits.filter(p => p.intrigueCount > 0)
         
         if (playersWithIntrigueAndUnits.length === 0) {
-          // Skip combat phase - no one can participate
+          // Skip combat intrigue — banner then conflict rewards.
           const combatRewardsState = {
             ...newState,
             phase: GamePhase.COMBAT_REWARDS,
@@ -8776,12 +8855,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             gains: [],
             pendingRewards: []
           }
-          
-          // Don't add the combat rewards state to history - it will be added when combat actually resolves
-          // For turn 0, preserve the initial state in history. For other turns, include truncated history
+          const baseHistory = turnIndex === 0 ? [targetState] : truncatedHistory
           return {
             ...combatRewardsState,
-            history: turnIndex === 0 ? [targetState] : truncatedHistory
+            history: [...baseHistory, snapshotCombatBannerForHistory(combatRewardsState)],
           }
         }
         
@@ -8813,20 +8890,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               : p
           ),
           activePlayerId: combatActiveId,
-          currTurn: null,
+          gains: [],
+          pendingRewards: [],
+          currTurn: {
+            playerId: combatActiveId,
+            type: TurnType.ACTION,
+            gainsStartIndex: 0,
+          },
           canEndTurn: false,
           canAcquireIR: false,
           selectedCard: null,
           selectedCardDeckIndex: null,
-          gains: [],
-          pendingRewards: []
         }
-        
-        // Don't add the combat state to history - it will be added when combat actually resolves
-        // For turn 0, preserve the initial state in history. For other turns, include truncated history
+        const baseHistory = turnIndex === 0 ? [targetState] : truncatedHistory
         return {
           ...combatState,
-          history: turnIndex === 0 ? [targetState] : truncatedHistory
+          history: [...baseHistory, snapshotCombatBannerForHistory(combatState)],
         }
       }
       
@@ -9500,12 +9579,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
             kind !== 'setup' &&
             kind !== 'round-start' &&
             kind !== 'combat' &&
+            kind !== 'conflict-rewards' &&
             kind !== 'endgame'
           if (isPlayerTurnRow) {
             history = [...history.slice(0, -1), snapshotStateForHistory(prev)]
           }
         }
-        // Prefer reducer-built combat snapshot (has strengths/gains before transition cleared them).
+        // Prefer reducer-built conflict-rewards snapshot (has strengths/gains before transition cleared them).
         if (
           (action.type === 'RESOLVE_COMBAT' || action.type === 'RESOLVE_CONFLICT_REWARD_CHOICE') &&
           next !== prev
@@ -9517,7 +9597,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
           if (wasCombatRewards && !stillDeferred) {
             let liveCombat: GameState | undefined
             for (let i = next.history.length - 1; i >= 0; i--) {
-              if (next.history[i].historyEntryKind === 'combat') {
+              const kind = next.history[i].historyEntryKind
+              if (kind === 'conflict-rewards' || kind === 'combat') {
                 liveCombat = next.history[i]
                 break
               }
@@ -9715,12 +9796,19 @@ function createImperiumRowAcquireChoice(
 }
 
 /**
- * Live Combat Resolution view: same snapshot shape as history.
+ * Live Conflict rewards view: same snapshot shape as the conflict-rewards history row.
  * During COMBAT_REWARDS before confirm, previews RESOLVE_COMBAT on a copy so
  * placement rewards show before the snapshot is appended to history.
  */
 function buildCombatResolutionView(state: GameState): GameState {
-  if (state.historyEntryKind === 'combat') return state
+  if (state.historyEntryKind === 'conflict-rewards') return state
+  // Legacy combined combat rows (pre-split) still render as rewards views.
+  if (
+    state.historyEntryKind === 'combat' &&
+    (state.gains ?? []).some(g => g.source === GainSource.CONFLICT && g.amount !== 0)
+  ) {
+    return state
+  }
 
   const needsRewardPreview =
     state.phase === GamePhase.COMBAT_REWARDS &&
@@ -9729,7 +9817,9 @@ function buildCombatResolutionView(state: GameState): GameState {
 
   if (needsRewardPreview) {
     const previewed = applyGameAction(deepCopyGameState(state), { type: 'RESOLVE_COMBAT' })
-    const snap = [...previewed.history].reverse().find(row => row.historyEntryKind === 'combat')
+    const snap = [...previewed.history]
+      .reverse()
+      .find(row => row.historyEntryKind === 'conflict-rewards' || row.historyEntryKind === 'combat')
     if (snap) return snap
     return snapshotCombatResolutionForHistory(previewed, previewed, state.currentRound)
   }

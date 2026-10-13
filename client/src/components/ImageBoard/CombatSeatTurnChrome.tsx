@@ -39,10 +39,12 @@ export interface BirdseyeSeatActions {
   familyAtomicsUsed?: boolean
   familyAtomicsDisabled?: boolean
   onUseFamilyAtomics?: () => void
-  /** When true, End Turn is available. Desktop swaps Play/Reveal; the rim keeps both. */
+  /** When true, End Turn / Pass Combat is available. Desktop swaps Play/Reveal; the rim keeps both. */
   showEndTurn: boolean
   endTurnDisabled: boolean
   endTurnTitle?: string
+  /** Button label for the End Turn slot (e.g. Pass Combat / Continue during combat). */
+  endTurnLabel?: string
   agents: number
   handCount: number
   /** Selected card, agent not placed — same rule as TurnControls Play→Change. */
@@ -105,7 +107,7 @@ export function BirdseyePrimaryControls({
           disabled={actions.endTurnDisabled}
           title={actions.endTurnTitle}
         >
-          End Turn
+          {actions.endTurnLabel ?? 'End Turn'}
         </button>
       ) : (
         <>
@@ -806,7 +808,7 @@ export function BirdseyeRimBar({
             disabled={actions.endTurnDisabled}
             title={actions.endTurnTitle}
           >
-            End Turn
+            {actions.endTurnLabel ?? 'End Turn'}
           </button>
         ) : null}
         <BirdseyeUtilControls

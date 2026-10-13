@@ -1,6 +1,11 @@
 import { BOARD_SPACES } from '../catalog/runtime'
 import { dreadnoughtStrengthEach } from '../data/leaderAbilities/rhomburDreadnoughtStrength'
-import { computeStrength } from './combatStrength'
+import {
+  computeStrength,
+  computeUnitStrength,
+  getCachedCombatTotal,
+  shouldUseCachedCombatValue,
+} from './combatStrength'
 import {
   ChoiceType,
   ControlMarkerType,
@@ -73,6 +78,44 @@ export function syncCombatStrengthForPlayer(state: GameState, playerId: number):
     combatStrength: nextStrength,
     players: state.players.map(p =>
       p.id === playerId ? { ...p, combatValue: strength > 0 ? strength : 0 } : p
+    ),
+  }
+}
+
+/**
+ * After deploying/undeploying units during reveal/combat, bump the cached total
+ * by the unit strength delta so intrigue swords are preserved.
+ * Agent-turn deploy still full-resyncs from units only (ignores stale combatValue).
+ */
+export function syncCombatStrengthAfterUnitDelta(
+  state: GameState,
+  playerId: number,
+  strengthDelta: number
+): GameState {
+  if (!shouldUseCachedCombatValue(state, playerId)) {
+    return syncCombatStrengthForPlayer(state, playerId)
+  }
+
+  const unitStrength = computeUnitStrength(state, playerId)
+  if (unitStrength <= 0) {
+    const nextStrength = { ...state.combatStrength }
+    delete nextStrength[playerId]
+    return {
+      ...state,
+      combatStrength: nextStrength,
+      players: state.players.map(p =>
+        p.id === playerId ? { ...p, combatValue: 0 } : p
+      ),
+    }
+  }
+
+  const prev = getCachedCombatTotal(state, playerId)
+  const nextVal = Math.max(0, (prev > 0 ? prev : unitStrength - strengthDelta) + strengthDelta)
+  return {
+    ...state,
+    combatStrength: { ...state.combatStrength, [playerId]: nextVal },
+    players: state.players.map(p =>
+      p.id === playerId ? { ...p, combatValue: nextVal } : p
     ),
   }
 }
@@ -400,7 +443,8 @@ export function adjustDreadnoughtConflictStrength(
   if (!player) return state
   const each = dreadnoughtStrengthEach(player.leader)
   const delta = deltaUnits * each
-  const nextVal = Math.max(0, (player.combatValue || 0) + delta)
+  const prev = getCachedCombatTotal(state, playerId)
+  const nextVal = Math.max(0, prev + delta)
   const next = {
     ...state,
     players: state.players.map(p =>

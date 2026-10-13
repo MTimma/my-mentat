@@ -3,11 +3,17 @@ import { GamePhase, GameState, TurnType } from '../types/GameTypes'
 import { shouldHideLiveHistoryEntry } from './endgameHistoryDisplay'
 import { resolvePlayedCardsForTurn } from './revealTurnStats'
 
-/** Non-player rows: setup, round start, combat resolution. */
+/** Non-player rows: setup, round start, combat banner, conflict rewards, endgame. */
 export function isMetaHistoryEntry(turn: GameState | undefined): boolean {
   if (!turn) return false
   const kind = turn.historyEntryKind
-  return kind === 'setup' || kind === 'round-start' || kind === 'combat' || kind === 'endgame'
+  return (
+    kind === 'setup' ||
+    kind === 'round-start' ||
+    kind === 'combat' ||
+    kind === 'conflict-rewards' ||
+    kind === 'endgame'
+  )
 }
 
 /** Round-start divider rows, including the merged opening snapshot still tagged as setup. */
@@ -25,20 +31,41 @@ export function getRoundStartLabel(turn: GameState): string {
   return `Round ${turn.currentRound}`
 }
 
-/** Turn-history / banner title for a combat resolution row. */
+/** Turn-history / banner title for a combat phase banner row. */
 export function getCombatHistoryLabel(turn: GameState): string {
   const name = turn.currentConflict?.name?.trim()
   return name ? `Combat: ${name}` : 'Combat'
 }
 
+/** Turn-history / banner title for conflict placement rewards. */
+export function getConflictRewardsHistoryLabel(): string {
+  return 'Conflict rewards'
+}
+
+/** Legacy saves stored intrigue+rewards on one `combat` row; new games use empty combat banners. */
+export function isLegacyCombinedCombatHistoryEntry(turn: GameState | undefined): boolean {
+  if (!turn || turn.historyEntryKind !== 'combat') return false
+  return (turn.gains ?? []).some(g => g.amount !== 0)
+}
+
+/** Combat intrigue visits are history rows, but they are not player turns. */
+export function isCombatIntrigueHistoryEntry(turn: GameState | undefined): boolean {
+  if (!turn || isMetaHistoryEntry(turn)) return false
+  return turn.phase === GamePhase.COMBAT
+}
+
+export function getCombatIntrigueCardsLabel(): string {
+  return 'Combat intrigue cards'
+}
+
 export function isPlayerTurnHistoryEntry(turn: GameState | undefined): boolean {
-  return turn != null && !isMetaHistoryEntry(turn)
+  return turn != null && !isMetaHistoryEntry(turn) && !isCombatIntrigueHistoryEntry(turn)
 }
 
 /** 1-based player turn number at `index`, or null for meta rows. */
 export function getPlayerTurnNumber(turns: GameState[], index: number): number | null {
   const turn = turns[index]
-  if (!turn || isMetaHistoryEntry(turn)) return null
+  if (!turn || !isPlayerTurnHistoryEntry(turn)) return null
   let num = 0
   for (let i = 0; i <= index; i++) {
     if (isPlayerTurnHistoryEntry(turns[i])) num++
@@ -66,8 +93,15 @@ export function formatTurnRoundHeader(turnNum: number, round: number | null): st
 }
 
 /** Human-readable label for a history row or the live in-progress turn. */
-export function getHistoryRowLabel(turns: GameState[], index: number): string {
+export function getHistoryRowLabel(
+  turns: GameState[],
+  index: number,
+  liveState?: GameState
+): string {
   if (index >= turns.length) {
+    if (liveState && isCombatIntrigueHistoryEntry(liveState)) {
+      return getCombatIntrigueCardsLabel()
+    }
     return `turn ${getLivePlayerTurnNumber(turns)}`
   }
   const turn = turns[index]
@@ -75,15 +109,24 @@ export function getHistoryRowLabel(turns: GameState[], index: number): string {
   if (isRoundStartHistoryEntry(turn)) return getRoundStartLabel(turn)
   if (index === 0 || turn.historyEntryKind === 'setup') return 'setup'
   if (turn.historyEntryKind === 'combat') return getCombatHistoryLabel(turn)
+  if (turn.historyEntryKind === 'conflict-rewards') return getConflictRewardsHistoryLabel()
   if (turn.historyEntryKind === 'endgame') return 'endgame'
+  if (isCombatIntrigueHistoryEntry(turn)) return getCombatIntrigueCardsLabel()
   const playerTurnNum = getPlayerTurnNumber(turns, index)
   return playerTurnNum != null ? `turn ${playerTurnNum}` : `turn ${index}`
 }
 
 /** Board space name, "Reveal", "Agent", etc. for a player turn row. */
 export function getTurnActionLabel(turn: GameState): string {
-  if (turn.phase === GamePhase.COMBAT) return 'combat'
   const curr = turn.currTurn
+  if (turn.phase === GamePhase.COMBAT) {
+    if (!curr) return 'Combat'
+    // Completed visit that passed without playing intrigue.
+    if (curr.type === TurnType.PASS) return 'Pass'
+    if ((curr.playedIntrigueCard?.length ?? 0) > 0) return 'Intrigue'
+    // Live / in-progress combat seat — not passed yet.
+    return 'Combat'
+  }
   if (!curr) return '—'
   if (curr.type === TurnType.ACTION) {
     const spaceId = curr.agentSpaceId
@@ -100,14 +143,21 @@ export function getTurnActionLabel(turn: GameState): string {
 
 export function getHistoryRowBadge(turn: GameState, index: number, turns: GameState[]): string {
   if (turn.historyEntryKind === 'endgame') return 'Endgame'
+  if (turn.historyEntryKind === 'conflict-rewards') return 'Rewards'
   if (turn.historyEntryKind === 'combat') return 'Combat'
+  if (isCombatIntrigueHistoryEntry(turn)) return ''
   if (isRoundStartHistoryEntry(turn)) return ''
   if (index === 0 || turn.historyEntryKind === 'setup') return 'Setup'
   const playerTurnNum = getPlayerTurnNumber(turns, index)
   return playerTurnNum != null ? String(playerTurnNum) : String(index)
 }
 
-export type BirdseyeHistoryBannerKind = 'setup' | 'round-start' | 'combat' | 'endgame'
+export type BirdseyeHistoryBannerKind =
+  | 'setup'
+  | 'round-start'
+  | 'combat'
+  | 'conflict-rewards'
+  | 'endgame'
 
 export interface BirdseyeHistoryCell {
   historyIndex: number
@@ -202,6 +252,15 @@ function bannerForMeta(turn: GameState, historyIndex: number, isLive: boolean): 
       round: turn.currentRound,
     }
   }
+  if (turn.historyEntryKind === 'conflict-rewards') {
+    return {
+      kind: 'conflict-rewards',
+      historyIndex,
+      isLive,
+      label: getConflictRewardsHistoryLabel(),
+      round: turn.currentRound,
+    }
+  }
   if (turn.historyEntryKind === 'endgame') {
     return { kind: 'endgame', historyIndex, isLive, label: 'Endgame' }
   }
@@ -219,14 +278,29 @@ function bannerForMeta(turn: GameState, historyIndex: number, isLive: boolean): 
 
 function isLivePlayerTurn(state: GameState): boolean {
   if (state.sandboxSetup) return false
-  if (state.historyEntryKind === 'combat' || state.historyEntryKind === 'endgame') return false
-  if (state.phase === GamePhase.COMBAT || state.phase === GamePhase.END_GAME) return false
+  if (
+    state.historyEntryKind === 'combat' ||
+    state.historyEntryKind === 'conflict-rewards' ||
+    state.historyEntryKind === 'endgame'
+  ) {
+    return false
+  }
+  if (state.phase === GamePhase.END_GAME) return false
+  if (state.phase === GamePhase.COMBAT_REWARDS) return false
+  // Combat intrigue visits are player-turn rows under the Combat banner.
+  if (state.phase === GamePhase.COMBAT) return true
   return state.phase === GamePhase.PLAYER_TURNS
 }
 
 function liveBannerKind(state: GameState): BirdseyeHistoryBannerKind | null {
   if (state.phase === GamePhase.END_GAME || state.historyEntryKind === 'endgame') return 'endgame'
-  if (state.phase === GamePhase.COMBAT || state.historyEntryKind === 'combat') return 'combat'
+  if (
+    state.phase === GamePhase.COMBAT_REWARDS ||
+    state.historyEntryKind === 'conflict-rewards'
+  ) {
+    return 'conflict-rewards'
+  }
+  if (state.historyEntryKind === 'combat') return 'combat'
   return null
 }
 

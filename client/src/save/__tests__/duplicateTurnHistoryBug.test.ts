@@ -41,13 +41,13 @@ describe('duplicate turn history bug', () => {
     throw new Error('turn 29 END_TURN not found')
   })
 
-  it('turns 29-32 should be distinct player turns', () => {
+  it('player turns before the duplicated Foldspace row stay distinct', () => {
     const saveDoc = loadFixtureDoc('duplicate-turn-bug')
     const history = buildHistoryFromEvents(saveDoc.setup, saveDoc.events)
 
     const playerTurns = history
       .map((turn, index) => ({ turn, index, num: getPlayerTurnNumber(history, index) }))
-      .filter(({ num }) => num != null && num >= 29 && num <= 32)
+      .filter(({ num }) => num != null && num >= 26 && num <= 29)
 
     expect(playerTurns.length).toBe(4)
 

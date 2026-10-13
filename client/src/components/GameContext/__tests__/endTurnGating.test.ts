@@ -262,7 +262,12 @@ describe('END_TURN — turn rotation and phase transition', () => {
     expect(s.phase).toBe(GamePhase.COMBAT)
     expect(s.activePlayerId).toBe(0) // first eligible player from the first-player marker
     expect(s.combatPasses.size).toBe(0)
-    expect(s.currTurn).toBeNull()
+    expect(s.currTurn).toMatchObject({
+      playerId: 0,
+      type: TurnType.ACTION,
+      gainsStartIndex: 0,
+    })
+    expect(s.history.some(h => h.historyEntryKind === 'combat')).toBe(true)
   })
 })
 

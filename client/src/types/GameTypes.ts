@@ -824,8 +824,8 @@ export interface GameState {
   >
   /** Second Wave: player must deploy up to 2 garrison units to the Conflict */
   pendingSecondWave?: number | null
-  /** Labels a row in `history` (setup baseline, round start, combat resolution, endgame). */
-  historyEntryKind?: 'setup' | 'round-start' | 'combat' | 'endgame'
+  /** Labels a row in `history` (setup, round start, combat banner, conflict rewards, endgame). */
+  historyEntryKind?: 'setup' | 'round-start' | 'combat' | 'conflict-rewards' | 'endgame'
   /** All intrigue cards revealed at endgame, keyed by player id. */
   endgameRevealedIntrigue?: Record<number, IntrigueCard[]>
   /** Endgame-effect cards still waiting to be applied (may require choices). */

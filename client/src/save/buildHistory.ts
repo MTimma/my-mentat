@@ -57,21 +57,57 @@ function extractCombatSnapshotFromReducer(
 
   for (let i = stateAfterAction.history.length - 1; i >= 0; i--) {
     const row = stateAfterAction.history[i]
-    if (row.historyEntryKind === 'combat') return row
+    if (row.historyEntryKind === 'conflict-rewards') return row
+    // Legacy combined combat+rewards rows (pre-split history).
+    if (
+      row.historyEntryKind === 'combat' &&
+      (row.gains ?? []).some(g => g.amount !== 0)
+    ) {
+      return row
+    }
   }
   return null
 }
 
-/** Replace at most one combat row for this round (dedupe within a single resolution). */
+function isConflictRewardsHistoryRow(row: GameState): boolean {
+  if (row.historyEntryKind === 'conflict-rewards') return true
+  return (
+    row.historyEntryKind === 'combat' && (row.gains ?? []).some(g => g.amount !== 0)
+  )
+}
+
+function isCombatBannerHistoryRow(row: GameState): boolean {
+  return row.historyEntryKind === 'combat' && !isConflictRewardsHistoryRow(row)
+}
+
+function lastCombatBanner(history: GameState[]): GameState | undefined {
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (isCombatBannerHistoryRow(history[i])) return history[i]
+  }
+  return undefined
+}
+
+function historyHasCombatBannerForRound(history: GameState[], round: number): boolean {
+  return history.some(h => isCombatBannerHistoryRow(h) && h.currentRound === round)
+}
+
+function appendCombatBannerFromState(history: GameState[], state: GameState): GameState[] {
+  const banner = lastCombatBanner(state.history)
+  if (!banner) return history
+  if (historyHasCombatBannerForRound(history, banner.currentRound)) return history
+  return [...history, banner]
+}
+
+/** Replace at most one conflict-rewards row for this round (keep Combat banners). */
 export function upsertCombatHistoryEntry(
   history: GameState[],
   snapshot: GameState
 ): GameState[] {
   const combatRound = snapshot.currentRound
-  const withoutSameRoundCombat = history.filter(
-    h => h.historyEntryKind !== 'combat' || h.currentRound !== combatRound
+  const withoutSameRoundRewards = history.filter(
+    h => !(isConflictRewardsHistoryRow(h) && h.currentRound === combatRound)
   )
-  return [...withoutSameRoundCombat, snapshot]
+  return [...withoutSameRoundRewards, snapshot]
 }
 
 function appendCombatSnapshotToHistory(
@@ -118,6 +154,23 @@ export function buildHistoryFromEvents(setup: SetupBlock, events: EventEntry[]):
         if (state.phase === GamePhase.END_GAME) break
         if (stateBeforeAction?.currTurn) {
           history = [...history, snapshotStateForHistory(stateBeforeAction)]
+        }
+        if (state.phase === GamePhase.COMBAT || state.phase === GamePhase.COMBAT_REWARDS) {
+          history = appendCombatBannerFromState(history, state)
+        }
+        break
+      }
+      case 'START_COMBAT_PHASE': {
+        history = appendCombatBannerFromState(history, state)
+        break
+      }
+      case 'PASS_COMBAT':
+      case 'PLAY_COMBAT_INTRIGUE': {
+        const newRows = state.history.slice(preAction.history.length)
+        for (const row of newRows) {
+          if (!row.historyEntryKind && row.phase === GamePhase.COMBAT && row.currTurn) {
+            history = [...history, row]
+          }
         }
         break
       }
@@ -191,7 +244,23 @@ export function historyIndexToEventIndex(
         if (state.phase !== GamePhase.END_GAME && stateBeforeAction?.currTurn) {
           history = [...history, snapshotStateForHistory(stateBeforeAction)]
         }
+        if (state.phase === GamePhase.COMBAT || state.phase === GamePhase.COMBAT_REWARDS) {
+          history = appendCombatBannerFromState(history, state)
+        }
         break
+      case 'START_COMBAT_PHASE':
+        history = appendCombatBannerFromState(history, state)
+        break
+      case 'PASS_COMBAT':
+      case 'PLAY_COMBAT_INTRIGUE': {
+        const newRows = state.history.slice(preAction.history.length)
+        for (const row of newRows) {
+          if (!row.historyEntryKind && row.phase === GamePhase.COMBAT && row.currTurn) {
+            history = [...history, row]
+          }
+        }
+        break
+      }
       case 'RESOLVE_COMBAT':
       case 'RESOLVE_CONFLICT_REWARD_CHOICE': {
         const combatSnapshot = extractCombatSnapshotFromReducer(preAction, state)

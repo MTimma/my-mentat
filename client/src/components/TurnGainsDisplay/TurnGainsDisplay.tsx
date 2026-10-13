@@ -105,9 +105,9 @@ export interface TurnGainsDisplayProps {
   omitPositiveSign?: boolean
 }
 
-/** Solari/spice: icon + count beside it (matches effect labels), not a count badge on the icon. */
+/** Solari/spice/troop retreat: icon + count beside it (matches effect labels). */
 const usesIconWithAmountLabel = (type: RewardType): boolean =>
-  type === RewardType.SOLARI || type === RewardType.SPICE
+  type === RewardType.SOLARI || type === RewardType.SPICE || type === RewardType.RETREAT
 
 const usesStackedRepeatIcons = (type: RewardType): boolean =>
   type === RewardType.TROOPS ||
@@ -159,7 +159,6 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
 
   if (!hasTotals && groups.length === 0 && deployedCount === 0 && retreatedCount === 0) return null
   const troopIcon = getRewardIcon(RewardType.TROOPS)
-  const retreatIcon = getRewardIcon(RewardType.RETREAT)
 
   const renderGainMultiplier = (amount: number) => {
     const absAmount = Math.abs(amount)
@@ -391,7 +390,10 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     acquiredCardTitle = false
   ) => {
     const rewardType = gain.type as RewardType
-    const iconPath = getRewardIcon(rewardType)
+    const iconPath =
+      rewardType === RewardType.RETREAT
+        ? getRewardIcon(RewardType.TROOPS)
+        : getRewardIcon(rewardType)
     const isCost = side === 'cost'
     const displayName =
       rewardType === RewardType.FREIGHTER
@@ -400,7 +402,9 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
           : 'Advance'
         : rewardType === RewardType.SWORDMASTER
           ? 'Agent'
-          : getRewardDisplayName(rewardType, gain.name)
+          : rewardType === RewardType.RETREAT
+            ? getRewardDisplayName(RewardType.TROOPS)
+            : getRewardDisplayName(rewardType, gain.name)
     const absAmount = Math.abs(gain.amount)
     const freighterOrdinal = rewardType === RewardType.FREIGHTER && isCost
       ? freighterRecallStepOrdinal(absAmount)
@@ -874,7 +878,6 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   }
 
   const troopDisplayName = getRewardDisplayName(RewardType.TROOPS)
-  const retreatDisplayName = getRewardDisplayName(RewardType.RETREAT)
   const hasCombatSection = deployedCount > 0 || retreatedCount > 0
 
   return (
@@ -983,8 +986,8 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
             retreatedCount,
             'retreated',
             'Retreated',
-            retreatIcon ?? troopIcon,
-            retreatDisplayName
+            troopIcon,
+            getRewardDisplayName(RewardType.TROOPS)
           )}
         </>
       ) : null}

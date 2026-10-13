@@ -24,10 +24,11 @@ function row(partial: Partial<GameState>): GameState {
 }
 
 describe('turnHistoryDisplay', () => {
-  it('treats setup, round-start, combat, and endgame as meta entries', () => {
+  it('treats setup, round-start, combat, conflict-rewards, and endgame as meta entries', () => {
     expect(isMetaHistoryEntry(row({ historyEntryKind: 'setup' }))).toBe(true)
     expect(isMetaHistoryEntry(row({ historyEntryKind: 'round-start' }))).toBe(true)
     expect(isMetaHistoryEntry(row({ historyEntryKind: 'combat' }))).toBe(true)
+    expect(isMetaHistoryEntry(row({ historyEntryKind: 'conflict-rewards' }))).toBe(true)
     expect(isMetaHistoryEntry(row({ historyEntryKind: 'endgame' }))).toBe(true)
     expect(isMetaHistoryEntry(row({ phase: GamePhase.PLAYER_TURNS }))).toBe(false)
   })
@@ -50,6 +51,26 @@ describe('turnHistoryDisplay', () => {
     expect(getPlayerTurnNumber(turns, 5)).toBe(3)
     expect(countPlayerTurns(turns)).toBe(3)
     expect(getLivePlayerTurnNumber(turns)).toBe(4)
+  })
+
+  it('does not number combat intrigue visits as player turns', () => {
+    const turns: GameState[] = [
+      row({ historyEntryKind: 'setup', currentRound: 1 }),
+      row({ phase: GamePhase.PLAYER_TURNS, currTurn: { playerId: 0, type: 'action' } }),
+      row({ historyEntryKind: 'combat', currentRound: 1 }),
+      row({ phase: GamePhase.COMBAT, currTurn: { playerId: 0, type: 'action' } }),
+      row({ phase: GamePhase.COMBAT, currTurn: { playerId: 1, type: 'action' } }),
+      row({ phase: GamePhase.PLAYER_TURNS, currTurn: { playerId: 0, type: 'action' } }),
+    ]
+    expect(getPlayerTurnNumber(turns, 3)).toBeNull()
+    expect(getPlayerTurnNumber(turns, 4)).toBeNull()
+    expect(getPlayerTurnNumber(turns, 5)).toBe(2)
+    expect(countPlayerTurns(turns)).toBe(2)
+    expect(getHistoryRowLabel(turns, 3)).toBe('Combat intrigue cards')
+    expect(getHistoryRowLabel(turns, 6, row({ phase: GamePhase.COMBAT }))).toBe(
+      'Combat intrigue cards'
+    )
+    expect(getHistoryRowBadge(turns[3], 3, turns)).toBe('')
   })
 
   it('applies player turn offset for sandbox mid-round starts', () => {
