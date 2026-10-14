@@ -19,6 +19,7 @@ import {
 import { seedTroopSupply } from '../../../utils/troops'
 import { factionFromInfluenceGainName } from '../../../utils/influenceDisplay'
 import { groupGainsBySource } from '../../../utils/turnGainsDisplay'
+import { continueAllConflictRewards } from './_helpers'
 
 function stubDeckCard(id: number): Card {
   return {
@@ -717,6 +718,7 @@ describe('Intrigue cards — combat phase', () => {
     expect(rewardsView.historyEntryKind).toBe('conflict-rewards')
 
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    s = continueAllConflictRewards(s)
     const rewards = s.history.find(h => h.historyEntryKind === 'conflict-rewards')
     expect(rewards).toBeDefined()
     expect(
@@ -742,7 +744,7 @@ describe('Intrigue cards — combat phase', () => {
     expect(s.activePlayerId).toBe(1)
   })
 
-  it('Master Tactician (17): retreating all troops auto-passes and advances combat turn', () => {
+  it('Master Tactician (17): retreat can be put back; Pass after emptying advances', () => {
     let s = combatFourPlayerState()
     s = {
       ...s,
@@ -764,10 +766,24 @@ describe('Intrigue cards — combat phase', () => {
       source: { type: GainSource.INTRIGUE, id: 17, name: 'Master Tactician' },
     })
     expect(s.currTurn?.effectRetreatAllowance).toBe(3)
+    expect(s.gains.some(g => g.type === RewardType.RETREAT)).toBe(false)
+    s = applyGameAction(s, { type: 'RETREAT_TROOP', playerId: 1, fromEffect: true })
+    expect(s.currTurn?.troopsRetreatedFromConflict).toBe(1)
+    expect(s.currTurn?.effectRetreatsUsed).toBe(1)
+    expect(s.combatTroops[1]).toBe(2)
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 1 })
+    expect(s.combatTroops[1]).toBe(3)
+    expect(s.currTurn?.effectRetreatsUsed).toBe(0)
+    expect(s.currTurn?.troopsRetreatedFromConflict).toBe(0)
+    expect(s.activePlayerId).toBe(1)
     for (let i = 0; i < 3; i++) {
       s = applyGameAction(s, { type: 'RETREAT_TROOP', playerId: 1, fromEffect: true })
     }
     expect(s.combatTroops[1]).toBe(0)
+    expect(s.currTurn?.effectRetreatsUsed).toBe(3)
+    expect(s.activePlayerId).toBe(1)
+    expect(s.combatPasses.has(1)).toBe(false)
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 1 })
     expect(s.combatPasses.has(1)).toBe(true)
     expect(s.activePlayerId).toBe(0)
     expect(s.phase).toBe(GamePhase.COMBAT)
@@ -889,6 +905,7 @@ describe('Intrigue cards — combat phase', () => {
 
     s = { ...s, phase: GamePhase.COMBAT_REWARDS }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    s = continueAllConflictRewards(s)
 
     expect(s.phase).toBe(GamePhase.ROUND_START)
     expect(s.imperiumRow.map(card => card.id)).toEqual(rowCards.map(card => card.id))

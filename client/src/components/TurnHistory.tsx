@@ -5,6 +5,7 @@ import { conflictCardImageSrc } from '../data/conflictCardImages'
 import {
   computeTurnGainTotals,
   excludeAcquiredGainsFromDisplay,
+  excludeRetreatAllowanceGains,
   getGainsForHistoryRow,
   getGainsForTurnState,
   isCombatHistoryEntry,
@@ -957,7 +958,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             isAgentTurn && !isCombatVisit && displayTurn.currTurn?.playerId != null
               ? getAcquiredTechTilesForTurn(displayTurn, displayTurn.currTurn.playerId)
               : []
-          const gainsForDisplay =
+          const gainsForDisplay = excludeRetreatAllowanceGains(
             acquiredCards.length > 0 || acquiredTechTiles.length > 0
               ? excludeAcquiredGainsFromDisplay(
                   gains,
@@ -965,6 +966,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                   acquiredTechTiles.map(t => t.id)
                 )
               : gains
+          )
           const showRevealSummary = revealStats != null && revealTurnStatsHasContent(revealStats)
           const troopsDeployed = getTroopsDeployedToConflict(displayTurn)
           const troopsRetreated = getTroopsRetreatedFromConflict(displayTurn)
@@ -1077,7 +1079,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             liveIsAgentTurn && !liveIsCombatVisit && currentGameState.currTurn?.playerId != null
               ? getAcquiredTechTilesForTurn(currentGameState, currentGameState.currTurn.playerId)
               : []
-          const liveGainsForDisplay =
+          const liveGainsForDisplay = excludeRetreatAllowanceGains(
             liveAcquiredCards.length > 0 || liveAcquiredTechTiles.length > 0
               ? excludeAcquiredGainsFromDisplay(
                   liveGains,
@@ -1085,6 +1087,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                   liveAcquiredTechTiles.map(t => t.id)
                 )
               : liveGains
+          )
           const liveShowRevealSummary =
             liveRevealStats != null && revealTurnStatsHasContent(liveRevealStats)
           const liveTroopsDeployed = getTroopsDeployedToConflict(currentGameState)

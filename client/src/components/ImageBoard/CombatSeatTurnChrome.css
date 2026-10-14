@@ -2146,12 +2146,15 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   overflow-anchor: none;
-  scroll-snap-type: y mandatory;
+  padding-bottom: 0.4rem;
+  scroll-padding-top: 1.4rem;
+  scroll-padding-bottom: 0.4rem;
+  /* Proximity so a long combat-intrigue round can rest on its last rows. */
+  scroll-snap-type: y proximity;
 }
 
 .birdseye-turn-history__round {
   scroll-snap-align: start;
-  scroll-snap-stop: always;
 }
 
 .birdseye-turn-history__banner {

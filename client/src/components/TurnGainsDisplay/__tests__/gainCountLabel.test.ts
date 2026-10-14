@@ -45,6 +45,12 @@ describe('Gain count labels', () => {
     expect(tsx).toContain('RewardType.TECH')
   })
 
+  it('renders trashed cards by title, with the full image on zoom', () => {
+    expect(tsx).toContain('renderInlineTrashGain')
+    expect(tsx).toContain('renderAcquiredCardTitle(gain.cardId, label, `trash-inline-card-${index}`)')
+    expect(tsx).toContain('turn-gain-card-title-zoom-src')
+  })
+
   it('renders acquired cards by title, not a thumbnail', () => {
     expect(tsx).toContain('ACQUIRE_GROUP_TITLE')
     expect(tsx).toContain('renderAcquiredCardTitle')

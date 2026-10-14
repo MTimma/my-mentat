@@ -528,6 +528,8 @@ export interface PendingReward {
   isTrash: boolean // true if reward.trash or reward.trashThisCard
   disabled?: boolean // true if the reward cannot be claimed (e.g., no valid targets)
   powerPlay?: boolean // true if this influence reward should grant +1 extra (Power Play effect)
+  /** Seat that owns this pending reward (conflict trash / tech). */
+  playerId?: number
 }
 
 // Mandatory OR-choice effect generated when a card lists multiple rewards with `effectOR`.
@@ -799,10 +801,18 @@ export interface GameState {
     excludedChoiceIndices?: number[]
     /** Unfiltered options for distinctChoiceGroup picks. */
     fullOptions?: ChoiceOption[]
+    /** When true, Continue may skip this choice. */
+    optional?: boolean
   }>
+  /**
+   * Seats that still need Continue during conflict-reward resolution,
+   * clockwise from firstPlayerMarker. Index 0 is the active seat.
+   */
+  conflictRewardResolveQueue?: number[]
   // Stored when combat resolution is deferred for choices; used when completing the transition
   combatResolutionDeferred?: {
     mentatOwnerNextRound: number | null
+    winnerIds?: number[]
   }
   /** Conflict id whose immediate (non-choice) rewards were already applied this combat. */
   combatRewardsResolvedConflictId?: number | null

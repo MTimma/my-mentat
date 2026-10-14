@@ -36,6 +36,55 @@ import './SandboxPlayerEditor.css'
 
 const RESEARCH_NODE_IDS = Object.keys(RESEARCH_NODES)
 
+function PileEditIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="sandbox-player-editor__deck-button-icon">
+      <path
+        d="M12 20h9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function PileEditButton({
+  label,
+  count,
+  disabled,
+  onClick,
+}: {
+  label: string
+  count: number
+  disabled?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className="sandbox-player-editor__deck-button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={`Edit ${label.toLowerCase()}, ${count}`}
+    >
+      <span className="sandbox-player-editor__deck-button-label">{label}</span>
+      <span className="sandbox-player-editor__deck-button-count">{count}</span>
+      <span className="sandbox-player-editor__deck-button-edit">
+        <PileEditIcon />
+      </span>
+    </button>
+  )
+}
+
 const CONTROL_SPACES: Array<{ type: ControlMarkerType; label: string }> = [
   { type: ControlMarkerType.ARRAKIN, label: 'Arrakeen' },
   { type: ControlMarkerType.CARTHAG, label: 'Carthag' },
@@ -265,9 +314,9 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
     switch (pileEditor) {
       case 'deck':
         return {
-          title: `Edit Player ${player.id + 1} deck`,
+          title: ``,
           description:
-            "Select the cards in this player's deck (the default rules deck is 20 cards, but you can use any size). Available cards include the current deck, the Imperium deck, and reserve cards (Arrakis Liaison, Spice Must Flow, Foldspace).",
+            "",
           cards: deckEditorCards,
           initialSelected: player.deck,
           selectionCount: deckEditorCards.length,
@@ -276,9 +325,9 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
         }
       case 'discard':
         return {
-          title: `Edit Player ${player.id + 1} discard`,
+          title: ``,
           description:
-            'Select cards for the discard pile. Any card not selected stays in the deck.',
+            '',
           cards: discardEditorPool,
           initialSelected: player.discardPile,
           selectionCount: discardEditorPool.length,
@@ -286,9 +335,9 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
         }
       case 'trash':
         return {
-          title: `Edit Player ${player.id + 1} trash`,
+          title: ``,
           description:
-            'Select cards for the trash pile. Any card not selected stays in the deck.',
+            '',
           cards: trashEditorPool,
           initialSelected: player.trash,
           selectionCount: trashEditorPool.length,
@@ -467,87 +516,6 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
         aria-label="Player setup"
       >
         <div className="sandbox-player-editor__body">
-          <div className="sandbox-player-editor__name-row">
-            <label className="sandbox-player-editor__name" htmlFor="sandbox-player-name">
-              <span className="sandbox-player-editor__name-label">Player name</span>
-              <input
-                id="sandbox-player-name"
-                className="sandbox-player-editor__name-input"
-                value={nameDraft}
-                placeholder="Empty will use leader name"
-                maxLength={Math.max(PLAYER_NAME_MAX_LENGTH, nameDraft.length)}
-                autoComplete="off"
-                spellCheck={false}
-                onFocus={() => {
-                  nameFocusedRef.current = true
-                }}
-                onBlur={() => {
-                  nameFocusedRef.current = false
-                  commitNameDraft()
-                }}
-                onChange={event => {
-                  const next = event.target.value
-                  const leaderName = defaultSavedPlayerName(player)
-                  setNameDraft(
-                    next === leaderName || next.length <= PLAYER_NAME_MAX_LENGTH
-                      ? next
-                      : next.slice(0, PLAYER_NAME_MAX_LENGTH)
-                  )
-                }}
-                onKeyDown={event => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault()
-                    event.currentTarget.blur()
-                  }
-                }}
-              />
-            </label>
-            <div className="sandbox-player-editor__color" ref={colorMenuRef}>
-              <button
-                type="button"
-                className="sandbox-player-editor__color-select"
-                aria-label="Player color"
-                aria-haspopup="listbox"
-                aria-expanded={colorMenuOpen}
-                onClick={() => setColorMenuOpen(open => !open)}
-              >
-                <AgentIcon
-                  playerId={player.id}
-                  color={player.color}
-                  className="sandbox-player-editor__color-agent"
-                />
-              </button>
-              {colorMenuOpen ? (
-                <div className="sandbox-player-editor__color-menu" role="listbox" aria-label="Player color">
-                  {Object.values(PlayerColor).map(color => (
-                    <button
-                      key={color}
-                      type="button"
-                      role="option"
-                      aria-selected={color === player.color}
-                      aria-label={color}
-                      className={[
-                        'sandbox-player-editor__color-option',
-                        color === player.color ? 'sandbox-player-editor__color-option--selected' : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                      onClick={() => {
-                        handleColorChange(color)
-                        setColorMenuOpen(false)
-                      }}
-                    >
-                      <AgentIcon
-                        playerId={player.id}
-                        color={color}
-                        className="sandbox-player-editor__color-agent"
-                      />
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </div>
           <div className="sandbox-player-editor__leader-row">
             <LeaderSelect
               leaders={availableLeaders}
@@ -555,43 +523,87 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
               onChange={handleLeaderChange}
               ariaLabel="Leader"
             />
-            <div className="sandbox-player-editor__pile-buttons">
-              <button
-                type="button"
-                className="sandbox-player-editor__deck-button"
-                onClick={() => openPileEditor('deck')}
-              >
-                Edit deck {player.deck.length}
-              </button>
-              <button
-                type="button"
-                className="sandbox-player-editor__deck-button"
-                onClick={() => openPileEditor('discard')}
-                disabled={discardEditorPool.length === 0}
-              >
-                Edit discard {player.discardPile.length}
-              </button>
-              <button
-                type="button"
-                className="sandbox-player-editor__deck-button"
-                onClick={() => openPileEditor('trash')}
-                disabled={trashEditorPool.length === 0}
-              >
-                Edit trash {player.trash.length}
-              </button>
-              {expansions.riseOfIx ? (
+            <div className="sandbox-player-editor__name-row">
+              <label className="sandbox-player-editor__name" htmlFor="sandbox-player-name">
+                <span className="sandbox-player-editor__name-label">Player name</span>
+                <input
+                  id="sandbox-player-name"
+                  className="sandbox-player-editor__name-input"
+                  value={nameDraft}
+                  placeholder="Empty will use leader name"
+                  maxLength={Math.max(PLAYER_NAME_MAX_LENGTH, nameDraft.length)}
+                  autoComplete="off"
+                  spellCheck={false}
+                  onFocus={() => {
+                    nameFocusedRef.current = true
+                  }}
+                  onBlur={() => {
+                    nameFocusedRef.current = false
+                    commitNameDraft()
+                  }}
+                  onChange={event => {
+                    const next = event.target.value
+                    const leaderName = defaultSavedPlayerName(player)
+                    setNameDraft(
+                      next === leaderName || next.length <= PLAYER_NAME_MAX_LENGTH
+                        ? next
+                        : next.slice(0, PLAYER_NAME_MAX_LENGTH)
+                    )
+                  }}
+                  onKeyDown={event => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      event.currentTarget.blur()
+                    }
+                  }}
+                />
+              </label>
+              <div className="sandbox-player-editor__color" ref={colorMenuRef}>
                 <button
                   type="button"
-                  className="sandbox-player-editor__deck-button"
-                  onClick={() => setTechEditorOpen(true)}
+                  className="sandbox-player-editor__color-select"
+                  aria-label="Player color"
+                  aria-haspopup="listbox"
+                  aria-expanded={colorMenuOpen}
+                  onClick={() => setColorMenuOpen(open => !open)}
                 >
-                  Edit tech {player.tech?.length ?? 0}
+                  <AgentIcon
+                    playerId={player.id}
+                    color={player.color}
+                    className="sandbox-player-editor__color-agent"
+                  />
                 </button>
-              ) : null}
+                {colorMenuOpen ? (
+                  <div className="sandbox-player-editor__color-menu" role="listbox" aria-label="Player color">
+                    {Object.values(PlayerColor).map(color => (
+                      <button
+                        key={color}
+                        type="button"
+                        role="option"
+                        aria-selected={color === player.color}
+                        aria-label={color}
+                        className={[
+                          'sandbox-player-editor__color-option',
+                          color === player.color ? 'sandbox-player-editor__color-option--selected' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        onClick={() => {
+                          handleColorChange(color)
+                          setColorMenuOpen(false)
+                        }}
+                      >
+                        <AgentIcon
+                          playerId={player.id}
+                          color={color}
+                          className="sandbox-player-editor__color-agent"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
-
-          <div className="sandbox-player-editor__control-row">
             <div className="sandbox-player-editor__control-toggles">
               <label className="sandbox-player-editor__control-toggle">
                 <input
@@ -614,45 +626,31 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                 <span>Mentat</span>
               </label>
             </div>
-          </div>
-
-          <div className="sandbox-player-editor__control-row">
-            <span className="sandbox-player-editor__control-heading">Board control</span>
-            <div className="sandbox-player-editor__control-spaces">
-              {CONTROL_SPACES.map(space => {
-                const held = controlMarkers[space.type] === player.id
-                const dreadnoughtHeld = dreadnoughtCover?.[space.type] === player.id
-                return (
-                  <div key={space.type} className="sandbox-player-editor__control-space">
-                    <label className="sandbox-player-editor__control-toggle">
-                      <input
-                        type="checkbox"
-                        checked={held}
-                        onChange={() => onSetControl(space.type, held ? null : player.id)}
-                      />
-                      <span>{space.label}</span>
-                    </label>
-                    {expansions.riseOfIx ? (
-                      <label className="sandbox-player-editor__control-toggle sandbox-player-editor__control-toggle--dreadnought">
-                        <input
-                          type="checkbox"
-                          checked={dreadnoughtHeld}
-                          aria-label={`${space.label} dreadnought`}
-                          onChange={() =>
-                            onSetDreadnoughtControl(space.type, dreadnoughtHeld ? null : player.id)
-                          }
-                        />
-                        <DreadnoughtIcon
-                          playerId={player.id}
-                          color={player.color}
-                          appearance="control"
-                          className="sandbox-player-editor__dreadnought-control-icon"
-                        />
-                      </label>
-                    ) : null}
-                  </div>
-                )
-              })}
+            <div className="sandbox-player-editor__pile-buttons">
+              <PileEditButton
+                label="Deck"
+                count={player.deck.length}
+                onClick={() => openPileEditor('deck')}
+              />
+              <PileEditButton
+                label="Discard"
+                count={player.discardPile.length}
+                onClick={() => openPileEditor('discard')}
+                disabled={discardEditorPool.length === 0}
+              />
+              <PileEditButton
+                label="Trash"
+                count={player.trash.length}
+                onClick={() => openPileEditor('trash')}
+                disabled={trashEditorPool.length === 0}
+              />
+              {expansions.riseOfIx ? (
+                <PileEditButton
+                  label="Tech"
+                  count={player.tech?.length ?? 0}
+                  onClick={() => setTechEditorOpen(true)}
+                />
+              ) : null}
             </div>
           </div>
 
@@ -813,6 +811,46 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                 ))}
               </div>
             ) : null}
+          </div>
+
+          <div className="sandbox-player-editor__control-row">
+            <span className="sandbox-player-editor__control-heading">Board control</span>
+            <div className="sandbox-player-editor__control-spaces">
+              {CONTROL_SPACES.map(space => {
+                const held = controlMarkers[space.type] === player.id
+                const dreadnoughtHeld = dreadnoughtCover?.[space.type] === player.id
+                return (
+                  <div key={space.type} className="sandbox-player-editor__control-space">
+                    <label className="sandbox-player-editor__control-toggle">
+                      <input
+                        type="checkbox"
+                        checked={held}
+                        onChange={() => onSetControl(space.type, held ? null : player.id)}
+                      />
+                      <span>{space.label}</span>
+                    </label>
+                    {expansions.riseOfIx ? (
+                      <label className="sandbox-player-editor__control-toggle sandbox-player-editor__control-toggle--dreadnought">
+                        <input
+                          type="checkbox"
+                          checked={dreadnoughtHeld}
+                          aria-label={`${space.label} dreadnought`}
+                          onChange={() =>
+                            onSetDreadnoughtControl(space.type, dreadnoughtHeld ? null : player.id)
+                          }
+                        />
+                        <DreadnoughtIcon
+                          playerId={player.id}
+                          color={player.color}
+                          appearance="control"
+                          className="sandbox-player-editor__dreadnought-control-icon"
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
           <button type="button" className="sandbox-player-editor__close" onClick={handleClose}>

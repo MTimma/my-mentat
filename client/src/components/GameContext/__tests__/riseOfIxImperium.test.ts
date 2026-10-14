@@ -437,9 +437,7 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
         'Desert Ambush'
       )
       expect(s.currTurn?.effectRetreatAllowance).toBe(2)
-      expect(s.gains).toContainEqual(
-        expect.objectContaining({ type: RewardType.RETREAT, amount: 2 })
-      )
+      expect(s.gains.some(g => g.type === RewardType.RETREAT)).toBe(false)
     })
 
     it('no retreat when zero troops deployed', () => {

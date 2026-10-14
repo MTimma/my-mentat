@@ -23,11 +23,12 @@ describe('Sandbox player editor leader row', () => {
     expect(editorTsx).toContain('availableLeaders.find(leader => !usedLeaderNames.includes(leader.name))')
   })
 
-  it('puts color beside the player name and deck buttons in the pile grid', () => {
-    const nameRow = editorTsx.slice(
-      editorTsx.indexOf('sandbox-player-editor__name-row'),
-      editorTsx.indexOf('sandbox-player-editor__leader-row')
-    )
+  it('puts the name and color under the leader, and deck buttons in the pile grid', () => {
+    const leaderAt = editorTsx.indexOf('<LeaderSelect')
+    const nameAt = editorTsx.indexOf('sandbox-player-editor__name-row')
+    expect(leaderAt).toBeGreaterThan(-1)
+    expect(nameAt).toBeGreaterThan(leaderAt)
+    const nameRow = editorTsx.slice(nameAt, editorTsx.indexOf('sandbox-player-editor__control-toggles'))
     expect(nameRow).toContain('aria-label="Player color"')
     expect(nameRow).not.toContain('>Color<')
     const buttonsBlock = editorTsx.slice(
@@ -35,9 +36,14 @@ describe('Sandbox player editor leader row', () => {
       editorTsx.indexOf('sandbox-player-editor__control-row')
     )
     expect(buttonsBlock).not.toContain('aria-label="Player color"')
-    expect(buttonsBlock).toContain('Edit deck {player.deck.length}')
-    expect(buttonsBlock).toContain('Edit discard {player.discardPile.length}')
-    expect(buttonsBlock).toContain('Edit trash {player.trash.length}')
+    expect(buttonsBlock).toContain('label="Deck"')
+    expect(buttonsBlock).toContain('count={player.deck.length}')
+    expect(buttonsBlock).toContain('label="Discard"')
+    expect(buttonsBlock).toContain('count={player.discardPile.length}')
+    expect(buttonsBlock).toContain('label="Trash"')
+    expect(buttonsBlock).toContain('count={player.trash.length}')
+    expect(editorTsx).toContain('sandbox-player-editor__deck-button-count')
+    expect(editorTsx).toContain('sandbox-player-editor__deck-button-edit')
     expect(buttonsBlock).not.toContain('sandbox-player-editor__pile-count')
     expect(editorTsx).toContain('Board control')
     expect(editorCss).toContain('.sandbox-player-editor__pile-buttons')

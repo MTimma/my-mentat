@@ -214,14 +214,20 @@ export function getGainGroupIcon(group: TurnGainSourceGroup): string | null {
 /** Merged opponent discards — one horizontal row, no per-card titles. */
 export const INLINE_DISCARDS_GROUP_KEY = 'inline-discards'
 
+/** Retreat allowance is not a resource gain; actual retreats use troopsRetreatedFromConflict. */
+export function excludeRetreatAllowanceGains(gains: Gain[]): Gain[] {
+  return gains.filter(gain => gain.type !== RewardType.RETREAT)
+}
+
 export function groupGainsForDisplay(
   gains: Gain[],
   options?: { inlineDiscards?: boolean }
 ): TurnGainSourceGroup[] {
-  if (!options?.inlineDiscards) return groupGainsBySource(gains)
+  const visible = excludeRetreatAllowanceGains(gains)
+  if (!options?.inlineDiscards) return groupGainsBySource(visible)
 
-  const discardGains = gains.filter(gain => gain.type === RewardType.DISCARD)
-  const otherGains = gains.filter(gain => gain.type !== RewardType.DISCARD)
+  const discardGains = visible.filter(gain => gain.type === RewardType.DISCARD)
+  const otherGains = visible.filter(gain => gain.type !== RewardType.DISCARD)
   const groups = groupGainsBySource(otherGains)
 
   if (discardGains.length > 0) {
@@ -263,6 +269,18 @@ const COMBAT_PLACEMENT_RANK: Record<string, number> = {
   '1st place': 1,
   '2nd place': 2,
   '3rd place': 3,
+}
+
+/** Leader-strip title: "1st" / "2nd" / "3rd". Null hides an intrigue-card title. */
+export function compactBirdseyeGainTitle(group: TurnGainSourceGroup): string | null {
+  const ranks = [combatPlacementRankFromGainName(group.title)]
+  for (const gain of group.gains) ranks.push(combatPlacementRankFromGainName(gain.name))
+  const placement = ranks.find((rank): rank is number => rank != null)
+  if (placement === 1) return '1st'
+  if (placement === 2) return '2nd'
+  if (placement === 3) return '3rd'
+  if (group.gains.some(gain => gain.source === GainSource.INTRIGUE)) return null
+  return group.title
 }
 
 /** Best (lowest) placement rank from conflict gain names like "Skirmish - 1st place". */
@@ -849,6 +867,7 @@ export function computeTurnGainTotals(gains: Gain[]): TurnGainTotals {
 
   for (const gain of gains) {
     if (gain.amount === 0) continue
+    if (gain.type === RewardType.RETREAT) continue
     if (isTechAcquireOfferGain(gain)) continue
 
     if (gain.type === RewardType.INFLUENCE) {

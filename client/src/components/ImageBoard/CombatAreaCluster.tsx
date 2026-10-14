@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, type RefObject } from 'react'
-import { GameState, TurnType, type Gain, type Player } from '../../types/GameTypes'
+import { GamePhase, GameState, TurnType, type Gain, type Player } from '../../types/GameTypes'
 import {
   getActiveIntrigueCardsForTurnView,
   getPlayAreaCardsForTurnView,
@@ -405,6 +405,9 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
 
     const isActive = player.id === activePlayerId
     const seatGains = birdseyeGainsByPlayer?.[player.id] ?? []
+    const compactConflictTitles =
+      gameState?.phase === GamePhase.COMBAT_REWARDS ||
+      gameState?.historyEntryKind === 'conflict-rewards'
     const isRevealSeat =
       gameState?.currTurn?.type === TurnType.REVEAL && gameState.currTurn.playerId === player.id
     const resolveSeatCard =
@@ -491,6 +494,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 /* Totals hidden for now (mobile + desktop); keep prop wiring. */
                 showTotals={false}
                 showSourceTitles={false}
+                compactConflictTitles={compactConflictTitles}
                 revealPooledTotals={isRevealSeat}
               />
             </div>
@@ -528,6 +532,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 troopsRetreated={isActive ? birdseyeTroopsRetreated : 0}
                 showTotals={false}
                 showSourceTitles
+                compactConflictTitles={compactConflictTitles}
                 revealPooledTotals={isRevealSeat}
               />
             </div>

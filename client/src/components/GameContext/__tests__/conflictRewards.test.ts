@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { RISE_OF_IX_CONFLICTS } from '../../../data/conflicts'
+import { CONFLICTS, RISE_OF_IX_CONFLICTS } from '../../../data/conflicts'
 import { TechTileId } from '../../../data/techTiles'
 import {
   ChoiceType,
@@ -9,8 +9,8 @@ import {
   NO_EXPANSIONS,
   RewardType,
 } from '../../../types/GameTypes'
-import { applyGameAction } from '../GameContext'
-import { getBaseTestState, makePlayer } from './_helpers'
+import { applyGameAction, applyRecordedAction } from '../GameContext'
+import { continueAllConflictRewards, getBaseTestState, makePlayer } from './_helpers'
 
 const ROI_EXPANSIONS = { ...NO_EXPANSIONS, riseOfIx: true, riseOfIxEpic: false }
 
@@ -74,21 +74,11 @@ describe('RoI conflict rewards — FREIGHTER & TECH', () => {
     expect(freighterConflictChoices(s)).toHaveLength(2)
   })
 
-  it('Economy Supremacy TECH choice enqueues acquireTech', () => {
-    let s = resolveCombat(economySupremacy)
+  it('Economic Supremacy first place grants VP and defers the remaining choice', () => {
+    const s = resolveCombat(economySupremacy)
     expect(s.players[0].victoryPoints).toBe(1)
-
-    const vpChoice = s.pendingConflictRewardChoices?.find(c =>
-      c.options.some(opt => opt.reward.acquireTech !== undefined)
-    )
-    expect(vpChoice).toBeDefined()
-    const techIndex = vpChoice!.options.findIndex(opt => opt.reward.acquireTech !== undefined)
-    s = applyGameAction(s, {
-      type: 'RESOLVE_CONFLICT_REWARD_CHOICE',
-      choiceId: vpChoice!.id,
-      optionIndex: techIndex,
-    })
-    expect(s.pendingRewards.some(r => r.reward.acquireTech !== undefined)).toBe(true)
+    expect((s.pendingConflictRewardChoices ?? []).length).toBeGreaterThan(0)
+    expect(s.phase).toBe(GamePhase.COMBAT_REWARDS)
   })
 
   it('no freighter/tech handlers when riseOfIx false', () => {
@@ -96,5 +86,111 @@ describe('RoI conflict rewards — FREIGHTER & TECH', () => {
     expect(s.players[0].troops).toBe(1)
     expect(freighterConflictChoices(s)).toHaveLength(0)
     expect(s.pendingRewards.some(r => r.reward.acquireTech !== undefined)).toBe(false)
+  })
+})
+
+const terriblePurpose = CONFLICTS.find(c => c.id === 914)!
+const skirmish902 = CONFLICTS.find(c => c.id === 902)!
+
+describe('conflict reward sequential Continue', () => {
+  it('Terrible Purpose first place enqueues optional trash for the winner', () => {
+    let s = getBaseTestState(undefined, { players: 4 })
+    s = {
+      ...s,
+      currentConflict: terriblePurpose,
+      phase: GamePhase.COMBAT_REWARDS,
+      combatStrength: { 0: 10, 1: 8, 2: 6, 3: 0 },
+      players: s.players.map(p => ({ ...p, spice: 0, water: 0, victoryPoints: 0 })),
+    }
+    const gainsBefore = s.gains
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(gainsBefore).toHaveLength(0)
+    expect(s.phase).toBe(GamePhase.COMBAT_REWARDS)
+    expect(s.players[0].victoryPoints).toBe(1)
+    expect(s.gains.filter(g => g.playerId === 0 && g.type === RewardType.VICTORY_POINTS)).toHaveLength(1)
+    const trash = s.pendingRewards.find(r => r.isTrash && r.playerId === 0)
+    expect(trash?.reward).toEqual({ trash: 1 })
+    expect(s.gains.some(g => g.playerId === 0 && g.type === RewardType.TRASH)).toBe(false)
+    expect(s.conflictRewardResolveQueue?.[0]).toBe(s.firstPlayerMarker)
+  })
+
+  it('starts the Continue circle at firstPlayerMarker, not the winner', () => {
+    let s = getBaseTestState(undefined, { players: 4 })
+    s = {
+      ...s,
+      firstPlayerMarker: 2,
+      currentConflict: skirmish902,
+      phase: GamePhase.COMBAT_REWARDS,
+      combatStrength: { 0: 10, 1: 8, 2: 6, 3: 0 },
+      players: s.players.map(p => ({ ...p, solari: 0, victoryPoints: 0 })),
+    }
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(s.phase).toBe(GamePhase.COMBAT_REWARDS)
+    expect(s.activePlayerId).toBe(2)
+    expect(s.conflictRewardResolveQueue).toEqual([2, 0, 1])
+
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 2 })
+    expect(s.activePlayerId).toBe(0)
+    expect(s.phase).toBe(GamePhase.COMBAT_REWARDS)
+
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 0 })
+    expect(s.activePlayerId).toBe(1)
+    expect(s.phase).toBe(GamePhase.COMBAT_REWARDS)
+
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 1 })
+    expect(s.phase).toBe(GamePhase.ROUND_START)
+  })
+
+  it('Continue skips unused optional trash and finishes the round', () => {
+    let s = getBaseTestState(undefined, { players: 4 })
+    s = {
+      ...s,
+      currentConflict: terriblePurpose,
+      phase: GamePhase.COMBAT_REWARDS,
+      combatStrength: { 0: 10, 1: 4, 2: 2, 3: 0 },
+      players: s.players.map(p => ({ ...p, spice: 0, water: 0, victoryPoints: 0 })),
+    }
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(s.pendingRewards.some(r => r.isTrash && r.playerId === 0)).toBe(true)
+    s = continueAllConflictRewards(s)
+    expect(s.phase).toBe(GamePhase.ROUND_START)
+    expect(s.pendingRewards.some(r => r.isTrash)).toBe(false)
+    expect(s.players[0].victoryPoints).toBe(1)
+  })
+
+  it('Continue is a no-op while the active seat has a mandatory conflict choice', () => {
+    const machinations909 = CONFLICTS.find(c => c.id === 909)!
+    let s = getBaseTestState(undefined, { players: 4 })
+    s = {
+      ...s,
+      currentConflict: machinations909,
+      phase: GamePhase.COMBAT_REWARDS,
+      combatStrength: { 0: 10, 1: 8, 2: 6, 3: 0 },
+      players: s.players.map(p => ({ ...p, solari: 0, victoryPoints: 0 })),
+    }
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(s.activePlayerId).toBe(0)
+    expect((s.pendingConflictRewardChoices ?? []).some(c => c.playerId === 0)).toBe(true)
+    const blocked = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 0 })
+    expect(blocked.activePlayerId).toBe(0)
+    expect(blocked.phase).toBe(GamePhase.COMBAT_REWARDS)
+    expect(blocked.conflictRewardResolveQueue).toEqual(s.conflictRewardResolveQueue)
+  })
+
+  it('a later recorded action finishes leftover Continues and starts the next round', () => {
+    let s = getBaseTestState(undefined, { players: 4 })
+    s = {
+      ...s,
+      currentConflict: skirmish902,
+      phase: GamePhase.COMBAT_REWARDS,
+      combatStrength: { 0: 10, 1: 8, 2: 6, 3: 0 },
+      players: s.players.map(p => ({ ...p, solari: 0, victoryPoints: 0 })),
+    }
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(s.phase).toBe(GamePhase.COMBAT_REWARDS)
+    s = applyRecordedAction(s, { type: 'SELECT_CONFLICT', conflictId: 909 }).state
+    expect(s.phase).toBe(GamePhase.PLAYER_TURNS)
+    expect(s.currentRound).toBe(2)
+    expect(s.currentConflict.id).toBe(909)
   })
 })

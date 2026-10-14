@@ -13,7 +13,7 @@ import { useTimeTravel } from './components/TimeTravel'
 import LocalGameAutosave from './components/LocalGameAutosave/LocalGameAutosave'
 import SandboxSessionBar from './components/SandboxSessionBar/SandboxSessionBar'
 import PwaPrompt from './components/PwaPrompt/PwaPrompt'
-import { FactionType, GamePhase, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingReward, TurnType } from './types/GameTypes'
+import { FactionType, GamePhase, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingChoice, PendingReward, TurnType } from './types/GameTypes'
 import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
 import { isSoleTrashThisCardReward } from './utils/pendingRewardAutoApply'
 import { isKwisatzHaderachCard, canPlaceAgentOnBoard, isKwisatzSourceChoicePending, isKwisatzRecallMode, isAgentPlacementPending } from './utils/kwisatzHaderach'
@@ -32,7 +32,6 @@ import {
 } from './utils/birdseyeTurnChrome'
 import { getRemainingDeploySlots } from './utils/dreadnoughtLifecycle'
 import { getRemainingTroopDeploySlots } from './utils/troops'
-import CombatResults from './components/CombatResults/CombatResults'
 import EndgameOverlay from './components/EndgameOverlay/EndgameOverlay'
 import { endgameRevealIncomplete } from './utils/endgameResolution'
 import { mergeEndgameHistoryRow } from './utils/endgameHistoryDisplay'
@@ -86,6 +85,7 @@ import {
   getInfluenceBoardPrompt,
   isInfluenceBoardChoice,
 } from './utils/influenceBoardChoice'
+import { isBlockedSequentialConflictChoice } from './utils/conflictDistinctFactions'
 import {
   COMPACT_PLAY_OVERLAY_MQ,
   DESKTOP_PLAY_LAYOUT_MQ,
@@ -107,6 +107,37 @@ import {
   getPlayBoardInfoTipsEnabled,
   setPlayBoardInfoTipsEnabled,
 } from './utils/playBoardInfoTips'
+
+function conflictRewardChoicesForActiveSeat(state: GameState): PendingChoice[] {
+  if (state.phase !== GamePhase.COMBAT_REWARDS) return []
+  const pending = state.pendingConflictRewardChoices ?? []
+  return pending
+    .filter(choice => choice.playerId === state.activePlayerId)
+    .filter(choice => !isBlockedSequentialConflictChoice(choice, pending))
+    .map(conflictChoiceAsFixedOptions)
+}
+
+function conflictRewardsPendingForActiveSeat(state: GameState): PendingReward[] {
+  if (state.phase !== GamePhase.COMBAT_REWARDS) return state.pendingRewards
+  return state.pendingRewards.filter(
+    reward =>
+      reward.playerId === state.activePlayerId ||
+      (reward.playerId == null && state.activePlayerId != null)
+  )
+}
+
+function hasMandatoryConflictRewardUi(state: GameState, playerId: number): boolean {
+  const mandatoryChoice = (state.pendingConflictRewardChoices ?? []).some(
+    choice => choice.playerId === playerId && !choice.optional
+  )
+  const mandatoryReward = state.pendingRewards.some(
+    reward =>
+      !reward.disabled &&
+      !reward.isTrash &&
+      (reward.playerId === playerId || (reward.playerId == null && state.activePlayerId === playerId))
+  )
+  return mandatoryChoice || mandatoryReward
+}
 
 interface GameContentProps {
   autoApplyMandatoryRewards: boolean
@@ -478,9 +509,6 @@ const GameContent = ({
   const handlePassCombat = (playerId: number) => {
     dispatch({ type: 'PASS_COMBAT', playerId })
   }
-  const handleConfirmCombat = () => {
-    dispatch({ type: 'RESOLVE_COMBAT' });
-  }
 
   const handleAddTroop = (playerId: number) => {
     dispatch({ type: 'DEPLOY_TROOP', playerId })
@@ -488,6 +516,10 @@ const GameContent = ({
 
   const handleResolveChoice = (choiceId: string, optionIndex: number, source?: { type: string; id: number; name: string }) => {
     if(!activePlayer) return;
+    if (gameState.pendingConflictRewardChoices?.some(choice => choice.id === choiceId)) {
+      dispatch({ type: 'RESOLVE_CONFLICT_REWARD_CHOICE', choiceId, optionIndex })
+      return
+    }
     dispatch({ type:'RESOLVE_CHOICE', playerId: activePlayer.id, choiceId, optionIndex, source })
   }
 
@@ -764,7 +796,7 @@ const GameContent = ({
       CustomEffect.TEST_OF_HUMANITY
     ]
     // Filter rewards to only include non-interactive ones
-    return state.pendingRewards.filter(reward => {
+    return conflictRewardsPendingForActiveSeat(state).filter(reward => {
       // Skip disabled rewards
       if (reward.disabled) return false
 
@@ -903,8 +935,6 @@ const GameContent = ({
 
   const liveCombatRewardsPhase =
     !isViewingHistory && gameState.phase === GamePhase.COMBAT_REWARDS
-  const pendingCombatRewardChoices =
-    (gameState.pendingConflictRewardChoices?.length ?? 0) > 0
 
   const showEndgameOverlay =
     (gameState.phase === GamePhase.END_GAME && !isViewingHistory) || viewingEndgameHistory
@@ -954,7 +984,10 @@ const GameContent = ({
   const activeConflictInfluenceChoice = useMemo(() => {
     if (isViewingHistory) return null
     if (gameState.phase !== GamePhase.COMBAT_REWARDS) return null
-    return findConflictInfluenceBoardChoice(gameState.pendingConflictRewardChoices)
+    return findConflictInfluenceBoardChoice(
+      gameState.pendingConflictRewardChoices,
+      gameState.activePlayerId
+    )
   }, [
     gameState.pendingConflictRewardChoices,
     gameState.phase,
@@ -1052,14 +1085,21 @@ const GameContent = ({
   )
 
   const showFooterPassCombat = Boolean(
-    !isViewingHistory && gameState.phase === GamePhase.COMBAT && activePlayer
+    !isViewingHistory &&
+      (gameState.phase === GamePhase.COMBAT || gameState.phase === GamePhase.COMBAT_REWARDS) &&
+      activePlayer
   )
 
   const hasPlayedCombatIntrigueThisVisit =
     activePlayer != null &&
     gameState.currTurn?.playerId === activePlayer.id &&
     (gameState.currTurn?.playedIntrigueCard?.length ?? 0) > 0
-  const combatFooterActionLabel = hasPlayedCombatIntrigueThisVisit ? 'Continue' : 'Pass'
+  const combatFooterActionLabel =
+    gameState.phase === GamePhase.COMBAT_REWARDS
+      ? 'Continue'
+      : hasPlayedCombatIntrigueThisVisit
+        ? 'Continue'
+        : 'Pass'
 
   // Auto-apply conflict rewards when intrigue passes finish (no Confirm modal).
   useEffect(() => {
@@ -1587,9 +1627,36 @@ const GameContent = ({
     if (
       !isViewingHistory &&
       turnControlsState.phase !== GamePhase.PLAYER_TURNS &&
-      turnControlsState.phase !== GamePhase.COMBAT
+      turnControlsState.phase !== GamePhase.COMBAT &&
+      turnControlsState.phase !== GamePhase.COMBAT_REWARDS
     ) {
       return null
+    }
+
+    if (turnControlsState.phase === GamePhase.COMBAT_REWARDS && !isViewingHistory) {
+      const mandatory = hasMandatoryConflictRewardUi(gameState, player.id)
+      return {
+        playDisabled: true,
+        revealDisabled: true,
+        intrigueDisabled: true,
+        intrigueCount: player.intrigueCount,
+        techCount: birdseyeTechCount(player),
+        techDisabled: true,
+        showTech: false,
+        hidePlayReveal: true,
+        showEndTurn: true,
+        endTurnDisabled: mandatory,
+        endTurnTitle: mandatory
+          ? 'Resolve this seat\'s reward choice first.'
+          : 'Continue to the next player',
+        endTurnLabel: 'Continue',
+        agents: player.agents,
+        handCount: player.handCount,
+        onPlay: () => {},
+        onReveal: () => {},
+        onIntrigue: () => {},
+        onEndTurn: () => handlePassCombat(player.id),
+      }
     }
 
     const agentPlaced = Boolean(turnControlsState.currTurn?.agentSpace)
@@ -1766,6 +1833,9 @@ const GameContent = ({
     handleUseFamilyAtomics,
     combatFooterActionLabel,
     hasPlayedCombatIntrigueThisVisit,
+    gameState.pendingConflictRewardChoices,
+    gameState.pendingRewards,
+    gameState.activePlayerId,
   ])
 
 
@@ -1805,23 +1875,23 @@ const GameContent = ({
               : (() => {
                   const canDeployTroops = Boolean(gameState.currTurn?.canDeployTroops)
                   const garrisonTroops = activePlayer.troops || 0
+                  const retreatedThisEffect = gameState.currTurn?.effectRetreatsUsed ?? 0
                   const retreatable = Math.min(
                     getEffectRetreatRemaining(gameState.currTurn),
                     gameState.combatTroops[activePlayer.id] || 0
                   )
-                  const retreatOnly = !canDeployTroops && retreatable > 0
+                  const retreatOnly =
+                    !canDeployTroops && (retreatable > 0 || retreatedThisEffect > 0)
                   return {
                     canDeploy: canDeployTroops || retreatOnly,
                     deployableTroops: canDeployTroops
                       ? Math.min(getRemainingTroopDeploySlots(gameState), garrisonTroops)
-                      : 0,
+                      : Math.min(retreatedThisEffect, garrisonTroops),
                     deployedThisTurn: retreatOnly
                       ? retreatable
                       : gameState.currTurn?.removableTroops || 0,
                     garrisonTroops,
-                    onDeploy: () => {
-                      if (canDeployTroops) handleAddTroop(activePlayer.id)
-                    },
+                    onDeploy: () => handleAddTroop(activePlayer.id),
                     onUndeploy: () =>
                       retreatOnly
                         ? handleEffectRetreatTroop(activePlayer.id)
@@ -2392,7 +2462,14 @@ const GameContent = ({
                 firstPlayerMarker={turnControlsState.firstPlayerMarker}
                 mentatOwner={turnControlsState.mentatOwner}
                 optionalEffects={isViewingHistory ? [] : gameState.currTurn?.optionalEffects || []}
-                pendingChoices={isViewingHistory ? [] : gameState.currTurn?.pendingChoices || []}
+                pendingChoices={
+                  isViewingHistory
+                    ? []
+                    : [
+                        ...(gameState.currTurn?.pendingChoices || []),
+                        ...conflictRewardChoicesForActiveSeat(gameState),
+                      ]
+                }
                 onResolveChoice={handleResolveChoice}
                 onResolveCardSelect={handleResolveCardSelect}
                 onResolveCounterChoice={handleResolveCounterChoice}
@@ -2401,7 +2478,9 @@ const GameContent = ({
                 selectedCard={isViewingHistory ? null : getSelectedCard(gameState)}
                 recallMode={!isViewingHistory && kwisatzRecallActive}
                 placementPrompt={!isViewingHistory ? boardPlacementPrompt : null}
-                pendingRewards={isViewingHistory ? [] : gameState.pendingRewards}
+                pendingRewards={
+                  isViewingHistory ? [] : conflictRewardsPendingForActiveSeat(gameState)
+                }
                 onClaimReward={handleClaimReward}
                 onClaimAllRewards={handleClaimAllRewards}
                 onAutoApplyRewards={handleAutoApplyRewards}
@@ -2598,6 +2677,10 @@ const GameContent = ({
                     type="button"
                     className="footer-pass-combat-button footer-nav-slot-button"
                     onClick={() => handlePassCombat(activePlayer!.id)}
+                    disabled={
+                      gameState.phase === GamePhase.COMBAT_REWARDS &&
+                      hasMandatoryConflictRewardUi(gameState, activePlayer!.id)
+                    }
                     aria-label={combatFooterActionLabel}
                   >
                     {combatFooterActionLabel}
@@ -2631,22 +2714,6 @@ const GameContent = ({
           }}
           {...turnHistoryUndoProps}
         />
-      )}
-      {liveCombatRewardsPhase && pendingCombatRewardChoices && (
-        <div className="combat-results-container combat-results-container--inline">
-          <CombatResults
-            variant="inline"
-            players={gameState.players}
-            combatStrength={gameState.combatStrength}
-            history={gameState.history}
-            onConfirm={handleConfirmCombat}
-            pendingConflictRewardChoices={gameState.pendingConflictRewardChoices}
-            influenceBoardChoiceActive={Boolean(activeConflictInfluenceChoice && conflictInfluenceBoardMeta)}
-            onResolveConflictChoice={(choiceId, optionIndex) =>
-              dispatch({ type: 'RESOLVE_CONFLICT_REWARD_CHOICE', choiceId, optionIndex })
-            }
-          />
-        </div>
       )}
       <UndoConfirmDialog
         isOpen={undoToSetup || undoTargetIndex !== null}

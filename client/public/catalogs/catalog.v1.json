@@ -9527,11 +9527,11 @@
         ],
         "second": [
           {
-            "type": "Spice",
+            "type": "Water",
             "amount": 1
           },
           {
-            "type": "Water",
+            "type": "Spice",
             "amount": 1
           }
         ],

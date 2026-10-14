@@ -23,6 +23,45 @@ export function isRiseOfIxConflict(conflictId: number): boolean {
   return conflictId >= RISE_OF_IX_CONFLICT_ID_MIN && conflictId <= RISE_OF_IX_CONFLICT_ID_MAX
 }
 
+/** Optional pick-a-card trash from a conflict placement (Terrible Purpose, etc.). */
+export function enqueueOptionalConflictTrash(
+  pendingRewards: PendingReward[],
+  playerIds: number[],
+  conflictId: number,
+  conflictName: string,
+  placement: string
+): void {
+  const source = conflictRewardSource(conflictId, conflictName, placement)
+  for (const playerId of playerIds) {
+    pendingRewards.push({
+      id: nextSemanticId(source, `TRASH-p${playerId}`, pendingRewards.map(r => r.id)),
+      source,
+      reward: { trash: 1 },
+      isTrash: true,
+      playerId,
+    })
+  }
+}
+
+/** Clockwise from firstPlayerMarker, only seats that received a placement. */
+export function conflictRewardSeatOrder(
+  firstPlayerMarker: number,
+  playerCount: number,
+  placements: { first: number[] | null; second: number[] | null; third: number[] | null }
+): number[] {
+  const rewarded = new Set([
+    ...(placements.first ?? []),
+    ...(placements.second ?? []),
+    ...(placements.third ?? []),
+  ])
+  const queue: number[] = []
+  for (let i = 0; i < playerCount; i++) {
+    const id = (firstPlayerMarker + i) % playerCount
+    if (rewarded.has(id)) queue.push(id)
+  }
+  return queue
+}
+
 export function conflictRewardSource(
   conflictId: number,
   conflictName: string,
@@ -88,6 +127,7 @@ export function enqueueConflictAcquireTech(
     source,
     reward: { acquireTech: { discount } },
     isTrash: false,
+    playerId,
   })
   gains.push({
     round: state.currentRound,
@@ -130,6 +170,16 @@ export function applyRiseOfIxConflictPlacementRewards(
         deferChoice(reward, placement, playerIds)
         continue
       }
+      if (reward.type === RewardType.TRASH) {
+        enqueueOptionalConflictTrash(
+          pendingRewards,
+          playerIds,
+          conflictId,
+          conflictName,
+          placement
+        )
+        continue
+      }
       next = applyImmediate(next, reward, placement, playerIds)
     }
     return next
@@ -145,6 +195,16 @@ export function applyRiseOfIxConflictPlacementRewards(
       (reward.chooseFaction && reward.type === RewardType.INFLUENCE)
     if (hasChoice) {
       deferChoice(reward, placement, playerIds)
+      continue
+    }
+    if (reward.type === RewardType.TRASH) {
+      enqueueOptionalConflictTrash(
+        pendingRewards,
+        playerIds,
+        conflictId,
+        conflictName,
+        placement
+      )
       continue
     }
     if (reward.type === RewardType.FREIGHTER) {

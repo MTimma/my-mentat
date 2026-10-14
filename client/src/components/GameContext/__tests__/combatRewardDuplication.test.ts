@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { CONFLICTS } from '../../../data/conflicts'
 import { ControlMarkerType, GainSource, RewardType, GamePhase, FactionType } from '../../../types/GameTypes'
 import { applyGameAction, buildCombatResolutionView } from '../GameContext'
-import { getBaseTestState } from './_helpers'
+import { continueAllConflictRewards, getBaseTestState } from './_helpers'
 
 function conflictGainKeys(gains: { playerId: number; name: string; type: RewardType; amount: number }[]) {
   return gains.map(g => `${g.playerId}|${g.name}|${g.type}|${g.amount}`)
@@ -37,10 +37,11 @@ function resolveCombat(
 
 describe('combat reward duplication', () => {
   it('902 clear ranks: 2nd gets only 2nd rewards, 3rd gets only 3rd rewards', () => {
-    const s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, skirmish902)
+    let s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, skirmish902)
     expect(s.players[1].solari).toBe(2)
     expect(s.players[2].solari).toBe(2)
     expect(s.players[1].intrigueCount).toBe(1)
+    s = continueAllConflictRewards(s)
 
     const combat = s.history.find(h => h.historyEntryKind === 'conflict-rewards')
     const p1Solari =
@@ -58,12 +59,13 @@ describe('combat reward duplication', () => {
   })
 
   it('915 Battle for Imperial Basin: 2 VP + control, 5 spice 2nd, 3 spice 3rd', () => {
-    const s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, battle915)
+    let s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, battle915)
     expect(battle915.name).toBe('Battle for Imperial Basin')
     expect(s.players[0].victoryPoints).toBe(2)
     expect(s.controlMarkers[ControlMarkerType.IMPERIAL_BASIN]).toBe(0)
     expect(s.players[1].spice).toBe(5)
     expect(s.players[2].spice).toBe(3)
+    s = continueAllConflictRewards(s)
 
     const combat = s.history.find(h => h.historyEntryKind === 'conflict-rewards')
     const p1Gain = combat?.gains?.find(g => g.playerId === 1 && g.type === RewardType.SPICE)
@@ -86,6 +88,7 @@ describe('combat reward duplication', () => {
 
   it('916 Battle for Arrakeen: 2nd place picks two unique rewards from three options', () => {
     let s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, battle916)
+    s = applyGameAction(s, { type: 'PASS_COMBAT', playerId: 0 })
     const [first] = (s.pendingConflictRewardChoices ?? []).filter(
       c => c.placement === '2nd place' && c.playerId === 1
     )
@@ -143,7 +146,7 @@ describe('combat reward duplication', () => {
   })
 
   it('no player receives two conflict solari gains at different placements', () => {
-    const s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, skirmish902)
+    const s = continueAllConflictRewards(resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, skirmish902))
     const combat = s.history.find(h => h.historyEntryKind === 'conflict-rewards')
     const byPlayer = new Map<number, string[]>()
     for (const gain of combat?.gains ?? []) {
@@ -158,7 +161,7 @@ describe('combat reward duplication', () => {
   })
 
   it('combat history has no duplicate conflict gain records per placement', () => {
-    const s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, skirmish902)
+    const s = continueAllConflictRewards(resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, skirmish902))
     const combat = s.history.find(h => h.historyEntryKind === 'conflict-rewards')
     const conflictGains = (combat?.gains ?? []).filter(g => g.source === GainSource.CONFLICT)
     expect(conflictGainKeys(conflictGains)).toEqual([...new Set(conflictGainKeys(conflictGains))])
@@ -168,7 +171,7 @@ describe('combat reward duplication', () => {
   })
 
   it('combat history snapshot is post-transition (not re-confirmable)', () => {
-    const s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, skirmish902)
+    const s = continueAllConflictRewards(resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, skirmish902))
     const combat = s.history.find(h => h.historyEntryKind === 'conflict-rewards')
     expect(combat?.phase).toBe(GamePhase.ROUND_START)
     expect(s.phase).toBe(GamePhase.ROUND_START)
@@ -198,7 +201,11 @@ describe('combat reward duplication', () => {
     expect(previewConflict.find(g => g.playerId === 1 && g.type === RewardType.SOLARI)?.amount).toBe(2)
 
     const resolved = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
-    const combat = resolved.history.find(h => h.historyEntryKind === 'conflict-rewards')
+    const live = buildCombatResolutionView(resolved)
+    const liveConflict = (live.gains ?? []).filter(g => g.source === GainSource.CONFLICT)
+    expect(conflictGainKeys(previewConflict)).toEqual(conflictGainKeys(liveConflict))
+    const finished = continueAllConflictRewards(resolved)
+    const combat = finished.history.find(h => h.historyEntryKind === 'conflict-rewards')
     const historyConflict = (combat?.gains ?? []).filter(g => g.source === GainSource.CONFLICT)
     expect(conflictGainKeys(previewConflict)).toEqual(conflictGainKeys(historyConflict))
     expect(s.phase).toBe(GamePhase.COMBAT_REWARDS)
@@ -210,7 +217,8 @@ describe('combat reward duplication', () => {
     let s = resolveCombat({ 0: 10, 1: 8, 2: 6, 3: 2 }, machinations909)
     expect((s.pendingConflictRewardChoices?.length ?? 0) > 0).toBe(true)
     while ((s.pendingConflictRewardChoices?.length ?? 0) > 0) {
-      const choice = s.pendingConflictRewardChoices![0]
+      const choice = s.pendingConflictRewardChoices!.find(c => c.playerId === s.activePlayerId)
+      if (!choice) break
       const optionIndex = choice.options.findIndex(o => !o.disabled)
       s = applyGameAction(s, {
         type: 'RESOLVE_CONFLICT_REWARD_CHOICE',
@@ -218,6 +226,7 @@ describe('combat reward duplication', () => {
         optionIndex: optionIndex >= 0 ? optionIndex : 0,
       })
     }
+    s = continueAllConflictRewards(s)
     const combat = s.history.find(h => h.historyEntryKind === 'conflict-rewards')
     const conflictGains = (combat?.gains ?? []).filter(g => g.source === GainSource.CONFLICT)
     expect(conflictGainKeys(conflictGains)).toEqual([...new Set(conflictGainKeys(conflictGains))])

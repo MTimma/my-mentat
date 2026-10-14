@@ -179,11 +179,13 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster-stack--play-horizontal > \.birdseye-turn-history \{[\s\S]*?max-height:\s*min\(15\.1rem, 50%\)/
     )
     expect(seatChromeCss).toMatch(
-      /\.birdseye-turn-history__scroll \{[\s\S]*?scroll-snap-type:\s*y mandatory/
+      /\.birdseye-turn-history__scroll \{[\s\S]*?scroll-snap-type:\s*y proximity/
     )
     expect(seatChromeCss).toMatch(
       /\.birdseye-turn-history__round \{[\s\S]*?scroll-snap-align:\s*start/
     )
+    expect(seatChromeCss).not.toMatch(/scroll-snap-stop:\s*always/)
+    expect(historyGridTsx).toContain('if (deltaToRound > pad)')
     expect(historyGridTsx).toContain('birdseye-turn-history__round--current')
     expect(historyGridTsx).toContain('TurnHistoryNav')
     expect(historyGridTsx).toContain('currentLabel={inSandboxSetup ? undefined : turnLabel}')

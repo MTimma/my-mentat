@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { applyGameAction } from '../../components/GameContext/GameContext'
+import { applyRecordedAction } from '../../components/GameContext/GameContext'
 import { buildHistoryFromEvents } from '../buildHistory'
+import { replaySaveDoc } from '../replay'
+import { GamePhase } from '../../types/GameTypes'
+import { isPlayerTurnHistoryEntry, isRoundStartHistoryEntry } from '../../utils/turnHistoryDisplay'
 import { buildInitialState } from '../buildInitialState'
 import { getPlayerTurnNumber } from '../../utils/turnHistoryDisplay'
 import { BOARD_SPACES } from '../../data/boardSpaces'
@@ -31,12 +34,12 @@ describe('duplicate turn history bug', () => {
       const ctx = saveDoc.events[i].ctx
       if (action.type === 'END_TURN' && ctx?.turn === 29) {
         const before = state
-        const next = applyGameAction(state, action)
+        const next = applyRecordedAction(state, action).state
         expect(next).toBe(before)
         expect(before.pendingRewards?.some(r => !r.disabled && r.id === 'card-406-REWARD-1')).toBe(true)
         return
       }
-      state = applyGameAction(state, action)
+      state = applyRecordedAction(state, action).state
     }
     throw new Error('turn 29 END_TURN not found')
   })
@@ -65,5 +68,19 @@ describe('duplicate turn history bug', () => {
 
     const keys = summaries.map(s => `${s.playerId}-${s.spaceId}-${s.cardId}`)
     expect(new Set(keys).size).toBe(4)
+  })
+
+  it('legacy combat resolve advances past round 1 and keeps each leader’s turns', () => {
+    const saveDoc = loadFixtureDoc('duplicate-turn-bug')
+    const { state } = replaySaveDoc(saveDoc)
+    expect(state.currentRound).toBeGreaterThan(1)
+    expect(state.phase).not.toBe(GamePhase.COMBAT_REWARDS)
+
+    const history = buildHistoryFromEvents(saveDoc.setup, saveDoc.events)
+    expect(history.some(row => isRoundStartHistoryEntry(row) && row.currentRound >= 2)).toBe(true)
+    const leaders = new Set(
+      history.filter(isPlayerTurnHistoryEntry).map(row => row.currTurn?.playerId)
+    )
+    expect(leaders.size).toBeGreaterThan(1)
   })
 })

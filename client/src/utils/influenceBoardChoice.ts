@@ -28,10 +28,12 @@ export function conflictChoiceAsFixedOptions(choice: ConflictRewardChoice): Fixe
 }
 
 export function findConflictInfluenceBoardChoice(
-  choices: GameState['pendingConflictRewardChoices'] | undefined
+  choices: GameState['pendingConflictRewardChoices'] | undefined,
+  playerId?: number
 ): ConflictRewardChoice | null {
   if (!choices?.length) return null
   for (const choice of choices) {
+    if (playerId != null && choice.playerId !== playerId) continue
     if (isBlockedSequentialConflictChoice(choice, choices)) continue
     if (isInfluenceBoardChoice(conflictChoiceAsFixedOptions(choice))) {
       return choice

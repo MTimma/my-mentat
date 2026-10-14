@@ -190,6 +190,23 @@ export function withCardOnTop(state: GameState, playerId: number, card: Card): G
   return { ...state, players }
 }
 
+/** Continue each conflict-reward seat (skips unused optional trash). Stops on mandatory choices. */
+export function continueAllConflictRewards(state: GameState): GameState {
+  let s = state
+  let guard = 0
+  while (s.phase === GamePhase.COMBAT_REWARDS && guard++ < 16) {
+    const playerId = s.activePlayerId
+    const mandatory = (s.pendingConflictRewardChoices ?? []).some(
+      choice => choice.playerId === playerId && !choice.optional
+    )
+    if (mandatory) break
+    const next = applyGameAction(s, { type: 'PASS_COMBAT', playerId })
+    if (next === s) break
+    s = next
+  }
+  return s
+}
+
 export function snapshotAfterAgentTurn(
   state: GameState,
   playerId: number,

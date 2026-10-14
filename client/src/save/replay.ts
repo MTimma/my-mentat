@@ -4,7 +4,7 @@
  * ./recording.ts (cycle-free, importable from GameContext).
  */
 import type { GameAction } from '../components/GameContext/GameContext'
-import { applyGameAction } from '../components/GameContext/GameContext'
+import { applyRecordedAction } from '../components/GameContext/GameContext'
 import { repairLegacyTechDiscardState } from '../components/GameContext/riseOfIxReducer'
 import type { GameState } from '../types/GameTypes'
 import { compareEndgameStanding } from '../utils/endgameResolution'
@@ -38,7 +38,7 @@ export function replayEvents(initial: GameState, events: EventEntry[]): ReplayRe
   const divergences: ReplayDivergence[] = []
   let state = initial
   events.forEach((entry, eventIndex) => {
-    state = applyGameAction(state, entry.a)
+    state = applyRecordedAction(state, entry.a).state
     if (entry.ck) {
       for (const [key, expected] of Object.entries(entry.ck)) {
         const playerId = Number(key.slice(1))

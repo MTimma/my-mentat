@@ -12,6 +12,7 @@ import type {
   CombatTroopDeployProps,
 } from './CombatAreaCluster'
 import { playAreaCardHasPendingEffectHighlight } from '../../utils/playAreaDisplay'
+import { excludeRetreatAllowanceGains } from '../../utils/turnGainsDisplay'
 import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './CombatSeatTurnChrome.css'
 
@@ -45,6 +46,8 @@ export interface BirdseyeSeatActions {
   endTurnTitle?: string
   /** Button label for the End Turn slot (e.g. Pass Combat / Continue during combat). */
   endTurnLabel?: string
+  /** Hide Play/Reveal (conflict-reward Continue circle). */
+  hidePlayReveal?: boolean
   agents: number
   handCount: number
   /** Selected card, agent not placed — same rule as TurnControls Play→Change. */
@@ -92,7 +95,8 @@ export function BirdseyePrimaryControls({
   const isChangingSelectedCard = Boolean(actions.isChangingSelectedCard)
   const actionLabel = isChangingSelectedCard ? 'Change' : 'Play'
   const showCardThumb = Boolean(isChangingSelectedCard && actions.selectedCardImage)
-  const showEndTurnOnly = actions.showEndTurn && !keepPlayReveal
+  const showEndTurnOnly =
+    Boolean(actions.hidePlayReveal) || (actions.showEndTurn && !keepPlayReveal)
 
   return (
     <div className="birdseye-seat__primary" onClick={stop}>
@@ -434,6 +438,7 @@ export function BirdseyeSeatGains({
   totalsOnly = false,
   revealPooledTotals = false,
   showSourceTitles = true,
+  compactConflictTitles = false,
   resolveCard,
 }: {
   playerId: number
@@ -445,12 +450,15 @@ export function BirdseyeSeatGains({
   totalsOnly?: boolean
   revealPooledTotals?: boolean
   showSourceTitles?: boolean
+  /** Conflict rewards: title is 1st/2nd/3rd. Intrigue card names stay off this strip. */
+  compactConflictTitles?: boolean
   resolveCard?: (cardId: number, name: string) => Card | undefined
 }) {
-  const hasGains = gains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0
+  const displayGains = excludeRetreatAllowanceGains(gains)
+  const hasGains = displayGains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0
   const { scrollRef, overflowStart, overflowEnd, scrollable, thumb } = useScrollOverflowFades(
     hasGains,
-    `${gains.length}:${troopsDeployed}:${troopsRetreated}`
+    `${displayGains.length}:${troopsDeployed}:${troopsRetreated}`
   )
 
   if (!hasGains) return null
@@ -467,10 +475,11 @@ export function BirdseyeSeatGains({
     >
       <div className="birdseye-seat-gains__scroll birdseye-lane-scroll" ref={scrollRef}>
         <TurnGainsDisplay
-          gains={gains}
+          gains={displayGains}
           playerId={playerId}
           playerColor={playerColor}
           showSourceTitles={showSourceTitles && !totalsOnly}
+          compactConflictTitles={compactConflictTitles}
           showTotals={showTotals}
           totalsOnly={totalsOnly}
           revealPooledTotals={revealPooledTotals}
@@ -796,8 +805,12 @@ export function BirdseyeRimBar({
   return (
     <div className="birdseye-rim" role="toolbar" aria-label="Turn actions">
       <div className="birdseye-rim__actions">
-        <BirdseyePrimaryControls actions={actions} player={player} keepPlayReveal />
-        {actions.showEndTurn ? (
+        <BirdseyePrimaryControls
+          actions={actions}
+          player={player}
+          keepPlayReveal={!actions.hidePlayReveal}
+        />
+        {actions.showEndTurn && !actions.hidePlayReveal ? (
           <button
             type="button"
             className="birdseye-seat-btn birdseye-seat-btn--end-turn"

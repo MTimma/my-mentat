@@ -294,10 +294,7 @@ function isLivePlayerTurn(state: GameState): boolean {
 
 function liveBannerKind(state: GameState): BirdseyeHistoryBannerKind | null {
   if (state.phase === GamePhase.END_GAME || state.historyEntryKind === 'endgame') return 'endgame'
-  if (
-    state.phase === GamePhase.COMBAT_REWARDS ||
-    state.historyEntryKind === 'conflict-rewards'
-  ) {
+  if (state.historyEntryKind === 'conflict-rewards') {
     return 'conflict-rewards'
   }
   if (state.historyEntryKind === 'combat') return 'combat'

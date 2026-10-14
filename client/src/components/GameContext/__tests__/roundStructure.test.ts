@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { applyGameAction, getFreshDefaultGameState } from '../GameContext'
 import { CONFLICTS } from '../../../data/conflicts'
 import { GamePhase, RewardType, type ConflictCard } from '../../../types/GameTypes'
-import { getBaseTestState, stubDeckCard } from './_helpers'
+import { continueAllConflictRewards, getBaseTestState, stubDeckCard } from './_helpers'
 
 describe('Round structure (base rules)', () => {
   it('fresh game starts in ROUND_START', () => {
@@ -165,6 +165,7 @@ describe('Round structure (base rules)', () => {
     }
 
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    s = continueAllConflictRewards(s)
 
     const p = s.players[0]
     expect(p.handCount).toBe(5)
@@ -184,6 +185,7 @@ describe('Round structure (base rules)', () => {
       combatStrength: { 0: 4, 1: 2 },
     }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    s = continueAllConflictRewards(s)
     expect(s.mentatOwner).toBeNull()
     expect(s.occupiedSpaces).toEqual({})
     expect(s.players[0].agents).toBe(2)
@@ -210,6 +212,7 @@ describe('Round structure (base rules)', () => {
       combatStrength: { 0: 8, 1: 4, 2: 2, 3: 2 },
     }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    s = continueAllConflictRewards(s)
     expect(s.mentatOwner).toBe(0)
     expect(s.players[0].agents).toBe(3)
     expect(s.players[1].agents).toBe(2)
@@ -225,6 +228,7 @@ describe('Round structure (base rules)', () => {
       combatTroops: { 0: 2, 1: 1 },
     }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    s = continueAllConflictRewards(s)
     expect(s.players[0].combatValue).toBe(0)
     expect(s.players[1].combatValue).toBe(0)
   })

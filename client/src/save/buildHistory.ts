@@ -2,7 +2,7 @@
  * Rebuild turn history from the event log (replaces full-state snapshots in GameState.history).
  */
 import {
-  applyGameAction,
+  applyRecordedAction,
   deepCopyGameState,
   snapshotEndgameForHistory,
   snapshotStateForHistory,
@@ -110,6 +110,16 @@ export function upsertCombatHistoryEntry(
   return [...withoutSameRoundRewards, snapshot]
 }
 
+function withFinishedConflictRewards(
+  history: GameState[],
+  before: GameState,
+  after: GameState
+): GameState[] {
+  const snapshot = extractCombatSnapshotFromReducer(before, after)
+  if (!snapshot) return history
+  return appendCombatSnapshotToHistory(history, snapshot, after)
+}
+
 function appendCombatSnapshotToHistory(
   history: GameState[],
   snapshot: GameState,
@@ -136,10 +146,14 @@ export function buildHistoryFromEvents(setup: SetupBlock, events: EventEntry[]):
   let history: GameState[] = [setupSnapshot(state)]
   for (const entry of events) {
     const action: GameAction = entry.a
-    const stateBeforeAction = action.type === 'END_TURN' ? state : null
-    const preAction = state
-
-    state = applyGameAction(state, action)
+    const prior = state
+    const stepped = applyRecordedAction(state, action)
+    const preAction = stepped.preAction
+    const stateBeforeAction = action.type === 'END_TURN' ? preAction : null
+    state = stepped.state
+    if (preAction !== prior) {
+      history = withFinishedConflictRewards(history, prior, preAction)
+    }
 
     switch (action.type) {
       case 'SELECT_CONFLICT': {
@@ -172,14 +186,12 @@ export function buildHistoryFromEvents(setup: SetupBlock, events: EventEntry[]):
             history = [...history, row]
           }
         }
+        history = withFinishedConflictRewards(history, preAction, state)
         break
       }
       case 'RESOLVE_COMBAT':
       case 'RESOLVE_CONFLICT_REWARD_CHOICE': {
-        const combatSnapshot = extractCombatSnapshotFromReducer(preAction, state)
-        if (combatSnapshot) {
-          history = appendCombatSnapshotToHistory(history, combatSnapshot, state)
-        }
+        history = withFinishedConflictRewards(history, preAction, state)
         break
       }
       case 'RESOLVE_ENDGAME': {
@@ -218,12 +230,17 @@ export function historyIndexToEventIndex(
   let state = buildInitialState(setup)
   let history: GameState[] = [setupSnapshot(state)]
   for (let eventIndex = 0; eventIndex < events.length; eventIndex++) {
-    const action = events[eventIndex].a
-    const stateBeforeAction = action.type === 'END_TURN' ? state : null
-    const preAction = state
-    state = applyGameAction(state, action)
-
     const beforeLen = history.length
+    const action = events[eventIndex].a
+    const prior = state
+    const stepped = applyRecordedAction(state, action)
+    const preAction = stepped.preAction
+    const stateBeforeAction = action.type === 'END_TURN' ? preAction : null
+    state = stepped.state
+    if (preAction !== prior) {
+      history = withFinishedConflictRewards(history, prior, preAction)
+    }
+
     let index0Replaced = false
     switch (action.type) {
       case 'SELECT_CONFLICT': {
@@ -259,14 +276,12 @@ export function historyIndexToEventIndex(
             history = [...history, row]
           }
         }
+        history = withFinishedConflictRewards(history, preAction, state)
         break
       }
       case 'RESOLVE_COMBAT':
       case 'RESOLVE_CONFLICT_REWARD_CHOICE': {
-        const combatSnapshot = extractCombatSnapshotFromReducer(preAction, state)
-        if (combatSnapshot) {
-          history = appendCombatSnapshotToHistory(history, combatSnapshot, state)
-        }
+        history = withFinishedConflictRewards(history, preAction, state)
         break
       }
       default:

@@ -1031,28 +1031,14 @@ export function applyNegotiatedWithdrawal(
 /** Desert Ambush: enemy retreats per troop deployed this turn. */
 export function applyDesertAmbush(
   state: GameState,
-  playerId: number,
-  cardId: number,
-  cardName: string
+  _playerId: number,
+  _cardId: number,
+  _cardName: string
 ): GameState {
   const deployed = state.currTurn?.troopsDeployedToConflict ?? 0
   if (deployed <= 0) return state
-  const source = cardGainSource(cardId, cardName)
-  const gains = [
-    ...state.gains,
-    {
-      round: state.currentRound,
-      playerId,
-      sourceId: cardId,
-      name: cardName,
-      amount: deployed,
-      type: RewardType.RETREAT,
-      source: GainSource.CARD,
-    },
-  ]
   return {
     ...state,
-    gains,
     currTurn: state.currTurn
       ? {
           ...state.currTurn,

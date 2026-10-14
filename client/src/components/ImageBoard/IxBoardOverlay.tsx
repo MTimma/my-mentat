@@ -12,6 +12,7 @@ import {
 import { tileById, canPlayerAffordTechTile } from '../../utils/techTiles'
 import { DEFAULT_PLAYER_COLORS, playerColorHex, playerMarkerHex } from '../../utils/playerColors'
 import BoardAgentFigure from '../AgentIcon/AgentIcon'
+import { BoardTrackerCube } from './BoardTracker'
 import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
 import './IxBoardOverlay.css'
@@ -169,15 +170,13 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
               }}
               title={`${player.leader.name}: ${count} negotiator${count === 1 ? '' : 's'} on Ix`}
             >
-              {Array.from({ length: Math.min(count, 6) }, (_, index) => (
-                <span
-                  key={index}
-                  className="ix-board-overlay__negotiator-square"
-                  style={{ backgroundColor: playerMarkerHex(player) }}
-                  aria-hidden="true"
-                />
-              ))}
-              {count > 6 ? <span className="ix-board-overlay__negotiator-overflow">+{count - 6}</span> : null}
+              <BoardTrackerCube
+                color={playerMarkerHex(player)}
+                className="ix-board-overlay__negotiator-square"
+              />
+              {count > 1 ? (
+                <span className="ix-board-overlay__negotiator-count">x{count}</span>
+              ) : null}
             </div>
           )
         })}

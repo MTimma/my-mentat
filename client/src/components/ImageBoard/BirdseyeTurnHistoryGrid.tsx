@@ -70,21 +70,26 @@ export function BirdseyeTurnHistoryGrid({
     const roundEl = activeRoundRef.current
     if (!scrollEl || !roundEl) return
 
-    // Pin the active Round X / Setup / Endgame block to the top of the scrollport.
-    const scrollRect = scrollEl.getBoundingClientRect()
-    const roundTop = roundEl.getBoundingClientRect().top
-    const deltaToRound = roundTop - scrollRect.top
-    if (deltaToRound !== 0) scrollEl.scrollTop += deltaToRound
+    const pad = 4
+    const stickyBanner = roundEl.querySelector<HTMLElement>(
+      '.birdseye-turn-history__banner--round-start, .birdseye-turn-history__banner--setup, .birdseye-turn-history__banner--endgame'
+    )
+    const topPad = Math.max(pad, stickyBanner?.getBoundingClientRect().height ?? 0)
 
-    // If the viewing/live cell is still below the fold, nudge down so it shows.
-    // Sticky Round banners keep the title visible while scrolling within the round.
+    // Only pull a round header up when it is still below the fold. Never snap
+    // back to the round start — that hides later combat intrigue / pass rows.
+    const scrollRect = scrollEl.getBoundingClientRect()
+    const deltaToRound = roundEl.getBoundingClientRect().top - scrollRect.top
+    if (deltaToRound > pad) scrollEl.scrollTop += deltaToRound
+
     const cellEl = activeCellRef.current
     if (!cellEl) return
-    const pad = 4
     const nextScrollRect = scrollEl.getBoundingClientRect()
     const cellRect = cellEl.getBoundingClientRect()
     if (cellRect.bottom > nextScrollRect.bottom - pad) {
       scrollEl.scrollTop += cellRect.bottom - nextScrollRect.bottom + pad
+    } else if (cellRect.top < nextScrollRect.top + topPad) {
+      scrollEl.scrollTop += cellRect.top - nextScrollRect.top - topPad
     }
   }, [viewingKey, activeRoundKey, roundGroups.length, historyRowCount])
 

@@ -5,7 +5,7 @@ const skirmish901 = CONFLICTS.find(c => c.id === 901)!
 import { RewardType, ControlMarkerType } from '../../../types/GameTypes'
 import { baseGameManifest } from '../../../test-fixtures/baseGameManifest'
 import { applyGameAction } from '../GameContext'
-import { getBaseTestState, makePlayer } from './_helpers'
+import { continueAllConflictRewards, getBaseTestState, makePlayer } from './_helpers'
 import { GamePhase } from '../../../types/GameTypes'
 
 describe('Base conflicts — data', () => {
@@ -143,6 +143,7 @@ describe('Base conflicts — resolution', () => {
       players: s.players.map(p => ({ ...p, victoryPoints: 0 })),
     }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    s = continueAllConflictRewards(s)
     expect(s.history.length).toBe(historyLength + 1)
     expect(s.history[s.history.length - 1].historyEntryKind).toBe('conflict-rewards')
     expect(s.players[0].victoryPoints).toBe(1)

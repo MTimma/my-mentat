@@ -14,6 +14,22 @@ export interface BoardTrackerProps {
   dataAttrs?: Record<string, string | number | undefined>
 }
 
+export interface BoardTrackerCubeProps {
+  color: string
+  className?: string
+}
+
+/** Beveled player square shared with faction influence cubes. */
+export function BoardTrackerCube({ color, className }: BoardTrackerCubeProps) {
+  return (
+    <span
+      className={['image-board__tracker-cube', className].filter(Boolean).join(' ')}
+      style={{ backgroundColor: color }}
+      aria-hidden="true"
+    />
+  )
+}
+
 const BoardTracker: React.FC<BoardTrackerProps> = ({
   kind,
   player,
@@ -55,12 +71,22 @@ const BoardTracker: React.FC<BoardTrackerProps> = ({
     )
   }
 
-  const variantClass =
-    variant === 'cube' ? 'image-board__tracker--cube' : 'image-board__tracker--circle'
+  if (variant === 'cube') {
+    return (
+      <div
+        className="image-board__tracker image-board__tracker--cube"
+        style={{ left, top }}
+        title={title}
+        {...dataProps}
+      >
+        <BoardTrackerCube color={color} className="image-board__tracker-cube--fill" />
+      </div>
+    )
+  }
 
   return (
     <div
-      className={`image-board__tracker ${variantClass}`}
+      className="image-board__tracker image-board__tracker--circle"
       style={{ left, top, backgroundColor: color }}
       title={title}
       {...dataProps}

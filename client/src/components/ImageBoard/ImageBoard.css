@@ -830,16 +830,34 @@
 }
 
 /* Scale with board width (overlay %), not viewport — keeps VP/influence markers proportional on desktop */
+.image-board__tracker,
+.image-board__tracker-cube {
+  --tracker-depth-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.28),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.18);
+}
+
 .image-board__tracker {
   position: absolute;
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 2;
   box-sizing: border-box;
-  --tracker-depth-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.5),
-    inset -2px -2px 0 rgba(0, 0, 0, 0.28),
-    inset 2px 2px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* Same face as influence cubes. Size comes from the track or a local modifier. */
+.image-board__tracker-cube {
+  display: block;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  border-radius: 2px;
+  box-shadow: var(--tracker-depth-shadow);
+}
+
+.image-board__tracker-cube--fill {
+  position: absolute;
+  inset: 0;
 }
 
 .image-board__tracker--circle {
@@ -854,8 +872,6 @@
   width: clamp(8px, 2.15%, 25px);
   aspect-ratio: 1;
   height: auto;
-  border-radius: 2px;
-  box-shadow: var(--tracker-depth-shadow);
 }
 
 .image-board__tracker--portrait {

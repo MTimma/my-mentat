@@ -81,11 +81,7 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
         aria-label={`Return one ${unitLabel} from the Conflict. ${deployedThisTurn} deployed.`}
         title={`${deployedThisTurn} in Conflict`}
       >
-        <img
-          src={variant === 'troop' ? '/icon/sword.png' : '/icon/deploy.png'}
-          alt=""
-          className="troop-action-icon troop-action-icon--sword"
-        />
+        <img src="/icon/deploy.png" alt="" className="troop-action-icon troop-action-icon--deploy" />
         <span className="troop-action-count">{deployedThisTurn}</span>
       </button>
       <button

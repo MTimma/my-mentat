@@ -45,12 +45,12 @@ export const IX_TECH_TILE_RECTS: Array<{
   { stackIndex: 2, left: 56, top: 63, width: 40, height: 24 },
 ]
 
-/** Per-player negotiator pips on the shield track (sorted by player id). */
+/** Per-player negotiator cubes under the Ix shield (sorted by player id). One shared baseline. */
 export const IX_NEGOTIATOR_LANE_ANCHORS: Array<{ x: number; y: number }> = [
-  { x: 22, y: 90 },
-  { x: 31, y: 92 },
-  { x: 40, y: 92 },
-  { x: 49, y: 90 },
+  { x: 14, y: 80 },
+  { x: 26, y: 80 },
+  { x: 38, y: 80 },
+  { x: 50, y: 80 },
 ]
 
 export function layoutIxBoardOnStage(): {

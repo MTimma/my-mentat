@@ -1,8 +1,7 @@
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Leader } from '../../types/GameTypes'
-import { getLeaderImage } from '../../data/leaders'
-import { cardThumbSrc } from '../../utils/cardThumbSrc'
+import { getLeaderIconPath, getLeaderImage } from '../../data/leaders'
 import './LeaderSelect.css'
 
 interface LeaderSelectProps {
@@ -35,12 +34,12 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
       setMenuRect(null)
       return
     }
-    const rect = trigger.getBoundingClientRect()
-    const menuWidth = Math.min(rect.width, window.innerWidth - rect.left - 8)
+    const thumb = trigger.querySelector('.leader-select__thumb')
+    const rect = (thumb ?? trigger).getBoundingClientRect()
     setMenuRect({
       top: rect.bottom,
       left: rect.left,
-      width: menuWidth,
+      width: rect.width,
     })
   }
 
@@ -119,7 +118,8 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
         }}
       >
         {leaders.map(leader => {
-          const image = getLeaderImage(leader.name)
+          const cardImage = getLeaderImage(leader.name)
+          const headImage = getLeaderIconPath(leader.name) ?? cardImage
           const selected = leader.name === value.name
           return (
             <button
@@ -127,7 +127,7 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
               type="button"
               role="option"
               aria-selected={selected}
-              aria-label="Leader card"
+              aria-label={leader.name}
               className={[
                 'leader-select__option',
                 selected ? 'leader-select__option--selected' : '',
@@ -137,12 +137,12 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
               onClick={() => handleSelect(leader)}
             >
               <span className="leader-select__option-img">
-                {image ? (
+                {headImage ? (
                   <img
-                    src={cardThumbSrc(image)}
+                    src={headImage}
                     alt=""
                     draggable={false}
-                    data-preview-src={image}
+                    data-preview-src={cardImage}
                     loading="lazy"
                     decoding="async"
                   />

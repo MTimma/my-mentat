@@ -5,6 +5,8 @@ import { getTechTile } from '../../data/techTiles'
 import type { TechTileId } from '../../data/techTiles'
 import type { Player } from '../../types/GameTypes'
 import { effectiveTechCost } from '../../utils/techTiles'
+import { playerMarkerHex } from '../../utils/playerColors'
+import { BoardTrackerCube } from '../ImageBoard/BoardTracker'
 import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './TechStacksModal.css'
 
@@ -148,11 +150,19 @@ const TechStacksModal: React.FC<TechStacksModalProps> = ({
               className={`tech-stacks-modal__player-negotiators player-${player.color}`}
               title={`${player.leader.name}: ${player.negotiatorsOnIx ?? 0} negotiators`}
             >
-              {(player.negotiatorsOnIx ?? 0) > 0
-                ? Array.from({ length: player.negotiatorsOnIx ?? 0 }, (_, index) => (
-                    <span key={index} className="tech-stacks-modal__negotiator-square" aria-hidden="true" />
-                  ))
-                : <span className="tech-stacks-modal__negotiator-empty" aria-hidden="true" />}
+              {(player.negotiatorsOnIx ?? 0) > 0 ? (
+                <>
+                  <BoardTrackerCube
+                    color={playerMarkerHex(player)}
+                    className="tech-stacks-modal__negotiator-square"
+                  />
+                  {(player.negotiatorsOnIx ?? 0) > 1 ? (
+                    <span className="tech-stacks-modal__negotiator-count">x{player.negotiatorsOnIx}</span>
+                  ) : null}
+                </>
+              ) : (
+                <span className="tech-stacks-modal__negotiator-empty" aria-hidden="true" />
+              )}
             </span>
           ))}
         </div>

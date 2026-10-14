@@ -232,6 +232,7 @@ import {
 } from './riseOfIx/freighter'
 import {
   applyRiseOfIxConflictPlacementRewards,
+  conflictRewardSeatOrder,
   enqueueConflictAcquireTech,
 } from './riseOfIx/conflictRewards'
 import {
@@ -753,6 +754,7 @@ function snapshotCombatResolutionForHistory(
     pendingConflictRewardChoices: undefined,
     combatResolutionDeferred: undefined,
     combatRewardsResolvedConflictId: undefined,
+    conflictRewardResolveQueue: undefined,
     history: [],
   })
   return copy
@@ -899,6 +901,57 @@ function afterEndgamePlayerAction(state: GameState): GameState {
   return advanceEndgameQueue(state)
 }
 
+function hasMandatoryConflictRewardInput(state: GameState, playerId: number): boolean {
+  const mandatoryChoice = (state.pendingConflictRewardChoices ?? []).some(
+    choice => choice.playerId === playerId && !choice.optional
+  )
+  const mandatoryReward = state.pendingRewards.some(
+    reward =>
+      !reward.disabled &&
+      !reward.isTrash &&
+      (reward.playerId === playerId || (reward.playerId == null && state.activePlayerId === playerId))
+  )
+  return mandatoryChoice || mandatoryReward
+}
+
+function continueConflictRewardSeat(state: GameState, playerId: number): GameState {
+  if (state.phase !== GamePhase.COMBAT_REWARDS) return state
+  if (playerId !== state.activePlayerId) return state
+  if (hasMandatoryConflictRewardInput(state, playerId)) return state
+
+  const pendingRewards = state.pendingRewards.filter(
+    reward => !(reward.isTrash && (reward.playerId === playerId || reward.playerId == null))
+  )
+  const remaining = (state.conflictRewardResolveQueue ?? []).slice(1)
+  if (remaining.length > 0) {
+    const nextId = remaining[0]
+    return {
+      ...state,
+      pendingRewards,
+      conflictRewardResolveQueue: remaining,
+      activePlayerId: nextId,
+      currTurn: {
+        playerId: nextId,
+        type: TurnType.ACTION,
+        gainsStartIndex: state.gains.length,
+      },
+    }
+  }
+
+  const deferred = state.combatResolutionDeferred
+  const mentatOwnerNextRound = deferred?.mentatOwnerNextRound ?? null
+  const withTech = applyAfterConflictTechEffects(
+    {
+      ...state,
+      pendingRewards,
+      conflictRewardResolveQueue: undefined,
+      combatResolutionDeferred: undefined,
+    },
+    deferred?.winnerIds ?? []
+  )
+  return appendCombatSnapshotAndTransition(withTech, state, mentatOwnerNextRound)
+}
+
 function appendCombatSnapshotAndTransition(
   stateAfterRewards: GameState,
   stateBeforeResolve: GameState,
@@ -1002,6 +1055,7 @@ function completeCombatTransition(
     combatRewardsResolvedConflictId: null,
     pendingConflictRewardChoices: undefined,
     combatResolutionDeferred: undefined,
+    conflictRewardResolveQueue: undefined,
   }
 }
 
@@ -1084,7 +1138,7 @@ function buildConflictChoiceOptions(
 
 function applyReward(state: GameState, reward: ConflictReward, placement: string, playerIds: number[]): GameState {
   let newState = { ...state }
-  newState.gains = newState.gains || []
+  newState.gains = [...(state.gains || [])]
   const gainName = state.currentConflict.name + ' - ' + placement
   const recipientIds = [...new Set(playerIds)]
   for (const playerId of recipientIds) {
@@ -1696,7 +1750,6 @@ function applyChoiceReward(
   }
   if (reward.retreatTroops) {
     newState = withEffectRetreatAllowance(newState, reward.retreatTroops)
-    pushGain(reward.retreatTroops, RewardType.RETREAT)
   }
   if (reward.dreadnoughts && state.expansions?.riseOfIx) {
     newState = handleDreadnoughtReward(newState, playerId, reward.dreadnoughts, gainSource)
@@ -3013,10 +3066,11 @@ function finishCombatIntrigueAction(state: GameState, actedPlayerId: number): Ga
     }
   }
 
-  // Retreated out of the Conflict — cannot Continue; auto-end the visit.
+  // Retreated out of the Conflict — keep the visit while they can still put troops back.
   if (
     (state.currTurn?.playedIntrigueCard?.length ?? 0) > 0 &&
-    !playerCanParticipateInCombat(state, actedPlayerId)
+    !playerCanParticipateInCombat(state, actedPlayerId) &&
+    (state.currTurn?.effectRetreatsUsed ?? 0) <= 0
   ) {
     return endCombatIntrigueVisit(state, actedPlayerId)
   }
@@ -3794,7 +3848,39 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'DEPLOY_TROOP': {
       const player = state.players.find(p => p.id === action.playerId)
       if (!player || player.troops <= 0) return state
-      if (!state.currTurn?.canDeployTroops) return state
+      if (!state.currTurn?.canDeployTroops) {
+        const used = state.currTurn?.effectRetreatsUsed ?? 0
+        if (used <= 0 || state.activePlayerId !== action.playerId || !state.currTurn) return state
+
+        const currentTroops = state.combatTroops[action.playerId] || 0
+        const retreated = Math.max(0, (state.currTurn.troopsRetreatedFromConflict ?? 0) - 1)
+        const currentTurn = syncDeployTurnStats(
+          {
+            ...state.currTurn,
+            playerId: state.activePlayerId,
+            type: state.currTurn.type || TurnType.ACTION,
+            effectRetreatsUsed: used - 1,
+          },
+          state.currTurn.removableTroops ?? 0,
+          retreated
+        )
+        const restored = {
+          ...state,
+          combatTroops: {
+            ...state.combatTroops,
+            [action.playerId]: currentTroops + 1,
+          },
+          players: state.players.map(p =>
+            p.id === action.playerId ? { ...p, troops: p.troops - 1 } : p
+          ),
+          currTurn: currentTurn,
+        }
+        return syncCombatStrengthAfterUnitDelta(
+          checkAndApplyDiversion(checkAndApplyMasterstroke(restored, action.playerId), action.playerId),
+          action.playerId,
+          2
+        )
+      }
       const exclusiveRemaining = getRemainingTheseTroopsDeploySlots(state)
       const generalRemaining = getRemainingDeploySlots(state)
       if (exclusiveRemaining <= 0 && generalRemaining <= 0) return state
@@ -4180,8 +4266,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
     case 'PASS_COMBAT': {
       const { playerId } = action
-      if (state.phase !== GamePhase.COMBAT) return state
       if (playerId !== state.activePlayerId) return state
+      if (state.phase === GamePhase.COMBAT_REWARDS) {
+        return continueConflictRewardSeat(state, playerId)
+      }
+      if (state.phase !== GamePhase.COMBAT) return state
       // Mandatory intrigue choices must be resolved before Continue.
       if ((state.currTurn?.pendingChoices?.length ?? 0) > 0) {
         return state
@@ -4583,26 +4672,42 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
 
-      if (pendingChoices.length > 0) {
-        return {
-          ...newState,
-          pendingRewards,
-          combatRewardsResolvedConflictId: conflictId,
-          pendingConflictRewardChoices: pendingChoices,
-          combatResolutionDeferred: { mentatOwnerNextRound },
-        }
+      const queue = conflictRewardSeatOrder(
+        state.firstPlayerMarker,
+        state.players.length,
+        placements
+      )
+      const deferred = {
+        mentatOwnerNextRound,
+        winnerIds: placements.first ?? [],
+      }
+      if (queue.length === 0) {
+        const withAfterConflictTech = applyAfterConflictTechEffects(
+          { ...newState, pendingRewards },
+          deferred.winnerIds
+        )
+        return appendCombatSnapshotAndTransition(
+          { ...withAfterConflictTech, combatRewardsResolvedConflictId: conflictId },
+          state,
+          mentatOwnerNextRound
+        )
       }
 
-      const withAfterConflictTech = applyAfterConflictTechEffects(
-        newState,
-        placements.first ?? []
-      )
-
-      return appendCombatSnapshotAndTransition(
-        { ...withAfterConflictTech, combatRewardsResolvedConflictId: conflictId, pendingRewards },
-        state,
-        mentatOwnerNextRound
-      )
+      return {
+        ...newState,
+        pendingRewards,
+        pendingConflictRewardChoices: pendingChoices.length > 0 ? pendingChoices : undefined,
+        combatRewardsResolvedConflictId: conflictId,
+        combatResolutionDeferred: deferred,
+        conflictRewardResolveQueue: queue,
+        activePlayerId: queue[0],
+        currTurn: {
+          playerId: queue[0],
+          type: TurnType.ACTION,
+          gainsStartIndex: newState.gains.length,
+        },
+        phase: GamePhase.COMBAT_REWARDS,
+      }
     }
     case 'RESOLVE_CONFLICT_REWARD_CHOICE': {
       const { choiceId } = action
@@ -4647,15 +4752,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         remaining = applyDistinctChoiceExclusion(remaining, choice, pickedOriginalIndex)
       }
       newState = { ...newState, pendingConflictRewardChoices: remaining.length > 0 ? remaining : undefined }
-
-      if (remaining.length > 0) {
-        return newState
-      }
-
-      const deferred = state.combatResolutionDeferred
-      const mentatOwnerNextRound = deferred?.mentatOwnerNextRound ?? null
-      newState = { ...newState, combatResolutionDeferred: undefined }
-      return appendCombatSnapshotAndTransition(newState, state, mentatOwnerNextRound)
+      return newState
     }
     case 'PLAY_INTRIGUE': {
       const { cardId, playerId, targetPlayerId } = action
@@ -6937,7 +7034,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         tempCurrTurn = applyDeployTroopsAllowance(tempCurrTurn, reward.deployTroops, reward);
       }
       if (reward.retreatTroops) {
-        pushGain(reward.retreatTroops, RewardType.RETREAT)
         tempCurrTurn.effectRetreatAllowance =
           (tempCurrTurn.effectRetreatAllowance ?? 0) + reward.retreatTroops
       }
@@ -8227,6 +8323,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Find the reward
       const reward = state.pendingRewards.find(r => r.id === rewardId)
       if (!reward) return state
+      if (
+        state.phase === GamePhase.COMBAT_REWARDS &&
+        reward.playerId != null &&
+        reward.playerId !== playerId
+      ) {
+        return state
+      }
       if (reward.reward.custom === CustomEffect.THE_VOICE && (typeof customData?.spaceId !== 'number')) {
         return state
       }
@@ -8424,15 +8527,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       if (reward.reward.retreatTroops) {
         newState = withEffectRetreatAllowance(newState, reward.reward.retreatTroops)
-        newGains.push({
-          round: state.currentRound,
-          playerId,
-          sourceId: reward.source.id,
-          name: reward.source.name,
-          amount: reward.reward.retreatTroops,
-          type: RewardType.RETREAT,
-          source: reward.source.type,
-        })
       }
 
       newState.players = newState.players.map(p => (p.id === playerId ? newPlayer : p))
@@ -8469,6 +8563,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       )
 
       const rewardsToApply = state.pendingRewards.filter(r => {
+        if (
+          state.phase === GamePhase.COMBAT_REWARDS &&
+          r.playerId != null &&
+          r.playerId !== playerId
+        ) {
+          return false
+        }
         if (r.disabled) return false
         if (r.reward.custom) return false
         if (r.reward.influence?.chooseOne) return false
@@ -9667,6 +9768,49 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
 /** Isolated default state for unit tests (deep copy). */
 export function getFreshDefaultGameState(): GameState {
   return deepCopyGameState(initialGameState)
+}
+
+const CONFLICT_REWARD_REPLAY_ACTIONS = new Set<GameAction['type']>([
+  'PASS_COMBAT',
+  'RESOLVE_COMBAT',
+  'RESOLVE_CONFLICT_REWARD_CHOICE',
+  'CLAIM_REWARD',
+  'CLAIM_ALL_REWARDS',
+  'TRASH_CARD',
+])
+
+/** Older logs resolved combat, then selected the next conflict, with no per-seat Continue. */
+function drainConflictRewardContinues(state: GameState): GameState {
+  let s = state
+  let guard = 0
+  while (s.phase === GamePhase.COMBAT_REWARDS && guard++ < 16) {
+    const playerId = s.activePlayerId
+    if (hasMandatoryConflictRewardInput(s, playerId)) break
+    const next = gameReducer(s, { type: 'PASS_COMBAT', playerId })
+    if (next === s) break
+    s = next
+  }
+  return s
+}
+
+/**
+ * Replay one saved event. Conflict-reward Continue clicks are inserted when the
+ * next recorded action leaves that phase (legacy saves, and any log that did not
+ * record a Continue for an optional trash).
+ */
+export function applyRecordedAction(state: GameState, action: GameAction): {
+  state: GameState
+  preAction: GameState
+} {
+  const rewardsAlreadyResolved =
+    state.combatRewardsResolvedConflictId != null || state.combatResolutionDeferred != null
+  const preAction =
+    state.phase === GamePhase.COMBAT_REWARDS &&
+    rewardsAlreadyResolved &&
+    !CONFLICT_REWARD_REPLAY_ACTIONS.has(action.type)
+      ? drainConflictRewardContinues(state)
+      : state
+  return { state: gameReducer(preAction, action), preAction }
 }
 
 /** Run one reducer step (unit tests). */

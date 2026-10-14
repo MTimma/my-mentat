@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { FactionType, GainSource, RewardType, TurnType } from '../../types/GameTypes'
 import { TechTileId, techTileGainSourceId } from '../../data/techTiles'
 import {
+  compactBirdseyeGainTitle,
   groupGainsBySource,
   groupGainsForDisplay,
   INLINE_DISCARDS_GROUP_KEY,
@@ -32,6 +33,7 @@ import {
   ACQUIRE_GROUP_TITLE,
   TECH_ACQUIRE_GROUP_TITLE,
   getGainGroupIcon,
+  excludeRetreatAllowanceGains,
   isRevealPooledRewardType,
   splitRevealPooledGains,
   getPersuasionSourceContributions,
@@ -755,6 +757,34 @@ describe('turnGainsDisplay', () => {
         gains: [expect.objectContaining({ name: 'Gun Thopter', amount: -1, type: RewardType.TROOPS })],
       },
     ])
+  })
+
+  it('hides retreat-allowance gains; actual retreats use troopsRetreatedFromConflict', () => {
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.INTRIGUE,
+        sourceId: 17,
+        round: 1,
+        name: 'Master Tactician',
+        amount: 1,
+        type: RewardType.RETREAT,
+      },
+      {
+        playerId: 0,
+        source: GainSource.INTRIGUE,
+        sourceId: 17,
+        round: 1,
+        name: 'Master Tactician',
+        amount: 3,
+        type: RewardType.COMBAT,
+      },
+    ]
+    expect(excludeRetreatAllowanceGains(gains)).toEqual([gains[1]])
+    expect(groupGainsForDisplay(gains)).toHaveLength(1)
+    expect(groupGainsForDisplay(gains)[0].gains).toEqual([gains[1]])
+    expect(groupGainsForDisplay([gains[0]])).toHaveLength(0)
+    expect(computeTurnGainTotals([gains[0]]).resources).toEqual([])
   })
 
   it('groupGainsForDisplay merges discards into one inline group', () => {
@@ -1581,6 +1611,33 @@ describe('turnGainsDisplay', () => {
     ] as Parameters<typeof groupCombatHistoryGainsByPlayer>[0]
 
     expect(groupCombatHistoryGainsByPlayer(gains).map(g => g.playerId)).toEqual([0, 1, 2])
+  })
+
+  it('leader-strip conflict titles are the placement only', () => {
+    expect(
+      compactBirdseyeGainTitle({
+        key: 'c',
+        title: 'Terrible Purpose - 1st place',
+        gains: [],
+      })
+    ).toBe('1st')
+    expect(
+      compactBirdseyeGainTitle({
+        key: 'i',
+        title: 'Poison Snooper',
+        gains: [
+          {
+            playerId: 0,
+            source: GainSource.INTRIGUE,
+            sourceId: 34,
+            round: 1,
+            name: 'Poison Snooper',
+            amount: 1,
+            type: RewardType.SPICE,
+          },
+        ],
+      })
+    ).toBeNull()
   })
 
   it('splitRevealPooledGains keeps persuasion and swords as totals, spice as a named card', () => {

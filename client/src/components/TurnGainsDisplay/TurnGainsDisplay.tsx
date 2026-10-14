@@ -10,6 +10,7 @@ import {
   getGainGroupIcon,
   getPersuasionSourceContributions,
   getRepeatedIconDisplay,
+  compactBirdseyeGainTitle,
   groupGainsForDisplay,
   INLINE_DISCARDS_GROUP_KEY,
   isRevealPooledRewardType,
@@ -103,6 +104,8 @@ export interface TurnGainsDisplayProps {
   inlineTrash?: boolean
   /** Totals row: show plain amounts for gains (e.g. 2 spice) without a leading +. */
   omitPositiveSign?: boolean
+  /** Leader strip during conflict rewards: "1st"/"2nd"/"3rd", no card name. */
+  compactConflictTitles?: boolean
 }
 
 /** Solari/spice/troop retreat: icon + count beside it (matches effect labels). */
@@ -133,6 +136,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   inlineDiscards = false,
   inlineTrash = false,
   omitPositiveSign = false,
+  compactConflictTitles = false,
 }) => {
   const deployedCount = Math.max(0, troopsDeployedToConflict)
   const retreatedCount = Math.max(0, troopsRetreatedFromConflict)
@@ -363,7 +367,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         aria-label={`Trashed ${label}`}
       >
         {iconPath ? renderGainIcon(iconPath, 'Trash', 'turn-gain-trash-icon') : null}
-        {renderCardGains(gain.cardId, label, gain.amount, `trash-inline-card-${index}`)}
+        {renderAcquiredCardTitle(gain.cardId, label, `trash-inline-card-${index}`)}
       </div>
     )
   }
@@ -908,7 +912,10 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         const rewardContent = renderGainSide(rewards, 'reward', isAcquireGroup)
         const recallContent = renderGainSide(freighterRecalls, 'cost', isAcquireGroup)
         if (!costContent && !rewardContent && !recallContent) return null
-        const techTile = techTileFromGroupTitle(groupTitle)
+        const displayedTitle = compactConflictTitles
+          ? compactBirdseyeGainTitle({ ...group, title: groupTitle })
+          : groupTitle
+        const techTile = techTileFromGroupTitle(displayedTitle ?? groupTitle)
         const copyCount = distinctCardCopyCount(group.gains)
         const showCopyCount =
           copyCount > 1 && !group.gains.some(g => g.type === RewardType.CARD)
@@ -923,8 +930,8 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
               .filter(Boolean)
               .join(' ')}
           >
-            {(showSourceTitles || revealPooledTotals) && groupTitle && !isInlineDiscards
-              ? renderSourceGroupTitle(group, groupTitle)
+            {(showSourceTitles || revealPooledTotals) && displayedTitle && !isInlineDiscards
+              ? renderSourceGroupTitle(group, displayedTitle)
               : null}
             <div
               className={[
@@ -933,8 +940,8 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              title={isInlineDiscards ? 'Discarded cards' : groupTitle}
-              aria-label={isInlineDiscards ? 'Discarded cards' : groupTitle}
+              title={isInlineDiscards ? 'Discarded cards' : displayedTitle ?? groupTitle}
+              aria-label={isInlineDiscards ? 'Discarded cards' : displayedTitle ?? groupTitle}
             >
               {isInlineDiscards ? (
                 costContent

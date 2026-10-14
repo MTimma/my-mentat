@@ -447,6 +447,7 @@ describe('Combat rank strip wiring', () => {
       'utf8'
     )
     expect(troopControls).toContain('/icon/deploy.png')
+    expect(troopControls).not.toContain('/icon/sword.png')
     expect(troopControls).toContain('troop-undeploy-button')
     expect(troopControls).toContain('troop-deploy-button')
     expect(troopControls).toContain('troop-action-count')
