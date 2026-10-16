@@ -227,7 +227,6 @@ const TechTileSelect: React.FC<TechTileSelectProps> = ({
                 role="option"
                 aria-selected={selected}
                 className={[
-                  'card',
                   'tech-tile-select-tile',
                   selected ? 'selected' : '',
                   disabled ? 'tech-tile-select-tile--disabled' : '',
@@ -244,10 +243,6 @@ const TechTileSelect: React.FC<TechTileSelectProps> = ({
                   draggable={false}
                   data-preview-src={tile.image}
                 />
-                <span className="tech-tile-select-tile__meta">
-                  <span className="tech-tile-select-tile__name">{tile.name}</span>
-                  <span className="tech-tile-select-tile__cost">{tile.cost}</span>
-                </span>
               </button>
             )
           })}

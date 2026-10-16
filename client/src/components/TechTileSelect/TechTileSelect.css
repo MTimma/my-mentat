@@ -110,55 +110,55 @@
   object-fit: contain;
 }
 
-.tech-tile-select-grid {
+.imperium-select-cardsearch-wrapper .cards-grid.tech-tile-select-grid,
+.sandbox-player-tech-select .cards-grid.tech-tile-select-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  padding: 2px 0 4px;
   flex: 1 1 auto;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
-  align-content: flex-start;
+  align-content: start;
+  justify-items: stretch;
 }
 
-.tech-tile-select-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  height: auto !important;
-  min-height: 88px;
-  padding: 6px 4px !important;
+.tech-tile-select-grid .tech-tile-select-tile {
+  display: block;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  aspect-ratio: 400 / 259;
+  overflow: hidden;
+  border: 1px solid #3a3a3a;
+  border-radius: 3px;
+  background: #0f0d0a;
   cursor: pointer;
-  border: 2px solid transparent;
+  line-height: 0;
+  transform: none;
   box-shadow: none;
   outline: none;
-  transform: none;
+  appearance: none;
+  font: inherit;
+  color: inherit;
 }
 
-.tech-tile-select-tile img {
+.tech-tile-select-grid .tech-tile-select-tile img {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  max-height: 72px;
-  object-fit: contain;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  display: block;
   pointer-events: none;
-}
-
-.tech-tile-select-tile__meta {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  width: 100%;
-  line-height: 1.1;
-}
-
-.tech-tile-select-tile__name {
-  font-size: 0.62rem;
-  font-weight: 600;
-  text-align: center;
-  color: #e8e8e8;
-}
-
-.tech-tile-select-tile__cost {
-  font-size: 0.58rem;
-  color: #c7a84b;
-  font-weight: 700;
 }
 
 .tech-tile-select-tile--disabled {
@@ -166,22 +166,23 @@
   cursor: not-allowed;
 }
 
-.imperium-select-cardsearch-wrapper .tech-tile-select-grid .tech-tile-select-tile:hover {
-  transform: scale(1.03);
-  border-color: rgba(255, 255, 255, 0.2);
+.tech-tile-select-grid .tech-tile-select-tile:hover:not(:disabled) {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.45);
   box-shadow: none;
+  z-index: 1;
 }
 
-.imperium-select-cardsearch-wrapper .tech-tile-select-grid .tech-tile-select-tile.selected {
+.tech-tile-select-grid .tech-tile-select-tile.selected {
   border-color: #ffd700;
   box-shadow: none;
   outline: none;
   transform: none;
 }
 
-.imperium-select-cardsearch-wrapper .tech-tile-select-grid .tech-tile-select-tile.selected:hover {
+.tech-tile-select-grid .tech-tile-select-tile.selected:hover:not(:disabled) {
   border-color: #ffd700;
-  transform: scale(1.03);
+  transform: none;
 }
 
 @media (max-width: 600px) {
@@ -195,11 +196,8 @@
     height: 45px;
   }
 
-  .tech-tile-select-tile {
-    min-height: 76px;
-  }
-
-  .tech-tile-select-tile img {
-    max-height: 56px;
+  .imperium-select-cardsearch-wrapper .cards-grid.tech-tile-select-grid,
+  .sandbox-player-tech-select .cards-grid.tech-tile-select-grid {
+    gap: 3px;
   }
 }

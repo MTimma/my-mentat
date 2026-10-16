@@ -107,7 +107,6 @@ const SandboxPlayerTechSelect: React.FC<SandboxPlayerTechSelectProps> = ({
               role="option"
               aria-selected={isSelected}
               className={[
-                'card',
                 'tech-tile-select-tile',
                 isSelected ? 'selected' : '',
                 isBlocked ? 'tech-tile-select-tile--disabled' : '',
@@ -122,11 +121,12 @@ const SandboxPlayerTechSelect: React.FC<SandboxPlayerTechSelectProps> = ({
               disabled={isBlocked}
               onClick={() => toggleTile(tile.id)}
             >
-              <img src={tile.image} alt={tile.name} draggable={false} />
-              <span className="tech-tile-select-tile__meta">
-                <span className="tech-tile-select-tile__name">{tile.name}</span>
-                <span className="tech-tile-select-tile__cost">{tile.cost}</span>
-              </span>
+              <img
+                src={tile.image}
+                alt={tile.name}
+                draggable={false}
+                data-preview-src={tile.image}
+              />
             </button>
           )
         })}
