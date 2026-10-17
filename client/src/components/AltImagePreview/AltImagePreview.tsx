@@ -45,6 +45,8 @@ const PREVIEW_FRAME_SELECTOR = [
   '.birdseye-seat-play-area__card',
   '.turn-card-frame',
   '.turn-history-card-thumb',
+  '.turn-history-player-badge',
+  '.combat-area-cluster__leader',
   '.turn-gain-card-thumb',
   '.turn-gain-card-title',
   '.turn-gain-tech-title',
@@ -119,7 +121,26 @@ function findCardTitlePreviewImage(target: EventTarget | null): HTMLImageElement
   )
 }
 
-function findPreviewImageFromTarget(target: EventTarget | null): HTMLImageElement | null {
+function previewImageContainedBy(el: Element, x: number, y: number): HTMLImageElement | null {
+  const imgs = el.querySelectorAll('img[data-preview-src]')
+  let best: HTMLImageElement | null = null
+  let bestArea = Infinity
+  imgs.forEach(node => {
+    if (!(node instanceof HTMLImageElement)) return
+    if (!node.getAttribute('data-preview-src')) return
+    if (!isVisiblePreviewTarget(node)) return
+    const rect = node.getBoundingClientRect()
+    if (!pointInRect(x, y, rect)) return
+    const area = rect.width * rect.height
+    if (area < bestArea) {
+      best = node
+      bestArea = area
+    }
+  })
+  return best
+}
+
+function findPreviewImageFromTarget(target: EventTarget | null, x?: number, y?: number): HTMLImageElement | null {
   if (!(target instanceof Element)) return null
 
   const direct = target.closest('[data-preview-src]')
@@ -134,12 +155,19 @@ function findPreviewImageFromTarget(target: EventTarget | null): HTMLImageElemen
     if (nested instanceof HTMLImageElement) return nested
   }
 
+  // Seat portraits can sit under a button that receives the hit. A still
+  // cursor has to resolve the leader image inside that button.
+  if (x != null && y != null) {
+    const contained = previewImageContainedBy(target, x, y)
+    if (contained) return contained
+  }
+
   return null
 }
 
 /** Hit-test preview images by geometry (works through pointer-events: none ancestors). */
 function findPreviewImageAtPoint(x: number, y: number, target: EventTarget | null): HTMLImageElement | null {
-  const fromTarget = findPreviewImageFromTarget(target)
+  const fromTarget = findPreviewImageFromTarget(target, x, y)
   if (fromTarget) {
     const rect = fromTarget.getBoundingClientRect()
     if (pointInRect(x, y, rect) && isVisiblePreviewTarget(fromTarget)) {
@@ -277,6 +305,15 @@ function gainsPreviewPanelStyle(preview: GainsPreviewState): React.CSSProperties
   }
 }
 
+/** Full leader cards have a light edge. Head icons do not. */
+function isAltKeyboardEvent(event: KeyboardEvent): boolean {
+  return event.key === 'Alt' || event.code === 'AltLeft' || event.code === 'AltRight'
+}
+
+function isLeaderCardPreviewSrc(src: string): boolean {
+  return src.includes('/leaders/') && !src.includes('/icons/')
+}
+
 function previewPanelStyle(preview: PreviewState): React.CSSProperties {
   return preview.kind === 'gains'
     ? gainsPreviewPanelStyle(preview)
@@ -331,6 +368,7 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
   const [preview, setPreview] = useState<PreviewState | null>(null)
   const [zoomHint, setZoomHint] = useState<ZoomHintState | null>(null)
   const pointerRef = useRef({ x: 0, y: 0 })
+  const altDownRef = useRef(false)
   const hintTimerRef = useRef<number | null>(null)
   const hintHostRef = useRef<Element | null>(null)
   const suppressedTitlesRef = useRef<Element[]>([])
@@ -358,36 +396,55 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
   }, [])
 
   useEffect(() => {
+    const showAtPointer = () => {
+      const { x, y } = pointerRef.current
+      applyPreview(x, y, document.elementFromPoint(x, y), true)
+    }
+    const hideZoom = () => {
+      altDownRef.current = false
+      setAltPreviewHeld(false)
+      setAltHeld(false)
+      setPreview(null)
+    }
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Alt' && !event.altKey) return
+      if (!isAltKeyboardEvent(event) && !event.altKey && !event.getModifierState('Alt')) return
+      altDownRef.current = true
       setAltPreviewHeld(true)
       setAltHeld(true)
       clearZoomHint()
       if (event.repeat) return
-      const { x, y } = pointerRef.current
-      applyPreview(x, y, document.elementFromPoint(x, y), true)
+      showAtPointer()
+      // Alt can blur the page in the same turn and wipe the preview.
+      // Show again after that, while Option is still held and the mouse is still.
+      requestAnimationFrame(() => {
+        if (altDownRef.current) showAtPointer()
+      })
     }
     const onKeyUp = (event: KeyboardEvent) => {
-      if (event.key === 'Alt' || !event.altKey) {
-        setAltPreviewHeld(false)
-        setAltHeld(false)
-        setPreview(null)
-      }
+      // Keyup of Option itself reports altKey false. Any keyup while the
+      // modifier is already up must hide the zoom, without waiting for a move.
+      // A keyup while Option is still held keeps it open.
+      if (event.altKey || event.getModifierState('Alt')) return
+      hideZoom()
+    }
+    const onPointerMove = (event: PointerEvent) => {
+      pointerRef.current = { x: event.clientX, y: event.clientY }
     }
     const onBlur = () => {
-      setAltPreviewHeld(false)
-      setAltHeld(false)
-      setPreview(null)
+      if (altDownRef.current) return
+      hideZoom()
       clearZoomHint()
     }
 
-    window.addEventListener('keydown', onKeyDown)
-    window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('keydown', onKeyDown, true)
+    window.addEventListener('keyup', onKeyUp, true)
     window.addEventListener('blur', onBlur)
+    window.addEventListener('pointermove', onPointerMove, true)
     return () => {
-      window.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('keydown', onKeyDown, true)
+      window.removeEventListener('keyup', onKeyUp, true)
       window.removeEventListener('blur', onBlur)
+      window.removeEventListener('pointermove', onPointerMove, true)
       setAltPreviewHeld(false)
     }
   }, [applyPreview, clearZoomHint])
@@ -454,12 +511,15 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
     }
   }, [altHeld, applyPreview, clearZoomHint])
 
+  const leaderCardZoom = preview?.kind === 'image' && isLeaderCardPreviewSrc(preview.src)
+
   const panel =
     (altHeld || preview) && preview ? (
       <div
         className={[
           'alt-image-preview',
           preview.kind === 'gains' ? 'alt-image-preview--gains' : '',
+          leaderCardZoom ? 'alt-image-preview--leader' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -471,6 +531,15 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
             className="alt-gain-preview"
             dangerouslySetInnerHTML={{ __html: preview.html }}
           />
+        ) : leaderCardZoom ? (
+          <div className="alt-image-preview__leader-frame">
+            <img
+              src={preview.src}
+              alt={preview.alt}
+              className="alt-image-preview__img alt-image-preview__img--leader"
+              draggable={false}
+            />
+          </div>
         ) : (
           <img src={preview.src} alt={preview.alt} className="alt-image-preview__img" draggable={false} />
         )}

@@ -8,7 +8,8 @@ describe('Alt / Option card zoom', () => {
   const css = readFileSync(resolve(root, 'components/AltImagePreview/AltImagePreview.css'), 'utf8')
 
   it('treats Alt (Windows/Linux) and Option (Mac) as the zoom modifier', () => {
-    expect(tsx).toContain("event.key !== 'Alt' && !event.altKey")
+    expect(tsx).toContain('isAltKeyboardEvent')
+    expect(tsx).toContain("event.code === 'AltLeft' || event.code === 'AltRight'")
   })
 
   it('zooms gains as a full-content clone, not a scaled compact chip', () => {
@@ -75,10 +76,27 @@ describe('Alt / Option card zoom', () => {
     expect(tsx).toContain("'.bene-tleilax-board__open'")
   })
 
+  it('zooms turn-history and seat leader portraits to the leader card', () => {
+    const history = readFileSync(resolve(root, 'components/TurnHistory.tsx'), 'utf8')
+    const seats = readFileSync(resolve(root, 'components/ImageBoard/CombatAreaCluster.tsx'), 'utf8')
+    expect(history).toContain('data-preview-src={previewSrc}')
+    expect(history).toContain('withImageZoomHint(leaderName)')
+    expect(seats).toContain('data-preview-src={leaderImage}')
+    expect(seats).toContain('withImageZoomHint(player.leader.name)')
+    expect(tsx).toContain("'.turn-history-player-badge'")
+    expect(tsx).toContain("'.combat-area-cluster__leader'")
+    expect(tsx).toContain('isLeaderCardPreviewSrc')
+    expect(tsx).toContain('alt-image-preview__img--leader')
+    expect(css).toContain('transform: scale(1.045)')
+  })
+
   it('zooms on Alt / Option keydown without requiring a mouse move', () => {
     expect(tsx).toContain('pointerRef')
     expect(tsx).toContain('document.elementFromPoint')
     expect(tsx).toContain('if (event.repeat) return')
     expect(tsx).toContain('applyPreview(x, y, document.elementFromPoint(x, y), true)')
+    expect(tsx).toContain('requestAnimationFrame')
+    expect(tsx).toContain("event.getModifierState('Alt')")
+    expect(tsx).toContain('altDownRef')
   })
 })

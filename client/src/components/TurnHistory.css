@@ -308,7 +308,7 @@
   overflow: hidden;
   box-sizing: border-box;
   cursor: default;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .turn-history-player-icon,

@@ -15,8 +15,10 @@ html:has(.game-container--play) .dialog-overlay.combat-player-detail-overlay--bo
 }
 
 .combat-player-detail-modal {
-  width: min(380px, 100%);
+  width: min(520px, 100%);
+  height: min(90vh, 720px);
   max-height: 100%;
+  min-height: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -67,14 +69,31 @@ html:has(.game-container--play) .dialog-overlay.combat-player-detail-overlay--bo
   padding: 12px 16px 10px;
 }
 
-.combat-player-detail-header h3 {
+.combat-player-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
   margin: 0;
   font-size: 0.95rem;
   font-weight: 800;
 }
 
-.combat-player-detail-overlay--board-scoped .combat-player-detail-header h3 {
+.combat-player-detail-overlay--board-scoped .combat-player-detail-title {
   font-size: 1.1rem;
+}
+
+.combat-player-detail-title-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combat-player-detail-title .combat-player-detail-title-agent.agent:not(.agent--dreadnought) {
+  width: 22px;
+  height: 28px;
 }
 
 .combat-player-detail-close {
@@ -85,6 +104,7 @@ html:has(.game-container--play) .dialog-overlay.combat-player-detail-overlay--bo
   line-height: 1;
   cursor: pointer;
   padding: 0 4px;
+  flex-shrink: 0;
 }
 
 .combat-player-detail-close:hover {
@@ -94,17 +114,9 @@ html:has(.game-container--play) .dialog-overlay.combat-player-detail-overlay--bo
 .combat-player-detail-body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px 12px 14px;
-  overflow-y: auto;
-  min-height: 0;
-}
-
-.combat-player-detail-overlay--board-scoped .combat-player-detail-body {
+  gap: 12px;
   flex: 1 1 auto;
-  flex-direction: row;
-  align-items: stretch;
-  gap: 14px;
+  min-height: 0;
   padding: 12px 16px 16px;
   overflow: hidden;
 }
@@ -113,206 +125,182 @@ html:has(.game-container--play) .dialog-overlay.combat-player-detail-overlay--bo
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-shrink: 0;
-}
-
-.combat-player-detail-leader-frame {
-  position: relative;
-  display: inline-flex;
-  max-width: 100%;
-}
-
-.combat-player-detail-overlay--board-scoped .combat-player-detail-leader-frame {
-  height: 100%;
-  width: auto;
-  max-width: 100%;
-}
-
-.combat-player-detail-overlay--board-scoped .combat-player-detail-leader {
-  flex: 1.2 1 auto;
-  min-height: 45%;
+  flex: 0 0 auto;
   min-width: 0;
 }
 
-.combat-player-detail-leader-img {
-  width: min(280px, 100%);
-  max-height: min(240px, 42vh);
-  object-fit: contain;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
-}
-
-.combat-player-detail-overlay--board-scoped .combat-player-detail-leader-img {
-  width: auto;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  border-radius: 10px;
-}
-
-.combat-player-detail-footer {
+/* Same crop as the setup leader dropdown: black fill, slight scale hides the white card edge. */
+.combat-player-detail-leader-frame {
+  position: relative;
+  width: min(340px, 100%);
+  height: auto;
+  aspect-ratio: 10 / 7;
   flex-shrink: 0;
+  background: #000;
+  border: 1px solid #000;
+  border-radius: 2.9% / 4.2%;
+  overflow: hidden;
+}
+
+.combat-player-detail-leader-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.045);
+  transform-origin: center;
+}
+
+.combat-player-detail-sheet {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  flex: 1 1 0;
+  min-height: 0;
 }
 
-.combat-player-detail-overlay--board-scoped .combat-player-detail-footer {
-  gap: 12px;
-}
-
-.combat-player-detail-influence {
+.combat-player-detail-tabs {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.combat-player-detail-influence-heading {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: rgba(255, 248, 232, 0.72);
-}
-
-.combat-player-detail-overlay--board-scoped .combat-player-detail-influence-heading {
-  font-size: 0.78rem;
-}
-
-.combat-player-detail-influence-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-}
-
-.combat-player-detail-influence-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-shrink: 0;
   gap: 4px;
-  padding: 6px 4px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  font-size: 0.9em;
+  align-items: flex-end;
+  position: relative;
+  z-index: 1;
+  /* One line under every tab and through the gaps. The active tab covers its span. */
+  border-bottom: 1px solid rgba(255, 248, 232, 0.28);
 }
 
-.combat-player-detail-overlay--board-scoped .combat-player-detail-influence-item {
-  padding: 8px 6px;
-  font-size: 1rem;
-  gap: 6px;
-}
-
-.combat-player-detail-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
-
-.combat-player-detail-overlay--board-scoped .combat-player-detail-stats {
-  gap: 8px;
-}
-
-.combat-player-detail-stat {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 6px 4px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  font-size: 0.9em;
-}
-
-.combat-player-detail-overlay--board-scoped .combat-player-detail-stat {
-  padding: 8px 6px;
-  font-size: 1rem;
-  gap: 6px;
-}
-
-.combat-player-detail-stat-icon {
-  width: 1rem;
-  height: 1rem;
-  object-fit: contain;
-}
-
-.combat-player-detail-overlay--board-scoped .combat-player-detail-stat-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-.combat-player-detail-piles {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
-
-.combat-player-detail-overlay--board-scoped .combat-player-detail-piles {
-  gap: 10px;
-}
-
-.combat-player-detail-pile-btn {
+.combat-player-detail-tab {
+  box-sizing: border-box;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 8px 6px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 248, 232, 0.18);
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff8e8;
+  padding: 8px 6px 7px;
+  border: 1px solid rgba(255, 248, 232, 0.16);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 248, 232, 0.72);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  font: inherit;
 }
 
-.combat-player-detail-overlay--board-scoped .combat-player-detail-pile-btn {
-  padding: 12px 8px;
-  gap: 4px;
+.combat-player-detail-tab:hover {
+  background: rgba(255, 248, 232, 0.08);
+  color: #fff8e8;
+  border-color: rgba(255, 248, 232, 0.16);
 }
 
-.combat-player-detail-pile-btn:hover {
-  background: rgba(255, 248, 232, 0.1);
-  border-color: rgba(255, 248, 232, 0.35);
+.combat-player-detail-tab:focus,
+.combat-player-detail-tab:focus-visible {
+  outline: none;
 }
 
-.combat-player-detail-pile-label {
-  font-size: 0.72rem;
+.combat-player-detail-tab--active,
+.combat-player-detail-tab--active:hover,
+.combat-player-detail-tab--active:focus,
+.combat-player-detail-tab--active:focus-visible {
+  background: rgba(0, 0, 0, 0.35);
+  border-color: rgba(255, 248, 232, 0.28);
+  border-bottom: none;
+  color: #fff8e8;
+  position: relative;
+  z-index: 2;
+  margin-bottom: -1px;
+  outline: none;
+}
+
+.combat-player-detail-tab-label {
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  text-align: center;
+  line-height: 1.15;
 }
 
-.combat-player-detail-overlay--board-scoped .combat-player-detail-pile-label {
-  font-size: 0.82rem;
-}
-
-.combat-player-detail-pile-count {
+.combat-player-detail-tab-count {
   font-size: 1rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
-.combat-player-detail-overlay--board-scoped .combat-player-detail-pile-count {
-  font-size: 1.2rem;
-}
-
-.combat-player-detail-tech {
+.combat-player-detail-panel {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  border: 1px solid rgba(255, 248, 232, 0.28);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.combat-player-detail-pile-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px 12px 12px;
+  box-sizing: border-box;
+}
+
+.combat-player-detail-pile-scroll .card-pile-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
 }
 
-.combat-player-detail-tech-heading {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: rgba(255, 248, 232, 0.72);
+.combat-player-detail-pile-scroll .card-pile-grid__card {
+  width: 100%;
 }
 
-.combat-player-detail-overlay--board-scoped .combat-player-detail-tech-heading {
-  font-size: 0.82rem;
+.combat-player-detail-panel--overflow-start::before,
+.combat-player-detail-panel--overflow-end::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 6px;
+  z-index: 1;
+  height: 1.15rem;
+  pointer-events: none;
+}
+
+.combat-player-detail-panel--overflow-start::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.78), transparent);
+}
+
+.combat-player-detail-panel--overflow-end::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78), transparent);
+}
+
+.combat-player-detail-tech-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+}
+
+.combat-player-detail-tech-tile {
+  width: min(220px, 100%);
+  aspect-ratio: 400 / 259;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid rgba(255, 248, 232, 0.16);
+}
+
+.combat-player-detail-tech-tile__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }

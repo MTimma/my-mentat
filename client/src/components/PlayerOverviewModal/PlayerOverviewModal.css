@@ -60,6 +60,44 @@
   min-height: 0;
 }
 
+.player-overview-play-area {
+  flex: 0 0 auto;
+  margin: 0 10px 10px;
+  border-radius: 8px;
+  background: rgba(10, 12, 18, 0.96);
+  color: #fff8e8;
+  overflow: hidden;
+}
+
+.player-overview-play-area__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.player-overview-play-area__hide {
+  border: 1px solid rgba(255, 248, 232, 0.28);
+  border-radius: 4px;
+  background: transparent;
+  color: #fff8e8;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.player-overview-play-area__cards {
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 10px 10px;
+}
+
 .player-overview-table-wrap {
   padding: 12px;
   flex: 1 1 auto;

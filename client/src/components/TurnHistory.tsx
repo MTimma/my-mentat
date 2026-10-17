@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Card, Gain, IntrigueCard, Player, GameState, GamePhase, TurnType, AcquiredTechTileSnapshot } from '../types/GameTypes'
-import { getLeaderIconPath } from '../data/leaders'
+import { getLeaderIconPath, getLeaderImage } from '../data/leaders'
 import { conflictCardImageSrc } from '../data/conflictCardImages'
 import {
   computeTurnGainTotals,
@@ -385,15 +385,23 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     const color = player?.color ?? 'gray'
     const leaderName = player?.leader.name ?? 'Player'
     const iconPath = player ? getLeaderIconPath(player.leader.name) : undefined
+    const leaderImage = player ? getLeaderImage(player.leader.name) : undefined
+    const previewSrc = leaderImage ?? iconPath
 
     return (
       <span
         className={`turn-history-player-badge leader-avatar-btn ${color}`}
-        title={leaderName}
+        title={previewSrc ? withImageZoomHint(leaderName) : leaderName}
         aria-hidden="true"
       >
         {iconPath ? (
-          <img src={iconPath} alt="" className="turn-history-player-icon" draggable={false} />
+          <img
+            src={iconPath}
+            alt=""
+            className="turn-history-player-icon"
+            draggable={false}
+            data-preview-src={previewSrc}
+          />
         ) : (
           <span className="turn-history-player-icon-fallback">{leaderName.charAt(0)}</span>
         )}

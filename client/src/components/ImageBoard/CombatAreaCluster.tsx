@@ -10,6 +10,7 @@ import {
 } from '../../utils/playAreaDisplay'
 import { COMBAT_AREA_SEATS } from '../../data/boardMarkerAnchors'
 import { getLeaderImage, isUnassignedLeader } from '../../data/leaders'
+import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import { isTessiaLeader } from '../../data/leaderAbilities/tessiaSnoopers'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
@@ -158,6 +159,8 @@ function LeaderPortrait({
           alt=""
           className="combat-area-cluster__leader-img"
           draggable={false}
+          data-preview-src={leaderImage}
+          title={withImageZoomHint(player.leader.name)}
         />
       ) : (
         <span className="combat-area-cluster__leader-plus">+</span>
@@ -357,7 +360,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   desktopPlayAreaLayout: desktopPlayAreaLayoutProp,
   onDesktopPlayAreaLayoutChange,
 }) => {
-  const [detailPlayer, setDetailPlayer] = useState<Player | null>(null)
+  const [detailPlayerId, setDetailPlayerId] = useState<number | null>(null)
   const [internalPlayAreaLayout, setInternalPlayAreaLayout] = useState<DesktopPlayAreaLayout>(
     readDesktopPlayAreaLayout
   )
@@ -367,6 +370,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
     onDesktopPlayAreaLayoutChange?.(next)
   }
   const playerById = new Map(players.map(p => [p.id, p]))
+  const detailPlayer = detailPlayerId == null ? null : playerById.get(detailPlayerId) ?? null
   const isRow = layout === 'row'
   const isColumn = layout === 'column'
   const isLinear = isRow || isColumn
@@ -381,6 +385,11 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   const pendingIntrigueIds = playAreaIntrigueIdsWithPendingEffectChoice(gameState, {
     isHistoryView: birdseyeIsHistoryView,
   })
+
+  useEffect(() => {
+    if (detailPlayerId == null) return
+    if (!players.some(player => player.id === detailPlayerId)) setDetailPlayerId(null)
+  }, [detailPlayerId, players])
 
   useEffect(() => {
     if (!isColumn || !birdseyeEnabled) return
@@ -432,7 +441,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
         riseOfIx={riseOfIx}
         showFamilyAtomics={showFamilyAtomics}
         onSelect={() =>
-          onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
+          onPlayerSelect ? onPlayerSelect(player) : setDetailPlayerId(player.id)
         }
       />
     )
@@ -478,7 +487,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 showFamilyAtomics={showFamilyAtomics}
                 showResources={false}
                 onSelect={() =>
-                  onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
+                  onPlayerSelect ? onPlayerSelect(player) : setDetailPlayerId(player.id)
                 }
               />
             </div>
@@ -548,7 +557,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                     showFamilyAtomics={showFamilyAtomics}
                     showResources={false}
                     onSelect={() =>
-                      onPlayerSelect ? onPlayerSelect(player) : setDetailPlayer(player)
+                      onPlayerSelect ? onPlayerSelect(player) : setDetailPlayerId(player.id)
                     }
                   />
                 </div>
@@ -670,10 +679,11 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
 
       {detailPlayer && (
         <CombatPlayerDetailModal
+          key={detailPlayer.id}
           player={detailPlayer}
           gameState={gameState}
           containerRef={modalContainerRef}
-          onClose={() => setDetailPlayer(null)}
+          onClose={() => setDetailPlayerId(null)}
         />
       )}
     </>

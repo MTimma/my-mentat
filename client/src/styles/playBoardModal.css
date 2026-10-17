@@ -22,7 +22,6 @@
 .tech-stacks-overlay.play-board-modal-overlay--scoped,
 .undo-confirm-overlay.play-board-modal-overlay--scoped,
 .dialog-overlay.player-overview-overlay.play-board-modal-overlay--scoped,
-.dialog-overlay.player-play-area-overlay--board-scoped,
 .dialog-overlay.combat-player-detail-overlay--board-scoped {
   position: absolute !important;
   inset: 0 !important;
@@ -105,7 +104,6 @@
   padding-left: 64px;
 }
 
-.player-play-area-overlay--board-scoped .player-play-area-modal,
 .combat-player-detail-overlay--board-scoped .combat-player-detail-modal {
   max-height: 100%;
 }

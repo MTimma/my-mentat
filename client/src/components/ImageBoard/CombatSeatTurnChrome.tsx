@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react'
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { Card, Gain, GameState, IntrigueCard, Player, PlayerColor } from '../../types/GameTypes'
 import type { TechTileId } from '../../data/techTiles'
 import TurnGainsDisplay from '../TurnGainsDisplay/TurnGainsDisplay'
@@ -349,21 +349,33 @@ export function BirdseyeIdleBand({
   )
 }
 
+type ScrollBindRef = ((el: HTMLDivElement | null) => void) & {
+  current: HTMLDivElement | null
+}
+
 export function useScrollOverflowFades(enabled: boolean, measureKey: string) {
-  const scrollRef = useRef<HTMLDivElement>(null)
   const [overflowStart, setOverflowStart] = useState(false)
   const [overflowEnd, setOverflowEnd] = useState(false)
   const [thumb, setThumb] = useState({ topPct: 0, heightPct: 100 })
+  const [node, setNode] = useState<HTMLDivElement | null>(null)
+  // Callback ref so measurement rebinds when a portal moves the scroller.
+  const scrollRef = useMemo(() => {
+    const bind = ((el: HTMLDivElement | null) => {
+      bind.current = el
+      setNode(prev => (prev === el ? prev : el))
+    }) as ScrollBindRef
+    bind.current = null
+    return bind
+  }, [])
 
   useLayoutEffect(() => {
-    if (!enabled) {
+    if (!enabled || !node) {
       setOverflowStart(false)
       setOverflowEnd(false)
       setThumb({ topPct: 0, heightPct: 100 })
       return
     }
-    const el = scrollRef.current
-    if (!el) return
+    const el = node
 
     const update = () => {
       const { scrollTop, scrollHeight, clientHeight } = el
@@ -398,7 +410,7 @@ export function useScrollOverflowFades(enabled: boolean, measureKey: string) {
       el.removeEventListener('scroll', update)
       el.removeEventListener('load', update, true)
     }
-  }, [enabled, measureKey])
+  }, [enabled, measureKey, node])
 
   return {
     scrollRef,

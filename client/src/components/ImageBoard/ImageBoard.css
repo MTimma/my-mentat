@@ -1917,6 +1917,9 @@ button.image-board__conflict-panel--sandbox.image-board__conflict-discard--fille
   object-fit: cover;
   object-position: top center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  /* Parent portrait ignores hits so board clicks pass through. This image
+     opts back in so Alt/Option zoom works without a mouse move. */
+  pointer-events: auto;
 }
 
 .combat-area-cluster__leader--tessia .combat-area-cluster__leader-img {

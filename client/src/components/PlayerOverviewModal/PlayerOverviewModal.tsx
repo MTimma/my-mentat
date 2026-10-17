@@ -2,9 +2,10 @@ import React, { useState } from 'react'
 import { ControlMarkerType, FactionType, GameState, Player } from '../../types/GameTypes'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { getLeaderImage } from '../../data/leaders'
+import { listedPlayerName } from '../../utils/playerName'
 import { BoardScopedModal } from '../BoardScopedModal'
 import LeaderImageModal from '../LeaderImageModal/LeaderImageModal'
-import PlayerPlayAreaModal from '../PlayerPlayAreaModal/PlayerPlayAreaModal'
+import CardPileGrid from '../CardPileGrid/CardPileGrid'
 import './PlayerOverviewModal.css'
 
 interface PlayerOverviewModalProps {
@@ -62,7 +63,9 @@ const PlayerOverviewModal = ({
   gameState
 }: PlayerOverviewModalProps) => {
   const [leaderImagePlayer, setLeaderImagePlayer] = useState<Player | null>(null)
-  const [playAreaPlayer, setPlayAreaPlayer] = useState<Player | null>(null)
+  const [playAreaPlayerId, setPlayAreaPlayerId] = useState<number | null>(null)
+  const playAreaPlayer =
+    playAreaPlayerId == null ? null : players.find(player => player.id === playAreaPlayerId) ?? null
 
   const getBestValue = (valueSelector: (player: Player) => number): number => {
     return Math.max(...players.map(valueSelector), 0)
@@ -147,9 +150,12 @@ const PlayerOverviewModal = ({
                       <button
                         type="button"
                         className="see-play-area-button"
-                        onClick={() => setPlayAreaPlayer(player)}
+                        onClick={() =>
+                          setPlayAreaPlayerId(current => (current === player.id ? null : player.id))
+                        }
                         title="See Play Area"
                         aria-label={`View ${player.leader.name} play area`}
+                        aria-pressed={playAreaPlayerId === player.id}
                       >
                         See Play Area
                       </button>
@@ -268,6 +274,27 @@ const PlayerOverviewModal = ({
           </table>
         </div>
 
+        {playAreaPlayer ? (
+          <section className="player-overview-play-area" aria-label={`${listedPlayerName(playAreaPlayer)} play area`}>
+            <div className="player-overview-play-area__bar">
+              <span>{listedPlayerName(playAreaPlayer)} — Play area</span>
+              <button
+                type="button"
+                className="player-overview-play-area__hide"
+                onClick={() => setPlayAreaPlayerId(null)}
+              >
+                Hide
+              </button>
+            </div>
+            <div className="player-overview-play-area__cards">
+              <CardPileGrid
+                cards={playAreaPlayer.playArea ?? []}
+                emptyLabel="No cards in play area"
+              />
+            </div>
+          </section>
+        ) : null}
+
         </div>
 
         <div className="player-overview-footer">
@@ -283,11 +310,6 @@ const PlayerOverviewModal = ({
           onClose={() => setLeaderImagePlayer(null)}
         />
       )}
-      <PlayerPlayAreaModal
-        player={playAreaPlayer}
-        isOpen={!!playAreaPlayer}
-        onClose={() => setPlayAreaPlayer(null)}
-      />
     </BoardScopedModal>
   )
 }

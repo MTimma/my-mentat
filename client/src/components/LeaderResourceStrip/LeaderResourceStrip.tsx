@@ -1,13 +1,10 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { FactionType, Player } from '../../types/GameTypes'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
 import { GameState } from '../../types/GameTypes'
 import { OptionalCostResourceKind } from '../../utils/influenceChoices'
 import { getAnyFactionInfluenceLossIcon } from '../../utils/influenceDisplay'
-import PlayerPlayAreaModal from '../PlayerPlayAreaModal/PlayerPlayAreaModal'
 import './LeaderResourceStrip.css'
-
-type CardPileKind = 'deck' | 'discard' | 'trash'
 
 export type LeaderResourceStripInclude =
   | 'vp'
@@ -20,12 +17,6 @@ export type LeaderResourceStripInclude =
   | 'discard'
   | 'trash'
   | 'influence'
-
-const PILE_LABELS: Record<CardPileKind, string> = {
-  deck: 'Hand & Deck',
-  discard: 'Discard',
-  trash: 'Trash',
-}
 
 interface LeaderResourceStripProps {
   player: Player
@@ -57,8 +48,6 @@ const LeaderResourceStrip = ({
   include,
   onlyResources,
 }: LeaderResourceStripProps) => {
-  const [openPile, setOpenPile] = useState<CardPileKind | null>(null)
-
   const vp = gameState ? getTotalVictoryPoints(player, gameState) : player.victoryPoints
   const showItem = (kind: LeaderResourceStripInclude): boolean => {
     if (include) return include.includes(kind)
@@ -83,35 +72,14 @@ const LeaderResourceStrip = ({
     return null
   }
 
-  const pileCards =
-    openPile === 'deck'
-      ? player.deck
-      : openPile === 'discard'
-        ? player.discardPile
-        : openPile === 'trash'
-          ? player.trash
-          : []
-
-  const renderPileCounter = (
-    kind: CardPileKind,
-    title: string,
-    count: number,
-    content: ReactNode
-  ) => (
-    <button
-      type="button"
-      className="leader-resource-item leader-resource-item--clickable"
-      title={`${title} – click to view cards`}
-      aria-label={`${title}: ${count} cards. View all cards.`}
-      onClick={() => setOpenPile(kind)}
-    >
+  const renderPileCounter = (title: string, count: number, content: ReactNode) => (
+    <span className="leader-resource-item" title={title}>
       {content}
       <span className="leader-resource-value">{count}</span>
-    </button>
+    </span>
   )
 
   return (
-    <>
     <div
       className={[
         'leader-resource-strip',
@@ -165,7 +133,6 @@ const LeaderResourceStrip = ({
       )}
       {showItem('deck') &&
         renderPileCounter(
-          'deck',
           'Hand & Deck',
           player.deck.length,
           <span className="leader-resource-abbr" aria-hidden="true">
@@ -174,7 +141,6 @@ const LeaderResourceStrip = ({
         )}
       {showItem('discard') &&
         renderPileCounter(
-          'discard',
           'Discard pile',
           player.discardPile.length,
           <span className="leader-resource-abbr" aria-hidden="true">
@@ -183,7 +149,6 @@ const LeaderResourceStrip = ({
         )}
       {showItem('trash') &&
         renderPileCounter(
-          'trash',
           'Trashed cards',
           player.trash.length,
           <img src="/icon/trash.png" alt="" className="leader-resource-icon" />
@@ -199,16 +164,6 @@ const LeaderResourceStrip = ({
         </span>
       )}
     </div>
-    {openPile && (
-      <PlayerPlayAreaModal
-        player={player}
-        isOpen={true}
-        pileLabel={PILE_LABELS[openPile]}
-        cards={pileCards}
-        onClose={() => setOpenPile(null)}
-      />
-    )}
-    </>
   )
 }
 
