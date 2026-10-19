@@ -1510,11 +1510,19 @@ button.image-board__conflict-panel--sandbox.image-board__conflict-discard--fille
   overflow: hidden;
 }
 
-.combat-area-cluster--row .combat-area-cluster__first-player-badge,
-.combat-area-cluster--row .combat-area-cluster__mentat-badge,
 .combat-area-cluster--row .combat-area-cluster__atomics-badge {
   width: 14px;
   height: 14px;
+}
+
+.combat-area-cluster--row .combat-area-cluster__first-player-badge {
+  width: 22px;
+  height: 20px;
+}
+
+.combat-area-cluster--row .combat-area-cluster__mentat-badge {
+  width: 15px;
+  height: 26px;
 }
 
 /* Mobile: crop name banner via image position — keep leader layer full height (no top gap). */
@@ -1873,40 +1881,72 @@ button.image-board__conflict-panel--sandbox.image-board__conflict-discard--fille
   z-index: 0;
 }
 
-.combat-area-cluster__first-player-badge {
+/* White rim follows the icon alpha (mask), then the token lifts off the portrait. */
+.combat-area-cluster__status-token {
+  display: block;
+  pointer-events: none;
+  line-height: 0;
+  filter:
+    drop-shadow(0 0 1.5px rgba(255, 255, 255, 0.28))
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+.combat-area-cluster__status-token::before {
+  content: '';
   position: absolute;
-  top: 0.06em;
-  left: 0.06em;
-  z-index: 2;
-  width: clamp(22px, 2.35em, 34px);
-  height: clamp(22px, 2.35em, 34px);
+  inset: 0;
+  background: #fff;
+  transform: scale(1.05);
+  -webkit-mask-image: var(--status-token-mask);
+  mask-image: var(--status-token-mask);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  pointer-events: none;
+}
+
+.combat-area-cluster__status-token img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.72));
+}
+
+.combat-area-cluster__first-player-badge {
+  --status-token-mask: url('/icon/first_player.png');
+  position: absolute;
+  top: 0.32em;
+  left: 0.32em;
+  z-index: 4;
+  width: clamp(26px, 2.7em, 38px);
+  height: clamp(24px, 2.45em, 34px);
   pointer-events: none;
 }
 
 .combat-area-cluster__atomics-badge {
+  --status-token-mask: url('/icon/atomic.png');
   position: absolute;
-  top: 0.06em;
-  right: 0.06em;
-  z-index: 2;
+  top: 0.32em;
+  right: 0.32em;
+  z-index: 4;
   width: clamp(18px, 1.85em, 26px);
   height: clamp(18px, 1.85em, 26px);
-  object-fit: contain;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.72));
   pointer-events: none;
 }
 
 .combat-area-cluster__mentat-badge {
+  --status-token-mask: url('/icon/mentat.png');
   position: absolute;
-  right: 0.1em;
-  bottom: 100%;
-  margin-bottom: 1px;
-  z-index: 3;
-  width: clamp(22px, 2.35em, 34px);
-  height: clamp(22px, 2.35em, 34px);
-  object-fit: contain;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.72));
+  right: 0.32em;
+  bottom: calc(100% + 0.28em);
+  z-index: 4;
+  width: clamp(16px, 1.55em, 24px);
+  height: clamp(28px, 2.75em, 42px);
   pointer-events: none;
 }
 

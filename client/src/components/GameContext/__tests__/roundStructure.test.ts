@@ -246,6 +246,38 @@ describe('Round structure (base rules)', () => {
     expect(s.players[0].combatValue).toBe(4)
   })
 
+  it('next round first player is not stuck on End Turn after conflict rewards', () => {
+    let s = getBaseTestState(undefined, { players: 2, activeId: 0 })
+    const playedConflict = s.currentConflict
+    s = {
+      ...s,
+      canEndTurn: true,
+      selectedCard: 1,
+      currTurn: { playerId: 0, type: 'reveal' as const },
+      phase: GamePhase.COMBAT_REWARDS,
+      combatTroops: { 0: 2, 1: 1 },
+      combatStrength: { 0: 4, 1: 2 },
+      firstPlayerMarker: 0,
+    }
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    s = continueAllConflictRewards(s)
+    expect(s.phase).toBe(GamePhase.ROUND_START)
+    expect(s.canEndTurn).toBe(false)
+    expect(s.currTurn).toBeNull()
+    expect(s.selectedCard).toBeNull()
+
+    const nextConflict = CONFLICTS.find(
+      c => c.id !== playedConflict.id && c.tier === (s.currentRound <= 6 ? (s.currentRound === 1 ? 1 : 2) : 3)
+    )!
+    s = applyGameAction(s, { type: 'SELECT_CONFLICT', conflictId: nextConflict.id })
+    expect(s.phase).toBe(GamePhase.PLAYER_TURNS)
+    expect(s.canEndTurn).toBe(false)
+    expect(s.currTurn).toBeNull()
+    expect(s.activePlayerId).toBe(s.firstPlayerMarker)
+    const stuck = s
+    expect(applyGameAction(s, { type: 'END_TURN', playerId: s.activePlayerId })).toBe(stuck)
+  })
+
   it.todo('recall: agents return to leader; first player marker passes clockwise')
   it.todo('makers: +1 bonus spice on each unoccupied maker space')
   it.todo('endgame at 10 VP or empty conflict deck')

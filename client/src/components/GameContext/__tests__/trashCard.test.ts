@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { applyGameAction } from '../GameContext'
 import { getBaseTestState, stubDeckCard, withCardOnTop } from './_helpers'
 import { BOARD_SPACES } from '../../../data/boardSpaces'
+import { groupGainsBySource, splitGainsByCostAndReward } from '../../../utils/turnGainsDisplay'
 import { IMPERIUM_ROW_DECK } from '../../../data/cards'
+import { RISE_OF_IX_IMPERIUM_DECK } from '../../../data/cardsRiseOfIx'
 import {
   AgentIcon,
   CardPile,
@@ -376,5 +378,189 @@ describe('Selective Breeding — trash via board-space PAY_COST', () => {
     expect(p.spice).toBe(8)
     expect(s.gains.some(g => g.type === RewardType.TRASH && g.cardId === trashed.id)).toBe(true)
     expect(s.gains.some(g => g.type === RewardType.TRASH && g.name === `Selective Breeding|${trashed.name}`)).toBe(true)
+  })
+
+  it('trashing the played Sietch Reverend Mother drops its unresolved trash ability', () => {
+    const sietch = imperiumCard('Sietch Reverend Mother')
+    const drawA = stubDeckCard(801)
+    const drawB = stubDeckCard(802)
+    let s = getBaseTestState({ spice: 10, handCount: 1, deck: [sietch, drawA, drawB] })
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: sietch.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: SELECTIVE_BREEDING_ID })
+
+    expect(
+      s.currTurn?.optionalEffects?.some(
+        e => e.source.type === GainSource.CARD && e.source.id === sietch.id && e.reward.trash
+      )
+    ).toBe(true)
+
+    const spaceTrash = s.currTurn?.optionalEffects?.find(
+      e => e.cost.trash && e.source.id === SELECTIVE_BREEDING_ID
+    )
+    expect(spaceTrash).toBeTruthy()
+
+    s = applyGameAction(s, {
+      type: 'PAY_COST',
+      playerId: 0,
+      effectId: spaceTrash!.id,
+      data: { trashedCardId: sietch.id },
+    })
+
+    expect(s.players[0].playArea.some(c => c.id === sietch.id)).toBe(false)
+    expect(s.players[0].trash.some(c => c.id === sietch.id)).toBe(true)
+    expect(
+      s.currTurn?.optionalEffects?.some(e => e.source.type === GainSource.CARD && e.source.id === sietch.id)
+    ).toBe(false)
+    expect(
+      s.currTurn?.pendingChoices?.some(c => c.source.type === GainSource.CARD && c.source.id === sietch.id)
+    ).toBe(false)
+    expect(s.pendingRewards.some(r => r.source.type === GainSource.CARD && r.source.id === sietch.id)).toBe(
+      false
+    )
+    expect(s.gains.some(g => g.type === RewardType.TRASH && g.cardId === sietch.id)).toBe(true)
+    expect(s.gains.some(g => g.type === RewardType.DRAW && g.source === GainSource.BOARD_SPACE)).toBe(true)
+
+    s = applyGameAction(s, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+    const breeding = groupGainsBySource(
+      s.gains.filter(g => g.source === GainSource.BOARD_SPACE && g.sourceId === SELECTIVE_BREEDING_ID)
+    )
+    expect(breeding.map(g => g.title)).toEqual(['Selective Breeding', 'Selective Breeding'])
+    const placement = splitGainsByCostAndReward(breeding[0].gains)
+    const arrow = splitGainsByCostAndReward(breeding[1].gains)
+    expect(placement.costs.map(g => g.type)).toEqual([RewardType.SPICE])
+    expect(placement.rewards.map(g => g.type)).toEqual([RewardType.INFLUENCE])
+    expect(arrow.costs.map(g => ({ type: g.type, cardId: g.cardId }))).toEqual([
+      { type: RewardType.TRASH, cardId: sietch.id },
+    ])
+    expect(arrow.rewards.map(g => g.type)).toEqual([RewardType.DRAW])
+  })
+
+  it('trashing a different card keeps Sietch Reverend Mother’s optional trash', () => {
+    const sietch = imperiumCard('Sietch Reverend Mother')
+    const dagger = stubDeckCard(402, { name: 'Dagger' })
+    let s = getBaseTestState({ spice: 10 })
+    s = withCardOnTop(s, 0, sietch)
+    s.players[0].deck = [sietch, dagger, ...s.players[0].deck.slice(1)]
+
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: sietch.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: SELECTIVE_BREEDING_ID })
+
+    const spaceTrash = s.currTurn?.optionalEffects?.find(
+      e => e.cost.trash && e.source.id === SELECTIVE_BREEDING_ID
+    )
+    s = applyGameAction(s, {
+      type: 'PAY_COST',
+      playerId: 0,
+      effectId: spaceTrash!.id,
+      data: { trashedCardId: dagger.id },
+    })
+
+    expect(
+      s.currTurn?.optionalEffects?.some(
+        e => e.source.type === GainSource.CARD && e.source.id === sietch.id && e.reward.trash
+      )
+    ).toBe(true)
+  })
+})
+
+describe('trashing a card drops its unresolved effects', () => {
+  it('removes that card’s pending reward, choice, and optional effect and leaves other sources', () => {
+    const doomed = stubDeckCard(701, { name: 'Doomed' })
+    let s = getBaseTestState({ playArea: [doomed], handCount: 1 })
+    s = {
+      ...s,
+      pendingRewards: [
+        {
+          id: 'doomed-spice',
+          source: { type: GainSource.CARD, id: doomed.id, name: doomed.name },
+          reward: { spice: 2 },
+          isTrash: false,
+        },
+        {
+          id: 'space-spice',
+          source: { type: GainSource.BOARD_SPACE, id: 1, name: 'Arrakeen' },
+          reward: { spice: 1 },
+          isTrash: false,
+        },
+      ],
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        agentSpaceId: 1,
+        pendingChoices: [
+          {
+            id: 'doomed-or',
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Choose',
+            options: [{ reward: { water: 1 } }],
+            source: { type: GainSource.CARD, id: doomed.id, name: doomed.name },
+          },
+          {
+            id: 'space-or',
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Keep',
+            options: [{ reward: { solari: 1 } }],
+            source: { type: GainSource.BOARD_SPACE, id: 1, name: 'Arrakeen' },
+          },
+        ],
+        optionalEffects: [
+          {
+            id: 'doomed-opt',
+            cost: {},
+            reward: { trash: 1 },
+            source: { type: GainSource.CARD, id: doomed.id, name: doomed.name },
+          },
+          {
+            id: 'space-opt',
+            cost: { spice: 1 },
+            reward: { drawCards: 1 },
+            source: { type: GainSource.BOARD_SPACE, id: SELECTIVE_BREEDING_ID, name: 'Selective Breeding' },
+          },
+        ],
+      },
+    }
+
+    s = applyGameAction(s, { type: 'TRASH_CARD', playerId: 0, cardId: doomed.id })
+
+    expect(s.pendingRewards.map(r => r.id)).toEqual(['space-spice'])
+    expect(s.currTurn?.pendingChoices?.map(c => c.id)).toEqual(['space-or'])
+    expect(s.currTurn?.optionalEffects?.map(e => e.id)).toEqual(['space-opt'])
+    expect(s.gains.some(g => g.type === RewardType.TRASH && g.cardId === doomed.id)).toBe(true)
+  })
+
+  it('still fires Unload reveal after dropping the card’s agent effect', () => {
+    const esmar = structuredClone(RISE_OF_IX_IMPERIUM_DECK.find(c => c.name === 'Esmar Tuek')!)
+    let s = getBaseTestState({ playArea: [esmar], handCount: 1 })
+    s = {
+      ...s,
+      expansions: { riseOfIx: true, riseOfIxEpic: false, immortality: false },
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        agentSpaceId: 1,
+        optionalEffects: [
+          {
+            id: 'esmar-opt',
+            cost: { spice: 1 },
+            reward: { drawCards: 1 },
+            source: { type: GainSource.CARD, id: esmar.id, name: esmar.name },
+          },
+        ],
+      },
+    }
+
+    s = applyGameAction(s, { type: 'TRASH_CARD', playerId: 0, cardId: esmar.id })
+
+    expect(s.currTurn?.optionalEffects ?? []).toEqual([])
+    expect(s.pendingRewards.map(r => r.source.name)).toEqual([
+      'Esmar Tuek (Unload)',
+      'Esmar Tuek (Unload)',
+    ])
+    expect(s.pendingRewards.map(r => r.reward)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ spice: 2 }),
+        expect.objectContaining({ solari: 2 }),
+      ])
+    )
   })
 })

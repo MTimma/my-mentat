@@ -17,6 +17,7 @@ import {
 } from '../../../types/GameTypes'
 import { revealRequirementSatisfied } from '../requirements'
 import { nextSemanticId } from '../../../utils/semanticIds'
+import { computeCanEndTurn } from '../../../utils/endTurnState'
 import { applyDeployTroopsAllowance, getRemainingTheseTroopsDeploySlots } from '../../../utils/troops'
 import {
   applyImmediateTroopRecruit,
@@ -56,14 +57,50 @@ export function shouldFireUnload(state: GameState, playerId: number, card: Card)
   return true
 }
 
+function effectBelongsToCard(
+  source: { type: GainSource; id: number } | undefined,
+  cardId: number
+): boolean {
+  return source?.type === GainSource.CARD && source.id === cardId
+}
+
+/**
+ * A card that just left play no longer provides unresolved rewards, choices,
+ * or optional effects. Already-resolved gains stay. Unload reveal is applied
+ * after this, so those new effects are kept.
+ */
+export function stripUnresolvedCardEffects(state: GameState, cardId: number): GameState {
+  const pendingRewards = state.pendingRewards.filter(r => !effectBelongsToCard(r.source, cardId))
+  const turn = state.currTurn
+  const pendingChoices = (turn?.pendingChoices ?? []).filter(
+    c => !effectBelongsToCard(c.source, cardId)
+  )
+  const optionalEffects = (turn?.optionalEffects ?? []).filter(
+    e => !effectBelongsToCard(e.source, cardId)
+  )
+
+  const rewardsSame = pendingRewards.length === state.pendingRewards.length
+  const choicesSame = pendingChoices.length === (turn?.pendingChoices?.length ?? 0)
+  const optionalSame = optionalEffects.length === (turn?.optionalEffects?.length ?? 0)
+  if (rewardsSame && choicesSame && optionalSame) return state
+
+  const next: GameState = {
+    ...state,
+    pendingRewards,
+    currTurn: turn ? { ...turn, pendingChoices, optionalEffects } : turn,
+  }
+  return { ...next, canEndTurn: computeCanEndTurn(next) }
+}
+
 export function fireUnloadIfApplicable(
   state: GameState,
   playerId: number,
   card: Card,
   _reason: UnloadReason
 ): GameState {
-  if (!card.unload || !shouldFireUnload(state, playerId, card)) return state
-  return applyUnloadRevealEffects(state, playerId, card)
+  const stripped = stripUnresolvedCardEffects(state, card.id)
+  if (!card.unload || !shouldFireUnload(stripped, playerId, card)) return stripped
+  return applyUnloadRevealEffects(stripped, playerId, card)
 }
 
 /** Fire unload for each card newly added to a player's trash pile. */

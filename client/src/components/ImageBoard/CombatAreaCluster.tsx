@@ -167,22 +167,20 @@ function LeaderPortrait({
       )}
       {leaderImage ? <TessiaLeaderOverlays leader={player.leader} /> : null}
       {isFirstPlayer ? (
-        <img
-          src="/icon/first_player.png"
-          alt=""
-          className="combat-area-cluster__first-player-badge"
+        <span
+          className="combat-area-cluster__status-token combat-area-cluster__first-player-badge"
           title="First player"
-          draggable={false}
-        />
+        >
+          <img src="/icon/first_player.png" alt="" draggable={false} />
+        </span>
       ) : null}
       {hasFamilyAtomics ? (
-        <img
-          src="/icon/atomic.png"
-          alt=""
-          className="combat-area-cluster__atomics-badge"
+        <span
+          className="combat-area-cluster__status-token combat-area-cluster__atomics-badge"
           title="Family Atomics"
-          draggable={false}
-        />
+        >
+          <img src="/icon/atomic.png" alt="" draggable={false} />
+        </span>
       ) : null}
     </div>
   )
@@ -238,13 +236,12 @@ function PlayerQuadrant({
       />
       <div className="combat-area-cluster__quadrant-body">
         {hasMentat ? (
-          <img
-            src="/icon/mentat.png"
-            alt=""
-            className="combat-area-cluster__mentat-badge"
+          <span
+            className="combat-area-cluster__status-token combat-area-cluster__mentat-badge"
             title="Mentat (this round)"
-            draggable={false}
-          />
+          >
+            <img src="/icon/mentat.png" alt="" draggable={false} />
+          </span>
         ) : null}
         {showResources ? <ResourceGrid player={player} riseOfIx={riseOfIx} /> : null}
       </div>

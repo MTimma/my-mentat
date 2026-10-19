@@ -969,6 +969,9 @@ function appendCombatSnapshotAndTransition(
     history: [...stateBeforeResolve.history, combatSnapshot],
     gains: [],
     currTurn: null,
+    canEndTurn: false,
+    selectedCard: null,
+    selectedCardDeckIndex: null,
   }
   if (result.phase === GamePhase.END_GAME) {
     result = finalizeEndgameAfterCombat(result)
@@ -1383,7 +1386,7 @@ function makeTrashGain(
   playerId: number,
   trashedCard: Card,
   source: { type: GainSource; id: number; name?: string },
-  options?: { displayName?: string }
+  options?: { displayName?: string; effectId?: string; paidCost?: boolean }
 ): Gain {
   const removedName = options?.displayName ?? trashedCard.name
   return {
@@ -1395,6 +1398,8 @@ function makeTrashGain(
     amount: -1,
     type: RewardType.TRASH,
     source: source.type,
+    ...(options?.effectId ? { effectId: options.effectId } : {}),
+    ...(options?.paidCost ? { paidCost: true } : {}),
   }
 }
 
@@ -1404,7 +1409,7 @@ function makeDiscardGain(
   playerId: number,
   discardedCard: Card,
   source: { type: GainSource; id: number; name?: string },
-  options?: { displayName?: string }
+  options?: { displayName?: string; effectId?: string }
 ): Gain {
   const removedName = options?.displayName ?? discardedCard.name
   return {
@@ -1416,6 +1421,7 @@ function makeDiscardGain(
     amount: -1,
     type: RewardType.DISCARD,
     source: source.type,
+    ...(options?.effectId ? { effectId: options.effectId } : {}),
   }
 }
 
@@ -3241,13 +3247,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         players: prepareIlesaPlayersForRound(state.players),
       }
 
-      const withRoundStart = applyRoundStartTech(nextState)
+      const withRoundStart = applyRoundStartTech({
+        ...nextState,
+        currTurn: null,
+        selectedCard: null,
+        selectedCardDeckIndex: null,
+        canEndTurn: false,
+        canAcquireIR: false,
+        pendingRewards: [],
+      })
       const withActivePlayer = activatePlayerForTurn(withRoundStart, withRoundStart.firstPlayerMarker)
 
       // Replace pre-setup history with a round-start baseline so undoing the first
       // turn rewinds to configured imperium row + conflict, not initial setup.
       const roundStartBaseline = deepCopyGameState({
-        ...withRoundStart,
+        ...withActivePlayer,
         historyEntryKind: 'round-start',
         currTurn: null,
         selectedCard: null,
@@ -3265,7 +3279,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         : [...state.history, roundStartBaseline]
 
       return {
-        ...withRoundStart,
+        ...withActivePlayer,
+        canEndTurn: false,
         setupBaseline: state.setupBaseline,
         history,
       }
@@ -6832,6 +6847,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           amount: -amount,
           type,
           source: source.type,
+          effectId: effect.id,
         });
       }
 
@@ -6872,7 +6888,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 discardPile.push(removed)
                 // Mentarium: chosen deck card is treated as having been in hand.
                 handCount = Math.max(0, handCount - 1)
-                newGains.push(makeDiscardGain(state, playerId, removed, source))
+                newGains.push(makeDiscardGain(state, playerId, removed, source, { effectId: effect.id }))
               }
               player = { ...player, deck, discardPile, handCount }
             } else {
@@ -6913,6 +6929,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 amount,
                 type,
                 source: source.type,
+                effectId: effect.id,
               })
             }
             const appliedCompanion = applyNonInfluencePayCostRewards(
@@ -6963,7 +6980,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         player.playArea = player.playArea.filter(c => { if(c.id===cardId){trashedCard=c;return false;} return true;});
         if(trashedCard) {
           player.trash = [...(player.trash||[]), trashedCard];
-          newGains.push(makeTrashGain(state, playerId, trashedCard, source))
+          newGains.push(
+            makeTrashGain(state, playerId, trashedCard, source, {
+              effectId: effect.id,
+              paidCost: true,
+            })
+          )
           unloadAfterPayCost = trashedCard;
         } else {
           console.log("(Trash this card) card not found in playArea");
@@ -6984,7 +7006,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         player.discardPile = player.discardPile.filter(c => { if(c.id===cardId){trashedCard=c;return false;} return true;});
         if(trashedCard) {
           player.trash = [...(player.trash||[]), trashedCard];
-          newGains.push(makeTrashGain(state, playerId, trashedCard, source))
+          newGains.push(
+            makeTrashGain(state, playerId, trashedCard, source, {
+              effectId: effect.id,
+              paidCost: Boolean(cost.trash),
+            })
+          )
           unloadAfterPayCost = trashedCard;
           // If card trashed from hand (deck), fix handCount
           if(isTrashedFromHand) {
@@ -7005,7 +7032,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           name: source.name,
           amount,
           type,
-          source: source.type
+          source: source.type,
+          effectId: effect.id,
         });
       }
 
@@ -7215,17 +7243,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
         const deck = player.deck.filter((_, idx) => idx !== topIdx)
         gains.push(makeTrashGain(state, playerId, topCard, intrigueSource))
-        const after = {
-          ...state,
-          gains,
-          players: state.players.map(p =>
-            p.id === playerId
-              ? { ...p, deck, trash: [...p.trash, topCard] }
-              : p
-          ),
-          currTurn: { ...state.currTurn, pendingChoices: newPending },
-          canEndTurn: newPending.length === 0,
-        }
+        const after = withUnloadAfterCardRemoved(
+          {
+            ...state,
+            gains,
+            players: state.players.map(p =>
+              p.id === playerId
+                ? { ...p, deck, trash: [...p.trash, topCard] }
+                : p
+            ),
+            currTurn: { ...state.currTurn, pendingChoices: newPending },
+            canEndTurn: newPending.length === 0,
+          },
+          playerId,
+          topCard,
+          'trash'
+        )
         return state.phase === GamePhase.END_GAME ? afterEndgamePlayerAction(after) : after
       }
 
@@ -8588,6 +8621,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (rewardsToApply.length === 0) return state
 
+      const trashBeforeClaimAll = player.trash
       let newState = { ...state }
       const baselinePlayer = { ...player }
       let newPlayer = { ...player }
@@ -8668,8 +8702,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       
       // Update canEndTurn based on remaining pendingRewards and pendingChoices (excluding disabled rewards)
       newState.canEndTurn = computeCanEndTurn(newState)
-      
-      return resolveMandatoryTroopDeploy(newState, playerId)
+
+      const trashAfterClaimAll =
+        newState.players.find(p => p.id === playerId)?.trash ?? newPlayer.trash
+      return resolveMandatoryTroopDeploy(
+        withUnloadForNewlyTrashedCards(
+          newState,
+          playerId,
+          trashBeforeClaimAll,
+          trashAfterClaimAll,
+          'trash'
+        ),
+        playerId
+      )
     }
     case 'OPPONENT_DISCARD_CHOICE': {
       const { playerId: actingPlayerId, opponentId, choice } = action

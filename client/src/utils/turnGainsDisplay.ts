@@ -772,6 +772,11 @@ function sourceGroupKey(
   return `${groupingGain.source}:${groupingGain.sourceId}`
 }
 
+/** Optional-effect payments stay their own row, still titled like the source. */
+function effectGroupKey(key: string, gain: Gain): string {
+  return gain.effectId ? `${key}::${gain.effectId}` : key
+}
+
 /** Group gains by effect source so costs and rewards stay together. */
 export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
   const order: string[] = []
@@ -791,7 +796,10 @@ export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
       groupingGain.source === GainSource.CONFLICT
         ? conflictGainDisplayTitle(groupingGain, conflictPlacements)
         : titleForGainGroup(groupingGain, acquiredIds)
-    const key = sourceGroupKey(groupingGain, groupTitle, acquiredIds, conflictPlacements)
+    const key = effectGroupKey(
+      sourceGroupKey(groupingGain, groupTitle, acquiredIds, conflictPlacements),
+      gain
+    )
     const existing = map.get(key)
     if (existing) {
       existing.gains.push(gain)
@@ -1011,7 +1019,8 @@ export function splitGainsByCostAndReward(gains: Gain[]): { costs: Gain[]; rewar
   for (const gain of gains) {
     if (gain.amount === 0) continue
     // Trashing a card is an effect (reward side), even though the gain amount is negative.
-    if (gain.type === RewardType.TRASH && gain.amount < 0) {
+    // Trash is the effect itself, unless it was paid as an arrow cost.
+    if (gain.type === RewardType.TRASH && gain.amount < 0 && !gain.paidCost) {
       rewards.push({ ...gain, amount: Math.abs(gain.amount) })
       continue
     }

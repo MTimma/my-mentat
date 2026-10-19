@@ -257,6 +257,63 @@ describe('turnGainsDisplay', () => {
     })
   })
 
+  it('keeps a board-space arrow effect on its own row: trash cost, draw reward', () => {
+    const selectiveBreedingId = 19
+    const gains = [
+      {
+        playerId: 0,
+        source: GainSource.BOARD_SPACE,
+        sourceId: selectiveBreedingId,
+        round: 1,
+        name: 'Selective Breeding',
+        amount: -2,
+        type: RewardType.SPICE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.BOARD_SPACE,
+        sourceId: selectiveBreedingId,
+        round: 1,
+        name: 'Selective Breeding|bene-gesserit',
+        amount: 1,
+        type: RewardType.INFLUENCE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.BOARD_SPACE,
+        sourceId: selectiveBreedingId,
+        cardId: 6,
+        round: 1,
+        name: 'Selective Breeding|Sietch Reverend Mother',
+        amount: -1,
+        type: RewardType.TRASH,
+        effectId: 'board-space-19-EFFECT',
+        paidCost: true,
+      },
+      {
+        playerId: 0,
+        source: GainSource.BOARD_SPACE,
+        sourceId: selectiveBreedingId,
+        round: 1,
+        name: 'Selective Breeding',
+        amount: 2,
+        type: RewardType.DRAW,
+        effectId: 'board-space-19-EFFECT',
+      },
+    ]
+
+    const groups = groupGainsBySource(gains)
+    expect(groups.map(g => g.title)).toEqual(['Selective Breeding', 'Selective Breeding'])
+
+    const placement = splitGainsByCostAndReward(groups[0].gains)
+    expect(placement.costs.map(g => g.type)).toEqual([RewardType.SPICE])
+    expect(placement.rewards.map(g => g.type)).toEqual([RewardType.INFLUENCE])
+
+    const arrow = splitGainsByCostAndReward(groups[1].gains)
+    expect(arrow.costs.map(g => g.type)).toEqual([RewardType.TRASH])
+    expect(arrow.rewards.map(g => g.type)).toEqual([RewardType.DRAW])
+  })
+
   it('treats Foldspace trash-this-card as an effect, not a cost to draw', () => {
     const gains = [
       {

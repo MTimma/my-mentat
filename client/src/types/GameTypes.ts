@@ -342,6 +342,13 @@ export interface Gain {
   type: RewardType
   /** Trashed/discarded card id when it differs from sourceId (e.g. card effect trash). */
   cardId?: number
+  /**
+   * Optional-effect id (`PAY_COST` effectId). Gains that share it stay one row,
+   * separate from the source's other gains (space cost vs arrow effect).
+   */
+  effectId?: string
+  /** Trash paid as an arrow cost (left of →), not the effect itself. */
+  paidCost?: boolean
 }
 
 export enum GainSource {
