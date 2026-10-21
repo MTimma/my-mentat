@@ -558,6 +558,12 @@
   --freighter-arrow-size: 9px;
 }
 
+.turn-gain-freighter-moves {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
 .turn-gain-freighter-move {
   display: inline-flex;
   align-items: center;

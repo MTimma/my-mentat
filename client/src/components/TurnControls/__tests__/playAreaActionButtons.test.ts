@@ -71,6 +71,25 @@ describe('Play area action buttons', () => {
     )
   })
 
+  it('styles freighter advance/recall choices in the turn-history grey', () => {
+    expect(turnControls).toContain('isFreighterMoveChoice')
+    expect(turnControls).toContain('fixed-choice-options--freighter')
+    expect(turnControls).toContain('card-effects-inline-choice--freighter')
+    expect(turnControls).toContain("freighterMoveChoice ? 'or' : 'OR'")
+    expect(turnCss).toMatch(
+      /\.fixed-choice-options--freighter \.or-separator \{[\s\S]*?color:\s*var\(--chrome-text-muted\)/
+    )
+    expect(turnCss).toMatch(
+      /\.fixed-choice-options--freighter \.freighter-icon \{[\s\S]*?color:\s*var\(--chrome-text-muted\)/
+    )
+    expect(turnCss).toMatch(
+      /\.card-effects-inline-choice--freighter \{[\s\S]*?background:\s*transparent/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.birdseye-interactions-strip \.effect-chip-group--freighter \{[\s\S]*?border-color:\s*rgba\(255,\s*255,\s*255,\s*0\.1\)/
+    )
+  })
+
   it('splits shipping recall chips by step and uses a compact source title', () => {
     expect(turnControls).toContain('effectSourceGroupKey')
     expect(turnControls).toContain('effect-chip-group--shipping')

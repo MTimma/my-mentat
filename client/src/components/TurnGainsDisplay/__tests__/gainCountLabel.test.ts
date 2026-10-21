@@ -65,6 +65,11 @@ describe('Gain count labels', () => {
     expect(tsx).toContain('{costContent && (rewardContent || recallContent) ? (')
   })
 
+  it('draws one bump icon per Interstellar Shipping advance', () => {
+    expect(tsx).toContain('freighterAdvanceIconCount(stepAmount)')
+    expect(tsx).toContain('turn-gain-freighter-moves')
+  })
+
   it('reveal turns pool persuasion and swords, then title other effects', () => {
     expect(tsx).toContain('revealPooledTotals')
     expect(tsx).toContain('splitRevealPooledGains')

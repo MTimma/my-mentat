@@ -193,7 +193,20 @@ const LeaderSelect: React.FC<LeaderSelectProps> = ({
             <span className="leader-select__thumb-fallback">+</span>
           )}
         </span>
-        <span className="leader-select__chevron" aria-hidden="true" />
+        <span className="leader-select__chevron-bar" aria-hidden="true">
+          <span className="leader-select__chevron">
+            <svg viewBox="0 0 16 10" width="16" height="10" focusable="false">
+              <path
+                d="M1.5 1.75 L8 8.25 L14.5 1.75"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        </span>
       </button>
 
       {menu ? createPortal(menu, document.body) : null}

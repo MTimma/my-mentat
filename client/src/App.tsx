@@ -214,6 +214,7 @@ const GameContent = ({
   )
   const [isPlayerOverviewOpen, setIsPlayerOverviewOpen] = useState(false)
   const [voiceSelectionRewardId, setVoiceSelectionRewardId] = useState<string | null>(null)
+  const [humanityDiscardOpponentId, setHumanityDiscardOpponentId] = useState<number | null>(null)
   const [masterstrokeSelectionRewardId, setMasterstrokeSelectionRewardId] = useState<string | null>(null)
   const [memnonHighCouncilRewardId, setMemnonHighCouncilRewardId] = useState<string | null>(null)
   const [sandboxImperiumOpen, setSandboxImperiumOpen] = useState(false)
@@ -787,6 +788,23 @@ const GameContent = ({
     if (!activePlayer) return
     dispatch({ type: 'OPPONENT_NO_CARD_ACK', playerId: activePlayer.id, opponentId })
   }
+
+  const humanityDiscard = gameState.currTurn?.opponentDiscardState
+  const humanityPromptOpen =
+    !isViewingHistory && humanityDiscard?.effect === CustomEffect.TEST_OF_HUMANITY
+
+  useEffect(() => {
+    if (!humanityPromptOpen) {
+      setHumanityDiscardOpponentId(null)
+      return
+    }
+    if (
+      humanityDiscardOpponentId != null &&
+      !humanityDiscard?.remainingOpponents.includes(humanityDiscardOpponentId)
+    ) {
+      setHumanityDiscardOpponentId(null)
+    }
+  }, [humanityPromptOpen, humanityDiscard, humanityDiscardOpponentId])
 
   const getAutoApplicableRewards = (state: GameState): PendingReward[] => {
     // Interactive custom effects that require user input
@@ -1996,6 +2014,34 @@ const GameContent = ({
           playAreaTopSlot={playAreaTopSlot}
           desktopPlayAreaLayout={desktopPlayAreaLayout}
           onDesktopPlayAreaLayoutChange={setDesktopPlayAreaLayout}
+          testOfHumanity={
+            humanityPromptOpen
+              ? {
+                  selectingPlayerId: humanityDiscardOpponentId,
+                  onDiscard: opponentId => setHumanityDiscardOpponentId(opponentId),
+                  onLoseTroop: opponentId => {
+                    if (!activePlayer) return
+                    dispatch({
+                      type: 'OPPONENT_DISCARD_CHOICE',
+                      playerId: activePlayer.id,
+                      opponentId,
+                      choice: 'loseTroop',
+                    })
+                  },
+                  onSelectCard: (opponentId, cardId) => {
+                    if (!activePlayer) return
+                    dispatch({
+                      type: 'OPPONENT_DISCARD_CARD',
+                      playerId: activePlayer.id,
+                      opponentId,
+                      cardId,
+                    })
+                    setHumanityDiscardOpponentId(null)
+                  },
+                  onCancelSelect: () => setHumanityDiscardOpponentId(null),
+                }
+              : null
+          }
         />
     ),
     [
@@ -2032,6 +2078,8 @@ const GameContent = ({
       birdseyeGainsByPlayer,
       birdseyeTroopCounts,
       desktopPlayAreaLayout,
+      humanityPromptOpen,
+      humanityDiscardOpponentId,
     ]
   )
 

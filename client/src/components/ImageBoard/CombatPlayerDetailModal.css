@@ -158,6 +158,13 @@ html:has(.game-container--play) .dialog-overlay.combat-player-detail-overlay--bo
   min-height: 0;
 }
 
+.combat-player-detail-select-prompt {
+  margin: 0 0 0.35rem;
+  color: #fff8e8;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 .combat-player-detail-tabs {
   display: flex;
   flex-shrink: 0;

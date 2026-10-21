@@ -600,6 +600,16 @@ export function freighterRecallStepOrdinal(step: number): string | null {
   return null
 }
 
+/**
+ * Advance gains are one step each and then summed.
+ * The summed amount is how many bump-up icons to draw.
+ * Recall amount is the track step, not a count of icons.
+ */
+export function freighterAdvanceIconCount(amount: number): number {
+  if (!Number.isFinite(amount)) return 0
+  return Math.max(0, Math.floor(Math.abs(amount)))
+}
+
 /** Tile id for grouping TECH costs/rewards when the gain `name` is the discarded card. */
 function techIdentityForGain(gain: Gain): string {
   const fromId = techTileFromGainSourceId(gain.sourceId)

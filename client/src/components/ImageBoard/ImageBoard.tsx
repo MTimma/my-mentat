@@ -211,6 +211,8 @@ interface ImageBoardProps {
   birdseyeTroopsRetreated?: number
   birdseyeIsHistoryView?: boolean
   birdseyeInteractionsHostRef?: (el: HTMLDivElement | null) => void
+  /** Live Test of Humanity prompts under other leaders. */
+  testOfHumanity?: import('./CombatAreaCluster').TestOfHumanitySeatPrompt | null
   /** Desktop: Imperium row sits above the board, board-width only. */
   imperiumRowSlot?: ReactNode
   /** Horizontal play-area: expansions / setup sit above the right column only. */
@@ -286,6 +288,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   birdseyeTroopsRetreated = 0,
   birdseyeIsHistoryView = false,
   birdseyeInteractionsHostRef,
+  testOfHumanity = null,
   imperiumRowSlot,
   playAreaTopSlot,
   desktopPlayAreaLayout,
@@ -603,6 +606,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         birdseyeTroopsRetreated={birdseyeTroopsRetreated}
         birdseyeIsHistoryView={birdseyeIsHistoryView}
         birdseyeInteractionsHostRef={birdseyeInteractionsHostRef}
+        testOfHumanity={testOfHumanity}
         troopDeploy={troopDeploy}
         dreadnoughtDeploy={dreadnoughtDeploy}
         specimenDeploy={specimenDeploy}

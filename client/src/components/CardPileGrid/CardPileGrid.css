@@ -44,3 +44,19 @@
   color: #e0e0e0;
   word-break: break-word;
 }
+
+button.card-pile-grid__card {
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+button.card-pile-grid__card:hover {
+  border-color: rgba(255, 215, 0, 0.75);
+}
+
+button.card-pile-grid__card:focus-visible {
+  outline: 2px solid #ffd700;
+  outline-offset: 2px;
+}

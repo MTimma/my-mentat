@@ -215,6 +215,7 @@ import { countSpiceMustFlowCards } from '../../utils/spiceMustFlow'
 import { applySandboxDeckEdit } from '../../utils/sandboxDeckPools'
 import { defaultSavedPlayerName, normalizeStoredPlayerName, playerNameOnBegin } from '../../utils/playerName'
 import { getOpponentDiscardableCards, validateDiscardCostSelection } from '../../utils/playAreaDisplay'
+import { opponentCanFaceTestOfHumanity } from '../../utils/testOfHumanity'
 import { computeCanEndTurn, hasCompletedRequiredTurnAction } from '../../utils/endTurnState'
 import { normalizeChoiceOptEffects } from '../../utils/choiceOptEffects'
 import { drawCardsFromDeck, drawRoundStartHand, applyDrawCardsToPlayer } from '../../utils/deckDraw'
@@ -2784,6 +2785,18 @@ function isReverendMotherOpponentDiscard(discardState: OpponentDiscardState): bo
   return discardState.effect === CustomEffect.REVEREND_MOTHER_MOHIAM
 }
 
+function isTestOfHumanityOpponentDiscard(discardState: OpponentDiscardState): boolean {
+  return discardState.effect === CustomEffect.TEST_OF_HUMANITY
+}
+
+/** Test of Humanity prompts every remaining opponent at once. Other effects stay sequential. */
+function opponentDiscardAccepts(discardState: OpponentDiscardState, opponentId: number): boolean {
+  if (isTestOfHumanityOpponentDiscard(discardState)) {
+    return discardState.remainingOpponents.includes(opponentId)
+  }
+  return discardState.currentOpponent === opponentId
+}
+
 function requiredOpponentDiscards(discardState: OpponentDiscardState): number {
   return isReverendMotherOpponentDiscard(discardState) ? 2 : 1
 }
@@ -2813,7 +2826,9 @@ function advanceOpponentDiscardState(
     ? remainingOpponents.length === 1
       ? remainingOpponents[0]
       : undefined
-    : remainingOpponents[0]
+    : isTestOfHumanityOpponentDiscard(discardState)
+      ? undefined
+      : remainingOpponents[0]
 
   return {
     ...discardState,
@@ -2847,7 +2862,7 @@ function applyOpponentDiscards(
   if (cardIds.length === 0) return state
 
   const discardState = state.currTurn.opponentDiscardState
-  if (discardState.currentOpponent !== opponentId) return state
+  if (!opponentDiscardAccepts(discardState, opponentId)) return state
 
   const opponent = state.players.find(p => p.id === opponentId)
   if (!opponent) return state
@@ -2871,16 +2886,24 @@ function applyOpponentDiscards(
       handCount = Math.max(0, handCount - 1)
     }
     discardPile = [...discardPile, card]
-    newGains.push({
-      round: state.currentRound,
-      playerId: opponentId,
-      sourceId: card.id,
-      cardId: card.id,
-      name: card.name,
-      amount: -1,
-      type: RewardType.DISCARD,
-      source: GainSource.CARD,
-    })
+    newGains.push(
+      isTestOfHumanityOpponentDiscard(discardState)
+        ? makeDiscardGain(state, opponentId, card, {
+            type: GainSource.CARD,
+            id: discardState.sourceCardId ?? card.id,
+            name: discardState.sourceCardName ?? 'Test of Humanity',
+          })
+        : {
+            round: state.currentRound,
+            playerId: opponentId,
+            sourceId: card.id,
+            cardId: card.id,
+            name: card.name,
+            amount: -1,
+            type: RewardType.DISCARD,
+            source: GainSource.CARD,
+          }
+    )
   }
 
   const discardCounts = { ...(discardState.discardCounts || {}) }
@@ -5539,11 +5562,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const controlPlayerId = controlBonusOwner(newState, space.controlMarker)
         if(controlPlayerId != null) {
           if(space.controlBonus?.solari) {
-            updatedPlayers[controlPlayerId].solari += space.controlBonus.solari
-            if (controlPlayerId === playerId) {
-              currPlayer.solari += space.controlBonus.solari
+            const baseSolari = space.controlBonus.solari
+            let solariAmount = baseSolari
+            const controller = updatedPlayers[controlPlayerId]
+            updatedGains.push({ round: newState.currentRound, playerId: controlPlayerId, sourceId: space.id, name: space.name + " Control Bonus", amount: baseSolari, type: RewardType.SOLARI, source: GainSource.CONTROL } )
+            if (controller && shouldGrantYunaSolariBonus(newState, controller, { solari: baseSolari })) {
+              solariAmount = applyYunaSolariBonus(solariAmount)
+              updatedGains.push({ round: newState.currentRound, playerId: controlPlayerId, sourceId: 0, name: 'Leader Ability', amount: 1, type: RewardType.SOLARI, source: GainSource.LEADER_ABILITY })
             }
-            updatedGains.push({ round: newState.currentRound, playerId: controlPlayerId, sourceId: space.id, name: space.name + " Control Bonus", amount: space.controlBonus.solari, type: RewardType.SOLARI, source: GainSource.CONTROL } )
+            updatedPlayers[controlPlayerId].solari += solariAmount
+            if (controlPlayerId === playerId) {
+              currPlayer.solari += solariAmount
+            }
           }
           if(space.controlBonus?.spice) {
             updatedPlayers[controlPlayerId].spice += space.controlBonus.spice
@@ -8221,11 +8251,26 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
         }
         case CustomEffect.TEST_OF_HUMANITY: {
-          const opponents = state.players.filter(p => p.id !== playerId).map(p => p.id)
-          if (opponents.length === 0) return state
+          const actor = state.players.find(p => p.id === playerId)
+          const sourceCardId = typeof data?.cardId === 'number' ? data.cardId : undefined
+          const sourceCard =
+            sourceCardId != null
+              ? actor?.playArea.find(c => c.id === sourceCardId)
+              : undefined
+          const opponents = state.players.filter(
+            p => p.id !== playerId && opponentCanFaceTestOfHumanity(state, p)
+          )
+          if (opponents.length === 0) {
+            return {
+              ...state,
+              canEndTurn:
+                state.pendingRewards.filter(r => !r.disabled).length === 0 &&
+                !(state.currTurn?.pendingChoices?.length),
+            }
+          }
           const discardCounts: Record<number, number> = {}
-          opponents.forEach(id => {
-            discardCounts[id] = 0
+          opponents.forEach(p => {
+            discardCounts[p.id] = 0
           })
           return {
             ...state,
@@ -8234,9 +8279,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                   ...state.currTurn,
                   opponentDiscardState: {
                     effect: CustomEffect.TEST_OF_HUMANITY,
-                    remainingOpponents: opponents,
-                    currentOpponent: opponents[0],
+                    remainingOpponents: opponents.map(p => p.id),
+                    currentOpponent: undefined,
                     discardCounts,
+                    sourceCardId: sourceCard?.id ?? sourceCardId,
+                    sourceCardName: sourceCard?.name ?? 'Test of Humanity',
                   },
                 }
               : null,
@@ -8742,27 +8789,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
       
-      // For other cases, currentOpponent must match
-      if (discardState.currentOpponent !== opponentId) return state
+      if (!opponentDiscardAccepts(discardState, opponentId)) return state
       
       const opponent = state.players.find(p => p.id === opponentId)
       if (!opponent) return state
       
       if (choice === 'loseTroop') {
-        // Remove one deployed troop from combat
+        // Lost, not retreated: leave the Conflict and return to supply, not the garrison.
         const currentTroops = state.combatTroops[opponentId] || 0
         if (currentTroops <= 0) return state
+        const nextTroops = currentTroops - 1
         
         const newCombatTroops = { ...state.combatTroops }
-        newCombatTroops[opponentId] = currentTroops - 1
+        newCombatTroops[opponentId] = nextTroops
         
         const newCombatStrength = { ...state.combatStrength }
-        const currentStrength = newCombatStrength[opponentId] || 0
-        if (currentStrength >= 2) {
-          newCombatStrength[opponentId] = currentStrength - 2
-        } else {
-          delete newCombatStrength[opponentId]
-        }
+        newCombatStrength[opponentId] =
+          nextTroops === 0 ? 0 : Math.max(0, (newCombatStrength[opponentId] || 0) - 2)
         
         const discardCounts = { ...(discardState.discardCounts || {}) }
         const newOpponentDiscardState = advanceOpponentDiscardState(
@@ -8776,9 +8819,25 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ...state,
           combatTroops: newCombatTroops,
           combatStrength: newCombatStrength,
+          gains: [
+            ...state.gains,
+            {
+              round: state.currentRound,
+              playerId: opponentId,
+              sourceId: discardState.sourceCardId ?? 0,
+              name: discardState.sourceCardName ?? 'Test of Humanity',
+              amount: -1,
+              type: RewardType.TROOPS,
+              source: GainSource.CARD,
+            },
+          ],
           players: state.players.map(p =>
             p.id === opponentId
-              ? { ...p, troops: p.troops + 1, combatValue: p.combatValue ? p.combatValue - 2 : 0 }
+              ? {
+                  ...p,
+                  troopSupply: (p.troopSupply ?? 0) + 1,
+                  combatValue: nextTroops === 0 ? 0 : Math.max(0, (p.combatValue || 0) - 2),
+                }
               : p
           ),
           currTurn: state.currTurn ? {

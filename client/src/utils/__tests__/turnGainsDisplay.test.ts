@@ -14,6 +14,7 @@ import {
   discardedOrTrashedCardLabel,
   encodeEffectCardGainName,
   sourceTitleFromEffectCardGainName,
+  freighterAdvanceIconCount,
   freighterMoveSourceTitle,
   freighterRecallStepOrdinal,
   resolveFreighterMoveGroupTitle,
@@ -1119,6 +1120,26 @@ describe('turnGainsDisplay', () => {
     ] as Parameters<typeof groupGainsBySource>[0])
     expect(groups).toHaveLength(1)
     expect(groups[0].title).toBe('Smuggling')
+  })
+
+  it('keeps both Interstellar Shipping advances as two bump icons', () => {
+    const gains = [1, 1].map(amount => ({
+      playerId: 0,
+      source: GainSource.BOARD_SPACE,
+      sourceId: 26,
+      round: 1,
+      name: 'Interstellar Shipping',
+      amount,
+      type: RewardType.FREIGHTER,
+    }))
+    const groups = groupGainsBySource(gains)
+    expect(groups).toHaveLength(1)
+    const { rewards } = splitGainsByCostAndReward(groups[0].gains)
+    expect(aggregateResourceGains(rewards)).toEqual([
+      expect.objectContaining({ type: RewardType.FREIGHTER, amount: 2 }),
+    ])
+    expect(freighterAdvanceIconCount(2)).toBe(2)
+    expect(freighterAdvanceIconCount(1)).toBe(1)
   })
 
   it('peels Interstellar Shipping recall off the cost→reward arrow and keeps advance first', () => {

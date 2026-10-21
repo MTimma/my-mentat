@@ -3,7 +3,7 @@ import { BOARD_SPACES } from '../../../data/boardSpaces'
 import { BOARD_HOTSPOTS_FOR_EXPANSIONS } from '../../../data/boardHotspots'
 import { IX_BOARD_HOTSPOTS } from '../../../data/ixBoardAnchors'
 import { STARTING_DECK } from '../../../catalog/runtime'
-import { LEADERS, LEADER_NAMES } from '../../../data/leaders'
+import { LEADERS, LEADER_NAMES, RISE_OF_IX_LEADERS } from '../../../data/leaders'
 import { applyGameAction } from '../GameContext'
 import {
   AgentIcon,
@@ -14,9 +14,11 @@ import {
   NO_EXPANSIONS,
   RewardType,
 } from '../../../types/GameTypes'
-import { getBaseTestState, stubDeckCard } from './_helpers'
+import { aggregateResourceGains, groupGainsBySource } from '../../../utils/turnGainsDisplay'
+import { getBaseTestState, getRoiTestState, stubDeckCard } from './_helpers'
 
 const ARRAKEEN_ID = BOARD_SPACES.find(s => s.name === 'Arrakeen')!.id
+const CARTHAG_ID = BOARD_SPACES.find(s => s.name === 'Carthag')!.id
 const IMPERIAL_BASIN_ID = BOARD_SPACES.find(s => s.name === 'Imperial Basin')!.id
 const HARDY_WARRIORS_ID = BOARD_SPACES.find(s => s.name === 'Hardy Warriors')!.id
 
@@ -142,6 +144,79 @@ describe('Board spaces — control bonus', () => {
           g.name.includes('Control Bonus')
       )
     ).toBe(true)
+  })
+
+  it('Yuna Spice Royalty adds 1 solari when she collects her own Carthag control bonus', () => {
+    const yuna = RISE_OF_IX_LEADERS.find(l => l.name === LEADER_NAMES.PRINCESS_YUNA_MORITANI)!
+    const card = stubDeckCard(5600, { agentIcons: [AgentIcon.CITY] })
+    let s = getRoiTestState({
+      players: 2,
+      playerOverrides: { leader: yuna, solari: 3, deck: [card], handCount: 1 },
+      stateOverrides: {
+        controlMarkers: {
+          [ControlMarkerType.ARRAKIN]: null,
+          [ControlMarkerType.CARTHAG]: 0,
+          [ControlMarkerType.IMPERIAL_BASIN]: null,
+        },
+      },
+    })
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+    const after = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: CARTHAG_ID })
+
+    expect(after.players[0].solari).toBe(5)
+    expect(after.gains).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          playerId: 0,
+          name: 'Carthag Control Bonus',
+          amount: 1,
+          type: RewardType.SOLARI,
+          source: GainSource.CONTROL,
+        }),
+        expect.objectContaining({
+          playerId: 0,
+          name: 'Leader Ability',
+          amount: 1,
+          type: RewardType.SOLARI,
+          source: GainSource.LEADER_ABILITY,
+        }),
+      ])
+    )
+    const groups = groupGainsBySource(after.gains)
+    const controlGroup = groups.find(g => g.title === 'Carthag Control Bonus')
+    const leaderGroup = groups.find(g => g.title === 'Leader Ability')
+    expect(aggregateResourceGains(controlGroup?.gains ?? [])).toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: RewardType.SOLARI, amount: 1 })])
+    )
+    expect(aggregateResourceGains(leaderGroup?.gains ?? [])).toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: RewardType.SOLARI, amount: 1 })])
+    )
+  })
+
+  it('Yuna does not get Spice Royalty when an opponent visits her Carthag', () => {
+    const yuna = RISE_OF_IX_LEADERS.find(l => l.name === LEADER_NAMES.PRINCESS_YUNA_MORITANI)!
+    const card = stubDeckCard(5601, { agentIcons: [AgentIcon.CITY] })
+    let s = getRoiTestState({
+      players: 2,
+      playerOverrides: { deck: [card], handCount: 1 },
+      stateOverrides: {
+        controlMarkers: {
+          [ControlMarkerType.ARRAKIN]: null,
+          [ControlMarkerType.CARTHAG]: 1,
+          [ControlMarkerType.IMPERIAL_BASIN]: null,
+        },
+      },
+    })
+    s = {
+      ...s,
+      players: s.players.map(p => (p.id === 1 ? { ...p, leader: yuna, solari: 4 } : p)),
+    }
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+    const after = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: CARTHAG_ID })
+
+    expect(after.players[1].solari).toBe(5)
+    expect(after.players[0].solari).toBe(s.players[0].solari)
+    expect(after.gains.filter(g => g.source === GainSource.LEADER_ABILITY)).toHaveLength(0)
   })
 
   it('Imperial Basin visit grants +1 spice to control marker owner', () => {

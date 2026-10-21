@@ -6,6 +6,7 @@ import {
   aggregateResourceGains,
   computeTurnGainTotals,
   discardedOrTrashedCardLabel,
+  freighterAdvanceIconCount,
   freighterRecallStepOrdinal,
   getGainGroupIcon,
   getPersuasionSourceContributions,
@@ -186,11 +187,25 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     stepAmount: number,
     className = 'turn-gain-freighter-icon'
   ) => {
-    const ordinal = direction === 'down' ? freighterRecallStepOrdinal(stepAmount) : null
-    const title = direction === 'down' ? (ordinal ? `Recall ${ordinal}` : 'Recall') : 'Advance'
+    if (direction === 'up') {
+      const count = freighterAdvanceIconCount(stepAmount)
+      const title = count > 1 ? `Advance ${count}` : 'Advance'
+      return (
+        <span className="turn-gain-freighter-moves" title={title}>
+          {Array.from({ length: count }, (_, index) => (
+            <span key={index} className="turn-gain-freighter-move">
+              <FreighterIcon direction="up" size="sm" className={className} title="Advance" />
+            </span>
+          ))}
+        </span>
+      )
+    }
+
+    const ordinal = freighterRecallStepOrdinal(stepAmount)
+    const title = ordinal ? `Recall ${ordinal}` : 'Recall'
     return (
       <span className="turn-gain-freighter-move" title={title}>
-        <FreighterIcon direction={direction} size="sm" className={className} title={title} />
+        <FreighterIcon direction="down" size="sm" className={className} title={title} />
         {ordinal ? <span className="turn-gain-freighter-step">{ordinal}</span> : null}
       </span>
     )
@@ -419,7 +434,9 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
           ? freighterOrdinal
             ? `Recall ${freighterOrdinal}`
             : 'Recall'
-          : 'Advance'
+          : absAmount > 1
+            ? `Advance ${absAmount}`
+            : 'Advance'
         : absAmount === 1
           ? `${isCost ? 'Paid' : 'Gained'} 1 ${displayName}`
           : `${isCost ? 'Paid' : 'Gained'} ${absAmount} ${displayName}`
@@ -707,7 +724,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     if (isFreighter) {
       const recallOrdinal = total.spent > 0 ? freighterRecallStepOrdinal(total.spent) : null
       const title = [
-        total.gained > 0 ? 'Advance' : null,
+        total.gained > 1 ? `Advance ${total.gained}` : total.gained > 0 ? 'Advance' : null,
         total.spent > 0 ? (recallOrdinal ? `Recall ${recallOrdinal}` : 'Recall') : null,
       ]
         .filter(Boolean)

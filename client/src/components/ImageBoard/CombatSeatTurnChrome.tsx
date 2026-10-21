@@ -65,6 +65,53 @@ function stop(e: React.SyntheticEvent) {
   e.stopPropagation()
 }
 
+/** Test of Humanity — discard or lose a deployed troop, under that leader's turn buttons. */
+export function TestOfHumanityChoice({
+  canDiscard,
+  canLose,
+  onDiscard,
+  onLoseTroop,
+}: {
+  canDiscard: boolean
+  canLose: boolean
+  onDiscard: () => void
+  onLoseTroop: () => void
+}) {
+  return (
+    <div
+      className="birdseye-seat__primary test-of-humanity-choice"
+      onClick={stop}
+      role="group"
+      aria-label="Test of Humanity"
+    >
+      <button
+        type="button"
+        className="birdseye-seat-btn"
+        disabled={!canDiscard}
+        title={canDiscard ? 'Discard a card' : 'No cards to discard'}
+        onClick={event => {
+          stop(event)
+          if (canDiscard) onDiscard()
+        }}
+      >
+        <span className="birdseye-seat-btn__label">Discard</span>
+      </button>
+      <button
+        type="button"
+        className="birdseye-seat-btn"
+        disabled={!canLose}
+        title={canLose ? 'Lose one deployed troop' : 'No deployed troops'}
+        onClick={event => {
+          stop(event)
+          if (canLose) onLoseTroop()
+        }}
+      >
+        <span className="birdseye-seat-btn__label">Lose troop</span>
+      </button>
+    </div>
+  )
+}
+
 /** Host for TurnControls-ported reward/choice chips (in the gains column above the leader). */
 export function BirdseyeInteractionsHost({
   hostRef,

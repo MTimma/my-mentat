@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, type RefObject } from 'react'
-import { GamePhase, GameState, TurnType, type Gain, type Player } from '../../types/GameTypes'
+import { CustomEffect, GamePhase, GameState, TurnType, type Gain, type Player } from '../../types/GameTypes'
 import {
   getActiveIntrigueCardsForTurnView,
   getPlayAreaCardsForTurnView,
@@ -8,6 +8,7 @@ import {
   playAreaCardIdsWithPendingEffectChoice,
   playAreaIntrigueIdsWithPendingEffectChoice,
 } from '../../utils/playAreaDisplay'
+import { testOfHumanityOptions } from '../../utils/testOfHumanity'
 import { COMBAT_AREA_SEATS } from '../../data/boardMarkerAnchors'
 import { getLeaderImage, isUnassignedLeader } from '../../data/leaders'
 import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
@@ -21,6 +22,7 @@ import {
   BirdseyeDesktopControls,
   BirdseyeSeatGains,
   BirdseyeSeatPlayArea,
+  TestOfHumanityChoice,
   type BirdseyeSeatActions,
   type BirdseyeSeatMode,
 } from './CombatSeatTurnChrome'
@@ -294,6 +296,14 @@ export function readDesktopPlayAreaLayout(): DesktopPlayAreaLayout {
   }
 }
 
+export interface TestOfHumanitySeatPrompt {
+  onDiscard: (playerId: number) => void
+  onLoseTroop: (playerId: number) => void
+  selectingPlayerId: number | null
+  onSelectCard: (playerId: number, cardId: number) => void
+  onCancelSelect: () => void
+}
+
 export interface BirdseyeSeatGainsMap {
   [playerId: number]: Gain[]
 }
@@ -328,6 +338,8 @@ export interface CombatAreaClusterProps {
   /** Controlled desktop play-area orientation (App hides docked history when horizontal). */
   desktopPlayAreaLayout?: DesktopPlayAreaLayout
   onDesktopPlayAreaLayoutChange?: (layout: DesktopPlayAreaLayout) => void
+  /** Live Test of Humanity prompts. Null when that effect is not waiting on opponents. */
+  testOfHumanity?: TestOfHumanitySeatPrompt | null
 }
 
 const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
@@ -356,6 +368,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   specimenDeploy,
   desktopPlayAreaLayout: desktopPlayAreaLayoutProp,
   onDesktopPlayAreaLayoutChange,
+  testOfHumanity = null,
 }) => {
   const [detailPlayerId, setDetailPlayerId] = useState<number | null>(null)
   const [internalPlayAreaLayout, setInternalPlayAreaLayout] = useState<DesktopPlayAreaLayout>(
@@ -410,6 +423,22 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
     if (!player) return null
 
     const isActive = player.id === activePlayerId
+    const humanityOptions =
+      testOfHumanity &&
+      !birdseyeIsHistoryView &&
+      gameState?.currTurn?.opponentDiscardState?.effect === CustomEffect.TEST_OF_HUMANITY &&
+      gameState.currTurn.opponentDiscardState.remainingOpponents.includes(player.id)
+        ? testOfHumanityOptions(gameState, player)
+        : null
+    const humanityButtons =
+      humanityOptions && testOfHumanity ? (
+        <TestOfHumanityChoice
+          canDiscard={humanityOptions.canDiscard}
+          canLose={humanityOptions.canLose}
+          onDiscard={() => testOfHumanity.onDiscard(player.id)}
+          onLoseTroop={() => testOfHumanity.onLoseTroop(player.id)}
+        />
+      ) : null
     const seatGains = birdseyeGainsByPlayer?.[player.id] ?? []
     const compactConflictTitles =
       gameState?.phase === GamePhase.COMBAT_REWARDS ||
@@ -503,6 +532,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 compactConflictTitles={compactConflictTitles}
                 revealPooledTotals={isRevealSeat}
               />
+              {humanityButtons}
             </div>
           </div>
         </div>
@@ -581,7 +611,9 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 interactionsHostRef={birdseyeInteractionsHostRef}
                 {...seatDeploy}
               />
-            ) : null}
+            ) : (
+              humanityButtons
+            )}
           </div>
         </div>
       </div>
@@ -674,15 +706,32 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
         </div>
       </div>
 
-      {detailPlayer && (
-        <CombatPlayerDetailModal
-          key={detailPlayer.id}
-          player={detailPlayer}
-          gameState={gameState}
-          containerRef={modalContainerRef}
-          onClose={() => setDetailPlayerId(null)}
-        />
-      )}
+      {(() => {
+        const promptedPlayer =
+          testOfHumanity?.selectingPlayerId == null
+            ? null
+            : playerById.get(testOfHumanity.selectingPlayerId) ?? null
+        const modalPlayer = promptedPlayer ?? detailPlayer
+        if (!modalPlayer) return null
+        return (
+          <CombatPlayerDetailModal
+            key={promptedPlayer ? `discard-${modalPlayer.id}` : modalPlayer.id}
+            player={modalPlayer}
+            gameState={gameState}
+            containerRef={modalContainerRef}
+            onSelectDeckCard={
+              promptedPlayer && testOfHumanity
+                ? card => testOfHumanity.onSelectCard(promptedPlayer.id, card.id)
+                : undefined
+            }
+            onClose={
+              promptedPlayer && testOfHumanity
+                ? testOfHumanity.onCancelSelect
+                : () => setDetailPlayerId(null)
+            }
+          />
+        )
+      })()}
     </>
   )
 }

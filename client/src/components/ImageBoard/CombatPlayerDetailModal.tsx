@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, type RefObject } from 'react'
-import { GameState, Player } from '../../types/GameTypes'
+import { Card, GameState, Player } from '../../types/GameTypes'
 import { getLeaderImage } from '../../data/leaders'
 import { getTechTile } from '../../data/techTiles'
 import { listedPlayerName } from '../../utils/playerName'
@@ -33,6 +33,8 @@ interface CombatPlayerDetailModalProps {
   gameState?: GameState
   containerRef?: RefObject<HTMLElement | null>
   onClose: () => void
+  /** When set, only Hand & Deck is shown and a card click discards it. */
+  onSelectDeckCard?: (card: Card) => void
 }
 
 const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
@@ -40,6 +42,7 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
   gameState,
   containerRef,
   onClose,
+  onSelectDeckCard,
 }) => {
   const [activeTab, setActiveTab] = useState<DetailTab>('deck')
   const leaderImage = getLeaderImage(player.leader.name)
@@ -51,12 +54,14 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
   const pileCards =
     tab === 'deck' ? player.deck : tab === 'discard' ? player.discardPile : tab === 'trash' ? player.trash : []
 
-  const tabs: Array<{ id: DetailTab; count: number }> = [
-    { id: 'deck', count: player.deck.length },
-    { id: 'discard', count: player.discardPile.length },
-    { id: 'trash', count: player.trash.length },
-  ]
-  if (riseOfIx) tabs.push({ id: 'tech', count: ownedTech.length })
+  const tabs: Array<{ id: DetailTab; count: number }> = onSelectDeckCard
+    ? [{ id: 'deck', count: player.deck.length }]
+    : [
+        { id: 'deck', count: player.deck.length },
+        { id: 'discard', count: player.discardPile.length },
+        { id: 'trash', count: player.trash.length },
+      ]
+  if (riseOfIx && !onSelectDeckCard) tabs.push({ id: 'tech', count: ownedTech.length })
 
   const contentKey =
     tab === 'tech'
@@ -129,6 +134,9 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
           ) : null}
 
           <div className="combat-player-detail-sheet">
+          {onSelectDeckCard ? (
+            <p className="combat-player-detail-select-prompt">Choose a card to discard</p>
+          ) : null}
           <div className="combat-player-detail-tabs" role="tablist" aria-label="Player cards">
             {tabs.map(({ id, count }) => {
               const selected = tab === id
@@ -199,7 +207,11 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
                   </div>
                 )
               ) : (
-                <CardPileGrid cards={pileCards} emptyLabel={EMPTY_LABELS[tab]} />
+                <CardPileGrid
+                  cards={pileCards}
+                  emptyLabel={EMPTY_LABELS[tab]}
+                  onSelectCard={tab === 'deck' ? onSelectDeckCard : undefined}
+                />
               )}
             </div>
             <BirdseyeLaneScrollbar visible={scrollable} thumb={thumb} />

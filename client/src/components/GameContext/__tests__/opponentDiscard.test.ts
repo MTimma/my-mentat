@@ -79,16 +79,45 @@ function triggerMohiam(base?: GameState): GameState {
 }
 
 describe('Test of Humanity — opponent discard-or-lose-troop flow', () => {
-  it('claiming the custom effect initializes opponentDiscardState with the first opponent current', () => {
+  const tohId = imperiumCard('Test of Humanity').id
+
+  it('prompts every opponent who can discard or lose a troop, all at once', () => {
     const s = triggerTestOfHumanity()
     expect(s.currTurn?.opponentDiscardState).toEqual({
       effect: CustomEffect.TEST_OF_HUMANITY,
       remainingOpponents: [1, 2],
-      currentOpponent: 1,
+      currentOpponent: undefined,
       discardCounts: { 1: 0, 2: 0 },
+      sourceCardId: tohId,
+      sourceCardName: 'Test of Humanity',
     })
     // All non-disabled rewards were claimed before the custom effect.
     expect(s.pendingRewards.filter(r => !r.disabled)).toEqual([])
+  })
+
+  it('skips an opponent who has no cards and no deployed troops', () => {
+    const base = threePlayerState(undefined, p =>
+      p.id === 2 ? { ...p, deck: [], handCount: 0 } : p
+    )
+    const s = triggerTestOfHumanity(base)
+    expect(s.currTurn?.opponentDiscardState?.remainingOpponents).toEqual([1])
+    expect(s.currTurn?.opponentDiscardState?.currentOpponent).toBeUndefined()
+  })
+
+  it('keeps an opponent who has deployed troops but no cards', () => {
+    let base = threePlayerState(undefined, p =>
+      p.id === 2 ? { ...p, deck: [], handCount: 0 } : p
+    )
+    base = { ...base, combatTroops: { 2: 1 }, combatStrength: { 2: 2 } }
+    const s = triggerTestOfHumanity(base)
+    expect(s.currTurn?.opponentDiscardState?.remainingOpponents).toEqual([1, 2])
+  })
+
+  it('does not open a prompt when every opponent can do neither', () => {
+    const base = threePlayerState(undefined, p => ({ ...p, deck: [], handCount: 0 }))
+    const s = triggerTestOfHumanity(base)
+    expect(s.currTurn?.opponentDiscardState).toBeUndefined()
+    expect(s.canEndTurn).toBe(true)
   })
 
   it('END_TURN is blocked while opponentDiscardState exists', () => {
@@ -97,8 +126,10 @@ describe('Test of Humanity — opponent discard-or-lose-troop flow', () => {
     expect(after).toBe(s)
   })
 
-  it("OPPONENT_DISCARD_CHOICE 'loseTroop' removes a conflict troop back to the opponent's troop pool", () => {
+  it("OPPONENT_DISCARD_CHOICE 'loseTroop' removes a conflict troop to supply, not the garrison", () => {
     let s = triggerTestOfHumanity()
+    const supplyBefore = s.players[1].troopSupply ?? 0
+    const garrisonBefore = s.players[1].troops
     s = {
       ...s,
       combatTroops: { 1: 2 },
@@ -112,20 +143,51 @@ describe('Test of Humanity — opponent discard-or-lose-troop flow', () => {
       choice: 'loseTroop',
     })
 
-    // NOTE: current behavior — the lost troop returns to the opponent's troops pool
-    // (garrison/supply counter), it is not removed from the game.
     expect(after.combatTroops[1]).toBe(1)
     expect(after.combatStrength[1]).toBe(2)
-    expect(after.players[1].troops).toBe(9)
+    expect(after.players[1].troops).toBe(garrisonBefore)
+    expect(after.players[1].troopSupply).toBe(supplyBefore + 1)
     expect(after.players[1].combatValue).toBe(2)
-    // Opponent 1 is done; flow advances to opponent 2.
+    expect(after.gains).toContainEqual({
+      round: s.currentRound,
+      playerId: 1,
+      sourceId: tohId,
+      name: 'Test of Humanity',
+      amount: -1,
+      type: RewardType.TROOPS,
+      source: GainSource.CARD,
+    })
+    // Opponent 1 is done; opponent 2 is still prompted on this same turn.
     expect(after.currTurn?.opponentDiscardState).toEqual({
       effect: CustomEffect.TEST_OF_HUMANITY,
       remainingOpponents: [2],
-      currentOpponent: 2,
+      currentOpponent: undefined,
       discardCounts: { 1: 0, 2: 0 },
+      sourceCardId: tohId,
+      sourceCardName: 'Test of Humanity',
     })
     expect(after.canEndTurn).toBe(false)
+  })
+
+  it('losing the last deployed troop sets strength to 0 and does not garrison it', () => {
+    let s = triggerTestOfHumanity()
+    const garrisonBefore = s.players[1].troops
+    s = {
+      ...s,
+      combatTroops: { 1: 1 },
+      combatStrength: { 1: 5 },
+      players: s.players.map(p => (p.id === 1 ? { ...p, combatValue: 5 } : p)),
+    }
+    const after = applyGameAction(s, {
+      type: 'OPPONENT_DISCARD_CHOICE',
+      playerId: 0,
+      opponentId: 1,
+      choice: 'loseTroop',
+    })
+    expect(after.combatTroops[1]).toBe(0)
+    expect(after.combatStrength[1]).toBe(0)
+    expect(after.players[1].troops).toBe(garrisonBefore)
+    expect(after.players[1].combatValue).toBe(0)
   })
 
   it("'loseTroop' with no troops in the conflict leaves state unchanged", () => {
@@ -164,8 +226,9 @@ describe('Test of Humanity — opponent discard-or-lose-troop flow', () => {
     expect(after.gains).toContainEqual({
       round: s.currentRound,
       playerId: 1,
-      sourceId: 101,
-      name: 'stub-101',
+      sourceId: tohId,
+      cardId: 101,
+      name: 'Test of Humanity|stub-101',
       amount: -1,
       type: RewardType.DISCARD,
       source: GainSource.CARD,
@@ -174,8 +237,10 @@ describe('Test of Humanity — opponent discard-or-lose-troop flow', () => {
     expect(after.currTurn?.opponentDiscardState).toEqual({
       effect: CustomEffect.TEST_OF_HUMANITY,
       remainingOpponents: [2],
-      currentOpponent: 2,
+      currentOpponent: undefined,
       discardCounts: { 1: 1, 2: 0 },
+      sourceCardId: tohId,
+      sourceCardName: 'Test of Humanity',
     })
     expect(after.canEndTurn).toBe(false)
 
@@ -192,13 +257,18 @@ describe('Test of Humanity — opponent discard-or-lose-troop flow', () => {
     expect(after.canEndTurn).toBe(true)
   })
 
-  it('rejects discards out of turn order, by a non-active player, or for unknown cards', () => {
-    const s = triggerTestOfHumanity() // currentOpponent is 1
+  it('lets either remaining opponent discard, and rejects a non-active player or an unknown card', () => {
+    const s = triggerTestOfHumanity()
 
-    // Opponent 2 cannot discard before opponent 1.
-    expect(
-      applyGameAction(s, { type: 'OPPONENT_DISCARD_CARD', playerId: 0, opponentId: 2, cardId: 201 })
-    ).toBe(s)
+    const opponent2First = applyGameAction(s, {
+      type: 'OPPONENT_DISCARD_CARD',
+      playerId: 0,
+      opponentId: 2,
+      cardId: 201,
+    })
+    expect(opponent2First.players[2].discardPile.map(c => c.id)).toEqual([201])
+    expect(opponent2First.currTurn?.opponentDiscardState?.remainingOpponents).toEqual([1])
+
     // Acting player must be the active player.
     expect(
       applyGameAction(s, { type: 'OPPONENT_DISCARD_CARD', playerId: 1, opponentId: 1, cardId: 101 })
@@ -223,6 +293,7 @@ describe('Test of Humanity — opponent discard-or-lose-troop flow', () => {
     expect(after.players[1].handCount).toBe(2)
     expect(after.players[1].discardPile.map(c => c.id)).toEqual([103])
     expect(after.currTurn?.opponentDiscardState?.discardCounts).toEqual({ 1: 1, 2: 0 })
+    expect(after.currTurn?.opponentDiscardState?.currentOpponent).toBeUndefined()
   })
 })
 

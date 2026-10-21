@@ -167,6 +167,13 @@ export type TurnControlsHandle = {
 }
 
 /** Rewards that require a tap / modal / board step (not plain +resource claims), e.g. The Voice. */
+function isFreighterMoveChoice(choice: FixedOptionsChoice): boolean {
+  return (
+    choice.options.length > 0 &&
+    choice.options.every(option => freighterArrowDirectionFromCustom(option.reward.custom) != null)
+  )
+}
+
 function rewardNeedsInteractionHighlight(reward: Reward): boolean {
   if (reward.custom) {
     return !AUTO_APPLIED_CUSTOM_EFFECTS.includes(reward.custom)
@@ -1754,12 +1761,14 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     }
 
     const showOrBetween = fixedChoice.options.length > 1
+    const freighterMoveChoice = isFreighterMoveChoice(fixedChoice)
     return (
       <div
         className={[
           'fixed-choice-options',
           `fixed-choice-options--${variant}`,
           showOrBetween ? 'fixed-choice-options--or' : '',
+          freighterMoveChoice ? 'fixed-choice-options--freighter' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -1781,7 +1790,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
             <Fragment key={`${fixedChoice.id}-${index}`}>
               {showOrBetween && index > 0 && (
                 <span className="or-separator" aria-hidden="true">
-                  OR
+                  {freighterMoveChoice ? 'or' : 'OR'}
                 </span>
               )}
               <button
@@ -2119,6 +2128,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 reward.isTrash ? 'trash-reward' : '',
                 reward.reward.custom === CustomEffect.POWER_PLAY ? 'effect-btn--power-play' : '',
                 reward.reward.custom === CustomEffect.FOLDSPACE_DRAW ? 'effect-btn--foldspace-draw' : '',
+                reward.reward.custom === CustomEffect.TEST_OF_HUMANITY ? 'effect-btn--test-of-humanity' : '',
                 needsInputHighlight ? 'effect-btn--needs-input' : '',
                 frameOnly ? 'effect-btn--overlay-frame' : '',
               ]
@@ -2148,6 +2158,16 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 ? null
                 : reward.isTrash
                   ? renderTrashRewardButtonContent(reward, variant)
+                  : reward.reward.custom === CustomEffect.TEST_OF_HUMANITY
+                    ? (
+                      <span className="test-of-humanity-copy">
+                        <span>Each opponent</span>
+                        <span>chooses:</span>
+                        <span>Discard a card</span>
+                        <span className="test-of-humanity-or">OR</span>
+                        <span>Lose a deployed troop</span>
+                      </span>
+                    )
                   : renderRewardContent(reward)}
             </button>
           )
@@ -2315,6 +2335,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
             variant === 'compact' || isPlayAreaInlineTechOrSignetChoice(fixedChoice)
           if (useInlineFixedChoice) {
             const isInlineOrChoice = fixedChoice.options.length > 1
+            const freighterMoveChoice = isFreighterMoveChoice(fixedChoice)
             const defaultOrPrompt =
               fixedChoice.prompt === 'Choose one reward' || fixedChoice.prompt === 'Choose one option'
             return (
@@ -2323,6 +2344,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 className={[
                   'card-effects-inline-choice',
                   isInlineOrChoice ? 'card-effects-inline-choice--or' : '',
+                  freighterMoveChoice ? 'card-effects-inline-choice--freighter' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -2950,6 +2972,13 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
             className={[
               'effect-chip-group',
               card.source.type === GainSource.SHIPPING_TRACK ? 'effect-chip-group--shipping' : '',
+              card.choices.some(
+                choice =>
+                  choice.type === ChoiceType.FIXED_OPTIONS &&
+                  isFreighterMoveChoice(choice as FixedOptionsChoice)
+              )
+                ? 'effect-chip-group--freighter'
+                : '',
             ]
               .filter(Boolean)
               .join(' ')}
@@ -2983,6 +3012,8 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
   const renderOpponentDiscardPanel = () => {
     const effect = opponentDiscardState?.effect
     if (!effect) return null
+    // Choices sit under each other leader, not in this panel.
+    if (effect === CustomEffect.TEST_OF_HUMANITY) return null
     
     // For REVEREND_MOTHER_MOHIAM, show player selection if no current opponent selected
     if (effect === CustomEffect.REVEREND_MOTHER_MOHIAM && !opponentDiscardState?.currentOpponent) {
