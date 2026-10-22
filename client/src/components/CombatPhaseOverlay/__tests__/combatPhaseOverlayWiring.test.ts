@@ -67,6 +67,7 @@ describe('Combat phase overlay wiring', () => {
   })
 
   it('uses explicit desktop leader portrait sizes in rank chips, not board-strip cqh', () => {
+    expect(overlay).toContain('showPortrait')
     expect(css).toMatch(
       /\.combat-phase-rank \.combat-rank-strip__leader \{[\s\S]*?width: 48px/
     )

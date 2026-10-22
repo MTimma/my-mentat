@@ -290,6 +290,7 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
                     entry={entry}
                     riseOfIx={riseOfIx}
                     isActive={isActive}
+                    showPortrait
                   />
                   {showDetails ? (
                     <div className="combat-phase-rank-details">

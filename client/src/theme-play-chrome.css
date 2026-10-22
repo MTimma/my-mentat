@@ -30,6 +30,12 @@
   --color-arrakis-earth-glow-soft: var(--chrome-accent-muted);
   --color-arrakis-earth-footer-glow: var(--chrome-accent-subtle);
   --color-text-on-parchment: var(--chrome-cta-text);
+
+  /* Influence cubes and other board markers. Same hex as playerColorHex(). */
+  --player-marker-red: #d32f2f;
+  --player-marker-green: #388e3c;
+  --player-marker-yellow: #e6b800;
+  --player-marker-blue: #1976d2;
 }
 
 html[data-theme='void'] {

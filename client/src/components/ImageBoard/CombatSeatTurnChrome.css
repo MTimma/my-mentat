@@ -100,10 +100,6 @@
   color: var(--chrome-cta-text, #fff8e8);
 }
 
-.birdseye-seat-btn--intrigue {
-  border-color: rgba(143, 97, 188, 0.55);
-}
-
 .birdseye-seat-btn--intrigue,
 .birdseye-seat-btn--tech {
   min-width: 2.7rem;

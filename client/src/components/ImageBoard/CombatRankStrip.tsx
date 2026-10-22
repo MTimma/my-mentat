@@ -5,6 +5,47 @@ import { buildCombatRankSlots, type CombatRankEntry } from '../../utils/combatRa
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import './CombatRankStrip.css'
 
+function RankStrength({ total }: { total: number }) {
+  return (
+    <span className="combat-rank-strip__strength" aria-hidden="true">
+      <span className="combat-rank-strip__dagger">
+        <img src="/icon/sword.png" alt="" className="combat-rank-strip__icon" />
+      </span>
+      <span className="combat-rank-strip__value combat-rank-strip__value--strength">{total}</span>
+    </span>
+  )
+}
+
+function RankForces({
+  troops,
+  dreadnoughts,
+  riseOfIx,
+  playerId,
+}: {
+  troops: number
+  dreadnoughts: number
+  riseOfIx: boolean
+  playerId: number
+}) {
+  return (
+    <span className="combat-rank-strip__forces" aria-hidden="true">
+      <span className="combat-rank-strip__stat">
+        <img src="/icon/troop.png" alt="" className="combat-rank-strip__icon" />
+        <span className="combat-rank-strip__value">{troops}</span>
+      </span>
+      {riseOfIx ? (
+        <span className="combat-rank-strip__stat">
+          <DreadnoughtIcon
+            playerId={playerId}
+            className="combat-rank-strip__icon combat-rank-strip__icon--dreadnought"
+          />
+          <span className="combat-rank-strip__value">{dreadnoughts}</span>
+        </span>
+      ) : null}
+    </span>
+  )
+}
+
 export interface CombatRankStripProps {
   players: Player[]
   troops: Record<number, number>
@@ -26,9 +67,11 @@ export const CombatRankChip: React.FC<{
   entry: CombatRankEntry
   riseOfIx: boolean
   isActive: boolean
-}> = ({ entry, riseOfIx, isActive }) => {
+  /** Board strip identifies the player by marker color. The combat-phase modal keeps the portrait. */
+  showPortrait?: boolean
+}> = ({ entry, riseOfIx, isActive, showPortrait = false }) => {
   const { player, place, troops: troopCount, dreadnoughts, strength: total } = entry
-  const iconPath = getLeaderIconPath(player.leader.name)
+  const iconPath = showPortrait ? getLeaderIconPath(player.leader.name) : undefined
   return (
     <div
       className={[
@@ -45,41 +88,31 @@ export const CombatRankChip: React.FC<{
       data-place={place}
     >
       <span className="combat-rank-strip__body" aria-hidden="true">
-        <span className={`combat-rank-strip__leader leader-avatar-btn ${player.color}`}>
-          {iconPath ? (
-            <img
-              src={iconPath}
-              alt=""
-              className="combat-rank-strip__leader-icon"
-              draggable={false}
-            />
-          ) : (
-            <span className="combat-rank-strip__leader-fallback">
-              {player.leader.name.charAt(0)}
-            </span>
-          )}
-        </span>
-        <span className="combat-rank-strip__strength">
-          <img src="/icon/sword.png" alt="" className="combat-rank-strip__icon" />
-          <span className="combat-rank-strip__value combat-rank-strip__value--strength">{total}</span>
-        </span>
-      </span>
-      <span className="combat-rank-strip__rule" aria-hidden="true" />
-      <span className="combat-rank-strip__forces" aria-hidden="true">
-        <span className="combat-rank-strip__stat">
-          <img src="/icon/troop.png" alt="" className="combat-rank-strip__icon" />
-          <span className="combat-rank-strip__value">{troopCount}</span>
-        </span>
-        {riseOfIx ? (
-          <span className="combat-rank-strip__stat">
-            <DreadnoughtIcon
-              playerId={player.id}
-              className="combat-rank-strip__icon combat-rank-strip__icon--dreadnought"
-            />
-            <span className="combat-rank-strip__value">{dreadnoughts}</span>
+        {showPortrait ? (
+          <span className={`combat-rank-strip__leader leader-avatar-btn ${player.color}`}>
+            {iconPath ? (
+              <img
+                src={iconPath}
+                alt=""
+                className="combat-rank-strip__leader-icon"
+                draggable={false}
+              />
+            ) : (
+              <span className="combat-rank-strip__leader-fallback">
+                {player.leader.name.charAt(0)}
+              </span>
+            )}
           </span>
         ) : null}
+        <RankStrength total={total} />
       </span>
+      <span className="combat-rank-strip__rule" aria-hidden="true" />
+      <RankForces
+        troops={troopCount}
+        dreadnoughts={dreadnoughts}
+        riseOfIx={riseOfIx}
+        playerId={player.id}
+      />
     </div>
   )
 }
@@ -88,86 +121,56 @@ function memberForcesLabel(entry: CombatRankEntry, riseOfIx: boolean): string {
   return `${entry.troops} troops${riseOfIx ? `, ${entry.dreadnoughts} dreadnoughts` : ''}`
 }
 
-/** One reward box. Tied players stack inside it and share one strength. */
+/** One reward box. Tied players each get one horizontal line: troops, then strength. */
 const BoardRankBox: React.FC<{
   entries: CombatRankEntry[]
   riseOfIx: boolean
   activePlayerId: number
 }> = ({ entries, riseOfIx, activePlayerId }) => {
   const place = entries[0]?.place ?? 0
-  const total = entries[0]?.strength ?? 0
-  const tied = entries.length > 1
-  const solo = entries.length === 1 ? entries[0] : null
   const title = entries
-    .map(entry => `${entry.player.leader.name}: ${memberForcesLabel(entry, riseOfIx)}`)
+    .map(
+      entry =>
+        `${entry.player.leader.name}: ${memberForcesLabel(entry, riseOfIx)}, ${entry.strength} strength`
+    )
     .join('; ')
   return (
     <div
       className={[
         'combat-rank-strip__chip',
-        solo ? `combat-rank-strip__chip--${solo.player.color}` : '',
-        tied ? 'combat-rank-strip__chip--tied' : '',
+        'combat-rank-strip__chip--tied',
         entries.some(entry => entry.player.id === activePlayerId)
           ? 'combat-rank-strip__chip--active'
           : '',
       ]
         .filter(Boolean)
         .join(' ')}
-      title={`${place}. ${title}, ${total} strength`}
+      title={`${place}. ${title}`}
       data-place={place}
       data-tie-count={entries.length}
     >
-      <span className="combat-rank-strip__strength" aria-hidden="true">
-        <img src="/icon/sword.png" alt="" className="combat-rank-strip__icon" />
-        <span className="combat-rank-strip__value combat-rank-strip__value--strength">{total}</span>
-      </span>
       <span className="combat-rank-strip__members">
-        {entries.map(entry => {
-          const iconPath = getLeaderIconPath(entry.player.leader.name)
-          return (
-            <span
-              key={entry.player.id}
-              className={[
-                'combat-rank-strip__member',
-                `combat-rank-strip__member--${entry.player.color}`,
-                entry.player.id === activePlayerId ? 'combat-rank-strip__member--active' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              data-player-id={entry.player.id}
-            >
-              <span className={`combat-rank-strip__leader leader-avatar-btn ${entry.player.color}`}>
-                {iconPath ? (
-                  <img
-                    src={iconPath}
-                    alt=""
-                    className="combat-rank-strip__leader-icon"
-                    draggable={false}
-                  />
-                ) : (
-                  <span className="combat-rank-strip__leader-fallback">
-                    {entry.player.leader.name.charAt(0)}
-                  </span>
-                )}
-              </span>
-              <span className="combat-rank-strip__forces" aria-hidden="true">
-                <span className="combat-rank-strip__stat">
-                  <img src="/icon/troop.png" alt="" className="combat-rank-strip__icon" />
-                  <span className="combat-rank-strip__value">{entry.troops}</span>
-                </span>
-                {riseOfIx ? (
-                  <span className="combat-rank-strip__stat">
-                    <DreadnoughtIcon
-                      playerId={entry.player.id}
-                      className="combat-rank-strip__icon combat-rank-strip__icon--dreadnought"
-                    />
-                    <span className="combat-rank-strip__value">{entry.dreadnoughts}</span>
-                  </span>
-                ) : null}
-              </span>
-            </span>
-          )
-        })}
+        {entries.map(entry => (
+          <span
+            key={entry.player.id}
+            className={[
+              'combat-rank-strip__member',
+              `combat-rank-strip__member--${entry.player.color}`,
+              entry.player.id === activePlayerId ? 'combat-rank-strip__member--active' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            data-player-id={entry.player.id}
+          >
+            <RankForces
+              troops={entry.troops}
+              dreadnoughts={entry.dreadnoughts}
+              riseOfIx={riseOfIx}
+              playerId={entry.player.id}
+            />
+            <RankStrength total={entry.strength} />
+          </span>
+        ))}
       </span>
     </div>
   )

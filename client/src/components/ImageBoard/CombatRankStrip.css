@@ -32,7 +32,7 @@
   font-size: clamp(9px, 1.55cqw, 14px);
   line-height: 1.05;
   color: var(--chrome-text, #e0d4c0);
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 2px #000;
+  text-shadow: none;
 }
 
 /* Four equal boxes, including empty shadows. Place 1 is the top slot. */
@@ -61,7 +61,7 @@
   box-sizing: border-box;
 }
 
-/* Same wash as the gains column: player tint over the gains panel (0.38 black). */
+/* Marker fill. --player-marker-* is the influence-cube color from theme-play-chrome.css. */
 .combat-rank-strip--board .combat-rank-strip__chip--red,
 .combat-rank-strip--board .combat-rank-strip__member--red,
 .combat-rank-strip--board .combat-rank-strip__chip--green,
@@ -70,55 +70,73 @@
 .combat-rank-strip--board .combat-rank-strip__member--yellow,
 .combat-rank-strip--board .combat-rank-strip__chip--blue,
 .combat-rank-strip--board .combat-rank-strip__member--blue {
-  background:
-    linear-gradient(var(--player-tint, transparent), var(--player-tint, transparent)),
-    rgba(0, 0, 0, 0.38);
-  color: var(--chrome-text, #e0d4c0);
-  border-color: var(--chrome-border-accent-strong, rgba(156, 120, 78, 0.45));
+  --player-marker-ink: #fff8f4;
+  /* Darker than the board cubes, same direction as the turn-history wash over the dark panel. */
+  background: color-mix(in srgb, var(--player-marker) 46%, #16130f);
+  color: var(--player-marker-ink);
+  border-color: color-mix(in srgb, var(--player-marker) 28%, #16130f);
+  box-shadow: none;
 }
 
-/* Short band: face + strength on top, troops underneath. */
+.combat-rank-strip--board .combat-rank-strip__chip--red,
+.combat-rank-strip--board .combat-rank-strip__member--red {
+  --player-marker: var(--player-marker-red);
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip--green,
+.combat-rank-strip--board .combat-rank-strip__member--green {
+  --player-marker: var(--player-marker-green);
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip--yellow,
+.combat-rank-strip--board .combat-rank-strip__member--yellow {
+  --player-marker: var(--player-marker-yellow);
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip--blue,
+.combat-rank-strip--board .combat-rank-strip__member--blue {
+  --player-marker: var(--player-marker-blue);
+}
+
+/* Solo box: marker color is the player. Strength on top, troops underneath. */
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied):not(.combat-rank-strip__chip--empty) {
   padding: 2px 2px 1px;
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__body {
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
   padding: 0;
   gap: 0.06em;
-  /* Portrait + sword size against this row, not the full chip. */
   container-type: size;
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__forces {
-  flex: 0 0 20cqh;
-  flex-basis: 20cqh;
+  flex: 0 0 42cqh;
+  flex-basis: 42cqh;
+  padding-bottom: 0;
+  align-items: center;
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__strength {
-  gap: 0;
+  gap: 0.04em;
   margin-left: 0;
   flex-shrink: 1;
   min-width: 0;
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__strength .combat-rank-strip__icon {
-  width: 42cqh;
-  height: 42cqh;
+  width: 68cqh;
+  height: 68cqh;
 }
 
+/* Tie: one full-width line per player. The 1px gap is the split between colors. */
 .combat-rank-strip--board .combat-rank-strip__chip--tied {
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(8, 6, 4, 0.88);
   color: #fff;
-  padding: 1px 2px;
-  gap: 1px;
-}
-
-.combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__strength {
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 2px;
-  color: #fff;
+  padding: 0;
+  gap: 0;
+  box-shadow: none;
 }
 
 .combat-rank-strip--board .combat-rank-strip__members {
@@ -128,44 +146,105 @@
   min-height: 0;
   min-width: 0;
   gap: 1px;
+  background: rgba(0, 0, 0, 0.72);
 }
 
 .combat-rank-strip--board .combat-rank-strip__member {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 0.08em;
+  justify-content: space-between;
+  gap: 1px;
   flex: 1 1 0;
   min-width: 0;
   min-height: 0;
-  border-radius: 2px;
+  border: none;
+  border-radius: 0;
   padding: 0 1px;
   container-type: size;
 }
 
-.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__member {
-  background: transparent;
-}
-
-.combat-rank-strip--board .combat-rank-strip__member .combat-rank-strip__leader {
-  width: 78cqh;
-  height: 78cqh;
-  min-width: 78cqh;
-  min-height: 78cqh;
+.combat-rank-strip--board .combat-rank-strip__member--active {
+  box-shadow: inset 0 0 0 1px var(--play-target-highlight, #ffd700);
 }
 
 .combat-rank-strip--board .combat-rank-strip__member .combat-rank-strip__forces {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   flex-basis: auto;
-  height: auto;
+  height: 100%;
+  min-width: 0;
   padding: 0;
-  gap: 0.06em;
+  gap: 1px;
+  justify-content: flex-start;
 }
 
-.combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__strength .combat-rank-strip__icon {
-  width: 22cqh;
-  height: 22cqh;
+.combat-rank-strip--board .combat-rank-strip__member .combat-rank-strip__strength {
+  flex: 0 0 auto;
+  margin-left: auto;
+  gap: 0;
+}
+
+.combat-rank-strip--board .combat-rank-strip__member .combat-rank-strip__strength .combat-rank-strip__icon {
+  width: 78cqh;
+  height: 78cqh;
+}
+
+.combat-rank-strip--board .combat-rank-strip__member .combat-rank-strip__icon,
+.combat-rank-strip--board .combat-rank-strip__member .combat-rank-strip__icon--dreadnought.dreadnought-icon,
+.combat-rank-strip--board .combat-rank-strip__member .combat-rank-strip__icon--dreadnought.dreadnought-icon--card {
+  width: 56cqh;
+  height: 56cqh;
+  min-width: 0;
+  min-height: 0;
+}
+
+.combat-rank-strip--board .combat-rank-strip__member .combat-rank-strip__value,
+.combat-rank-strip--board .combat-rank-strip__member .combat-rank-strip__value--strength {
+  font-size: 58cqh;
+  min-width: 0;
+  font-weight: 800;
+}
+
+/* Shared box: stats a bit smaller, dagger much smaller than a solo box. */
+.combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__member .combat-rank-strip__icon,
+.combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__member .combat-rank-strip__icon--dreadnought.dreadnought-icon,
+.combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__member .combat-rank-strip__icon--dreadnought.dreadnought-icon--card {
+  width: 46cqh;
+  height: 46cqh;
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__member .combat-rank-strip__value,
+.combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__member .combat-rank-strip__value--strength {
+  font-size: 48cqh;
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__member .combat-rank-strip__strength .combat-rank-strip__icon {
+  width: 40cqh;
+  height: 40cqh;
+}
+
+/* Three or four in one box: every icon and number shrinks further. */
+.combat-rank-strip--board .combat-rank-strip__chip--tied[data-tie-count='3'] .combat-rank-strip__member .combat-rank-strip__icon,
+.combat-rank-strip--board .combat-rank-strip__chip--tied[data-tie-count='4'] .combat-rank-strip__member .combat-rank-strip__icon,
+.combat-rank-strip--board .combat-rank-strip__chip--tied[data-tie-count='3'] .combat-rank-strip__member .combat-rank-strip__icon--dreadnought.dreadnought-icon,
+.combat-rank-strip--board .combat-rank-strip__chip--tied[data-tie-count='4'] .combat-rank-strip__member .combat-rank-strip__icon--dreadnought.dreadnought-icon,
+.combat-rank-strip--board .combat-rank-strip__chip--tied[data-tie-count='3'] .combat-rank-strip__member .combat-rank-strip__icon--dreadnought.dreadnought-icon--card,
+.combat-rank-strip--board .combat-rank-strip__chip--tied[data-tie-count='4'] .combat-rank-strip__member .combat-rank-strip__icon--dreadnought.dreadnought-icon--card {
+  width: 36cqh;
+  height: 36cqh;
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip--tied[data-tie-count='3'] .combat-rank-strip__member .combat-rank-strip__value,
+.combat-rank-strip--board .combat-rank-strip__chip--tied[data-tie-count='4'] .combat-rank-strip__member .combat-rank-strip__value,
+.combat-rank-strip--board .combat-rank-strip__chip--tied[data-tie-count='3'] .combat-rank-strip__member .combat-rank-strip__value--strength,
+.combat-rank-strip--board .combat-rank-strip__chip--tied[data-tie-count='4'] .combat-rank-strip__member .combat-rank-strip__value--strength {
+  font-size: 38cqh;
+}
+
+.combat-rank-strip--board .combat-rank-strip__chip--tied[data-tie-count='3'] .combat-rank-strip__member .combat-rank-strip__strength .combat-rank-strip__icon,
+.combat-rank-strip--board .combat-rank-strip__chip--tied[data-tie-count='4'] .combat-rank-strip__member .combat-rank-strip__strength .combat-rank-strip__icon {
+  width: 28cqh;
+  height: 28cqh;
 }
 
 .combat-rank-strip__chip {
@@ -209,12 +288,12 @@
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip--empty {
-  background: rgba(8, 10, 14, 0.42);
-  border: 1px dashed rgba(224, 212, 192, 0.62);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.28);
+  background: rgba(8, 10, 14, 0.28);
+  border: 1px dashed rgba(224, 212, 192, 0.45);
+  box-shadow: none;
 }
 
-/* Top zone: square portrait (main) + total combat to the right. */
+/* Top zone: combat strength. Board chips identify the player by marker color. */
 .combat-rank-strip__body {
   display: flex;
   flex-direction: row;
@@ -246,14 +325,9 @@
   pointer-events: none;
 }
 
-.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__leader {
-  /* Fill upper-left of the body row. */
-  width: 92cqh;
-  height: 92cqh;
-  min-width: 92cqh;
-  min-height: 92cqh;
-  margin: 0;
-  align-self: flex-start;
+.combat-rank-strip--board .combat-rank-strip__chip--active:not(.combat-rank-strip__chip--empty) {
+  border-color: var(--play-target-highlight, #ffd700);
+  box-shadow: none;
 }
 
 .combat-rank-strip__leader-icon,
@@ -290,12 +364,42 @@
   min-width: 0;
 }
 
+.combat-rank-strip--board .combat-rank-strip__dagger {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.combat-rank-strip--board .combat-rank-strip__dagger::before {
+  content: '';
+  position: absolute;
+  /* One quarter smaller than the previous plate. The icon size stays on the img. */
+  inset: 3.5%;
+  border-radius: 2px;
+  background: linear-gradient(
+    to bottom right,
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(0, 0, 0, 0.88) 52%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.combat-rank-strip--board .combat-rank-strip__dagger .combat-rank-strip__icon {
+  position: relative;
+  z-index: 1;
+}
+
 .combat-rank-strip__strength .combat-rank-strip__icon {
   width: 30cqh;
   height: 30cqh;
   object-fit: contain;
   flex-shrink: 0;
-  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
+  filter: none;
 }
 
 .combat-rank-strip__value--strength {
@@ -315,11 +419,13 @@
 }
 
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__rule {
-  margin: 1cqh 0;
+  margin: 0 0 1cqh;
+  background: color-mix(in srgb, var(--player-marker-ink, #fff) 42%, transparent);
 }
 
-.combat-rank-strip--board .combat-rank-strip__chip--tied .combat-rank-strip__value--strength {
-  font-size: clamp(10px, 28cqh, 20px);
+.combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__forces .combat-rank-strip__value {
+  font-size: 28cqh;
+  font-weight: 800;
 }
 
 .combat-rank-strip__rule {
@@ -361,9 +467,15 @@
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
 }
 
+.combat-rank-strip--board .combat-rank-strip__forces .combat-rank-strip__icon,
+.combat-rank-strip--board .combat-rank-strip__icon--dreadnought.dreadnought-icon,
+.combat-rank-strip--board .combat-rank-strip__icon--dreadnought.dreadnought-icon--card {
+  filter: none;
+}
+
 .combat-rank-strip--board .combat-rank-strip__chip:not(.combat-rank-strip__chip--tied) .combat-rank-strip__forces .combat-rank-strip__icon {
-  width: 20cqh;
-  height: 22cqh;
+  width: 30cqh;
+  height: 30cqh;
 }
 
 /* Beat DreadnoughtIcon --card clamp(14px) so RoI dreads fit a 4-chip ~360px row. */

@@ -185,8 +185,7 @@ export const COMBAT_RANK_STRIP_RECT = {
 /**
  * Logging layout. One conflict card covers both piles, the sand above them,
  * and the Round Start … Recall text. Stops just before the Ix panel (left 60).
- * 1st/2nd/3rd placements share that height on the card's right edge;
- * 4th is the same band below the card.
+ * Rank boxes start with the card and run down to just inside the board bottom.
  */
 export const PLAY_CONFLICT_CARD_RECT = {
   left: CONFLICT_CARD_RECT.left -3,
@@ -199,7 +198,7 @@ export const PLAY_COMBAT_RANK_STRIP_RECT = {
   left: PLAY_CONFLICT_CARD_RECT.left + PLAY_CONFLICT_CARD_RECT.width,
   top: PLAY_CONFLICT_CARD_RECT.top,
   width: 12,
-  height: 36,
+  height: 33,
 } as const
 
 /** Effect-retreat dock vertical anchor (inner % Y); X is in App.css `.effect-retreat-troop-dock__anchor`. */

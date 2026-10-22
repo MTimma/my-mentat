@@ -81,7 +81,7 @@
 <body>
   <div class="toolbar">
     <button type="button" id="theme-toggle" aria-pressed="false">Theme: void</button>
-    <span>Chip fill/border follow --chrome-* (void sand / blueish steel). Podium 1/2/3 stay metal.</span>
+    <span>Player identity is the board-marker color (--player-marker-*). Ties split one line per player.</span>
   </div>
   <div class="zoom">
     <h2>Vertical column · 11×40% right of conflict cards · 4 slots · place 1 on top</h2>
@@ -97,87 +97,68 @@
       role="list"
     >
       <div class="combat-rank-strip__slot combat-rank-strip__slot--place-4" data-slot-place="4" role="listitem">
-        <span class="combat-rank-strip__slot-label combat-rank-strip__slot-label--4">4</span>
-        <div class="combat-rank-strip__chip combat-rank-strip__chip--yellow" data-place="4">
-          <span class="combat-rank-strip__body">
-            <span class="combat-rank-strip__leader leader-avatar-btn yellow">
-              <img src="/leaders/icons/helena-head.avif" alt="" class="combat-rank-strip__leader-icon" />
-            </span>
-            <span class="combat-rank-strip__strength">
-              <img src="/icon/sword.png" alt="" class="combat-rank-strip__icon" />
-              <span class="combat-rank-strip__value combat-rank-strip__value--strength">2</span>
-            </span>
-          </span>
-          <span class="combat-rank-strip__rule"></span>
-          <span class="combat-rank-strip__forces">
-            <span class="combat-rank-strip__stat">
-              <img src="/icon/troop.png" alt="" class="combat-rank-strip__icon" />
-              <span class="combat-rank-strip__value">1</span>
-            </span>
-            <span class="combat-rank-strip__stat">
-              <img src="/icon/dreadnought_card.png" alt="" class="combat-rank-strip__icon combat-rank-strip__icon--dreadnought dreadnought-icon dreadnought-icon--card" />
-              <span class="combat-rank-strip__value">0</span>
-            </span>
-          </span>
-        </div>
+        <div class="combat-rank-strip__chip combat-rank-strip__chip--empty"></div>
       </div>
       <div class="combat-rank-strip__slot combat-rank-strip__slot--place-3" data-slot-place="3" role="listitem">
-        <span class="combat-rank-strip__slot-label combat-rank-strip__slot-label--3">3</span>
-        <div class="combat-rank-strip__chip combat-rank-strip__chip--blue" data-place="3">
-          <span class="combat-rank-strip__body">
-            <span class="combat-rank-strip__leader leader-avatar-btn blue">
-              <img src="/leaders/icons/paul-head.avif" alt="" class="combat-rank-strip__leader-icon" />
+        <div class="combat-rank-strip__chip combat-rank-strip__chip--tied" data-place="3" data-tie-count="3">
+          <span class="combat-rank-strip__members">
+            <span class="combat-rank-strip__member combat-rank-strip__member--green" data-player-id="1">
+              <span class="combat-rank-strip__forces">
+                <span class="combat-rank-strip__stat">
+                  <img src="/icon/troop.png" alt="" class="combat-rank-strip__icon" />
+                  <span class="combat-rank-strip__value">2</span>
+                </span>
+                <span class="combat-rank-strip__stat">
+                  <img src="/icon/dreadnought_card.png" alt="" class="combat-rank-strip__icon combat-rank-strip__icon--dreadnought dreadnought-icon dreadnought-icon--card" />
+                  <span class="combat-rank-strip__value">1</span>
+                </span>
+              </span>
+              <span class="combat-rank-strip__strength">
+                <img src="/icon/sword.png" alt="" class="combat-rank-strip__icon" />
+                <span class="combat-rank-strip__value combat-rank-strip__value--strength">6</span>
+              </span>
             </span>
-            <span class="combat-rank-strip__strength">
-              <img src="/icon/sword.png" alt="" class="combat-rank-strip__icon" />
-              <span class="combat-rank-strip__value combat-rank-strip__value--strength">7</span>
+            <span class="combat-rank-strip__member combat-rank-strip__member--yellow" data-player-id="2">
+              <span class="combat-rank-strip__forces">
+                <span class="combat-rank-strip__stat">
+                  <img src="/icon/troop.png" alt="" class="combat-rank-strip__icon" />
+                  <span class="combat-rank-strip__value">3</span>
+                </span>
+                <span class="combat-rank-strip__stat">
+                  <img src="/icon/dreadnought_card.png" alt="" class="combat-rank-strip__icon combat-rank-strip__icon--dreadnought dreadnought-icon dreadnought-icon--card" />
+                  <span class="combat-rank-strip__value">0</span>
+                </span>
+              </span>
+              <span class="combat-rank-strip__strength">
+                <img src="/icon/sword.png" alt="" class="combat-rank-strip__icon" />
+                <span class="combat-rank-strip__value combat-rank-strip__value--strength">6</span>
+              </span>
             </span>
-          </span>
-          <span class="combat-rank-strip__rule"></span>
-          <span class="combat-rank-strip__forces">
-            <span class="combat-rank-strip__stat">
-              <img src="/icon/troop.png" alt="" class="combat-rank-strip__icon" />
-              <span class="combat-rank-strip__value">2</span>
-            </span>
-            <span class="combat-rank-strip__stat">
-              <img src="/icon/dreadnought_card.png" alt="" class="combat-rank-strip__icon combat-rank-strip__icon--dreadnought dreadnought-icon dreadnought-icon--card" />
-              <span class="combat-rank-strip__value">1</span>
+            <span class="combat-rank-strip__member combat-rank-strip__member--blue combat-rank-strip__member--active" data-player-id="3">
+              <span class="combat-rank-strip__forces">
+                <span class="combat-rank-strip__stat">
+                  <img src="/icon/troop.png" alt="" class="combat-rank-strip__icon" />
+                  <span class="combat-rank-strip__value">1</span>
+                </span>
+                <span class="combat-rank-strip__stat">
+                  <img src="/icon/dreadnought_card.png" alt="" class="combat-rank-strip__icon combat-rank-strip__icon--dreadnought dreadnought-icon dreadnought-icon--card" />
+                  <span class="combat-rank-strip__value">1</span>
+                </span>
+              </span>
+              <span class="combat-rank-strip__strength">
+                <img src="/icon/sword.png" alt="" class="combat-rank-strip__icon" />
+                <span class="combat-rank-strip__value combat-rank-strip__value--strength">6</span>
+              </span>
             </span>
           </span>
         </div>
       </div>
       <div class="combat-rank-strip__slot combat-rank-strip__slot--place-2" data-slot-place="2" role="listitem">
-        <span class="combat-rank-strip__slot-label combat-rank-strip__slot-label--2">2</span>
-        <div class="combat-rank-strip__chip combat-rank-strip__chip--green" data-place="2">
-          <span class="combat-rank-strip__body">
-            <span class="combat-rank-strip__leader leader-avatar-btn green">
-              <img src="/leaders/icons/leto-head.avif" alt="" class="combat-rank-strip__leader-icon" />
-            </span>
-            <span class="combat-rank-strip__strength">
-              <img src="/icon/sword.png" alt="" class="combat-rank-strip__icon" />
-              <span class="combat-rank-strip__value combat-rank-strip__value--strength">9</span>
-            </span>
-          </span>
-          <span class="combat-rank-strip__rule"></span>
-          <span class="combat-rank-strip__forces">
-            <span class="combat-rank-strip__stat">
-              <img src="/icon/troop.png" alt="" class="combat-rank-strip__icon" />
-              <span class="combat-rank-strip__value">3</span>
-            </span>
-            <span class="combat-rank-strip__stat">
-              <img src="/icon/dreadnought_card.png" alt="" class="combat-rank-strip__icon combat-rank-strip__icon--dreadnought dreadnought-icon dreadnought-icon--card" />
-              <span class="combat-rank-strip__value">1</span>
-            </span>
-          </span>
-        </div>
+        <div class="combat-rank-strip__chip combat-rank-strip__chip--empty"></div>
       </div>
       <div class="combat-rank-strip__slot combat-rank-strip__slot--place-1" data-slot-place="1" role="listitem">
-        <span class="combat-rank-strip__slot-label combat-rank-strip__slot-label--1">1</span>
-        <div class="combat-rank-strip__chip combat-rank-strip__chip--red combat-rank-strip__chip--active" data-place="1" id="place-1-chip">
+        <div class="combat-rank-strip__chip combat-rank-strip__chip--red combat-rank-strip__chip--active" data-place="1" data-player-id="0" id="place-1-chip">
           <span class="combat-rank-strip__body">
-            <span class="combat-rank-strip__leader leader-avatar-btn red">
-              <img src="/leaders/icons/baron-head.avif" alt="" class="combat-rank-strip__leader-icon" />
-            </span>
             <span class="combat-rank-strip__strength">
               <img src="/icon/sword.png" alt="" class="combat-rank-strip__icon" />
               <span class="combat-rank-strip__value combat-rank-strip__value--strength">12</span>

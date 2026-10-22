@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { PlayerColor } from '../../../types/GameTypes'
+import { playerColorHex } from '../../../utils/playerColors'
 
 /**
  * Source contracts for combat rank strip + seat deploy relocation.
@@ -62,7 +64,7 @@ describe('Combat rank strip wiring', () => {
     expect(imageBoard).toContain('PLAY_CONFLICT_CARD_RECT')
     expect(imageBoard).toContain('PLAY_COMBAT_RANK_STRIP_RECT')
     expect(anchors).toContain('height: 27')
-    expect(anchors).toContain('height: 36')
+    expect(anchors).toContain('height: 33')
   })
 
   it('uses a constant 4-slot frame with shadow boxes (no corner place digits)', () => {
@@ -92,8 +94,13 @@ describe('Combat rank strip wiring', () => {
     expect(css).not.toContain('.combat-rank-strip__slot-label')
     expect(css).toContain('.combat-rank-strip__chip--empty')
     expect(css).toContain('.combat-rank-strip__member--red')
-    expect(css).toContain('linear-gradient(var(--player-tint, transparent), var(--player-tint, transparent))')
-    expect(css).toContain('rgba(0, 0, 0, 0.38)')
+    expect(css).toContain('var(--player-marker)')
+    expect(css).toContain('var(--player-marker-red)')
+    expect(css).toContain('var(--player-marker-green)')
+    expect(css).toContain('var(--player-marker-yellow)')
+    expect(css).toContain('var(--player-marker-blue)')
+    expect(css).not.toContain('linear-gradient(var(--player-tint, transparent), var(--player-tint, transparent))')
+    expect(css).toContain('justify-content: space-between')
     expect(strip).toContain('entries.length === 1')
     expect(strip).toContain('<CombatRankChip')
     expect(util).toContain('entries: CombatRankEntry[]')
@@ -108,16 +115,25 @@ describe('Combat rank strip wiring', () => {
     expect(css).not.toContain('combat-rank-strip__color')
     const chipFn = strip.slice(
       strip.indexOf('const CombatRankChip'),
+      strip.indexOf('function memberForcesLabel')
+    )
+    expect(chipFn).toContain('showPortrait')
+    expect(chipFn.indexOf('showPortrait ?')).toBeLessThan(chipFn.indexOf('combat-rank-strip__leader'))
+    expect(chipFn.indexOf('combat-rank-strip__leader')).toBeLessThan(chipFn.indexOf('<RankStrength'))
+    expect(chipFn.indexOf('<RankStrength')).toBeLessThan(chipFn.indexOf('combat-rank-strip__rule'))
+    expect(chipFn.indexOf('combat-rank-strip__rule')).toBeLessThan(chipFn.indexOf('<RankForces'))
+    const boxFn = strip.slice(
+      strip.indexOf('const BoardRankBox'),
       strip.indexOf('const CombatRankStrip:')
     )
-    const leaderIdx = chipFn.indexOf('combat-rank-strip__leader')
-    const strengthIdx = chipFn.indexOf('combat-rank-strip__strength')
-    const ruleIdx = chipFn.indexOf('combat-rank-strip__rule')
-    const forcesIdx = chipFn.indexOf('combat-rank-strip__forces')
-    expect(leaderIdx).toBeGreaterThan(-1)
-    expect(leaderIdx).toBeLessThan(strengthIdx)
-    expect(strengthIdx).toBeLessThan(ruleIdx)
-    expect(ruleIdx).toBeLessThan(forcesIdx)
+    expect(boxFn).not.toContain('combat-rank-strip__leader')
+    expect(boxFn).toContain('combat-rank-strip__chip--tied')
+    expect(boxFn.indexOf('<RankForces')).toBeLessThan(boxFn.indexOf('<RankStrength'))
+    const theme = readFileSync(resolve(root, 'theme-play-chrome.css'), 'utf8')
+    expect(theme).toContain(`--player-marker-red: ${playerColorHex(PlayerColor.RED)}`)
+    expect(theme).toContain(`--player-marker-green: ${playerColorHex(PlayerColor.GREEN)}`)
+    expect(theme).toContain(`--player-marker-yellow: ${playerColorHex(PlayerColor.YELLOW)}`)
+    expect(theme).toContain(`--player-marker-blue: ${playerColorHex(PlayerColor.BLUE)}`)
   })
 
   it('fits four chips without scroll (flex-end, overflow hidden, no spacer)', () => {
@@ -159,7 +175,7 @@ describe('Combat rank strip wiring', () => {
     expect(css).not.toContain('background: rgba(0, 0, 0, 0.45)')
     expect(css).toContain('background: transparent')
     expect(css).toContain('font-size: clamp(9px, 1.55cqw, 14px)')
-    expect(css).toContain('text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 2px #000')
+    expect(css).toMatch(/\.combat-rank-strip--board \{[\s\S]*?text-shadow:\s*none/)
     expect(css).toMatch(/\.combat-rank-strip__leader \{[\s\S]*?border-radius:\s*2px/)
     expect(css).not.toMatch(/\.combat-rank-strip__leader \{[\s\S]*?border-radius:\s*50%/)
     expect(css).not.toMatch(
