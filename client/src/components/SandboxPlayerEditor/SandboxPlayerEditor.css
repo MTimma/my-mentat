@@ -73,9 +73,17 @@
   box-shadow: none;
 }
 
-.sandbox-player-editor__close {
-  width: 100%;
-  margin-top: 2px;
+.sandbox-player-editor__actions {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.sandbox-player-editor__close,
+.sandbox-player-editor__advanced {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
   padding: 8px 10px;
   border-radius: 6px;
   border: 1px solid rgba(255, 248, 232, 0.28);
@@ -85,9 +93,22 @@
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
+  outline: none;
+  box-shadow: none;
 }
 
-.sandbox-player-editor__close:hover {
+.sandbox-player-editor__close:hover,
+.sandbox-player-editor__close:focus,
+.sandbox-player-editor__close:focus-visible,
+.sandbox-player-editor__close:active,
+.sandbox-player-editor__advanced:hover,
+.sandbox-player-editor__advanced:focus,
+.sandbox-player-editor__advanced:focus-visible,
+.sandbox-player-editor__advanced:active,
+.sandbox-player-editor__advanced--open {
+  outline: none;
+  box-shadow: none;
+  border-color: rgba(255, 248, 232, 0.28);
   background: rgba(255, 248, 232, 0.08);
 }
 

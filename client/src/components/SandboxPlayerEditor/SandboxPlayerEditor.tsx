@@ -199,6 +199,7 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   const [techEditorOpen, setTechEditorOpen] = useState(false)
   const [researchPickerOpen, setResearchPickerOpen] = useState(false)
   const [colorMenuOpen, setColorMenuOpen] = useState(false)
+  const [advancedSetup, setAdvancedSetup] = useState(false)
   const colorMenuRef = useRef<HTMLDivElement>(null)
   const [selectedPileCards, setSelectedPileCards] = useState<Card[]>([])
   const [numericDraft, setNumericDraft] = useState(() => pickNumericDraft(player))
@@ -604,6 +605,36 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                 ) : null}
               </div>
             </div>
+            <div className="sandbox-player-editor__actions">
+              <button
+                type="button"
+                className={[
+                  'sandbox-player-editor__advanced',
+                  advancedSetup ? 'sandbox-player-editor__advanced--open' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                aria-expanded={advancedSetup}
+                onClick={() => {
+                  setAdvancedSetup(open => {
+                    if (open) {
+                      setPileEditor(null)
+                      setSelectedPileCards([])
+                      setTechEditorOpen(false)
+                      setResearchPickerOpen(false)
+                    }
+                    return !open
+                  })
+                }}
+              >
+                Advanced setup
+              </button>
+              <button type="button" className="sandbox-player-editor__close" onClick={handleClose}>
+                Close
+              </button>
+            </div>
+            {advancedSetup ? (
+              <>
             <div className="sandbox-player-editor__control-toggles">
               <label className="sandbox-player-editor__control-toggle">
                 <input
@@ -652,8 +683,12 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                 />
               ) : null}
             </div>
+              </>
+            ) : null}
           </div>
 
+          {advancedSetup ? (
+            <>
           <div className="sandbox-player-editor__counters">
             {NUMERIC_FIELDS.map(field => (
               <ValueStepper
@@ -852,10 +887,8 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
               })}
             </div>
           </div>
-
-          <button type="button" className="sandbox-player-editor__close" onClick={handleClose}>
-            Close
-          </button>
+            </>
+          ) : null}
         </div>
       </div>
 

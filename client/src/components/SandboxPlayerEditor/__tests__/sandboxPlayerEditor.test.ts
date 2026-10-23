@@ -63,6 +63,27 @@ describe('Sandbox player editor leader row', () => {
     expect(editorCss).toContain('.sandbox-player-editor__research-pick')
   })
 
+  it('keeps leader, name, and close visible and hides the rest behind Advanced setup', () => {
+    const leaderAt = editorTsx.indexOf('<LeaderSelect')
+    const nameAt = editorTsx.indexOf('sandbox-player-editor__name-row')
+    const advancedAt = editorTsx.indexOf('Advanced setup')
+    const togglesAt = editorTsx.indexOf('sandbox-player-editor__control-toggles')
+    const closeAt = editorTsx.indexOf('sandbox-player-editor__close')
+    expect(leaderAt).toBeGreaterThan(-1)
+    expect(nameAt).toBeGreaterThan(leaderAt)
+    expect(advancedAt).toBeGreaterThan(nameAt)
+    expect(closeAt).toBeGreaterThan(advancedAt)
+    expect(togglesAt).toBeGreaterThan(closeAt)
+    expect(editorTsx).toContain('sandbox-player-editor__actions')
+    expect(editorCss).toContain('.sandbox-player-editor__actions')
+    expect(editorCss).toContain('border-color: rgba(255, 248, 232, 0.28)')
+    expect(editorCss).toContain('outline: none')
+    expect(editorTsx).toContain('const [advancedSetup, setAdvancedSetup] = useState(false)')
+    expect(editorTsx).toContain('aria-expanded={advancedSetup}')
+    expect(editorTsx).toContain('{advancedSetup ? (')
+    expect(editorCss).toContain('.sandbox-player-editor__advanced')
+  })
+
   it('uses a wider sandbox leader trigger', () => {
     expect(leaderCss).toContain('.leader-select--sandbox .leader-select__trigger')
     expect(leaderCss).toMatch(/\.leader-select--sandbox \.leader-select__trigger \{[\s\S]*?width:\s*100%/)
