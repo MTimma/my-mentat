@@ -1464,6 +1464,18 @@
   box-shadow: none;
 }
 
+/* Reveal-turn hand. Same gold as board target highlights (--play-target-highlight). */
+.combat-area-cluster--column .birdseye-seat-play-area__card--revealed,
+.combat-area-cluster--column .birdseye-seat-play-area__card--revealed.turn-card-frame--has-effects,
+.combat-area-cluster--column .birdseye-seat-play-area__card--revealed.turn-card-frame--has-effects:hover:not(:disabled),
+.combat-area-cluster--column .birdseye-seat-play-area__card--revealed.turn-card-frame--has-effects:focus-visible {
+  outline: 2px solid var(--play-target-highlight, #ffd700);
+  outline-offset: -2px;
+  box-shadow:
+    0 0 10px var(--play-target-highlight-glow, rgba(255, 215, 0, 0.55)),
+    0 3px 8px rgba(0, 0, 0, 0.45);
+}
+
 .combat-area-cluster--column .birdseye-seat-play-area__card.turn-card-frame--has-effects > img {
   border-radius: inherit;
   box-shadow: none;

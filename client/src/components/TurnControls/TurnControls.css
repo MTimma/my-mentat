@@ -545,6 +545,15 @@ button.turn-card-frame.turn-card-frame--intrigue:hover:not(:disabled) {
   flex-shrink: 0;
 }
 
+/* Reveal-turn hand in the play strip. Same gold as board target highlights. */
+.turn-card-frame--revealed:not(.turn-card-frame--has-effects) {
+  outline: 2px solid var(--play-target-highlight, #ffd700);
+  outline-offset: -2px;
+  box-shadow:
+    0 0 10px var(--play-target-highlight-glow, rgba(255, 215, 0, 0.55)),
+    0 2px 10px rgba(0, 0, 0, 0.38);
+}
+
 .turn-card-frame {
   position: relative;
   display: inline-flex;

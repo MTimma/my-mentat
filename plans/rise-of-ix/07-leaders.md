@@ -105,7 +105,7 @@ The 6 new leaders are:
 
 ### 3.3 "Princess" Yuna Moritani
 
-- **Ability — Spice Royalty:** "You start game with no water. When you gain
+- **Ability — Smuggling Operation:** "You start game with no water. When you gain
   Solari on your turn, increase the amount by 1."
 - **Signet — 7 Solari → Influence + Spice + Troop:**
   "7 Solari → +1 inf (choose), +1 spice, +1 troop."

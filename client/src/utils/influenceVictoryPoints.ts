@@ -1,11 +1,23 @@
 import type { GameState, Player } from '../types/GameTypes'
 import { recruitTroopsToGarrison } from './troops'
+import { pushYunaSolariBonus } from '../data/leaderAbilities/yunaSolariBonus'
 import {
   FactionType,
   GainSource,
   RewardType,
   type Gain
 } from '../types/GameTypes'
+
+function milestoneSolariTotal(
+  state: GameState,
+  playerId: number,
+  base: number,
+  gains: Gain[]
+): number {
+  const player = state.players.find(p => p.id === playerId)
+  if (!player) return base
+  return base + pushYunaSolariBonus(state, player, base, gains)
+}
 
 export const MAX_INFLUENCE = 6
 
@@ -210,6 +222,7 @@ export function applyFourthInfluenceBonusReward(
       options.milestoneMeta.troopsRecruited += milestone.troops
     }
   }
+  let solariGranted = 0
   if (milestone.solari) {
     milestoneGains.push({
       playerId,
@@ -220,6 +233,7 @@ export function applyFourthInfluenceBonusReward(
       amount: milestone.solari,
       type: RewardType.SOLARI,
     })
+    solariGranted = milestoneSolariTotal(state, playerId, milestone.solari, milestoneGains)
   }
   if (milestone.intrigueCards) {
     milestoneGains.push({
@@ -251,7 +265,7 @@ export function applyFourthInfluenceBonusReward(
       : { player: p, recruited: 0 }
     return {
       ...recruited.player,
-      solari: p.solari + (milestone.solari ?? 0),
+      solari: p.solari + solariGranted,
       water: p.water + (milestone.water ?? 0),
       intrigueCount: p.intrigueCount + (milestone.intrigueCards ?? 0),
     }
@@ -381,6 +395,7 @@ export function updateFactionInfluence(
         options.milestoneMeta.troopsRecruited += milestone.troops
       }
     }
+    let solariGranted = 0
     if (milestone.solari) {
       milestoneGains.push({
         playerId,
@@ -391,6 +406,7 @@ export function updateFactionInfluence(
         amount: milestone.solari,
         type: RewardType.SOLARI,
       })
+      solariGranted = milestoneSolariTotal(state, playerId, milestone.solari, milestoneGains)
     }
     if (milestone.intrigueCards) {
       milestoneGains.push({
@@ -421,7 +437,7 @@ export function updateFactionInfluence(
         : { player: p, recruited: 0 }
       return {
         ...recruited.player,
-        solari: p.solari + (milestone.solari ?? 0),
+        solari: p.solari + solariGranted,
         water: p.water + (milestone.water ?? 0),
         intrigueCount: p.intrigueCount + (milestone.intrigueCards ?? 0),
       }

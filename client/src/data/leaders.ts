@@ -210,7 +210,7 @@ export const RISE_OF_IX_LEADERS: Leader[] = [
   {
     name: LEADER_NAMES.PRINCESS_YUNA_MORITANI,
     ability: {
-      name: 'Spice Royalty',
+      name: 'Smuggling Operation',
       description:
         'You start with no water. When you gain Solari on your turn, increase the amount by 1.',
     },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Leader } from '../../../types/GameTypes'
+import { GamePhase, Leader } from '../../../types/GameTypes'
 import { LEADER_NAMES } from '../../leaders'
 import {
   applyYunaSolariBonus,
@@ -12,7 +12,7 @@ import { getRoiTestState, makePlayer } from '../../../components/GameContext/__t
 describe('Yuna Moritani — solari bonus & setup', () => {
   const yuna = new Leader(
     LEADER_NAMES.PRINCESS_YUNA_MORITANI,
-    { name: 'Spice Royalty', description: '+1 solari on own turn.' },
+    { name: 'Smuggling Operation', description: '+1 solari on own turn.' },
     'Signet',
     2
   )
@@ -36,6 +36,15 @@ describe('Yuna Moritani — solari bonus & setup', () => {
     const s = getRoiTestState({ players: 2, activeId: 1 })
     const yunaPlayer = { ...s.players[0], leader: yuna }
     expect(shouldGrantYunaSolariBonus(s, yunaPlayer, { solari: 2 })).toBe(false)
+  })
+
+  it('no bonus outside Player Turns (combat, round start, endgame)', () => {
+    const s = getRoiTestState({
+      playerOverrides: { leader: yuna },
+      activeId: 0,
+      stateOverrides: { phase: GamePhase.COMBAT },
+    })
+    expect(shouldGrantYunaSolariBonus(s, s.players[0], { solari: 5 })).toBe(false)
   })
 
   it('no bonus for non-Yuna leader', () => {

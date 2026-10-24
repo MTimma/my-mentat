@@ -33,6 +33,7 @@ import { encodeEffectCardGainName } from '../../utils/turnGainsDisplay'
 import { effectiveTechCost, playerOwnsTile, techTilesAvailableForNextReveal, tileById, tilesActivatableNow, techTileIdFromDiscardPrompt } from '../../utils/techTiles'
 import { BOARD_SPACES } from '../../data/boardSpaces'
 import { updateFactionInfluence } from '../../utils/influenceVictoryPoints'
+import { pushYunaSolariBonus } from '../../data/leaderAbilities/yunaSolariBonus'
 import { playerHasUnitsInCombat } from '../../utils/dreadnoughts'
 import {
   placeNegotiatorsFromSupply,
@@ -241,8 +242,10 @@ export function applyTechTileAcquireEffect(
     pushGain(next.gains, next, playerId, source, effect.water, RewardType.WATER)
   }
   if (effect.solari) {
-    next = updatePlayer(next, playerId, p => ({ ...p, solari: p.solari + effect.solari! }))
+    const buyer = next.players.find(p => p.id === playerId)
     pushGain(next.gains, next, playerId, source, effect.solari, RewardType.SOLARI)
+    const bonus = buyer ? pushYunaSolariBonus(next, buyer, effect.solari, next.gains) : 0
+    next = updatePlayer(next, playerId, p => ({ ...p, solari: p.solari + effect.solari! + bonus }))
   }
   if (effect.troops) {
     next = updatePlayer(next, playerId, p => recruitTroopsToGarrison(p, effect.troops!).player)
@@ -830,6 +833,7 @@ export function applyBountyInfiltrationBonus(
   const opponentOccupied = occupants.some(id => id !== playerId)
   if (!opponentOccupied) return state
 
+  const player = state.players.find(p => p.id === playerId)
   const gains = [
     ...state.gains,
     {
@@ -842,7 +846,8 @@ export function applyBountyInfiltrationBonus(
       source: source.type,
     },
   ]
-  return updatePlayer({ ...state, gains }, playerId, p => ({ ...p, solari: p.solari + 2 }))
+  const bonus = player ? pushYunaSolariBonus(state, player, 2, gains) : 0
+  return updatePlayer({ ...state, gains }, playerId, p => ({ ...p, solari: p.solari + 2 + bonus }))
 }
 
 /** Guild Accord: Heighliner costs 2 spice less this turn. */
@@ -867,8 +872,10 @@ export function applyWebOfPower(state: GameState, playerId: number, cardId: numb
   let next = { ...state, gains: [...state.gains] }
 
   if (have2(FactionType.EMPEROR)) {
-    next = updatePlayer(next, playerId, p => ({ ...p, solari: p.solari + 2 }))
+    const player = next.players.find(p => p.id === playerId)
     pushGain(next.gains, next, playerId, source, 2, RewardType.SOLARI)
+    const bonus = player ? pushYunaSolariBonus(next, player, 2, next.gains) : 0
+    next = updatePlayer(next, playerId, p => ({ ...p, solari: p.solari + 2 + bonus }))
   }
   if (have2(FactionType.SPACING_GUILD)) {
     next = updatePlayer(next, playerId, p => ({ ...p, handCount: p.handCount + 1 }))

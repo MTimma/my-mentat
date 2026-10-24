@@ -146,7 +146,7 @@ describe('Board spaces — control bonus', () => {
     ).toBe(true)
   })
 
-  it('Yuna Spice Royalty adds 1 solari when she collects her own Carthag control bonus', () => {
+  it('Yuna Smuggling Operation adds 1 solari when she collects her own Carthag control bonus', () => {
     const yuna = RISE_OF_IX_LEADERS.find(l => l.name === LEADER_NAMES.PRINCESS_YUNA_MORITANI)!
     const card = stubDeckCard(5600, { agentIcons: [AgentIcon.CITY] })
     let s = getRoiTestState({
@@ -175,7 +175,7 @@ describe('Board spaces — control bonus', () => {
         }),
         expect.objectContaining({
           playerId: 0,
-          name: 'Leader Ability',
+          name: 'Smuggling Operation',
           amount: 1,
           type: RewardType.SOLARI,
           source: GainSource.LEADER_ABILITY,
@@ -184,7 +184,7 @@ describe('Board spaces — control bonus', () => {
     )
     const groups = groupGainsBySource(after.gains)
     const controlGroup = groups.find(g => g.title === 'Carthag Control Bonus')
-    const leaderGroup = groups.find(g => g.title === 'Leader Ability')
+    const leaderGroup = groups.find(g => g.title === 'Smuggling Operation')
     expect(aggregateResourceGains(controlGroup?.gains ?? [])).toEqual(
       expect.arrayContaining([expect.objectContaining({ type: RewardType.SOLARI, amount: 1 })])
     )
@@ -193,7 +193,7 @@ describe('Board spaces — control bonus', () => {
     )
   })
 
-  it('Yuna does not get Spice Royalty when an opponent visits her Carthag', () => {
+  it('Yuna does not get Smuggling Operation when an opponent visits her Carthag', () => {
     const yuna = RISE_OF_IX_LEADERS.find(l => l.name === LEADER_NAMES.PRINCESS_YUNA_MORITANI)!
     const card = stubDeckCard(5601, { agentIcons: [AgentIcon.CITY] })
     let s = getRoiTestState({

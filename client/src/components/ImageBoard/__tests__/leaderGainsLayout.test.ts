@@ -574,6 +574,9 @@ describe('Leader gains leftover layout', () => {
     expect(seatChromeCss).toMatch(
       /\.combat-area-cluster--column \.birdseye-seat-play-area__cards \{[\s\S]*?isolation:\s*isolate/
     )
+    expect(seatChromeCss).toMatch(
+      /\.birdseye-seat-play-area__card--revealed[\s\S]*?outline:\s*2px solid var\(--play-target-highlight/
+    )
   })
 
   it('highlights play-area cards that still have a pending effect choice', () => {

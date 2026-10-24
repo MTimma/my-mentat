@@ -13,6 +13,7 @@ import {
 } from '../../../types/GameTypes'
 import { createGainInfluenceChoice } from '../../../utils/influenceChoices'
 import { applyTroopTransportsToFreighterReward } from '../riseOfIxReducer'
+import { pushYunaSolariBonus } from '../../../data/leaderAbilities/yunaSolariBonus'
 import { nextSemanticId } from '../../../utils/semanticIds'
 
 export type GainAttribution = { type: GainSource; id: number; name: string }
@@ -294,7 +295,8 @@ export function applyDividendsReward(
       amount: amt,
       type: RewardType.SOLARI,
     })
-    return { ...p, solari: p.solari + amt }
+    const bonus = pushYunaSolariBonus(state, p, amt, gains)
+    return { ...p, solari: p.solari + amt + bonus }
   })
   return { players, gains }
 }

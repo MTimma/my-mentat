@@ -192,10 +192,7 @@ import { getEffectiveSolariCost } from '../../data/leaderAbilities/letoLandsraad
 import { shouldGrantMemnonInfluence, buildMemnonInfluenceReward } from '../../data/leaderAbilities/memnonHighCouncilInfluence'
 import { applyLeaderStartingResourceDelta } from '../../data/leaderAbilities/beastSetup'
 import { canonicalLeaderName, isUnassignedLeader } from '../../data/leaders'
-import {
-  shouldGrantYunaSolariBonus,
-  applyYunaSolariBonus,
-} from '../../data/leaderAbilities/yunaSolariBonus'
+import { pushYunaSolariBonus } from '../../data/leaderAbilities/yunaSolariBonus'
 import {
   shouldOfferArmandTrashChoice,
   buildArmandTrashChoice,
@@ -1462,7 +1459,7 @@ function applyRewardToPlayer(
     updatedPlayer.water += reward.water
   }
   
-  if (reward.solari) {
+    if (reward.solari) {
     gains.push({
       round: state.currentRound,
       playerId: player.id,
@@ -1472,20 +1469,8 @@ function applyRewardToPlayer(
       type: RewardType.SOLARI,
       source: source.type
     })
-    let solariAmount = reward.solari
-    if (shouldGrantYunaSolariBonus(state, player, reward)) {
-      solariAmount = applyYunaSolariBonus(solariAmount)
-      gains.push({
-        round: state.currentRound,
-        playerId: player.id,
-        sourceId: source.id,
-        name: 'Spice Royalty (Yuna)',
-        amount: 1,
-        type: RewardType.SOLARI,
-        source: source.type,
-      })
-    }
-    updatedPlayer.solari += solariAmount
+    const bonus = pushYunaSolariBonus(state, player, reward.solari, gains)
+    updatedPlayer.solari += reward.solari + bonus
   }
   
   if (reward.troops) {
@@ -1724,7 +1709,11 @@ function applyChoiceReward(
 
   if (reward.spice) { player.spice += reward.spice; pushGain(reward.spice, RewardType.SPICE) }
   if (reward.water) { player.water += reward.water; pushGain(reward.water, RewardType.WATER) }
-  if (reward.solari) { player.solari += reward.solari; pushGain(reward.solari, RewardType.SOLARI) }
+  if (reward.solari) {
+    const bonus = pushYunaSolariBonus(newState, player, reward.solari, newState.gains)
+    player.solari += reward.solari + bonus
+    pushGain(reward.solari, RewardType.SOLARI)
+  }
   if (reward.troops) {
     const recruited = recruitTroopsToGarrison(player, reward.troops)
     player = recruited.player
@@ -2040,7 +2029,8 @@ function handleIntrigueEffect(
       pushGain(reward.water, RewardType.WATER)
     }
     if (reward.solari) {
-      updatedPlayer.solari += reward.solari
+      const bonus = pushYunaSolariBonus(newState, updatedPlayer, reward.solari, newState.gains)
+      updatedPlayer.solari += reward.solari + bonus
       pushGain(reward.solari, RewardType.SOLARI)
     }
     if (reward.troops) {
@@ -5563,13 +5553,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if(controlPlayerId != null) {
           if(space.controlBonus?.solari) {
             const baseSolari = space.controlBonus.solari
-            let solariAmount = baseSolari
             const controller = updatedPlayers[controlPlayerId]
             updatedGains.push({ round: newState.currentRound, playerId: controlPlayerId, sourceId: space.id, name: space.name + " Control Bonus", amount: baseSolari, type: RewardType.SOLARI, source: GainSource.CONTROL } )
-            if (controller && shouldGrantYunaSolariBonus(newState, controller, { solari: baseSolari })) {
-              solariAmount = applyYunaSolariBonus(solariAmount)
-              updatedGains.push({ round: newState.currentRound, playerId: controlPlayerId, sourceId: 0, name: 'Leader Ability', amount: 1, type: RewardType.SOLARI, source: GainSource.LEADER_ABILITY })
-            }
+            const bonus = controller
+              ? pushYunaSolariBonus(newState, controller, baseSolari, updatedGains)
+              : 0
+            const solariAmount = baseSolari + bonus
             updatedPlayers[controlPlayerId].solari += solariAmount
             if (controlPlayerId === playerId) {
               currPlayer.solari += solariAmount
@@ -5606,7 +5595,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (sellMelangeData) {
         currPlayer.spice -= sellMelangeData.spiceCost
         recordBoardSpaceCost(RewardType.SPICE, sellMelangeData.spiceCost)
-        currPlayer.solari += sellMelangeData.solariReward
         updatedGains.push({ 
           round: newState.currentRound, 
           playerId: playerId, 
@@ -5616,6 +5604,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           type: RewardType.SOLARI, 
           source: GainSource.BOARD_SPACE
         })
+        const sellMelangeBonus = pushYunaSolariBonus(
+          newState,
+          currPlayer,
+          sellMelangeData.solariReward,
+          updatedGains
+        )
+        currPlayer.solari += sellMelangeData.solariReward + sellMelangeBonus
       } else if (space.cost) {
         if (space.cost.solari) {
           const solariPaid = getEffectiveSolariCost(space, currPlayer)
@@ -6125,7 +6120,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           pushIntrigueGain(s.reward.water, RewardType.WATER)
         }
         if (s.reward.solari) {
-          player.solari += s.reward.solari
+          const bonus = pushYunaSolariBonus(state, player, s.reward.solari, updatedGains)
+          player.solari += s.reward.solari + bonus
           pushIntrigueGain(s.reward.solari, RewardType.SOLARI)
         }
         if (s.reward.troops) {
@@ -6496,6 +6492,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                   persuasion: ilesaPlayer.persuasion + persuasionCount,
                   revealed: true,
                   troops: player.troops,
+                  troopSupply: player.troopSupply,
+                  solari: player.solari,
+                  spice: player.spice,
+                  water: player.water,
+                  intrigueCount: player.intrigueCount,
+                  victoryPoints: player.victoryPoints,
                 }
               : p
           ),
@@ -6970,6 +6972,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             )
             player = appliedCompanion.player
             tempCurrTurn = appliedCompanion.currTurn
+            if (reward.solari) {
+              const bonus = pushYunaSolariBonus(state, player, reward.solari, newGains)
+              if (bonus > 0) player = { ...player, solari: player.solari + bonus }
+            }
             influenceChoices.push(
               createGainInfluenceChoice(reward.influence, choiceSource, undefined, collectLiveIds(state, influenceChoices.map(c => c.id)))
             )
@@ -7074,7 +7080,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       if(reward.spice) { player.spice += reward.spice; pushGain(reward.spice, RewardType.SPICE);}
       if(reward.water) { player.water += reward.water; pushGain(reward.water, RewardType.WATER);} 
-      if(reward.solari) { player.solari += reward.solari; pushGain(reward.solari, RewardType.SOLARI);} 
+      if(reward.solari) {
+        const bonus = pushYunaSolariBonus(state, player, reward.solari, newGains)
+        player.solari += reward.solari + bonus
+        pushGain(reward.solari, RewardType.SOLARI)
+      } 
       if(reward.troops) {
         const recruited = recruitTroopsToGarrison(player, reward.troops)
         player = recruited.player
