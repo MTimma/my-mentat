@@ -157,6 +157,9 @@ interface ImageBoardProps {
   currentConflict?: ConflictCard
   bonusSpice: { [key: string]: number }
   recallMode?: boolean
+  /** Urgent Mission: these occupied spaces are the recall choices. */
+  agentRecallSpaceIds?: number[]
+  onAgentRecallSpaceSelect?: (spaceId: number) => void
   /** Shown above the board during Kwisatz recall / agent-source steps. */
   placementPrompt?: string | null
   /** Kwisatz Haderach: ignore influence requirements (not spice/solari/water costs). */
@@ -261,6 +264,8 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   currentConflict,
   bonusSpice,
   recallMode = false,
+  agentRecallSpaceIds,
+  onAgentRecallSpaceSelect,
   placementPrompt = null,
   ignoreSpaceRequirements = false,
   voiceSelectionActive = false,
@@ -409,10 +414,17 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     anchor => !ixBoardDocked || !isIxOverlaySpaceId(anchor.spaceId)
   )
 
+  const agentRecallSpaceIdSet = new Set(agentRecallSpaceIds ?? [])
+  const agentRecallActive = agentRecallSpaceIdSet.size > 0
+  const boardRecallActive = recallMode || agentRecallActive
+  const isRecallTargetSpace = (spaceId: number): boolean => {
+    if (agentRecallActive) return agentRecallSpaceIdSet.has(spaceId)
+    if (recallMode) return Boolean(occupiedSpaces[spaceId]?.includes(currentPlayer))
+    return false
+  }
+
   const canPayCosts = (space: SpaceProps): boolean => {
-    if (recallMode) {
-      return Boolean(occupiedSpaces[space.id]?.includes(currentPlayer))
-    }
+    if (boardRecallActive) return isRecallTargetSpace(space.id)
     const player = players.find(p => p.id === currentPlayer)
     if (!player) return false
     if (!isBoardSpaceAvailableForExpansions(space, gameStateForMarkers.expansions)) {
@@ -435,6 +447,10 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
   const handleSpaceClick = (spaceId: number) => {
     if (influenceSelection) return
+    if (agentRecallActive) {
+      if (agentRecallSpaceIdSet.has(spaceId)) onAgentRecallSpaceSelect?.(spaceId)
+      return
+    }
     if (voiceSelectionActive && onVoiceSpaceSelect) {
       onVoiceSpaceSelect(spaceId)
       return
@@ -460,11 +476,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
   const isSpaceEnabled = (space: SpaceProps): boolean => {
     if (influenceSelection) return false
+    if (boardRecallActive) return isRecallTargetSpace(space.id)
     if (voiceSelectionActive) return true
     const blockedBy = blockedSpaceMap.get(space.id)
     const isBlockedForCurrent = typeof blockedBy === 'number' && blockedBy !== currentPlayer
     if (isBlockedForCurrent) return false
-    if (recallMode) return Boolean(occupiedSpaces[space.id]?.includes(currentPlayer))
     return Boolean(canPayCosts(space) && canPlaceAgent && highlightedAreas?.includes(space.agentIcon))
   }
 
@@ -531,7 +547,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     sidePanelDocked ? 'image-board--with-side-dock' : '',
     ixBoardDocked ? 'image-board--with-ix-dock' : '',
     immortalityBoardDocked ? 'image-board--with-immortality-dock' : '',
-    agentPlacedThisTurn ? 'image-board--agent-placed' : '',
+    agentPlacedThisTurn && !agentRecallActive ? 'image-board--agent-placed' : '',
     hotspotDebug ? 'image-board--hotspot-debug' : '',
     markerDebug ? 'image-board--marker-debug' : '',
     trackerInspectMode ? 'image-board--tracker-inspect' : '',
@@ -547,6 +563,9 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         stacks={gameStateForMarkers.ixBoard?.stacks ?? [[], [], []]}
         onSpaceClick={handleSpaceClick}
         isSpaceEnabled={space => isSpaceEnabled(space)}
+        recallActive={boardRecallActive}
+        agentRecallActive={agentRecallActive}
+        isRecallTargetSpace={isRecallTargetSpace}
         highlightedAreas={highlightedAreas}
         canPlaceAgent={canPlaceAgent}
         hotspotDebug={hotspotDebug}
@@ -723,17 +742,18 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
 
             const enabled = isSpaceEnabled(space)
             const isHighlighted = highlightedAreas?.includes(space.agentIcon) || false
-            const isRecallTarget =
-              recallMode && Boolean(occupiedSpaces[space.id]?.includes(currentPlayer))
+            const isRecallTarget = isRecallTargetSpace(space.id)
             const isCombat = space.conflictMarker
             const blockedBy = blockedSpaceMap.get(space.id)
             const isVoiceBlocked = typeof blockedBy === 'number'
 
             const classes = [
               'image-board__hotspot',
-              isRecallTarget ? 'recall-selectable' : '',
-              canPlaceAgent && isHighlighted && enabled ? 'highlighted' : '',
-              recallMode && !isRecallTarget ? 'recall-dimmed' : '',
+              isRecallTarget && !agentRecallActive ? 'recall-selectable' : '',
+              (agentRecallActive && isRecallTarget) || (canPlaceAgent && isHighlighted && enabled)
+                ? 'highlighted'
+                : '',
+              boardRecallActive && !isRecallTarget ? 'recall-dimmed' : '',
               !enabled ? 'disabled' : '',
               isCombat ? 'combat-space' : '',
               voiceSelectionActive ? 'voice-selectable' : '',
@@ -755,7 +775,8 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                   width: `${box.width}%`,
                   height: `${box.height}%`,
                 }}
-                title={space.name}
+                title={isRecallTarget ? `Recall agent from ${space.name}` : space.name}
+                aria-label={isRecallTarget ? `Recall agent from ${space.name}` : space.name}
                 data-space-id={hotspot.spaceId}
                 data-space-name={space.name}
                 onClick={() => handleSpaceClick(space.id)}

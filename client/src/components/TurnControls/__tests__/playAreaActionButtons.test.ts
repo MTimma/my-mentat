@@ -134,6 +134,8 @@ describe('Play area action buttons', () => {
       'Influence gain/lose is chosen on the board tracks, not in the play area.'
     )
     expect(turnControls).toContain('return !isInfluenceBoardChoice(choice as FixedOptionsChoice)')
+    expect(turnControls).toContain('isAgentRecallBoardChoice')
+    expect(turnControls).toContain('Agent recall is chosen on the board spaces, not in the play area.')
   })
 
   it('renders mandatory card choices on top of the glowing play-area card', () => {

@@ -12,6 +12,7 @@ import {
   type Reward,
 } from '../types/GameTypes'
 import { resolveGraftCards } from '../expansions/immortality/graft'
+import { isAgentRecallBoardChoice } from './agentRecallBoardChoice'
 import { isInfluenceBoardChoice } from './influenceBoardChoice'
 
 /** Find card objects by id across a player's in-round piles (play area, deck, discard; optionally trash). */
@@ -134,10 +135,11 @@ function playAreaSourceIdsWithPendingEffectChoice(
 
   for (const choice of gameState.currTurn?.pendingChoices ?? []) {
     if (choice.disabled) continue
-    // Influence gain/lose is chosen on the board tracks — do not ring the play-area card.
+    // Influence and agent recall are chosen on the board, not in the play area.
     if (
       choice.type === ChoiceType.FIXED_OPTIONS &&
-      isInfluenceBoardChoice(choice as FixedOptionsChoice)
+      (isInfluenceBoardChoice(choice as FixedOptionsChoice) ||
+        isAgentRecallBoardChoice(choice as FixedOptionsChoice))
     ) {
       continue
     }

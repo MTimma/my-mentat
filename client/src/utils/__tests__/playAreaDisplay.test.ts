@@ -341,4 +341,28 @@ describe('playAreaDisplay', () => {
     expect([...playAreaCardIdsWithPendingEffectChoice(gameState)]).toEqual([1])
     expect(playAreaIntrigueIdsWithPendingEffectChoice(gameState, { isHistoryView: true }).size).toBe(0)
   })
+
+  it('playAreaIntrigueIdsWithPendingEffectChoice skips agent-recall choices resolved on the board', () => {
+    const gameState = {
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        pendingChoices: [
+          {
+            id: 'urgent',
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Recall one of your Agents from a space',
+            options: [
+              { reward: { recallSpaceId: 10 }, rewardLabel: 'Mentat' },
+              { reward: { recallSpaceId: 26 }, rewardLabel: 'Interstellar Shipping' },
+            ],
+            source: { type: GainSource.INTRIGUE, id: 29, name: 'Urgent Mission' },
+          },
+        ],
+      },
+      pendingRewards: [],
+    } as GameState
+
+    expect(playAreaIntrigueIdsWithPendingEffectChoice(gameState).size).toBe(0)
+  })
 })

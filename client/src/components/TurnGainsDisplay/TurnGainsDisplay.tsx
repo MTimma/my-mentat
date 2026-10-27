@@ -475,6 +475,11 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
           renderInlineTrashGain(gain, index)
         ) : rewardType === RewardType.DISCARD ? (
           renderInlineDiscardGain(gain, index)
+        ) : rewardType === RewardType.RECALL && gain.name ? (
+          <span className="turn-gain-recall" title={`Recalled from ${gain.name}`}>
+            <span className="turn-gain-recall-label">RECALL</span>
+            <span className="turn-gain-recall-space">{gain.name}</span>
+          </span>
         ) : rewardType === RewardType.PERSUASION ? (
           <span className="gain-persuasion-badge" title={displayName} aria-hidden="true">
             <span className="gain-persuasion-diamond" />

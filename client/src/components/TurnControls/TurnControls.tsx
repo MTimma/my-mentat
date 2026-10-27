@@ -59,6 +59,7 @@ import {
   getLackingOptionalCostResources,
   requiresInfluenceChoices,
 } from '../../utils/influenceChoices'
+import { isAgentRecallBoardChoice } from '../../utils/agentRecallBoardChoice'
 import { isInfluenceBoardChoice } from '../../utils/influenceBoardChoice'
 import { isSoleTrashThisCardReward } from '../../utils/pendingRewardAutoApply'
 import { effectSourceGroupKey } from '../../utils/turnGainsDisplay'
@@ -1896,6 +1897,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     
     // Pending OR choices (full list — acquire-tech branches filtered at render time).
     // Influence gain/lose is chosen on the board tracks, not in the play area.
+    // Agent recall is chosen on the board spaces, not in the play area.
     pendingChoices
       .filter(
         choice =>
@@ -1903,6 +1905,10 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
           !(
             choice.type === ChoiceType.FIXED_OPTIONS &&
             isInfluenceBoardChoice(choice as FixedOptionsChoice)
+          ) &&
+          !(
+            choice.type === ChoiceType.FIXED_OPTIONS &&
+            isAgentRecallBoardChoice(choice as FixedOptionsChoice)
           )
       )
       .forEach(choice => {
@@ -2077,7 +2083,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
             card.choices.filter(choice => {
               if (choice.type !== ChoiceType.FIXED_OPTIONS) return true
               // Influence gain/lose is chosen on the board tracks, not in the play area.
-              return !isInfluenceBoardChoice(choice as FixedOptionsChoice)
+              // Agent recall is chosen on the board spaces, not in the play area.
+              return !isInfluenceBoardChoice(choice as FixedOptionsChoice) &&
+                !isAgentRecallBoardChoice(choice as FixedOptionsChoice)
             })
           )
     const techAcquireOption =
@@ -2497,7 +2505,8 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     const modalChoices = filterAcquireTechFromChoices(
       nonOverlayCard.choices.filter(choice => {
         if (choice.type !== ChoiceType.FIXED_OPTIONS) return true
-        return !isInfluenceBoardChoice(choice as FixedOptionsChoice)
+        return !isInfluenceBoardChoice(choice as FixedOptionsChoice) &&
+          !isAgentRecallBoardChoice(choice as FixedOptionsChoice)
       })
     )
     const overlayChoicePlacements = isRevealed

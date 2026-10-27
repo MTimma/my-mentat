@@ -940,18 +940,24 @@
 
 .birdseye-interactions-strip .effect-chip-group {
   margin: 0;
-  padding: 2px 4px;
-  border: 1px solid rgba(212, 177, 106, 0.22);
-  background: rgba(16, 13, 10, 0.72);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   justify-content: center;
   align-self: stretch;
-  gap: 2px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  gap: 0;
 }
 
 .birdseye-interactions-strip .effect-chip-group--freighter {
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
 }
@@ -969,14 +975,38 @@
   display: flex;
   flex-wrap: wrap;
   align-self: stretch;
-  gap: 0.15rem;
+  gap: 1px;
+}
+
+.birdseye-interactions-strip .card-effects-inline-choice,
+.birdseye-interactions-strip .card-effects-inline-choice--or,
+.birdseye-interactions-strip .fixed-choice-options,
+.birdseye-interactions-strip .fixed-choice-options--or,
+.birdseye-interactions-strip .fixed-choice-options--compact {
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.birdseye-interactions-strip .effect-label {
+  gap: 1px 2px;
+}
+
+.birdseye-interactions-strip .fixed-choice-option,
+.birdseye-interactions-strip .fixed-choice-option--compact {
+  min-height: 0;
+  padding: 0 1px;
 }
 
 .birdseye-interactions-strip .effect-btn,
 .birdseye-interactions-strip .get-mandatory-effects-button--birdseye {
   font-size: 0.58rem;
-  padding: 0.15rem 0.3rem;
-  min-height: 1.35rem;
+  padding: 0 1px;
+  min-height: 0;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -1185,14 +1215,16 @@
 .combat-area-cluster--column .birdseye-seat__controls-row .birdseye-seat__interactions {
   width: 100%;
   max-width: none;
-  flex: 0 1 auto;
+  /* Deploy and turn buttons do not shrink. Keep this row at content size
+     so its chips are not crushed into a padded box when deploy is open. */
+  flex: 0 0 auto;
   align-self: stretch;
   max-height: 6.5rem;
   overflow: auto;
-  padding: 0.12rem;
-  background: rgba(0, 0, 0, 0.42);
-  border: 1px solid rgba(255, 248, 232, 0.16);
-  border-radius: 5px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   box-shadow: none;
 }
 
@@ -1209,6 +1241,13 @@
   flex-direction: column;
   flex-wrap: nowrap;
   align-items: stretch;
+  gap: 1px;
+}
+
+.combat-area-cluster--column .birdseye-seat__controls-row .effects-inline-panel--birdseye {
+  gap: 1px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .combat-area-cluster--column .birdseye-seat__controls-stack {

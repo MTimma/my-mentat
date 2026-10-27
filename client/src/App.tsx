@@ -13,10 +13,16 @@ import { useTimeTravel } from './components/TimeTravel'
 import LocalGameAutosave from './components/LocalGameAutosave/LocalGameAutosave'
 import SandboxSessionBar from './components/SandboxSessionBar/SandboxSessionBar'
 import PwaPrompt from './components/PwaPrompt/PwaPrompt'
+import WelcomeModal from './components/WelcomeModal/WelcomeModal'
 import { FactionType, GamePhase, Player, GameState, Card, AgentIcon, CustomEffect, ChoiceType, FixedOptionsChoice, GainSource, PendingChoice, PendingReward, TurnType } from './types/GameTypes'
 import { mergeDispatchEnvoyIcons } from './utils/dispatchEnvoy'
 import { isSoleTrashThisCardReward } from './utils/pendingRewardAutoApply'
 import { isKwisatzHaderachCard, canPlaceAgentOnBoard, isKwisatzSourceChoicePending, isKwisatzRecallMode, isAgentPlacementPending } from './utils/kwisatzHaderach'
+import {
+  agentRecallOptionIndex,
+  agentRecallSpaceIds,
+  findAgentRecallBoardChoice,
+} from './utils/agentRecallBoardChoice'
 import TurnControls, { type TurnControlsHandle } from './components/TurnControls/TurnControls'
 import type { BirdseyeSeatActions } from './components/ImageBoard/CombatSeatTurnChrome'
 import {
@@ -1041,6 +1047,10 @@ const GameContent = ({
 
   const kwisatzRecallActive =
     !isViewingHistory && isKwisatzRecallMode(gameState)
+  const activeAgentRecallChoice = useMemo(() => {
+    if (isViewingHistory || gameState.sandboxSetup) return null
+    return findAgentRecallBoardChoice(gameState.currTurn?.pendingChoices)
+  }, [gameState.currTurn?.pendingChoices, gameState.sandboxSetup, isViewingHistory])
   const kwisatzSourceChoiceActive =
     !isViewingHistory && isKwisatzSourceChoicePending(gameState)
   const agentPlacementPending =
@@ -1057,6 +1067,19 @@ const GameContent = ({
     : kwisatzRecallActive
       ? 'Recall one of your Agents — click a space where you already have an Agent.'
       : null
+
+  const handleAgentRecallSpaceSelect = (spaceId: number) => {
+    if (!activePlayer || !activeAgentRecallChoice) return
+    const optionIndex = agentRecallOptionIndex(activeAgentRecallChoice, spaceId)
+    if (optionIndex < 0) return
+    dispatch({
+      type: 'RESOLVE_CHOICE',
+      playerId: activePlayer.id,
+      choiceId: activeAgentRecallChoice.id,
+      optionIndex,
+      source: activeAgentRecallChoice.source,
+    })
+  }
 
   const handleInfluenceBoardFactionSelect = (faction: FactionType) => {
     if (activeInfluenceBoardChoice && activePlayer && influenceBoardMeta) {
@@ -1874,6 +1897,12 @@ const GameContent = ({
           currentConflict={displayState.currentConflict}
           bonusSpice={displayState.bonusSpice}
           recallMode={isViewingHistory ? false : kwisatzRecallActive}
+          agentRecallSpaceIds={
+            isViewingHistory || !activeAgentRecallChoice
+              ? undefined
+              : agentRecallSpaceIds(activeAgentRecallChoice)
+          }
+          onAgentRecallSpaceSelect={handleAgentRecallSpaceSelect}
           placementPrompt={isViewingHistory ? null : boardPlacementPrompt}
           ignoreSpaceRequirements={
             isViewingHistory
@@ -2067,6 +2096,8 @@ const GameContent = ({
       immortality,
       sandboxTechSummary,
       kwisatzRecallActive,
+      activeAgentRecallChoice,
+      handleAgentRecallSpaceSelect,
       boardPlacementPrompt,
       influenceBoardMeta,
       activeInfluenceBoardChoice,
@@ -3039,6 +3070,7 @@ function App() {
   return (
     <div className="app">
       <PwaPrompt />
+      <WelcomeModal />
 
       {!gameInput && (
         <p className="app-loading-game">Loading game…</p>

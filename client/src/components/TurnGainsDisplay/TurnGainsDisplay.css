@@ -332,6 +332,27 @@
   transition: transform 0.12s ease;
 }
 
+.turn-gain-recall {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  font-size: 0.68rem;
+  color: var(--chrome-text);
+  font-family: var(--font-log);
+  line-height: 1.15;
+}
+
+.turn-gain-recall-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--chrome-text-muted);
+}
+
+.turn-gain-recall-space {
+  white-space: nowrap;
+}
+
 .turn-gain-source-title {
   font-size: 0.68rem;
   font-weight: 600;

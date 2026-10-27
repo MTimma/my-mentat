@@ -706,9 +706,16 @@ function isAcquireRelatedGain(gain: Gain, acquiredIds: Set<number>): boolean {
   return gain.source === GainSource.CARD && acquiredIds.has(gain.sourceId)
 }
 
+/** Urgent Mission: group title is the intrigue; gain.name is the recalled space. */
+function agentRecallSourceTitle(gain: Gain): string | undefined {
+  if (gain.type !== RewardType.RECALL || gain.source !== GainSource.INTRIGUE) return undefined
+  return catalogIntrigueNameById(gain.sourceId)
+}
+
 function titleForGainGroup(gain: Gain, acquiredIds: Set<number>): string {
   if (isAcquireRelatedGain(gain, acquiredIds)) return ACQUIRE_GROUP_TITLE
   return (
+    agentRecallSourceTitle(gain) ??
     abilityTitleForGain(gain) ??
     boardSpaceTitleForGain(gain) ??
     trashDiscardSourceTitleForGain(gain) ??
@@ -818,7 +825,9 @@ export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
       } else {
         const abilityTitle = abilityTitleForGain(groupingGain)
         const spaceTitle = boardSpaceTitleForGain(groupingGain)
-        if (abilityTitle) existing.title = abilityTitle
+        const recallTitle = agentRecallSourceTitle(groupingGain)
+        if (recallTitle) existing.title = recallTitle
+        else if (abilityTitle) existing.title = abilityTitle
         else if (spaceTitle) existing.title = spaceTitle
       }
     } else {
@@ -840,6 +849,7 @@ export function aggregateResourceGains(gains: Gain[]): AggregatedResourceGain[] 
       gain.type === RewardType.TRASH || gain.type === RewardType.DISCARD
     const isCardLike = gain.type === RewardType.CARD || isTrashOrDiscard
     const isTechTile = gain.type === RewardType.TECH
+    const isAgentRecall = gain.type === RewardType.RECALL
     const trashedCardId = isTrashOrDiscard ? trashedCardIdFromGain(gain) : undefined
     const cardIdForAggregate = isTrashOrDiscard
       ? trashedCardId
@@ -850,7 +860,7 @@ export function aggregateResourceGains(gains: Gain[]): AggregatedResourceGain[] 
       ? `${gain.type}:${cardIdForAggregate ?? gain.sourceId}`
       : gain.type === RewardType.CARD
         ? `${gain.type}:${gain.name || gain.sourceId}`
-        : isTechTile
+        : isTechTile || isAgentRecall
           ? `${gain.type}:${gain.name}`
           : gain.type
     const existing = aggregated.get(key)
@@ -860,7 +870,7 @@ export function aggregateResourceGains(gains: Gain[]): AggregatedResourceGain[] 
       aggregated.set(key, {
         type: gain.type,
         amount: gain.amount,
-        name: isCardLike || isTechTile ? gain.name : undefined,
+        name: isCardLike || isTechTile || isAgentRecall ? gain.name : undefined,
         cardId: cardIdForAggregate,
       })
     }

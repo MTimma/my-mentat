@@ -1106,6 +1106,28 @@ describe('turnGainsDisplay', () => {
     ])
   })
 
+  it('groups an agent recall under the intrigue title and keeps the space name', () => {
+    const gain = {
+      playerId: 0,
+      source: GainSource.INTRIGUE,
+      sourceId: 29,
+      round: 1,
+      name: 'Interstellar Shipping',
+      amount: 1,
+      type: RewardType.RECALL,
+    }
+    const groups = groupGainsBySource([gain])
+    expect(groups).toHaveLength(1)
+    expect(groups[0].title).toBe('Urgent Mission')
+    expect(aggregateResourceGains(groups[0].gains)).toEqual([
+      expect.objectContaining({
+        type: RewardType.RECALL,
+        amount: 1,
+        name: 'Interstellar Shipping',
+      }),
+    ])
+  })
+
   it('groups board-space freighter recall under the space name', () => {
     const groups = groupGainsBySource([
       {

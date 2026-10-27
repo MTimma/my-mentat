@@ -36,6 +36,11 @@ export interface IxBoardOverlayProps {
   stacks: TechTileId[][]
   onSpaceClick: (spaceId: number) => void
   isSpaceEnabled: (space: SpaceProps) => boolean
+  /** Recall targeting: highlight these spaces and dim the rest. */
+  recallActive?: boolean
+  /** Urgent Mission: gold placement highlight, not the blue Kwisatz recall style. */
+  agentRecallActive?: boolean
+  isRecallTargetSpace?: (spaceId: number) => boolean
   highlightedAreas: SpaceProps['agentIcon'][]
   canPlaceAgent?: boolean
   hotspotDebug?: boolean
@@ -70,6 +75,9 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
   stacks,
   onSpaceClick,
   isSpaceEnabled,
+  recallActive = false,
+  agentRecallActive = false,
+  isRecallTargetSpace,
   highlightedAreas,
   canPlaceAgent = false,
   hotspotDebug = false,
@@ -304,11 +312,15 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
           const isVoiceBlocked = typeof blockedBy === 'number'
           const occupied = occupiedSpaces[space.id] || []
           const isOccupied = occupied.length > 0
-
+          const isRecallTarget = Boolean(recallActive && isRecallTargetSpace?.(space.id))
           const classes = [
             'ix-board-overlay__hotspot',
             'image-board__hotspot',
-            canPlaceAgent && isHighlighted && enabled ? 'highlighted' : '',
+            isRecallTarget && !agentRecallActive ? 'recall-selectable' : '',
+            recallActive && !isRecallTarget ? 'recall-dimmed' : '',
+            (agentRecallActive && isRecallTarget) || (canPlaceAgent && isHighlighted && enabled)
+              ? 'highlighted'
+              : '',
             isOccupied ? 'occupied' : '',
             !enabled ? 'disabled' : '',
             isVoiceBlocked ? 'voice-blocked' : '',
@@ -327,7 +339,8 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
                 width: `${hotspot.width}%`,
                 height: `${hotspot.height}%`,
               }}
-              title={space.name}
+              title={isRecallTarget ? `Recall agent from ${space.name}` : space.name}
+              aria-label={isRecallTarget ? `Recall agent from ${space.name}` : space.name}
               data-space-id={hotspot.spaceId}
               data-space-name={space.name}
               onClick={() => onSpaceClick(space.id)}

@@ -414,6 +414,44 @@ describe('Intrigue cards — player turns (plot)', () => {
     })
     expect(s.occupiedSpaces[12] ?? []).not.toContain(0)
     expect(s.players[0].agents).toBe(2)
+    expect(s.canEndTurn).toBe(false)
+    expect(s.gains).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: RewardType.RECALL,
+          source: GainSource.INTRIGUE,
+          sourceId: 29,
+          name: 'Hall of Oratory',
+          playerId: 0,
+          amount: 1,
+        }),
+      ])
+    )
+  })
+
+  it('Urgent Mission recall still allows ending the turn after an agent was placed', () => {
+    let s = basePlotState([makePlayer(0, { agents: 0 })])
+    s = {
+      ...s,
+      occupiedSpaces: { 12: [0] },
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        agentSpaceId: 15,
+        agentSpace: AgentIcon.EMPEROR,
+        gainsStartIndex: 0,
+      },
+    }
+    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 29 })
+    const ch = s.currTurn?.pendingChoices?.[0]
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: ch!.id,
+      reward: { recallSpaceId: 12 },
+    })
+    expect(s.canEndTurn).toBe(true)
+    expect(s.currTurn?.agentSpaceId).toBe(15)
   })
 
   it('Rapid Mobilization (20): MOBILIZE_GARRISON deploys from garrison', () => {

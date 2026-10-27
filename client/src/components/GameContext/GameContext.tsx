@@ -2717,13 +2717,15 @@ function applyIntrigueCardPlay(
       ? {
           ...updatedState.currTurn,
           pendingChoices: [...(updatedState.currTurn.pendingChoices || []), ...pendingChoices],
-          playedIntrigueCard: [...(updatedState.currTurn.playedIntrigueCard || []), { cardId: card.id }]
+          playedIntrigueCard: [...(updatedState.currTurn.playedIntrigueCard || []), { cardId: card.id }],
+          gainsStartIndex: updatedState.currTurn.gainsStartIndex ?? updatedState.gains.length,
         }
       : {
           playerId,
           type: TurnType.ACTION,
           playedIntrigueCard: [{ cardId: card.id }],
-          pendingChoices
+          pendingChoices,
+          gainsStartIndex: updatedState.gains.length,
         }
 
   const alreadyDiscarded = updatedState.intrigueDiscard.some(c => c.id === card.id)
@@ -7311,15 +7313,27 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           [spaceId]: occ.filter(id => id !== playerId)
         }
         const newPending = (state.currTurn.pendingChoices || []).filter(c => c.id !== action.choiceId)
-        const newTurn = { ...state.currTurn, pendingChoices: newPending }
+        const gainsStartIndex = state.currTurn.gainsStartIndex ?? state.gains.length
+        const newTurn = { ...state.currTurn, pendingChoices: newPending, gainsStartIndex }
+        const spaceName = BOARD_SPACES.find(s => s.id === spaceId)?.name ?? `Space ${spaceId}`
+        const recallGain: Gain = {
+          round: state.currentRound,
+          playerId,
+          source: gainAttribution?.type ?? GainSource.INTRIGUE,
+          sourceId: gainAttribution?.id ?? 0,
+          name: spaceName,
+          amount: 1,
+          type: RewardType.RECALL,
+        }
         const afterRecall = {
           ...state,
           occupiedSpaces: newOccupied,
+          gains: [...state.gains, recallGain],
           players: state.players.map(p =>
             p.id === playerId ? { ...p, agents: p.agents + 1 } : p
           ),
           currTurn: newTurn,
-          canEndTurn: newPending.length === 0
+          canEndTurn: computeCanEndTurn({ ...state, currTurn: newTurn }),
         }
         return state.phase === GamePhase.END_GAME
           ? afterEndgamePlayerAction(afterRecall)
