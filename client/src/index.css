@@ -143,7 +143,8 @@ button:hover {
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 2px solid var(--play-target-highlight, #ffd700);
+  outline-offset: 2px;
 }
 
 /* Blueish is the default shell; avoid overriding with prefers-color-scheme
