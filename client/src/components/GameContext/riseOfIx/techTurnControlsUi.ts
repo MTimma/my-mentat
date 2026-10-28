@@ -30,8 +30,12 @@ export function isAcquireTechOnlyOptional(effect: OptionalEffect): boolean {
   return effect.reward.acquireTech !== undefined && !hasMeaningfulRewardBesidesAcquireTech(effect.reward)
 }
 
+export function isAcquireTechOnlyReward(reward: Reward): boolean {
+  return reward.acquireTech !== undefined && !hasMeaningfulRewardBesidesAcquireTech(reward)
+}
+
 export function isAcquireTechOnlyChoiceOption(option: { reward: Reward }): boolean {
-  return option.reward.acquireTech !== undefined && !hasMeaningfulRewardBesidesAcquireTech(option.reward)
+  return isAcquireTechOnlyReward(option.reward)
 }
 
 export function filterAcquireTechOptionalEffects(effects: OptionalEffect[]): OptionalEffect[] {

@@ -564,13 +564,11 @@ export function BirdseyeDesktopControls({
   troopDeploy,
   dreadnoughtDeploy,
   specimenDeploy,
-  interactionsHostRef,
 }: {
   player: Player
   actions: BirdseyeSeatActions
   gameState?: GameState
   isHistoryView?: boolean
-  interactionsHostRef?: (el: HTMLDivElement | null) => void
 } & BirdseyeSeatDeployProps) {
   const [techOpen, setTechOpen] = useState(false)
   return (
@@ -598,7 +596,6 @@ export function BirdseyeDesktopControls({
           />
         ) : null}
       </div>
-      <BirdseyeInteractionsHost hostRef={interactionsHostRef} />
     </div>
   )
 }
@@ -645,6 +642,7 @@ export function BirdseyeSeatPlayArea({
   playedIntrigues = [],
   activeIntrigues = [],
   pendingIntrigueIds,
+  interactionsHostRef,
 }: {
   cards: Card[]
   isActive?: boolean
@@ -653,6 +651,8 @@ export function BirdseyeSeatPlayArea({
   playedIntrigues?: IntrigueCard[]
   activeIntrigues?: IntrigueCard[]
   pendingIntrigueIds?: ReadonlySet<number> | number[]
+  /** Pending chips overlay this lane, from the action buttons up to the resources. */
+  interactionsHostRef?: (el: HTMLDivElement | null) => void
 }) {
   const names = cards.map(card => card.name).filter(Boolean)
   const revealedIds = new Set(revealedCardIds ?? [])
@@ -784,6 +784,9 @@ export function BirdseyeSeatPlayArea({
         </div>
       )}
       <BirdseyeLaneScrollbar visible={scrollable} thumb={thumb} />
+      {interactionsHostRef ? (
+        <BirdseyeInteractionsHost hostRef={interactionsHostRef} />
+      ) : null}
     </div>
   )
 }

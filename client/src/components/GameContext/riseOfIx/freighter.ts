@@ -53,6 +53,26 @@ export function isFreighterPendingChoice(choice: PendingChoice): choice is Fixed
   return choice.type === ChoiceType.FIXED_OPTIONS && choice.prompt.startsWith('Freighter (now at ')
 }
 
+export function freighterChoiceOffersAdvance(choice: FixedOptionsChoice): boolean {
+  return choice.options.some(option => option.reward.custom === CustomEffect.FREIGHTER_ADVANCE)
+}
+
+/**
+ * A later freighter icon is stored as Recall-only when the track cannot advance
+ * twice (step 2 + two icons). Leave that button out of the play area until the
+ * player takes the Advance that made Recall the only legal move.
+ */
+export function deferRecallOnlyFreighterChoices(choices: PendingChoice[]): PendingChoice[] {
+  const freighters = choices.filter(isFreighterPendingChoice)
+  const advanceStillOpen = freighters.some(freighterChoiceOffersAdvance)
+  if (!advanceStillOpen) return choices
+  const hidden = new Set(
+    freighters.filter(choice => !freighterChoiceOffersAdvance(choice)).map(choice => choice.id)
+  )
+  if (hidden.size === 0) return choices
+  return choices.filter(choice => !hidden.has(choice.id))
+}
+
 export function buildFreighterChoiceOptions(
   state: GameState,
   playerId: number

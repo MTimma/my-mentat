@@ -383,6 +383,11 @@
   border-color: var(--chrome-border-accent-strong);
 }
 
+.turn-history-icon-btn--details:focus,
+.turn-history-icon-btn--details:focus-visible {
+  outline: none;
+}
+
 .turn-history-action-icon--undo {
   width: 15px;
   height: 15px;
@@ -407,7 +412,7 @@
     0 1px 3px rgba(0, 0, 0, 0.28);
 }
 
-.turn-history-icon-btn--undo:hover {
+.turn-history-icon-btn--undo:hover:not(:disabled) {
   background: var(--chrome-danger-hover-bg);
   color: var(--chrome-danger-text);
   border-color: var(--chrome-danger-hover-border);
@@ -415,6 +420,14 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     0 2px 8px rgba(0, 0, 0, 0.28);
   transform: translateY(-1px);
+}
+
+.turn-history-icon-btn--undo:hover:disabled {
+  border-color: var(--chrome-danger-border);
+}
+
+.turn-history-icon-btn--undo:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .turn-history-icon-btn--undo:active {

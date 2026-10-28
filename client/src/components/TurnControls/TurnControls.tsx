@@ -31,6 +31,7 @@ import {
   findOriginalOptionIndex,
   findTechAcquireOptionForEffectSource,
   canAffordAnyFaceUpTech,
+  isAcquireTechOnlyReward,
   isPlayAreaInlineTechOrSignetChoice,
 } from '../GameContext/riseOfIx/techTurnControlsUi'
 import { canPlayDiversion, canPlayStrongarm } from '../GameContext/riseOfIx/intrigue'
@@ -38,6 +39,7 @@ import PlayerTechModal from '../PlayerTechModal/PlayerTechModal'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import FreighterIcon, { freighterArrowDirectionFromCustom } from '../FreighterIcon/FreighterIcon'
+import { deferRecallOnlyFreighterChoices } from '../GameContext/riseOfIx/freighter'
 import {
   getAgentTurnCardsForDisplay,
   getPlayAreaCardsForTurnView,
@@ -62,7 +64,7 @@ import {
 import { isAgentRecallBoardChoice } from '../../utils/agentRecallBoardChoice'
 import { isInfluenceBoardChoice } from '../../utils/influenceBoardChoice'
 import { isSoleTrashThisCardReward } from '../../utils/pendingRewardAutoApply'
-import { effectSourceGroupKey } from '../../utils/turnGainsDisplay'
+import { effectSourceGroupKey, orderShippingRecallEffects } from '../../utils/turnGainsDisplay'
 import {
   CardEffectRect,
   CARD_EFFECT_REGIONS,
@@ -1774,7 +1776,13 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
           .filter(Boolean)
           .join(' ')}
         role="group"
-        aria-label={fixedChoice.prompt || 'Choose one option'}
+        aria-label={
+          freighterMoveChoice
+            ? fixedChoice.options.length > 1
+              ? 'Advance or recall'
+              : 'Recall'
+            : fixedChoice.prompt || 'Choose one option'
+        }
       >
         {fixedChoice.options.map((option, index) => {
           let disabledTooltip: string | undefined
@@ -2064,8 +2072,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     const selectionActive =
       voiceSelectionActive ||
       masterstrokeSelectionActive ||
-      memnonHighCouncilSelectionActive ||
-      influenceBoardSelectionActive
+      memnonHighCouncilSelectionActive
     const rewards =
       filter === 'overlay-only'
         ? card.rewards.filter(reward => reward.isTrash || shouldOverlayCardReward(reward))
@@ -2079,14 +2086,16 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     const choices =
       filter === 'overlay-only'
         ? []
-        : filterAcquireTechFromChoices(
-            card.choices.filter(choice => {
-              if (choice.type !== ChoiceType.FIXED_OPTIONS) return true
-              // Influence gain/lose is chosen on the board tracks, not in the play area.
-              // Agent recall is chosen on the board spaces, not in the play area.
-              return !isInfluenceBoardChoice(choice as FixedOptionsChoice) &&
-                !isAgentRecallBoardChoice(choice as FixedOptionsChoice)
-            })
+        : deferRecallOnlyFreighterChoices(
+            filterAcquireTechFromChoices(
+              card.choices.filter(choice => {
+                if (choice.type !== ChoiceType.FIXED_OPTIONS) return true
+                // Influence gain/lose is chosen on the board tracks, not in the play area.
+                // Agent recall is chosen on the board spaces, not in the play area.
+                return !isInfluenceBoardChoice(choice as FixedOptionsChoice) &&
+                  !isAgentRecallBoardChoice(choice as FixedOptionsChoice)
+              })
+            )
           )
     const techAcquireOption =
       riseOfIx && activePlayer && gameState && !isHistoryView
@@ -2098,7 +2107,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
         : false
     return (
       <>
-        {rewards.map(reward => {
+        {rewards.filter(reward => !(techAcquireOption && onOpenTechAcquire && isAcquireTechOnlyReward(reward.reward))).map(reward => {
           const isVoiceReward = reward.reward.custom === CustomEffect.THE_VOICE
           const isMasterstrokeReward = reward.source.type === GainSource.MASTERSTROKE
           const isMemnonReward = reward.source.type === GainSource.MEMNON_HIGH_COUNCIL
@@ -2232,12 +2241,12 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                disabled={selectionActive || !canAffordAnyTech}
+                disabled={selectionActive}
                 onClick={() => onOpenTechAcquire(techAcquireOption.id)}
                 title={
                   canAffordAnyTech
                     ? 'Buy tech from the market'
-                    : 'Cannot afford any face-up tech tile'
+                    : 'Open the tech market'
                 }
               >
                 <img
@@ -2357,9 +2366,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                   .filter(Boolean)
                   .join(' ')}
               >
-                {!isInlineOrChoice && !defaultOrPrompt && fixedChoice.prompt && (
+                {!freighterMoveChoice && !isInlineOrChoice && !defaultOrPrompt && fixedChoice.prompt ? (
                   <div className="card-effects-inline-choice-title">{fixedChoice.prompt}</div>
-                )}
+                ) : null}
                 {renderFixedChoiceOptions(fixedChoice, 'compact')}
               </div>
             )
@@ -2952,17 +2961,19 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     const compactBirdseye = Boolean(options?.compactBirdseye)
     const includeAll = Boolean(options?.includeAll)
     const playedIntrigueIds = new Set(stripIntrigueCards.map(c => c.id))
-    const fallbackCards = includeAll
-      ? effectCards
-      : effectCards.filter(card => {
-          if (card.source.type === GainSource.CARD) {
-            return !visibleCardIds.has(card.source.id)
-          }
-          if (card.source.type === GainSource.INTRIGUE) {
-            return !playedIntrigueIds.has(card.source.id)
-          }
-          return true
-        })
+    const fallbackCards = orderShippingRecallEffects(
+      includeAll
+        ? effectCards
+        : effectCards.filter(card => {
+            if (card.source.type === GainSource.CARD) {
+              return !visibleCardIds.has(card.source.id)
+            }
+            if (card.source.type === GainSource.INTRIGUE) {
+              return !playedIntrigueIds.has(card.source.id)
+            }
+            return true
+          })
+    )
     if (fallbackCards.length === 0) return null
 
     return (

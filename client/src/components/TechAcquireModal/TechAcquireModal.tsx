@@ -227,7 +227,6 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
         {showStackPicker ? (
           <>
             <h3 className="tech-acquire-modal__title">Buy tech</h3>
-            <p className="tech-acquire-modal__subtitle">Choose a face-up tech tile to acquire.</p>
             {renderSourcePicker()}
             {!sourceReady ? (
               <p className="tech-acquire-modal__view-only-hint">

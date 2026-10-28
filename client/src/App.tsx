@@ -867,43 +867,6 @@ const GameContent = ({
 
   const autoAppliedBatchRef = useRef<string | null>(null)
 
-  useEffect(() => {
-    if (!autoApplyMandatoryRewards || !activePlayer || isViewingHistory) return
-    if (
-      voiceSelectionRewardId ||
-      masterstrokeSelectionRewardId ||
-      memnonHighCouncilRewardId ||
-      influenceBoardSelectionActive
-    ) {
-      return
-    }
-
-    const applicable = getAutoApplicableRewards(gameState)
-    if (applicable.length === 0) {
-      autoAppliedBatchRef.current = null
-      return
-    }
-
-    const batchKey = applicable
-      .map(r => r.id)
-      .sort()
-      .join('|')
-    if (autoAppliedBatchRef.current === batchKey) return
-    autoAppliedBatchRef.current = batchKey
-
-    dispatch({ type: 'CLAIM_ALL_REWARDS', playerId: activePlayer.id })
-  }, [
-    autoApplyMandatoryRewards,
-    activePlayer?.id,
-    isViewingHistory,
-    gameState.pendingRewards,
-    gameState.currTurn?.pendingChoices,
-    voiceSelectionRewardId,
-    masterstrokeSelectionRewardId,
-    memnonHighCouncilRewardId,
-    dispatch,
-  ])
-
   // Sandbox setup turn: blocking round-start modals are replaced by on-board click targets.
   const inSandboxSetup = Boolean(gameState.sandboxSetup) && !isViewingHistory
   const riseOfIx = Boolean(gameState.expansions?.riseOfIx)
@@ -1040,6 +1003,52 @@ const GameContent = ({
     (activeInfluenceBoardChoice && activePlayer && influenceBoardMeta) ||
       (activeConflictInfluenceChoice && conflictInfluenceBoardMeta)
   )
+
+  useEffect(() => {
+    if (!autoApplyMandatoryRewards || !activePlayer || isViewingHistory) return
+    if (
+      voiceSelectionRewardId ||
+      masterstrokeSelectionRewardId ||
+      memnonHighCouncilRewardId
+    ) {
+      return
+    }
+
+    const applicable = getAutoApplicableRewards(gameState).filter(reward =>
+      influenceBoardSelectionActive ? reward.reward.acquireTech === undefined : true
+    )
+    if (applicable.length === 0) {
+      autoAppliedBatchRef.current = null
+      return
+    }
+
+    const batchKey = applicable
+      .map(r => r.id)
+      .sort()
+      .join('|')
+    if (autoAppliedBatchRef.current === batchKey) return
+    autoAppliedBatchRef.current = batchKey
+
+    if (influenceBoardSelectionActive) {
+      for (const reward of applicable) {
+        dispatch({ type: 'CLAIM_REWARD', playerId: activePlayer.id, rewardId: reward.id })
+      }
+      return
+    }
+
+    dispatch({ type: 'CLAIM_ALL_REWARDS', playerId: activePlayer.id })
+  }, [
+    autoApplyMandatoryRewards,
+    activePlayer?.id,
+    isViewingHistory,
+    gameState.pendingRewards,
+    gameState.currTurn?.pendingChoices,
+    voiceSelectionRewardId,
+    masterstrokeSelectionRewardId,
+    memnonHighCouncilRewardId,
+    influenceBoardSelectionActive,
+    dispatch,
+  ])
 
   const influenceBoardPrompt = influenceBoardMeta
     ? getInfluenceBoardPrompt(influenceBoardMeta.mode, influenceBoardMeta.amount)

@@ -45,6 +45,15 @@
   border-color: var(--chrome-border-accent-strong);
 }
 
+.turn-history-nav-btn:hover:disabled {
+  border-color: var(--chrome-border-accent);
+}
+
+.turn-history-nav-btn:focus,
+.turn-history-nav-btn:focus-visible {
+  outline: none;
+}
+
 .turn-history-nav-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;

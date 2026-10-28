@@ -245,12 +245,6 @@ export function getTechAcquireSourceOptions(
 
   if (state.pendingAcquireTech?.playerId === playerId) {
     const offer = offerFromAcquireReward(state.pendingAcquireTech, { ready: true })
-    const discount = offer.discount
-    if (discount > 0) {
-      return [
-        sourceOptionFromOffer('board-space', 'board-space', TECH_NEGOTIATION_PROMPT, offer),
-      ]
-    }
     return [sourceOptionFromOffer('ready', 'other', 'Acquire tech', offer)]
   }
 
@@ -267,11 +261,10 @@ export function getTechAcquireSourceOptions(
       ready: false,
       pendingRewardId: reward.id,
     })
-    const discount = offer.discount
     options.push(
       sourceOptionFromOffer(
         `reward-${reward.id}`,
-        discount > 0 ? 'board-space' : 'other',
+        'other',
         reward.source.name || 'Acquire tech',
         offer
       )

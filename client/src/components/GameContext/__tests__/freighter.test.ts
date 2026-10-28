@@ -15,6 +15,7 @@ import {
 } from '../../../types/GameTypes'
 import { assertJsonSerializable } from '../../../save/recording'
 import { applyGameAction } from '../GameContext'
+import { deferRecallOnlyFreighterChoices } from '../riseOfIx/freighter'
 import { getBaseTestState, makePlayer, stubDeckCard, defaultRoiIxBoard } from './_helpers'
 
 const ROI_EXPANSIONS = { riseOfIx: true, riseOfIxEpic: false }
@@ -310,6 +311,31 @@ describe('freighter shipping track', () => {
     expect(hasAdvanceOption(first)).toBe(true)
     expect(second.prompt).toBe('Freighter (now at 3/3)')
     expect(hasAdvanceOption(second)).toBe(false)
+  })
+
+  it('hides the recall-only second icon until the step-2 advance is taken', () => {
+    const source = { type: GainSource.BOARD_SPACE, id: INTERSTELLAR_SHIPPING_ID, name: 'Interstellar Shipping' }
+    const advanceAndRecall: FixedOptionsChoice = {
+      id: 'first',
+      type: ChoiceType.FIXED_OPTIONS,
+      prompt: 'Freighter (now at 2/3)',
+      source,
+      options: [
+        { reward: { custom: CustomEffect.FREIGHTER_ADVANCE }, rewardLabel: 'Advance' },
+        { reward: { custom: CustomEffect.FREIGHTER_RECALL }, rewardLabel: 'Recall' },
+      ],
+    }
+    const recallOnly: FixedOptionsChoice = {
+      id: 'second',
+      type: ChoiceType.FIXED_OPTIONS,
+      prompt: 'Freighter (now at 3/3)',
+      source,
+      options: [{ reward: { custom: CustomEffect.FREIGHTER_RECALL }, rewardLabel: 'Recall' }],
+    }
+    expect(deferRecallOnlyFreighterChoices([advanceAndRecall, recallOnly]).map(c => c.id)).toEqual([
+      'first',
+    ])
+    expect(deferRecallOnlyFreighterChoices([recallOnly]).map(c => c.id)).toEqual(['second'])
   })
 
   it('after advancing from step 2, remaining freighter choice drops Advance', () => {

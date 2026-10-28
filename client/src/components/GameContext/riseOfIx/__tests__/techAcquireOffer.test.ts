@@ -195,6 +195,23 @@ describe('getTechAcquireOffer', () => {
       ready: false,
       pendingRewardId: 'shipping-recall-tech',
       label: 'Shipping track',
+      kind: 'other',
+    })
+  })
+
+  it('keeps a discounted pending purchase as Acquire tech, not Tech Negotiation', () => {
+    const s = {
+      ...roiState(),
+      pendingAcquireTech: { playerId: 0, discount: 2 },
+    }
+    const options = getTechAcquireSourceOptions(s, 0)
+    expect(options).toHaveLength(1)
+    expect(options[0]).toMatchObject({
+      id: 'ready',
+      kind: 'other',
+      label: 'Acquire tech',
+      discount: 2,
+      ready: true,
     })
   })
 })

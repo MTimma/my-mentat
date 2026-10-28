@@ -648,6 +648,32 @@ export function effectSourceGroupKey(source: {
   return `${source.type}-${source.id}`
 }
 
+export function shippingRecallStep(name: string | undefined): number | null {
+  const match = /^Shipping ([123])$/.exec(name ?? '')
+  return match ? Number(match[1]) : null
+}
+
+/** Recall chips are enqueued as step 2, then 3, then the step-1 choice. Show 1, 2, 3. */
+export function orderShippingRecallEffects<T extends { source: { type: string; name?: string } }>(
+  items: T[]
+): T[] {
+  const indexes: number[] = []
+  items.forEach((item, index) => {
+    if (item.source.type === GainSource.SHIPPING_TRACK) indexes.push(index)
+  })
+  if (indexes.length < 2) return items
+  const sorted = indexes
+    .map(index => items[index]!)
+    .sort(
+      (a, b) => (shippingRecallStep(a.source.name) ?? 9) - (shippingRecallStep(b.source.name) ?? 9)
+    )
+  const next = items.slice()
+  indexes.forEach((index, position) => {
+    next[index] = sorted[position]!
+  })
+  return next
+}
+
 /** Board-space title for grouping mandatory rewards from the same space (e.g. Foldspace card + influence). */
 function boardSpaceTitleForGain(gain: Gain): string | undefined {
   if (gain.source !== GainSource.BOARD_SPACE) return undefined

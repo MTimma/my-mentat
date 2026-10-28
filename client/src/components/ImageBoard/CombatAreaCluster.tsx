@@ -601,6 +601,9 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
               playedIntrigues={getPlayedIntrigueCardsForTurnView(gameState, player)}
               activeIntrigues={getActiveIntrigueCardsForTurnView(gameState, player)}
               pendingIntrigueIds={isActive ? pendingIntrigueIds : undefined}
+              interactionsHostRef={
+                showActiveActions && birdseyeActions ? birdseyeInteractionsHostRef : undefined
+              }
             />
             {showActiveActions && birdseyeActions ? (
               <BirdseyeDesktopControls
@@ -608,7 +611,6 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 actions={birdseyeActions}
                 gameState={gameState}
                 isHistoryView={birdseyeIsHistoryView}
-                interactionsHostRef={birdseyeInteractionsHostRef}
                 {...seatDeploy}
               />
             ) : (
