@@ -1,7 +1,25 @@
 /**
  * Shared modal overlay / panel / button tokens.
  * Legacy per-modal overlay classes remain as aliases during migration.
+ *
+ * --setup-modal-* is the leader-setup / browse chrome.
+ * Names are local tokens, not from an external design spec.
  */
+
+:root {
+  --setup-modal-overlay: rgba(0, 0, 0, 0.62);
+  --setup-modal-bg: rgba(10, 12, 18, 0.97);
+  --setup-modal-text: #fff8e8;
+  --setup-modal-text-muted: rgba(255, 248, 232, 0.72);
+  --setup-modal-text-faint: rgba(255, 248, 232, 0.4);
+  --setup-modal-line: rgba(255, 248, 232, 0.28);
+  --setup-modal-line-soft: rgba(255, 248, 232, 0.2);
+  --setup-modal-control-bg: rgba(0, 0, 0, 0.35);
+  --setup-modal-hover: rgba(255, 248, 232, 0.08);
+  --setup-modal-radius: 10px;
+  --setup-modal-control-radius: 6px;
+  --setup-modal-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+}
 
 .modal-overlay {
   position: fixed;

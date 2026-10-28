@@ -239,7 +239,7 @@ function BrowseGameTable({ rows, emptyLabel }: { rows: BrowseGameRow[]; emptyLab
 }
 
 const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
-  const [activeTab, setActiveTab] = useState<GamesListTab>('community')
+  const [activeTab, setActiveTab] = useState<GamesListTab>('official')
   const cachedCommunity = getCachedGamesList()
   const [games, setGames] = useState<GameDetail[]>(cachedCommunity ?? [])
   const [localGames, setLocalGames] = useState<Array<LocalGameMeta & { summary?: SaveSummary }>>([])
@@ -301,7 +301,8 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
   }, [])
 
   useEffect(() => {
-    if (activeTab === 'community') {
+    // Saved server games show on Official until official and community lists are split.
+    if (activeTab === 'official') {
       void loadCommunityGames()
       return
     }
@@ -363,20 +364,6 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
         <button
           type="button"
           role="tab"
-          aria-selected={activeTab === 'community'}
-          className={[
-            'games-list-tab',
-            activeTab === 'community' ? 'games-list-tab--active' : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          onClick={() => setActiveTab('community')}
-        >
-          Community
-        </button>
-        <button
-          type="button"
-          role="tab"
           aria-selected={activeTab === 'official'}
           className={[
             'games-list-tab',
@@ -387,6 +374,20 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
           onClick={() => setActiveTab('official')}
         >
           Official
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'community'}
+          className={[
+            'games-list-tab',
+            activeTab === 'community' ? 'games-list-tab--active' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          onClick={() => setActiveTab('community')}
+        >
+          Community
         </button>
         <button
           type="button"
@@ -405,8 +406,8 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
       </div>
 
       <div className="games-list-panel" role="tabpanel">
-        {activeTab === 'official' ? (
-          <BrowseGameTable rows={[]} emptyLabel="No official games yet." />
+        {activeTab === 'community' ? (
+          <p className="games-list-empty">No community games yet.</p>
         ) : activeTab === 'local' ? (
           listStatus === 'loading' ? (
             <p className="games-list-status">Loading drafts…</p>
@@ -446,7 +447,7 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
             </>
           )
         ) : listStatus === 'loading' ? (
-          <p className="games-list-status">Loading community games…</p>
+          <p className="games-list-status">Loading official games…</p>
         ) : listStatus === 'error' ? (
           <div className="games-list-error-block">
             <pre className="games-list-error games-list-error--copyable" role="alert" tabIndex={0}>
@@ -462,7 +463,7 @@ const GamesList: React.FC<GamesListProps> = ({ onLoad, className }) => {
             </div>
           </div>
         ) : games.length === 0 ? (
-          <p className="games-list-empty">No community games yet.</p>
+          <p className="games-list-empty">No official games yet.</p>
         ) : (
           <BrowseGameTable
             rows={games.map(game => ({

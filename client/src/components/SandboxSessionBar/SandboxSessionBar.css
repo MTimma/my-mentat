@@ -331,32 +331,95 @@
   flex: 0 1 auto;
 }
 
-.sandbox-session-bar__browse-dialog {
+.modal-overlay.sandbox-session-bar__browse-overlay {
+  align-items: flex-start;
+  background-color: var(--setup-modal-overlay);
+}
+
+.sandbox-session-bar__browse-dialog.target-dialog {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  gap: 12px;
   width: min(92rem, 96vw);
   max-width: 96vw;
   max-height: min(80vh, 40rem);
+  margin-top: 0;
+  margin-bottom: auto;
+  overflow: hidden;
+  padding: 12px 14px 16px;
+  background: var(--setup-modal-bg);
+  border: none;
+  border-radius: var(--setup-modal-radius);
+  box-shadow: var(--setup-modal-shadow);
+  color: var(--setup-modal-text);
+}
+
+/* Viewport-fixed dialog centers with top/translate. Pin the top; height still follows content. */
+.sandbox-session-bar__browse-overlay:not(.play-board-modal-overlay--scoped)
+  .sandbox-session-bar__browse-dialog.target-dialog {
+  top: 12px;
+  transform: translateX(-50%);
+}
+
+.sandbox-session-bar__browse-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border-radius: var(--setup-modal-control-radius);
+  border: 1px solid var(--setup-modal-line);
+  background: transparent;
+  color: var(--setup-modal-text);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  outline: none;
+  box-shadow: none;
+}
+
+.sandbox-session-bar__browse-close:hover,
+.sandbox-session-bar__browse-close:focus,
+.sandbox-session-bar__browse-close:focus-visible,
+.sandbox-session-bar__browse-close:active {
+  outline: none;
+  box-shadow: none;
+  border-color: var(--setup-modal-line);
+  background: var(--setup-modal-hover);
+  color: var(--setup-modal-text);
+}
+
+.sandbox-session-bar__browse-dialog .games-list {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.sandbox-session-bar__browse-dialog .games-list-tabs {
+  padding-right: 40px;
+}
+
+.sandbox-session-bar__browse-dialog .games-list-panel {
+  min-height: 0;
   overflow: auto;
 }
 
-.sandbox-session-bar__browse-list {
-  background: var(--color-arrakis-parchment, #f4e4bc);
-  color: var(--color-arrakis-earth, #5c3d24);
-  border-radius: 8px;
-  padding: 8px;
+.sandbox-session-bar__browse-dialog .games-list-table-wrap {
+  max-height: none;
 }
 
 .sandbox-session-bar__browse-empty {
   margin: 0;
   font-size: 0.85rem;
-}
-
-.sandbox-session-bar__browse-note {
-  margin: 0.35rem auto 0.9rem;
-  max-width: 28rem;
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.45;
-  text-align: center;
-  color: color-mix(in srgb, var(--color-arrakis-earth, #5c3d24) 42%, #000);
+  color: var(--setup-modal-text-muted);
 }

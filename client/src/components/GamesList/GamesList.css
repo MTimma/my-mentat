@@ -1,26 +1,33 @@
-/* Matches .setup-container palette in App.css (light parchment card, dark earth text). */
+/* Same chrome as the leader setup modal (--setup-modal-* in modal.css). */
 .games-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   text-align: left;
-  color: var(--color-arrakis-earth);
+  color: var(--setup-modal-text);
 }
 
-/* Override index.css global `button { background: #1a1a1a }` on the setup card. */
+/* Override index.css global `button { background: #1a1a1a }`. */
 .games-list button {
   font-family: inherit;
+  color: var(--setup-modal-text);
+  border-color: var(--setup-modal-line);
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.games-list button:hover {
-  border-color: var(--color-arrakis-earth);
+.games-list button:hover,
+.games-list button:focus,
+.games-list button:focus-visible,
+.games-list button:active {
+  outline: none;
+  box-shadow: none;
+  border-color: var(--setup-modal-line);
 }
 
 .games-list-tabs {
   display: flex;
   gap: 0.35rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-arrakis-earth) 25%, transparent);
+  border-bottom: 1px solid var(--setup-modal-line-soft);
   padding-bottom: 0.35rem;
 }
 
@@ -28,24 +35,24 @@
   flex: 1;
   padding: 0.45rem 0.6rem;
   border: 1px solid transparent;
-  border-radius: 6px 6px 0 0;
+  border-radius: var(--setup-modal-control-radius) var(--setup-modal-control-radius) 0 0;
   background: transparent;
-  color: color-mix(in srgb, var(--color-arrakis-earth) 72%, #5c5348);
+  color: var(--setup-modal-text-muted);
   cursor: pointer;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .games-list-tab:hover {
-  color: var(--color-arrakis-earth);
-  background: rgba(255, 255, 255, 0.55);
+  color: var(--setup-modal-text);
+  background: var(--setup-modal-hover);
 }
 
 .games-list-tab--active {
-  color: var(--color-arrakis-earth);
-  border-color: color-mix(in srgb, var(--color-arrakis-earth) 30%, transparent);
+  color: var(--setup-modal-text);
+  border-color: var(--setup-modal-line);
   border-bottom-color: transparent;
-  background: #fff;
+  background: var(--setup-modal-hover);
 }
 
 .games-list-panel {
@@ -56,13 +63,13 @@
 .games-list-status {
   margin: 0;
   font-size: 0.9rem;
-  color: #5c5348;
+  color: var(--setup-modal-text-muted);
 }
 
 .games-list-error {
   margin: 0;
   font-size: 0.85rem;
-  color: #b91c1c;
+  color: #ffb4b4;
 }
 
 .games-list-error--copyable {
@@ -74,9 +81,9 @@
   font-size: 0.8rem;
   line-height: 1.4;
   padding: 0.5rem 0.6rem;
-  border: 1px solid color-mix(in srgb, #b91c1c 35%, transparent);
-  border-radius: 4px;
-  background: color-mix(in srgb, #b91c1c 6%, #fff);
+  border: 1px solid rgba(255, 180, 180, 0.45);
+  border-radius: var(--setup-modal-control-radius);
+  background: rgba(80, 16, 16, 0.45);
   outline: none;
 }
 
@@ -96,29 +103,30 @@
   margin-top: 0.5rem;
   padding: 0.35rem 0.65rem;
   font-size: 0.85rem;
+  font-weight: 700;
   cursor: pointer;
-  border: 1px solid var(--color-arrakis-earth);
-  border-radius: 4px;
-  background: #fff;
-  color: var(--color-arrakis-earth);
+  border: 1px solid var(--setup-modal-line);
+  border-radius: var(--setup-modal-control-radius);
+  background: transparent;
+  color: var(--setup-modal-text);
 }
 
 .games-list-retry:hover {
-  background: color-mix(in srgb, var(--color-arrakis-earth) 8%, #fff);
+  background: var(--setup-modal-hover);
 }
 
 .games-list-cap-note {
   margin: 0 0 0.5rem;
   font-size: 0.78rem;
-  color: #5c5348;
+  color: var(--setup-modal-text-muted);
 }
 
 .games-list-table-wrap {
   max-height: 22rem;
   overflow: auto;
-  border: 2px solid var(--color-arrakis-earth);
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid var(--setup-modal-line);
+  border-radius: var(--setup-modal-control-radius);
+  background: var(--setup-modal-control-bg);
 }
 
 .games-list-table {
@@ -126,7 +134,7 @@
   table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.82rem;
-  color: #1a1a1a;
+  color: var(--setup-modal-text);
 }
 
 .games-list-col-name {
@@ -148,7 +156,7 @@
 .games-list-table th,
 .games-list-table td {
   padding: 0.45rem 0.55rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-arrakis-earth) 18%, transparent);
+  border-bottom: 1px solid var(--setup-modal-line-soft);
   text-align: left;
   vertical-align: top;
 }
@@ -156,16 +164,16 @@
 .games-list-table th {
   position: sticky;
   top: 0;
-  background: color-mix(in srgb, var(--color-arrakis-earth) 12%, var(--color-arrakis-parchment));
+  background: color-mix(in srgb, var(--setup-modal-text) 8%, transparent);
   font-weight: 700;
-  color: var(--color-arrakis-earth);
+  color: var(--setup-modal-text-muted);
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
 
 .games-list-table tbody tr:nth-child(even) {
-  background: color-mix(in srgb, var(--color-arrakis-parchment) 55%, #fff);
+  background: color-mix(in srgb, var(--setup-modal-text) 4%, transparent);
 }
 
 .games-list-table tr:last-child td {
@@ -176,13 +184,13 @@
   display: block;
   width: 100%;
   font-weight: 600;
-  color: var(--color-arrakis-earth);
+  color: var(--setup-modal-text);
   overflow: hidden;
   white-space: nowrap;
 }
 
 .games-list-meta {
-  color: #5c5348;
+  color: var(--setup-modal-text-muted);
   white-space: nowrap;
 }
 
@@ -202,7 +210,7 @@
 }
 
 .games-list-date {
-  color: #5c5348;
+  color: var(--setup-modal-text-muted);
   font-size: 0.78rem;
   font-weight: 500;
   vertical-align: top;
@@ -367,17 +375,17 @@
   width: 100%;
   padding: 0.3rem 0.55rem;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  border: 1px solid var(--color-arrakis-earth);
-  border-radius: 4px;
-  background: var(--color-arrakis-earth);
-  color: #fff;
+  border: 1px solid var(--setup-modal-line);
+  border-radius: var(--setup-modal-control-radius);
+  background: transparent;
+  color: var(--setup-modal-text);
   white-space: nowrap;
 }
 
 .games-list-load-btn:hover:not(:disabled) {
-  background: var(--color-arrakis-earth-hover, color-mix(in srgb, var(--color-arrakis-earth) 88%, #000));
+  background: var(--setup-modal-hover);
 }
 
 .games-list-load-btn:disabled {
@@ -389,21 +397,22 @@
   width: 100%;
   padding: 0.3rem 0.55rem;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  border: 1px solid color-mix(in srgb, var(--color-arrakis-earth) 45%, transparent);
-  border-radius: 4px;
-  background: #fff;
-  color: var(--color-arrakis-earth);
+  border: 1px solid var(--setup-modal-line);
+  border-radius: var(--setup-modal-control-radius);
+  background: transparent;
+  color: var(--setup-modal-text-muted);
   white-space: nowrap;
 }
 
 .games-list-delete-btn:hover {
-  background: color-mix(in srgb, var(--color-arrakis-earth) 8%, #fff);
+  background: var(--setup-modal-hover);
+  color: var(--setup-modal-text);
 }
 
 .games-list-load-error {
   margin: 0.35rem 0 0;
   font-size: 0.78rem;
-  color: #b91c1c;
+  color: #ffb4b4;
 }

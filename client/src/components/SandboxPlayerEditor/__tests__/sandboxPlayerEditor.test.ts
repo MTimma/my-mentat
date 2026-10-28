@@ -76,7 +76,7 @@ describe('Sandbox player editor leader row', () => {
     expect(togglesAt).toBeGreaterThan(closeAt)
     expect(editorTsx).toContain('sandbox-player-editor__actions')
     expect(editorCss).toContain('.sandbox-player-editor__actions')
-    expect(editorCss).toContain('border-color: rgba(255, 248, 232, 0.28)')
+    expect(editorCss).toContain('border-color: var(--setup-modal-line)')
     expect(editorCss).toContain('outline: none')
     expect(editorTsx).toContain('const [advancedSetup, setAdvancedSetup] = useState(false)')
     expect(editorTsx).toContain('aria-expanded={advancedSetup}')

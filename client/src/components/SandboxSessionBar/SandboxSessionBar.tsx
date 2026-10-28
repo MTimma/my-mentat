@@ -182,6 +182,7 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
       <BoardScopedModal
         isOpen={browseOpen}
         overlayVariant="picker"
+        overlayClassName="sandbox-session-bar__browse-overlay"
         onClose={() => setBrowseOpen(false)}
         closeOnOverlayClick
       >
@@ -189,14 +190,17 @@ const SandboxSessionBar: React.FC<SandboxSessionBarProps> = ({
         <BoardDialogPanel
           className="sandbox-session-bar__browse-dialog"
           titleId="sandbox-browse-title"
-          onClose={() => setBrowseOpen(false)}
-          showCancel
-          cancelLabel="Close"
         >
+          <button
+            type="button"
+            className="sandbox-session-bar__browse-close"
+            aria-label="Close"
+            onClick={() => setBrowseOpen(false)}
+          >
+            ×
+          </button>
           {onLoadSave ? (
-            <div className="sandbox-session-bar__browse-list">
-              <GamesList onLoad={handleLoad} />
-            </div>
+            <GamesList onLoad={handleLoad} />
           ) : (
             <p className="sandbox-session-bar__browse-empty">No loader available.</p>
           )}
