@@ -23,6 +23,7 @@ interface RevealTurnStatsPanelProps {
   /** Omit revealed card row (e.g. turn history header already shows them). */
   hideRevealedCards?: boolean
   troopsDeployedToConflict?: number
+  dreadnoughtsDeployedToConflict?: number
   troopsRetreatedFromConflict?: number
   resolveCard?: (cardId: number, name: string) => import('../../types/GameTypes').Card | undefined
 }
@@ -34,6 +35,7 @@ const RevealTurnStatsPanel = ({
   acquiredOnly = false,
   gains = [],
   troopsDeployedToConflict = 0,
+  dreadnoughtsDeployedToConflict = 0,
   troopsRetreatedFromConflict = 0,
   resolveCard,
   hideRevealedCards = false,
@@ -153,7 +155,10 @@ const RevealTurnStatsPanel = ({
   )
 
   const totalsRow =
-    totalsGains.length > 0 || troopsDeployedToConflict > 0 || troopsRetreatedFromConflict > 0 ? (
+    totalsGains.length > 0 ||
+    troopsDeployedToConflict > 0 ||
+    dreadnoughtsDeployedToConflict > 0 ||
+    troopsRetreatedFromConflict > 0 ? (
       <TurnGainsDisplay
         gains={totalsGains}
         revealPooledTotals
@@ -162,6 +167,7 @@ const RevealTurnStatsPanel = ({
         inlineTrash
         resolveCard={resolveCard}
         troopsDeployedToConflict={troopsDeployedToConflict}
+        dreadnoughtsDeployedToConflict={dreadnoughtsDeployedToConflict}
         troopsRetreatedFromConflict={troopsRetreatedFromConflict}
       />
     ) : null

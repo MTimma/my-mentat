@@ -512,7 +512,31 @@ export function resolveCommissionDreadnoughtChoice(
   const count = reward.dreadnoughts ?? 1
   const toConflict = Boolean(reward.dreadnoughtToConflict)
   const gains: Gain[] = [...state.gains]
+  const beforeConflict = state.players.find(p => p.id === playerId)?.dreadnoughts?.conflict ?? 0
   const next = applyDreadnoughtCommission(state, playerId, count, toConflict, source, gains)
   if (!next) return state
-  return { ...next, gains }
+  const afterConflict = next.players.find(p => p.id === playerId)?.dreadnoughts?.conflict ?? 0
+  const deployed = Math.max(0, afterConflict - beforeConflict)
+  const noted = toConflict ? withDreadnoughtsDeployedThisTurn(next, playerId, deployed) : next
+  return { ...noted, gains }
+}
+
+/** Commissioned straight into the Conflict counts as deployed this turn (undo + turn gains). */
+function withDreadnoughtsDeployedThisTurn(
+  state: GameState,
+  playerId: number,
+  added: number
+): GameState {
+  if (added <= 0) return state
+  const ct = state.currTurn
+  if (!ct || ct.playerId !== playerId) return state
+  const removable = Math.max(0, (ct.removableDreadnoughts ?? 0) + added)
+  return {
+    ...state,
+    currTurn: {
+      ...ct,
+      removableDreadnoughts: removable,
+      dreadnoughtsDeployedToConflict: removable,
+    },
+  }
 }

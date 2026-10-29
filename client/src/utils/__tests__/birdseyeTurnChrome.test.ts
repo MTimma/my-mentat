@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { GainSource, GamePhase, RewardType, type GameState } from '../../types/GameTypes'
-import { buildBirdseyeGainsByPlayer } from '../birdseyeTurnChrome'
+import { GainSource, GamePhase, RewardType, TurnType, type GameState } from '../../types/GameTypes'
+import { birdseyeTroopDeployCounts, buildBirdseyeGainsByPlayer } from '../birdseyeTurnChrome'
 
 function baseState(overrides: Partial<GameState> = {}): GameState {
   return {
@@ -172,5 +172,23 @@ describe('buildBirdseyeGainsByPlayer', () => {
     )
     expect(byPlayer[0]).toHaveLength(1)
     expect(byPlayer[0]?.[0].amount).toBe(1)
+  })
+})
+
+describe('birdseyeTroopDeployCounts', () => {
+  it('includes dreadnoughts deployed this turn beside troops', () => {
+    expect(
+      birdseyeTroopDeployCounts(
+        baseState({
+          currTurn: {
+            playerId: 1,
+            type: TurnType.ACTION,
+            removableTroops: 3,
+            removableDreadnoughts: 1,
+            troopsRetreatedFromConflict: 0,
+          },
+        })
+      )
+    ).toEqual({ deployed: 3, dreadnoughts: 1, retreated: 0 })
   })
 })

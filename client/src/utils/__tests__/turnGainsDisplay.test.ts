@@ -23,6 +23,7 @@ import {
   orderShippingRecallEffects,
   getGainsForTurnState,
   getOtherPlayersGainsForTurnState,
+  getDreadnoughtsDeployedToConflict,
   getTroopsDeployedToConflict,
   getTroopsRetreatedFromConflict,
   getEffectRetreatRemaining,
@@ -604,6 +605,19 @@ describe('turnGainsDisplay', () => {
         currTurn: { playerId: 0, type: TurnType.ACTION },
       } as Parameters<typeof getTroopsDeployedToConflict>[0])
     ).toBe(0)
+  })
+
+  it('getDreadnoughtsDeployedToConflict uses removable dreadnoughts in conflict', () => {
+    expect(
+      getDreadnoughtsDeployedToConflict({
+        currTurn: {
+          playerId: 0,
+          type: TurnType.ACTION,
+          removableTroops: 3,
+          removableDreadnoughts: 1,
+        },
+      } as Parameters<typeof getDreadnoughtsDeployedToConflict>[0])
+    ).toBe(1)
   })
 
   it('getTroopsRetreatedFromConflict reads troopsRetreatedFromConflict from currTurn', () => {

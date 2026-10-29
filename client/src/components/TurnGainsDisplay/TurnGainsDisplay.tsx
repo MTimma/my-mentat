@@ -97,6 +97,8 @@ export interface TurnGainsDisplayProps {
   resolveCard?: (cardId: number, name: string) => Card | undefined
   /** Troops sent to the Conflict this turn (shown after source groups). */
   troopsDeployedToConflict?: number
+  /** Dreadnoughts sent to the Conflict this turn (same Deployed row as troops). */
+  dreadnoughtsDeployedToConflict?: number
   /** Troops retreated from the Conflict this turn. */
   troopsRetreatedFromConflict?: number
   /** Opponent discards: one thumbnail row, no card-name titles. */
@@ -133,6 +135,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   revealPooledTotals = false,
   resolveCard,
   troopsDeployedToConflict = 0,
+  dreadnoughtsDeployedToConflict = 0,
   troopsRetreatedFromConflict = 0,
   inlineDiscards = false,
   inlineTrash = false,
@@ -140,6 +143,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   compactConflictTitles = false,
 }) => {
   const deployedCount = Math.max(0, troopsDeployedToConflict)
+  const dreadnoughtsDeployed = Math.max(0, dreadnoughtsDeployedToConflict)
   const retreatedCount = Math.max(0, troopsRetreatedFromConflict)
   const totals = useMemo(() => {
     if (revealPooledTotals) {
@@ -162,8 +166,17 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     totals != null &&
     (totals.resources.length > 0 || totals.influence.length > 0 || totals.cards.length > 0)
 
-  if (!hasTotals && groups.length === 0 && deployedCount === 0 && retreatedCount === 0) return null
+  if (
+    !hasTotals &&
+    groups.length === 0 &&
+    deployedCount === 0 &&
+    dreadnoughtsDeployed === 0 &&
+    retreatedCount === 0
+  ) {
+    return null
+  }
   const troopIcon = getRewardIcon(RewardType.TROOPS)
+  const troopDisplayName = getRewardDisplayName(RewardType.TROOPS)
 
   const renderGainMultiplier = (amount: number) => {
     const absAmount = Math.abs(amount)
@@ -581,6 +594,17 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     )
   }
 
+  const renderCombatUnitToken = (
+    count: number,
+    variant: 'deployed' | 'retreated',
+    icon: React.ReactNode
+  ) => (
+    <span className={`turn-gain-combat-token turn-gain-combat-token--${variant}`}>
+      {icon}
+      <span className="turn-gain-combat-count">{count}</span>
+    </span>
+  )
+
   const renderCombatTroopCount = (
     count: number,
     variant: 'deployed' | 'retreated',
@@ -601,13 +625,51 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         >
           <div className={`turn-gains-side turn-gains-side--${variant}`}>
             {iconPath ? (
-              <span className={`turn-gain-combat-token turn-gain-combat-token--${variant}`}>
-                {renderGainIcon(iconPath, displayName, 'turn-gain-combat-icon')}
-                <span className="turn-gain-combat-count">{count}</span>
-              </span>
+              renderCombatUnitToken(
+                count,
+                variant,
+                renderGainIcon(iconPath, displayName, 'turn-gain-combat-icon')
+              )
             ) : (
               <span className="gain-text-fallback">{count}</span>
             )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderDeployedUnits = () => {
+    if (deployedCount === 0 && dreadnoughtsDeployed === 0) return null
+    const parts: string[] = []
+    if (deployedCount > 0) parts.push(`${deployedCount} troop${deployedCount === 1 ? '' : 's'}`)
+    if (dreadnoughtsDeployed > 0) {
+      parts.push(`${dreadnoughtsDeployed} dreadnought${dreadnoughtsDeployed === 1 ? '' : 's'}`)
+    }
+    const summary = parts.join(', ')
+    return (
+      <div className="turn-gain-source-group turn-gain-combat-group turn-gain-combat-group--deployed">
+        <span className="turn-gain-source-title turn-gain-source-title--combat" title="Deployed">
+          Deployed
+        </span>
+        <div className="turn-gain-source-flow" title={`Deployed: ${summary}`} aria-label={`Deployed: ${summary}`}>
+          <div className="turn-gains-side turn-gains-side--deployed">
+            {deployedCount > 0 && troopIcon
+              ? renderCombatUnitToken(
+                  deployedCount,
+                  'deployed',
+                  renderGainIcon(troopIcon, troopDisplayName, 'turn-gain-combat-icon')
+                )
+              : deployedCount > 0
+                ? <span className="gain-text-fallback">{deployedCount}</span>
+                : null}
+            {dreadnoughtsDeployed > 0
+              ? renderCombatUnitToken(
+                  dreadnoughtsDeployed,
+                  'deployed',
+                  renderDreadnoughtGainIcon('turn-gain-combat-icon')
+                )
+              : null}
           </div>
         </div>
       </div>
@@ -903,8 +965,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     )
   }
 
-  const troopDisplayName = getRewardDisplayName(RewardType.TROOPS)
-  const hasCombatSection = deployedCount > 0 || retreatedCount > 0
+  const hasCombatSection = deployedCount > 0 || dreadnoughtsDeployed > 0 || retreatedCount > 0
 
   return (
     <div
@@ -1004,13 +1065,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
       })}
       {hasCombatSection ? (
         <>
-          {renderCombatTroopCount(
-            deployedCount,
-            'deployed',
-            'Deployed',
-            troopIcon,
-            troopDisplayName
-          )}
+          {renderDeployedUnits()}
           {renderCombatTroopCount(
             retreatedCount,
             'retreated',

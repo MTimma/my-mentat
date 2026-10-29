@@ -492,6 +492,7 @@ export function BirdseyeSeatGains({
   playerColor,
   gains,
   troopsDeployed = 0,
+  dreadnoughtsDeployed = 0,
   troopsRetreated = 0,
   showTotals = false,
   totalsOnly = false,
@@ -504,6 +505,7 @@ export function BirdseyeSeatGains({
   playerColor?: PlayerColor
   gains: Gain[]
   troopsDeployed?: number
+  dreadnoughtsDeployed?: number
   troopsRetreated?: number
   showTotals?: boolean
   totalsOnly?: boolean
@@ -514,10 +516,11 @@ export function BirdseyeSeatGains({
   resolveCard?: (cardId: number, name: string) => Card | undefined
 }) {
   const displayGains = excludeRetreatAllowanceGains(gains)
-  const hasGains = displayGains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0
+  const hasGains =
+    displayGains.length > 0 || troopsDeployed > 0 || dreadnoughtsDeployed > 0 || troopsRetreated > 0
   const { scrollRef, overflowStart, overflowEnd, scrollable, thumb } = useScrollOverflowFades(
     hasGains,
-    `${displayGains.length}:${troopsDeployed}:${troopsRetreated}`
+    `${displayGains.length}:${troopsDeployed}:${dreadnoughtsDeployed}:${troopsRetreated}`
   )
 
   if (!hasGains) return null
@@ -546,6 +549,7 @@ export function BirdseyeSeatGains({
           inlineTrash
           resolveCard={resolveCard}
           troopsDeployedToConflict={troopsDeployed}
+          dreadnoughtsDeployedToConflict={dreadnoughtsDeployed}
           troopsRetreatedFromConflict={troopsRetreated}
           className="birdseye-seat-gains__display"
         />

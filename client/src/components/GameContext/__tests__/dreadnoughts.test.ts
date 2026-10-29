@@ -131,6 +131,28 @@ describe('dreadnought lifecycle (GameContext)', () => {
     })
     expect(s.players[0].dreadnoughts?.conflict).toBe(1)
     expect(s.players[0].dreadnoughts?.garrison).toBe(0)
+    expect(s.currTurn?.removableDreadnoughts).toBe(1)
+    expect(s.currTurn?.dreadnoughtsDeployedToConflict).toBe(1)
+  })
+
+  it('Choosing Garrison does not count the dreadnought as deployed', () => {
+    const card = cityCard(9005)
+    let s = roiState([
+      withDreadnoughts(makePlayer(0, { deck: [card], handCount: 1 }), { supply: 2 }),
+    ])
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: combatSpaceId() })
+    const choice = s.currTurn?.pendingChoices?.[0]
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: choice!.id,
+      optionIndex: 0,
+    })
+    expect(s.players[0].dreadnoughts?.garrison).toBe(1)
+    expect(s.players[0].dreadnoughts?.conflict).toBe(0)
+    expect(s.currTurn?.removableDreadnoughts ?? 0).toBe(0)
+    expect(s.currTurn?.dreadnoughtsDeployedToConflict ?? 0).toBe(0)
   })
 
   it('computeStrength sums troops*2 + dreads*3 + swords', () => {
@@ -343,5 +365,6 @@ describe('dreadnought lifecycle (GameContext)', () => {
     s = applyGameAction(s, { type: 'DEPLOY_DREADNOUGHT', playerId: 0 })
     expect(s.players[0].dreadnoughts?.garrison).toBe(0)
     expect(s.players[0].dreadnoughts?.conflict).toBe(1)
+    expect(s.currTurn?.dreadnoughtsDeployedToConflict).toBe(1)
   })
 })

@@ -329,6 +329,7 @@ export interface CombatAreaClusterProps {
   birdseyeActions?: BirdseyeSeatActions | null
   birdseyeGainsByPlayer?: BirdseyeSeatGainsMap
   birdseyeTroopsDeployed?: number
+  birdseyeDreadnoughtsDeployed?: number
   birdseyeTroopsRetreated?: number
   birdseyeIsHistoryView?: boolean
   birdseyeInteractionsHostRef?: (el: HTMLDivElement | null) => void
@@ -360,6 +361,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   birdseyeActions = null,
   birdseyeGainsByPlayer,
   birdseyeTroopsDeployed = 0,
+  birdseyeDreadnoughtsDeployed = 0,
   birdseyeTroopsRetreated = 0,
   birdseyeIsHistoryView = false,
   birdseyeInteractionsHostRef,
@@ -525,6 +527,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 gains={seatGains}
                 resolveCard={resolveSeatCard}
                 troopsDeployed={isActive ? birdseyeTroopsDeployed : 0}
+                dreadnoughtsDeployed={isActive ? birdseyeDreadnoughtsDeployed : 0}
                 troopsRetreated={isActive ? birdseyeTroopsRetreated : 0}
                 /* Totals hidden for now (mobile + desktop); keep prop wiring. */
                 showTotals={false}
@@ -565,6 +568,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 gains={seatGains}
                 resolveCard={resolveSeatCard}
                 troopsDeployed={isActive ? birdseyeTroopsDeployed : 0}
+                dreadnoughtsDeployed={isActive ? birdseyeDreadnoughtsDeployed : 0}
                 troopsRetreated={isActive ? birdseyeTroopsRetreated : 0}
                 showTotals={false}
                 showSourceTitles

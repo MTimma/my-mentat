@@ -2,6 +2,7 @@ import { GamePhase, GainSource, type Gain, type GameState, type Player } from '.
 import {
   getGainsForTurnState,
   getOtherPlayersGainsForTurnState,
+  getDreadnoughtsDeployedToConflict,
   getTroopsDeployedToConflict,
   getTroopsRetreatedFromConflict,
   isCombatHistoryEntry,
@@ -61,13 +62,15 @@ export function buildBirdseyeGainsByPlayer(turn: GameState): Record<number, Gain
 
 export function birdseyeTroopDeployCounts(turn: GameState): {
   deployed: number
+  dreadnoughts: number
   retreated: number
 } {
   if (isCombatHistoryEntry(turn) || isEndgameHistoryEntry(turn)) {
-    return { deployed: 0, retreated: 0 }
+    return { deployed: 0, dreadnoughts: 0, retreated: 0 }
   }
   return {
     deployed: getTroopsDeployedToConflict(turn),
+    dreadnoughts: getDreadnoughtsDeployedToConflict(turn),
     retreated: getTroopsRetreatedFromConflict(turn),
   }
 }

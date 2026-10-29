@@ -211,6 +211,7 @@ interface ImageBoardProps {
   birdseyeActions?: import('./CombatSeatTurnChrome').BirdseyeSeatActions | null
   birdseyeGainsByPlayer?: import('./CombatAreaCluster').BirdseyeSeatGainsMap
   birdseyeTroopsDeployed?: number
+  birdseyeDreadnoughtsDeployed?: number
   birdseyeTroopsRetreated?: number
   birdseyeIsHistoryView?: boolean
   birdseyeInteractionsHostRef?: (el: HTMLDivElement | null) => void
@@ -290,6 +291,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   birdseyeActions = null,
   birdseyeGainsByPlayer,
   birdseyeTroopsDeployed = 0,
+  birdseyeDreadnoughtsDeployed = 0,
   birdseyeTroopsRetreated = 0,
   birdseyeIsHistoryView = false,
   birdseyeInteractionsHostRef,
@@ -622,6 +624,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         birdseyeActions={birdseyeActions}
         birdseyeGainsByPlayer={birdseyeGainsByPlayer}
         birdseyeTroopsDeployed={birdseyeTroopsDeployed}
+        birdseyeDreadnoughtsDeployed={birdseyeDreadnoughtsDeployed}
         birdseyeTroopsRetreated={birdseyeTroopsRetreated}
         birdseyeIsHistoryView={birdseyeIsHistoryView}
         birdseyeInteractionsHostRef={birdseyeInteractionsHostRef}

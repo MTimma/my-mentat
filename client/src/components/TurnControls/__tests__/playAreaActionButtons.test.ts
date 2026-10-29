@@ -115,6 +115,11 @@ describe('Play area action buttons', () => {
     )
   })
 
+  it('does not repeat Tech Negotiation or Signet Ring as a title inside the play-area OR button', () => {
+    expect(turnControls).toContain('const hideInlinePromptTitle = isPlayAreaInlineTechOrSignetChoice(fixedChoice)')
+    expect(turnControls).toContain('!hideInlinePromptTitle &&')
+  })
+
   it('shows small source titles on desktop birdseye pending chips', () => {
     expect(turnControls).toContain('compactBirdseye: true')
     expect(turnControls).not.toContain('hideSourceTitles: true')

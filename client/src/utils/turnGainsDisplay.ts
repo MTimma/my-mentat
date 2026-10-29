@@ -377,6 +377,13 @@ export function getTroopsDeployedToConflict(turn: GameState): number {
   return Math.max(0, ct.removableTroops ?? 0)
 }
 
+/** Dreadnoughts currently in the Conflict from this turn (deploy or commission-to-conflict). */
+export function getDreadnoughtsDeployedToConflict(turn: GameState): number {
+  const ct = turn.currTurn
+  if (!ct) return 0
+  return Math.max(0, ct.removableDreadnoughts ?? ct.dreadnoughtsDeployedToConflict ?? 0)
+}
+
 /**
  * Troops retreated from the Conflict this turn.
  * Clamps corrupt totals from before deploy-limit enforcement (removable + retreated >> limit).

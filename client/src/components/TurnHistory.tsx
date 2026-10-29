@@ -13,6 +13,7 @@ import {
   isEndgameHistoryEntry,
   groupCombatHistoryGainsByPlayer,
   getOtherPlayersGainsForTurnState,
+  getDreadnoughtsDeployedToConflict,
   getTroopsDeployedToConflict,
   getTroopsRetreatedFromConflict,
 } from '../utils/turnGainsDisplay'
@@ -478,6 +479,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       gains: Gain[]
       gainsForDisplay: Gain[]
       troopsDeployed: number
+      dreadnoughtsDeployed: number
       troopsRetreated: number
       acquiredCards: Card[]
       acquiredTechTiles: AcquiredTechTileSnapshot[]
@@ -488,6 +490,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
       gains,
       gainsForDisplay,
       troopsDeployed,
+      dreadnoughtsDeployed,
       troopsRetreated,
       acquiredCards,
       acquiredTechTiles,
@@ -508,6 +511,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               }
               resolveCard={makeResolveCard(turn)}
               troopsDeployedToConflict={troopsDeployed}
+              dreadnoughtsDeployedToConflict={dreadnoughtsDeployed}
               troopsRetreatedFromConflict={troopsRetreated}
               showSourceTitles
               inlineTrash
@@ -558,6 +562,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     showStandardGains: boolean
     showRevealGains: boolean
     troopsDeployed: number
+    dreadnoughtsDeployed: number
     troopsRetreated: number
   }
 
@@ -586,6 +591,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
     showStandardGains,
     showRevealGains,
     troopsDeployed,
+    dreadnoughtsDeployed,
     troopsRetreated,
   }: PlayerTurnRowContentProps) => {
     const groupGainsByPlayer =
@@ -603,6 +609,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             gains,
             gainsForDisplay,
             troopsDeployed,
+            dreadnoughtsDeployed,
             troopsRetreated,
             acquiredCards,
             acquiredTechTiles,
@@ -626,6 +633,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               hideAcquiredNames
               resolveCard={makeResolveCard(turn)}
               troopsDeployedToConflict={troopsDeployed}
+              dreadnoughtsDeployedToConflict={dreadnoughtsDeployed}
               troopsRetreatedFromConflict={troopsRetreated}
             />
           </div>
@@ -977,6 +985,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           )
           const showRevealSummary = revealStats != null && revealTurnStatsHasContent(revealStats)
           const troopsDeployed = getTroopsDeployedToConflict(displayTurn)
+          const dreadnoughtsDeployed = getDreadnoughtsDeployedToConflict(displayTurn)
           const troopsRetreated = getTroopsRetreatedFromConflict(displayTurn)
           const showStandardGains =
             isEndgameEntry || isConflictRewardsEntry || isLegacyCombinedCombatHistoryEntry(displayTurn)
@@ -984,12 +993,17 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               : !isRevealTurn &&
                 (gainsForDisplay.length > 0 ||
                   troopsDeployed > 0 ||
+                  dreadnoughtsDeployed > 0 ||
                   troopsRetreated > 0 ||
                   acquiredCards.length > 0 ||
                   acquiredTechTiles.length > 0)
           const showRevealGains =
             isRevealTurn &&
-            (showRevealSummary || gains.length > 0 || troopsDeployed > 0 || troopsRetreated > 0)
+            (showRevealSummary ||
+              gains.length > 0 ||
+              troopsDeployed > 0 ||
+              dreadnoughtsDeployed > 0 ||
+              troopsRetreated > 0)
           const isRowClickable = !inSandboxSetup
 
           return (
@@ -1047,6 +1061,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                 showStandardGains,
                 showRevealGains,
                 troopsDeployed,
+                dreadnoughtsDeployed,
                 troopsRetreated,
               })}
             </div>
@@ -1099,6 +1114,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           const liveShowRevealSummary =
             liveRevealStats != null && revealTurnStatsHasContent(liveRevealStats)
           const liveTroopsDeployed = getTroopsDeployedToConflict(currentGameState)
+          const liveDreadnoughtsDeployed = getDreadnoughtsDeployedToConflict(currentGameState)
           const liveTroopsRetreated = getTroopsRetreatedFromConflict(currentGameState)
           const liveShowStandardGains =
             liveIsConflictRewards
@@ -1106,6 +1122,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
               : !liveIsRevealTurn &&
                 (liveGainsForDisplay.length > 0 ||
                   liveTroopsDeployed > 0 ||
+                  liveDreadnoughtsDeployed > 0 ||
                   liveTroopsRetreated > 0 ||
                   liveAcquiredCards.length > 0 ||
                   liveAcquiredTechTiles.length > 0)
@@ -1114,6 +1131,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             (liveShowRevealSummary ||
               liveGains.length > 0 ||
               liveTroopsDeployed > 0 ||
+              liveDreadnoughtsDeployed > 0 ||
               liveTroopsRetreated > 0)
           return (
         <div
@@ -1170,6 +1188,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             showStandardGains: liveShowStandardGains,
             showRevealGains: liveShowRevealGains,
             troopsDeployed: liveTroopsDeployed,
+            dreadnoughtsDeployed: liveDreadnoughtsDeployed,
             troopsRetreated: liveTroopsRetreated,
           })}
         </div>

@@ -2045,6 +2045,7 @@ const GameContent = ({
           birdseyeActions={birdseyeActions}
           birdseyeGainsByPlayer={birdseyeGainsByPlayer}
           birdseyeTroopsDeployed={birdseyeTroopCounts.deployed}
+          birdseyeDreadnoughtsDeployed={birdseyeTroopCounts.dreadnoughts}
           birdseyeTroopsRetreated={birdseyeTroopCounts.retreated}
           birdseyeIsHistoryView={isViewingHistory}
           birdseyeInteractionsHostRef={setBirdseyeInteractionsHost}

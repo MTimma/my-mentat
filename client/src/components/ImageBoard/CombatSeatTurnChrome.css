@@ -874,6 +874,11 @@
   height: 16px;
 }
 
+.combat-area-cluster--column .birdseye-seat-gains .turn-gain-combat-icon.dreadnought-icon {
+  width: 13px;
+  height: 16px;
+}
+
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-resource-amt,
 .combat-area-cluster--column .birdseye-seat-gains .turn-gain-combat-count,
 .combat-area-cluster--column .birdseye-seat-gains .gain-multiplier,

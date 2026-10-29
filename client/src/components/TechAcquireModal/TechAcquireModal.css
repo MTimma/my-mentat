@@ -127,12 +127,36 @@
   margin-top: 4px;
 }
 
+.tech-acquire-overlay .tech-acquire-modal.tech-acquire-modal--next-face-up {
+  width: min(96vw, 1080px);
+  max-width: min(96vw, 1080px);
+  max-height: min(92vh, 100%);
+  overflow-y: auto;
+  align-items: stretch;
+}
+
+/* Board-scoped play overlay otherwise caps this dialog at 380px. */
+.imperium-preview-overlay.play-board-modal-overlay--scoped
+  .tech-acquire-modal.tech-acquire-modal--next-face-up {
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+
 .tech-acquire-modal__pick-grid {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.tech-acquire-modal--next-face-up .tech-acquire-modal__pick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 14px;
 }
 
 .tech-acquire-modal__pick-tile {
@@ -143,11 +167,25 @@
   cursor: pointer;
 }
 
+.tech-acquire-modal--next-face-up .tech-acquire-modal__pick-tile {
+  width: 70%;
+  justify-self: center;
+  padding: 0;
+  border-width: 3px;
+  border-radius: 8px;
+}
+
 .tech-acquire-modal__pick-tile img {
   display: block;
   width: min(72px, 18vw);
   height: auto;
   border-radius: 4px;
+}
+
+.tech-acquire-modal--next-face-up .tech-acquire-modal__pick-tile img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
 }
 
 .tech-acquire-modal__pick-tile--selected {

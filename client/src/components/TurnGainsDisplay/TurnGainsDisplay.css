@@ -557,7 +557,8 @@
 }
 
 .turn-gains-display .gain-icon.dreadnought-icon,
-.turn-gains-display .turn-gain-total-icon.dreadnought-icon {
+.turn-gains-display .turn-gain-total-icon.dreadnought-icon,
+.turn-gains-display .turn-gain-combat-icon.dreadnought-icon {
   width: 11px;
   height: 14px;
 }

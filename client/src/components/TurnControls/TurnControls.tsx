@@ -2355,6 +2355,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
             const freighterMoveChoice = isFreighterMoveChoice(fixedChoice)
             const defaultOrPrompt =
               fixedChoice.prompt === 'Choose one reward' || fixedChoice.prompt === 'Choose one option'
+            // Chip already shows the source name. After the acquire branch is its own button,
+            // the leftover option would repeat "Tech Negotiation" / "Signet Ring" inside the OR.
+            const hideInlinePromptTitle = isPlayAreaInlineTechOrSignetChoice(fixedChoice)
             return (
               <div
                 key={choice.id}
@@ -2366,7 +2369,11 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                   .filter(Boolean)
                   .join(' ')}
               >
-                {!freighterMoveChoice && !isInlineOrChoice && !defaultOrPrompt && fixedChoice.prompt ? (
+                {!freighterMoveChoice &&
+                !isInlineOrChoice &&
+                !defaultOrPrompt &&
+                !hideInlinePromptTitle &&
+                fixedChoice.prompt ? (
                   <div className="card-effects-inline-choice-title">{fixedChoice.prompt}</div>
                 ) : null}
                 {renderFixedChoiceOptions(fixedChoice, 'compact')}

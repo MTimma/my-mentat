@@ -210,7 +210,13 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
       onClick={resetAndClose}
     >
       <div
-        className="imperium-preview-modal tech-acquire-modal"
+        className={[
+          'imperium-preview-modal',
+          'tech-acquire-modal',
+          acquireStep ? 'tech-acquire-modal--next-face-up' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         role="dialog"
         aria-modal="true"
         aria-label={
@@ -300,9 +306,6 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
         ) : acquireStep ? (
           <>
             <h3 className="tech-acquire-modal__title">Choose next face-up tile</h3>
-            <p className="tech-acquire-modal__subtitle">
-              Acquiring {tile!.name} — pick which tile to reveal on stack {activeStackIndex! + 1}.
-            </p>
             <div className="tech-acquire-modal__pick-grid" role="listbox" aria-label="Next face-up tile">
               {acquireStep.availableIds.map(tileId => {
                 const pickTile = getTechTile(tileId)
@@ -329,9 +332,6 @@ const TechAcquireModal: React.FC<TechAcquireModalProps> = ({
               })}
             </div>
             <div className="imperium-preview-actions tech-acquire-modal__actions">
-              <button type="button" className="imperium-preview-cancel" onClick={() => setAcquireStep(null)}>
-                Back
-              </button>
               <button
                 type="button"
                 className="imperium-preview-acquire"
