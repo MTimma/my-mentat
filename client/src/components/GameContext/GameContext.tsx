@@ -96,6 +96,7 @@ import {
   EffectTiming,
   NO_EXPANSIONS,
   normalizeExpansions,
+  type RedoConflict,
   type SandboxSetupPosition,
 } from '../../types/GameTypes'
 import { BOARD_SPACES, ARRAKIS_LIAISON_DECK, buildImperiumDeck, buildTleilaxuPool, SPICE_MUST_FLOW_DECK, FOLDSPACE_DECK } from '../../catalog/runtime'
@@ -395,6 +396,7 @@ export type GameAction =
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
     | { type: 'UNDO_TO_TURN'; turnIndex: number }
     | { type: 'UNDO_TO_SETUP' }
+    | { type: 'RESOLVE_REDO_CONFLICT'; choice: 'restore' | 'startOver' }
     | { type: 'RESOLVE_ENDGAME' }
     | { type: 'REVEAL_ENDGAME_INTRIGUE'; playerId: number; cardIds: number[] }
     | { type: 'SANDBOX_SET_IMPERIUM_ROW'; cardIds: number[] }
@@ -9704,6 +9706,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
   const recordedEventsRef = useRef<EventEntry[]>(initialEvents)
   /** React Strict Mode runs setState updaters twice with the same prev; record once per dispatch. */
   const strictModeRecordCommittedRef = useRef(false)
+  /** Turns cut off by UNDO_TO_TURN, replayed on top of the edited turn. */
+  const redoPendingEventsRef = useRef<EventEntry[]>([])
+  /** Event log before the redo fork, used to restore the old turn. */
+  const redoOriginalEventsRef = useRef<EventEntry[] | null>(null)
   const setupRef = useRef<{ setup: SetupBlock; unmapped: string[] }>({
     setup: gameInput.setup,
     unmapped: gameInput.meta.notes?.includes('Unmapped')
@@ -9729,34 +9735,81 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
             recordedEventsRef.current,
             action.turnIndex
           )
+          // Remember the turns after the fork so they can be replayed on top of the edit.
+          redoOriginalEventsRef.current = recordedEventsRef.current
+          redoPendingEventsRef.current = recordedEventsRef.current.slice(eventIndex + 1)
           recordedEventsRef.current = recordedEventsRef.current.slice(
             0,
             Math.max(0, eventIndex + 1)
           )
           const next = gameReducer(prev, action)
           if (next.sandboxSetup) {
+            redoPendingEventsRef.current = []
+            redoOriginalEventsRef.current = null
             recordedEventsRef.current = recordedEventsRef.current.filter(
               e => e.a.type !== 'SANDBOX_COMMIT_SETUP'
             )
-            return { ...next, setupBaseline: prev.setupBaseline }
+            return { ...next, setupBaseline: prev.setupBaseline, redoConflict: null }
           }
           const { state } = replayEvents(
             buildInitialState(gameInput.setup),
             recordedEventsRef.current
           )
           const history = buildHistoryFromEvents(gameInput.setup, recordedEventsRef.current)
-          return { ...state, setupBaseline: prev.setupBaseline, history }
+          return { ...state, setupBaseline: prev.setupBaseline, history, redoConflict: null }
+        }
+
+        if (action.type === 'RESOLVE_REDO_CONFLICT') {
+          if (action.choice === 'restore' && redoOriginalEventsRef.current) {
+            // Restore the old turn: put the original log back and replay it.
+            recordedEventsRef.current = redoOriginalEventsRef.current
+            redoPendingEventsRef.current = []
+            redoOriginalEventsRef.current = null
+            const { state } = replayEvents(
+              buildInitialState(gameInput.setup),
+              recordedEventsRef.current
+            )
+            const history = buildHistoryFromEvents(gameInput.setup, recordedEventsRef.current)
+            return { ...state, setupBaseline: prev.setupBaseline, history, redoConflict: null }
+          }
+          // Start over after the new turn: keep the edit, drop the un-replayable turns.
+          redoPendingEventsRef.current = []
+          redoOriginalEventsRef.current = null
+          return { ...prev, redoConflict: null }
         }
 
         if (action.type === 'UNDO_TO_SETUP') {
+          redoPendingEventsRef.current = []
+          redoOriginalEventsRef.current = null
           recordedEventsRef.current = prev.setupBaseline?.sandboxSetup
             ? truncateSandboxEventsForSetupReedit(recordedEventsRef.current)
             : []
           const next = gameReducer(prev, action)
-          return { ...next, setupBaseline: prev.setupBaseline }
+          return { ...next, setupBaseline: prev.setupBaseline, redoConflict: null }
         }
 
-        const next = gameReducer(prev, action)
+        let next = gameReducer(prev, action)
+
+        // Replay the turns cut off by the last undo, on top of the edited turn.
+        // Runs once the edited turn ends; a rejected event surfaces a conflict
+        // instead of committing (the reducer returns the same reference on reject).
+        if (
+          redoPendingEventsRef.current.length > 0 &&
+          action.type === 'END_TURN' &&
+          next !== prev
+        ) {
+          const replay = replayPendingRedoEvents(next, redoPendingEventsRef.current)
+          if (replay.conflict) {
+            return { ...next, redoConflict: replay.conflict }
+          }
+          recordedEventsRef.current = [
+            ...recordedEventsRef.current,
+            ...redoPendingEventsRef.current,
+          ]
+          redoPendingEventsRef.current = []
+          redoOriginalEventsRef.current = null
+          next = replay.state
+        }
 
         if (next.currentConflict?.id && next.currentConflict.id > 0) {
           setupRef.current = {
@@ -9944,6 +9997,64 @@ export function applyRecordedAction(state: GameState, action: GameAction): {
 /** Run one reducer step (unit tests). */
 export function applyGameAction(state: GameState, action: GameAction): GameState {
   return gameReducer(state, action)
+}
+
+/**
+ * Replay recorded turns on top of an edited turn. Returns the first conflict
+ * (with a human-readable reason) instead of a state when a turn can no longer
+ * be applied — the reducer returns the same reference for rejected actions.
+ */
+function replayPendingRedoEvents(
+  base: GameState,
+  events: EventEntry[]
+): { state: GameState; conflict: null } | { state: GameState; conflict: RedoConflict } {
+  let state = base
+  for (let i = 0; i < events.length; i++) {
+    const entry = events[i]
+    const next = gameReducer(state, entry.a)
+    if (next === state) {
+      return { state, conflict: describeRedoConflict(state, entry, i) }
+    }
+    state = next
+  }
+  return { state, conflict: null }
+}
+
+/** Best-effort explanation for why a recorded turn no longer applies. */
+function describeRedoConflict(
+  state: GameState,
+  entry: EventEntry,
+  eventIndex: number
+): RedoConflict {
+  const action = entry.a
+  const turnIndex = state.history.length
+  if (action.type === 'PLAY_CARD') {
+    const player = state.players.find(p => p.id === action.playerId)
+    const hasCard = player?.deck.some(c => c.id === action.cardId) ?? false
+    if (!hasCard) {
+      return {
+        turnIndex,
+        eventIndex,
+        reason: 'missing_card',
+        cardId: action.cardId,
+        message: `Turn ${turnIndex + 1} can no longer be replayed — the required card is no longer available.`,
+      }
+    }
+  }
+  if (action.type === 'PLACE_AGENT') {
+    return {
+      turnIndex,
+      eventIndex,
+      reason: 'occupied_space',
+      message: `Turn ${turnIndex + 1} can no longer be replayed — the board space is no longer available.`,
+    }
+  }
+  return {
+    turnIndex,
+    eventIndex,
+    reason: 'invalid_action',
+    message: `Turn ${turnIndex + 1} can no longer be replayed (${action.type}).`,
+  }
 }
 
 function getEffectChoice(currPlayer: Player, card: Card, effect: PlayEffect, existingChoiceIds: Iterable<string> = []): CardSelectChoice | FixedOptionsChoice {

@@ -916,6 +916,12 @@ export interface GameState {
    * Immortality — Usurp borrowed an Imperium Row card for this agent turn; trashed at end of turn.
    */
   usurpBorrowed?: { card: Card; rowIndex: number } | null
+  /**
+   * Redo/replay — set when recorded turns after an edited turn can no longer be
+   * replayed. Blocks ending the turn until the player restores the old turn or
+   * starts over after the new one.
+   */
+  redoConflict?: RedoConflict | null
 }
 
 export interface Expansions {
@@ -940,6 +946,20 @@ export const NO_EXPANSIONS: Expansions = {
 export function normalizeExpansions(expansions?: Expansions | null): Expansions {
   if (!expansions) return NO_EXPANSIONS
   return { ...NO_EXPANSIONS, ...expansions }
+}
+
+/**
+ * Redo/replay — a recorded turn after an edited turn could not be replayed.
+ * Surfaced by `computeCanEndTurn` and the redo-conflict modal.
+ */
+export interface RedoConflict {
+  /** History index of the turn that could not be replayed. */
+  turnIndex: number
+  /** Index of the failing event within the pending redo log. */
+  eventIndex: number
+  reason: 'missing_card' | 'invalid_action' | 'occupied_space' | 'insufficient_resources' | 'unknown'
+  cardId?: number
+  message: string
 }
 
 export interface SandboxSetupPosition {

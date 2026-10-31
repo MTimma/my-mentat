@@ -5,6 +5,7 @@ import {
   type GameTurn,
   type PendingChoice,
   type PendingReward,
+  type RedoConflict,
 } from '../types/GameTypes'
 
 export interface EndTurnButtonStateInput {
@@ -37,39 +38,14 @@ export function hasCompletedRequiredTurnAction(
 
 /** True when mandatory pending work is clear and the turn action (agent/reveal) is done. */
 export function computeCanEndTurn(
-  state: Pick<GameState, 'phase' | 'currTurn' | 'pendingRewards' | 'cursor' | 'history'> & {
+  state: Pick<GameState, 'phase' | 'currTurn' | 'pendingRewards' | 'redoConflict'> & {
     pendingResearchAdvance?: GameState['pendingResearchAdvance']
   }
 ): { canEnd: boolean; conflict?: RedoConflict } {
-  // Check for redo conflicts
-  if (state.cursor.redoConflict) {
-    return { 
-      canEnd: false,
-      conflict: state.cursor.redoConflict
-    }
-  }
-  
-  // Cannot end turn if in redo state with invalid history
-  if (state.cursor.originalEvent !== undefined && state.cursor.originalEvent !== state.cursor.event) {
-    // Check if subsequent turns would be invalid
-    const originalIndex = state.cursor.originalEvent
-    if (originalIndex < state.history.length - 1) {
-      const nextTurn = state.history[originalIndex + 1]
-      if (nextTurn.type === 'PLAY_CARD' && !state.players.some(p => 
-        p.deck.some(c => c.id === nextTurn.cardId)
-      )) {
-        return {
-          canEnd: false,
-          conflict: {
-            turnIndex: originalIndex + 1,
-            reason: 'missing_card',
-            cardId: nextTurn.cardId,
-            message: `Cannot replay turn ${originalIndex + 2} - required card is no longer available`
-          }
-        }
-      }
-    }
-    return { canEnd: false }
+  // A pending redo conflict blocks ending the turn until it is resolved
+  // (restore the old turn, or start over after the new one).
+  if (state.redoConflict) {
+    return { canEnd: false, conflict: state.redoConflict }
   }
   if (state.pendingRewards.some(r => !r.disabled)) return false
   if ((state.currTurn?.pendingChoices?.length ?? 0) > 0) return false
