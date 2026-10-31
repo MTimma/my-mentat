@@ -151,6 +151,43 @@ export function setTleilaxuStep(state: GameState, playerId: number, step: number
   return withPlayer(state, playerId, p => ({ ...p, tleilaxuStep: clampTleilaxuStep(step) }))
 }
 
+export function redoFromTurn(state: GameState, turnIndex: number): GameState {
+  if (turnIndex < 0 || turnIndex >= state.history.length) return state
+  
+  // Create new state with history up to the redo point
+  const newState = {
+    ...state.history[turnIndex],
+    // Preserve current expansions and other metadata
+    expansions: state.expansions,
+    boardSet: state.boardSet,
+    // Reset history to just before the redo point
+    history: state.history.slice(0, turnIndex),
+    // Mark cursor with original position
+    cursor: {
+      ...state.cursor,
+      originalEvent: state.cursor.event,
+      // Initialize conflict tracking
+      redoConflict: null
+    }
+  }
+
+  // Check for immediate conflicts in the first turn after redo
+  if (turnIndex < state.history.length - 1) {
+    const nextTurn = state.history[turnIndex + 1]
+    if (nextTurn.type === 'PLAY_CARD' && !newState.players.some(p => 
+      p.deck.some(c => c.id === nextTurn.cardId)
+    )) {
+      newState.cursor.redoConflict = {
+        turnIndex: turnIndex + 1,
+        reason: 'missing_card',
+        cardId: nextTurn.cardId
+      }
+    }
+  }
+
+  return newState
+}
+
 /** Resolve a pending research branch choice, then continue any remaining advances. */
 export function resolveResearchBranch(
   state: GameState,

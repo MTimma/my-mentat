@@ -37,10 +37,40 @@ export function hasCompletedRequiredTurnAction(
 
 /** True when mandatory pending work is clear and the turn action (agent/reveal) is done. */
 export function computeCanEndTurn(
-  state: Pick<GameState, 'phase' | 'currTurn' | 'pendingRewards'> & {
+  state: Pick<GameState, 'phase' | 'currTurn' | 'pendingRewards' | 'cursor' | 'history'> & {
     pendingResearchAdvance?: GameState['pendingResearchAdvance']
   }
-): boolean {
+): { canEnd: boolean; conflict?: RedoConflict } {
+  // Check for redo conflicts
+  if (state.cursor.redoConflict) {
+    return { 
+      canEnd: false,
+      conflict: state.cursor.redoConflict
+    }
+  }
+  
+  // Cannot end turn if in redo state with invalid history
+  if (state.cursor.originalEvent !== undefined && state.cursor.originalEvent !== state.cursor.event) {
+    // Check if subsequent turns would be invalid
+    const originalIndex = state.cursor.originalEvent
+    if (originalIndex < state.history.length - 1) {
+      const nextTurn = state.history[originalIndex + 1]
+      if (nextTurn.type === 'PLAY_CARD' && !state.players.some(p => 
+        p.deck.some(c => c.id === nextTurn.cardId)
+      )) {
+        return {
+          canEnd: false,
+          conflict: {
+            turnIndex: originalIndex + 1,
+            reason: 'missing_card',
+            cardId: nextTurn.cardId,
+            message: `Cannot replay turn ${originalIndex + 2} - required card is no longer available`
+          }
+        }
+      }
+    }
+    return { canEnd: false }
+  }
   if (state.pendingRewards.some(r => !r.disabled)) return false
   if ((state.currTurn?.pendingChoices?.length ?? 0) > 0) return false
   if (state.currTurn?.opponentDiscardState) return false

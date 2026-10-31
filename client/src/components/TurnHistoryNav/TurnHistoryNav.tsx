@@ -59,7 +59,13 @@ export interface TurnHistoryNavProps {
   viewingTurnIndex: number | null
   historyLength: number
   inSandboxSetup?: boolean
+  /** Called when user wants to redo from a specific turn */
+  onRedoFromTurn?: (turnIndex: number) => void
+  /** Called when there's a conflict to show user */
+  onRedoConflict?: (conflict: RedoConflict) => void
   isViewingHistory: boolean
+  /** Current redo conflict if any */
+  redoConflict?: RedoConflict | null
   onTurnChange: (turnIndex: number) => void
   onReturnToCurrent: () => void
   /** When true, next/current cannot land on the live in-progress turn. */
