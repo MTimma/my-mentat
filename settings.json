@@ -1,0 +1,27 @@
+{
+  "language_models": {
+
+  "open_router": {
+    "available_models": [
+      {
+        "name": "anthropic/claude-3.5-sonnet",
+        "max_tokens": 8192
+      },
+      {
+        "name": "deepseek/deepseek-chat",
+        "max_tokens": 4096
+      },
+      {
+        "name": "meta-llama/llama-3.3-70b-instruct",
+        "max_tokens": 4096
+      }
+    ]
+    }
+  },
+  "agent": {
+    "default_model": {
+      "provider": "openrouter",
+      "model": "openrouter/auto"
+    }
+  }
+}

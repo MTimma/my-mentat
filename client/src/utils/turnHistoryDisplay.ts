@@ -163,12 +163,15 @@ export interface BirdseyeHistoryCell {
   historyIndex: number
   playerId: number
   isLive: boolean
+  /** Turn from before an edit, still listed while the replacement turn is played. */
+  isPreview?: boolean
 }
 
 export interface BirdseyeHistoryBanner {
   kind: BirdseyeHistoryBannerKind
   historyIndex: number
   isLive: boolean
+  isPreview?: boolean
   label: string
   round?: number
 }
@@ -242,12 +245,18 @@ function historyPlayerId(turn: GameState): number | undefined {
   return turn.currTurn?.playerId ?? turn.activePlayerId
 }
 
-function bannerForMeta(turn: GameState, historyIndex: number, isLive: boolean): BirdseyeHistoryBanner {
+function bannerForMeta(
+  turn: GameState,
+  historyIndex: number,
+  isLive: boolean,
+  isPreview = false
+): BirdseyeHistoryBanner {
   if (turn.historyEntryKind === 'combat') {
     return {
       kind: 'combat',
       historyIndex,
       isLive,
+      isPreview,
       label: getCombatHistoryLabel(turn),
       round: turn.currentRound,
     }
@@ -257,23 +266,25 @@ function bannerForMeta(turn: GameState, historyIndex: number, isLive: boolean): 
       kind: 'conflict-rewards',
       historyIndex,
       isLive,
+      isPreview,
       label: getConflictRewardsHistoryLabel(),
       round: turn.currentRound,
     }
   }
   if (turn.historyEntryKind === 'endgame') {
-    return { kind: 'endgame', historyIndex, isLive, label: 'Endgame' }
+    return { kind: 'endgame', historyIndex, isLive, isPreview, label: 'Endgame' }
   }
   if (isRoundStartHistoryEntry(turn)) {
     return {
       kind: 'round-start',
       historyIndex,
       isLive,
+      isPreview,
       label: getRoundStartLabel(turn),
       round: turn.currentRound,
     }
   }
-  return { kind: 'setup', historyIndex, isLive, label: 'Setup', round: turn.currentRound }
+  return { kind: 'setup', historyIndex, isLive, isPreview, label: 'Setup', round: turn.currentRound }
 }
 
 function isLivePlayerTurn(state: GameState): boolean {
@@ -311,7 +322,8 @@ function liveBannerKind(state: GameState): BirdseyeHistoryBannerKind | null {
 export function buildBirdseyeTurnHistoryGrid(
   history: GameState[],
   playerIds: number[],
-  liveState?: GameState | null
+  liveState?: GameState | null,
+  previewHistory?: GameState[] | null
 ): BirdseyeHistoryGridRow[] {
   const colCount = playerIds.length
   if (colCount === 0) return []
@@ -361,13 +373,13 @@ export function buildBirdseyeTurnHistoryGrid(
 
   const rowHasMainSide = () => cells.some((cell, index) => cell != null && index >= firstPlayerCol)
 
-  const placeTurn = (historyIndex: number, playerId: number, isLive: boolean) => {
+  const placeTurn = (historyIndex: number, playerId: number, isLive: boolean, isPreview = false) => {
     const col = colOf.get(playerId)
     if (col == null) return
     if (!roundFirstPlayerLocked) setFirstPlayerCol(playerId)
     if (col < firstPlayerCol && rowHasMainSide()) flush()
     if (cells[col] != null) flush()
-    cells[col] = { historyIndex, playerId, isLive }
+    cells[col] = { historyIndex, playerId, isLive, isPreview }
   }
 
   for (let index = 0; index < history.length; index++) {
@@ -418,6 +430,26 @@ export function buildBirdseyeTurnHistoryGrid(
         }
       }
     }
+  }
+
+  const preview = previewHistory ?? []
+  for (let i = 0; i < preview.length; i++) {
+    const turn = preview[i]
+    if (!turn) continue
+    const index = history.length + 1 + i
+    if (isMetaHistoryEntry(turn)) {
+      if (isRoundStartHistoryEntry(turn)) {
+        beginRound(turn.currentRound, markerId(turn))
+      } else {
+        flush()
+      }
+      rows.push({ type: 'banner', banner: bannerForMeta(turn, index, false, true) })
+      continue
+    }
+    const playerId = historyPlayerId(turn)
+    if (playerId == null) continue
+    preparePlayerTurnRound(turn)
+    placeTurn(index, playerId, false, true)
   }
 
   flush()

@@ -297,3 +297,23 @@ export function historyIndexToEventIndex(
   if (historyIndex === 0) return -1
   return events.length - 1
 }
+
+/**
+ * Split a log so `historyIndex` can be played again.
+ * `kept` ends at the previous row. `pending` starts after the edited row.
+ * The edited row's own events are in neither list.
+ */
+export function splitLogForTurnEdit(
+  setup: SetupBlock,
+  events: EventEntry[],
+  historyIndex: number
+): { kept: EventEntry[]; pending: EventEntry[] } | null {
+  if (historyIndex <= 0) return null
+  const endOfEdited = historyIndexToEventIndex(setup, events, historyIndex)
+  const endOfRewind = historyIndexToEventIndex(setup, events, historyIndex - 1)
+  if (endOfEdited < 0) return null
+  return {
+    kept: events.slice(0, Math.max(0, endOfRewind + 1)),
+    pending: events.slice(endOfEdited + 1),
+  }
+}

@@ -5,6 +5,7 @@ import { GameContext } from './gameContextState'
 import {
   buildHistoryFromEvents,
   historyIndexToEventIndex,
+  splitLogForTurnEdit,
   upsertCombatHistoryEntry,
 } from '../../save/buildHistory'
 import { buildInitialStateFromSaveDoc } from '../../save/buildInitialStateFromSaveDoc'
@@ -395,8 +396,9 @@ export type GameAction =
   | { type: 'OPPONENT_DISCARD_CARDS'; playerId: number; opponentId: number; cardIds: number[] }
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
     | { type: 'UNDO_TO_TURN'; turnIndex: number }
+    | { type: 'REDO_FROM_TURN'; turnIndex: number }
     | { type: 'UNDO_TO_SETUP' }
-    | { type: 'RESOLVE_REDO_CONFLICT'; choice: 'restore' | 'startOver' }
+    | { type: 'RESOLVE_REDO_CONFLICT'; choice: 'restore' | 'truncate' | 'backToEdit' }
     | { type: 'RESOLVE_ENDGAME' }
     | { type: 'REVEAL_ENDGAME_INTRIGUE'; playerId: number; cardIds: number[] }
     | { type: 'SANDBOX_SET_IMPERIUM_ROW'; cardIds: number[] }
@@ -9585,6 +9587,11 @@ function copyCurrTurnForHistory(currTurn: GameTurn | null | undefined): GameTurn
 /** History snapshots store only this turn's gains with gainsStartIndex 0. */
 function snapshotStateForHistory(state: GameState): GameState {
   const copy = deepCopyGameState(state)
+  copy.redoConflict = null
+  copy.redoEditing = false
+  copy.redoPreviewHistory = null
+  copy.redoOriginalTurn = null
+  copy.redoFocusIndex = null
   if (!copy.currTurn) return copy
   const start = copy.currTurn.gainsStartIndex ?? 0
   const turnGains = (copy.gains ?? []).slice(start)
@@ -9706,10 +9713,23 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
   const recordedEventsRef = useRef<EventEntry[]>(initialEvents)
   /** React Strict Mode runs setState updaters twice with the same prev; record once per dispatch. */
   const strictModeRecordCommittedRef = useRef(false)
-  /** Turns cut off by UNDO_TO_TURN, replayed on top of the edited turn. */
+  /** Turns after the edited row, replayed once the replacement turn ends. */
   const redoPendingEventsRef = useRef<EventEntry[]>([])
-  /** Event log before the redo fork, used to restore the old turn. */
+  /** Full event log from before the edit, used if the player cancels. */
   const redoOriginalEventsRef = useRef<EventEntry[] | null>(null)
+  /** True only for an Edit-button session (shows the held turns as preview). */
+  const redoEditingRef = useRef(false)
+  /** History rows after the edited turn, shown while that turn is replayed. */
+  const redoHeldHistoryRef = useRef<GameState[]>([])
+  /** Snapshot of the edited turn, used for the original-choice hints. */
+  const redoOriginalTurnRef = useRef<GameState | null>(null)
+  /** History index of the edited turn, so the view can land on it after the edit. */
+  const redoEditedIndexRef = useRef<number | null>(null)
+  /**
+   * Pending events already appended during this dispatch. React Strict Mode runs
+   * the updater more than once; later passes must not append them again.
+   */
+  const redoCommittedPendingRef = useRef<EventEntry[]>([])
   const setupRef = useRef<{ setup: SetupBlock; unmapped: string[] }>({
     setup: gameInput.setup,
     unmapped: gameInput.meta.notes?.includes('Unmapped')
@@ -9728,7 +9748,49 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
   const recordingDispatch = useCallback(
     (action: GameAction) => {
       strictModeRecordCommittedRef.current = false
+      redoCommittedPendingRef.current = []
       setGameState(prev => {
+        const clearRedoSession = () => {
+          redoPendingEventsRef.current = []
+          redoOriginalEventsRef.current = null
+          redoEditingRef.current = false
+          redoHeldHistoryRef.current = []
+          redoOriginalTurnRef.current = null
+        }
+        /** Attach the live redo session (preview rows + original turn) to a state. */
+        const withRedoState = (state: GameState): GameState => ({
+          ...state,
+          redoEditing: redoEditingRef.current,
+          redoPreviewHistory: redoHeldHistoryRef.current.length
+            ? redoHeldHistoryRef.current
+            : null,
+          redoOriginalTurn: redoOriginalTurnRef.current,
+          redoFocusIndex: null,
+        })
+        /** Rebuild the live state and history from the committed event log. */
+        const replayRecorded = () => {
+          const { state } = replayEvents(
+            buildInitialState(gameInput.setup),
+            recordedEventsRef.current
+          )
+          const history = buildHistoryFromEvents(gameInput.setup, recordedEventsRef.current)
+          return { state, history }
+        }
+        /** Snapshot a history row for the held (preview) list, dropping redo flags. */
+        const heldRow = (row: GameState): GameState => {
+          const copy = deepCopyGameState(row)
+          copy.history = []
+          copy.redoConflict = null
+          copy.redoEditing = false
+          copy.redoPreviewHistory = null
+          copy.redoOriginalTurn = null
+          copy.redoFocusIndex = null
+          return copy
+        }
+
+        // While a replay conflict is open, only its resolution is accepted.
+        if (prev.redoConflict && action.type !== 'RESOLVE_REDO_CONFLICT') return prev
+
         if (action.type === 'UNDO_TO_TURN') {
           const eventIndex = historyIndexToEventIndex(
             gameInput.setup,
@@ -9738,77 +9800,154 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
           // Remember the turns after the fork so they can be replayed on top of the edit.
           redoOriginalEventsRef.current = recordedEventsRef.current
           redoPendingEventsRef.current = recordedEventsRef.current.slice(eventIndex + 1)
+          redoEditingRef.current = false
+          redoHeldHistoryRef.current = []
+          redoOriginalTurnRef.current = null
           recordedEventsRef.current = recordedEventsRef.current.slice(
             0,
             Math.max(0, eventIndex + 1)
           )
           const next = gameReducer(prev, action)
           if (next.sandboxSetup) {
-            redoPendingEventsRef.current = []
-            redoOriginalEventsRef.current = null
+            clearRedoSession()
             recordedEventsRef.current = recordedEventsRef.current.filter(
               e => e.a.type !== 'SANDBOX_COMMIT_SETUP'
             )
             return { ...next, setupBaseline: prev.setupBaseline, redoConflict: null }
           }
-          const { state } = replayEvents(
-            buildInitialState(gameInput.setup),
-            recordedEventsRef.current
-          )
-          const history = buildHistoryFromEvents(gameInput.setup, recordedEventsRef.current)
-          return { ...state, setupBaseline: prev.setupBaseline, history, redoConflict: null }
+          const { state, history } = replayRecorded()
+          return withRedoState({ ...state, setupBaseline: prev.setupBaseline, history, redoConflict: null })
+        }
+
+        if (action.type === 'REDO_FROM_TURN') {
+          if (action.turnIndex <= 0) return prev
+          // A second click while an edit is already open must not fork again.
+          if (redoOriginalEventsRef.current && !strictModeRecordCommittedRef.current) return prev
+          if (!strictModeRecordCommittedRef.current) {
+            const split = splitLogForTurnEdit(
+              gameInput.setup,
+              recordedEventsRef.current,
+              action.turnIndex
+            )
+            if (!split) return prev
+            redoOriginalEventsRef.current = recordedEventsRef.current
+            redoPendingEventsRef.current = split.pending
+            redoEditingRef.current = true
+            redoHeldHistoryRef.current = prev.history.slice(action.turnIndex + 1).map(heldRow)
+            redoOriginalTurnRef.current = prev.history[action.turnIndex] ?? null
+            redoEditedIndexRef.current = action.turnIndex
+            recordedEventsRef.current = split.kept
+            strictModeRecordCommittedRef.current = true
+          }
+          const { state, history } = replayRecorded()
+          return withRedoState({
+            ...state,
+            setupBaseline: prev.setupBaseline,
+            history,
+            redoConflict: null,
+          })
         }
 
         if (action.type === 'RESOLVE_REDO_CONFLICT') {
-          if (action.choice === 'restore' && redoOriginalEventsRef.current) {
-            // Restore the old turn: put the original log back and replay it.
-            recordedEventsRef.current = redoOriginalEventsRef.current
-            redoPendingEventsRef.current = []
-            redoOriginalEventsRef.current = null
-            const { state } = replayEvents(
-              buildInitialState(gameInput.setup),
-              recordedEventsRef.current
-            )
-            const history = buildHistoryFromEvents(gameInput.setup, recordedEventsRef.current)
-            return { ...state, setupBaseline: prev.setupBaseline, history, redoConflict: null }
+          const focusIndex = redoEditedIndexRef.current
+
+          if (action.choice === 'backToEdit') {
+            // Dismiss the conflict and reopen the replacement turn for editing.
+            // Drop the END_TURN that triggered it; keep the held turns so the
+            // replay is retried when the turn is ended again.
+            if (!strictModeRecordCommittedRef.current) {
+              const events = recordedEventsRef.current
+              if (events[events.length - 1]?.a.type === 'END_TURN') {
+                recordedEventsRef.current = events.slice(0, -1)
+              }
+              strictModeRecordCommittedRef.current = true
+            }
+            const { state, history } = replayRecorded()
+            return withRedoState({
+              ...state,
+              setupBaseline: prev.setupBaseline,
+              history,
+              redoConflict: null,
+            })
           }
-          // Start over after the new turn: keep the edit, drop the un-replayable turns.
-          redoPendingEventsRef.current = []
-          redoOriginalEventsRef.current = null
-          return { ...prev, redoConflict: null }
+
+          if (!strictModeRecordCommittedRef.current) {
+            if (action.choice === 'restore' && redoOriginalEventsRef.current) {
+              // Cancel the edit: put the original log back and replay it.
+              recordedEventsRef.current = redoOriginalEventsRef.current
+            } else if (action.choice === 'truncate') {
+              // Keep play up to the turn that no longer applies, drop the rest.
+              const pending = redoPendingEventsRef.current
+              const count = Math.max(0, prev.redoConflict?.eventIndex ?? 0)
+              recordedEventsRef.current = [
+                ...recordedEventsRef.current,
+                ...pending.slice(0, count),
+              ]
+            }
+            clearRedoSession()
+            strictModeRecordCommittedRef.current = true
+          }
+          const { state, history } = replayRecorded()
+          return {
+            ...state,
+            setupBaseline: prev.setupBaseline,
+            history,
+            redoConflict: null,
+            redoEditing: false,
+            redoPreviewHistory: null,
+            redoOriginalTurn: null,
+            // Land on the edited turn either way: the replacement when cleared,
+            // or the restored original when cancelled.
+            redoFocusIndex: focusIndex,
+          }
         }
 
         if (action.type === 'UNDO_TO_SETUP') {
-          redoPendingEventsRef.current = []
-          redoOriginalEventsRef.current = null
+          clearRedoSession()
           recordedEventsRef.current = prev.setupBaseline?.sandboxSetup
             ? truncateSandboxEventsForSetupReedit(recordedEventsRef.current)
             : []
           const next = gameReducer(prev, action)
-          return { ...next, setupBaseline: prev.setupBaseline, redoConflict: null }
+          return {
+            ...next,
+            setupBaseline: prev.setupBaseline,
+            redoConflict: null,
+            redoEditing: false,
+            redoPreviewHistory: null,
+            redoOriginalTurn: null,
+            redoFocusIndex: null,
+          }
         }
 
         let next = gameReducer(prev, action)
 
-        // Replay the turns cut off by the last undo, on top of the edited turn.
-        // Runs once the edited turn ends; a rejected event surfaces a conflict
-        // instead of committing (the reducer returns the same reference on reject).
-        if (
-          redoPendingEventsRef.current.length > 0 &&
-          action.type === 'END_TURN' &&
-          next !== prev
-        ) {
-          const replay = replayPendingRedoEvents(next, redoPendingEventsRef.current)
-          if (replay.conflict) {
-            return { ...next, redoConflict: replay.conflict }
+        // Replay the turns cut off by the last undo/edit, on top of the edited
+        // turn. Runs once the replacement turn ends; a rejected event surfaces a
+        // conflict instead of committing (the reducer returns the same reference
+        // on reject). Reads the pending list from whichever ref still holds it so
+        // Strict Mode's extra updater passes compute the same result.
+        let pendingConflict: RedoConflict | null = null
+        let cleanReplay: GameState | null = null
+        let cleanPending: EventEntry[] | null = null
+        // Edited turn to land on once the edit closes (no later turns to replay).
+        let completionFocusIndex: number | null = null
+        if (action.type === 'END_TURN' && next !== prev) {
+          const pending = redoPendingEventsRef.current.length
+            ? redoPendingEventsRef.current
+            : redoCommittedPendingRef.current
+          if (pending.length > 0) {
+            const replay = replayPendingRedoEvents(next, pending)
+            if (replay.conflict) {
+              pendingConflict = replay.conflict
+            } else {
+              cleanReplay = replay.state
+              cleanPending = pending
+            }
+          } else if (redoOriginalEventsRef.current) {
+            // Editing the last recorded turn: nothing left to replay.
+            completionFocusIndex = redoEditedIndexRef.current
+            clearRedoSession()
           }
-          recordedEventsRef.current = [
-            ...recordedEventsRef.current,
-            ...redoPendingEventsRef.current,
-          ]
-          redoPendingEventsRef.current = []
-          redoOriginalEventsRef.current = null
-          next = replay.state
         }
 
         if (next.currentConflict?.id && next.currentConflict.id > 0) {
@@ -9842,7 +9981,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
         // Sandbox setup rows are maintained by the reducer (withSandboxSetupHistory);
         // event replay only snapshots on SANDBOX_COMMIT_SETUP and would drop in-progress edits.
         if (SANDBOX_SETUP_HISTORY_ACTIONS.has(action.type)) {
-          return { ...next, history: next.history }
+          return withRedoState({ ...next, history: next.history, redoConflict: null })
         }
 
         let history = buildHistoryFromEvents(gameInput.setup, recordedEventsRef.current)
@@ -9890,7 +10029,51 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
             }
           }
         }
-        return { ...next, history }
+        if (cleanPending && cleanReplay) {
+          // Commit the replayed turns. `already` keeps Strict Mode's extra pass
+          // from appending the same events twice.
+          const tail = recordedEventsRef.current.slice(-cleanPending.length)
+          const already =
+            tail.length === cleanPending.length &&
+            tail.every((entry, index) => entry === cleanPending[index])
+          const finalEvents = already
+            ? recordedEventsRef.current
+            : [...recordedEventsRef.current, ...cleanPending]
+          recordedEventsRef.current = finalEvents
+          let finalHistory = buildHistoryFromEvents(gameInput.setup, finalEvents)
+          // Keep the live replacement-turn row (replay can miss optional gains).
+          const beforePending = finalEvents.slice(0, finalEvents.length - cleanPending.length)
+          const editedIndex = buildHistoryFromEvents(gameInput.setup, beforePending).length - 1
+          if (editedIndex >= 0 && editedIndex < finalHistory.length) {
+            finalHistory = [
+              ...finalHistory.slice(0, editedIndex),
+              snapshotStateForHistory(prev),
+              ...finalHistory.slice(editedIndex + 1),
+            ]
+          }
+          redoCommittedPendingRef.current = cleanPending
+          clearRedoSession()
+          return {
+            ...cleanReplay,
+            history: finalHistory,
+            canEndTurn: cleanReplay.canEndTurn,
+            redoConflict: null,
+            redoEditing: false,
+            redoPreviewHistory: null,
+            redoOriginalTurn: null,
+            // Land the viewer on the turn that was just edited.
+            redoFocusIndex: editedIndex >= 0 ? editedIndex : null,
+          }
+        }
+        return {
+          ...withRedoState({
+            ...next,
+            history,
+            canEndTurn: pendingConflict ? false : next.canEndTurn,
+            redoConflict: pendingConflict,
+          }),
+          redoFocusIndex: completionFocusIndex,
+        }
       })
     },
     [gameInput.setup]
@@ -10037,7 +10220,7 @@ function describeRedoConflict(
         eventIndex,
         reason: 'missing_card',
         cardId: action.cardId,
-        message: `Turn ${turnIndex + 1} can no longer be replayed — the required card is no longer available.`,
+        message: `Turn ${turnIndex + 1} is no longer valid - the required card is no longer available.`,
       }
     }
   }
@@ -10046,14 +10229,14 @@ function describeRedoConflict(
       turnIndex,
       eventIndex,
       reason: 'occupied_space',
-      message: `Turn ${turnIndex + 1} can no longer be replayed — the board space is no longer available.`,
+      message: `Turn ${turnIndex + 1} is no longer valid - the board space is no longer available.`,
     }
   }
   return {
     turnIndex,
     eventIndex,
     reason: 'invalid_action',
-    message: `Turn ${turnIndex + 1} can no longer be replayed (${action.type}).`,
+    message: `Turn ${turnIndex + 1} is no longer valid (${action.type}).`,
   }
 }
 

@@ -1,0 +1,76 @@
+import { ALL_INTRIGUE_CARDS } from '../services/IntrigueDeckService'
+import { TurnType, normalizeExpansions, type GameState } from '../types/GameTypes'
+import { resolveCardInSnapshot, resolvePlayedCardsForTurn } from './revealTurnStats'
+
+/** Small card shown in orange during a redo, as a reminder of the original choice. */
+export interface RedoReminderThumb {
+  key: string
+  id: number
+  name: string
+  image?: string
+}
+
+export interface RedoTurnReminders {
+  /** Cards played on the original agent turn. */
+  playedCards: RedoReminderThumb[]
+  /** Cards revealed on the original reveal turn. */
+  revealedCards: RedoReminderThumb[]
+  /** Board space the original agent was placed on. */
+  agentSpaceId: number | null
+  /** Intrigue played on the original turn. */
+  intrigue: RedoReminderThumb[]
+}
+
+const EMPTY: RedoTurnReminders = {
+  playedCards: [],
+  revealedCards: [],
+  agentSpaceId: null,
+  intrigue: [],
+}
+
+function thumb(key: string, id: number, name: string, image?: string): RedoReminderThumb {
+  return { key, id, name, image }
+}
+
+/**
+ * What the original turn did, shown while that turn is being replayed after an
+ * edit. Only the choices the player must make again are surfaced: the board
+ * space visited, the card played, cards revealed, and intrigue played.
+ */
+export function originalTurnReminders(turn: GameState | null | undefined): RedoTurnReminders {
+  const curr = turn?.currTurn
+  const playerId = curr?.playerId
+  if (!turn || !curr || playerId == null) return EMPTY
+
+  const playedCards =
+    curr.type === TurnType.ACTION
+      ? resolvePlayedCardsForTurn(turn).map(card =>
+          thumb(`play-${card.id}`, card.id, card.name, card.image)
+        )
+      : []
+
+  const revealedCards =
+    curr.type === TurnType.REVEAL
+      ? (curr.revealedCardIds ?? []).flatMap(id => {
+          const card = resolveCardInSnapshot(turn, playerId, id)
+          return card ? [thumb(`reveal-${card.id}`, card.id, card.name, card.image)] : []
+        })
+      : []
+
+  const intrigue = (curr.playedIntrigueCard ?? []).flatMap(play => {
+    const card =
+      turn.intrigueDiscard.find(entry => entry.id === play.cardId) ??
+      turn.intrigueDeck.find(entry => entry.id === play.cardId) ??
+      ALL_INTRIGUE_CARDS(normalizeExpansions(turn.expansions)).find(
+        entry => entry.id === play.cardId
+      )
+    return card ? [thumb(`intrigue-${card.id}`, card.id, card.name, card.image)] : []
+  })
+
+  return {
+    playedCards,
+    revealedCards,
+    agentSpaceId: curr.type === TurnType.ACTION ? curr.agentSpaceId ?? null : null,
+    intrigue,
+  }
+}

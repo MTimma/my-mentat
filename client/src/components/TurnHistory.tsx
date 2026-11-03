@@ -60,6 +60,7 @@ import TurnGainsDisplay from './TurnGainsDisplay/TurnGainsDisplay'
 import { type LoadSaveFn } from '../api/gamesApi'
 import TurnHistoryNav from './TurnHistoryNav/TurnHistoryNav'
 import { TurnHistoryUndoButton } from './TurnHistoryUndoButton'
+import { TurnHistoryRedoButton, useTurnHistoryRedo } from './TurnHistoryRedoButton'
 import { TurnHistoryDebugButton } from './TurnHistoryDebugButton'
 import './TurnHistory.css'
 
@@ -113,6 +114,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   onLoadSave,
   hideLiveTurn = false,
 }) => {
+  const redo = useTurnHistoryRedo()
   const isDocked = layout === 'docked'
   /** Birds-eye: history list gains collapsed by default (dock seats show gains). */
   const [showHistoryGains, setShowHistoryGains] = useState(false)
@@ -875,6 +877,14 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           undoTitle={undoTitle}
           undoAriaLabel={undoAriaLabel}
         />
+        {redo ? (
+          <TurnHistoryRedoButton
+            onRedo={redo.onRedo}
+            canRedo={redo.canRedo}
+            redoTitle={redo.redoTitle}
+            redoAriaLabel={redo.redoAriaLabel}
+          />
+        ) : null}
         {/* {onOpenPlayerOverview && (
           <button
             type="button"

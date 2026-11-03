@@ -48,6 +48,7 @@ export interface IxBoardOverlayProps {
   /** `embedded` = overlay on Board.jpg; `docked` = standalone panel beside board (desktop). */
   placement?: IxBoardPlacement
   historyHighlightSpaceId?: number | null
+  redoReminderSpaceId?: number | null
   /** Sandbox setup: tech stack slots become click targets to pick face-up tiles. */
   sandboxTechSetup?: {
     onConfigure: () => void
@@ -84,6 +85,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
   blockedSpaceMap,
   placement = 'embedded',
   historyHighlightSpaceId = null,
+  redoReminderSpaceId = null,
   sandboxTechSetup,
   currentPlayerId,
   techAcquire,
@@ -354,6 +356,21 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
             <div
               key={`hist-${h.spaceId}`}
               className="image-board__history-space-highlight"
+              style={{
+                left: `${h.left}%`,
+                top: `${h.top}%`,
+                width: `${h.width}%`,
+                height: `${h.height}%`,
+              }}
+              aria-hidden
+            />
+          ))}
+
+        {redoReminderSpaceId != null &&
+          IX_BOARD_HOTSPOTS.filter(h => h.spaceId === redoReminderSpaceId).map(h => (
+            <div
+              key={`redo-${h.spaceId}`}
+              className="image-board__redo-space-highlight"
               style={{
                 left: `${h.left}%`,
                 top: `${h.top}%`,

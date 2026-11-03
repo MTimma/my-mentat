@@ -67,7 +67,9 @@ import SandboxSetupControls from './components/SandboxSetupControls/SandboxSetup
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
 import UndoConfirmDialog from './components/TimeTravel/UndoConfirmDialog'
+import RedoConflictModal from './components/RedoConflictModal/RedoConflictModal'
 import { TurnHistoryUndoProvider } from './components/TurnHistoryUndoButton'
+import { TurnHistoryRedoProvider } from './components/TurnHistoryRedoButton'
 import { areAllLeadersAssigned, isUnassignedLeader } from './data/leaders'
 import { getEndTurnButtonState } from './utils/endTurnState'
 import {
@@ -108,6 +110,7 @@ import {
   getLivePlayerTurnNumber,
   getPlayerTurnNumber,
   isCombatIntrigueHistoryEntry,
+  isPlayerTurnHistoryEntry,
 } from './utils/turnHistoryDisplay'
 import {
   getPlayBoardInfoTipsEnabled,
@@ -187,6 +190,7 @@ const GameContent = ({
   const [undoTargetIndex, setUndoTargetIndex] = useState<number | null>(null)
   const [undoSourceRowIndex, setUndoSourceRowIndex] = useState<number | null>(null)
   const [undoToSetup, setUndoToSetup] = useState(false)
+  const [redoConfirmIndex, setRedoConfirmIndex] = useState<number | null>(null)
 
   const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(
     () =>
@@ -423,6 +427,47 @@ const GameContent = ({
     onLoadSave,
     onOpenPlayerOverview: isDesktopPlayView ? () => setIsPlayerOverviewOpen(true) : undefined,
   }
+
+  // Edit button: edit the past player turn currently being viewed, then replay
+  // the turns that follow it.
+  const redoRow = viewingTurnIndex
+  const redoTurn = redoRow != null ? gameState.history[redoRow] : undefined
+  const canRedo =
+    canEdit &&
+    !gameState.sandboxSetup &&
+    !gameState.redoEditing &&
+    !gameState.redoConflict &&
+    redoRow != null &&
+    redoRow > 0 &&
+    isPlayerTurnHistoryEntry(redoTurn)
+  const redoTurnLabel =
+    redoRow != null ? getHistoryRowLabel(gameState.history, redoRow) : 'this turn'
+  const handleRedoClick = () => {
+    if (!canRedo || redoRow == null) return
+    setRedoConfirmIndex(redoRow)
+  }
+  const confirmRedoEdit = () => {
+    if (redoConfirmIndex == null) return
+    dispatch({ type: 'REDO_FROM_TURN', turnIndex: redoConfirmIndex })
+    setRedoConfirmIndex(null)
+    returnToCurrent()
+  }
+  const redoTitle = !canEdit
+    ? viewOnlyTitle
+    : canRedo
+      ? `Edit ${redoTurnLabel} and replay later turns`
+      : 'Select a past player turn to edit it and replay later turns'
+  const turnHistoryRedoProps = {
+    onRedo: handleRedoClick,
+    canRedo,
+    redoTitle,
+    redoAriaLabel: redoTitle,
+  }
+  // Orange reminder of the board space used on the original turn, shown while
+  // its replacement is being played.
+  const redoOriginalCurr = gameState.redoEditing ? gameState.redoOriginalTurn?.currTurn : null
+  const redoReminderSpaceId =
+    redoOriginalCurr?.type === TurnType.ACTION ? redoOriginalCurr.agentSpaceId ?? null : null
 
   const handleCompleteGraftPair = (
     playerId: number,
@@ -1925,6 +1970,7 @@ const GameContent = ({
           combatStrength={displayState.combatStrength ?? gameState.combatStrength}
           controlMarkers={displayState.controlMarkers}
           historyHighlightSpaceId={historyHighlightSpaceId}
+          redoReminderSpaceId={redoReminderSpaceId}
           troopDeploy={
             isViewingHistory || gameState.sandboxSetup || !activePlayer
               ? undefined
@@ -2092,6 +2138,7 @@ const GameContent = ({
       handlePlaceAgent,
       handleVoiceSpaceSelect,
       historyHighlightSpaceId,
+      redoReminderSpaceId,
       handleAddTroop,
       handleUndeployTroop,
       handleAddDreadnought,
@@ -2232,6 +2279,7 @@ const GameContent = ({
 
   return (
     <TurnHistoryUndoProvider value={turnHistoryUndoProps}>
+    <TurnHistoryRedoProvider value={turnHistoryRedoProps}>
     <div
       ref={gameContainerRef}
       className={[
@@ -2815,6 +2863,29 @@ const GameContent = ({
         onConfirm={handleUndoConfirm}
         onCancel={clearUndoState}
       />
+      {redoConfirmIndex != null && !gameState.redoConflict ? (
+        <RedoConflictModal
+          mode="confirm"
+          turnLabel={getHistoryRowLabel(gameState.history, redoConfirmIndex)}
+          conflict={null}
+          onConfirm={confirmRedoEdit}
+          onTruncate={() => setRedoConfirmIndex(null)}
+          onCancel={() => setRedoConfirmIndex(null)}
+        />
+      ) : null}
+      {gameState.redoConflict ? (
+        <RedoConflictModal
+          mode="conflict"
+          turnLabel={
+            redoRow != null ? getHistoryRowLabel(gameState.history, redoRow) : 'This turn'
+          }
+          conflict={gameState.redoConflict}
+          onConfirm={() => dispatch({ type: 'RESOLVE_REDO_CONFLICT', choice: 'truncate' })}
+          onTruncate={() => dispatch({ type: 'RESOLVE_REDO_CONFLICT', choice: 'truncate' })}
+          onBackToEdit={() => dispatch({ type: 'RESOLVE_REDO_CONFLICT', choice: 'backToEdit' })}
+          onCancel={() => dispatch({ type: 'RESOLVE_REDO_CONFLICT', choice: 'restore' })}
+        />
+      ) : null}
       {masterstrokeSelectionRewardId && (
         <MasterstrokeFactionModal
           open={true}
@@ -2850,6 +2921,7 @@ const GameContent = ({
       </AltImagePreviewProvider>
       </PlayBoardModalProvider>
     </div>
+    </TurnHistoryRedoProvider>
     </TurnHistoryUndoProvider>
   )
 }

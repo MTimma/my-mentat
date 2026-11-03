@@ -663,6 +663,18 @@
   background: rgba(255, 215, 0, 0.12);
 }
 
+/* Orange reminder of the board space used on the turn being replayed. */
+.image-board__redo-space-highlight {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  box-sizing: border-box;
+  border: 2px solid #e07a2f;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(224, 122, 47, 0.75);
+  background: rgba(224, 122, 47, 0.18);
+}
+
 /* ?hotspotDebug=1 — tune hitboxes in DevTools, then copy % into boardHotspots.ts */
 .image-board--hotspot-debug .image-board__hotspot {
   outline: 2px solid rgba(255, 0, 220, 0.9);

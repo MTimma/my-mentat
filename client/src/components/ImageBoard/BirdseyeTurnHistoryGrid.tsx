@@ -4,6 +4,7 @@ import { useGame } from '../GameContext/GameContext'
 import { useTimeTravel } from '../TimeTravel'
 import TurnHistoryNav from '../TurnHistoryNav/TurnHistoryNav'
 import { TurnHistoryUndoButton, useTurnHistoryUndo } from '../TurnHistoryUndoButton'
+import { TurnHistoryRedoButton, useTurnHistoryRedo } from '../TurnHistoryRedoButton'
 import { TurnHistoryDebugButton } from '../TurnHistoryDebugButton'
 import {
   birdseyeRoundGroupContainsIndex,
@@ -19,9 +20,13 @@ function turnAtIndex(
   history: GameState[],
   liveState: GameState,
   historyIndex: number,
-  isLive: boolean
+  isLive: boolean,
+  previewHistory: GameState[]
 ): GameState | undefined {
   if (isLive) return liveState
+  if (historyIndex > history.length) {
+    return previewHistory[historyIndex - history.length - 1]
+  }
   return history[historyIndex]
 }
 
@@ -41,13 +46,24 @@ export function BirdseyeTurnHistoryGrid({
   const { gameState } = useGame()
   const { viewingTurnIndex, isViewingHistory, goToTurn, returnToCurrent, hideLiveTurn } = useTimeTravel()
   const undo = useTurnHistoryUndo()
+  const redo = useTurnHistoryRedo()
   const activeCellRef = useRef<HTMLButtonElement | null>(null)
   const playerById = useMemo(() => new Map(players.map(player => [player.id, player])), [players])
 
   const history = gameState.history
+  const previewHistory = useMemo(
+    () => gameState.redoPreviewHistory ?? [],
+    [gameState.redoPreviewHistory]
+  )
   const rows = useMemo(
-    () => buildBirdseyeTurnHistoryGrid(history, playerIds, hideLiveTurn ? undefined : gameState),
-    [history, playerIds, gameState, hideLiveTurn]
+    () =>
+      buildBirdseyeTurnHistoryGrid(
+        history,
+        playerIds,
+        hideLiveTurn ? undefined : gameState,
+        previewHistory
+      ),
+    [history, playerIds, gameState, hideLiveTurn, previewHistory]
   )
   const roundGroups = useMemo(() => groupBirdseyeHistoryRounds(rows), [rows])
   const activeRoundRef = useRef<HTMLDivElement | null>(null)
@@ -106,6 +122,10 @@ export function BirdseyeTurnHistoryGrid({
   const handleBannerClick = (historyIndex: number, isLive: boolean) => {
     if (gameState.sandboxSetup) return
     if (isLive || historyIndex >= history.length) {
+      if (historyIndex > history.length) {
+        goToTurn(historyIndex)
+        return
+      }
       if (hideLiveTurn) return
       returnToCurrent()
       return
@@ -193,6 +213,15 @@ export function BirdseyeTurnHistoryGrid({
               undoAriaLabel={undo.undoAriaLabel}
             />
           ) : null}
+          {redo ? (
+            <TurnHistoryRedoButton
+              className="birdseye-turn-history__redo"
+              onRedo={redo.onRedo}
+              canRedo={redo.canRedo}
+              redoTitle={redo.redoTitle}
+              redoAriaLabel={redo.redoAriaLabel}
+            />
+          ) : null}
           <TurnHistoryDebugButton
             className="birdseye-turn-history__debug"
             onLoadSave={undo?.onLoadSave}
@@ -229,6 +258,7 @@ export function BirdseyeTurnHistoryGrid({
                         'birdseye-turn-history__banner',
                         `birdseye-turn-history__banner--${banner.kind}`,
                         isViewing ? 'birdseye-turn-history__banner--viewing' : '',
+                        banner.isPreview ? 'birdseye-turn-history__banner--preview' : '',
                       ]
                         .filter(Boolean)
                         .join(' ')}
@@ -263,7 +293,13 @@ export function BirdseyeTurnHistoryGrid({
                           />
                         )
                       }
-                      const turn = turnAtIndex(history, gameState, cell.historyIndex, cell.isLive)
+                      const turn = turnAtIndex(
+                        history,
+                        gameState,
+                        cell.historyIndex,
+                        cell.isLive,
+                        previewHistory
+                      )
                       const parts = turn
                         ? getBirdseyeHistoryCellParts(turn)
                         : { action: cell.isLive ? 'Current' : '—' }
@@ -285,6 +321,7 @@ export function BirdseyeTurnHistoryGrid({
                               player ? `birdseye-turn-history__cell--${player.color}` : '',
                               isViewing ? 'birdseye-turn-history__cell--viewing' : '',
                               cell.isLive ? 'birdseye-turn-history__cell--live' : '',
+                              cell.isPreview ? 'birdseye-turn-history__cell--preview' : '',
                               isReveal ? 'birdseye-turn-history__cell--reveal' : '',
                             ]
                               .filter(Boolean)

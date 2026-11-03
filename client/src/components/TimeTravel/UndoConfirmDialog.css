@@ -81,6 +81,7 @@
 }
 
 .undo-confirm-cancel,
+.undo-confirm-back,
 .undo-confirm-submit {
   flex: 1 1 0;
   min-width: 0;
@@ -94,13 +95,15 @@
   transition: background 0.2s, border-color 0.2s;
 }
 
-.undo-confirm-cancel {
+.undo-confirm-cancel,
+.undo-confirm-back {
   background: var(--chrome-inset-soft);
   border: 1px solid var(--chrome-border-strong);
   color: var(--chrome-text-strong);
 }
 
-.undo-confirm-cancel:hover {
+.undo-confirm-cancel:hover,
+.undo-confirm-back:hover {
   background: var(--chrome-accent-muted);
   border-color: var(--chrome-border-accent);
 }

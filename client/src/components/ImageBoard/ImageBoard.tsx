@@ -173,6 +173,8 @@ interface ImageBoardProps {
   controlMarkers: Record<ControlMarkerType, number | null>
   /** When viewing turn history, outline the board space where this turn's agent was placed. */
   historyHighlightSpaceId?: number | null
+  /** During an edit, orange reminder of the space used on the original turn. */
+  redoReminderSpaceId?: number | null
   /** Active-player troop deploy controls; rendered in seat Play/End Turn chrome. */
   troopDeploy?: CombatTroopDeployProps
   dreadnoughtDeploy?: CombatDreadnoughtDeployProps
@@ -276,6 +278,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   combatStrength,
   controlMarkers,
   historyHighlightSpaceId = null,
+  redoReminderSpaceId = null,
   troopDeploy,
   dreadnoughtDeploy,
   specimenDeploy,
@@ -531,6 +534,12 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     isIxOverlaySpaceId(historyHighlightSpaceId)
       ? historyHighlightSpaceId
       : null
+  const ixRedoReminderSpaceId =
+    riseOfIx &&
+    redoReminderSpaceId != null &&
+    isIxOverlaySpaceId(redoReminderSpaceId)
+      ? redoReminderSpaceId
+      : null
   const historyHighlightHotspot =
     historyHighlightSpaceId != null && ixHistoryHighlightSpaceId == null
       ? boardHotspots.find(h => h.spaceId === historyHighlightSpaceId)
@@ -538,6 +547,11 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const historyHighlightBox = historyHighlightHotspot
     ? layoutHotspotPercent(historyHighlightHotspot)
     : null
+  const redoReminderHotspot =
+    redoReminderSpaceId != null && !isIxOverlaySpaceId(redoReminderSpaceId)
+      ? boardHotspots.find(h => h.spaceId === redoReminderSpaceId)
+      : undefined
+  const redoReminderBox = redoReminderHotspot ? layoutHotspotPercent(redoReminderHotspot) : null
 
   const trackerInspectMode = hotspotDebug || markerDebug
   const agentPlacedThisTurn = Boolean(
@@ -574,6 +588,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         blockedSpaceMap={blockedSpaceMap}
         placement={ixBoardPlacement}
         historyHighlightSpaceId={ixHistoryHighlightSpaceId}
+        redoReminderSpaceId={ixRedoReminderSpaceId}
         sandboxTechSetup={
           sandboxSetup?.onTechTilesClick
             ? {
@@ -796,6 +811,19 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 top: `${historyHighlightBox.top}%`,
                 width: `${historyHighlightBox.width}%`,
                 height: `${historyHighlightBox.height}%`,
+              }}
+              aria-hidden
+            />
+          )}
+
+          {redoReminderBox && (
+            <div
+              className="image-board__redo-space-highlight"
+              style={{
+                left: `${redoReminderBox.left}%`,
+                top: `${redoReminderBox.top}%`,
+                width: `${redoReminderBox.width}%`,
+                height: `${redoReminderBox.height}%`,
               }}
               aria-hidden
             />

@@ -2381,12 +2381,14 @@
 }
 
 .birdseye-turn-history__undo,
+.birdseye-turn-history__redo,
 .birdseye-turn-history__debug {
   width: 24px;
   height: 24px;
 }
 
 .birdseye-turn-history__undo .turn-history-action-icon--undo,
+.birdseye-turn-history__redo .turn-history-action-icon--redo,
 .birdseye-turn-history__debug .turn-history-action-icon {
   width: 14px;
   height: 14px;
@@ -2403,6 +2405,7 @@
 }
 
 .birdseye-turn-history__undo.turn-history-icon-btn,
+.birdseye-turn-history__redo.turn-history-icon-btn,
 .birdseye-turn-history__debug.turn-history-icon-btn {
   border-radius: 0;
 }
@@ -2576,6 +2579,15 @@ button.birdseye-turn-history__cell {
 .birdseye-turn-history__cell--live:not(.birdseye-turn-history__cell--viewing) {
   outline: 1px dashed rgba(255, 248, 232, 0.22);
   outline-offset: -1px;
+}
+
+/* Held turns from before an edit: dimmed while the replacement is played. */
+.birdseye-turn-history__cell--preview:not(.birdseye-turn-history__cell--viewing) {
+  opacity: 0.55;
+}
+
+.birdseye-turn-history__banner--preview:not(.birdseye-turn-history__banner--viewing) {
+  opacity: 0.55;
 }
 
 .birdseye-turn-history__played,

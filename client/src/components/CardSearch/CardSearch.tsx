@@ -13,6 +13,7 @@ import { BoardScopedModal } from '../BoardScopedModal'
 import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import { cardThumbSrc } from '../../utils/cardThumbSrc'
+import type { RedoReminderThumb } from '../../utils/redoTurnReminders'
 import './CardSearch.css'
 
 /** iOS often scrolls the cards grid after the keyboard opens; re-apply scrollTop a few times. */
@@ -99,6 +100,7 @@ function cardHoverLabel(card: Card): string {
 type CardGridItemProps = {
   card: Card
   isSelected: boolean
+  isPrior?: boolean
   playability: GridItemPlayability
   onPick: (card: Card) => void
   /** View-only cards stay in the grid and can zoom, but do not select. */
@@ -108,6 +110,7 @@ type CardGridItemProps = {
 const CardGridItem = React.memo(function CardGridItem({
   card,
   isSelected,
+  isPrior = false,
   playability,
   onPick,
   selectable = true,
@@ -140,7 +143,7 @@ const CardGridItem = React.memo(function CardGridItem({
   return (
     <div className="card-cell">
       <div
-        className={`card ${selectable && isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+        className={`card ${selectable && isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''} ${isPrior ? 'card--prior' : ''}`}
         onPointerDown={selectable ? handlePointerDown : undefined}
         onClick={selectable ? handleClick : undefined}
       >
@@ -235,6 +238,11 @@ interface CardSearchProps {
   allowPartialSelection?: boolean
   /** Immortality — agent turn: pick a graft card plus optional partner from hand. */
   graftPairSelection?: boolean
+  /**
+   * Cards from the original turn, highlighted with a border in the grid while
+   * that turn is being replayed.
+   */
+  priorReminder?: RedoReminderThumb[]
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({
@@ -262,6 +270,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
   graftPairSelection = false,
   browseOnly = false,
   belowGrid,
+  priorReminder,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectionSlots, setSelectionSlots] = useState<(Card | null)[]>([])
@@ -645,6 +654,7 @@ const CardSearch: React.FC<CardSearchProps> = ({
                   ? selectionSlots.some(slot => slot === card)
                   : selectionSlots[0]?.id === card.id
             }
+            isPrior={priorReminder?.some(item => item.id === card.id) ?? false}
             playability={
               getCardPlayability ? playabilityByCardId.get(card.id) ?? PLAYABLE_CARD : PLAYABLE_CARD
             }

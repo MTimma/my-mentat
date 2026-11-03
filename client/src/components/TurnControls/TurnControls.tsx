@@ -17,6 +17,7 @@ import { FixedChoiceModal, BoardScopedModal, BoardDialogPanel } from '../BoardSc
 import CardSearch from '../CardSearch/CardSearch'
 import ValueStepper from '../ValueStepper/ValueStepper'
 import { immortalityGraftEnabled } from '../../expansions/immortality/graft'
+import { originalTurnReminders } from '../../utils/redoTurnReminders'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import RevealCardsIcon from '../RevealCardsIcon/RevealCardsIcon'
 import { getLeaderIconPath } from '../../data/leaders'
@@ -512,6 +513,10 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
 
   const isEndGame = gamePhase === GamePhase.END_GAME
   const isSandboxSetup = Boolean(gameState?.sandboxSetup)
+  // While a past turn is being replayed, hint at what the original turn did.
+  const redoReminders = gameState?.redoEditing
+    ? originalTurnReminders(gameState.redoOriginalTurn)
+    : null
   const sandboxSetupBlockedTitle =
     'Finish sandbox setup and tap Begin turns before taking player actions.'
 
@@ -3988,6 +3993,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
         playabilityInvalidateKey={isRevealTurn ? undefined : playCardPickerPlayabilityKey}
         graftPairSelection={graftPairSelection}
         initialSelectedCards={pendingGraftInitialCards}
+        priorReminder={isRevealTurn ? redoReminders?.revealedCards : redoReminders?.playedCards}
       />
 
       <CardSearch
@@ -4000,6 +4006,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
         text="Select an Intrigue card to play"
         getCardPlayability={(card) => checkIntrigueCardPlayability(card as IntrigueCard)}
         playabilityInvalidateKey={intriguePlayabilityKey}
+        priorReminder={redoReminders?.intrigue}
       />
 
       <CardSearch

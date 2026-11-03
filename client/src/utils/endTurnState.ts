@@ -5,7 +5,6 @@ import {
   type GameTurn,
   type PendingChoice,
   type PendingReward,
-  type RedoConflict,
 } from '../types/GameTypes'
 
 export interface EndTurnButtonStateInput {
@@ -41,12 +40,10 @@ export function computeCanEndTurn(
   state: Pick<GameState, 'phase' | 'currTurn' | 'pendingRewards' | 'redoConflict'> & {
     pendingResearchAdvance?: GameState['pendingResearchAdvance']
   }
-): { canEnd: boolean; conflict?: RedoConflict } {
-  // A pending redo conflict blocks ending the turn until it is resolved
-  // (restore the old turn, or start over after the new one).
-  if (state.redoConflict) {
-    return { canEnd: false, conflict: state.redoConflict }
-  }
+): boolean {
+  // A pending redo conflict blocks ending the turn until the player answers it
+  // (cancel the edit, or clear the turns from the conflict on).
+  if (state.redoConflict) return false
   if (state.pendingRewards.some(r => !r.disabled)) return false
   if ((state.currTurn?.pendingChoices?.length ?? 0) > 0) return false
   if (state.currTurn?.opponentDiscardState) return false

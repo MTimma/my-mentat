@@ -155,6 +155,13 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* Orange border on cards chosen on the original turn while it is replayed. */
+.card--prior {
+  outline: 2px solid #e07a2f;
+  outline-offset: -2px;
+  box-shadow: 0 0 8px rgba(224, 122, 47, 0.75);
+}
+
 .card-search-pile-tab {
   flex: 1 1 0;
   min-width: max-content;

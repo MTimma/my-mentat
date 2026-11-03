@@ -918,10 +918,27 @@ export interface GameState {
   usurpBorrowed?: { card: Card; rowIndex: number } | null
   /**
    * Redo/replay — set when recorded turns after an edited turn can no longer be
-   * replayed. Blocks ending the turn until the player restores the old turn or
-   * starts over after the new one.
+   * replayed. Blocks ending the turn until the player cancels the edit or clears
+   * the turns from the conflict on.
    */
   redoConflict?: RedoConflict | null
+  /** True while a past turn is being edited and later turns are held for replay. */
+  redoEditing?: boolean
+  /**
+   * Later turns from before the edit, shown in history while the replacement
+   * turn is played. Not part of the committed log.
+   */
+  redoPreviewHistory?: GameState[] | null
+  /**
+   * Snapshot of the turn being edited, used to hint at the original board space,
+   * played/revealed cards, and intrigue while the replacement is played.
+   */
+  redoOriginalTurn?: GameState | null
+  /**
+   * History index of the edited turn once its replacement has been accepted
+   * (clean replay or "clear later turns"). The viewer lands here after the edit.
+   */
+  redoFocusIndex?: number | null
 }
 
 export interface Expansions {
