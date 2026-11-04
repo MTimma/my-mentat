@@ -1424,6 +1424,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
             </span>
           )
         }
+      } else if (reward.custom === CustomEffect.FOLDSPACE_DRAW) {
+        // Same green card icon used for hand counts per leader.
+        right.push(renderRepeatedIconReward('foldspace-draw', 'draw', 1, 'Draw'))
       } else {
         const customText = PLAY_EFFECT_TEXTS[reward.custom] || reward.custom
         right.push(<span key="custom">{customText}</span>)
@@ -2141,7 +2144,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                     ? `Trash ${card.source.name} for ${reward.reward.victoryPoints} VP`
                     : `Trash ${card.source.name}`
                   : `Choose a card to trash (${card.source.name})`
-                : undefined
+                : reward.reward.custom === CustomEffect.FOLDSPACE_DRAW
+                  ? PLAY_EFFECT_TEXTS[CustomEffect.FOLDSPACE_DRAW]
+                  : undefined
           return (
             <button
               key={reward.id}

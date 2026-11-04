@@ -598,7 +598,13 @@ describe('Leader gains leftover layout', () => {
       /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects \{[\s\S]*?position:\s*absolute/
     )
     expect(seatChromeCss).toMatch(
-      /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects \{[\s\S]*?width:\s*max-content/
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects \{[\s\S]*?width:\s*100%/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects-inner \{[\s\S]*?width:\s*100%/
+    )
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects-inner > \.effect-btn--compact[\s\S]*?width:\s*100%/
     )
     expect(seatChromeCss).toMatch(
       /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects \.tech-acquire-btn[\s\S]*?\{[\s\S]*?height:\s*1\.85rem/
@@ -611,6 +617,13 @@ describe('Leader gains leftover layout', () => {
     )
     expect(seatChromeCss).toMatch(
       /\.combat-area-cluster--column \.birdseye-seat-play-area__card-effects \.effect-btn--compact:hover:not\(:disabled\)/
+    )
+    // Card art sizing must not leak into effect icons (e.g. the trash icon).
+    expect(seatChromeCss).toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__card > img \{[\s\S]*?width:\s*100%/
+    )
+    expect(seatChromeCss).not.toMatch(
+      /\.combat-area-cluster--column \.birdseye-seat-play-area__card img \{/
     )
     expect(seatChromeCss).not.toContain('birdseye-seat-play-area__card-effects-title')
     const turnControls = readFileSync(

@@ -168,6 +168,12 @@ describe('Play area action buttons', () => {
     expect(seatChrome).toContain('<PlayerTechModal')
   })
 
+  it('renders the Foldspace draw as the green card icon instead of text', () => {
+    expect(turnControls).toContain(
+      "renderRepeatedIconReward('foldspace-draw', 'draw', 1, 'Draw')"
+    )
+  })
+
   it('routes birdseye tech activation through TurnControls discard-aware activateTech', () => {
     const app = readFileSync(resolve(root, 'App.tsx'), 'utf8')
     expect(turnControls).toContain('activateTech:')

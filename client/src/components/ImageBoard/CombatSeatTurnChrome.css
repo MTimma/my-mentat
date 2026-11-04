@@ -1720,9 +1720,9 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0;
-  width: max-content;
-  max-width: calc(100% + 1.2rem);
-  min-width: calc(100% + 0.6rem);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   padding: 0;
   border: none;
   border-radius: 0;
@@ -1741,9 +1741,9 @@
   flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.1rem;
-  width: max-content;
-  max-width: none;
+  gap: 0;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
   padding: 0;
   border: none;
@@ -1932,6 +1932,14 @@
   cursor: pointer;
 }
 
+/* Pending effect buttons span the full card width. */
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects-inner > .effect-btn--compact,
+.combat-area-cluster--column .birdseye-seat-play-area__card-effects-inner > .tech-acquire-btn {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .combat-area-cluster--column .birdseye-seat-play-area__card-effects .effect-btn.choice,
 .combat-area-cluster--column .birdseye-seat-play-area__card-effects .fixed-choice-option,
 .combat-area-cluster--column .birdseye-seat-play-area__card-effects .tech-acquire-btn.effect-btn--needs-input:not(:disabled) {
@@ -1945,6 +1953,7 @@
 .combat-area-cluster--column .birdseye-seat-play-area__card-effects .tech-acquire-btn:hover:not(:disabled),
 .combat-area-cluster--column .birdseye-seat-play-area__card-effects .fixed-choice-option:hover:not(:disabled) {
   transform: translateY(-1px);
+  background: #000;
   border-color: color-mix(in srgb, var(--pending-accent, #ffd700) 55%, white);
   box-shadow:
     0 0 0 1px rgba(10, 8, 6, 0.45),
@@ -2016,7 +2025,8 @@
   gap: 0;
 }
 
-.combat-area-cluster--column .birdseye-seat-play-area__card img {
+/* Card art only — effect icons (e.g. the trash icon) must keep their own size. */
+.combat-area-cluster--column .birdseye-seat-play-area__card > img {
   display: block;
   width: 100%;
   height: 100%;
