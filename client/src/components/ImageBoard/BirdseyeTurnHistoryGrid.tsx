@@ -4,7 +4,11 @@ import { useGame } from '../GameContext/GameContext'
 import { useTimeTravel } from '../TimeTravel'
 import TurnHistoryNav from '../TurnHistoryNav/TurnHistoryNav'
 import { TurnHistoryUndoButton, useTurnHistoryUndo } from '../TurnHistoryUndoButton'
-import { TurnHistoryRedoButton, useTurnHistoryRedo } from '../TurnHistoryRedoButton'
+import {
+  TurnHistoryRowEditButton,
+  TurnHistoryCancelEditButton,
+  useTurnHistoryEdit,
+} from '../TurnHistoryEditButton'
 import { TurnHistoryDebugButton } from '../TurnHistoryDebugButton'
 import {
   birdseyeRoundGroupContainsIndex,
@@ -46,7 +50,7 @@ export function BirdseyeTurnHistoryGrid({
   const { gameState } = useGame()
   const { viewingTurnIndex, isViewingHistory, goToTurn, returnToCurrent, hideLiveTurn } = useTimeTravel()
   const undo = useTurnHistoryUndo()
-  const redo = useTurnHistoryRedo()
+  const redo = useTurnHistoryEdit()
   const activeCellRef = useRef<HTMLButtonElement | null>(null)
   const playerById = useMemo(() => new Map(players.map(player => [player.id, player])), [players])
 
@@ -213,15 +217,7 @@ export function BirdseyeTurnHistoryGrid({
               undoAriaLabel={undo.undoAriaLabel}
             />
           ) : null}
-          {redo ? (
-            <TurnHistoryRedoButton
-              className="birdseye-turn-history__redo"
-              onRedo={redo.onRedo}
-              canRedo={redo.canRedo}
-              redoTitle={redo.redoTitle}
-              redoAriaLabel={redo.redoAriaLabel}
-            />
-          ) : null}
+
           <TurnHistoryDebugButton
             className="birdseye-turn-history__debug"
             onLoadSave={undo?.onLoadSave}
@@ -303,6 +299,9 @@ export function BirdseyeTurnHistoryGrid({
                       const parts = turn
                         ? getBirdseyeHistoryCellParts(turn)
                         : { action: cell.isLive ? 'Current' : '—' }
+                      // The live cell is the turn currently being edited.
+                      const isEditingCell = cell.isLive && Boolean(redo?.editing)
+                      const displayParts = isEditingCell ? { action: 'edit in progress' } : parts
                       const player = playerById.get(cell.playerId)
                       const isViewing = cell.isLive
                         ? !isViewingHistory
@@ -314,6 +313,18 @@ export function BirdseyeTurnHistoryGrid({
                           className="birdseye-turn-history__cell-wrap"
                           role="gridcell"
                         >
+                          {redo && redo.canEditTurn(cell.historyIndex) ? (
+                            <TurnHistoryRowEditButton
+                              className="birdseye-turn-history__cell-edit"
+                              onEdit={() => redo.onEditTurn(cell.historyIndex)}
+                            />
+                          ) : null}
+                          {isEditingCell && redo ? (
+                            <TurnHistoryCancelEditButton
+                              className="birdseye-turn-history__cell-cancel-edit"
+                              onCancel={redo.onCancelEdit}
+                            />
+                          ) : null}
                           <button
                             type="button"
                             className={[
@@ -328,14 +339,14 @@ export function BirdseyeTurnHistoryGrid({
                               .join(' ')}
                             onClick={() => handleCellClick(cell)}
                             aria-current={isViewing ? 'step' : undefined}
-                            aria-label={cellAriaLabel(parts, player)}
-                            title={cellAriaLabel(parts, player)}
+                            aria-label={cellAriaLabel(displayParts, player)}
+                            title={cellAriaLabel(displayParts, player)}
                             ref={isViewing ? activeCellRef : undefined}
                           >
-                            {parts.played ? (
-                              <span className="birdseye-turn-history__played">{parts.played}</span>
+                            {displayParts.played ? (
+                              <span className="birdseye-turn-history__played">{displayParts.played}</span>
                             ) : null}
-                            <span className="birdseye-turn-history__action">{parts.action}</span>
+                            <span className="birdseye-turn-history__action">{displayParts.action}</span>
                           </button>
                         </div>
                       )

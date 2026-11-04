@@ -3,32 +3,32 @@ import { TurnType, normalizeExpansions, type GameState } from '../types/GameType
 import { resolveCardInSnapshot, resolvePlayedCardsForTurn } from './revealTurnStats'
 
 /** Small card shown in orange during a redo, as a reminder of the original choice. */
-export interface RedoReminderThumb {
+export interface EditReminderThumb {
   key: string
   id: number
   name: string
   image?: string
 }
 
-export interface RedoTurnReminders {
+export interface EditTurnReminders {
   /** Cards played on the original agent turn. */
-  playedCards: RedoReminderThumb[]
+  playedCards: EditReminderThumb[]
   /** Cards revealed on the original reveal turn. */
-  revealedCards: RedoReminderThumb[]
+  revealedCards: EditReminderThumb[]
   /** Board space the original agent was placed on. */
   agentSpaceId: number | null
   /** Intrigue played on the original turn. */
-  intrigue: RedoReminderThumb[]
+  intrigue: EditReminderThumb[]
 }
 
-const EMPTY: RedoTurnReminders = {
+const EMPTY: EditTurnReminders = {
   playedCards: [],
   revealedCards: [],
   agentSpaceId: null,
   intrigue: [],
 }
 
-function thumb(key: string, id: number, name: string, image?: string): RedoReminderThumb {
+function thumb(key: string, id: number, name: string, image?: string): EditReminderThumb {
   return { key, id, name, image }
 }
 
@@ -37,7 +37,7 @@ function thumb(key: string, id: number, name: string, image?: string): RedoRemin
  * edit. Only the choices the player must make again are surfaced: the board
  * space visited, the card played, cards revealed, and intrigue played.
  */
-export function originalTurnReminders(turn: GameState | null | undefined): RedoTurnReminders {
+export function originalTurnReminders(turn: GameState | null | undefined): EditTurnReminders {
   const curr = turn?.currTurn
   const playerId = curr?.playerId
   if (!turn || !curr || playerId == null) return EMPTY

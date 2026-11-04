@@ -109,6 +109,8 @@ export interface TurnGainsDisplayProps {
   omitPositiveSign?: boolean
   /** Leader strip during conflict rewards: "1st"/"2nd"/"3rd", no card name. */
   compactConflictTitles?: boolean
+  /** Past turn: pencil on Deployed opens the play-area deploy controls. */
+  onEditDeployment?: () => void
 }
 
 /** Solari/spice/troop retreat: icon + count beside it (matches effect labels). */
@@ -141,6 +143,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   inlineTrash = false,
   omitPositiveSign = false,
   compactConflictTitles = false,
+  onEditDeployment,
 }) => {
   const deployedCount = Math.max(0, troopsDeployedToConflict)
   const dreadnoughtsDeployed = Math.max(0, dreadnoughtsDeployedToConflict)
@@ -171,7 +174,8 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     groups.length === 0 &&
     deployedCount === 0 &&
     dreadnoughtsDeployed === 0 &&
-    retreatedCount === 0
+    retreatedCount === 0 &&
+    !onEditDeployment
   ) {
     return null
   }
@@ -640,7 +644,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   }
 
   const renderDeployedUnits = () => {
-    if (deployedCount === 0 && dreadnoughtsDeployed === 0) return null
+    if (deployedCount === 0 && dreadnoughtsDeployed === 0 && !onEditDeployment) return null
     const parts: string[] = []
     if (deployedCount > 0) parts.push(`${deployedCount} troop${deployedCount === 1 ? '' : 's'}`)
     if (dreadnoughtsDeployed > 0) {
@@ -648,11 +652,24 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     }
     const summary = parts.join(', ')
     return (
-      <div className="turn-gain-source-group turn-gain-combat-group turn-gain-combat-group--deployed">
+      <div
+        className={[
+          'turn-gain-source-group',
+          'turn-gain-combat-group',
+          'turn-gain-combat-group--deployed',
+          onEditDeployment ? 'turn-gain-combat-group--editable' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <span className="turn-gain-source-title turn-gain-source-title--combat" title="Deployed">
           Deployed
         </span>
-        <div className="turn-gain-source-flow" title={`Deployed: ${summary}`} aria-label={`Deployed: ${summary}`}>
+        <div
+          className="turn-gain-source-flow turn-gain-source-flow--deployed"
+          title={`Deployed: ${summary}`}
+          aria-label={`Deployed: ${summary}`}
+        >
           <div className="turn-gains-side turn-gains-side--deployed">
             {deployedCount > 0 && troopIcon
               ? renderCombatUnitToken(
@@ -671,6 +688,30 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
                 )
               : null}
           </div>
+          {onEditDeployment ? (
+            <button
+              type="button"
+              className="turn-gain-edit-btn"
+              onClick={event => {
+                event.stopPropagation()
+                onEditDeployment()
+              }}
+              title="Edit how many units were deployed"
+              aria-label="Edit how many units were deployed"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 20h9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <path
+                  d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          ) : null}
         </div>
       </div>
     )

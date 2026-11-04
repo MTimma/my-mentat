@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, cloneElement, isValidElement, type ReactNode } from 'react'
-import type { RedoConflict } from '../../types/GameTypes'
+import { useCallback, useLayoutEffect, useRef, useState, cloneElement, isValidElement, type ReactNode } from 'react'
 import './TurnHistoryNav.css'
 
 const SkipToBeginningIcon = () => (
@@ -56,38 +55,11 @@ const SkipToCurrentIcon = () => (
   </svg>
 )
 
-const RedoIcon = () => (
-  <svg className="turn-history-nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path
-      d="M4 12a8 8 0 1 1 2.3 5.6"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M4 6v6h6"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-)
-
 export interface TurnHistoryNavProps {
   viewingTurnIndex: number | null
   historyLength: number
   inSandboxSetup?: boolean
-  /** Called when user wants to redo from a specific turn */
-  onRedoFromTurn?: (turnIndex: number) => void
-  /** Called when there's a conflict to show user */
-  onRedoConflict?: (conflict: RedoConflict) => void
   isViewingHistory: boolean
-  /** Current redo conflict if any */
-  redoConflict?: RedoConflict | null
   onTurnChange: (turnIndex: number) => void
   onReturnToCurrent: () => void
   /** When true, next/current cannot land on the live in-progress turn. */
@@ -110,9 +82,6 @@ const TurnHistoryNav = ({
   isViewingHistory,
   onTurnChange,
   onReturnToCurrent,
-  onRedoFromTurn,
-  onRedoConflict,
-  redoConflict,
   hideLiveTurn = false,
   className,
   lastSlot,
@@ -157,19 +126,6 @@ const TurnHistoryNav = ({
     if (!canGoToCurrent) return
     onReturnToCurrent()
   }, [canGoToCurrent, onReturnToCurrent])
-
-  const canRedoFromTurn =
-    !inSandboxSetup && onRedoFromTurn != null && viewingTurnIndex !== null
-
-  const redoFromTurn = useCallback(() => {
-    if (!canRedoFromTurn || !onRedoFromTurn) return
-    onRedoFromTurn(effectiveViewIndex)
-  }, [canRedoFromTurn, onRedoFromTurn, effectiveViewIndex])
-
-  // Surface a replay conflict to the host (which renders the redo-conflict modal).
-  useEffect(() => {
-    if (redoConflict && onRedoConflict) onRedoConflict(redoConflict)
-  }, [redoConflict, onRedoConflict])
 
   useLayoutEffect(() => {
     if (!lastSlotWidthLabel) {
@@ -274,18 +230,6 @@ const TurnHistoryNav = ({
       >
         <ChevronRightIcon />
       </button>
-      {onRedoFromTurn ? (
-        <button
-          type="button"
-          className="turn-history-nav-btn turn-history-nav-btn--redo"
-          onClick={redoFromTurn}
-          disabled={!canRedoFromTurn}
-          title="Redo from this turn"
-          aria-label="Redo from this turn"
-        >
-          <RedoIcon />
-        </button>
-      ) : null}
       {renderLastSlot()}
       {currentLabel ? (
         <span className="turn-history-nav-label" aria-live="polite">

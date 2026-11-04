@@ -3,7 +3,7 @@ import type { RedoConflict } from '../../types/GameTypes'
 import { BoardScopedModal } from '../BoardScopedModal'
 import '../TimeTravel/UndoConfirmDialog.css'
 
-interface RedoConflictModalProps {
+interface EditConflictModalProps {
   /** `confirm` = ask before overwriting a turn. `conflict` = later turns no longer apply. */
   mode: 'confirm' | 'conflict'
   turnLabel: string
@@ -15,7 +15,7 @@ interface RedoConflictModalProps {
   onBackToEdit?: () => void
 }
 
-const RedoConflictModal = ({
+const EditConflictModal = ({
   mode,
   turnLabel,
   conflict,
@@ -23,7 +23,7 @@ const RedoConflictModal = ({
   onTruncate,
   onCancel,
   onBackToEdit,
-}: RedoConflictModalProps) => {
+}: EditConflictModalProps) => {
   const dismiss = onBackToEdit ?? onCancel
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -98,4 +98,4 @@ const RedoConflictModal = ({
   )
 }
 
-export default RedoConflictModal
+export default EditConflictModal

@@ -8,6 +8,7 @@ import {
   splitLogForTurnEdit,
   upsertCombatHistoryEntry,
 } from '../../save/buildHistory'
+import { rewriteTurnDeployment } from '../../save/rewriteTurnDeployment'
 import { buildInitialStateFromSaveDoc } from '../../save/buildInitialStateFromSaveDoc'
 import { replayEvents } from '../../save/replay'
 import {
@@ -397,6 +398,8 @@ export type GameAction =
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
     | { type: 'UNDO_TO_TURN'; turnIndex: number }
     | { type: 'REDO_FROM_TURN'; turnIndex: number }
+    | { type: 'REDO_TURN_DEPLOYMENT'; turnIndex: number; playerId: number; troops: number; dreadnoughts: number }
+    | { type: 'CANCEL_TURN_EDIT' }
     | { type: 'UNDO_TO_SETUP' }
     | { type: 'RESOLVE_REDO_CONFLICT'; choice: 'restore' | 'truncate' | 'backToEdit' }
     | { type: 'RESOLVE_ENDGAME' }
@@ -9730,6 +9733,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
    * the updater more than once; later passes must not append them again.
    */
   const redoCommittedPendingRef = useRef<EventEntry[]>([])
+  /** Conflict from a deployment rewrite, read by Strict Mode's second updater pass. */
+  const redoDeployConflictRef = useRef<RedoConflict | null>(null)
   const setupRef = useRef<{ setup: SetupBlock; unmapped: string[] }>({
     setup: gameInput.setup,
     unmapped: gameInput.meta.notes?.includes('Unmapped')
@@ -9749,6 +9754,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
     (action: GameAction) => {
       strictModeRecordCommittedRef.current = false
       redoCommittedPendingRef.current = []
+      redoDeployConflictRef.current = null
       setGameState(prev => {
         const clearRedoSession = () => {
           redoPendingEventsRef.current = []
@@ -9790,6 +9796,79 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
 
         // While a replay conflict is open, only its resolution is accepted.
         if (prev.redoConflict && action.type !== 'RESOLVE_REDO_CONFLICT') return prev
+
+        if (action.type === 'REDO_TURN_DEPLOYMENT') {
+          // Rewrite one past turn's deployment and replay it plus the later turns,
+          // keeping the rest of that turn intact.
+          if (action.turnIndex <= 0 || action.troops < 0 || action.dreadnoughts < 0) return prev
+          if (!strictModeRecordCommittedRef.current) {
+            const original = recordedEventsRef.current
+            const split = splitLogForTurnEdit(gameInput.setup, original, action.turnIndex)
+            if (!split) return prev
+            const endOfEdited = historyIndexToEventIndex(
+              gameInput.setup,
+              original,
+              action.turnIndex
+            )
+            const turnEvents = original.slice(split.kept.length, endOfEdited + 1)
+            if (turnEvents.length === 0) return prev
+            const rewritten = rewriteTurnDeployment(
+              turnEvents,
+              action.playerId,
+              action.troops,
+              action.dreadnoughts
+            )
+            const base = replayEvents(buildInitialState(gameInput.setup), split.kept).state
+            const turned = replayPendingRedoEvents(base, rewritten)
+            if (turned.conflict) {
+              // The requested deployment can't be replayed for this turn.
+              console.warn('[deploy edit] rewritten turn rejected', {
+                turnIndex: action.turnIndex,
+                playerId: action.playerId,
+                troops: action.troops,
+                dreadnoughts: action.dreadnoughts,
+                conflict: turned.conflict,
+              })
+              return prev
+            }
+            const later = replayPendingRedoEvents(turned.state, split.pending)
+            redoOriginalEventsRef.current = original
+            redoEditedIndexRef.current = action.turnIndex
+            redoOriginalTurnRef.current = prev.history[action.turnIndex] ?? null
+            if (later.conflict) {
+              // Hold the later turns so the conflict modal can restore / clear / edit.
+              redoPendingEventsRef.current = split.pending
+              redoHeldHistoryRef.current = prev.history.slice(action.turnIndex + 1).map(heldRow)
+              redoEditingRef.current = true
+              recordedEventsRef.current = [...split.kept, ...rewritten]
+              redoDeployConflictRef.current = later.conflict
+            } else {
+              recordedEventsRef.current = [...split.kept, ...rewritten, ...split.pending]
+              clearRedoSession()
+            }
+            strictModeRecordCommittedRef.current = true
+          }
+          const { state, history } = replayRecorded()
+          const conflict = redoDeployConflictRef.current
+          if (conflict) {
+            return withRedoState({
+              ...state,
+              setupBaseline: prev.setupBaseline,
+              history,
+              canEndTurn: false,
+              redoConflict: conflict,
+            })
+          }
+          return {
+            ...withRedoState({
+              ...state,
+              setupBaseline: prev.setupBaseline,
+              history,
+              redoConflict: null,
+            }),
+            redoFocusIndex: action.turnIndex,
+          }
+        }
 
         if (action.type === 'UNDO_TO_TURN') {
           const eventIndex = historyIndexToEventIndex(
@@ -9846,6 +9925,29 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
             history,
             redoConflict: null,
           })
+        }
+
+        if (action.type === 'CANCEL_TURN_EDIT') {
+          // Abandon the in-progress edit and put the original turn back.
+          const focusIndex = redoEditedIndexRef.current
+          if (!strictModeRecordCommittedRef.current) {
+            if (redoOriginalEventsRef.current) {
+              recordedEventsRef.current = redoOriginalEventsRef.current
+            }
+            clearRedoSession()
+            strictModeRecordCommittedRef.current = true
+          }
+          const { state, history } = replayRecorded()
+          return {
+            ...state,
+            setupBaseline: prev.setupBaseline,
+            history,
+            redoConflict: null,
+            redoEditing: false,
+            redoPreviewHistory: null,
+            redoOriginalTurn: null,
+            redoFocusIndex: focusIndex,
+          }
         }
 
         if (action.type === 'RESOLVE_REDO_CONFLICT') {

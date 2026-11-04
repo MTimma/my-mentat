@@ -179,6 +179,10 @@ interface ImageBoardProps {
   troopDeploy?: CombatTroopDeployProps
   dreadnoughtDeploy?: CombatDreadnoughtDeployProps
   specimenDeploy?: CombatSpecimenDeployProps
+  /** Apply / Cancel under the deploy dock while editing a past deployment. */
+  deployEditFooter?: React.ReactNode
+  /** Pencil on the viewed turn's Deployed gain. */
+  onEditDeployment?: () => void
   /** Sandbox setup turn: conflict slot and player quadrants become configuration targets. */
   sandboxSetup?: {
     onConflictClick: () => void
@@ -282,6 +286,8 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   troopDeploy,
   dreadnoughtDeploy,
   specimenDeploy,
+  deployEditFooter,
+  onEditDeployment,
   sandboxSetup,
   influenceSelection,
   showBoardInfoTips = true,
@@ -647,6 +653,8 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         troopDeploy={troopDeploy}
         dreadnoughtDeploy={dreadnoughtDeploy}
         specimenDeploy={specimenDeploy}
+        deployEditFooter={deployEditFooter}
+        onEditDeployment={onEditDeployment}
         desktopPlayAreaLayout={desktopPlayAreaLayout}
         onDesktopPlayAreaLayoutChange={onDesktopPlayAreaLayoutChange}
         className={[

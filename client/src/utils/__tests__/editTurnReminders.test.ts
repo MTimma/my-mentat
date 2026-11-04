@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { TurnType, type GameState } from '../../types/GameTypes'
-import { originalTurnReminders } from '../redoTurnReminders'
+import { originalTurnReminders } from '../editTurnReminders'
 
 describe('originalTurnReminders', () => {
   it('remembers the played card and agent space from an agent turn', () => {

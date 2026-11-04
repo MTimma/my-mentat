@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { finishedEditFocusIndex } from '../redoTurnFocus'
+import { finishedEditFocusIndex } from '../editTurnFocus'
 
 const base = {
   wasEditing: true,

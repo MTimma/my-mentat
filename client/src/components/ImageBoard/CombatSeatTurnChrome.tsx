@@ -227,8 +227,10 @@ export function BirdseyeSeatDeployControls({
   troopDeploy,
   dreadnoughtDeploy,
   specimenDeploy,
+  footer,
 }: {
   player: Player
+  footer?: React.ReactNode
 } & BirdseyeSeatDeployProps) {
   if (!troopDeploy && !dreadnoughtDeploy && !specimenDeploy) return null
   return (
@@ -240,6 +242,7 @@ export function BirdseyeSeatDeployControls({
         activePlayerId={player.id}
         activePlayerColor={player.color}
         className="birdseye-seat__deploy-dock"
+        footer={footer}
       />
     </div>
   )
@@ -500,6 +503,7 @@ export function BirdseyeSeatGains({
   showSourceTitles = true,
   compactConflictTitles = false,
   resolveCard,
+  onEditDeployment,
 }: {
   playerId: number
   playerColor?: PlayerColor
@@ -514,6 +518,7 @@ export function BirdseyeSeatGains({
   /** Conflict rewards: title is 1st/2nd/3rd. Intrigue card names stay off this strip. */
   compactConflictTitles?: boolean
   resolveCard?: (cardId: number, name: string) => Card | undefined
+  onEditDeployment?: () => void
 }) {
   const displayGains = excludeRetreatAllowanceGains(gains)
   const hasGains =
@@ -552,9 +557,36 @@ export function BirdseyeSeatGains({
           dreadnoughtsDeployedToConflict={dreadnoughtsDeployed}
           troopsRetreatedFromConflict={troopsRetreated}
           className="birdseye-seat-gains__display"
+          onEditDeployment={onEditDeployment}
         />
       </div>
       <BirdseyeLaneScrollbar visible={scrollable} thumb={thumb} />
+    </div>
+  )
+}
+
+/** Deploy dock only (no End Turn / intrigue / tech), e.g. while editing deployment. */
+function BirdseyeDeployOnlyControls({
+  player,
+  troopDeploy,
+  dreadnoughtDeploy,
+  specimenDeploy,
+  footer,
+}: {
+  player: Player
+  footer?: React.ReactNode
+} & BirdseyeSeatDeployProps) {
+  return (
+    <div className="birdseye-seat__controls-row">
+      <div className="birdseye-seat__controls-stack">
+        <BirdseyeSeatDeployControls
+          player={player}
+          troopDeploy={troopDeploy}
+          dreadnoughtDeploy={dreadnoughtDeploy}
+          specimenDeploy={specimenDeploy}
+          footer={footer}
+        />
+      </div>
     </div>
   )
 }
@@ -568,13 +600,29 @@ export function BirdseyeDesktopControls({
   troopDeploy,
   dreadnoughtDeploy,
   specimenDeploy,
+  deployOnly = false,
+  deployEditFooter,
 }: {
   player: Player
-  actions: BirdseyeSeatActions
+  actions?: BirdseyeSeatActions
   gameState?: GameState
   isHistoryView?: boolean
+  /** Only the deploy dock (no End Turn / intrigue / tech), e.g. while editing deployment. */
+  deployOnly?: boolean
+  deployEditFooter?: React.ReactNode
 } & BirdseyeSeatDeployProps) {
   const [techOpen, setTechOpen] = useState(false)
+  if (deployOnly || !actions) {
+    return (
+      <BirdseyeDeployOnlyControls
+        player={player}
+        troopDeploy={troopDeploy}
+        dreadnoughtDeploy={dreadnoughtDeploy}
+        specimenDeploy={specimenDeploy}
+        footer={deployEditFooter}
+      />
+    )
+  }
   return (
     <div className="birdseye-seat__controls-row">
       <div className="birdseye-seat__controls-stack">

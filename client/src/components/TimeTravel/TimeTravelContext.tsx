@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useLayoutEffect, useRef } from 'react'
 import { GameState } from '../../types/GameTypes'
-import { finishedEditFocusIndex } from '../../utils/redoTurnFocus'
+import { finishedEditFocusIndex } from '../../utils/editTurnFocus'
 import {
   clampHistoryViewIndex,
   shouldHideLiveTurnForViewers,

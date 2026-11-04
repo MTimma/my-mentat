@@ -13,7 +13,7 @@ import { BoardScopedModal } from '../BoardScopedModal'
 import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import { cardThumbSrc } from '../../utils/cardThumbSrc'
-import type { RedoReminderThumb } from '../../utils/redoTurnReminders'
+import type { EditReminderThumb } from '../../utils/editTurnReminders'
 import './CardSearch.css'
 
 /** iOS often scrolls the cards grid after the keyboard opens; re-apply scrollTop a few times. */
@@ -242,7 +242,7 @@ interface CardSearchProps {
    * Cards from the original turn, highlighted with a border in the grid while
    * that turn is being replayed.
    */
-  priorReminder?: RedoReminderThumb[]
+  priorReminder?: EditReminderThumb[]
 }
 
 const CardSearch: React.FC<CardSearchProps> = ({

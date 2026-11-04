@@ -15,6 +15,8 @@ export interface CombatDeployDockProps {
   activePlayerColor?: PlayerColor
   className?: string
   style?: React.CSSProperties
+  /** Shown under the deploy controls (e.g. Apply / Cancel while editing deployment). */
+  footer?: React.ReactNode
 }
 
 /** Invented helper name `isCombatDeployDockVisible` — same visibility rule the dock already used. */
@@ -48,6 +50,7 @@ const CombatDeployDock: React.FC<CombatDeployDockProps> = ({
   activePlayerColor,
   className,
   style,
+  footer,
 }) => {
   const deployStripVisible = isCombatDeployDockVisible(
     troopDeploy,
@@ -63,7 +66,7 @@ const CombatDeployDock: React.FC<CombatDeployDockProps> = ({
       style={style}
       data-marker="combat-troop-controls"
     >
-      <div className="combat-deploy-dock" hidden={!deployStripVisible}>
+      <div className="combat-deploy-dock" hidden={!deployStripVisible && !footer}>
         {troopDeploy ? (
           <CombatTroopControls
             {...troopDeploy}
@@ -100,6 +103,7 @@ const CombatDeployDock: React.FC<CombatDeployDockProps> = ({
           />
         ) : null}
       </div>
+      {footer}
     </div>
   )
 }

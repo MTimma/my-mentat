@@ -40,6 +40,12 @@
   transform: translateY(1px);
 }
 
+/* No global gold focus ring on the deploy controls. */
+.troop-action-button:focus,
+.troop-action-button:focus-visible {
+  outline: none;
+}
+
 .troop-action-icon {
   width: 1.05rem;
   height: 1.05rem;

@@ -60,7 +60,11 @@ import TurnGainsDisplay from './TurnGainsDisplay/TurnGainsDisplay'
 import { type LoadSaveFn } from '../api/gamesApi'
 import TurnHistoryNav from './TurnHistoryNav/TurnHistoryNav'
 import { TurnHistoryUndoButton } from './TurnHistoryUndoButton'
-import { TurnHistoryRedoButton, useTurnHistoryRedo } from './TurnHistoryRedoButton'
+import {
+  TurnHistoryRowEditButton,
+  TurnHistoryCancelEditButton,
+  useTurnHistoryEdit,
+} from './TurnHistoryEditButton'
 import { TurnHistoryDebugButton } from './TurnHistoryDebugButton'
 import './TurnHistory.css'
 
@@ -114,7 +118,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
   onLoadSave,
   hideLiveTurn = false,
 }) => {
-  const redo = useTurnHistoryRedo()
+  const redo = useTurnHistoryEdit()
   const isDocked = layout === 'docked'
   /** Birds-eye: history list gains collapsed by default (dock seats show gains). */
   const [showHistoryGains, setShowHistoryGains] = useState(false)
@@ -877,14 +881,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           undoTitle={undoTitle}
           undoAriaLabel={undoAriaLabel}
         />
-        {redo ? (
-          <TurnHistoryRedoButton
-            onRedo={redo.onRedo}
-            canRedo={redo.canRedo}
-            redoTitle={redo.redoTitle}
-            redoAriaLabel={redo.redoAriaLabel}
-          />
-        ) : null}
+
         {/* {onOpenPlayerOverview && (
           <button
             type="button"
@@ -1046,6 +1043,9 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
                   : undefined
               }
             >
+              {redo && redo.canEditTurn(index) ? (
+                <TurnHistoryRowEditButton onEdit={() => redo.onEditTurn(index)} />
+              ) : null}
               {renderPlayerTurnRowContent({
                 turn: displayTurn,
                 turnPlayer,
@@ -1165,6 +1165,7 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && onReturnToCurrent()}
         >
+          {redo?.editing ? <TurnHistoryCancelEditButton onCancel={redo.onCancelEdit} /> : null}
           {renderPlayerTurnRowContent({
             turn: currentGameState,
             turnPlayer: players.find(p => p.id === currentGameState.activePlayerId),
@@ -1188,7 +1189,9 @@ const TurnHistory: React.FC<TurnHistoryProps> = ({
             playedIntrigue: livePlayedIntrigue,
             title: liveIsConflictRewards
               ? getConflictRewardsHistoryLabel()
-              : getTurnActionLabel(currentGameState),
+              : redo?.editing && getTurnActionLabel(currentGameState) === '—'
+                ? 'edit in progress'
+                : getTurnActionLabel(currentGameState),
             gains: liveGains,
             gainsForDisplay: liveGainsForDisplay,
             otherPlayerGains: liveOtherPlayerGains,

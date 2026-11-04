@@ -17,7 +17,7 @@ import { FixedChoiceModal, BoardScopedModal, BoardDialogPanel } from '../BoardSc
 import CardSearch from '../CardSearch/CardSearch'
 import ValueStepper from '../ValueStepper/ValueStepper'
 import { immortalityGraftEnabled } from '../../expansions/immortality/graft'
-import { originalTurnReminders } from '../../utils/redoTurnReminders'
+import { originalTurnReminders } from '../../utils/editTurnReminders'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import RevealCardsIcon from '../RevealCardsIcon/RevealCardsIcon'
 import { getLeaderIconPath } from '../../data/leaders'

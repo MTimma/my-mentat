@@ -69,6 +69,20 @@ describe('edit turn focus', () => {
     expect(viewIndex).toBe(1)
   })
 
+  it('cancels the edit and restores the original turn', () => {
+    setup()
+    act(() => goToTurnRef!(1))
+    send({ type: 'REDO_FROM_TURN', turnIndex: 1 })
+    expect(latest!.redoEditing).toBe(true)
+
+    send({ type: 'CANCEL_TURN_EDIT' })
+    expect(latest!.redoEditing).toBe(false)
+    expect(latest!.redoConflict).toBeNull()
+    expect(latest!.history.length).toBe(3)
+    expect(latest!.redoFocusIndex).toBe(1)
+    expect(viewIndex).toBe(1)
+  })
+
   it('focuses the edited turn even when it is the last one', () => {
     setup()
     act(() => goToTurnRef!(2))

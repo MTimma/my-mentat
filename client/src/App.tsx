@@ -67,9 +67,9 @@ import SandboxSetupControls from './components/SandboxSetupControls/SandboxSetup
 import PlayerOverviewModal from './components/PlayerOverviewModal/PlayerOverviewModal'
 import MasterstrokeFactionModal from './components/MasterstrokeFactionModal/MasterstrokeFactionModal'
 import UndoConfirmDialog from './components/TimeTravel/UndoConfirmDialog'
-import RedoConflictModal from './components/RedoConflictModal/RedoConflictModal'
+import EditConflictModal from './components/EditConflictModal/EditConflictModal'
 import { TurnHistoryUndoProvider } from './components/TurnHistoryUndoButton'
-import { TurnHistoryRedoProvider } from './components/TurnHistoryRedoButton'
+import { TurnHistoryEditProvider } from './components/TurnHistoryEditButton'
 import { areAllLeadersAssigned, isUnassignedLeader } from './data/leaders'
 import { getEndTurnButtonState } from './utils/endTurnState'
 import {
@@ -112,6 +112,12 @@ import {
   isCombatIntrigueHistoryEntry,
   isPlayerTurnHistoryEntry,
 } from './utils/turnHistoryDisplay'
+import {
+  dreadnoughtDeployRoom,
+  seedDeployEdit,
+  troopDeployRoom,
+  type DeployEditSession,
+} from './utils/deployEdit'
 import {
   getPlayBoardInfoTipsEnabled,
   setPlayBoardInfoTipsEnabled,
@@ -191,6 +197,7 @@ const GameContent = ({
   const [undoSourceRowIndex, setUndoSourceRowIndex] = useState<number | null>(null)
   const [undoToSetup, setUndoToSetup] = useState(false)
   const [redoConfirmIndex, setRedoConfirmIndex] = useState<number | null>(null)
+  const [deployEdit, setDeployEdit] = useState<DeployEditSession | null>(null)
 
   const [isTurnHistoryOpen, setIsTurnHistoryOpen] = useState(
     () =>
@@ -428,23 +435,17 @@ const GameContent = ({
     onOpenPlayerOverview: isDesktopPlayView ? () => setIsPlayerOverviewOpen(true) : undefined,
   }
 
-  // Edit button: edit the past player turn currently being viewed, then replay
-  // the turns that follow it.
-  const redoRow = viewingTurnIndex
-  const redoTurn = redoRow != null ? gameState.history[redoRow] : undefined
-  const canRedo =
+  // Hover pencil on each past player turn: edit it and replay the turns after.
+  const canEditTurn = (turnIndex: number): boolean =>
     canEdit &&
     !gameState.sandboxSetup &&
     !gameState.redoEditing &&
     !gameState.redoConflict &&
-    redoRow != null &&
-    redoRow > 0 &&
-    isPlayerTurnHistoryEntry(redoTurn)
-  const redoTurnLabel =
-    redoRow != null ? getHistoryRowLabel(gameState.history, redoRow) : 'this turn'
-  const handleRedoClick = () => {
-    if (!canRedo || redoRow == null) return
-    setRedoConfirmIndex(redoRow)
+    turnIndex > 0 &&
+    isPlayerTurnHistoryEntry(gameState.history[turnIndex])
+  const handleEditTurn = (turnIndex: number) => {
+    if (!canEditTurn(turnIndex)) return
+    setRedoConfirmIndex(turnIndex)
   }
   const confirmRedoEdit = () => {
     if (redoConfirmIndex == null) return
@@ -452,16 +453,67 @@ const GameContent = ({
     setRedoConfirmIndex(null)
     returnToCurrent()
   }
-  const redoTitle = !canEdit
-    ? viewOnlyTitle
-    : canRedo
-      ? `Edit ${redoTurnLabel} and replay later turns`
-      : 'Select a past player turn to edit it and replay later turns'
-  const turnHistoryRedoProps = {
-    onRedo: handleRedoClick,
-    canRedo,
-    redoTitle,
-    redoAriaLabel: redoTitle,
+  const turnHistoryEditProps = {
+    onEditTurn: handleEditTurn,
+    canEditTurn,
+    editing: Boolean(gameState.redoEditing),
+    onCancelEdit: () => dispatch({ type: 'CANCEL_TURN_EDIT' }),
+  }
+
+  // Deploy-dock session for rewriting the viewed past turn's deployment.
+  const deployEditSeed =
+    canEdit &&
+    isViewingHistory &&
+    !gameState.sandboxSetup &&
+    !gameState.redoEditing &&
+    !gameState.redoConflict &&
+    !deployEdit &&
+    viewingTurnIndex != null &&
+    isPlayerTurnHistoryEntry(displayState)
+      ? seedDeployEdit(displayState, viewingTurnIndex)
+      : null
+
+  const openDeployEdit = () => {
+    if (!deployEditSeed) return
+    setDeployEdit(deployEditSeed)
+  }
+
+  // Deltas (not absolute counts) so rapid clicks can't act on a stale session.
+  const changeDeployEdit = (patch: { troopDelta?: number; dreadnoughtDelta?: number }) => {
+    setDeployEdit(current => {
+      if (!current) return current
+      let next = current
+      if (patch.troopDelta) {
+        const troops = current.troops + patch.troopDelta
+        if (troops < 0) return current
+        if (troops > current.troops && troopDeployRoom(current).deployable <= 0) return current
+        next = { ...next, troops }
+      }
+      if (patch.dreadnoughtDelta) {
+        const dreadnoughts = current.dreadnoughts + patch.dreadnoughtDelta
+        if (dreadnoughts < 0) return current
+        if (
+          dreadnoughts > current.dreadnoughts &&
+          dreadnoughtDeployRoom(current).deployable <= 0
+        ) {
+          return current
+        }
+        next = { ...next, dreadnoughts }
+      }
+      return next
+    })
+  }
+
+  const applyDeployEdit = () => {
+    if (!deployEdit) return
+    dispatch({
+      type: 'REDO_TURN_DEPLOYMENT',
+      turnIndex: deployEdit.historyIndex,
+      playerId: deployEdit.playerId,
+      troops: deployEdit.troops,
+      dreadnoughts: deployEdit.dreadnoughts,
+    })
+    setDeployEdit(null)
   }
   // Orange reminder of the board space used on the original turn, shown while
   // its replacement is being played.
@@ -1972,7 +2024,16 @@ const GameContent = ({
           historyHighlightSpaceId={historyHighlightSpaceId}
           redoReminderSpaceId={redoReminderSpaceId}
           troopDeploy={
-            isViewingHistory || gameState.sandboxSetup || !activePlayer
+            deployEdit
+              ? {
+                  canDeploy: true,
+                  deployableTroops: troopDeployRoom(deployEdit).deployable,
+                  deployedThisTurn: deployEdit.troops,
+                  garrisonTroops: troopDeployRoom(deployEdit).garrisonLeft,
+                  onDeploy: () => changeDeployEdit({ troopDelta: 1 }),
+                  onUndeploy: () => changeDeployEdit({ troopDelta: -1 }),
+                }
+              : isViewingHistory || gameState.sandboxSetup || !activePlayer
               ? undefined
               : (() => {
                   const canDeployTroops = Boolean(gameState.currTurn?.canDeployTroops)
@@ -2002,12 +2063,21 @@ const GameContent = ({
                 })()
           }
           dreadnoughtDeploy={
-            isViewingHistory ||
-            gameState.sandboxSetup ||
-            !activePlayer ||
-            !gameState.expansions?.riseOfIx
-              ? undefined
-              : {
+            deployEdit && (gameState.expansions?.riseOfIx || deployEdit.garrisonDreadnoughts > 0)
+              ? {
+                  canDeploy: true,
+                  deployableDreadnoughts: dreadnoughtDeployRoom(deployEdit).deployable,
+                  deployedThisTurn: deployEdit.dreadnoughts,
+                  garrisonDreadnoughts: dreadnoughtDeployRoom(deployEdit).garrisonLeft,
+                  onDeploy: () => changeDeployEdit({ dreadnoughtDelta: 1 }),
+                  onUndeploy: () => changeDeployEdit({ dreadnoughtDelta: -1 }),
+                }
+              : isViewingHistory ||
+                  gameState.sandboxSetup ||
+                  !activePlayer ||
+                  !gameState.expansions?.riseOfIx
+                ? undefined
+                : {
                   canDeploy: Boolean(gameState.currTurn?.canDeployTroops),
                   deployableDreadnoughts: Math.min(
                     getRemainingDeploySlots(gameState),
@@ -2020,6 +2090,7 @@ const GameContent = ({
                 }
           }
           specimenDeploy={
+            deployEdit ||
             isViewingHistory ||
             gameState.sandboxSetup ||
             !activePlayer ||
@@ -2036,6 +2107,20 @@ const GameContent = ({
                   onDeploy: () => handleDeploySpecimen(activePlayer.id),
                   onUndeploy: () => handleUndeploySpecimen(activePlayer.id),
                 }
+          }
+          onEditDeployment={deployEditSeed ? openDeployEdit : undefined}
+          deployEditFooter={
+            deployEdit ? (
+              <div className="combat-deploy-dock__edit-actions">
+                <button
+                  type="button"
+                  className="combat-deploy-dock__edit-apply"
+                  onClick={applyDeployEdit}
+                >
+                  Apply
+                </button>
+              </div>
+            ) : undefined
           }
           sandboxSetup={
             inSandboxSetup
@@ -2139,6 +2224,11 @@ const GameContent = ({
       handleVoiceSpaceSelect,
       historyHighlightSpaceId,
       redoReminderSpaceId,
+      deployEdit,
+      deployEditSeed,
+      openDeployEdit,
+      changeDeployEdit,
+      applyDeployEdit,
       handleAddTroop,
       handleUndeployTroop,
       handleAddDreadnought,
@@ -2279,7 +2369,7 @@ const GameContent = ({
 
   return (
     <TurnHistoryUndoProvider value={turnHistoryUndoProps}>
-    <TurnHistoryRedoProvider value={turnHistoryRedoProps}>
+    <TurnHistoryEditProvider value={turnHistoryEditProps}>
     <div
       ref={gameContainerRef}
       className={[
@@ -2864,7 +2954,7 @@ const GameContent = ({
         onCancel={clearUndoState}
       />
       {redoConfirmIndex != null && !gameState.redoConflict ? (
-        <RedoConflictModal
+        <EditConflictModal
           mode="confirm"
           turnLabel={getHistoryRowLabel(gameState.history, redoConfirmIndex)}
           conflict={null}
@@ -2874,11 +2964,9 @@ const GameContent = ({
         />
       ) : null}
       {gameState.redoConflict ? (
-        <RedoConflictModal
+        <EditConflictModal
           mode="conflict"
-          turnLabel={
-            redoRow != null ? getHistoryRowLabel(gameState.history, redoRow) : 'This turn'
-          }
+          turnLabel="This turn"
           conflict={gameState.redoConflict}
           onConfirm={() => dispatch({ type: 'RESOLVE_REDO_CONFLICT', choice: 'truncate' })}
           onTruncate={() => dispatch({ type: 'RESOLVE_REDO_CONFLICT', choice: 'truncate' })}
@@ -2921,7 +3009,7 @@ const GameContent = ({
       </AltImagePreviewProvider>
       </PlayBoardModalProvider>
     </div>
-    </TurnHistoryRedoProvider>
+    </TurnHistoryEditProvider>
     </TurnHistoryUndoProvider>
   )
 }

@@ -336,6 +336,10 @@ export interface CombatAreaClusterProps {
   troopDeploy?: CombatTroopDeployProps
   dreadnoughtDeploy?: CombatDreadnoughtDeployProps
   specimenDeploy?: CombatSpecimenDeployProps
+  /** Shown under the deploy buttons while rewriting a past turn's deployment. */
+  deployEditFooter?: React.ReactNode
+  /** Pencil on the viewed turn's Deployed gain. */
+  onEditDeployment?: () => void
   /** Controlled desktop play-area orientation (App hides docked history when horizontal). */
   desktopPlayAreaLayout?: DesktopPlayAreaLayout
   onDesktopPlayAreaLayoutChange?: (layout: DesktopPlayAreaLayout) => void
@@ -368,6 +372,8 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   troopDeploy,
   dreadnoughtDeploy,
   specimenDeploy,
+  deployEditFooter,
+  onEditDeployment,
   desktopPlayAreaLayout: desktopPlayAreaLayoutProp,
   onDesktopPlayAreaLayoutChange,
   testOfHumanity = null,
@@ -456,7 +462,8 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
     const showActiveActions = Boolean(
       birdseyeEnabled && isActive && birdseyeActions && !birdseyeIsHistoryView
     )
-    const seatDeploy = showActiveActions
+    const showDeployEdit = Boolean(birdseyeEnabled && isActive && deployEditFooter)
+    const seatDeploy = showActiveActions || showDeployEdit
       ? { troopDeploy, dreadnoughtDeploy, specimenDeploy }
       : {}
 
@@ -534,6 +541,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 showSourceTitles={false}
                 compactConflictTitles={compactConflictTitles}
                 revealPooledTotals={isRevealSeat}
+                onEditDeployment={isActive ? onEditDeployment : undefined}
               />
               {humanityButtons}
             </div>
@@ -574,6 +582,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 showSourceTitles
                 compactConflictTitles={compactConflictTitles}
                 revealPooledTotals={isRevealSeat}
+                onEditDeployment={isActive ? onEditDeployment : undefined}
               />
             </div>
             <div className="combat-area-cluster__seat-leader-stack">
@@ -615,6 +624,15 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 actions={birdseyeActions}
                 gameState={gameState}
                 isHistoryView={birdseyeIsHistoryView}
+                {...seatDeploy}
+              />
+            ) : showDeployEdit ? (
+              <BirdseyeDesktopControls
+                player={player}
+                gameState={gameState}
+                isHistoryView
+                deployOnly
+                deployEditFooter={deployEditFooter}
                 {...seatDeploy}
               />
             ) : (
