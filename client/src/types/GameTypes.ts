@@ -312,6 +312,11 @@ export interface Reward {
   tleilaxu?: number
   /** Immortality — Combat icon: may deploy troops this turn as if on a combat space. */
   combatDeploy?: boolean
+  /**
+   * Troops gained from this reward may be deployed to the Conflict during the
+   * player's Reveal turn (e.g. Reinforcements plot intrigue).
+   */
+  deployOnReveal?: boolean
 }
 
 export enum EffectTiming {

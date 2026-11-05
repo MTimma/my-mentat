@@ -4313,7 +4313,8 @@
         "solari": 3
       },
       "reward": {
-        "troops": 3
+        "troops": 3,
+        "deployOnReveal": true
       }
     },
     {

@@ -13,6 +13,8 @@ import { TurnHistoryDebugButton } from '../TurnHistoryDebugButton'
 import {
   birdseyeRoundGroupContainsIndex,
   buildBirdseyeTurnHistoryGrid,
+  findBirdseyeGridPosition,
+  findBirdseyeVerticalNeighbor,
   getBirdseyeHistoryCellParts,
   getHistoryRowLabel,
   groupBirdseyeHistoryRounds,
@@ -165,14 +167,37 @@ export function BirdseyeTurnHistoryGrid({
     }
   }, [canGoToNextTurn, effectiveViewIndex, lastVisibleIndex, goToTurn, returnToCurrent])
 
+  const goToVerticalNeighbor = useCallback(
+    (direction: -1 | 1) => {
+      if (inSandboxSetup) return
+      const position = findBirdseyeGridPosition(rows, effectiveViewIndex, !isViewingHistory)
+      if (!position) return
+      const column = position.colIndex >= 0 ? position.colIndex : null
+      const neighbor = findBirdseyeVerticalNeighbor(rows, position, direction, column)
+      if (!neighbor) return
+      goToTurn(neighbor.historyIndex)
+    },
+    [inSandboxSetup, rows, effectiveViewIndex, isViewingHistory, goToTurn]
+  )
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        goToVerticalNeighbor(-1)
+        return
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        goToVerticalNeighbor(1)
+        return
+      }
+      if (e.key === 'ArrowLeft') {
         e.preventDefault()
         goToPreviousTurn()
         return
       }
-      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      if (e.key === 'ArrowRight') {
         e.preventDefault()
         goToNextTurn()
         return
@@ -183,7 +208,7 @@ export function BirdseyeTurnHistoryGrid({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [goToPreviousTurn, goToNextTurn, isViewingHistory, returnToCurrent])
+  }, [goToVerticalNeighbor, goToPreviousTurn, goToNextTurn, isViewingHistory, returnToCurrent])
 
   return (
     <div

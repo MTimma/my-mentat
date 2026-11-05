@@ -16,7 +16,7 @@ import {
   type GameState,
   type Player,
 } from '../../../types/GameTypes'
-import { seedTroopSupply } from '../../../utils/troops'
+import { seedTroopSupply, getRemainingTroopDeploySlots } from '../../../utils/troops'
 import { factionFromInfluenceGainName } from '../../../utils/influenceDisplay'
 import { groupGainsBySource } from '../../../utils/turnGainsDisplay'
 import { continueAllConflictRewards } from './_helpers'
@@ -286,6 +286,38 @@ describe('Intrigue cards — player turns (plot)', () => {
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 23 })
     expect(s.players[0].troops).toBe(11)
     expect(s.currTurn?.troopLimit).toBe(5)
+  })
+
+  it('Reinforcements (23): +3 troops become deployable on the Reveal turn', () => {
+    let s = basePlotState([makePlayer(0, { revealed: true, handCount: 0, solari: 20 })])
+    s = {
+      ...s,
+      currTurn: {
+        playerId: 0,
+        type: TurnType.REVEAL,
+        canDeployTroops: false,
+        troopLimit: 0,
+        removableTroops: 0,
+        troopsDeployedToConflict: 0,
+        troopsRetreatedFromConflict: 0,
+        gainsStartIndex: s.gains.length,
+        persuasionCount: 0,
+        gainedEffects: [],
+        acquiredCards: [],
+        pendingChoices: [],
+      },
+    }
+
+    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 23 })
+    expect(s.players[0].troops).toBe(11)
+    expect(s.currTurn?.canDeployTroops).toBe(true)
+    expect(s.currTurn?.theseTroopsDeployLimit).toBe(3)
+    expect(getRemainingTroopDeploySlots(s)).toBe(3)
+
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(s.combatTroops[0]).toBe(1)
+    expect(s.currTurn?.removableTheseTroops).toBe(1)
+    expect(getRemainingTroopDeploySlots(s)).toBe(2)
   })
 
   it('Reinforcements (23): cannot play without 3 Solari', () => {

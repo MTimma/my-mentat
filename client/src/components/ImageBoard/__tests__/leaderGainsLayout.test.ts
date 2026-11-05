@@ -194,8 +194,12 @@ describe('Leader gains leftover layout', () => {
     expect(historyGridTsx).toContain('TurnHistoryDebugButton')
     expect(historyGridTsx).toContain('birdseye-turn-history__undo')
     expect(historyGridTsx).toContain('groupBirdseyeHistoryRounds')
-    expect(historyGridTsx).toContain("e.key === 'ArrowUp' || e.key === 'ArrowLeft'")
-    expect(historyGridTsx).toContain("e.key === 'ArrowDown' || e.key === 'ArrowRight'")
+    expect(historyGridTsx).toContain("e.key === 'ArrowUp'")
+    expect(historyGridTsx).toContain("e.key === 'ArrowDown'")
+    expect(historyGridTsx).toContain('goToVerticalNeighbor(-1)')
+    expect(historyGridTsx).toContain('goToVerticalNeighbor(1)')
+    expect(historyGridTsx).toContain("e.key === 'ArrowLeft'")
+    expect(historyGridTsx).toContain("e.key === 'ArrowRight'")
     expect(historyGridTsx).toContain("e.key === 'Escape' && isViewingHistory")
     expect(historyGridTsx).toContain("window.addEventListener('keydown', handleKeyDown)")
     expect(seatChromeCss).toMatch(
@@ -545,6 +549,13 @@ describe('Leader gains leftover layout', () => {
     expect(seatChromeCss).toContain('.birdseye-seat-play-area--overflow-end::after')
     expect(seatChromeTsx).toContain("el.querySelectorAll('*')")
     expect(seatChromeTsx).toContain("el.addEventListener('load', update, true)")
+  })
+
+  it('pins the play-area stack to the newest card when it overflows', () => {
+    expect(seatChromeTsx).toContain('playAreaSignature')
+    expect(seatChromeTsx).toMatch(
+      /useLayoutEffect\(\(\) => \{[\s\S]*?scrollRef\.current[\s\S]*?el\.scrollTop = el\.scrollHeight/
+    )
   })
 
   it('keeps desktop gains above the leader, not in the play-area column', () => {

@@ -13,6 +13,8 @@ import {
   getTurnActionLabel,
   getBirdseyeHistoryCellParts,
   buildBirdseyeTurnHistoryGrid,
+  findBirdseyeGridPosition,
+  findBirdseyeVerticalNeighbor,
   groupBirdseyeHistoryRounds,
   isMetaHistoryEntry,
   isRoundStartHistoryEntry,
@@ -347,6 +349,93 @@ describe('buildBirdseyeTurnHistoryGrid', () => {
     expect(turnRows[0].cells[0]?.isLive).toBe(false)
     expect(turnRows[0].cells[1]?.isLive).toBe(true)
     expect(turnRows[0].cells[1]?.historyIndex).toBe(2)
+  })
+})
+
+describe('birdseye grid keyboard navigation', () => {
+  const playerIds = [0, 1, 2, 3]
+
+  function playerTurn(
+    playerId: number,
+    type: TurnType = TurnType.ACTION,
+    currentRound = 1,
+    firstPlayerMarker?: number
+  ): GameState {
+    return row({
+      phase: GamePhase.PLAYER_TURNS,
+      currentRound,
+      firstPlayerMarker,
+      activePlayerId: playerId,
+      currTurn: { playerId, type },
+    })
+  }
+
+  // Round 1: one full row. Round 2 starts at player 1, so the wrap turn
+  // (player 0) lands on a second row with empty seats to its right.
+  const history = [
+    row({ historyEntryKind: 'round-start', currentRound: 1, firstPlayerMarker: 0 }),
+    playerTurn(0),
+    playerTurn(1),
+    playerTurn(2),
+    playerTurn(3),
+    row({ historyEntryKind: 'round-start', currentRound: 2, firstPlayerMarker: 1 }),
+    playerTurn(1, TurnType.ACTION, 2, 1),
+    playerTurn(2, TurnType.ACTION, 2, 1),
+    playerTurn(3, TurnType.ACTION, 2, 1),
+    playerTurn(0, TurnType.ACTION, 2, 1),
+  ]
+  const grid = buildBirdseyeTurnHistoryGrid(history, playerIds)
+
+  it('locates a turn cell by history index and live flag', () => {
+    expect(findBirdseyeGridPosition(grid, 2, false)).toEqual({ rowIndex: 1, colIndex: 1 })
+    expect(findBirdseyeGridPosition(grid, 9, false)).toEqual({ rowIndex: 4, colIndex: 0 })
+    expect(findBirdseyeGridPosition(grid, 999, false)).toBeNull()
+  })
+
+  it('locates a banner row with no column', () => {
+    expect(findBirdseyeGridPosition(grid, 0, false)).toEqual({ rowIndex: 0, colIndex: -1 })
+    expect(findBirdseyeGridPosition(grid, 5, false)).toEqual({ rowIndex: 2, colIndex: -1 })
+  })
+
+  it('moves down within the same swimlane column', () => {
+    const position = findBirdseyeGridPosition(grid, 2, false)!
+    expect(findBirdseyeVerticalNeighbor(grid, position, 1, position.colIndex)).toEqual({
+      historyIndex: 6,
+      isLive: false,
+    })
+  })
+
+  it('moves up within the same swimlane column', () => {
+    const position = findBirdseyeGridPosition(grid, 7, false)!
+    expect(findBirdseyeVerticalNeighbor(grid, position, -1, position.colIndex)).toEqual({
+      historyIndex: 3,
+      isLive: false,
+    })
+  })
+
+  it('skips empty seats and banners when moving vertically', () => {
+    // Player 0 only acts in round 1 and on the wrap row; the round-2 banner
+    // and the empty seat above the wrap turn are both skipped.
+    const position = findBirdseyeGridPosition(grid, 9, false)!
+    expect(findBirdseyeVerticalNeighbor(grid, position, -1, position.colIndex)).toEqual({
+      historyIndex: 1,
+      isLive: false,
+    })
+  })
+
+  it('returns null when there is no entry in that direction', () => {
+    const firstTurn = findBirdseyeGridPosition(grid, 1, false)!
+    expect(findBirdseyeVerticalNeighbor(grid, firstTurn, -1, firstTurn.colIndex)).toBeNull()
+    const lastTurn = findBirdseyeGridPosition(grid, 9, false)!
+    expect(findBirdseyeVerticalNeighbor(grid, lastTurn, 1, lastTurn.colIndex)).toBeNull()
+  })
+
+  it('takes the first turn below a banner row', () => {
+    const banner = findBirdseyeGridPosition(grid, 5, false)!
+    expect(findBirdseyeVerticalNeighbor(grid, banner, 1, null)).toEqual({
+      historyIndex: 6,
+      isLive: false,
+    })
   })
 })
 

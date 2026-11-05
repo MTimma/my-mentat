@@ -456,6 +456,54 @@ export function buildBirdseyeTurnHistoryGrid(
   return rows
 }
 
+export interface BirdseyeGridPosition {
+  rowIndex: number
+  /** Column index for a turn cell; -1 for a full-width banner row. */
+  colIndex: number
+}
+
+/** Locate a history entry (turn cell or banner) in the flattened grid rows. */
+export function findBirdseyeGridPosition(
+  rows: BirdseyeHistoryGridRow[],
+  historyIndex: number,
+  isLive: boolean
+): BirdseyeGridPosition | null {
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+    const row = rows[rowIndex]
+    if (row.type === 'banner') {
+      if (row.banner.historyIndex === historyIndex && row.banner.isLive === isLive) {
+        return { rowIndex, colIndex: -1 }
+      }
+      continue
+    }
+    const colIndex = row.cells.findIndex(
+      cell => cell != null && cell.historyIndex === historyIndex && cell.isLive === isLive
+    )
+    if (colIndex >= 0) return { rowIndex, colIndex }
+  }
+  return null
+}
+
+/**
+ * Nearest non-empty turn above/below a grid position. Turn cells stay in their
+ * swimlane column; empty seats and full-width banners are skipped. Pass a null
+ * column (from a banner row) to take the first turn in the next row.
+ */
+export function findBirdseyeVerticalNeighbor(
+  rows: BirdseyeHistoryGridRow[],
+  position: BirdseyeGridPosition,
+  direction: -1 | 1,
+  column: number | null
+): { historyIndex: number; isLive: boolean } | null {
+  for (let r = position.rowIndex + direction; r >= 0 && r < rows.length; r += direction) {
+    const row = rows[r]
+    if (row.type === 'banner') continue
+    const cell = column == null ? row.cells.find(candidate => candidate != null) : row.cells[column]
+    if (cell) return { historyIndex: cell.historyIndex, isLive: cell.isLive }
+  }
+  return null
+}
+
 /** Compact chess-style cell copy: played card and destination, or Reveal/Pass. */
 export function getBirdseyeHistoryCellParts(turn: GameState): { played?: string; action: string } {
   const action = getTurnActionLabel(turn)

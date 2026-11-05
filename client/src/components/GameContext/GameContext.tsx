@@ -872,13 +872,13 @@ function skipEndgameRevealPlayersWithNoIntrigue(state: GameState): GameState {
 function advanceAfterEndgameReveal(state: GameState, revealedPlayerId: number): GameState {
   const done = new Set(state.endgameRevealDonePlayers ?? [])
   done.add(revealedPlayerId)
-  const nextId = getNextEndgameRevealPlayerId(state, revealedPlayerId)
+  const withDone = { ...state, endgameRevealDonePlayers: done }
+  const nextId = getNextEndgameRevealPlayerId(withDone, revealedPlayerId)
   if (nextId === null) {
-    return finishEndgameRevealPhase({ ...state, endgameRevealDonePlayers: done })
+    return finishEndgameRevealPhase(withDone)
   }
   return skipEndgameRevealPlayersWithNoIntrigue({
-    ...state,
-    endgameRevealDonePlayers: done,
+    ...withDone,
     activePlayerId: nextId,
   })
 }
@@ -1264,6 +1264,24 @@ function withRecruitedTroopsDeployLimit(state: GameState, troopsRecruited: numbe
   return {
     ...state,
     currTurn: applyRecruitedTroopsToTurnDeployLimit(state.currTurn, troopsRecruited),
+  }
+}
+
+/**
+ * Reinforcements-style reward: troops gained during the player's Reveal turn may
+ * be deployed to the Conflict. Opens an exclusive "these troops" deploy pool so
+ * only the newly recruited units become deployable.
+ */
+function withRevealDeployTroops(state: GameState, troopsRecruited: number): GameState {
+  if (troopsRecruited <= 0 || !state.currTurn) return state
+  if (state.currTurn.type !== TurnType.REVEAL) return state
+  return {
+    ...state,
+    currTurn: {
+      ...state.currTurn,
+      canDeployTroops: true,
+      theseTroopsDeployLimit: (state.currTurn.theseTroopsDeployLimit ?? 0) + troopsRecruited,
+    },
   }
 }
 
@@ -2044,7 +2062,10 @@ function handleIntrigueEffect(
       const recruited = recruitTroopsToGarrison(updatedPlayer, reward.troops)
       updatedPlayer = recruited.player
       pushGain(recruited.recruited, RewardType.TROOPS)
-      newState = withRecruitedTroopsDeployLimit(newState, recruited.recruited)
+      newState =
+        reward.deployOnReveal && newState.currTurn?.type === TurnType.REVEAL
+          ? withRevealDeployTroops(newState, recruited.recruited)
+          : withRecruitedTroopsDeployLimit(newState, recruited.recruited)
     }
     if (reward.persuasion) {
       updatedPlayer.persuasion += reward.persuasion
@@ -4895,10 +4916,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         playerId,
         selectedCards
       )
-      return advanceAfterEndgameReveal({
-        ...afterReveal,
-        endgameApplyQueue: [...(afterReveal.endgameApplyQueue ?? []), ...applyQueue],
-      })
+      return advanceAfterEndgameReveal(
+        {
+          ...afterReveal,
+          endgameApplyQueue: [...(afterReveal.endgameApplyQueue ?? []), ...applyQueue],
+        },
+        playerId
+      )
     }
     case 'PLAY_CARD': {
       const { playerId, cardId, deckIndex } = action

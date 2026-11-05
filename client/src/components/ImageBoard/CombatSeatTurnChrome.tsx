@@ -724,6 +724,24 @@ export function BirdseyeSeatPlayArea({
     hasCards || hasIntrigues,
     `${cards.length}:${playedIntrigues.length}:${activeIntrigues.length}:${pendingIds.size}:${pendingIntrigueIdSet.size}`
   )
+  const playAreaSignature = [
+    ...cards.map(card => `c${card.id}`),
+    ...playedIntrigues.map(card => `p${card.id}`),
+    ...activeIntrigues.map(card => `a${card.id}`),
+  ].join('|')
+
+  // Newest card sits at the bottom of the stack; keep it in view when the lane overflows.
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const pinToBottom = () => {
+      el.scrollTop = el.scrollHeight
+    }
+    pinToBottom()
+    const raf = requestAnimationFrame(pinToBottom)
+    return () => cancelAnimationFrame(raf)
+  }, [playAreaSignature, scrollable, scrollRef])
+
   const ariaLabel = [
     names.length > 0 && `Play area: ${names.join(', ')}`,
     playedIntrigues.length > 0 &&
