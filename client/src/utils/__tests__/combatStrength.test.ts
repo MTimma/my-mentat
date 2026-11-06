@@ -133,6 +133,47 @@ describe('computeStrength', () => {
     expect(after.players[0].combatValue).toBe(6)
   })
 
+  it('swords pool with no units: 0 strength, applies once a unit is deployed', () => {
+    const before = {
+      ...stubState([stubPlayer(0, { combatValue: 3, revealed: true })], {}, false),
+      phase: GamePhase.COMBAT,
+      combatStrength: { 0: 3 },
+    }
+    expect(computeStrength(before, 0)).toBe(0)
+
+    const after = syncCombatStrengthAfterUnitDelta(
+      { ...before, combatTroops: { 0: 1 } },
+      0,
+      2
+    )
+    expect(after.combatStrength[0]).toBe(5)
+    expect(after.players[0].combatValue).toBe(5)
+    expect(computeStrength(after, 0)).toBe(5)
+  })
+
+  it('removing the last unit keeps the sword pool for a later deploy', () => {
+    const before = {
+      ...stubState([stubPlayer(0, { combatValue: 5, revealed: true })], {}, false),
+      phase: GamePhase.COMBAT,
+      combatStrength: { 0: 5 },
+    }
+    const after = syncCombatStrengthAfterUnitDelta(before, 0, -2)
+    expect(after.combatStrength[0]).toBe(3)
+    expect(after.players[0].combatValue).toBe(3)
+    expect(computeStrength(after, 0)).toBe(0)
+  })
+
+  it('removing the last unit with no swords clears the cached total', () => {
+    const before = {
+      ...stubState([stubPlayer(0, { combatValue: 2, revealed: true })], {}, false),
+      phase: GamePhase.COMBAT,
+      combatStrength: { 0: 2 },
+    }
+    const after = syncCombatStrengthAfterUnitDelta(before, 0, -2)
+    expect(after.combatStrength[0]).toBeUndefined()
+    expect(after.players[0].combatValue).toBe(0)
+  })
+
   it('agent turn ignores stale combatValue and uses units only', () => {
     const state = stubState(
       [stubPlayer(0, { combatValue: 8 })],

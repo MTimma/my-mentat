@@ -125,12 +125,12 @@ below; keep the `("Color")` note in this plan only (not in code).
 | `jamis.png` | 1 | 2 | FR | FREMEN | Infiltrate: true | `trash:1` | `persuasion:1, combat:2` | – | **A** | Declarative. |
 | `landing_rights.png` | 1 | 4 | SG | CITY ("Blue") | – | `freighter:1` | `persuasion:2` | – | **A** | Declarative. |
 | `local_fence.png` | 1 | 3 | – | CITY ("Blue") | – | Choose: `spice:-2 → solari:5` OR `solari:-5 → spice:4` | `persuasion:2` | – | **A** | Two `choiceOpt` play effects mirroring Lady Jessica / Bypass Protocol. |
-| `negotiated_withdrawel.png` | 2 | 4 | – | SPICE_TRADE ("Yellow"), LANDSRAAD ("Green"), CITY ("Blue") | Acquire: `troops:1` | – | `persuasion:2`, **retreat 3× troops → +1 influence (choose)** | – | **B** | New `CustomEffect.NEGOTIATED_WITHDRAWAL`: enforce min retreat=3 from conflict to grant influence-of-choice. |
+| `negotiated_withdrawel.png` | 2 | 4 | – | LANDSRAAD ("Green"), CITY ("Blue"), SPICE_TRADE ("Yellow") | Acquire: `troops:1` | – | `persuasion:2`, **retreat 3× troops → +1 influence (choose)** | – | **B** | New `CustomEffect.NEGOTIATED_WITHDRAWAL`: enforce min retreat=3 from conflict to grant influence-of-choice. |
 | `satellite_ban.png` | 1 | 5 | SG, FR | SPACING_GUILD, FREMEN | – | Cost: `discard:1` → `spice:1, water:1` | `persuasion:1`, **retreat up to 2 troops** | – | **B** | `retreatTroops:2` reward (existing field). |
 | `sayyadina.png` | 1 | 3 | BG, FR | BENE_GESSERIT, FREMEN | – | Cost: `water:3` → `victoryPoints:1` | `persuasion:3` if **FR bond** | – | **B** | Standard. |
 | `shai_hulud.png` | 1 | 7 | FR | SPICE_TRADE ("Yellow") | Acquire: `trash:1` | Cost: `trash:1` → `troops:2` | `combat:5` if **FR bond** | – | **B** | Two trash flows (one acquire-time, one play-time). |
 | `spice_trader.png` | 1 | 4 | FR | CITY ("Blue"), SPICE_TRADE ("Yellow") | – | If **2× Inf FR**: `discard:1` → `spice:2` | `persuasion:2, combat:1` | – | **A** | Declarative. |
-| `treachery.png` | 2 | 6 | – | EMPEROR, SPACING_GUILD, BENE_GESSERIT, FREMEN | – | **Gain 2 influence instead of 1** AND `trashThisCard` | `persuasion:0`, `troops:2, deployTroops:2 (mandatory)` | yes | **B** | New `CustomEffect.TREACHERY_DOUBLE_INFLUENCE`: ✦ scope resolved per §8 — applies **only to Treachery's own influence** (each Faction icon on this card grants 2 instead of 1), *not* to all influence this turn. Re-uses Power Play model. deploy troops is mandatory. usually deployTroops in our app is optional, but for this card has to be mandatory|
+| `treachery.png` | 2 | 6 | – | EMPEROR, SPACING_GUILD, BENE_GESSERIT, FREMEN | – | **Gain 2 influence instead of 1** AND `trashThisCard` | `persuasion:0`, `troops:2, deployTroops:2 (mandatory)` | yes | **B** | New `CustomEffect.TREACHERY_DOUBLE_INFLUENCE`: ✦ scope resolved per §8 — doubles the **board-space influence bump** (1 → 2), same as Power Play; not per-icon influence. Re-uses Power Play pending-reward model. deploy troops is mandatory. usually deployTroops in our app is optional, but for this card has to be mandatory|
 | `truthsayer.png` | 2 | 3 | EM, BG | EMPEROR, BENE_GESSERIT, LANDSRAAD ("Green") | – | Cost: `discard:1` → `drawCards:1` | `persuasion:1, combat:1` | – | **A** | Declarative. |
 | `water_peddler.png` | 1 | 1 | – | – | Acquire: `water:1` | – | `water:1` | yes | **A** | Declarative. |
 | `web_of_power.png` | 1 | 4 | BG | BENE_GESSERIT | Infiltrate: true | If **2× Inf each**: EM → `solari:2`, SG → `drawCards:1`, FR → `water:1` | `persuasion:1`, `influence:{any,1}` *[paraphrase risk: faction unclear]* | – | **B** | New `CustomEffect.WEB_OF_POWER`: evaluate the four "2× Inf each" conditions and grant the appropriate rewards. Reveal's `+1 inf` player choose. the rewards from influence during play are mandatory and pending, but need to consider how to show effects that are unapplicable, mayhbe in grayed out way |
@@ -264,7 +264,9 @@ if (state.currTurn?.extraTurnAllowed) {
    such as `DESERT`). Spot-check: `appropriate` =
    `[LANDSRAAD, SPICE_TRADE]`; `guild_chief_administrator` =
    `[SPACING_GUILD, CITY, SPICE_TRADE]`; `negotiated_withdrawel` =
-   `[SPICE_TRADE, LANDSRAAD, CITY]` in that order.
+   `[LANDSRAAD, CITY, SPICE_TRADE]` in that order (matches card art
+   top-to-bottom; corrected 2026-11-05 — earlier drafts had
+   `[SPICE_TRADE, LANDSRAAD, CITY]`).
 
 ---
 
@@ -278,7 +280,7 @@ if (state.currTurn?.extraTurnAllowed) {
   icon in §3, `agentIcons` uses the correct enum (Green→LANDSRAAD,
   Blue→CITY, Yellow→SPICE_TRADE)
 - [ ] `negotiated_withdrawel` icon order is
-  `[SPICE_TRADE, LANDSRAAD, CITY]`
+  `[LANDSRAAD, CITY, SPICE_TRADE]`
 - [ ] `in_the_shadows` icon order is `[LANDSRAAD, CITY]`
 - [ ] `appropriate` has `[LANDSRAAD, SPICE_TRADE]` (no `DESERT`)
 
@@ -335,9 +337,11 @@ Group tests per card. Each card gets at least 1 expectation:
   turn" (e.g. Bene Gesserit Sister's chosen 2 combat counts; if she
   chose 2 persuasion she does not count). The implementation should
   inspect *resolved* effects, not printed icons.
-- **Treachery influence doubling**: the printed card says "instead of
-  1, you gain 2 with each Faction icon shown" — this is **only the
-  Treachery card's own influence**, not all influence this turn.
-  Update the handler to only apply when the influence reward's source
-  is Treachery itself. *Note: the user table is shorter than the
-  printed text — verify.*
+- **Treachery influence doubling** (corrected 2026-11-05): the printed
+  card reads "Gain two Influence instead of one. Trash this card." —
+  identical to Power Play. Per the rules FAQ (Selective Breeding entry:
+  "the double bump and troops from Treachery"; Power Play entry: the
+  Agent Box only works on a faction space), this doubles the
+  **board-space influence bump** (1 → 2), not the card's own faction
+  icons. Implemented with the Power Play pending-reward model
+  (`resolveTreacheryOnPendingRewards`).

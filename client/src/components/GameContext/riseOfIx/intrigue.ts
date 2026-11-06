@@ -215,7 +215,7 @@ export function applyRiseOfIxIntrigueCustomInEffect(
     case CustomEffect.ADVANCED_WEAPONRY: {
       const player = state.players.find(p => p.id === playerId)
       const techCount = player?.tech?.length ?? 0
-      if (techCount < 3 || !playerHasUnitsInCombatLocal(state, playerId)) return state
+      if (techCount < 3) return state
       const nextVal = (state.combatStrength[playerId] ?? player?.combatValue ?? 0) + 4
       const nextStrength = {
         ...state.combatStrength,
@@ -249,10 +249,6 @@ export function applyRiseOfIxIntrigueCustomInEffect(
     default:
       return state
   }
-}
-
-function playerHasUnitsInCombatLocal(state: GameState, playerId: number): boolean {
-  return unitsInConflictForPlayer(state, playerId) > 0
 }
 
 export function enqueueStrongarmChoice(

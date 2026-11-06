@@ -71,11 +71,11 @@ export function splitRevealPooledGains(gains: Gain[]): { pooled: Gain[]; specifi
   return { pooled, specifics }
 }
 
-export type PersuasionSourceKind = 'card' | 'intrigue' | 'tech' | 'text'
+export type PooledSourceKind = 'card' | 'intrigue' | 'tech' | 'text'
 
-export interface PersuasionSourceContribution {
+export interface PooledSourceContribution {
   key: string
-  kind: PersuasionSourceKind
+  kind: PooledSourceKind
   title: string
   amount: number
   image?: string
@@ -84,14 +84,14 @@ export interface PersuasionSourceContribution {
 
 const TECH_GAIN_TITLE_PREFIX = 'Tech: '
 
-function persuasionSourceKind(source: GainSource): PersuasionSourceKind {
+function pooledSourceKind(source: GainSource): PooledSourceKind {
   if (source === GainSource.CARD) return 'card'
   if (source === GainSource.INTRIGUE) return 'intrigue'
   if (source === GainSource.TECH || source === GainSource.IX_BOARD) return 'tech'
   return 'text'
 }
 
-function persuasionSourceTitle(group: TurnGainSourceGroup): string {
+function pooledSourceTitle(group: TurnGainSourceGroup): string {
   const sample = group.gains[0]
   if (sample?.source === GainSource.HIGH_COUNCIL) return 'High Council'
   if (group.title.startsWith(TECH_GAIN_TITLE_PREFIX)) {
@@ -100,8 +100,8 @@ function persuasionSourceTitle(group: TurnGainSourceGroup): string {
   return group.title
 }
 
-function persuasionSourceImage(
-  kind: PersuasionSourceKind,
+function pooledSourceImage(
+  kind: PooledSourceKind,
   sample: Gain,
   title: string
 ): string | undefined {
@@ -115,16 +115,20 @@ function persuasionSourceImage(
   return undefined
 }
 
-/** Reveal-turn persuasion total breakdown (cards, intrigue, tech, High Council). */
-export function getPersuasionSourceContributions(gains: Gain[]): PersuasionSourceContribution[] {
-  const persuasionGains = gains.filter(
-    gain => gain.type === RewardType.PERSUASION && gain.amount !== 0
-  )
-  if (persuasionGains.length === 0) return []
+/**
+ * Reveal-turn pooled total breakdown (cards, intrigue, tech, High Council) for one reward type.
+ * Feeds the persuasion and combat rows of the alt-zoom preview.
+ */
+function getPooledSourceContributions(
+  gains: Gain[],
+  type: RewardType
+): PooledSourceContribution[] {
+  const typedGains = gains.filter(gain => gain.type === type && gain.amount !== 0)
+  if (typedGains.length === 0) return []
 
   const order: string[] = []
   const grouped = new Map<string, Gain[]>()
-  for (const gain of persuasionGains) {
+  for (const gain of typedGains) {
     const key =
       gain.source === GainSource.TECH || gain.source === GainSource.IX_BOARD
         ? `${gain.source}:${techIdentityForGain(gain)}:${gain.playerId}`
@@ -139,19 +143,19 @@ export function getPersuasionSourceContributions(gains: Gain[]): PersuasionSourc
   }
 
   return order
-    .map(key => {
+    .map((key): PooledSourceContribution | null => {
       const groupGains = grouped.get(key)
       if (!groupGains) return null
       const sample = groupGains[0]
       const amount = groupGains.reduce((sum, gain) => sum + gain.amount, 0)
       if (!sample || amount === 0) return null
-      const kind = persuasionSourceKind(sample.source)
-      const title = persuasionSourceTitle({
+      const kind = pooledSourceKind(sample.source)
+      const title = pooledSourceTitle({
         key,
         title: abilityTitleForGain(sample) ?? sample.name,
         gains: groupGains,
       })
-      const image = persuasionSourceImage(kind, sample, title)
+      const image = pooledSourceImage(kind, sample, title)
       return {
         key,
         kind,
@@ -159,9 +163,22 @@ export function getPersuasionSourceContributions(gains: Gain[]): PersuasionSourc
         amount,
         image,
         cardId: kind === 'card' || kind === 'intrigue' ? sample.sourceId : undefined,
-      } satisfies PersuasionSourceContribution
+      } satisfies PooledSourceContribution
     })
-    .filter((entry): entry is PersuasionSourceContribution => entry != null)
+    .filter((entry): entry is PooledSourceContribution => entry != null)
+}
+
+/** Reveal-turn persuasion total breakdown (cards, intrigue, tech, High Council). */
+export function getPersuasionSourceContributions(gains: Gain[]): PooledSourceContribution[] {
+  return getPooledSourceContributions(gains, RewardType.PERSUASION)
+}
+
+/**
+ * Reveal-turn combat (swords) total breakdown. Each source shows the swords it actually
+ * provided — e.g. Imperial Bashar shows its full 2 + bonus, not the cards it counted.
+ */
+export function getCombatSourceContributions(gains: Gain[]): PooledSourceContribution[] {
+  return getPooledSourceContributions(gains, RewardType.COMBAT)
 }
 
 /** Display order for net resource totals in turn history. */

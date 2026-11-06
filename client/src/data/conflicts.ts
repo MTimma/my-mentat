@@ -300,7 +300,7 @@ export const CONFLICTS: ConflictCard[] = [
         { type: RewardType.INTRIGUE, amount: 1 },
         { type: RewardType.SPICE, amount: 3 },
       ],
-      third: [{ type: RewardType.SPICE, amount: 1 }],
+      third: [{ type: RewardType.SPICE, amount: 3 }],
     },
   },
 ]

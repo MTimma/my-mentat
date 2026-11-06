@@ -113,6 +113,24 @@ describe('Base conflicts — resolution', () => {
   it.todo('0 strength receives no reward')
   it.todo('after combat, troops return to supply and combat markers reset')
 
+  it('swords pooled with no units in the Conflict win nothing at resolution', () => {
+    let s = getBaseTestState(undefined, { players: 4 })
+    s = {
+      ...s,
+      currentConflict: skirmish901,
+      phase: GamePhase.COMBAT_REWARDS,
+      combatTroops: { 0: 0, 1: 1, 2: 1, 3: 1 },
+      combatStrength: { 0: 6, 1: 4, 2: 3, 3: 2 },
+      players: s.players.map(p => ({ ...p, spice: 0, water: 0, victoryPoints: 0 })),
+    }
+    // Player 0 has the highest total (6 swords pooled) but no units deployed, so it is ignored.
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(s.players[0].victoryPoints).toBe(0)
+    expect(s.players[0].water).toBe(0)
+    expect(s.players[1].victoryPoints).toBe(1)
+    expect(s.players[2].water).toBe(1)
+  })
+
   it('RESOLVE_COMBAT moves to ROUND_START and clears conflict troops', () => {
     let s = getBaseTestState(undefined, { players: 2 })
     s = {

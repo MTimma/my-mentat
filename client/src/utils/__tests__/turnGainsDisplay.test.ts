@@ -40,6 +40,7 @@ import {
   isRevealPooledRewardType,
   splitRevealPooledGains,
   getPersuasionSourceContributions,
+  getCombatSourceContributions,
   isTechAcquireOfferGain,
 } from '../turnGainsDisplay'
 
@@ -1885,6 +1886,64 @@ describe('turnGainsDisplay', () => {
     ])
     expect(contributions).toHaveLength(2)
     expect(contributions.every(c => c.title === 'Convincing Argument' && c.amount === 2)).toBe(true)
+  })
+
+  it('getCombatSourceContributions keeps each card’s resolved swords, Bashar included', () => {
+    const contributions = getCombatSourceContributions([
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 2079,
+        round: 1,
+        name: 'Imperial Bashar',
+        amount: 4,
+        type: RewardType.COMBAT,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 2016,
+        round: 1,
+        name: 'Fedaykin Death Commando',
+        amount: 3,
+        type: RewardType.COMBAT,
+      },
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 2078,
+        round: 1,
+        name: 'Jamis',
+        amount: 2,
+        type: RewardType.COMBAT,
+      },
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: 0,
+        round: 1,
+        name: 'Artillery',
+        amount: 1,
+        type: RewardType.COMBAT,
+      },
+      // Persuasion from the same card never leaks into the combat row.
+      {
+        playerId: 0,
+        source: GainSource.CARD,
+        sourceId: 2079,
+        round: 1,
+        name: 'Imperial Bashar',
+        amount: 1,
+        type: RewardType.PERSUASION,
+      },
+    ])
+
+    expect(contributions.map(c => ({ kind: c.kind, title: c.title, amount: c.amount }))).toEqual([
+      { kind: 'card', title: 'Imperial Bashar', amount: 4 },
+      { kind: 'card', title: 'Fedaykin Death Commando', amount: 3 },
+      { kind: 'card', title: 'Jamis', amount: 2 },
+      { kind: 'tech', title: 'Artillery', amount: 1 },
+    ])
   })
 
   it('groupGainsBySource merges conflict spice and influence under placement title', () => {

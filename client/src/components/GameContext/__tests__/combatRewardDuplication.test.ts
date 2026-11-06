@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { CONFLICTS } from '../../../data/conflicts'
 import { ControlMarkerType, GainSource, RewardType, GamePhase, FactionType } from '../../../types/GameTypes'
 import { applyGameAction, buildCombatResolutionView } from '../GameContext'
-import { continueAllConflictRewards, getBaseTestState } from './_helpers'
+import { combatTroopsFor, continueAllConflictRewards, getBaseTestState } from './_helpers'
 
 function conflictGainKeys(gains: { playerId: number; name: string; type: RewardType; amount: number }[]) {
   return gains.map(g => `${g.playerId}|${g.name}|${g.type}|${g.amount}`)
@@ -23,6 +23,7 @@ function resolveCombat(
     currentConflict: conflict,
     phase: GamePhase.COMBAT_REWARDS,
     combatStrength: strength,
+    combatTroops: combatTroopsFor(strength),
     players: s.players.map(p => ({
       ...p,
       spice: 0,
@@ -184,6 +185,7 @@ describe('combat reward duplication', () => {
       currentConflict: skirmish902,
       phase: GamePhase.COMBAT_REWARDS,
       combatStrength: { 0: 10, 1: 8, 2: 6, 3: 2 },
+      combatTroops: { 0: 1, 1: 1, 2: 1, 3: 1 },
       players: s.players.map(p => ({
         ...p,
         spice: 0,

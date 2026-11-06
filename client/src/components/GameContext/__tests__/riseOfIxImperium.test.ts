@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { RISE_OF_IX_IMPERIUM_DECK } from '../../../data/cardsRiseOfIx'
+import { IMPERIUM_ROW_DECK } from '../../../data/cards'
 import { riseOfIxImperiumManifest } from '../../../test-fixtures/riseOfIxManifest'
 import {
   AgentIcon,
@@ -9,8 +10,11 @@ import {
   GainSource,
   RewardType,
   TurnType,
+  type Card,
+  type Gain,
 } from '../../../types/GameTypes'
 import { TechTileId } from '../../../data/techTiles'
+import { computeStrength } from '../../../utils/combatStrength'
 import { DEFAULT_DREADNOUGHTS } from '../../../utils/dreadnoughts'
 import {
   applyBountyInfiltrationBonus,
@@ -21,7 +25,6 @@ import {
   applyIxianEngineerVp,
   applyNegotiatedWithdrawal,
   applyShockTrooperBonus,
-  applyTreacheryDoubleInfluence,
   applyWebOfPower,
   applyWeirdingWayExtraTurn,
   consumeExtraTurn,
@@ -41,6 +44,13 @@ const cardByName = (name: string) => {
   const card = RISE_OF_IX_IMPERIUM_DECK.find(c => c.name === name)
   if (!card) throw new Error(`missing RoI card: ${name}`)
   return card
+}
+
+/** Base-game imperium card with a test id (e.g. Fedaykin Death Commando). */
+const baseCardByName = (name: string, id: number): Card => {
+  const card = IMPERIUM_ROW_DECK.find(c => c.name === name)
+  if (!card) throw new Error(`missing base card: ${name}`)
+  return { ...structuredClone(card), id }
 }
 
 describe('Rise of Ix imperium cards — manifest coverage', () => {
@@ -241,23 +251,59 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
   })
 
   describe('Imperial Bashar — reveal swords', () => {
-    it('adds +2 plus +1 per other revealed sword card when in combat', () => {
-      const bashar = stubDeckCard(10, { revealEffect: [{ reward: { combat: 2 } }] })
-      const other = stubDeckCard(11, { revealEffect: [{ reward: { combat: 1 } }] })
+    it('adds +2 plus +1 per other card that actually provided swords this turn', () => {
+      const gains: Gain[] = [
+        {
+          round: 1,
+          playerId: 0,
+          sourceId: 11,
+          name: 'Sword card',
+          amount: 2,
+          type: RewardType.COMBAT,
+          source: GainSource.CARD,
+        },
+        {
+          round: 1,
+          playerId: 0,
+          sourceId: 12,
+          name: 'One-sword card',
+          amount: 1,
+          type: RewardType.COMBAT,
+          source: GainSource.CARD,
+        },
+      ]
       let s = getRoiTestState({
         stateOverrides: {
           combatTroops: { 0: 1 },
           combatStrength: { 0: 2 },
         },
       })
-      s = applyImperialBasharSwords(s, 0, 10, 'Imperial Bashar', [bashar, other, other])
-      // +2 base, +1 per other sword card (excludes cardId 10)
+      s = applyImperialBasharSwords(s, 0, 10, 'Imperial Bashar', gains)
+      // +2 base, +1 per other card that provided one or more swords (both cards count).
       expect(s.combatStrength[0]).toBe(6)
     })
 
-    it('no combat bonus without units in conflict', () => {
+    it('does not count a card that produced no swords (unmet bond, or a persuasion choice)', () => {
+      const gains: Gain[] = [
+        {
+          round: 1,
+          playerId: 0,
+          sourceId: 2016,
+          name: 'Fedaykin Death Commando',
+          amount: 1,
+          type: RewardType.PERSUASION,
+          source: GainSource.CARD,
+        },
+      ]
+      const s = applyImperialBasharSwords(getRoiTestState(), 0, 10, 'Imperial Bashar', gains)
+      expect(s.combatStrength[0]).toBe(2)
+    })
+
+    it('pools the swords without units in conflict so they apply once a unit deploys', () => {
       const s = applyImperialBasharSwords(getRoiTestState(), 0, 1, 'Imperial Bashar', [])
-      expect(s.combatStrength[0]).toBeUndefined()
+      // +2 base, no other sword cards: kept in the pool even with no units in the Conflict.
+      expect(s.combatStrength[0]).toBe(2)
+      expect(computeStrength(s, 0)).toBe(0)
     })
   })
 
@@ -283,6 +329,12 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
       })
       offEm = applyShockTrooperBonus(offEm, 0, 1, 'Imperial Shock Trooper')
       expect(offEm.combatStrength[0]).toBe(4)
+    })
+
+    it('pools the bonus without units in conflict so it applies once a unit deploys', () => {
+      const s = applyShockTrooperBonus(getRoiTestState(), 0, 1, 'Imperial Shock Trooper')
+      expect(s.combatStrength[0]).toBe(2)
+      expect(computeStrength(s, 0)).toBe(0)
     })
   })
 
@@ -420,7 +472,19 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
       )
       expect(s.pendingRewards[0].reward.retreatTroops).toBe(3)
       expect(s.pendingRewards[0].reward.influence?.chooseOne).toBe(true)
+      expect(s.pendingRewards[0].requiredEffectRetreats).toBe(3)
+      expect(s.pendingRewards[0].disabled).toBe(true)
       expect(s.currTurn?.effectRetreatAllowance).toBe(3)
+    })
+
+    it('each revealed copy requires its own 3 retreats', () => {
+      let s = getRoiTestState({
+        stateOverrides: { currTurn: { playerId: 0, type: TurnType.REVEAL } },
+      })
+      s = applyNegotiatedWithdrawal(s, 0, 1, 'Negotiated Withdrawel')
+      s = applyNegotiatedWithdrawal(s, 0, 2, 'Negotiated Withdrawel')
+      expect(s.pendingRewards.map(r => r.requiredEffectRetreats)).toEqual([3, 6])
+      expect(s.currTurn?.effectRetreatAllowance).toBe(6)
     })
   })
 
@@ -454,21 +518,70 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
   })
 
   describe('Treachery — double influence', () => {
-    it('adds +2 influence per faction icon on the card', () => {
-      const s = applyTreacheryDoubleInfluence(
-        getRoiTestState(),
-        0,
-        [FactionType.EMPEROR, FactionType.BENE_GESSERIT],
-        1,
-        'Treachery'
+    it('doubles the board-space influence bump (Power Play model), not per-icon influence', () => {
+      const card = cloneRoiCard('Treachery')
+      card.id = 88004
+      let s = getRoiTestState({
+        playerOverrides: { deck: [card], handCount: 1, agents: 1 },
+      })
+      s = withCardOnTop(s, 0, card)
+      s = { ...s, currTurn: { playerId: 0, type: TurnType.ACTION } }
+      s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+      s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 15 })
+
+      // No influence is granted up front — Treachery stays pending like Power Play.
+      expect(s.factionInfluence[FactionType.EMPEROR][0] ?? 0).toBe(0)
+      const treacheryReward = s.pendingRewards.find(
+        r => r.reward.custom === CustomEffect.TREACHERY_DOUBLE_INFLUENCE
       )
+      expect(treacheryReward).toBeDefined()
+
+      s = applyGameAction(s, {
+        type: 'CLAIM_REWARD',
+        playerId: 0,
+        rewardId: treacheryReward!.id,
+      })
+      const influenceReward = s.pendingRewards.find(r => r.reward.influence)
+      expect(influenceReward?.powerPlay).toBe(true)
+
+      s = applyGameAction(s, {
+        type: 'CLAIM_REWARD',
+        playerId: 0,
+        rewardId: influenceReward!.id,
+      })
       expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(2)
-      expect(s.factionInfluence[FactionType.BENE_GESSERIT][0]).toBe(2)
     })
   })
 })
 
 describe('Rise of Ix imperium cards — reducer integration', () => {
+  it('Imperial Bashar: counts other revealed sword cards regardless of reveal order', () => {
+    const bashar = { ...cloneRoiCard('Imperial Bashar'), id: 88010 }
+    const fedaykin = baseCardByName('Fedaykin Death Commando', 88011)
+    const jamis = { ...cloneRoiCard('Jamis'), id: 88012 }
+
+    const reveal = (order: number[]) => {
+      const s = getRoiTestState({
+        players: 4,
+        playerOverrides: { deck: [bashar, fedaykin, jamis], handCount: 3, troops: 3 },
+      })
+      return applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: order })
+    }
+
+    for (const order of [
+      [bashar.id, fedaykin.id, jamis.id],
+      [fedaykin.id, jamis.id, bashar.id],
+    ]) {
+      const s = reveal(order)
+      // Jamis 2 + Fedaykin 3 (Fremen bond via Jamis) + Bashar 2 + 1 per other sword card = 9.
+      expect(s.combatStrength[0]).toBe(9)
+      expect(s.players[0].combatValue).toBe(9)
+      expect(s.gains).toContainEqual(
+        expect.objectContaining({ sourceId: bashar.id, type: RewardType.COMBAT, amount: 4 })
+      )
+    }
+  })
+
   it('Landing Rights agent: +1 freighter step via freighter reward', () => {
     const card = cloneRoiCard('Landing Rights')
     card.id = 88001
@@ -543,7 +656,19 @@ describe('Rise of Ix imperium cards — reducer integration', () => {
     s = { ...s, currTurn: { playerId: 0, type: TurnType.ACTION } }
     s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
     s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 15 })
-    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBeGreaterThanOrEqual(2)
+
+    // Treachery doubles the board-space bump (Power Play model): the custom
+    // reward is pending until claimed, then the influence reward grants +1.
+    const treacheryReward = s.pendingRewards.find(
+      r => r.reward.custom === CustomEffect.TREACHERY_DOUBLE_INFLUENCE
+    )
+    expect(treacheryReward).toBeDefined()
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: treacheryReward!.id })
+    const influenceReward = s.pendingRewards.find(r => r.reward.influence)
+    expect(influenceReward?.powerPlay).toBe(true)
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: influenceReward!.id })
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(2)
+
     // trashThisCard is a pending reward (not immediate) — must be claimed
     expect(s.pendingRewards).toContainEqual(
       expect.objectContaining({
@@ -552,5 +677,57 @@ describe('Rise of Ix imperium cards — reducer integration', () => {
         isTrash: true,
       })
     )
+  })
+
+  it('Negotiated Withdrawel reveal: influence requires retreating 3 troops', () => {
+    const card = cloneRoiCard('Negotiated Withdrawel')
+    card.id = 88020
+    let s = getRoiTestState({
+      playerOverrides: { deck: [card], handCount: 1 },
+      stateOverrides: {
+        combatTroops: { 0: 3 },
+        combatStrength: { 0: 6 },
+      },
+    })
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [card.id] })
+
+    expect(s.players[0].persuasion).toBe(2)
+    expect(s.currTurn?.effectRetreatAllowance).toBe(3)
+
+    const reward = s.pendingRewards.find(r => r.source.id === card.id)
+    expect(reward).toMatchObject({ requiredEffectRetreats: 3, disabled: true })
+
+    // Claiming before retreating must not open the influence choice.
+    const blocked = applyGameAction(s, {
+      type: 'CLAIM_REWARD',
+      playerId: 0,
+      rewardId: reward!.id,
+    })
+    expect(blocked.currTurn?.pendingChoices ?? []).toHaveLength(0)
+    expect(blocked.pendingRewards.some(r => r.id === reward!.id)).toBe(true)
+
+    // Two retreats are not enough.
+    s = applyGameAction(s, { type: 'RETREAT_TROOP', playerId: 0, fromEffect: true })
+    s = applyGameAction(s, { type: 'RETREAT_TROOP', playerId: 0, fromEffect: true })
+    expect(s.pendingRewards.find(r => r.id === reward!.id)?.disabled).toBe(true)
+
+    // The third retreat satisfies the card's cost.
+    s = applyGameAction(s, { type: 'RETREAT_TROOP', playerId: 0, fromEffect: true })
+    expect(s.pendingRewards.find(r => r.id === reward!.id)?.disabled).toBe(false)
+    expect(s.canEndTurn).toBe(false)
+
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: reward!.id })
+    const influenceChoice = s.currTurn?.pendingChoices?.find(
+      c => c.type === ChoiceType.FIXED_OPTIONS && c.source.id === card.id
+    )
+    expect(influenceChoice).toBeDefined()
+
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: influenceChoice!.id,
+      optionIndex: 0,
+    })
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(1)
   })
 })

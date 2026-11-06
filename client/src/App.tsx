@@ -929,6 +929,9 @@ const GameContent = ({
       // Power Play (+1 bonus) stays manual on the card after board +1 auto-applies.
       if (reward.reward.custom === CustomEffect.POWER_PLAY) return false
 
+      // Treachery (+1 bonus) stays manual on the card after board +1 auto-applies.
+      if (reward.reward.custom === CustomEffect.TREACHERY_DOUBLE_INFLUENCE) return false
+
       // Foldspace draw stays manual until the player chooses order vs trash this card.
       if (reward.reward.custom === CustomEffect.FOLDSPACE_DRAW) return false
 

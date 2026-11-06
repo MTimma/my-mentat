@@ -289,7 +289,7 @@ export function applyUnloadRevealEffects(
               playerId,
               card.id,
               source.name,
-              revealedCards
+              nextState.gains
             )
             break
           case CustomEffect.SHOCKTROOPER_EM_BONUS:

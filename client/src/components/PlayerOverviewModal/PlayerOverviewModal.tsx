@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { ControlMarkerType, FactionType, GameState, Player } from '../../types/GameTypes'
 import { getTotalVictoryPoints } from '../../utils/influenceVictoryPoints'
+import { playerHasUnitsInCombat } from '../../utils/dreadnoughts'
 import { getLeaderImage } from '../../data/leaders'
 import { listedPlayerName } from '../../utils/playerName'
 import { BoardScopedModal } from '../BoardScopedModal'
@@ -76,6 +77,13 @@ const PlayerOverviewModal = ({
 
   const riseOfIx = gameState?.expansions?.riseOfIx === true
 
+  // Swords live in the combat total even with no units in the Conflict, but strength is 0
+  // until at least one unit is deployed.
+  const hasUnitsInCombat = (player: Player) =>
+    gameState
+      ? playerHasUnitsInCombat(gameState, player.id)
+      : (combatTroops[player.id] || 0) > 0
+
   const baseRows: NumericRow[] = [
     { key: 'vp', label: 'VP', icon: 'vp', value: vpValue, highlightBest: true },
     { key: 'spice', label: 'Spice', icon: 'spice', value: player => player.spice, highlightBest: true },
@@ -107,7 +115,7 @@ const PlayerOverviewModal = ({
         ] as NumericRow[])
       : []),
     { key: 'deployed', label: 'Deployed', value: player => combatTroops[player.id] || 0, highlightBest: true },
-    { key: 'strength', label: 'Strength', value: player => combatStrength[player.id] || 0, highlightBest: true },
+    { key: 'strength', label: 'Strength', value: player => (hasUnitsInCombat(player) ? combatStrength[player.id] || 0 : 0), highlightBest: true },
     { key: 'hand', label: 'Hand', value: player => player.handCount, highlightBest: true },
     { key: 'playArea', label: 'Play Area', value: player => (player.playArea?.length ?? 0), highlightBest: true },
     { key: 'deck', label: 'Hand & Deck', value: player => player.deck.length, highlightBest: true },

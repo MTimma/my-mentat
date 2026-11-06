@@ -9,6 +9,7 @@ import {
   freighterAdvanceIconCount,
   freighterRecallStepOrdinal,
   getGainGroupIcon,
+  getCombatSourceContributions,
   getPersuasionSourceContributions,
   getRepeatedIconDisplay,
   compactBirdseyeGainTitle,
@@ -22,7 +23,7 @@ import {
   type AggregatedResourceGain,
   type CardTypeTotal,
   type InfluenceTypeTotal,
-  type PersuasionSourceContribution,
+  type PooledSourceContribution,
   type ResourceTypeTotal,
   type TurnGainSourceGroup,
 } from '../../utils/turnGainsDisplay'
@@ -158,6 +159,11 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   const persuasionContributions = useMemo(
     () =>
       revealPooledTotals ? getPersuasionSourceContributions(splitRevealPooledGains(gains).pooled) : [],
+    [gains, revealPooledTotals]
+  )
+  const combatContributions = useMemo(
+    () =>
+      revealPooledTotals ? getCombatSourceContributions(splitRevealPooledGains(gains).pooled) : [],
     [gains, revealPooledTotals]
   )
   const groups = useMemo(() => {
@@ -766,7 +772,14 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     )
   }
 
-  const renderPersuasionContribution = (source: PersuasionSourceContribution) => {
+  /**
+   * One source chip in the reveal-pooled breakdown rows (persuasion / combat). The thumb/title
+   * layout is shared; only the amount badge differs per row.
+   */
+  const renderPooledSourceContribution = (
+    source: PooledSourceContribution,
+    variant: 'persuasion' | 'combat'
+  ) => {
     const resolvedImage =
       source.kind === 'card' && source.cardId != null
         ? resolveCard?.(source.cardId, source.title)?.image || source.image
@@ -775,11 +788,12 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     const showThumb = (source.kind === 'card' || source.kind === 'intrigue') && Boolean(resolvedImage)
     const showTechThumb = source.kind === 'tech' && Boolean(resolvedImage)
     const showText = !showThumb
+    const swordIcon = getRewardIcon(RewardType.COMBAT)
 
     return (
       <div
         key={source.key}
-        className="turn-gain-persuasion-source"
+        className={`turn-gain-${variant}-source`}
         title={
           showThumb || showTechThumb
             ? withImageZoomHint(`${source.title}: ${signed}`)
@@ -790,7 +804,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
           <img
             src={iconSrc(resolvedImage!)}
             alt=""
-            className="turn-gain-persuasion-source-thumb"
+            className={`turn-gain-${variant}-source-thumb`}
             draggable={false}
             data-preview-src={iconSrc(resolvedImage!)}
           />
@@ -799,21 +813,36 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
           <img
             src={iconSrc(resolvedImage!)}
             alt=""
-            className="turn-gain-persuasion-source-tech"
+            className={`turn-gain-${variant}-source-tech`}
             draggable={false}
             data-preview-src={iconSrc(resolvedImage!)}
           />
         ) : null}
         {showText ? (
-          <span className="turn-gain-persuasion-source-text">{source.title}</span>
+          <span className={`turn-gain-${variant}-source-text`}>{source.title}</span>
         ) : null}
-        <span className="gain-persuasion-badge turn-gain-persuasion-source-amt" aria-hidden="true">
-          <span className="gain-persuasion-diamond" />
-          <span className="gain-persuasion-count">{signed}</span>
-        </span>
+        {variant === 'persuasion' ? (
+          <span className="gain-persuasion-badge turn-gain-persuasion-source-amt" aria-hidden="true">
+            <span className="gain-persuasion-diamond" />
+            <span className="gain-persuasion-count">{signed}</span>
+          </span>
+        ) : (
+          <span className="turn-gain-combat-badge turn-gain-combat-source-amt" aria-hidden="true">
+            {swordIcon ? (
+              <img src={iconSrc(swordIcon)} alt="" className="turn-gain-combat-icon" />
+            ) : null}
+            <span className="turn-gain-combat-count">{signed}</span>
+          </span>
+        )}
       </div>
     )
   }
+
+  const renderPersuasionContribution = (source: PooledSourceContribution) =>
+    renderPooledSourceContribution(source, 'persuasion')
+
+  const renderCombatContribution = (source: PooledSourceContribution) =>
+    renderPooledSourceContribution(source, 'combat')
 
   const renderTotalResource = (total: ResourceTypeTotal) => {
     const iconPath = getRewardIcon(total.type)
@@ -1000,6 +1029,11 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         {revealPooledTotals && persuasionContributions.length > 0 ? (
           <div className="turn-gain-persuasion-sources" aria-label="Persuasion sources">
             {persuasionContributions.map(renderPersuasionContribution)}
+          </div>
+        ) : null}
+        {revealPooledTotals && combatContributions.length > 0 ? (
+          <div className="turn-gain-combat-sources" aria-label="Combat sources">
+            {combatContributions.map(renderCombatContribution)}
           </div>
         ) : null}
       </div>

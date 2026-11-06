@@ -23,12 +23,12 @@ describe('cardsRiseOfIx data', () => {
     expect(appropriate?.agentIcons).toEqual([AgentIcon.LANDSRAAD, AgentIcon.SPICE_TRADE])
   })
 
-  it('negotiated_withdrawel icon order is SPICE_TRADE, LANDSRAAD, CITY', () => {
+  it('negotiated_withdrawel icon order is LANDSRAAD, CITY, SPICE_TRADE', () => {
     const card = RISE_OF_IX_IMPERIUM_DECK.find(c => c.name === 'Negotiated Withdrawel')
     expect(card?.agentIcons).toEqual([
-      AgentIcon.SPICE_TRADE,
       AgentIcon.LANDSRAAD,
       AgentIcon.CITY,
+      AgentIcon.SPICE_TRADE,
     ])
   })
 

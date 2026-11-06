@@ -37,13 +37,13 @@ import {
   applyIxianEngineerVp,
   applyNegotiatedWithdrawal,
   applyShockTrooperBonus,
-  applyTreacheryDoubleInfluence,
   applyWebOfPower,
   applyWeirdingWayExtraTurn,
   buildIxBoardFromFaceUpTiles,
   buildIxBoardFromSandboxStackTops,
   claimAcquireTechReward,
   consumeExtraTurn,
+  countOtherSwordCards,
   handleAcquireTech,
   handleActivateTech,
   handleActivateTechDiscard,
@@ -54,6 +54,7 @@ import {
   applySonicSnoopersReturn,
   heighlinerDiscountForPlayer,
   markMandatoryDeploy,
+  refreshArtillerySwords,
   shouldConsumeExtraTurn,
   syncSpaceportAcquireToTop,
 } from './riseOfIxReducer'
@@ -92,7 +93,6 @@ import {
   CustomEffect,
   ChoiceType,
   CardPile,
-  AgentIcon,
   PendingReward,
   AUTO_APPLIED_CUSTOM_EFFECTS,
   EffectTiming,
@@ -185,9 +185,12 @@ import { resolveSignetRingEffect } from '../../data/signetRingEffects'
 import { checkAndApplyMasterstroke, revertMasterstrokeIfNeeded } from '../../data/leaderAbilities'
 import { getResolvedRewardForPlayer } from '../../data/leaderAbilities/arianaHarvest'
 import {
-  findPowerPlayInfluenceTarget,
+  findBoardInfluenceTarget,
   resolvePowerPlayOnPendingRewards,
   applyPowerPlayBonusAfterInfluenceClaimed,
+  resolveTreacheryOnPendingRewards,
+  applyTreacheryBonusAfterInfluenceClaimed,
+  hasUnclaimedInfluenceDoubler,
 } from '../../data/leaderAbilities/powerPlay'
 import { canPlaceDespiteOccupancy } from '../../data/leaderAbilities/helenaUnblockedAgents'
 import { shouldGrantIlbanSolariDraw } from '../../data/leaderAbilities/ilbanSolariDraw'
@@ -1335,6 +1338,22 @@ function withEffectRetreatAllowance(state: GameState, amount: number): GameState
   }
 }
 
+/**
+ * Rewards gated behind a minimum number of effect retreats (e.g. Negotiated
+ * Withdrawal) stay disabled until the player has retreated enough troops.
+ */
+function syncEffectRetreatGatedRewards(state: GameState): GameState {
+  if (!state.pendingRewards.some(r => r.requiredEffectRetreats !== undefined)) return state
+  const retreated = state.currTurn?.effectRetreatsUsed ?? 0
+  const pendingRewards = state.pendingRewards.map(r =>
+    r.requiredEffectRetreats !== undefined
+      ? { ...r, disabled: retreated < r.requiredEffectRetreats }
+      : r
+  )
+  const next = { ...state, pendingRewards }
+  return { ...next, canEndTurn: computeCanEndTurn(next) }
+}
+
 /** Deploy/retreat UI tracks removable (in conflict) and retreated separately for turn history. */
 function syncDeployTurnStats(
   currTurn: GameTurn,
@@ -1747,13 +1766,12 @@ function applyChoiceReward(
   }
   if (reward.persuasion) { player.persuasion += reward.persuasion; pushGain(reward.persuasion, RewardType.PERSUASION) }
   if (reward.combat) {
-    if (playerHasUnitsInCombat(newState, playerId)) {
-      const current = newState.combatStrength[playerId] ?? player.combatValue ?? 0
-      const next = current + reward.combat
-      newState.combatStrength[playerId] = next
-      player.combatValue = next
-      pushGain(reward.combat, RewardType.COMBAT)
-    }
+    // Swords pool even with no units in the Conflict; they apply once a unit is deployed.
+    const current = newState.combatStrength[playerId] ?? player.combatValue ?? 0
+    const next = current + reward.combat
+    newState.combatStrength[playerId] = next
+    player.combatValue = next
+    pushGain(reward.combat, RewardType.COMBAT)
   }
   if (reward.drawCards) {
     const drawn = applyDrawCardsToPlayer(player, reward.drawCards)
@@ -1877,7 +1895,53 @@ function applyChoiceReward(
   }
 
   newState.players = newState.players.map(p => (p.id === playerId ? player : p))
-  return newState
+  return refreshRevealSwordCounters(newState, playerId)
+}
+
+/**
+ * Reveal sword counters — Imperial Bashar and the Artillery tech tile — count cards that
+ * actually provided swords this turn (FAQ). Reveal choices resolve after the reveal itself, so
+ * re-evaluate both whenever a later card gain lands.
+ */
+function refreshRevealSwordCounters(state: GameState, playerId: number): GameState {
+  return refreshArtillerySwords(refreshImperialBasharBonus(state, playerId), playerId)
+}
+
+/**
+ * Imperial Bashar's reveal bonus counts other cards that actually provided swords this turn
+ * (FAQ). Reveal choices resolve after the reveal itself, so re-evaluate the bonus whenever a
+ * later card gain lands.
+ */
+function refreshImperialBasharBonus(state: GameState, playerId: number): GameState {
+  const player = state.players.find(p => p.id === playerId)
+  const basharCard = player?.playArea.find(card =>
+    (card.revealEffect ?? []).some(e => e.reward?.custom === CustomEffect.IMPERIAL_BASHAR_SWORDS)
+  )
+  if (!basharCard) return state
+
+  const index = state.gains.findIndex(
+    gain =>
+      gain.playerId === playerId &&
+      gain.round === state.currentRound &&
+      gain.type === RewardType.COMBAT &&
+      gain.sourceId === basharCard.id
+  )
+  if (index < 0) return state
+
+  const applied = state.gains[index].amount
+  const next = 2 + countOtherSwordCards(state.gains, playerId, state.currentRound, basharCard.id)
+  if (next === applied) return state
+
+  const current = state.combatStrength[playerId] ?? player?.combatValue ?? 0
+  const nextStrength = Math.max(0, current + (next - applied))
+  return {
+    ...state,
+    gains: state.gains.map((gain, i) => (i === index ? { ...gain, amount: next } : gain)),
+    combatStrength: { ...state.combatStrength, [playerId]: nextStrength },
+    players: state.players.map(p =>
+      p.id === playerId ? { ...p, combatValue: nextStrength } : p
+    ),
+  }
 }
 
 function hasImmortalityTrackReward(reward: Reward): boolean {
@@ -2076,13 +2140,12 @@ function handleIntrigueEffect(
       pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS)
     }
     if (reward.combat) {
-      if (playerHasUnitsInCombat(newState, playerId)) {
-        const current = newState.combatStrength[playerId] ?? updatedPlayer.combatValue ?? 0
-        const next = current + reward.combat
-        newState.combatStrength[playerId] = next
-        updatedPlayer.combatValue = next
-        pushGain(reward.combat, RewardType.COMBAT)
-      }
+      // Swords pool even with no units in the Conflict; they apply once a unit is deployed.
+      const current = newState.combatStrength[playerId] ?? updatedPlayer.combatValue ?? 0
+      const next = current + reward.combat
+      newState.combatStrength[playerId] = next
+      updatedPlayer.combatValue = next
+      pushGain(reward.combat, RewardType.COMBAT)
     }
     if (reward.drawCards) {
       const drawn = applyDrawCardsToPlayer(updatedPlayer, reward.drawCards)
@@ -4280,7 +4343,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ),
       }
 
-      const afterRetreat = revertMasterstrokeIfNeeded(newState, action.playerId)
+      const afterRetreat = syncEffectRetreatGatedRewards(
+        revertMasterstrokeIfNeeded(newState, action.playerId)
+      )
       if (afterRetreat.phase === GamePhase.COMBAT && afterRetreat.activePlayerId === action.playerId) {
         return finishCombatIntrigueAction(afterRetreat, action.playerId)
       }
@@ -4582,7 +4647,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return state
       }
 
-      const strength = {...state.combatStrength}
+      // Swords are stored in the combat total even with no units in the Conflict, but they
+      // only count once at least one unit is deployed (no units → 0 strength).
+      const strength: Record<number, number> = {}
+      for (const p of state.players) {
+        if (!playerHasUnitsInCombat(state, p.id)) continue
+        const value = state.combatStrength[p.id]
+        if (value != null && value > 0) strength[p.id] = value
+      }
       const placements = determinePlacements(strength, state.players.length) as Placements
       let newState = returnExpiredDreadnoughtControls({ ...state })
 
@@ -5306,25 +5378,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 updatedGains
               )
               break
-            case CustomEffect.TREACHERY_DOUBLE_INFLUENCE: {
-              const iconFactions: Partial<Record<AgentIcon, FactionType>> = {
-                [AgentIcon.EMPEROR]: FactionType.EMPEROR,
-                [AgentIcon.SPACING_GUILD]: FactionType.SPACING_GUILD,
-                [AgentIcon.BENE_GESSERIT]: FactionType.BENE_GESSERIT,
-                [AgentIcon.FREMEN]: FactionType.FREMEN,
-              }
-              const factions = card.agentIcons
-                .map(icon => iconFactions[icon])
-                .filter((f): f is FactionType => f != null)
-              newState = applyTreacheryDoubleInfluence(
-                newState,
-                playerId,
-                factions,
-                card.id,
-                card.name
-              )
+            case CustomEffect.TREACHERY_DOUBLE_INFLUENCE:
+              // Treachery reads "Gain two Influence instead of one" — like Power Play it
+              // doubles the board-space influence bump, so it stays a pending reward
+              // (resolved in CLAIM_REWARD) instead of granting influence immediately.
+              addPendingReward({ custom: effect.reward.custom }, gainSource)
               break
-            }
             case CustomEffect.SIGNET_RING: {
               const result = resolveSignetRingEffect(newState, playerId, card)
               if (result.optionalEffects) optionalEffects.push(...result.optionalEffects)
@@ -6338,7 +6397,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                     playerId,
                     card.id,
                     card.name,
-                    revealedCards
+                    updatedGains
                   )
                   break
                 case CustomEffect.SHOCKTROOPER_EM_BONUS:
@@ -6422,8 +6481,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           pendingRewards.push(r)
         }
       }
-      if (revealState.gains.length > updatedGains.length) {
-        updatedGains.push(...revealState.gains.slice(updatedGains.length))
+      for (const gain of revealState.gains) {
+        if (!updatedGains.includes(gain)) updatedGains.push(gain)
       }
       if (revealState.currTurn?.pendingChoices?.length) {
         for (const choice of revealState.currTurn.pendingChoices) {
@@ -6459,7 +6518,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             persuasionCount: (state.currTurn?.persuasionCount || 0) + persuasionCount,
             revealedCardIds: [...(state.currTurn.revealedCardIds || []), ...revealedCards.map(card => card.id)],
             optionalEffects: [...(state.currTurn?.optionalEffects||[]), ...optionalEffects],
-            pendingChoices: pendingChoices
+            pendingChoices: pendingChoices,
+            effectRetreatAllowance:
+              tempCurrTurn.effectRetreatAllowance ?? state.currTurn.effectRetreatAllowance ?? 0,
+            ...(revealTech.artilleryFired ? { artilleryFired: true } : {}),
           }
         : {
             playerId,
@@ -6469,6 +6531,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             removableTroops: 0,
             troopsDeployedToConflict: 0,
             troopsRetreatedFromConflict: 0,
+            effectRetreatAllowance: tempCurrTurn.effectRetreatAllowance ?? 0,
             gainsStartIndex: state.gains.length,
             persuasionCount: persuasionCount,
             gainedEffects: [],
@@ -6476,29 +6539,33 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             revealedCardIds: revealedCards.map(card => card.id),
             optionalEffects,
             pendingChoices,
+            artilleryFired: revealTech.artilleryFired,
           }
 
-      // Update combat strength even if not in combat (so can be used later)
+      // Swords go into a pool: keep them in the combat total even when no units are in the
+      // Conflict, so they re-apply once a unit is deployed (see computeStrength, which keeps
+      // effective strength at 0 while no units are deployed).
       const riseOfIx = state.expansions?.riseOfIx === true
       const immortality = state.expansions?.immortality === true
       const troops = state.combatTroops[playerId] || 0
       const specimens = immortality ? (state.combatSpecimens?.[playerId] ?? 0) : 0
       const dCount = riseOfIx ? (player.dreadnoughts?.conflict ?? 0) : 0
-      const hasUnitsInCombat =
-        riseOfIx || immortality ? troops + specimens + dCount > 0 : troops > 0
       const baseStrength =
         (troops + specimens) * 2 +
         (riseOfIx ? dCount * dreadnoughtStrengthEach(player.leader) : 0)
-      const updatedCombatValue = hasUnitsInCombat
-        ? (player.combatValue ? player.combatValue + swordCount : swordCount + baseStrength)
-        : 0
-      const updatedCombatStrength = hasUnitsInCombat
-        ? {
-            ...revealState.combatStrength,
-            ...state.combatStrength,
-            [playerId]: (revealState.combatStrength[playerId] ?? state.combatStrength[playerId] ?? 0) + swordCount,
-          }
-        : state.combatStrength
+      const cachedTotal =
+        revealState.combatStrength[playerId] ?? state.combatStrength[playerId] ?? 0
+      const pooledStrength = Math.max(cachedTotal, baseStrength) + swordCount
+      const updatedCombatValue = pooledStrength
+      const updatedCombatStrength = {
+        ...revealState.combatStrength,
+        ...state.combatStrength,
+      }
+      if (pooledStrength > 0) {
+        updatedCombatStrength[playerId] = pooledStrength
+      } else {
+        delete updatedCombatStrength[playerId]
+      }
 
       // Dispatch an Envoy only affects the next Agent card played; it does not modify revealed cards.
       // Clear the flag on Reveal so a wasted Dispatch (played before/during Reveal with no Agent play) does not linger.
@@ -6508,41 +6575,46 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return next
       })()
 
+      const revealedState: GameState = {
+        ...stateAfterRevealTech,
+        gains: gainsAfterRevealTech,
+        players: stateAfterRevealTech.players.map(p =>
+          p.id === playerId
+            ? {
+                ...ilesaPlayer,
+                deck: updatedDeck,
+                playArea: mutablePlayArea,
+                trash: mutableTrash,
+                selectedCard: null,
+                combatValue: updatedCombatValue,
+                handCount: 0,
+                persuasion: ilesaPlayer.persuasion + persuasionCount,
+                revealed: true,
+                troops: player.troops,
+                troopSupply: player.troopSupply,
+                solari: player.solari,
+                spice: player.spice,
+                water: player.water,
+                intrigueCount: player.intrigueCount,
+                victoryPoints: player.victoryPoints,
+              }
+            : p
+        ),
+        combatStrength: updatedCombatStrength,
+        currTurn: currentTurn,
+        pendingRewards,
+        canEndTurn: (pendingChoices.length > 0 || tempCurrTurn.pendingChoices?.length || pendingRewards.filter(r => !r.disabled).length > 0) ? false : true,
+        canAcquireIR: true,
+        scheduledIntrigueOnReveal: { ...(state.scheduledIntrigueOnReveal || {}), [playerId]: [] },
+        scheduledGraftOnReveal: { ...(state.scheduledGraftOnReveal || {}), [playerId]: [] },
+        dispatchEnvoyActive: dispatchEnvoyActiveAfterReveal,
+      }
+
+      // Imperial Bashar and Artillery count other revealed cards that provided swords. Cards
+      // revealed after them resolve their swords later in this loop, so re-evaluate the counters
+      // once the whole reveal is in (same refresh the reveal-choice path uses).
       return resolveMandatoryTroopDeploy(
-        {
-          ...stateAfterRevealTech,
-          gains: gainsAfterRevealTech,
-          players: stateAfterRevealTech.players.map(p =>
-            p.id === playerId
-              ? {
-                  ...ilesaPlayer,
-                  deck: updatedDeck,
-                  playArea: mutablePlayArea,
-                  trash: mutableTrash,
-                  selectedCard: null,
-                  combatValue: updatedCombatValue,
-                  handCount: 0,
-                  persuasion: ilesaPlayer.persuasion + persuasionCount,
-                  revealed: true,
-                  troops: player.troops,
-                  troopSupply: player.troopSupply,
-                  solari: player.solari,
-                  spice: player.spice,
-                  water: player.water,
-                  intrigueCount: player.intrigueCount,
-                  victoryPoints: player.victoryPoints,
-                }
-              : p
-          ),
-          combatStrength: updatedCombatStrength,
-          currTurn: currentTurn,
-          pendingRewards,
-          canEndTurn: (pendingChoices.length > 0 || tempCurrTurn.pendingChoices?.length || pendingRewards.filter(r => !r.disabled).length > 0) ? false : true,
-          canAcquireIR: true,
-          scheduledIntrigueOnReveal: { ...(state.scheduledIntrigueOnReveal || {}), [playerId]: [] },
-          scheduledGraftOnReveal: { ...(state.scheduledGraftOnReveal || {}), [playerId]: [] },
-          dispatchEnvoyActive: dispatchEnvoyActiveAfterReveal,
-        },
+        refreshRevealSwordCounters(revealedState, playerId),
         playerId
       )
     }
@@ -7141,13 +7213,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if(reward.victoryPoints) { player.victoryPoints += reward.victoryPoints; pushGain(reward.victoryPoints, RewardType.VICTORY_POINTS);} 
       let nextCombatStrength = { ...state.combatStrength }
       if (reward.combat) {
-        if (playerHasUnitsInCombat(state, playerId)) {
-          pushGain(reward.combat, RewardType.COMBAT)
-          player.combatValue = (player.combatValue || 0) + reward.combat
-          nextCombatStrength = {
-            ...nextCombatStrength,
-            [playerId]: (nextCombatStrength[playerId] || 0) + reward.combat
-          }
+        // Swords pool even with no units in the Conflict; they apply once a unit is deployed.
+        pushGain(reward.combat, RewardType.COMBAT)
+        player.combatValue = (player.combatValue || 0) + reward.combat
+        nextCombatStrength = {
+          ...nextCombatStrength,
+          [playerId]: (nextCombatStrength[playerId] || 0) + reward.combat
         }
       }
       if (
@@ -8235,7 +8306,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           return applySonicSnoopers(state, playerId, data?.count)
         }
         case CustomEffect.POWER_PLAY: {
-          if (findPowerPlayInfluenceTarget(state.pendingRewards)) {
+          if (findBoardInfluenceTarget(state.pendingRewards)) {
             return {
               ...state,
               pendingRewards: resolvePowerPlayOnPendingRewards(state.pendingRewards),
@@ -8243,6 +8314,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
           const powerPlayBonus = applyPowerPlayBonusAfterInfluenceClaimed(state, playerId)
           return appendTessiaPendingChoices(powerPlayBonus.state, powerPlayBonus.pendingChoices)
+        }
+        case CustomEffect.TREACHERY_DOUBLE_INFLUENCE: {
+          if (findBoardInfluenceTarget(state.pendingRewards)) {
+            return {
+              ...state,
+              pendingRewards: resolveTreacheryOnPendingRewards(state.pendingRewards),
+            }
+          }
+          const treacheryBonus = applyTreacheryBonusAfterInfluenceClaimed(state, playerId)
+          return appendTessiaPendingChoices(treacheryBonus.state, treacheryBonus.pendingChoices)
         }
         case CustomEffect.FOLDSPACE_DRAW: {
           const player = state.players.find(p => p.id === playerId)
@@ -8465,6 +8546,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       ) {
         return state
       }
+      if (
+        reward.requiredEffectRetreats !== undefined &&
+        (state.currTurn?.effectRetreatsUsed ?? 0) < reward.requiredEffectRetreats
+      ) {
+        return state
+      }
       if (reward.reward.custom === CustomEffect.THE_VOICE && (typeof customData?.spaceId !== 'number')) {
         return state
       }
@@ -8615,12 +8702,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           players: state.players.map(p => p.id === playerId ? newPlayer : p),
           gains: newGains
         }
-        return gameReducer(customEffectState, {
+        const resolved = gameReducer(customEffectState, {
           type: 'CUSTOM_EFFECT',
           playerId,
           customEffect: reward.reward.custom,
           data: { cardId: reward.source.id, ...(customData || {}) },
         })
+        // The claimed reward is gone, so re-derive the derived canEndTurn flag from
+        // the post-effect state. Keeping the pre-claim value would leave the turn
+        // stuck whenever the custom effect leaves no pending work (e.g. Secrets).
+        return { ...resolved, canEndTurn: computeCanEndTurn(resolved) }
       }
       
       // Apply the reward using shared helper (Ariana gains 1 less spice and draws 1 when harvesting)
@@ -8693,9 +8784,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const player = state.players.find(p => p.id === playerId)
       if (!player) return state
 
-      const hasUnclaimedPowerPlay = state.pendingRewards.some(
-        r => !r.disabled && r.reward.custom === CustomEffect.POWER_PLAY
-      )
+      const hasUnclaimedPowerPlay = hasUnclaimedInfluenceDoubler(state.pendingRewards)
 
       const rewardsToApply = state.pendingRewards.filter(r => {
         if (
@@ -8858,9 +8947,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const newCombatTroops = { ...state.combatTroops }
         newCombatTroops[opponentId] = nextTroops
         
+        // Losing the last troop leaves the Conflict, but the sword pool stays cached so it
+        // re-applies if a unit is deployed again this round.
         const newCombatStrength = { ...state.combatStrength }
-        newCombatStrength[opponentId] =
-          nextTroops === 0 ? 0 : Math.max(0, (newCombatStrength[opponentId] || 0) - 2)
+        const nextStrength = Math.max(0, (newCombatStrength[opponentId] || 0) - 2)
+        if (nextStrength > 0) {
+          newCombatStrength[opponentId] = nextStrength
+        } else {
+          delete newCombatStrength[opponentId]
+        }
         
         const discardCounts = { ...(discardState.discardCounts || {}) }
         const newOpponentDiscardState = advanceOpponentDiscardState(
@@ -8891,7 +8986,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
               ? {
                   ...p,
                   troopSupply: (p.troopSupply ?? 0) + 1,
-                  combatValue: nextTroops === 0 ? 0 : Math.max(0, (p.combatValue || 0) - 2),
+                  combatValue: nextStrength,
                 }
               : p
           ),

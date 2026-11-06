@@ -76,6 +76,8 @@ describe('Gain count labels', () => {
     expect(tsx).toContain('turn-gain-total-pooled-label')
     expect(tsx).toContain('turn-gain-total-item--pooled-reveal')
     expect(tsx).toContain('turn-gain-persuasion-sources')
+    expect(tsx).toContain('turn-gain-combat-sources')
+    expect(tsx).toContain('getCombatSourceContributions')
     expect(tsx).toContain('total:')
     expect(tsx).not.toContain('data-preview-hover')
   })

@@ -267,7 +267,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
       unload: true,
       playEffect: [
         {
-          requirement: { influence: { faction: FactionType.BENE_GESSERIT, amount: 2 } },// cost and req not appliade, just reward
+          requirement: { influence: { faction: FactionType.BENE_GESSERIT, amount: 2 } },
           cost: { discard: 1 },
           reward: { influence: NON_BG_INFLUENCE },
         },
@@ -367,7 +367,7 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
     card: {
       name: 'Negotiated Withdrawel',
       image: 'imperium_row/rise_of_ix/negotiated_withdrawel.avif',
-      agentIcons: [AgentIcon.SPICE_TRADE, AgentIcon.LANDSRAAD, AgentIcon.CITY],
+      agentIcons: [AgentIcon.LANDSRAAD, AgentIcon.CITY, AgentIcon.SPICE_TRADE],
       cost: 4,
       riseOfIx: true,
       acquireEffect: { troops: 1 },

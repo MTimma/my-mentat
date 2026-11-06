@@ -155,7 +155,8 @@
   color: var(--chrome-text);
 }
 
-.alt-gain-preview .turn-gain-persuasion-sources {
+.alt-gain-preview .turn-gain-persuasion-sources,
+.alt-gain-preview .turn-gain-combat-sources {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -165,31 +166,36 @@
   border-top: 1px solid rgba(255, 248, 232, 0.16);
 }
 
-.alt-gain-preview .turn-gain-persuasion-source {
+.alt-gain-preview .turn-gain-persuasion-source,
+.alt-gain-preview .turn-gain-combat-source {
   flex-direction: column;
   align-items: center;
   gap: 4px;
   max-width: 72px;
 }
 
-.alt-gain-preview .turn-gain-persuasion-source:has(.turn-gain-persuasion-source-text) {
+.alt-gain-preview .turn-gain-persuasion-source:has(.turn-gain-persuasion-source-text),
+.alt-gain-preview .turn-gain-combat-source:has(.turn-gain-combat-source-text) {
   flex-direction: row;
   max-width: none;
   align-items: center;
 }
 
-.alt-gain-preview .turn-gain-persuasion-source-thumb {
+.alt-gain-preview .turn-gain-persuasion-source-thumb,
+.alt-gain-preview .turn-gain-combat-source-thumb {
   width: 64px;
   max-height: 90px;
   height: auto;
 }
 
-.alt-gain-preview .turn-gain-persuasion-source-tech {
+.alt-gain-preview .turn-gain-persuasion-source-tech,
+.alt-gain-preview .turn-gain-combat-source-tech {
   width: 36px;
   height: 36px;
 }
 
-.alt-gain-preview .turn-gain-persuasion-source-text {
+.alt-gain-preview .turn-gain-persuasion-source-text,
+.alt-gain-preview .turn-gain-combat-source-text {
   font-size: 0.85rem;
   text-align: center;
   white-space: normal;

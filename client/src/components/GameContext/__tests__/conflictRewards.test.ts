@@ -10,7 +10,7 @@ import {
   RewardType,
 } from '../../../types/GameTypes'
 import { applyGameAction, applyRecordedAction } from '../GameContext'
-import { continueAllConflictRewards, getBaseTestState, makePlayer } from './_helpers'
+import { combatTroopsFor, continueAllConflictRewards, getBaseTestState, makePlayer } from './_helpers'
 
 const ROI_EXPANSIONS = { ...NO_EXPANSIONS, riseOfIx: true, riseOfIxEpic: false }
 
@@ -38,6 +38,7 @@ function resolveCombat(
     currentConflict: conflict,
     phase: GamePhase.COMBAT_REWARDS,
     combatStrength: strength,
+    combatTroops: combatTroopsFor(strength),
     players: s.players.map(p => ({
       ...p,
       troops: 0,
@@ -100,6 +101,7 @@ describe('conflict reward sequential Continue', () => {
       currentConflict: terriblePurpose,
       phase: GamePhase.COMBAT_REWARDS,
       combatStrength: { 0: 10, 1: 8, 2: 6, 3: 0 },
+      combatTroops: combatTroopsFor({ 0: 10, 1: 8, 2: 6, 3: 0 }),
       players: s.players.map(p => ({ ...p, spice: 0, water: 0, victoryPoints: 0 })),
     }
     const gainsBefore = s.gains
@@ -122,6 +124,7 @@ describe('conflict reward sequential Continue', () => {
       currentConflict: skirmish902,
       phase: GamePhase.COMBAT_REWARDS,
       combatStrength: { 0: 10, 1: 8, 2: 6, 3: 0 },
+      combatTroops: combatTroopsFor({ 0: 10, 1: 8, 2: 6, 3: 0 }),
       players: s.players.map(p => ({ ...p, solari: 0, victoryPoints: 0 })),
     }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
@@ -148,6 +151,7 @@ describe('conflict reward sequential Continue', () => {
       currentConflict: terriblePurpose,
       phase: GamePhase.COMBAT_REWARDS,
       combatStrength: { 0: 10, 1: 4, 2: 2, 3: 0 },
+      combatTroops: combatTroopsFor({ 0: 10, 1: 4, 2: 2, 3: 0 }),
       players: s.players.map(p => ({ ...p, spice: 0, water: 0, victoryPoints: 0 })),
     }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
@@ -166,6 +170,7 @@ describe('conflict reward sequential Continue', () => {
       currentConflict: machinations909,
       phase: GamePhase.COMBAT_REWARDS,
       combatStrength: { 0: 10, 1: 8, 2: 6, 3: 0 },
+      combatTroops: combatTroopsFor({ 0: 10, 1: 8, 2: 6, 3: 0 }),
       players: s.players.map(p => ({ ...p, solari: 0, victoryPoints: 0 })),
     }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
@@ -184,6 +189,7 @@ describe('conflict reward sequential Continue', () => {
       currentConflict: skirmish902,
       phase: GamePhase.COMBAT_REWARDS,
       combatStrength: { 0: 10, 1: 8, 2: 6, 3: 0 },
+      combatTroops: combatTroopsFor({ 0: 10, 1: 8, 2: 6, 3: 0 }),
       players: s.players.map(p => ({ ...p, solari: 0, victoryPoints: 0 })),
     }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })

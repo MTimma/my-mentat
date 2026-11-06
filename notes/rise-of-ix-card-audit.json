@@ -1,0 +1,4118 @@
+{
+  "generatedFrom": {
+    "csv": "client/src/data/Filtered Card Count ----> 136 5 cards av",
+    "code": "client/src/data/cardsRiseOfIx.ts",
+    "catalog": "client/public/catalogs/cards.v1.json + effects.v1.json"
+  },
+  "summary": {
+    "total": 33,
+    "ok": 29,
+    "mismatch": 0,
+    "missing": 4
+  },
+  "records": [
+    {
+      "name": "Appropriate",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/appropriate",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "acquire": {
+          "freighter": 1
+        },
+        "play": [
+          {
+            "requirement": {
+              "influence": {
+                "faction": "emperor",
+                "amount": 2
+              }
+            },
+            "reward": {
+              "acquireTech": {
+                "paySolariInsteadOfSpice": true
+              }
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 2
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Appropriate",
+        "qty": 1,
+        "cost": "5",
+        "acquire": "+1 Ship",
+        "faction": "EM",
+        "agentIcons": "Gr, Yw",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "If 2x Inf EM: +1 Tech and you may use Sol to buy",
+        "revealPer": "2",
+        "revealSword": "0",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Appropriate",
+        "qty": 1,
+        "cost": 5,
+        "factions": [
+          "emperor"
+        ],
+        "agentIcons": [
+          "landsraad",
+          "spice-trade"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": {
+          "freighter": 1
+        },
+        "play": [
+          {
+            "requirement": {
+              "influence": {
+                "faction": "emperor",
+                "amount": 2
+              }
+            },
+            "reward": {
+              "acquireTech": {
+                "paySolariInsteadOfSpice": true
+              }
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 2
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/appropriate.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/appropriate",
+          "name": "Appropriate",
+          "pool": "imperium",
+          "cost": 5,
+          "factions": [
+            "emperor"
+          ],
+          "agentIcons": [
+            "landsraad",
+            "spice-trade"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/appropriate.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/appropriate:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/appropriate:reveal:0"
+            ],
+            "acquire": "effect:card:imperium/appropriate:acquire:0"
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "requirement": {
+                "influence": {
+                  "faction": "emperor",
+                  "amount": 2
+                }
+              },
+              "reward": {
+                "acquireTech": {
+                  "paySolariInsteadOfSpice": true
+                }
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 2
+              }
+            }
+          ],
+          "acquire": [
+            {
+              "reward": {
+                "freighter": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Bounty Hunter",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/bounty-hunter",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "reward": {
+              "custom": "BOUNTY_INFILTRATION_BONUS"
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 1
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Bounty Hunter",
+        "qty": 1,
+        "cost": "1",
+        "acquire": "",
+        "faction": "",
+        "agentIcons": "Bl",
+        "infiltrate": "yes",
+        "graft": "",
+        "agentBox": "+2 Sol if used to send agent to occupied space",
+        "revealPer": "1",
+        "revealSword": "1",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Bounty Hunter",
+        "qty": 1,
+        "cost": 1,
+        "factions": [],
+        "agentIcons": [
+          "city"
+        ],
+        "infiltrate": true,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "reward": {
+              "custom": "BOUNTY_INFILTRATION_BONUS"
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 1
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/bounty_hunter.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/bounty-hunter",
+          "name": "Bounty Hunter",
+          "pool": "imperium",
+          "cost": 1,
+          "agentIcons": [
+            "city"
+          ],
+          "infiltrate": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/bounty_hunter.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/bounty-hunter:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/bounty-hunter:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "reward": {
+                "custom": "BOUNTY_INFILTRATION_BONUS"
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 1,
+                "combat": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CHOAM Delegate",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/choam-delegate",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "reveal": [
+          {
+            "reward": {
+              "solari": 3
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "CHOAM Delegate",
+        "qty": 1,
+        "cost": "1",
+        "acquire": "",
+        "faction": "",
+        "agentIcons": "Yw",
+        "infiltrate": "yes",
+        "graft": "",
+        "agentBox": "",
+        "revealPer": "0",
+        "revealSword": "0",
+        "revealOther": "+3 Sol",
+        "unload": "yes",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "CHOAM Delegate",
+        "qty": 1,
+        "cost": 1,
+        "factions": [],
+        "agentIcons": [
+          "spice-trade"
+        ],
+        "infiltrate": true,
+        "unload": true,
+        "acquire": null,
+        "play": null,
+        "reveal": [
+          {
+            "reward": {
+              "solari": 3
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/choam_delegate.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/choam-delegate",
+          "name": "CHOAM Delegate",
+          "pool": "imperium",
+          "cost": 1,
+          "agentIcons": [
+            "spice-trade"
+          ],
+          "infiltrate": true,
+          "unload": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/choam_delegate.avif",
+          "effects": {
+            "reveal": [
+              "effect:card:imperium/choam-delegate:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "reveal": [
+            {
+              "reward": {
+                "solari": 3
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Court Intrigue",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/court-intrigue",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "cost": {
+              "intrigueBottom": 1
+            },
+            "reward": {
+              "intrigueCards": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 1
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Court Intrigue",
+        "qty": 1,
+        "cost": "2",
+        "acquire": "",
+        "faction": "EM",
+        "agentIcons": "EM",
+        "infiltrate": "yes",
+        "graft": "",
+        "agentBox": "-1 Intrigue -> +1 intrigue",
+        "revealPer": "1",
+        "revealSword": "1",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Court Intrigue",
+        "qty": 1,
+        "cost": 2,
+        "factions": [
+          "emperor"
+        ],
+        "agentIcons": [
+          "emperor"
+        ],
+        "infiltrate": true,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "cost": {
+              "intrigueBottom": 1
+            },
+            "reward": {
+              "intrigueCards": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 1
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/court_intrigue.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/court-intrigue",
+          "name": "Court Intrigue",
+          "pool": "imperium",
+          "cost": 2,
+          "factions": [
+            "emperor"
+          ],
+          "agentIcons": [
+            "emperor"
+          ],
+          "infiltrate": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/court_intrigue.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/court-intrigue:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/court-intrigue:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "cost": {
+                "intrigueBottom": 1
+              },
+              "reward": {
+                "intrigueCards": 1
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 1,
+                "combat": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Desert Ambush",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/desert-ambush",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 1
+            }
+          },
+          {
+            "reward": {
+              "custom": "DESERT_AMBUSH"
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Desert Ambush",
+        "qty": 1,
+        "cost": "3",
+        "acquire": "",
+        "faction": "FR",
+        "agentIcons": "Yw",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "1 enemy unit retreats per troop you deploy this turn",
+        "revealPer": "1",
+        "revealSword": "1",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Desert Ambush",
+        "qty": 1,
+        "cost": 3,
+        "factions": [
+          "fremen"
+        ],
+        "agentIcons": [
+          "spice-trade"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": null,
+        "play": null,
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 1
+            }
+          },
+          {
+            "reward": {
+              "custom": "DESERT_AMBUSH"
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/desert_ambush.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/desert-ambush",
+          "name": "Desert Ambush",
+          "pool": "imperium",
+          "cost": 3,
+          "factions": [
+            "fremen"
+          ],
+          "agentIcons": [
+            "spice-trade"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/desert_ambush.avif",
+          "effects": {
+            "reveal": [
+              "effect:card:imperium/desert-ambush:reveal:0",
+              "effect:card:imperium/desert-ambush:reveal:1"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 1,
+                "combat": 1
+              }
+            },
+            {
+              "reward": {
+                "custom": "DESERT_AMBUSH"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Embedded Agent",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/embedded-agent",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "requirement": {
+              "inPlay": "bene-gesserit"
+            },
+            "reward": {
+              "freighter": 2
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "intrigueCards": 1
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Embedded Agent",
+        "qty": 1,
+        "cost": "5",
+        "acquire": "",
+        "faction": "BG",
+        "agentIcons": "Gr",
+        "infiltrate": "yes",
+        "graft": "",
+        "agentBox": "+2 shipping if you have another BG in play",
+        "revealPer": "1",
+        "revealSword": "0",
+        "revealOther": "+1 Intrigue",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Embedded Agent",
+        "qty": 1,
+        "cost": 5,
+        "factions": [
+          "bene-gesserit"
+        ],
+        "agentIcons": [
+          "landsraad"
+        ],
+        "infiltrate": true,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "requirement": {
+              "inPlay": "bene-gesserit"
+            },
+            "reward": {
+              "freighter": 2
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "intrigueCards": 1
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/embedded_agent.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/embedded-agent",
+          "name": "Embedded Agent",
+          "pool": "imperium",
+          "cost": 5,
+          "factions": [
+            "bene-gesserit"
+          ],
+          "agentIcons": [
+            "landsraad"
+          ],
+          "infiltrate": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/embedded_agent.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/embedded-agent:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/embedded-agent:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "requirement": {
+                "inPlay": "bene-gesserit"
+              },
+              "reward": {
+                "freighter": 2
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 1,
+                "intrigueCards": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Esmar Tuek",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/esmar-tuek",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "cost": {
+              "spice": 1
+            },
+            "reward": {
+              "influence": {
+                "amounts": [
+                  {
+                    "faction": "spacing-guild",
+                    "amount": 1
+                  }
+                ]
+              },
+              "drawCards": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "spice": 2,
+              "solari": 2
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Esmar Tuek",
+        "qty": 1,
+        "cost": "5",
+        "acquire": "",
+        "faction": "SG",
+        "agentIcons": "Bl, Yw",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "-1 Sp -> +1 inf SG and 1x draw",
+        "revealPer": "0",
+        "revealSword": "0",
+        "revealOther": "+2 Sp and +2 Sol",
+        "unload": "yes",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Esmar Tuek",
+        "qty": 1,
+        "cost": 5,
+        "factions": [
+          "spacing-guild"
+        ],
+        "agentIcons": [
+          "city",
+          "spice-trade"
+        ],
+        "infiltrate": false,
+        "unload": true,
+        "acquire": null,
+        "play": [
+          {
+            "cost": {
+              "spice": 1
+            },
+            "reward": {
+              "influence": {
+                "amounts": [
+                  {
+                    "faction": "spacing-guild",
+                    "amount": 1
+                  }
+                ]
+              },
+              "drawCards": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "spice": 2,
+              "solari": 2
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/esmar_tuek.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/esmar-tuek",
+          "name": "Esmar Tuek",
+          "pool": "imperium",
+          "cost": 5,
+          "factions": [
+            "spacing-guild"
+          ],
+          "agentIcons": [
+            "city",
+            "spice-trade"
+          ],
+          "unload": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/esmar_tuek.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/esmar-tuek:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/esmar-tuek:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "cost": {
+                "spice": 1
+              },
+              "reward": {
+                "influence": {
+                  "amounts": [
+                    {
+                      "faction": "spacing-guild",
+                      "amount": 1
+                    }
+                  ]
+                },
+                "drawCards": 1
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "spice": 2,
+                "solari": 2
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Freighter Fleet",
+      "set": "2. Ix",
+      "qtyCsv": 2,
+      "qtyCode": 2,
+      "catalogId": "imperium/freighter-fleet",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "reveal": [
+          {
+            "reward": {
+              "freighter": 1
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Freighter Fleet",
+        "qty": 2,
+        "cost": "2",
+        "acquire": "",
+        "faction": "",
+        "agentIcons": "Yw",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "",
+        "revealPer": "0",
+        "revealSword": "0",
+        "revealOther": "+1 Ship",
+        "unload": "yes",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Freighter Fleet",
+        "qty": 2,
+        "cost": 2,
+        "factions": [],
+        "agentIcons": [
+          "spice-trade"
+        ],
+        "infiltrate": false,
+        "unload": true,
+        "acquire": null,
+        "play": null,
+        "reveal": [
+          {
+            "reward": {
+              "freighter": 1
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/freighter_fleet.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/freighter-fleet",
+          "name": "Freighter Fleet",
+          "pool": "imperium",
+          "cost": 2,
+          "agentIcons": [
+            "spice-trade"
+          ],
+          "unload": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/freighter_fleet.avif",
+          "effects": {
+            "reveal": [
+              "effect:card:imperium/freighter-fleet:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0,
+            0
+          ]
+        },
+        "effects": {
+          "reveal": [
+            {
+              "reward": {
+                "freighter": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Full-Scale Assault",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/full-scale-assault",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "acquire": {
+          "dreadnoughts": 1
+        },
+        "play": [
+          {
+            "reward": {
+              "troops": 2
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 2
+            }
+          },
+          {
+            "reward": {
+              "custom": "FULLSCALE_DREAD_SWORDS"
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Full-Scale Assault",
+        "qty": 1,
+        "cost": "8",
+        "acquire": "+1 Dread",
+        "faction": "EM",
+        "agentIcons": "EM, Bl",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "+2 troops",
+        "revealPer": "2",
+        "revealSword": "3 per Dread in conflict",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Full-Scale Assault",
+        "qty": 1,
+        "cost": 8,
+        "factions": [
+          "emperor"
+        ],
+        "agentIcons": [
+          "emperor",
+          "city"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": {
+          "dreadnoughts": 1
+        },
+        "play": [
+          {
+            "reward": {
+              "troops": 2
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 2
+            }
+          },
+          {
+            "reward": {
+              "custom": "FULLSCALE_DREAD_SWORDS"
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/full_scale_assault.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/full-scale-assault",
+          "name": "Full-Scale Assault",
+          "pool": "imperium",
+          "cost": 8,
+          "factions": [
+            "emperor"
+          ],
+          "agentIcons": [
+            "emperor",
+            "city"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/full_scale_assault.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/full-scale-assault:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/full-scale-assault:reveal:0",
+              "effect:card:imperium/full-scale-assault:reveal:1"
+            ],
+            "acquire": "effect:card:imperium/full-scale-assault:acquire:0"
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "reward": {
+                "troops": 2
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 2
+              }
+            },
+            {
+              "reward": {
+                "custom": "FULLSCALE_DREAD_SWORDS"
+              }
+            }
+          ],
+          "acquire": [
+            {
+              "reward": {
+                "dreadnoughts": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Guild Accord",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/guild-accord",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "reward": {
+              "custom": "GUILD_ACCORD_HEIGHTLINER_DISCOUNT"
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "water": 1
+            }
+          },
+          {
+            "requirement": {
+              "alliance": "spacing-guild"
+            },
+            "reward": {
+              "spice": 3
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Guild Accord",
+        "qty": 1,
+        "cost": "6",
+        "acquire": "",
+        "faction": "SG",
+        "agentIcons": "SG",
+        "infiltrate": "yes",
+        "graft": "",
+        "agentBox": "heighliner costs 2 spice less this turn",
+        "revealPer": "0",
+        "revealSword": "0",
+        "revealOther": "+1 Wa and SG alliance: +3 spice",
+        "unload": "yes",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Guild Accord",
+        "qty": 1,
+        "cost": 6,
+        "factions": [
+          "spacing-guild"
+        ],
+        "agentIcons": [
+          "spacing-guild"
+        ],
+        "infiltrate": true,
+        "unload": true,
+        "acquire": null,
+        "play": [
+          {
+            "reward": {
+              "custom": "GUILD_ACCORD_HEIGHTLINER_DISCOUNT"
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "water": 1
+            }
+          },
+          {
+            "requirement": {
+              "alliance": "spacing-guild"
+            },
+            "reward": {
+              "spice": 3
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/guild_accord.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/guild-accord",
+          "name": "Guild Accord",
+          "pool": "imperium",
+          "cost": 6,
+          "factions": [
+            "spacing-guild"
+          ],
+          "agentIcons": [
+            "spacing-guild"
+          ],
+          "infiltrate": true,
+          "unload": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/guild_accord.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/guild-accord:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/guild-accord:reveal:0",
+              "effect:card:imperium/guild-accord:reveal:1"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "reward": {
+                "custom": "GUILD_ACCORD_HEIGHTLINER_DISCOUNT"
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "water": 1
+              }
+            },
+            {
+              "requirement": {
+                "alliance": "spacing-guild"
+              },
+              "reward": {
+                "spice": 3
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Guild Chief Administrator",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/guild-chief-administrator",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "cost": {
+              "discard": 1
+            },
+            "reward": {
+              "trash": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "freighter": 1
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Guild Chief Administrator",
+        "qty": 1,
+        "cost": "4",
+        "acquire": "",
+        "faction": "SG",
+        "agentIcons": "SG, Bl, Yw",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "1x discard -> 1x trash",
+        "revealPer": "1",
+        "revealSword": "0",
+        "revealOther": "+1 Ship",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Guild Chief Administrator",
+        "qty": 1,
+        "cost": 4,
+        "factions": [
+          "spacing-guild"
+        ],
+        "agentIcons": [
+          "spacing-guild",
+          "city",
+          "spice-trade"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "cost": {
+              "discard": 1
+            },
+            "reward": {
+              "trash": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "freighter": 1
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/guild_chief_administrator.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/guild-chief-administrator",
+          "name": "Guild Chief Administrator",
+          "pool": "imperium",
+          "cost": 4,
+          "factions": [
+            "spacing-guild"
+          ],
+          "agentIcons": [
+            "spacing-guild",
+            "city",
+            "spice-trade"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/guild_chief_administrator.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/guild-chief-administrator:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/guild-chief-administrator:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "cost": {
+                "discard": 1
+              },
+              "reward": {
+                "trash": 1
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 1,
+                "freighter": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Imperial Bashar",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/imperial-bashar",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "reward": {
+              "troops": 1
+            },
+            "choiceOpt": true
+          },
+          {
+            "reward": {
+              "trash": 1
+            },
+            "choiceOpt": true
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1
+            }
+          },
+          {
+            "reward": {
+              "custom": "IMPERIAL_BASHAR_SWORDS"
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Imperial Bashar",
+        "qty": 1,
+        "cost": "4",
+        "acquire": "",
+        "faction": "EM",
+        "agentIcons": "Bl",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "+1 troop or 1x trash",
+        "revealPer": "1",
+        "revealSword": "2 and +1 per card with sword",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Imperial Bashar",
+        "qty": 1,
+        "cost": 4,
+        "factions": [
+          "emperor"
+        ],
+        "agentIcons": [
+          "city"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "reward": {
+              "troops": 1
+            },
+            "choiceOpt": true
+          },
+          {
+            "reward": {
+              "trash": 1
+            },
+            "choiceOpt": true
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1
+            }
+          },
+          {
+            "reward": {
+              "custom": "IMPERIAL_BASHAR_SWORDS"
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/imperial_bashar.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/imperial-bashar",
+          "name": "Imperial Bashar",
+          "pool": "imperium",
+          "cost": 4,
+          "factions": [
+            "emperor"
+          ],
+          "agentIcons": [
+            "city"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/imperial_bashar.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/imperial-bashar:play:0",
+              "effect:card:imperium/imperial-bashar:play:1"
+            ],
+            "reveal": [
+              "effect:card:imperium/imperial-bashar:reveal:0",
+              "effect:card:imperium/imperial-bashar:reveal:1"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "reward": {
+                "troops": 1
+              },
+              "choiceOpt": true
+            },
+            {
+              "reward": {
+                "trash": 1
+              },
+              "choiceOpt": true
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 1
+              }
+            },
+            {
+              "reward": {
+                "custom": "IMPERIAL_BASHAR_SWORDS"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Imperial Shock Trooper",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/imperial-shock-trooper",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1
+            }
+          },
+          {
+            "reward": {
+              "custom": "SHOCKTROOPER_EM_BONUS"
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Imperial Shock Trooper",
+        "qty": 1,
+        "cost": "3",
+        "acquire": "",
+        "faction": "EM",
+        "agentIcons": "",
+        "infiltrate": "NA",
+        "graft": "",
+        "agentBox": "",
+        "revealPer": "1",
+        "revealSword": "2 or 5 if agent on EM space",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Imperial Shock Trooper",
+        "qty": 1,
+        "cost": 3,
+        "factions": [
+          "emperor"
+        ],
+        "agentIcons": [],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": null,
+        "play": null,
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1
+            }
+          },
+          {
+            "reward": {
+              "custom": "SHOCKTROOPER_EM_BONUS"
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/imperial_shock_trooper.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/imperial-shock-trooper",
+          "name": "Imperial Shock Trooper",
+          "pool": "imperium",
+          "cost": 3,
+          "factions": [
+            "emperor"
+          ],
+          "agentIcons": [],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/imperial_shock_trooper.avif",
+          "effects": {
+            "reveal": [
+              "effect:card:imperium/imperial-shock-trooper:reveal:0",
+              "effect:card:imperium/imperial-shock-trooper:reveal:1"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 1
+              }
+            },
+            {
+              "reward": {
+                "custom": "SHOCKTROOPER_EM_BONUS"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "In the Shadows",
+      "set": "2. Ix",
+      "qtyCsv": 2,
+      "qtyCode": 2,
+      "catalogId": "imperium/in-the-shadows",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "requirement": {
+              "influence": {
+                "faction": "bene-gesserit",
+                "amount": 2
+              }
+            },
+            "cost": {
+              "discard": 1
+            },
+            "reward": {
+              "influence": {
+                "chooseOne": true,
+                "amounts": [
+                  {
+                    "faction": "emperor",
+                    "amount": 1
+                  },
+                  {
+                    "faction": "spacing-guild",
+                    "amount": 1
+                  },
+                  {
+                    "faction": "fremen",
+                    "amount": 1
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "influence": {
+                "amounts": [
+                  {
+                    "faction": "bene-gesserit",
+                    "amount": 1
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "In the Shadows",
+        "qty": 2,
+        "cost": "2",
+        "acquire": "",
+        "faction": "BG",
+        "agentIcons": "Gr, Bl",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "If 2x Inf BG: 1x discard -> +1 inf EM or SG or FR",
+        "revealPer": "0",
+        "revealSword": "0",
+        "revealOther": "+1 inf BG",
+        "unload": "yes",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "In the Shadows",
+        "qty": 2,
+        "cost": 2,
+        "factions": [
+          "bene-gesserit"
+        ],
+        "agentIcons": [
+          "landsraad",
+          "city"
+        ],
+        "infiltrate": false,
+        "unload": true,
+        "acquire": null,
+        "play": [
+          {
+            "requirement": {
+              "influence": {
+                "faction": "bene-gesserit",
+                "amount": 2
+              }
+            },
+            "cost": {
+              "discard": 1
+            },
+            "reward": {
+              "influence": {
+                "chooseOne": true,
+                "amounts": [
+                  {
+                    "faction": "emperor",
+                    "amount": 1
+                  },
+                  {
+                    "faction": "spacing-guild",
+                    "amount": 1
+                  },
+                  {
+                    "faction": "fremen",
+                    "amount": 1
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "influence": {
+                "amounts": [
+                  {
+                    "faction": "bene-gesserit",
+                    "amount": 1
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/in_the_shadows.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/in-the-shadows",
+          "name": "In the Shadows",
+          "pool": "imperium",
+          "cost": 2,
+          "factions": [
+            "bene-gesserit"
+          ],
+          "agentIcons": [
+            "landsraad",
+            "city"
+          ],
+          "unload": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/in_the_shadows.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/in-the-shadows:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/in-the-shadows:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0,
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "requirement": {
+                "influence": {
+                  "faction": "bene-gesserit",
+                  "amount": 2
+                }
+              },
+              "cost": {
+                "discard": 1
+              },
+              "reward": {
+                "influence": {
+                  "chooseOne": true,
+                  "amounts": [
+                    {
+                      "faction": "emperor",
+                      "amount": 1
+                    },
+                    {
+                      "faction": "spacing-guild",
+                      "amount": 1
+                    },
+                    {
+                      "faction": "fremen",
+                      "amount": 1
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "influence": {
+                  "amounts": [
+                    {
+                      "faction": "bene-gesserit",
+                      "amount": 1
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ix-Guild Compact",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/ix-guild-compact",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "cost": {
+              "discard": 2
+            },
+            "reward": {
+              "dreadnoughts": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "techNegotiator": 2
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Ix-Guild Compact",
+        "qty": 1,
+        "cost": "3",
+        "acquire": "",
+        "faction": "SG",
+        "agentIcons": "SG",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "2x discard -> +1 dreadnought",
+        "revealPer": "0",
+        "revealSword": "0",
+        "revealOther": "+2 negotiator",
+        "unload": "yes",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Ix-Guild Compact",
+        "qty": 1,
+        "cost": 3,
+        "factions": [
+          "spacing-guild"
+        ],
+        "agentIcons": [
+          "spacing-guild"
+        ],
+        "infiltrate": false,
+        "unload": true,
+        "acquire": null,
+        "play": [
+          {
+            "cost": {
+              "discard": 2
+            },
+            "reward": {
+              "dreadnoughts": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "techNegotiator": 2
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/ix_guild_compact.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/ix-guild-compact",
+          "name": "Ix-Guild Compact",
+          "pool": "imperium",
+          "cost": 3,
+          "factions": [
+            "spacing-guild"
+          ],
+          "agentIcons": [
+            "spacing-guild"
+          ],
+          "unload": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/ix_guild_compact.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/ix-guild-compact:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/ix-guild-compact:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "cost": {
+                "discard": 2
+              },
+              "reward": {
+                "dreadnoughts": 1
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "techNegotiator": 2
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ixian Engineer",
+      "set": "2. Ix",
+      "qtyCsv": 2,
+      "qtyCode": 2,
+      "catalogId": "imperium/ixian-engineer",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "reward": {
+              "acquireTech": {}
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "custom": "IXIAN_ENGINEER_VP"
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Ixian Engineer",
+        "qty": 2,
+        "cost": "5",
+        "acquire": "",
+        "faction": "",
+        "agentIcons": "Yw",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "+1 Tech",
+        "revealPer": "0",
+        "revealSword": "0",
+        "revealOther": "If 3 Tech: Trash this card -> +1 VP",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Ixian Engineer",
+        "qty": 2,
+        "cost": 5,
+        "factions": [],
+        "agentIcons": [
+          "spice-trade"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "reward": {
+              "acquireTech": {}
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "custom": "IXIAN_ENGINEER_VP"
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/ixian_engineer.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/ixian-engineer",
+          "name": "Ixian Engineer",
+          "pool": "imperium",
+          "cost": 5,
+          "agentIcons": [
+            "spice-trade"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/ixian_engineer.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/ixian-engineer:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/ixian-engineer:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0,
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "reward": {
+                "acquireTech": {}
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "custom": "IXIAN_ENGINEER_VP"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Jamis",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/jamis",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "reward": {
+              "trash": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 2
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Jamis",
+        "qty": 1,
+        "cost": "2",
+        "acquire": "",
+        "faction": "FR",
+        "agentIcons": "FR",
+        "infiltrate": "yes",
+        "graft": "",
+        "agentBox": "1x trash",
+        "revealPer": "1",
+        "revealSword": "2",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Jamis",
+        "qty": 1,
+        "cost": 2,
+        "factions": [
+          "fremen"
+        ],
+        "agentIcons": [
+          "fremen"
+        ],
+        "infiltrate": true,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "reward": {
+              "trash": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 2
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/jamis.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/jamis",
+          "name": "Jamis",
+          "pool": "imperium",
+          "cost": 2,
+          "factions": [
+            "fremen"
+          ],
+          "agentIcons": [
+            "fremen"
+          ],
+          "infiltrate": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/jamis.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/jamis:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/jamis:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "reward": {
+                "trash": 1
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 1,
+                "combat": 2
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Landing Rights",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/landing-rights",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "reward": {
+              "freighter": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 2
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Landing Rights",
+        "qty": 1,
+        "cost": "4",
+        "acquire": "",
+        "faction": "SG",
+        "agentIcons": "Bl",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "+1 Ship",
+        "revealPer": "2",
+        "revealSword": "0",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Landing Rights",
+        "qty": 1,
+        "cost": 4,
+        "factions": [
+          "spacing-guild"
+        ],
+        "agentIcons": [
+          "city"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "reward": {
+              "freighter": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 2
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/landing_rights.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/landing-rights",
+          "name": "Landing Rights",
+          "pool": "imperium",
+          "cost": 4,
+          "factions": [
+            "spacing-guild"
+          ],
+          "agentIcons": [
+            "city"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/landing_rights.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/landing-rights:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/landing-rights:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "reward": {
+                "freighter": 1
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 2
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Local Fence",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/local-fence",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "cost": {
+              "spice": 2
+            },
+            "reward": {
+              "solari": 5
+            },
+            "choiceOpt": true
+          },
+          {
+            "cost": {
+              "solari": 5
+            },
+            "reward": {
+              "spice": 4
+            },
+            "choiceOpt": true
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 2
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Local Fence",
+        "qty": 1,
+        "cost": "3",
+        "acquire": "",
+        "faction": "",
+        "agentIcons": "Bl",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "-2 Sp -> +5 Sol or -5 Sol -> +4 Sp",
+        "revealPer": "2",
+        "revealSword": "0",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Local Fence",
+        "qty": 1,
+        "cost": 3,
+        "factions": [],
+        "agentIcons": [
+          "city"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "cost": {
+              "spice": 2
+            },
+            "reward": {
+              "solari": 5
+            },
+            "choiceOpt": true
+          },
+          {
+            "cost": {
+              "solari": 5
+            },
+            "reward": {
+              "spice": 4
+            },
+            "choiceOpt": true
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 2
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/local_fence.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/local-fence",
+          "name": "Local Fence",
+          "pool": "imperium",
+          "cost": 3,
+          "agentIcons": [
+            "city"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/local_fence.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/local-fence:play:0",
+              "effect:card:imperium/local-fence:play:1"
+            ],
+            "reveal": [
+              "effect:card:imperium/local-fence:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "cost": {
+                "spice": 2
+              },
+              "reward": {
+                "solari": 5
+              },
+              "choiceOpt": true
+            },
+            {
+              "cost": {
+                "solari": 5
+              },
+              "reward": {
+                "spice": 4
+              },
+              "choiceOpt": true
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 2
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Negotiated Withdrawel",
+      "set": "2. Ix",
+      "qtyCsv": 2,
+      "qtyCode": 2,
+      "catalogId": "imperium/negotiated-withdrawel",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "acquire": {
+          "troops": 1
+        },
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 2
+            }
+          },
+          {
+            "reward": {
+              "custom": "NEGOTIATED_WITHDRAWAL"
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Negotiated Withdrawel",
+        "qty": 2,
+        "cost": "4",
+        "acquire": "+1 troop",
+        "faction": "",
+        "agentIcons": "Gr, Bl, Yw",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "",
+        "revealPer": "2",
+        "revealSword": "0",
+        "revealOther": "Retreat 3x troops - > +1 inf ?",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Negotiated Withdrawel",
+        "qty": 2,
+        "cost": 4,
+        "factions": [],
+        "agentIcons": [
+          "landsraad",
+          "city",
+          "spice-trade"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": {
+          "troops": 1
+        },
+        "play": null,
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 2
+            }
+          },
+          {
+            "reward": {
+              "custom": "NEGOTIATED_WITHDRAWAL"
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/negotiated_withdrawel.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/negotiated-withdrawel",
+          "name": "Negotiated Withdrawel",
+          "pool": "imperium",
+          "cost": 4,
+          "agentIcons": [
+            "landsraad",
+            "city",
+            "spice-trade"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/negotiated_withdrawel.avif",
+          "effects": {
+            "reveal": [
+              "effect:card:imperium/negotiated-withdrawel:reveal:0",
+              "effect:card:imperium/negotiated-withdrawel:reveal:1"
+            ],
+            "acquire": "effect:card:imperium/negotiated-withdrawel:acquire:0"
+          },
+          "authorIds": [
+            0,
+            0
+          ]
+        },
+        "effects": {
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 2
+              }
+            },
+            {
+              "reward": {
+                "custom": "NEGOTIATED_WITHDRAWAL"
+              }
+            }
+          ],
+          "acquire": [
+            {
+              "reward": {
+                "troops": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Satellite Ban",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/satellite-ban",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "cost": {
+              "discard": 1
+            },
+            "reward": {
+              "spice": 1,
+              "water": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1
+            }
+          },
+          {
+            "reward": {
+              "retreatTroops": 2
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Satellite Ban",
+        "qty": 1,
+        "cost": "5",
+        "acquire": "",
+        "faction": "SG, FR",
+        "agentIcons": "SG, FR",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "1x discard -> +1 Sp, +1 Wa",
+        "revealPer": "1",
+        "revealSword": "0",
+        "revealOther": "Retreat up to 2 troops",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Satellite Ban",
+        "qty": 1,
+        "cost": 5,
+        "factions": [
+          "spacing-guild",
+          "fremen"
+        ],
+        "agentIcons": [
+          "spacing-guild",
+          "fremen"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "cost": {
+              "discard": 1
+            },
+            "reward": {
+              "spice": 1,
+              "water": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1
+            }
+          },
+          {
+            "reward": {
+              "retreatTroops": 2
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/satellite_ban.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/satellite-ban",
+          "name": "Satellite Ban",
+          "pool": "imperium",
+          "cost": 5,
+          "factions": [
+            "spacing-guild",
+            "fremen"
+          ],
+          "agentIcons": [
+            "spacing-guild",
+            "fremen"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/satellite_ban.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/satellite-ban:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/satellite-ban:reveal:0",
+              "effect:card:imperium/satellite-ban:reveal:1"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "cost": {
+                "discard": 1
+              },
+              "reward": {
+                "spice": 1,
+                "water": 1
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 1
+              }
+            },
+            {
+              "reward": {
+                "retreatTroops": 2
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Sayyadina",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/sayyadina",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "cost": {
+              "water": 3
+            },
+            "reward": {
+              "victoryPoints": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "requirement": {
+              "bond": "fremen"
+            },
+            "reward": {
+              "persuasion": 3
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Sayyadina",
+        "qty": 1,
+        "cost": "3",
+        "acquire": "",
+        "faction": "BG, FR",
+        "agentIcons": "BG, FR",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "-3 Wa -> +1 VP",
+        "revealPer": "3 if FR Bond",
+        "revealSword": "0",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Sayyadina",
+        "qty": 1,
+        "cost": 3,
+        "factions": [
+          "bene-gesserit",
+          "fremen"
+        ],
+        "agentIcons": [
+          "bene-gesserit",
+          "fremen"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "cost": {
+              "water": 3
+            },
+            "reward": {
+              "victoryPoints": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "requirement": {
+              "bond": "fremen"
+            },
+            "reward": {
+              "persuasion": 3
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/sayyadina.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/sayyadina",
+          "name": "Sayyadina",
+          "pool": "imperium",
+          "cost": 3,
+          "factions": [
+            "bene-gesserit",
+            "fremen"
+          ],
+          "agentIcons": [
+            "bene-gesserit",
+            "fremen"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/sayyadina.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/sayyadina:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/sayyadina:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "cost": {
+                "water": 3
+              },
+              "reward": {
+                "victoryPoints": 1
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "requirement": {
+                "bond": "fremen"
+              },
+              "reward": {
+                "persuasion": 3
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Shai-Hulud",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/shai-hulud",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "acquire": {
+          "trash": 1
+        },
+        "play": [
+          {
+            "cost": {
+              "trash": 1
+            },
+            "reward": {
+              "troops": 2
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "requirement": {
+              "bond": "fremen"
+            },
+            "reward": {
+              "combat": 5
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Shai-Hulud",
+        "qty": 1,
+        "cost": "7",
+        "acquire": "1x trash",
+        "faction": "FR",
+        "agentIcons": "Yw",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "1x trash -> +2 troops",
+        "revealPer": "0",
+        "revealSword": "5 if FR Bond",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Shai-Hulud",
+        "qty": 1,
+        "cost": 7,
+        "factions": [
+          "fremen"
+        ],
+        "agentIcons": [
+          "spice-trade"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": {
+          "trash": 1
+        },
+        "play": [
+          {
+            "cost": {
+              "trash": 1
+            },
+            "reward": {
+              "troops": 2
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "requirement": {
+              "bond": "fremen"
+            },
+            "reward": {
+              "combat": 5
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/shai_hulud.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/shai-hulud",
+          "name": "Shai-Hulud",
+          "pool": "imperium",
+          "cost": 7,
+          "factions": [
+            "fremen"
+          ],
+          "agentIcons": [
+            "spice-trade"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/shai_hulud.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/shai-hulud:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/shai-hulud:reveal:0"
+            ],
+            "acquire": "effect:card:imperium/shai-hulud:acquire:0"
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "cost": {
+                "trash": 1
+              },
+              "reward": {
+                "troops": 2
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "requirement": {
+                "bond": "fremen"
+              },
+              "reward": {
+                "combat": 5
+              }
+            }
+          ],
+          "acquire": [
+            {
+              "reward": {
+                "trash": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Spice Trader",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/spice-trader",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "requirement": {
+              "influence": {
+                "faction": "fremen",
+                "amount": 2
+              }
+            },
+            "cost": {
+              "discard": 1
+            },
+            "reward": {
+              "spice": 2
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 2,
+              "combat": 1
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Spice Trader",
+        "qty": 1,
+        "cost": "4",
+        "acquire": "",
+        "faction": "FR",
+        "agentIcons": "Bl, Yw",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "If 2x Inf FR: 1x discard -> +2 Sp",
+        "revealPer": "2",
+        "revealSword": "1",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Spice Trader",
+        "qty": 1,
+        "cost": 4,
+        "factions": [
+          "fremen"
+        ],
+        "agentIcons": [
+          "city",
+          "spice-trade"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "requirement": {
+              "influence": {
+                "faction": "fremen",
+                "amount": 2
+              }
+            },
+            "cost": {
+              "discard": 1
+            },
+            "reward": {
+              "spice": 2
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 2,
+              "combat": 1
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/spice_trader.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/spice-trader",
+          "name": "Spice Trader",
+          "pool": "imperium",
+          "cost": 4,
+          "factions": [
+            "fremen"
+          ],
+          "agentIcons": [
+            "city",
+            "spice-trade"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/spice_trader.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/spice-trader:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/spice-trader:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "requirement": {
+                "influence": {
+                  "faction": "fremen",
+                  "amount": 2
+                }
+              },
+              "cost": {
+                "discard": 1
+              },
+              "reward": {
+                "spice": 2
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 2,
+                "combat": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Treachery",
+      "set": "2. Ix",
+      "qtyCsv": 2,
+      "qtyCode": 2,
+      "catalogId": "imperium/treachery",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "reward": {
+              "custom": "TREACHERY_DOUBLE_INFLUENCE"
+            }
+          },
+          {
+            "reward": {
+              "trashThisCard": true
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "troops": 2,
+              "deployTroops": 2
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Treachery",
+        "qty": 2,
+        "cost": "6",
+        "acquire": "",
+        "faction": "",
+        "agentIcons": "EM, SG, BG, FR",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "Gain 2 Inf instead of 1 and trash this card",
+        "revealPer": "0",
+        "revealSword": "0",
+        "revealOther": "+2 troops and deploy them to conflict",
+        "unload": "yes",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Treachery",
+        "qty": 2,
+        "cost": 6,
+        "factions": [],
+        "agentIcons": [
+          "emperor",
+          "spacing-guild",
+          "bene-gesserit",
+          "fremen"
+        ],
+        "infiltrate": false,
+        "unload": true,
+        "acquire": null,
+        "play": [
+          {
+            "reward": {
+              "custom": "TREACHERY_DOUBLE_INFLUENCE"
+            }
+          },
+          {
+            "reward": {
+              "trashThisCard": true
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "troops": 2,
+              "deployTroops": 2
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/treachery.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/treachery",
+          "name": "Treachery",
+          "pool": "imperium",
+          "cost": 6,
+          "agentIcons": [
+            "emperor",
+            "spacing-guild",
+            "bene-gesserit",
+            "fremen"
+          ],
+          "unload": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/treachery.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/treachery:play:0",
+              "effect:card:imperium/treachery:play:1"
+            ],
+            "reveal": [
+              "effect:card:imperium/treachery:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0,
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "reward": {
+                "custom": "TREACHERY_DOUBLE_INFLUENCE"
+              }
+            },
+            {
+              "reward": {
+                "trashThisCard": true
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "troops": 2,
+                "deployTroops": 2
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Truthsayer",
+      "set": "2. Ix",
+      "qtyCsv": 2,
+      "qtyCode": 2,
+      "catalogId": "imperium/truthsayer",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "cost": {
+              "discard": 1
+            },
+            "reward": {
+              "drawCards": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 1
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Truthsayer",
+        "qty": 2,
+        "cost": "3",
+        "acquire": "",
+        "faction": "EM, BG",
+        "agentIcons": "EM, BG, Gr",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "1x discard -> 1x draw",
+        "revealPer": "1",
+        "revealSword": "1",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Truthsayer",
+        "qty": 2,
+        "cost": 3,
+        "factions": [
+          "emperor",
+          "bene-gesserit"
+        ],
+        "agentIcons": [
+          "emperor",
+          "bene-gesserit",
+          "landsraad"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "cost": {
+              "discard": 1
+            },
+            "reward": {
+              "drawCards": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 1
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/truthsayer.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/truthsayer",
+          "name": "Truthsayer",
+          "pool": "imperium",
+          "cost": 3,
+          "factions": [
+            "emperor",
+            "bene-gesserit"
+          ],
+          "agentIcons": [
+            "emperor",
+            "bene-gesserit",
+            "landsraad"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/truthsayer.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/truthsayer:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/truthsayer:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0,
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "cost": {
+                "discard": 1
+              },
+              "reward": {
+                "drawCards": 1
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 1,
+                "combat": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Water Peddler",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/water-peddler",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "acquire": {
+          "water": 1
+        },
+        "reveal": [
+          {
+            "reward": {
+              "water": 1
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Water Peddler",
+        "qty": 1,
+        "cost": "1",
+        "acquire": "1x Wa",
+        "faction": "",
+        "agentIcons": "",
+        "infiltrate": "NA",
+        "graft": "",
+        "agentBox": "",
+        "revealPer": "0",
+        "revealSword": "0",
+        "revealOther": "+1 Wa",
+        "unload": "yes",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Water Peddler",
+        "qty": 1,
+        "cost": 1,
+        "factions": [],
+        "agentIcons": [],
+        "infiltrate": false,
+        "unload": true,
+        "acquire": {
+          "water": 1
+        },
+        "play": null,
+        "reveal": [
+          {
+            "reward": {
+              "water": 1
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/water_peddler.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/water-peddler",
+          "name": "Water Peddler",
+          "pool": "imperium",
+          "cost": 1,
+          "agentIcons": [],
+          "unload": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/water_peddler.avif",
+          "effects": {
+            "reveal": [
+              "effect:card:imperium/water-peddler:reveal:0"
+            ],
+            "acquire": "effect:card:imperium/water-peddler:acquire:0"
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "reveal": [
+            {
+              "reward": {
+                "water": 1
+              }
+            }
+          ],
+          "acquire": [
+            {
+              "reward": {
+                "water": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Web of Power",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/web-of-power",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "reward": {
+              "custom": "WEB_OF_POWER"
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1
+            }
+          },
+          {
+            "reward": {
+              "influence": {
+                "chooseOne": true,
+                "amounts": [
+                  {
+                    "faction": "emperor",
+                    "amount": 1
+                  },
+                  {
+                    "faction": "spacing-guild",
+                    "amount": 1
+                  },
+                  {
+                    "faction": "bene-gesserit",
+                    "amount": 1
+                  },
+                  {
+                    "faction": "fremen",
+                    "amount": 1
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Web of Power",
+        "qty": 1,
+        "cost": "4",
+        "acquire": "",
+        "faction": "BG",
+        "agentIcons": "BG",
+        "infiltrate": "yes",
+        "graft": "",
+        "agentBox": "If 2x inf (each): EM = +2 Sol, SG = 1x draw, FR = +1 Wa",
+        "revealPer": "1",
+        "revealSword": "0",
+        "revealOther": "+1 inf ?",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Web of Power",
+        "qty": 1,
+        "cost": 4,
+        "factions": [
+          "bene-gesserit"
+        ],
+        "agentIcons": [
+          "bene-gesserit"
+        ],
+        "infiltrate": true,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "reward": {
+              "custom": "WEB_OF_POWER"
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1
+            }
+          },
+          {
+            "reward": {
+              "influence": {
+                "chooseOne": true,
+                "amounts": [
+                  {
+                    "faction": "emperor",
+                    "amount": 1
+                  },
+                  {
+                    "faction": "spacing-guild",
+                    "amount": 1
+                  },
+                  {
+                    "faction": "bene-gesserit",
+                    "amount": 1
+                  },
+                  {
+                    "faction": "fremen",
+                    "amount": 1
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/web_of_power.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/web-of-power",
+          "name": "Web of Power",
+          "pool": "imperium",
+          "cost": 4,
+          "factions": [
+            "bene-gesserit"
+          ],
+          "agentIcons": [
+            "bene-gesserit"
+          ],
+          "infiltrate": true,
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/web_of_power.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/web-of-power:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/web-of-power:reveal:0",
+              "effect:card:imperium/web-of-power:reveal:1"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "reward": {
+                "custom": "WEB_OF_POWER"
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 1
+              }
+            },
+            {
+              "reward": {
+                "influence": {
+                  "chooseOne": true,
+                  "amounts": [
+                    {
+                      "faction": "emperor",
+                      "amount": 1
+                    },
+                    {
+                      "faction": "spacing-guild",
+                      "amount": 1
+                    },
+                    {
+                      "faction": "bene-gesserit",
+                      "amount": 1
+                    },
+                    {
+                      "faction": "fremen",
+                      "amount": 1
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Weirding Way",
+      "set": "2. Ix",
+      "qtyCsv": 1,
+      "qtyCode": 1,
+      "catalogId": "imperium/weirding-way",
+      "inCode": true,
+      "inCatalog": true,
+      "status": "OK",
+      "mismatches": [],
+      "expectedEffects": {
+        "play": [
+          {
+            "reward": {
+              "custom": "WEIRDING_WAY_EXTRA_TURN"
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 2
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Weirding Way",
+        "qty": 1,
+        "cost": "3",
+        "acquire": "",
+        "faction": "BG",
+        "agentIcons": "Bl, Yw",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "may take another turn after this one",
+        "revealPer": "1",
+        "revealSword": "2",
+        "revealOther": "",
+        "unload": "no",
+        "set": "2. Ix",
+        "notes": ""
+      },
+      "code": {
+        "name": "Weirding Way",
+        "qty": 1,
+        "cost": 3,
+        "factions": [
+          "bene-gesserit"
+        ],
+        "agentIcons": [
+          "city",
+          "spice-trade"
+        ],
+        "infiltrate": false,
+        "unload": false,
+        "acquire": null,
+        "play": [
+          {
+            "reward": {
+              "custom": "WEIRDING_WAY_EXTRA_TURN"
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 2
+            }
+          }
+        ],
+        "image": "imperium_row/rise_of_ix/weirding_way.avif"
+      },
+      "catalog": {
+        "card": {
+          "id": "imperium/weirding-way",
+          "name": "Weirding Way",
+          "pool": "imperium",
+          "cost": 3,
+          "factions": [
+            "bene-gesserit"
+          ],
+          "agentIcons": [
+            "city",
+            "spice-trade"
+          ],
+          "riseOfIx": true,
+          "image": "imperium_row/rise_of_ix/weirding_way.avif",
+          "effects": {
+            "play": [
+              "effect:card:imperium/weirding-way:play:0"
+            ],
+            "reveal": [
+              "effect:card:imperium/weirding-way:reveal:0"
+            ]
+          },
+          "authorIds": [
+            0
+          ]
+        },
+        "effects": {
+          "play": [
+            {
+              "reward": {
+                "custom": "WEIRDING_WAY_EXTRA_TURN"
+              }
+            }
+          ],
+          "reveal": [
+            {
+              "reward": {
+                "persuasion": 1,
+                "combat": 2
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Boundless Ambition",
+      "set": "9. Promo",
+      "qtyCsv": 1,
+      "qtyCode": null,
+      "catalogId": null,
+      "inCode": false,
+      "inCatalog": false,
+      "status": "MISSING",
+      "mismatches": [
+        "missing from cardsRiseOfIx.ts"
+      ],
+      "expectedEffects": {
+        "play": [
+          {
+            "reward": {
+              "custom": "SIGNET_RING"
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "custom": "BOUNDLESS_AMBITION_ACQUIRE"
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Boundless Ambition",
+        "qty": 1,
+        "cost": "5",
+        "acquire": "",
+        "faction": "",
+        "agentIcons": "EM, SG, BG, FR",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "Signet Ring",
+        "revealPer": "0",
+        "revealSword": "0",
+        "revealOther": "Acquire a card that costs 5 or less",
+        "unload": "yes",
+        "set": "9. Promo",
+        "notes": "Requires Ix"
+      },
+      "code": null,
+      "catalog": {
+        "card": null,
+        "effects": null
+      }
+    },
+    {
+      "name": "Duncan Loyal Blade",
+      "set": "9. Promo",
+      "qtyCsv": 1,
+      "qtyCode": null,
+      "catalogId": null,
+      "inCode": false,
+      "inCatalog": false,
+      "status": "MISSING",
+      "mismatches": [
+        "missing from cardsRiseOfIx.ts"
+      ],
+      "expectedEffects": {
+        "play": [
+          {
+            "reward": {
+              "troops": 1
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 2
+            }
+          },
+          {
+            "cost": {
+              "trashThisCard": true
+            },
+            "reward": {
+              "custom": "DEPLOY_RETREAT_ANY_TROOPS"
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Duncan Loyal Blade",
+        "qty": 1,
+        "cost": "5",
+        "acquire": "",
+        "faction": "",
+        "agentIcons": "FR, Bl",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "+1 troop",
+        "revealPer": "1",
+        "revealSword": "2",
+        "revealOther": "trash this--> deploy/retreat any # of troops",
+        "unload": "no",
+        "set": "9. Promo",
+        "notes": ""
+      },
+      "code": null,
+      "catalog": {
+        "card": null,
+        "effects": null
+      }
+    },
+    {
+      "name": "Jessica of Arrakis",
+      "set": "9. Promo",
+      "qtyCsv": 1,
+      "qtyCode": null,
+      "catalogId": null,
+      "inCode": false,
+      "inCatalog": false,
+      "status": "MISSING",
+      "mismatches": [
+        "missing from cardsRiseOfIx.ts"
+      ],
+      "expectedEffects": {
+        "play": [
+          {
+            "requirement": {
+              "inPlay": "bene-gesserit"
+            },
+            "reward": {
+              "drawCards": 2
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "combat": 2
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Jessica of Arrakis",
+        "qty": 1,
+        "cost": "3",
+        "acquire": "",
+        "faction": "BG",
+        "agentIcons": "Yw",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "2x draw if another BG in play",
+        "revealPer": "1",
+        "revealSword": "2",
+        "revealOther": "",
+        "unload": "no",
+        "set": "9. Promo",
+        "notes": ""
+      },
+      "code": null,
+      "catalog": {
+        "card": null,
+        "effects": null
+      }
+    },
+    {
+      "name": "Thumper",
+      "set": "9. Promo",
+      "qtyCsv": 1,
+      "qtyCode": null,
+      "catalogId": null,
+      "inCode": false,
+      "inCatalog": false,
+      "status": "MISSING",
+      "mismatches": [
+        "missing from cardsRiseOfIx.ts"
+      ],
+      "expectedEffects": {
+        "play": [
+          {
+            "reward": {
+              "custom": "THUMPER_DOUBLE_BONUS_SPICE"
+            }
+          }
+        ],
+        "reveal": [
+          {
+            "reward": {
+              "persuasion": 1,
+              "spice": 1
+            }
+          }
+        ]
+      },
+      "csv": {
+        "name": "Thumper",
+        "qty": 1,
+        "cost": "3",
+        "acquire": "",
+        "faction": "FR",
+        "agentIcons": "Yw",
+        "infiltrate": "no",
+        "graft": "",
+        "agentBox": "Double the bonus spice you harvest w/ this agent",
+        "revealPer": "1",
+        "revealSword": "0",
+        "revealOther": "1 Spice",
+        "unload": "no",
+        "set": "9. Promo",
+        "notes": ""
+      },
+      "code": null,
+      "catalog": {
+        "card": null,
+        "effects": null
+      }
+    }
+  ]
+}

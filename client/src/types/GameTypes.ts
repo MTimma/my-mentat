@@ -539,7 +539,9 @@ export interface PendingReward {
   reward: Reward
   isTrash: boolean // true if reward.trash or reward.trashThisCard
   disabled?: boolean // true if the reward cannot be claimed (e.g., no valid targets)
-  powerPlay?: boolean // true if this influence reward should grant +1 extra (Power Play effect)
+  /** Claim requires this many troops to have been retreated via effects this turn (e.g. Negotiated Withdrawal). */
+  requiredEffectRetreats?: number
+  powerPlay?: boolean // true if this influence reward should grant +1 extra (Power Play / Treachery influence doubler)
   /** Seat that owns this pending reward (conflict trash / tech). */
   playerId?: number
 }
@@ -665,6 +667,8 @@ export interface GameTurn {
   /** Ix board tech tiles bought this turn (turn history acquired row). */
   acquiredTechTiles?: AcquiredTechTileSnapshot[]
   revealedCardIds?: number[]
+  /** Artillery tech tile fired on this reveal turn (its count is re-evaluated as choices resolve). */
+  artilleryFired?: boolean
   playedIntrigueCard?: IntrigueCardPlay[]
   optionalEffects?: OptionalEffect[]
   pendingChoices?: PendingChoice[]

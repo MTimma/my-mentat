@@ -154,6 +154,19 @@ export function makePlayer(id: number, overrides: Partial<Player> = {}): Player 
   return 'troopSupply' in overrides ? player : seedTroopSupply(player)
 }
 
+/**
+ * One deployed troop per player with positive strength. Combat strength only counts while
+ * a player has units in the Conflict, so setups that set `combatStrength` directly must
+ * also deploy units or the strength is ignored at resolution.
+ */
+export function combatTroopsFor(strength: Record<number, number>): Record<number, number> {
+  return Object.fromEntries(
+    Object.entries(strength)
+      .filter(([, value]) => value > 0)
+      .map(([id]) => [Number(id), 1])
+  )
+}
+
 /** Single-player agent/reveal tests with intrigue deck seeded. */
 export function getBaseTestState(
   playerOverrides?: Partial<Player>,

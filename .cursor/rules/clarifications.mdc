@@ -48,3 +48,13 @@ the board space you choose, then remove it on your next turn.
 board space for one turn.)
 This does prevent Kwisatz Haderach from sending an Agent to the
 board space you chose.
+
+General — Intrigue timing — An Intrigue card's effect takes effect
+immediately when you play it, unless the card ties the effect to a
+later moment ("during your Reveal turn this round", "if you win the
+Conflict", …). In that case the effect stays pending and applies at
+that moment.
+Combat strength and persuasion gained from Intrigues are pooled for
+the round: they persist even if the source card is trashed. Swords
+gained while you have no troops in the Conflict are kept, but you
+still have no strength until you deploy a unit — they then apply.

@@ -13,6 +13,7 @@ import {
   type GameState,
 } from '../../../types/GameTypes'
 import { applyGameAction } from '../GameContext'
+import { computeStrength } from '../../../utils/combatStrength'
 import { getPlayAreaCardsForTurnView, getRevealedCardIdsForTurnView } from '../../../utils/playAreaDisplay'
 import { getBaseTestState, stubDeckCard, withCardOnTop } from './_helpers'
 
@@ -89,19 +90,31 @@ describe('REVEAL_CARDS', () => {
     )
   })
 
-  it('swords contribute nothing without troops in conflict', () => {
+  it('swords pool without troops in conflict and apply once a unit is deployed', () => {
     const card = stubDeckCard(9112, { revealEffect: [{ reward: { combat: 3 } }] })
     let s = getBaseTestState({ deck: [card], handCount: 1, combatValue: 5 })
     s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [9112] })
 
-    // NOTE: current behavior — with no troops in conflict the player's combatValue
-    // is reset to 0 (even a pre-existing nonzero value), and combatStrength gets no entry
-    expect(s.players[0].combatValue).toBe(0)
-    expect(s.combatStrength).toEqual({})
+    // Swords are kept in the combat total even with no troops in conflict (a stale
+    // combatValue is not carried over), but effective strength stays 0 until a unit deploys.
+    expect(s.players[0].combatValue).toBe(3)
+    expect(s.combatStrength).toEqual({ 0: 3 })
+    expect(computeStrength(s, 0)).toBe(0)
     // The sword gain is still recorded in the gains log
     expect(s.gains).toContainEqual(
       expect.objectContaining({ type: RewardType.COMBAT, amount: 3, sourceId: 9112 })
     )
+
+    // Deploying a troop re-applies the pool: 2 (troop) + 3 (swords).
+    s = {
+      ...s,
+      currTurn: { ...s.currTurn!, canDeployTroops: true, theseTroopsDeployLimit: 1 },
+    }
+    s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(s.combatTroops[0]).toBe(1)
+    expect(s.combatStrength[0]).toBe(5)
+    expect(s.players[0].combatValue).toBe(5)
+    expect(computeStrength(s, 0)).toBe(5)
   })
 
   it('resource reveal rewards become pendingRewards (not applied immediately) and block canEndTurn', () => {

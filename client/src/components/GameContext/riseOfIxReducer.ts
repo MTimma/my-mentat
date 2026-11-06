@@ -24,6 +24,7 @@ import {
   type Player,
   type Reward,
   GameTurn,
+  TurnType,
 } from '../../types/GameTypes'
 import { countSpiceMustFlowCards } from '../../utils/spiceMustFlow'
 import { getDreadnoughtsInConflict } from '../../utils/dreadnoughts'
@@ -32,7 +33,6 @@ import { collectLiveIds, nextSemanticId } from '../../utils/semanticIds'
 import { encodeEffectCardGainName } from '../../utils/turnGainsDisplay'
 import { effectiveTechCost, playerOwnsTile, techTilesAvailableForNextReveal, tileById, tilesActivatableNow, techTileIdFromDiscardPrompt } from '../../utils/techTiles'
 import { BOARD_SPACES } from '../../data/boardSpaces'
-import { updateFactionInfluence } from '../../utils/influenceVictoryPoints'
 import { pushYunaSolariBonus } from '../../data/leaderAbilities/yunaSolariBonus'
 import { playerHasUnitsInCombat } from '../../utils/dreadnoughts'
 import {
@@ -211,10 +211,11 @@ function addPendingReward(
   state: GameState,
   reward: Reward,
   source: { type: GainSource; id: number; name: string },
-  isTrash = false
+  isTrash = false,
+  extra?: Pick<PendingReward, 'disabled' | 'requiredEffectRetreats'>
 ): GameState {
   const rewardId = nextSemanticId(source, 'REWARD', state.pendingRewards.map(r => r.id))
-  const pendingReward: PendingReward = { id: rewardId, source, reward, isTrash }
+  const pendingReward: PendingReward = { id: rewardId, source, reward, isTrash, ...extra }
   return { ...state, pendingRewards: [...state.pendingRewards, pendingReward] }
 }
 
@@ -568,8 +569,32 @@ export function syncSpaceportAcquireToTop(state: GameState): GameState {
   return { ...state, acquireToTopThisRound: flags }
 }
 
-function cardProvidesSword(card: Card): boolean {
-  return (card.revealEffect ?? []).some(e => (e.reward?.combat ?? 0) > 0)
+/** A revealed card that actually produced at least one sword this round (resolved gains, not icons). */
+function cardProvidedSwords(
+  gains: Gain[],
+  playerId: number,
+  round: number,
+  cardId: number
+): boolean {
+  return gains.some(
+    gain =>
+      gain.playerId === playerId &&
+      gain.round === round &&
+      gain.type === RewardType.COMBAT &&
+      gain.source === GainSource.CARD &&
+      gain.sourceId === cardId &&
+      gain.amount >= 1
+  )
+}
+
+/** Revealed cards that actually provided swords this round (FAQ: resolved effects, not printed icons). */
+function countRevealedSwordCards(
+  gains: Gain[],
+  playerId: number,
+  round: number,
+  revealedCardIds: number[]
+): number {
+  return revealedCardIds.filter(cardId => cardProvidedSwords(gains, playerId, round, cardId)).length
 }
 
 export function applyRevealTechEffects(
@@ -582,17 +607,20 @@ export function applyRevealTechEffects(
   state: GameState
   persuasionCount: number
   swordCount: number
+  /** True when the Artillery tile fired on this reveal (its count may grow as choices resolve). */
+  artilleryFired: boolean
 } {
   if (!state.expansions.riseOfIx) {
-    return { state, persuasionCount, swordCount }
+    return { state, persuasionCount, swordCount, artilleryFired: false }
   }
 
   const player = state.players.find(p => p.id === playerId)
-  if (!player) return { state, persuasionCount, swordCount }
+  if (!player) return { state, persuasionCount, swordCount, artilleryFired: false }
 
   let next = state
   let persuasion = persuasionCount
   let swords = swordCount
+  let artilleryFired = false
 
   for (const { id } of player.tech ?? []) {
     const tile = tileById(id)
@@ -620,8 +648,13 @@ export function applyRevealTechEffects(
     }
 
     if (id === TechTileId.ARTILLERY) {
-      const swordCards = revealedCards.filter(cardProvidesSword).length
-      if (swordCards > 0 && (next.combatTroops[playerId] ?? 0) > 0) {
+      artilleryFired = true
+      // Counts cards that actually provided swords (a Bene Gesserit Sister that chose persuasion,
+      // or a Fedaykin Death Commando without the Fremen bond, does not count).
+      const swordCards = revealedCards.filter(card =>
+        cardProvidedSwords(next.gains, playerId, next.currentRound, card.id)
+      ).length
+      if (swordCards > 0) {
         swords += swordCards
         const gains = [...next.gains]
         pushGain(gains, next, playerId, source, swordCards, RewardType.COMBAT)
@@ -637,18 +670,16 @@ export function applyRevealTechEffects(
     }
 
     if (id === TechTileId.RESTRICTED_ORDINANCE && player.hasHighCouncilSeat) {
-      if ((next.combatTroops[playerId] ?? 0) > 0) {
-        swords += 4
-        const gains = [...next.gains]
-        pushGain(gains, next, playerId, source, 4, RewardType.COMBAT)
-        next = {
-          ...next,
-          gains,
-          combatStrength: {
-            ...next.combatStrength,
-            [playerId]: (next.combatStrength[playerId] ?? 0) + 4,
-          },
-        }
+      swords += 4
+      const gains = [...next.gains]
+      pushGain(gains, next, playerId, source, 4, RewardType.COMBAT)
+      next = {
+        ...next,
+        gains,
+        combatStrength: {
+          ...next.combatStrength,
+          [playerId]: (next.combatStrength[playerId] ?? 0) + 4,
+        },
       }
     }
 
@@ -657,7 +688,63 @@ export function applyRevealTechEffects(
     }
   }
 
-  return { state: next, persuasionCount: persuasion, swordCount: swords }
+  return { state: next, persuasionCount: persuasion, swordCount: swords, artilleryFired }
+}
+
+/**
+ * Artillery counts revealed cards that actually provided swords. Reveal choices resolve after the
+ * tile fires, so re-evaluate the count whenever a later card gain lands (mirrors the Imperial
+ * Bashar refresh). Only turns where the tile actually fired are re-evaluated — acquiring it
+ * mid-reveal (e.g. via Machine Culture) must not grant its Reveal effect retroactively. The gain
+ * is created here when the tile fired with no resolved swords but a choice provided them later.
+ */
+export function refreshArtillerySwords(state: GameState, playerId: number): GameState {
+  const player = state.players.find(p => p.id === playerId)
+  if (!player || !playerOwnsTile(player, TechTileId.ARTILLERY)) return state
+  const turn = state.currTurn
+  if (!turn || turn.playerId !== playerId || turn.type !== TurnType.REVEAL) return state
+  if (!turn.artilleryFired) return state
+  const revealedCardIds = turn.revealedCardIds ?? []
+  if (revealedCardIds.length === 0) return state
+
+  const tileName = getTechTile(TechTileId.ARTILLERY)?.name
+  if (!tileName) return state
+
+  const index = state.gains.findIndex(
+    gain =>
+      gain.playerId === playerId &&
+      gain.round === state.currentRound &&
+      gain.type === RewardType.COMBAT &&
+      gain.source === GainSource.TECH &&
+      gain.name === tileName
+  )
+  const applied = index >= 0 ? state.gains[index].amount : 0
+  const next = countRevealedSwordCards(state.gains, playerId, state.currentRound, revealedCardIds)
+  if (next === applied) return state
+
+  const current = state.combatStrength[playerId] ?? player.combatValue ?? 0
+  const nextStrength = Math.max(0, current + (next - applied))
+  const gains =
+    index >= 0
+      ? state.gains.map((gain, i) => (i === index ? { ...gain, amount: next } : gain))
+      : [
+          ...state.gains,
+          {
+            round: state.currentRound,
+            playerId,
+            sourceId: 0,
+            name: tileName,
+            amount: next,
+            type: RewardType.COMBAT,
+            source: GainSource.TECH,
+          },
+        ]
+  return {
+    ...state,
+    gains,
+    combatStrength: { ...state.combatStrength, [playerId]: nextStrength },
+    players: state.players.map(p => (p.id === playerId ? { ...p, combatValue: nextStrength } : p)),
+  }
 }
 
 export function applyAfterConflictTechEffects(
@@ -912,16 +999,38 @@ export function applyWeirdingWayExtraTurn(
   }
 }
 
-/** Imperial Bashar reveal: +2 combat + 1 per other revealed sword card. */
+/**
+ * Other cards that actually provided one or more swords this turn. The FAQ is explicit that the
+ * Reveal box only counts cards that really produced swords — a Bene Gesserit Sister that chose
+ * persuasion, or a Fedaykin Death Commando without the Fremen bond, does not count.
+ */
+export function countOtherSwordCards(
+  gains: Gain[],
+  playerId: number,
+  round: number,
+  excludeSourceId: number
+): number {
+  const sources = new Set<number>()
+  for (const gain of gains) {
+    if (gain.playerId !== playerId || gain.round !== round) continue
+    if (gain.type !== RewardType.COMBAT || gain.source !== GainSource.CARD) continue
+    if (gain.sourceId === excludeSourceId) continue
+    if (gain.amount < 1) continue
+    sources.add(gain.sourceId)
+  }
+  return sources.size
+}
+
+/** Imperial Bashar reveal: +2 combat + 1 per other revealed card that provided swords this turn. */
 export function applyImperialBasharSwords(
   state: GameState,
   playerId: number,
   cardId: number,
   cardName: string,
-  revealedCards: Card[]
+  /** Working gains log for this turn — only resolved sword gains count. */
+  resolvedGains: Gain[] = state.gains
 ): GameState {
-  if (!playerHasUnitsInCombat(state, playerId)) return state
-  const swordCards = revealedCards.filter(c => c.id !== cardId && cardProvidesSword(c)).length
+  const swordCards = countOtherSwordCards(resolvedGains, playerId, state.currentRound, cardId)
   const bonus = 2 + swordCards
   const source = cardGainSource(cardId, cardName)
   const gains = [...state.gains]
@@ -943,7 +1052,6 @@ export function applyShockTrooperBonus(
   cardId: number,
   cardName: string
 ): GameState {
-  if (!playerHasUnitsInCombat(state, playerId)) return state
   const onEmSpace = Object.entries(state.occupiedSpaces).some(
     ([sid, occ]) => occ.includes(playerId) && EMPEROR_SPACE_IDS.has(Number(sid))
   )
@@ -1007,6 +1115,13 @@ export function applyNegotiatedWithdrawal(
   cardName: string
 ): GameState {
   const source = cardGainSource(cardId, cardName)
+  const currentTurn = state.currTurn?.playerId === playerId ? state.currTurn : undefined
+  const retreatsUsed = currentTurn?.effectRetreatsUsed ?? 0
+  // Each copy requires another 3 retreats; the allowance is granted per copy.
+  const sameCardGates = state.pendingRewards.filter(
+    r => r.requiredEffectRetreats !== undefined && r.source.name === source.name
+  ).length
+  const requiredRetreats = retreatsUsed + 3 * (sameCardGates + 1)
   let next = addPendingReward(
     state,
     {
@@ -1021,14 +1136,24 @@ export function applyNegotiatedWithdrawal(
         ],
       },
     },
-    source
+    source,
+    false,
+    {
+      requiredEffectRetreats: requiredRetreats,
+      disabled: retreatsUsed < requiredRetreats,
+    }
   )
-  if (next.currTurn?.playerId === playerId) {
+  // The retreat is the cost of the influence, so the allowance is available up front
+  // (including on Reveal, where the turn object is created by REVEAL_CARDS).
+  if (state.currTurn?.playerId === playerId || !state.currTurn) {
     next = {
       ...next,
       currTurn: {
-        ...next.currTurn,
-        effectRetreatAllowance: (next.currTurn.effectRetreatAllowance ?? 0) + 3,
+        type: TurnType.REVEAL,
+        ...(state.currTurn?.playerId === playerId ? state.currTurn : {}),
+        playerId,
+        effectRetreatAllowance:
+          (currentTurn?.effectRetreatAllowance ?? 0) + 3,
       },
     }
   }
@@ -1053,23 +1178,6 @@ export function applyDesertAmbush(
         }
       : state.currTurn,
   }
-}
-
-/** Treachery play: double influence from this card's faction icons only. */
-export function applyTreacheryDoubleInfluence(
-  state: GameState,
-  playerId: number,
-  factions: FactionType[],
-  cardId: number,
-  cardName: string
-): GameState {
-  const source = cardGainSource(cardId, cardName)
-  let next: GameState = { ...state, gains: [...state.gains] }
-  for (const faction of factions) {
-    next = updateFactionInfluence(next, faction, playerId, 2, { appendGainsTo: next.gains })
-    pushGain(next.gains, next, playerId, source, 2, RewardType.INFLUENCE)
-  }
-  return next
 }
 
 export function markMandatoryDeploy(state: GameState): GameState {

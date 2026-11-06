@@ -98,13 +98,21 @@ export function syncCombatStrengthAfterUnitDelta(
 
   const unitStrength = computeUnitStrength(state, playerId)
   if (unitStrength <= 0) {
+    // No units left: effective strength is 0, but keep the sword pool in the cached
+    // total so it re-applies if a unit is deployed again this round.
+    const prev = getCachedCombatTotal(state, playerId)
+    const nextVal = Math.max(0, prev + strengthDelta)
     const nextStrength = { ...state.combatStrength }
-    delete nextStrength[playerId]
+    if (nextVal > 0) {
+      nextStrength[playerId] = nextVal
+    } else {
+      delete nextStrength[playerId]
+    }
     return {
       ...state,
       combatStrength: nextStrength,
       players: state.players.map(p =>
-        p.id === playerId ? { ...p, combatValue: 0 } : p
+        p.id === playerId ? { ...p, combatValue: nextVal } : p
       ),
     }
   }

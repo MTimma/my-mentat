@@ -7142,9 +7142,9 @@
       "pool": "imperium",
       "cost": 4,
       "agentIcons": [
-        "spice-trade",
         "landsraad",
-        "city"
+        "city",
+        "spice-trade"
       ],
       "riseOfIx": true,
       "image": "imperium_row/rise_of_ix/negotiated_withdrawel.avif",
@@ -8873,10 +8873,6 @@
       "name": "Sietch Tabr",
       "agentIcon": "city",
       "conflictMarker": true,
-      "influence": {
-        "faction": "fremen",
-        "amount": 1
-      },
       "requiresInfluence": {
         "faction": "fremen",
         "amount": 2
@@ -9528,11 +9524,11 @@
         ],
         "second": [
           {
-            "type": "Water",
+            "type": "Spice",
             "amount": 1
           },
           {
-            "type": "Spice",
+            "type": "Water",
             "amount": 1
           }
         ],
@@ -9686,7 +9682,7 @@
         "third": [
           {
             "type": "Spice",
-            "amount": 1
+            "amount": 3
           }
         ]
       }

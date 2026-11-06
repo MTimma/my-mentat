@@ -1,0 +1,64 @@
+Filtered Card Count ---->,72,,,,,
+Intrigue Card Name,Qty,Type,Focus,Card Benefit,Swords,base/ix/Immo
+Master Tactician,3,Combat,Win Combat,+3 swords or retreat up to 3 troops,3,base
+Ambush,2,Combat,Win Combat,,4,base
+Private Army,2,Combat,Win Combat,,-2 Sp -> +5 Swords,base
+Staged Incident,1,Combat,VP,Lose 3 troops in conflict -> +1 VP,,base
+Allied Armada,1,Combat,Win Combat,,If alliance:-2 Sp -> +7 sword,base
+Tiebreaker,1,Combat or Endgame,Win Combat,(combat) 2 sword. Or (endgame) +10 Spice,2,base
+To the Victor…,1,Combat Victory,Resources,+3 Sp when you win,,base
+Demand Respect,1,Combat Victory,Influence,+1 inf ? Or -2 Sp -> +2 inf ?,,base
+Corner the Market,1,Endgame,VP,"If you have 2 SMF: +1 VP, if you have more SMF than all opps: +2 VP",,base
+Plans within Plans,1,Endgame,VP,3 inf on 3 tracks: +1 VP or 3 inf on all 4 tracks: +2 VP,,base
+Poison Snooper,2,Plot,Deck,"Look at the top card of your deck, draw or trash it",,base
+Urgent Mission,1,Plot,Worker Placement,Recall one of your agents,,base
+Dispatch an Envoy,2,Plot,Worker Placement,Add faction agent icons to the card you play this turn,,base
+Rapid Mobilization,1,Plot,Win Combat,Deploy any # of garrisoned troops to conflict,,base
+Recruitment Mission,1,Plot,Persuasion,"+1 persuasion during reveal this round, you may hadd acquired card to top of deck",,base
+Calculated Hire,1,Plot,Worker Placement,-1 Spice -> Take the mentat from Mentat space on board,,base
+Favored Subject,1,Plot,Influence,+1 Emperor influence,,base
+The Sleeper Must Awaken,1,Plot,VP,-4 Sp -> +1 VP,,base
+Councilor's Dispensation,1,Plot,Resources,+2 Spice if you have a seat on the high council,,base
+Water of Life,1,Plot,Deck,-1 Water and -1 Spice -> 3x draw,,base
+Charisma,1,Plot,Persuasion,+2 persuasion during reveal this round,,base
+Water Peddlers Union,1,Plot,Resources,+1 water,,base
+Refocus,1,Plot,Deck,"Shuffle your discard into deck, then 1x draw",,base
+Know Their Ways,1,Plot,Influence,+1 inf Fremen,,base
+Secret of the Sisterhood,1,Plot,Influence,+1 inf Bene Gesserit,,base
+Guild Authorization,1,Plot,Influence,+1 inf Spacing Guild,,base
+Bribery,1,Plot,Influence,-2 Solari -> +1 Influence ?,,base
+Bindu Suspension,1,Plot,Deck,At start of turn: draw 1 card and you may pass your turn,,base
+Double Cross,1,Plot,Win Combat,"-1 Solari - > An opp of your choice loses one deployed troop, you add one troop from supply to conflict",,base
+Reinforcements,1,Plot,Win Combat,-3 Solari -> +3 troops. If its your reveal you may deploy to conflict,,base
+Infiltrate,1,Plot,Worker Placement,Enemy agents don’t block your next agent on board spaces this turn,,base
+Windfall,1,Plot,Resources,+2 Solari,,base
+CHOAM shares,1,Plot,VP,-7 -> +1 VP,,base
+Bypass Protocol,1,Plot,Persuasion,Acquire 1 card worth 3 or less or -2 Spice -> card worth 5 or less and place on top of deck,,base
+Blackmail,1,Combat,Win Combat,,-1 inf ? -> +5 swords,ix
+Cannon Turrets,1,Combat,Win Combat,+2 swords and each opp retreats one Dreadnought,"+2 swords, opp retreats 1 Dread",ix
+Strategic Push,1,Combat,Win Combat and Resources,2 swords and if you win +2 Solari,2,ix
+Second Wave,1,Combat,Win Combat,,+2 sword and deploy up to 2 units from garrisson,ix
+War Chest,1,Combat or Endgame,Win Combat or VP,(combat) -2 Solari -> 4 swords. Or (endgame) If you have 10 Solari: +1 VP,-2 Solari -> +4 swords,ix
+Finesse,1,Combat or Plot,Win Combat or Influece,(combat) 2 swords. Or (plot) -1 influence ? -> +1 influence ? (plot),2,ix
+Advanced Weaponry,1,Combat or Plot,Win Combat or Resources,(combat) If you have 3 tech: +4 sword. Or (plot) -3 solari -> +1 dreadnought,If you have 3 tech: +4 sword,ix
+Grand Conspiracy,1,Endgame,VP,"If you have (2 dread, 1 SMF, 4 inf on 2 tracks, council): 3 = 1 VP, 4 = 2 VP",,ix
+Strongarm,1,Plot,Influence,Lose a troop -> +1 influece on track where you placed an agent this turn,,ix
+Ixian Probe,1,Plot,Deck,2x discard -> 2x draw,,ix
+Cull,1,Plot,Deck,-1 Solari -> 1x trash,,ix
+Secret Forces,1,Plot,Win Combat,+2 troops if you have a seat on high council,,ix
+Quid Pro Quo,1,Plot,Influence,-2 Spice -> +1 influence on each track where you currently have an agent,,ix
+Glimpse the Path,1,Plot,Resources,-1 Spice -> +1 Water and 1x draw,,ix
+Diversion,1,Plot,Resources,+1 shipping when you deploy 4 units to conflict in 1 turn,,ix
+Expedite,1,Plot,Resources,-1 Spice -> +1 shipping,,ix
+Machine Culture,1,Plot or Endgame,Resources or VP,(plot) +1 Tech. Or (endgame) If you have 3 tech: +1 VP,,ix
+Harvest Cells,2,Combat,Resources or Tleilaxu,When you lose 3+ troops at end of conflict: +2 specimen. May also acquire a tleilaxu card paying normal cost,,Immo
+Vicious Talents,2,Combat,Win Combat,2 swords. If resesrch lvl 1: +2 swords. If research lvl 2: +2 swords,2-6 swords depending on research,Immo
+Gruesome Sacrificee,2,Combat,Resources,Lose 2 of your troops in the conflict --> +2 specimen and +1 beetle,,Immo
+Breakthrough,1,Plot,Resources,+1 research,,Immo
+Illicit Dealings,2,Plot,Tleilaxu,+1 Beetle,,Immo
+Disguised Beaurocrat,1,Plot,Resources or Influence,"If research lvl 1: +1 Spice, If research lvl 2: +1 inf ?",,Immo
+Shadowy bargain,1,Plot or Endgame,Resources or Tleilaxu,+1 Specimen (plot) or +1 Beetle (Endgame),,Immo
+Tleilaxu Puppet,1,Plot or Endgame,Resources or VP,(plot) +1 persuasion this round. Or (endgame) If you have high council and research lvl 2: +1 VP,,Immo
+Study Melange,1,Plot or Endgame,Resources or VP,(plot) +1 spice. Or (endgame) If you have 3 spice and research lvl 2: +1 VP,,Immo
+Counterattack,1,Combat or Plot,Win Combat,(plot) Deploy up to 2 troops from garrison. Or (combat) If Opp played combat intrigue: +4 swords,4 swords if Opp played a combat intrigue,Immo
+Economic Positioning,1,Combat or Endgame,Resources or VP,(plot) retreat two troops --> +3 solari. Or (endgame) if you have 10 solari: +1 VP,,Immo

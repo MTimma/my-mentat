@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { applyGameAction } from '../GameContext'
+import { computeStrength } from '../../../utils/combatStrength'
 import { getBaseTestState, stubDeckCard, withCardOnTop } from './_helpers'
 import { BOARD_SPACES } from '../../../data/boardSpaces'
 import { IMPERIUM_ROW_DECK } from '../../../data/cards'
@@ -169,7 +170,7 @@ describe('Test of Humanity — opponent discard-or-lose-troop flow', () => {
     expect(after.canEndTurn).toBe(false)
   })
 
-  it('losing the last deployed troop sets strength to 0 and does not garrison it', () => {
+  it('losing the last deployed troop keeps the sword pool and does not garrison it', () => {
     let s = triggerTestOfHumanity()
     const garrisonBefore = s.players[1].troops
     s = {
@@ -185,9 +186,11 @@ describe('Test of Humanity — opponent discard-or-lose-troop flow', () => {
       choice: 'loseTroop',
     })
     expect(after.combatTroops[1]).toBe(0)
-    expect(after.combatStrength[1]).toBe(0)
+    // 5 = 1 troop (2) + 3 swords; the troop leaves but the sword pool stays cached.
+    expect(after.combatStrength[1]).toBe(3)
+    expect(computeStrength(after, 1)).toBe(0)
     expect(after.players[1].troops).toBe(garrisonBefore)
-    expect(after.players[1].combatValue).toBe(0)
+    expect(after.players[1].combatValue).toBe(3)
   })
 
   it("'loseTroop' with no troops in the conflict leaves state unchanged", () => {

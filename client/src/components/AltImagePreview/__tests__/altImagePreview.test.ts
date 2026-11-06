@@ -18,6 +18,7 @@ describe('Alt / Option card zoom', () => {
     expect(tsx).toContain('alt-gain-preview')
     expect(css).toContain('.alt-gain-preview .turn-gain-source-title')
     expect(css).toContain('.alt-gain-preview .turn-gain-persuasion-sources')
+    expect(css).toContain('.alt-gain-preview .turn-gain-combat-sources')
     expect(css).toContain('-webkit-line-clamp: unset')
     expect(css).not.toContain('transform: scale(1.55)')
   })

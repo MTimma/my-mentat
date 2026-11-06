@@ -1657,9 +1657,9 @@
       "pool": "imperium",
       "cost": 4,
       "agentIcons": [
-        "spice-trade",
         "landsraad",
-        "city"
+        "city",
+        "spice-trade"
       ],
       "riseOfIx": true,
       "image": "imperium_row/rise_of_ix/negotiated_withdrawel.avif",

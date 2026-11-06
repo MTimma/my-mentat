@@ -9,12 +9,37 @@ import {
   applyRoundStartTech,
   applyTroopTransportsToFreighterReward,
   handleAcquireTech,
+  refreshArtillerySwords,
 } from '../riseOfIxReducer'
-import { GamePhase, FactionType, NO_EXPANSIONS, TurnType } from '../../../types/GameTypes'
+import {
+  GamePhase,
+  FactionType,
+  GainSource,
+  NO_EXPANSIONS,
+  RewardType,
+  TurnType,
+  type GameState,
+} from '../../../types/GameTypes'
 import { makePlayer, stubDeckCard } from './_helpers'
 import { DEFAULT_DREADNOUGHTS } from '../../../utils/dreadnoughts'
 
 const RISE_OF_IX = { ...NO_EXPANSIONS, riseOfIx: true }
+
+/** Card-source gain for player 0 in round 1 (the default `roiState` round). */
+function cardGain(sourceId: number, amount: number, type: RewardType) {
+  return {
+    round: 1,
+    playerId: 0,
+    sourceId,
+    name: `card-${sourceId}`,
+    amount,
+    type,
+    source: GainSource.CARD,
+  }
+}
+
+const cardCombatGain = (sourceId: number, amount: number) =>
+  cardGain(sourceId, amount, RewardType.COMBAT)
 
 function roiState(overrides: Record<string, unknown> = {}) {
   const base = getFreshDefaultGameState()
@@ -249,9 +274,58 @@ describe('tech tiles reducer', () => {
     expect(after.players[0].victoryPoints).toBe(6)
   })
 
-  it('Artillery: +1 per sword-producing revealed card', () => {
-    const swordCard = stubDeckCard(10, {
-      revealEffect: [{ reward: { combat: 2 } }],
+  it('Artillery: +1 per revealed card that actually provided swords', () => {
+    const swordCard = stubDeckCard(10, { revealEffect: [{ reward: { combat: 2 } }] })
+    const oneSwordCard = stubDeckCard(11, { revealEffect: [{ reward: { combat: 1 } }] })
+    const persuasionCard = stubDeckCard(12, { revealEffect: [{ reward: { persuasion: 2 } }] })
+    const before = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.ARTILLERY, faceUp: true }],
+        }),
+      ],
+      combatTroops: { 0: 1 },
+      combatStrength: { 0: 2 },
+      gains: [
+        cardCombatGain(10, 2),
+        cardCombatGain(11, 1),
+        // Printed swords that never resolved (Bene Gesserit Sister choosing persuasion).
+        cardGain(12, 2, RewardType.PERSUASION),
+      ],
+    })
+    const result = applyRevealTechEffects(
+      before,
+      0,
+      [swordCard, oneSwordCard, persuasionCard],
+      0,
+      0
+    )
+    expect(result.swordCount).toBe(2)
+    expect(result.state.combatStrength[0]).toBe(4)
+  })
+
+  it('Artillery: pools swords with no units in conflict', () => {
+    const swordCard = stubDeckCard(10, { revealEffect: [{ reward: { combat: 2 } }] })
+    const before = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.ARTILLERY, faceUp: true }],
+        }),
+      ],
+      combatTroops: {},
+      combatStrength: {},
+      gains: [cardCombatGain(10, 2)],
+    })
+    const result = applyRevealTechEffects(before, 0, [swordCard], 0, 0)
+    expect(result.swordCount).toBe(1)
+  })
+
+  it('Artillery: re-evaluates when a reveal choice resolves later', () => {
+    const bgs = stubDeckCard(20, {
+      revealEffect: [
+        { choiceOpt: true, reward: { persuasion: 2 } },
+        { choiceOpt: true, reward: { combat: 2 } },
+      ],
     })
     const before = roiState({
       players: [
@@ -261,10 +335,127 @@ describe('tech tiles reducer', () => {
       ],
       combatTroops: { 0: 1 },
       combatStrength: { 0: 2 },
+      currTurn: {
+        playerId: 0,
+        type: TurnType.REVEAL,
+        revealedCardIds: [bgs.id],
+        artilleryFired: true,
+      },
     })
-    const result = applyRevealTechEffects(before, 0, [swordCard, swordCard, swordCard], 0, 0)
-    expect(result.swordCount).toBe(3)
-    expect(result.state.combatStrength[0]).toBe(5)
+    // The Sister's swords are still an unresolved choice, so Artillery counts nothing yet.
+    const revealed = applyRevealTechEffects(before, 0, [bgs], 0, 0)
+    expect(revealed.swordCount).toBe(0)
+
+    // She chooses 2 swords → Artillery now counts her.
+    const withChoice = {
+      ...revealed.state,
+      gains: [...revealed.state.gains, cardCombatGain(bgs.id, 2)],
+    }
+    const refreshed = refreshArtillerySwords(withChoice, 0)
+    expect(refreshed.gains).toContainEqual(
+      expect.objectContaining({ name: 'Artillery', type: RewardType.COMBAT, amount: 1 })
+    )
+    expect(refreshed.combatStrength[0]).toBe(3)
+  })
+
+  it('Artillery: does not fire when the tile was acquired mid-reveal', () => {
+    const bgs = stubDeckCard(20, {
+      revealEffect: [
+        { choiceOpt: true, reward: { persuasion: 2 } },
+        { choiceOpt: true, reward: { combat: 2 } },
+      ],
+    })
+    // Artillery is owned now, but the reveal turn started before it was acquired (no
+    // `artilleryFired` marker), so resolving the Sister's swords must not grant its bonus.
+    const before = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.ARTILLERY, faceUp: true }],
+        }),
+      ],
+      combatTroops: { 0: 1 },
+      combatStrength: { 0: 4 },
+      gains: [cardCombatGain(bgs.id, 2)],
+      currTurn: { playerId: 0, type: TurnType.REVEAL, revealedCardIds: [bgs.id] },
+    })
+    const refreshed = refreshArtillerySwords(before, 0)
+    expect(refreshed).toBe(before)
+    expect(refreshed.gains.some(g => g.name === 'Artillery')).toBe(false)
+  })
+
+  it('Artillery: counts a reveal choice resolved after the reveal (applyGameAction)', () => {
+    const bgs = stubDeckCard(20, {
+      revealEffect: [
+        { choiceOpt: true, reward: { persuasion: 2 } },
+        { choiceOpt: true, reward: { combat: 2 } },
+      ],
+    })
+    let s: GameState = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.ARTILLERY, faceUp: true }],
+          deck: [bgs],
+          handCount: 1,
+        }),
+        makePlayer(1),
+      ],
+      combatTroops: { 0: 1 },
+      combatStrength: { 0: 2 },
+    })
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [bgs.id] })
+    // No resolved swords yet — the Sister's reveal box is still a choice.
+    expect(s.gains.some(g => g.name === 'Artillery')).toBe(false)
+
+    const choice = s.currTurn?.pendingChoices?.find(c => c.id === `card-${bgs.id}-OR`)
+    expect(choice).toBeDefined()
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: choice!.id,
+      optionIndex: 1,
+      source: { type: 'card', id: bgs.id, name: bgs.name },
+    })
+    // 2 pooled + 2 Sister swords + 1 Artillery.
+    expect(s.gains).toContainEqual(
+      expect.objectContaining({ name: 'Artillery', type: RewardType.COMBAT, amount: 1 })
+    )
+    expect(s.combatStrength[0]).toBe(5)
+  })
+
+  it('Artillery: acquired after the reveal does not fire retroactively', () => {
+    const bgs = stubDeckCard(20, {
+      revealEffect: [
+        { choiceOpt: true, reward: { persuasion: 2 } },
+        { choiceOpt: true, reward: { combat: 2 } },
+      ],
+    })
+    let s: GameState = roiState({
+      players: [makePlayer(0, { deck: [bgs], handCount: 1 }), makePlayer(1)],
+      combatTroops: { 0: 1 },
+      combatStrength: { 0: 2 },
+    })
+    s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [bgs.id] })
+    expect(s.currTurn?.artilleryFired).toBe(false)
+
+    // Acquire Artillery mid-reveal (e.g. Machine Culture), then resolve the Sister's choice.
+    s = {
+      ...s,
+      players: s.players.map(p =>
+        p.id === 0 ? { ...p, tech: [{ id: TechTileId.ARTILLERY, faceUp: true }] } : p
+      ),
+    }
+    const choice = s.currTurn?.pendingChoices?.find(c => c.id === `card-${bgs.id}-OR`)
+    expect(choice).toBeDefined()
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: choice!.id,
+      optionIndex: 1,
+      source: { type: 'card', id: bgs.id, name: bgs.name },
+    })
+    // 2 pooled + 2 Sister swords — the tile was not owned during the reveal, so no bonus.
+    expect(s.gains.some(g => g.name === 'Artillery')).toBe(false)
+    expect(s.combatStrength[0]).toBe(4)
   })
 
   it('Restricted Ordinance: +4 combat only if hasHighCouncilSeat', () => {

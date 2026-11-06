@@ -117,18 +117,21 @@
   border: none;
 }
 
-.turn-gain-persuasion-sources {
+.turn-gain-persuasion-sources,
+.turn-gain-combat-sources {
   display: none;
 }
 
-.turn-gain-persuasion-source {
+.turn-gain-persuasion-source,
+.turn-gain-combat-source {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   min-width: 0;
 }
 
-.turn-gain-persuasion-source-thumb {
+.turn-gain-persuasion-source-thumb,
+.turn-gain-combat-source-thumb {
   width: 22px;
   height: auto;
   max-height: 32px;
@@ -137,7 +140,8 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.turn-gain-persuasion-source-tech {
+.turn-gain-persuasion-source-tech,
+.turn-gain-combat-source-tech {
   width: 18px;
   height: 18px;
   object-fit: cover;
@@ -145,11 +149,18 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.turn-gain-persuasion-source-text {
+.turn-gain-persuasion-source-text,
+.turn-gain-combat-source-text {
   font-size: 0.72rem;
   font-weight: 600;
   line-height: 1.2;
   color: var(--chrome-text);
+}
+
+.turn-gain-combat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .turn-gain-total-cards {

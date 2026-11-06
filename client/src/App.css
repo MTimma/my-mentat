@@ -706,6 +706,19 @@ body:has(.game-container--play) {
   gap: 10px;
 }
 
+/* Two acquire choices (top of deck / discard pile) always sit side by side. */
+.imperium-preview-actions:has(> .imperium-preview-acquire-button + .imperium-preview-acquire-button) {
+  flex-wrap: nowrap;
+}
+
+.imperium-preview-actions:has(> .imperium-preview-acquire-button + .imperium-preview-acquire-button)
+  .imperium-preview-acquire-button {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  padding: 8px 10px;
+}
+
 .imperium-preview-persuasion {
   display: inline-flex;
   align-items: center;

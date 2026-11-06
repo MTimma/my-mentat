@@ -2128,9 +2128,11 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
               ? 'Finish Masterstroke faction selection before claiming other rewards.'
               : memnonHighCouncilSelectionActive
                 ? 'Finish faction selection before claiming other rewards.'
-                : reward.isTrash
-                  ? `Trashing this card will cancel effects that haven't been applied yet. Cancels: ${getCancelledRewards(card, reward)}`
-                  : undefined
+                : reward.requiredEffectRetreats !== undefined && reward.disabled
+                  ? `Retreat ${reward.requiredEffectRetreats} troop(s) from the Conflict first.`
+                  : reward.isTrash
+                    ? `Trashing this card will cancel effects that haven't been applied yet. Cancels: ${getCancelledRewards(card, reward)}`
+                    : undefined
           const ariaLabel =
             variant === 'overlay' && overlayContext
               ? getCardOverlayAriaLabel(

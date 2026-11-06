@@ -142,10 +142,6 @@
       "name": "Sietch Tabr",
       "agentIcon": "city",
       "conflictMarker": true,
-      "influence": {
-        "faction": "fremen",
-        "amount": 1
-      },
       "requiresInfluence": {
         "faction": "fremen",
         "amount": 2
