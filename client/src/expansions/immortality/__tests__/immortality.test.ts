@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GamePhase, NO_EXPANSIONS, AgentIcon, type Card, type GameState, type Reward } from '../../../types/GameTypes'
+import { GamePhase, NO_EXPANSIONS, AgentIcon, type Card, type GameState, type Player, type Reward } from '../../../types/GameTypes'
 import { getBaseTestState, stubDeckCard } from '../../../components/GameContext/__tests__/_helpers'
 import { applyGameAction } from '../../../components/GameContext/GameContext'
 import { playRequirementSatisfied } from '../../../components/GameContext/requirements'
@@ -417,6 +417,102 @@ describe('Immortality — track rewards from cards', () => {
     state = applyGameAction(state, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
     expect(state.players[0].tleilaxuStep).toBe(1)
     expect(state.players[0].spice).toBe(10)
+  })
+
+  it('Gruesome Sacrifice loses 2 Conflict troops (returned to supply) for specimen and beetle', () => {
+    const card = IMMORTALITY_INTRIGUE_CARDS.find(c => c.name === 'Gruesome Sacrifice')!
+    let state = getBaseTestState({ intrigueCount: 1 }, { players: 2 })
+    const supplyBefore = state.players[0].troopSupply ?? 0
+    state = {
+      ...state,
+      expansions: IMMORTALITY_EXPANSIONS,
+      phase: GamePhase.COMBAT,
+      activePlayerId: 0,
+      currTurn: null,
+      intrigueDeck: [card],
+      combatTroops: { 0: 3, 1: 1 },
+      combatStrength: { 0: 6, 1: 2 },
+      combatPasses: new Set(),
+      currentConflict: {
+        id: 99,
+        tier: 1,
+        name: 'Test Conflict',
+        rewards: { first: [], second: [], third: [] },
+      },
+      tleilaxuTrackBonusSpice: 2,
+      tleilaxuTrackBonusClaimed: false,
+    }
+
+    state = applyGameAction(state, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: card.id })
+    expect(state.combatTroops[0]).toBe(3) // the cost is confirmed before it is paid
+    const ch = state.currTurn?.pendingChoices?.[0]
+    expect(ch).toBeDefined()
+
+    state = applyGameAction(state, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: ch!.id,
+      optionIndex: 0,
+    })
+    expect(state.combatTroops[0]).toBe(1)
+    expect(state.combatStrength[0]).toBe(2)
+    expect(state.players[0].troopSupply).toBe(supplyBefore + 2)
+    expect(state.players[0].specimens).toBe(2)
+    expect(state.players[0].tleilaxuStep).toBe(1)
+  })
+
+  it('Gruesome Sacrifice is unplayable with fewer than 2 Conflict troops', () => {
+    const card = IMMORTALITY_INTRIGUE_CARDS.find(c => c.name === 'Gruesome Sacrifice')!
+    let state = getBaseTestState({ intrigueCount: 1 }, { players: 2 })
+    state = {
+      ...state,
+      expansions: IMMORTALITY_EXPANSIONS,
+      phase: GamePhase.COMBAT,
+      activePlayerId: 0,
+      currTurn: null,
+      intrigueDeck: [card],
+      combatTroops: { 0: 1, 1: 1 },
+      combatStrength: { 0: 2, 1: 2 },
+      combatPasses: new Set(),
+      currentConflict: {
+        id: 99,
+        tier: 1,
+        name: 'Test Conflict',
+        rewards: { first: [], second: [], third: [] },
+      },
+    }
+    const before = state
+    state = applyGameAction(state, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: card.id })
+    expect(state).toBe(before)
+  })
+
+  it('endgame intrigue VP lines require their conditions', () => {
+    const play = (name: string, overrides: Partial<Player>) => {
+      const card = IMMORTALITY_INTRIGUE_CARDS.find(c => c.name === name)!
+      let state = getBaseTestState({ intrigueCount: 1, ...overrides })
+      state = {
+        ...state,
+        expansions: IMMORTALITY_EXPANSIONS,
+        phase: GamePhase.END_GAME,
+        activePlayerId: 0,
+        intrigueDeck: [card],
+        currTurn: null,
+        combatPasses: new Set(),
+        endgameDonePlayers: new Set(),
+      }
+      return applyGameAction(state, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
+    }
+
+    expect(play('Study Melange', { spice: 3, researchNodeId: 'r6' }).players[0].victoryPoints).toBe(1)
+    expect(play('Study Melange', { spice: 2, researchNodeId: 'r6' }).players[0].victoryPoints).toBe(0)
+    expect(
+      play('Tleilaxu Puppet', { hasHighCouncilSeat: true, researchNodeId: 'r6' }).players[0].victoryPoints
+    ).toBe(1)
+    expect(
+      play('Tleilaxu Puppet', { hasHighCouncilSeat: false, researchNodeId: 'r6' }).players[0].victoryPoints
+    ).toBe(0)
+    expect(play('Economic Positioning', { solari: 10 }).players[0].victoryPoints).toBe(1)
+    expect(play('Economic Positioning', { solari: 9 }).players[0].victoryPoints).toBe(0)
   })
 
   it('Experimentation advances research when its agent reward is claimed', () => {

@@ -16,10 +16,6 @@ mkdirSync(outDir, { recursive: true })
 const catalog = buildCatalog()
 const v = `v${CATALOG_SCHEMA_VERSION}`
 
-const expansionCounts = Object.fromEntries(
-  catalog.expansions.available.map(id => [id, catalog.expansions.byId[id].counts])
-)
-
 const files: Record<string, unknown> = {
   [`catalog.${v}.json`]: catalog,
   [`cards.${v}.json`]: { schemaVersion: catalog.schemaVersion, cards: catalog.cards, decks: catalog.decks },
@@ -37,10 +33,8 @@ const files: Record<string, unknown> = {
   },
   'index.json': {
     schemaVersion: catalog.schemaVersion,
-    counts: catalog.meta.counts,
     expansions: {
       available: catalog.expansions.available,
-      counts: expansionCounts,
     },
     files: [
       `catalog.${v}.json`,

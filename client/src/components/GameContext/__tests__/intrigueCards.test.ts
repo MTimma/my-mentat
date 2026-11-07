@@ -946,7 +946,7 @@ describe('Intrigue cards — combat phase', () => {
       optionIndex: 1,
       source: { type: GainSource.INTRIGUE, id: 33, name: 'Demand Respect' },
     })
-    expect(s.players[0].spice).toBe(3)
+    expect(s.players[0].spice).toBe(5)
     const factionChoice = s.currTurn?.pendingChoices?.[0]
     s = applyGameAction(s, {
       type: 'RESOLVE_CHOICE',
@@ -958,9 +958,11 @@ describe('Intrigue cards — combat phase', () => {
     expect(s.pendingDemandRespectReward?.[0]).toEqual({
       faction: FactionType.BENE_GESSERIT,
       amount: 2,
+      cost: { spice: 2 },
     })
     s = { ...s, phase: GamePhase.COMBAT_REWARDS }
     s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    expect(s.players[0].spice).toBe(3)
     expect(s.factionInfluence[FactionType.BENE_GESSERIT][0]).toBe(2)
   })
 

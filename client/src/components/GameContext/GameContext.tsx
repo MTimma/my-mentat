@@ -251,6 +251,7 @@ import {
 import { findRhomburSignetLegacyResolveChoice } from './riseOfIx/legacySignetPayCost'
 import {
   applyRiseOfIxIntrigueCustomInEffect,
+  agentFactionsOnBoard,
   applyQuidProQuo,
   canPlayDiversion,
   canPlayStrongarm,
@@ -282,7 +283,7 @@ import {
   type ImmortalityPlayContext,
 } from '../../expansions/immortality/customEffects'
 import { TLEILAXU_PURCHASABLE_SLOT_COUNT } from '../../expansions/immortality/setup'
-import { hasFirstGeneticMarker } from '../../expansions/immortality/researchTrack'
+import { geneLevelForNode, hasFirstGeneticMarker } from '../../expansions/immortality/researchTrack'
 
 /** Merge RoI unit fields without clobbering resources already adjusted this placement. */
 function mergeRoiUnitFieldsFromRefreshed(target: Player, refreshed: Player): void {
@@ -2010,9 +2011,42 @@ function canAffordIntrigueCost(state: GameState, player: Player, cost: Cost): bo
   if (cost.water && player.water < cost.water) return false
   if (cost.solari && player.solari < cost.solari) return false
   if (cost.troops && player.troops < cost.troops) return false// todo should be player.troops + conflict 
+  if (cost.troopsInConflict && (state.combatTroops[player.id] ?? 0) < cost.troopsInConflict) return false
   if (cost.discard && player.handCount < cost.discard) return false
+  if (cost.retreatTroops && (state.combatTroops[player.id] ?? 0) < cost.retreatTroops) return false
   if (cost.influence?.chooseOne && !canPayInfluenceCost(state, player.id, cost.influence)) return false
   return true
+}
+
+/**
+ * Pay a `troopsInConflict` cost: remove N troops from the Conflict. Lost troops still
+ * return to supply (pieces are not destroyed); each troop is worth 2 strength.
+ */
+function payTroopsInConflictCost(
+  state: GameState,
+  player: Player,
+  playerId: number,
+  count: number
+): { combatTroops: Record<number, number>; combatStrength: Record<number, number>; player: Player } | null {
+  const ct = state.combatTroops[playerId] ?? 0
+  if (ct < count) return null
+  const prevStrength = state.combatStrength[playerId] ?? player.combatValue ?? 0
+  const nextStrength = Math.max(0, prevStrength - count * 2)
+  const combatStrength = { ...state.combatStrength }
+  if (nextStrength <= 0) {
+    delete combatStrength[playerId]
+  } else {
+    combatStrength[playerId] = nextStrength
+  }
+  return {
+    combatTroops: { ...state.combatTroops, [playerId]: ct - count },
+    combatStrength,
+    player: {
+      ...player,
+      combatValue: nextStrength,
+      troopSupply: (player.troopSupply ?? 0) + count,
+    },
+  }
 }
 
 /** Player has at least one card in the draw pile (deck[handCount..]). */
@@ -2027,6 +2061,15 @@ function canPlayIntrigueCardNow(state: GameState, player: Player, card: Intrigue
   }
   if (intrigueCardHasCustom(card, CustomEffect.DEMAND_RESPECT)) {
     return true
+  }
+  if (
+    intrigueCardHasCustom(card, CustomEffect.ADVANCED_WEAPONRY) &&
+    state.phase === GamePhase.COMBAT
+  ) {
+    return (player.tech?.length ?? 0) >= 3
+  }
+  if (intrigueCardHasCustom(card, CustomEffect.QUID_PRO_QUO) && state.expansions?.riseOfIx) {
+    if (agentFactionsOnBoard(state, player.id).length === 0) return false
   }
 
   const effects = (card.playEffect ?? []).filter(effect => {
@@ -2053,8 +2096,8 @@ function canPlayIntrigueCardNow(state: GameState, player: Player, card: Intrigue
   return effects.every(effect => {
     if (effect.timing === EffectTiming.ON_REVEAL_THIS_ROUND) return true
     if (effect.reward?.acquire) return true
-    if (effect.reward?.influence?.chooseOne) return true
-    if (effect.cost?.influence?.chooseOne) return true
+    if (effect.reward?.influence?.chooseOne) return isAffordableEffect(effect)
+    if (effect.cost?.influence?.chooseOne) return isAffordableEffect(effect)
     if (effect.reward?.custom === CustomEffect.DOUBLE_CROSS) return true
     if (effect.reward?.custom === CustomEffect.URGENT_MISSION) return true
     if (effect.reward?.custom === CustomEffect.STRONGARM && !canPlayStrongarm(state, player.id)) {
@@ -2321,6 +2364,8 @@ function handleIntrigueEffect(
       }
       updatedPlayer.combatValue = Math.max(0, (updatedPlayer.combatValue || 0) - 6)
       newState.combatTroops = { ...newState.combatTroops, [playerId]: newCt }
+      // Lost troops are removed from the Conflict but still return to supply (pieces are not destroyed).
+      updatedPlayer.troopSupply = (updatedPlayer.troopSupply ?? 0) + 3
       updatedPlayer.victoryPoints += 1
       pushGain(1, RewardType.VICTORY_POINTS)
       return
@@ -2331,6 +2376,32 @@ function handleIntrigueEffect(
     }
     if (custom === CustomEffect.DEMAND_RESPECT || custom === CustomEffect.POISON_SNOOPER) {
       return
+    }
+
+    // Immortality intrigue customs (endgame VP checks).
+    if (custom && state.expansions?.immortality) {
+      const researchLevel = geneLevelForNode(updatedPlayer.researchNodeId)
+      if (custom === CustomEffect.STUDY_MELANGE) {
+        if (updatedPlayer.spice >= 3 && researchLevel >= 2) {
+          updatedPlayer.victoryPoints += 1
+          pushGain(1, RewardType.VICTORY_POINTS)
+        }
+        return
+      }
+      if (custom === CustomEffect.TLEILAXU_PUPPET) {
+        if (updatedPlayer.hasHighCouncilSeat && researchLevel >= 2) {
+          updatedPlayer.victoryPoints += 1
+          pushGain(1, RewardType.VICTORY_POINTS)
+        }
+        return
+      }
+      if (custom === CustomEffect.ECONOMIC_POSITIONING_IMM) {
+        if (updatedPlayer.solari >= 10) {
+          updatedPlayer.victoryPoints += 1
+          pushGain(1, RewardType.VICTORY_POINTS)
+        }
+        return
+      }
     }
     if (custom && isRiseOfIxIntrigueCustom(custom) && state.expansions?.riseOfIx) {
       if (effect.cost) {
@@ -2381,6 +2452,8 @@ function handleIntrigueEffect(
         (c.water && updatedPlayer.water < c.water) ||
         (c.solari && updatedPlayer.solari < c.solari) ||
         (c.troops && updatedPlayer.troops < c.troops) ||
+        (c.troopsInConflict && (newState.combatTroops[playerId] ?? 0) < c.troopsInConflict) ||
+        (c.retreatTroops && (newState.combatTroops[playerId] ?? 0) < c.retreatTroops) ||
         (c.specimen && (updatedPlayer.specimens ?? 0) < c.specimen)
       ) {
         return
@@ -2400,6 +2473,30 @@ function handleIntrigueEffect(
       if (c.troops) {
         updatedPlayer.troops -= c.troops
         pushGain(-c.troops, RewardType.TROOPS)
+      }
+      if (c.troopsInConflict) {
+        const paid = payTroopsInConflictCost(newState, updatedPlayer, playerId, c.troopsInConflict)
+        if (!paid) return
+        newState = {
+          ...newState,
+          combatTroops: paid.combatTroops,
+          combatStrength: paid.combatStrength,
+        }
+        updatedPlayer = paid.player
+        pushGain(-c.troopsInConflict, RewardType.TROOPS)
+      }
+      if (c.retreatTroops) {
+        const ct = newState.combatTroops[playerId] ?? 0
+        newState.combatTroops = { ...newState.combatTroops, [playerId]: ct - c.retreatTroops }
+        updatedPlayer.troops += c.retreatTroops
+        const prevStr = newState.combatStrength[playerId] ?? updatedPlayer.combatValue ?? 0
+        const newStr = Math.max(0, prevStr - c.retreatTroops * 2)
+        if (newStr <= 0) {
+          delete newState.combatStrength[playerId]
+        } else {
+          newState.combatStrength[playerId] = newStr
+        }
+        updatedPlayer.combatValue = newStr
       }
       if (c.specimen && newState.expansions?.immortality) {
         updatedPlayer.specimens = Math.max(0, (updatedPlayer.specimens ?? 0) - c.specimen)
@@ -2493,7 +2590,9 @@ function applyIntrigueCardPlay(
         if (p.id === tid) {
           return {
             ...p,
-            combatValue: Math.max(0, (p.combatValue || 0) - 2)
+            combatValue: Math.max(0, (p.combatValue || 0) - 2),
+            // The removed troop piece returns to the opponent's supply after the Conflict.
+            troopSupply: (p.troopSupply ?? 0) + 1,
           }
         }
         return p
@@ -4543,7 +4642,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           (c.spice && player.spice < c.spice) ||
           (c.water && player.water < c.water) ||
           (c.solari && player.solari < c.solari) ||
-          (c.troops && player.troops < c.troops)
+          (c.troops && player.troops < c.troops) ||
+          (c.troopsInConflict && (state.combatTroops[playerId] ?? 0) < c.troopsInConflict)
         )
 
         pendingCombatChoices.push({
@@ -4781,11 +4881,59 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (demandRespect) {
           const card = getIntrigueCardByCustom(CustomEffect.DEMAND_RESPECT)
           const sourceId = card?.id ?? 0
+          // The 2-spice option is charged only now that the win (and reward) is confirmed.
+          let amount = demandRespect.amount
+          const cost = demandRespect.cost
+          if (cost) {
+            const winner = newState.players.find(p => p.id === winnerId)
+            const affordable = Boolean(
+              winner &&
+                (!cost.spice || winner.spice >= cost.spice) &&
+                (!cost.water || winner.water >= cost.water) &&
+                (!cost.solari || winner.solari >= cost.solari) &&
+                (!cost.troops || winner.troops >= cost.troops)
+            )
+            if (!affordable) {
+              amount = 1
+            } else {
+              const paidGains: Gain[] = [...(newState.gains || [])]
+              const pushPaid = (paid: number, type: RewardType) => {
+                paidGains.push({
+                  round: state.currentRound,
+                  playerId: winnerId,
+                  sourceId,
+                  name: 'Demand Respect',
+                  amount: -paid,
+                  type,
+                  source: GainSource.INTRIGUE,
+                })
+              }
+              if (cost.spice) pushPaid(cost.spice, RewardType.SPICE)
+              if (cost.water) pushPaid(cost.water, RewardType.WATER)
+              if (cost.solari) pushPaid(cost.solari, RewardType.SOLARI)
+              if (cost.troops) pushPaid(cost.troops, RewardType.TROOPS)
+              newState = {
+                ...newState,
+                gains: paidGains,
+                players: newState.players.map(p =>
+                  p.id === winnerId
+                    ? {
+                        ...p,
+                        spice: p.spice - (cost.spice ?? 0),
+                        water: p.water - (cost.water ?? 0),
+                        solari: p.solari - (cost.solari ?? 0),
+                        troops: p.troops - (cost.troops ?? 0),
+                      }
+                    : p
+                ),
+              }
+            }
+          }
           newState = updateFactionInfluence(
             newState,
             demandRespect.faction,
             winnerId,
-            demandRespect.amount,
+            amount,
             {
               source: GainSource.INTRIGUE,
               sourceId,
@@ -7789,6 +7937,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedGains = [...state.gains]
       
       let followUpGainChoice: FixedOptionsChoice | null = null
+      let updatedCombatOverrides: Pick<GameState, 'combatTroops' | 'combatStrength'> | null = null
 
       if (choice && choice.type === ChoiceType.FIXED_OPTIONS) {
         const fixedChoice = choice as FixedOptionsChoice
@@ -7838,6 +7987,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             updatedPlayer.troops -= costToPay.troops
             pushGain(-costToPay.troops, RewardType.TROOPS)
           }
+          if (costToPay.troopsInConflict) {
+            const paid = payTroopsInConflictCost(
+              { ...state, ...(updatedCombatOverrides ?? {}) },
+              updatedPlayer,
+              playerId,
+              costToPay.troopsInConflict
+            )
+            if (!paid) return false
+            updatedCombatOverrides = {
+              combatTroops: paid.combatTroops,
+              combatStrength: paid.combatStrength,
+            }
+            Object.assign(updatedPlayer, paid.player)
+            pushGain(-costToPay.troopsInConflict, RewardType.TROOPS)
+          }
           return true
         }
 
@@ -7845,7 +8009,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           if (!payNumericCost(fixedChoice.influenceResolution.payOnResolve)) return state
         }
         
-        if (selectedOption?.cost) {
+        if (selectedOption?.cost && !fixedChoice.deferInfluenceUntilCombatWin) {
           if (!payNumericCost(selectedOption.cost)) return state
         }
 
@@ -7865,6 +8029,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           )
           if (fixedChoice.deferInfluenceUntilCombatWin) {
             followUpGainChoice.deferInfluenceUntilCombatWin = true
+            if (selectedOption?.cost) {
+              followUpGainChoice.pendingDemandRespectCost = selectedOption.cost
+            }
           }
         }
       }
@@ -7880,11 +8047,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const newPending = (state.currTurn.pendingChoices || []).filter(c => c.id !== action.choiceId)
         const after = {
           ...state,
+          ...(updatedCombatOverrides ?? {}),
           players: state.players.map(p => (p.id === playerId ? updatedPlayer : p)),
           gains: updatedGains,
           pendingDemandRespectReward: {
             ...(state.pendingDemandRespectReward || {}),
-            [playerId]: { faction, amount },
+            [playerId]: { faction, amount, cost: choice.pendingDemandRespectCost },
           },
           currTurn: { ...state.currTurn, pendingChoices: newPending },
           canEndTurn: newPending.length === 0,
@@ -7899,7 +8067,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const rewardForApply =
         reward.influence?.chooseOne ? { ...reward, influence: undefined } : reward
       const newState = applyChoiceReward(
-        { ...state, players: state.players.map(p => p.id === playerId ? updatedPlayer : p), gains: updatedGains },
+        {
+          ...state,
+          ...(updatedCombatOverrides ?? {}),
+          players: state.players.map(p => p.id === playerId ? updatedPlayer : p),
+          gains: updatedGains,
+        },
         rewardForApply,
         playerId,
         gainAttribution

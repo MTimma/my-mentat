@@ -242,6 +242,8 @@ export interface Cost {
   discard?: number
   influence?: InfluenceAmounts
   troops?: number
+  /** Immortality — lose N troops from the Conflict (pieces return to supply, not garrison). */
+  troopsInConflict?: number
   /** Rise of Ix — pay troop pieces from supply (not garrison). */
   poolTroop?: number
   retreatTroops?: number
@@ -589,6 +591,8 @@ export interface FixedOptionsChoice extends PendingChoiceBase {
   influenceResolution?: InfluenceResolutionMeta
   /** Combat victory intrigue — store faction pick until Conflict win is confirmed. */
   deferInfluenceUntilCombatWin?: boolean
+  /** Demand Respect — option cost, charged only when the Conflict win is confirmed. */
+  pendingDemandRespectCost?: Cost
 }
 
 export interface CounterChoice extends PendingChoiceBase {
@@ -846,7 +850,7 @@ export interface GameState {
   pendingVictorSolariThisCombat?: Record<number, boolean>
   /** Demand Respect: influence granted when this player wins the current Conflict */
   pendingDemandRespectReward?: Partial<
-    Record<number, { faction: FactionType; amount: number }>
+    Record<number, { faction: FactionType; amount: number; cost?: Cost }>
   >
   /** Second Wave: player must deploy up to 2 garrison units to the Conflict */
   pendingSecondWave?: number | null
@@ -1147,14 +1151,11 @@ export enum CustomEffect {
   CLANDESTINE_MEETING = 'CLANDESTINE_MEETING',
   IMPERIUM_CEREMONY = 'IMPERIUM_CEREMONY',
   SCIENTIFIC_BREAKTHROUGH = 'SCIENTIFIC_BREAKTHROUGH',
-  VICIOUS_TALENTS = 'VICIOUS_TALENTS',
-  DISGUISED_BUREAUCRAT = 'DISGUISED_BUREAUCRAT',
   STUDY_MELANGE = 'STUDY_MELANGE',
   TLEILAXU_PUPPET = 'TLEILAXU_PUPPET',
   COUNTERATTACK = 'COUNTERATTACK',
   ECONOMIC_POSITIONING_IMM = 'ECONOMIC_POSITIONING_IMM',
   HARVEST_CELLS = 'HARVEST_CELLS',
-  GRUESOME_SACRIFICE = 'GRUESOME_SACRIFICE',
   SHADOWY_BARGAIN = 'SHADOWY_BARGAIN',
   SHOW_OF_STRENGTH = 'SHOW_OF_STRENGTH',
   STILLSUIT_MANUFACTURER = 'STILLSUIT_MANUFACTURER',

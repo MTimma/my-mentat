@@ -868,6 +868,9 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     if (cost?.water && activePlayer.water < cost.water) return false
     if (cost?.solari && activePlayer.solari < cost.solari) return false
     if (cost?.troops && activePlayer.troops < cost.troops) return false
+    if (cost?.troopsInConflict && (gameState.combatTroops[activePlayer.id] ?? 0) < cost.troopsInConflict) {
+      return false
+    }
     if (reward?.techNegotiator && (activePlayer.troopSupply ?? 0) < reward.techNegotiator) return false
     if (reward?.acquireTech !== undefined && !gameState.ixBoard?.stacks?.some(stack => stack.length > 0)) {
       return false

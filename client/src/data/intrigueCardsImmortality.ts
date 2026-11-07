@@ -1,5 +1,6 @@
 import {
   CustomEffect,
+  FactionType,
   GamePhase,
   IntrigueCard,
   IntrigueCardType,
@@ -39,7 +40,11 @@ export const IMMORTALITY_INTRIGUE_CARDS: IntrigueCard[] = [
       'Combat: +2 strength. If research lvl 1: +2 more. If research lvl 2: +2 more (2–6 strength).',
     image: '/intrigue/immortality/vicious_talents.avif',
     agentIcons: [],
-    playEffect: [{ phase: GamePhase.COMBAT, reward: { custom: CustomEffect.VICIOUS_TALENTS } }],
+    playEffect: [
+      { phase: GamePhase.COMBAT, reward: { combat: 2 } },
+      { phase: GamePhase.COMBAT, requirement: { researchLevel: 1 }, reward: { combat: 2 } },
+      { phase: GamePhase.COMBAT, requirement: { researchLevel: 2 }, reward: { combat: 2 } },
+    ],
   },
   {
     id: 53,
@@ -49,7 +54,11 @@ export const IMMORTALITY_INTRIGUE_CARDS: IntrigueCard[] = [
       'Combat: +2 strength. If research lvl 1: +2 more. If research lvl 2: +2 more (2–6 strength).',
     image: '/intrigue/immortality/vicious_talents.avif',
     agentIcons: [],
-    playEffect: [{ phase: GamePhase.COMBAT, reward: { custom: CustomEffect.VICIOUS_TALENTS } }],
+    playEffect: [
+      { phase: GamePhase.COMBAT, reward: { combat: 2 } },
+      { phase: GamePhase.COMBAT, requirement: { researchLevel: 1 }, reward: { combat: 2 } },
+      { phase: GamePhase.COMBAT, requirement: { researchLevel: 2 }, reward: { combat: 2 } },
+    ],
   },
   {
     id: 54,
@@ -61,8 +70,8 @@ export const IMMORTALITY_INTRIGUE_CARDS: IntrigueCard[] = [
     playEffect: [
       {
         phase: GamePhase.COMBAT,
-        cost: { troops: 2 },
-        reward: { specimen: 2, tleilaxu: 1, custom: CustomEffect.GRUESOME_SACRIFICE },
+        cost: { troopsInConflict: 2 },
+        reward: { specimen: 2, tleilaxu: 1 },
       },
     ],
   },
@@ -76,8 +85,8 @@ export const IMMORTALITY_INTRIGUE_CARDS: IntrigueCard[] = [
     playEffect: [
       {
         phase: GamePhase.COMBAT,
-        cost: { troops: 2 },
-        reward: { specimen: 2, tleilaxu: 1, custom: CustomEffect.GRUESOME_SACRIFICE },
+        cost: { troopsInConflict: 2 },
+        reward: { specimen: 2, tleilaxu: 1 },
       },
     ],
   },
@@ -116,7 +125,23 @@ export const IMMORTALITY_INTRIGUE_CARDS: IntrigueCard[] = [
       'Plot: If research lvl 1: +1 spice. If research lvl 2: +1 influence (your choice).',
     image: '/intrigue/immortality/disguised_beaurocrat.avif',
     agentIcons: [],
-    playEffect: [{ reward: { custom: CustomEffect.DISGUISED_BUREAUCRAT } }],
+    playEffect: [
+      { requirement: { researchLevel: 1 }, reward: { spice: 1 } },
+      {
+        requirement: { researchLevel: 2 },
+        reward: {
+          influence: {
+            chooseOne: true,
+            amounts: [
+              { faction: FactionType.EMPEROR, amount: 1 },
+              { faction: FactionType.SPACING_GUILD, amount: 1 },
+              { faction: FactionType.BENE_GESSERIT, amount: 1 },
+              { faction: FactionType.FREMEN, amount: 1 },
+            ],
+          },
+        },
+      },
+    ],
   },
   {
     id: 60,

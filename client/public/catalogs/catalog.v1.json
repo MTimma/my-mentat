@@ -1,17 +1,5 @@
 {
   "schemaVersion": 1,
-  "meta": {
-    "counts": {
-      "effects": 362,
-      "cards": 127,
-      "boardSpaces": 26,
-      "conflicts": 22,
-      "intrigue": 66,
-      "leaders": 14,
-      "techTiles": 18,
-      "expansions": 2
-    }
-  },
   "effects": [
     {
       "id": "effect:card:starting/convincing-argument:reveal:0",
@@ -4925,7 +4913,39 @@
       "slot": "play",
       "index": 0,
       "reward": {
-        "custom": "VICIOUS_TALENTS"
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:imm-52:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": "imm-52"
+      },
+      "slot": "play",
+      "index": 1,
+      "requirement": {
+        "researchLevel": 1
+      },
+      "reward": {
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:imm-52:play:2",
+      "owner": {
+        "type": "intrigue",
+        "id": "imm-52"
+      },
+      "slot": "play",
+      "index": 2,
+      "requirement": {
+        "researchLevel": 2
+      },
+      "reward": {
+        "combat": 2
       },
       "phase": "combat"
     },
@@ -4938,7 +4958,39 @@
       "slot": "play",
       "index": 0,
       "reward": {
-        "custom": "VICIOUS_TALENTS"
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:imm-53:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": "imm-53"
+      },
+      "slot": "play",
+      "index": 1,
+      "requirement": {
+        "researchLevel": 1
+      },
+      "reward": {
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:imm-53:play:2",
+      "owner": {
+        "type": "intrigue",
+        "id": "imm-53"
+      },
+      "slot": "play",
+      "index": 2,
+      "requirement": {
+        "researchLevel": 2
+      },
+      "reward": {
+        "combat": 2
       },
       "phase": "combat"
     },
@@ -4951,12 +5003,11 @@
       "slot": "play",
       "index": 0,
       "cost": {
-        "troops": 2
+        "troopsInConflict": 2
       },
       "reward": {
         "specimen": 2,
-        "tleilaxu": 1,
-        "custom": "GRUESOME_SACRIFICE"
+        "tleilaxu": 1
       },
       "phase": "combat"
     },
@@ -4969,12 +5020,11 @@
       "slot": "play",
       "index": 0,
       "cost": {
-        "troops": 2
+        "troopsInConflict": 2
       },
       "reward": {
         "specimen": 2,
-        "tleilaxu": 1,
-        "custom": "GRUESOME_SACRIFICE"
+        "tleilaxu": 1
       },
       "phase": "combat"
     },
@@ -5022,8 +5072,46 @@
       },
       "slot": "play",
       "index": 0,
+      "requirement": {
+        "researchLevel": 1
+      },
       "reward": {
-        "custom": "DISGUISED_BUREAUCRAT"
+        "spice": 1
+      }
+    },
+    {
+      "id": "effect:intrigue:imm-59:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": "imm-59"
+      },
+      "slot": "play",
+      "index": 1,
+      "requirement": {
+        "researchLevel": 2
+      },
+      "reward": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
       }
     },
     {
@@ -10520,7 +10608,9 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:imm-52:play:0"
+          "effect:intrigue:imm-52:play:0",
+          "effect:intrigue:imm-52:play:1",
+          "effect:intrigue:imm-52:play:2"
         ]
       }
     },
@@ -10533,7 +10623,9 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:imm-53:play:0"
+          "effect:intrigue:imm-53:play:0",
+          "effect:intrigue:imm-53:play:1",
+          "effect:intrigue:imm-53:play:2"
         ]
       }
     },
@@ -10611,7 +10703,8 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:imm-59:play:0"
+          "effect:intrigue:imm-59:play:0",
+          "effect:intrigue:imm-59:play:1"
         ]
       }
     },
@@ -11156,14 +11249,6 @@
       "riseOfIx": {
         "id": "riseOfIx",
         "name": "Rise of Ix",
-        "counts": {
-          "cards": 29,
-          "conflicts": 4,
-          "leaders": 6,
-          "intrigue": 17,
-          "boardSpaces": 4,
-          "techTiles": 18
-        },
         "decks": {
           "imperium": [
             "imperium/appropriate",
@@ -11207,14 +11292,6 @@
       "immortality": {
         "id": "immortality",
         "name": "Immortality",
-        "counts": {
-          "cards": 45,
-          "conflicts": 0,
-          "leaders": 0,
-          "intrigue": 15,
-          "boardSpaces": 0,
-          "techTiles": 0
-        },
         "decks": {
           "imperium": [
             "imperium/bene-tleilax-lab",
@@ -11391,14 +11468,11 @@
     "CLANDESTINE_MEETING",
     "IMPERIUM_CEREMONY",
     "SCIENTIFIC_BREAKTHROUGH",
-    "VICIOUS_TALENTS",
-    "DISGUISED_BUREAUCRAT",
     "STUDY_MELANGE",
     "TLEILAXU_PUPPET",
     "COUNTERATTACK",
     "ECONOMIC_POSITIONING_IMM",
     "HARVEST_CELLS",
-    "GRUESOME_SACRIFICE",
     "SHADOWY_BARGAIN",
     "SHOW_OF_STRENGTH",
     "STILLSUIT_MANUFACTURER",

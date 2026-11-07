@@ -4913,7 +4913,39 @@
       "slot": "play",
       "index": 0,
       "reward": {
-        "custom": "VICIOUS_TALENTS"
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:imm-52:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": "imm-52"
+      },
+      "slot": "play",
+      "index": 1,
+      "requirement": {
+        "researchLevel": 1
+      },
+      "reward": {
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:imm-52:play:2",
+      "owner": {
+        "type": "intrigue",
+        "id": "imm-52"
+      },
+      "slot": "play",
+      "index": 2,
+      "requirement": {
+        "researchLevel": 2
+      },
+      "reward": {
+        "combat": 2
       },
       "phase": "combat"
     },
@@ -4926,7 +4958,39 @@
       "slot": "play",
       "index": 0,
       "reward": {
-        "custom": "VICIOUS_TALENTS"
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:imm-53:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": "imm-53"
+      },
+      "slot": "play",
+      "index": 1,
+      "requirement": {
+        "researchLevel": 1
+      },
+      "reward": {
+        "combat": 2
+      },
+      "phase": "combat"
+    },
+    {
+      "id": "effect:intrigue:imm-53:play:2",
+      "owner": {
+        "type": "intrigue",
+        "id": "imm-53"
+      },
+      "slot": "play",
+      "index": 2,
+      "requirement": {
+        "researchLevel": 2
+      },
+      "reward": {
+        "combat": 2
       },
       "phase": "combat"
     },
@@ -4939,12 +5003,11 @@
       "slot": "play",
       "index": 0,
       "cost": {
-        "troops": 2
+        "troopsInConflict": 2
       },
       "reward": {
         "specimen": 2,
-        "tleilaxu": 1,
-        "custom": "GRUESOME_SACRIFICE"
+        "tleilaxu": 1
       },
       "phase": "combat"
     },
@@ -4957,12 +5020,11 @@
       "slot": "play",
       "index": 0,
       "cost": {
-        "troops": 2
+        "troopsInConflict": 2
       },
       "reward": {
         "specimen": 2,
-        "tleilaxu": 1,
-        "custom": "GRUESOME_SACRIFICE"
+        "tleilaxu": 1
       },
       "phase": "combat"
     },
@@ -5010,8 +5072,46 @@
       },
       "slot": "play",
       "index": 0,
+      "requirement": {
+        "researchLevel": 1
+      },
       "reward": {
-        "custom": "DISGUISED_BUREAUCRAT"
+        "spice": 1
+      }
+    },
+    {
+      "id": "effect:intrigue:imm-59:play:1",
+      "owner": {
+        "type": "intrigue",
+        "id": "imm-59"
+      },
+      "slot": "play",
+      "index": 1,
+      "requirement": {
+        "researchLevel": 2
+      },
+      "reward": {
+        "influence": {
+          "chooseOne": true,
+          "amounts": [
+            {
+              "faction": "emperor",
+              "amount": 1
+            },
+            {
+              "faction": "spacing-guild",
+              "amount": 1
+            },
+            {
+              "faction": "bene-gesserit",
+              "amount": 1
+            },
+            {
+              "faction": "fremen",
+              "amount": 1
+            }
+          ]
+        }
       }
     },
     {

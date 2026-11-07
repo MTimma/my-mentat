@@ -30,15 +30,13 @@ describe('buildCatalog Rise of Ix', () => {
     expect(catalog.techTiles).toHaveLength(18)
     expect(catalog.techTiles).toHaveLength(TECH_TILES.length)
     expect(catalog.techTiles.every(tile => tile.riseOfIx)).toBe(true)
-    expect(catalog.expansions.byId.riseOfIx.counts.techTiles).toBe(18)
   })
 
-  it('reports expansion counts in meta and byId', () => {
-    const counts = catalog.expansions.byId.riseOfIx.counts
-    expect(counts.boardSpaces).toBe(4)
+  it('publishes the expansion content pools', () => {
+    expect(catalog.boardSpaces.filter(space => space.riseOfIx)).toHaveLength(4)
     // Rise of Ix + Immortality are both published.
-    expect(catalog.meta.counts.expansions).toBe(2)
-    expect(catalog.meta.counts.techTiles).toBe(18)
+    expect(catalog.expansions.available).toEqual(['riseOfIx', 'immortality'])
+    expect(catalog.techTiles).toHaveLength(18)
   })
 
   it('publishes the Immortality card and intrigue pools', () => {
@@ -53,7 +51,6 @@ describe('buildCatalog Rise of Ix', () => {
     expect(catalog.cards.find(c => c.id === 'starting/experimentation')?.authorIds).toEqual([
       11, 12,
     ])
-    expect(meta.counts.intrigue).toBe(15)
     expect(catalog.intrigue.filter(i => i.immortality)).toHaveLength(15)
     expect(catalog.cards.some(c => c.id === 'starting/experimentation')).toBe(true)
   })

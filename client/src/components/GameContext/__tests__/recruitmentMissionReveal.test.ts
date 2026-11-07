@@ -83,7 +83,7 @@ describe('Recruitment Mission during reveal turn', () => {
 
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: 21 })
     expect(s.acquireToTopThisRound[0]).toBe(true)
-    expect(s.players[0].water).toBe(4)
+    expect(s.players[0].persuasion).toBe(25)
 
     s = applyGameAction(s, { type: 'ACQUIRE_CARD', playerId: 0, cardId: 9206, acquireToTop: true })
     expect(s.players[0].deck.map(c => c.id)).toEqual([9206, 5001])

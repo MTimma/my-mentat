@@ -6,6 +6,7 @@ import {
   AgentIcon,
   CardPile,
   ChoiceType,
+  CustomEffect,
   GainSource,
   GamePhase,
   RewardType,
@@ -127,6 +128,32 @@ describe('END_TURN gating — mandatory pending work blocks the turn', () => {
     s = applyGameAction(s, { type: 'END_TURN', playerId: 0 })
     expect(s.activePlayerId).toBe(1)
     expect(s.currTurn).toBeNull()
+  })
+
+  it('claiming a custom-effect reward re-derives canEndTurn instead of leaving it stuck', () => {
+    const card = stubDeckCard(8106, {
+      agentIcons: [AgentIcon.CITY],
+      playEffect: [{ reward: { custom: CustomEffect.FOLDSPACE_DRAW } }],
+    })
+    let s = getBaseTestState({ deck: [card, stubDeckCard(8107)], handCount: 2 }, {
+      players: 2,
+      activeId: 0,
+    })
+    s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: 8106 })
+    s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: ARRAKEEN_ID })
+    s = applyGameAction(s, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+
+    const custom = s.pendingRewards.find(r => r.reward.custom === CustomEffect.FOLDSPACE_DRAW)
+    expect(custom).toBeDefined()
+    expect(s.canEndTurn).toBe(false)
+
+    s = applyGameAction(s, { type: 'CLAIM_REWARD', playerId: 0, rewardId: custom!.id })
+
+    expect(s.pendingRewards).toEqual([])
+    expect(s.canEndTurn).toBe(true)
+
+    s = applyGameAction(s, { type: 'END_TURN', playerId: 0 })
+    expect(s.activePlayerId).toBe(1)
   })
 })
 

@@ -170,19 +170,9 @@ export interface CatalogTechTileEntry {
   riseOfIx: true
 }
 
-export interface CatalogExpansionCounts {
-  cards: number
-  conflicts: number
-  leaders: number
-  intrigue: number
-  boardSpaces: number
-  techTiles: number
-}
-
 export interface CatalogExpansionMeta {
   id: string
   name: string
-  counts: CatalogExpansionCounts
   /** Deck composition rules — catalog card ids incl. duplicates. */
   decks: {
     imperium: string[]
@@ -200,9 +190,6 @@ export interface CatalogExpansions {
 
 export interface Catalog {
   schemaVersion: number
-  meta: {
-    counts: Record<string, number>
-  }
   effects: CatalogEffectEntry[]
   cards: CatalogCardEntry[]
   /** Default deck compositions: ordered catalog card ids incl. duplicates. */
@@ -482,7 +469,6 @@ export function buildCatalog(): Catalog {
   ]
 
   const techTiles = buildTechTileEntries(TECH_TILES)
-  const roiBoardSpaces = BOARD_SPACES.filter(space => space.riseOfIx)
 
   const expansions: CatalogExpansions = {
     available: ['riseOfIx', 'immortality'],
@@ -490,14 +476,6 @@ export function buildCatalog(): Catalog {
       riseOfIx: {
         id: 'riseOfIx',
         name: 'Rise of Ix',
-        counts: {
-          cards: roiImperium.entries.length,
-          conflicts: RISE_OF_IX_CONFLICTS.length,
-          leaders: RISE_OF_IX_LEADERS.length,
-          intrigue: RISE_OF_IX_INTRIGUE_CARDS.length,
-          boardSpaces: roiBoardSpaces.length,
-          techTiles: techTiles.length,
-        },
         decks: {
           imperium: roiImperium.deckIds,
         },
@@ -505,14 +483,6 @@ export function buildCatalog(): Catalog {
       immortality: {
         id: 'immortality',
         name: 'Immortality',
-        counts: {
-          cards: immImperium.entries.length + immTleilaxu.entries.length + immStarting.entries.length,
-          conflicts: 0,
-          leaders: 0,
-          intrigue: IMMORTALITY_INTRIGUE_CARDS.length,
-          boardSpaces: 0,
-          techTiles: 0,
-        },
         decks: {
           imperium: immImperium.deckIds,
           tleilaxu: immTleilaxu.deckIds,
@@ -524,18 +494,6 @@ export function buildCatalog(): Catalog {
 
   const catalog: Catalog = {
     schemaVersion: CATALOG_SCHEMA_VERSION,
-    meta: {
-      counts: {
-        effects: effects.length,
-        cards: cards.length,
-        boardSpaces: BOARD_SPACES.length,
-        conflicts: conflicts.length,
-        intrigue: intrigue.length,
-        leaders: leaders.length,
-        techTiles: techTiles.length,
-        expansions: expansions.available.length,
-      },
-    },
     effects,
     cards,
     decks: {

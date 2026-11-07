@@ -678,7 +678,9 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:imm-52:play:0"
+          "effect:intrigue:imm-52:play:0",
+          "effect:intrigue:imm-52:play:1",
+          "effect:intrigue:imm-52:play:2"
         ]
       }
     },
@@ -691,7 +693,9 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:imm-53:play:0"
+          "effect:intrigue:imm-53:play:0",
+          "effect:intrigue:imm-53:play:1",
+          "effect:intrigue:imm-53:play:2"
         ]
       }
     },
@@ -769,7 +773,8 @@
       "immortality": true,
       "effects": {
         "play": [
-          "effect:intrigue:imm-59:play:0"
+          "effect:intrigue:imm-59:play:0",
+          "effect:intrigue:imm-59:play:1"
         ]
       }
     },

@@ -133,7 +133,6 @@ describe('published id catalog', () => {
     )
 
     expect(catalog.techTiles).toHaveLength(TECH_TILES.length)
-    expect(catalog.meta.counts.techTiles).toBe(18)
   })
 
   it('flags Rise of Ix board spaces 23–26', () => {

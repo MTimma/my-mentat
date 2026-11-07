@@ -14,7 +14,7 @@ import {
   type Reward,
 } from '../../../types/GameTypes'
 import { countSpiceMustFlowCards } from '../../../utils/spiceMustFlow'
-import { unitsInConflictForPlayer } from '../../../utils/dreadnoughts'
+import { getActiveDreadnoughtCount, unitsInConflictForPlayer } from '../../../utils/dreadnoughts'
 import { syncCombatStrengthForPlayer } from '../../../utils/dreadnoughtLifecycle'
 import { createGainInfluenceChoice } from '../../../utils/influenceChoices'
 import { influenceGainName } from '../../../utils/influenceDisplay'
@@ -28,8 +28,7 @@ import {
 export function evaluateGrandConspiracy(state: GameState, playerId: number): number {
   const p = state.players.find(x => x.id === playerId)
   if (!p) return 0
-  const cond1 =
-    (p.dreadnoughts?.garrison ?? 0) + (p.dreadnoughts?.control?.length ?? 0) >= 2
+  const cond1 = p.dreadnoughts ? getActiveDreadnoughtCount(p.dreadnoughts) >= 2 : false
   const cond2 = countSpiceMustFlowCards(p) >= 1
   const cond3 =
     [

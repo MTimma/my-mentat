@@ -9,14 +9,6 @@
       "riseOfIx": {
         "id": "riseOfIx",
         "name": "Rise of Ix",
-        "counts": {
-          "cards": 29,
-          "conflicts": 4,
-          "leaders": 6,
-          "intrigue": 17,
-          "boardSpaces": 4,
-          "techTiles": 18
-        },
         "decks": {
           "imperium": [
             "imperium/appropriate",
@@ -60,14 +52,6 @@
       "immortality": {
         "id": "immortality",
         "name": "Immortality",
-        "counts": {
-          "cards": 45,
-          "conflicts": 0,
-          "leaders": 0,
-          "intrigue": 15,
-          "boardSpaces": 0,
-          "techTiles": 0
-        },
         "decks": {
           "imperium": [
             "imperium/bene-tleilax-lab",

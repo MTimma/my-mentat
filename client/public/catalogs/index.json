@@ -1,38 +1,10 @@
 {
   "schemaVersion": 1,
-  "counts": {
-    "effects": 362,
-    "cards": 127,
-    "boardSpaces": 26,
-    "conflicts": 22,
-    "intrigue": 66,
-    "leaders": 14,
-    "techTiles": 18,
-    "expansions": 2
-  },
   "expansions": {
     "available": [
       "riseOfIx",
       "immortality"
-    ],
-    "counts": {
-      "riseOfIx": {
-        "cards": 29,
-        "conflicts": 4,
-        "leaders": 6,
-        "intrigue": 17,
-        "boardSpaces": 4,
-        "techTiles": 18
-      },
-      "immortality": {
-        "cards": 45,
-        "conflicts": 0,
-        "leaders": 0,
-        "intrigue": 15,
-        "boardSpaces": 0,
-        "techTiles": 0
-      }
-    }
+    ]
   },
   "files": [
     "catalog.v1.json",
