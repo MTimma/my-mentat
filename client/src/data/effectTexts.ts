@@ -14,7 +14,7 @@ export const PLAY_EFFECT_TEXTS: Partial<Record<CustomEffect, string>> = {
     [CustomEffect.WEIRDING_WAY_EXTRA_TURN]: "Take another turn after this one.",
     [CustomEffect.IXIAN_ENGINEER_VP]: "Trash this card for 1 VP if you have 3+ tech tiles.",
     [CustomEffect.NEGOTIATED_WITHDRAWAL]: "Retreat 3 troops from the Conflict to gain 1 influence.",
-    [CustomEffect.DESERT_AMBUSH]: "Each troop you deployed this turn forces an enemy retreat.",
+    [CustomEffect.DESERT_AMBUSH]: "For each troop you deploy this turn, you may force an enemy unit to retreat.",
     [CustomEffect.TREACHERY_DOUBLE_INFLUENCE]: "Gain 2 influence per faction icon on this card, then trash it.",
     [CustomEffect.REVEREND_MOTHER_MOHIAM]: "If you have another Bene Gesserit card in play, each opponent discards two cards.",
     [CustomEffect.TEST_OF_HUMANITY]: "Each opponent chooses: Discard a card -OR- Lose a deployed troop.",

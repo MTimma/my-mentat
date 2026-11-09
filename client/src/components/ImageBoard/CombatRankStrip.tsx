@@ -5,6 +5,13 @@ import { buildCombatRankSlots, type CombatRankEntry } from '../../utils/combatRa
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import './CombatRankStrip.css'
 
+export interface DesertAmbushRetreatActions {
+  /** Enemy retreats still available this turn (one per troop deployed). */
+  remaining: number
+  onRetreatTroop: (playerId: number) => void
+  onRetreatDreadnought: (playerId: number) => void
+}
+
 function RankStrength({ total }: { total: number }) {
   return (
     <span className="combat-rank-strip__strength" aria-hidden="true">

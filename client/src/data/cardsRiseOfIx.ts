@@ -106,10 +106,8 @@ const RISE_OF_IX_CARD_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: number }> 
       agentIcons: [AgentIcon.SPICE_TRADE],
       cost: 3,
       riseOfIx: true,
-      revealEffect: [
-        { reward: { persuasion: 1, combat: 1 } },
-        { reward: { custom: CustomEffect.DESERT_AMBUSH } },
-      ],
+      playEffect: [{ reward: { custom: CustomEffect.DESERT_AMBUSH } }],
+      revealEffect: [{ reward: { persuasion: 1, combat: 1 } }],
     },
   },
   {

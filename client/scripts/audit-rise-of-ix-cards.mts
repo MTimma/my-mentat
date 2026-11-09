@@ -114,10 +114,8 @@ const EXPECTED_EFFECTS: Record<
     reveal: [{ reward: { persuasion: 1, combat: 1 } }],
   },
   'Desert Ambush': {
-    reveal: [
-      { reward: { persuasion: 1, combat: 1 } },
-      { reward: { custom: 'DESERT_AMBUSH' } },
-    ],
+    play: [{ reward: { custom: 'DESERT_AMBUSH' } }],
+    reveal: [{ reward: { persuasion: 1, combat: 1 } }],
   },
   'Embedded Agent': {
     play: [{ requirement: { inPlay: 'bene-gesserit' }, reward: { freighter: 2 } }],

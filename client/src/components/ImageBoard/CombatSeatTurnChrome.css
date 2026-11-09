@@ -430,7 +430,6 @@
 }
 
 /* Mobile chrome strip: Play/Reveal / Intr/Tech / deploy stacked above the portrait. */
-.birdseye-seat__overlay-utils,
 .birdseye-seat__overlay-actions {
   position: relative;
   top: auto;
@@ -491,7 +490,6 @@
 }
 
 .birdseye-seat__overlay-actions > *,
-.birdseye-seat__overlay-utils > *,
 .birdseye-seat__overlay-row > * {
   pointer-events: auto;
 }
@@ -540,35 +538,6 @@
   height: 1.05rem;
   max-width: 1.05rem;
   max-height: 1.05rem;
-}
-
-.birdseye-seat-tech-panel {
-  position: absolute;
-  z-index: 12;
-  left: 0.25rem;
-  right: 0.25rem;
-  top: 2.1rem;
-  padding: 0.25rem;
-  border-radius: 4px;
-  background: rgba(8, 10, 14, 0.94);
-  border: 1px solid rgba(255, 248, 232, 0.2);
-  max-height: 6rem;
-  overflow: auto;
-}
-
-.combat-area-cluster--row .birdseye-seat-tech-panel {
-  z-index: 1;
-  top: 0;
-  bottom: 0;
-  max-height: 100%;
-}
-
-.birdseye-seat__controls-stack .birdseye-seat-tech-panel {
-  position: relative;
-  top: auto;
-  left: auto;
-  right: auto;
-  max-height: 8rem;
 }
 
 .birdseye-seat-gains {
@@ -786,11 +755,10 @@
   font-size: 0.72em;
 }
 
-.birdseye-seat-gains .gain-title,
-.birdseye-seat-gains .turn-gain-source-title {
+/*.birdseye-seat-gains .turn-gain-source-title {
   font-size: 0.72em;
   color: var(--chrome-text-muted);
-}
+}*/
 
 /*
  * Desktop column: stacked gain boxes. Leftover height after gains
@@ -1356,11 +1324,6 @@
   min-width: 4.1rem;
   height: 2.35rem;
   font-size: 0.62rem;
-}
-
-.combat-area-cluster--column .birdseye-seat__controls-stack .birdseye-seat-tech-panel {
-  max-height: 9rem;
-  overflow: auto;
 }
 
 .combat-area-cluster--column .birdseye-seat__controls-stack .troop-action-button {
@@ -2066,21 +2029,6 @@
     0 2px 10px rgba(0, 0, 0, 0.28);
 }
 
-.combat-area-cluster__seat-top {
-  display: none;
-}
-
-.combat-area-cluster__seat-top-spacer {
-  display: none;
-}
-
-/*
- * Shared rim bar owns Play/Reveal. Do not keep a 4.6rem per-seat strip.
- */
-.combat-area-cluster--row .combat-area-cluster__seat-top {
-  display: none;
-}
-
 .combat-area-cluster--row .birdseye-seat__deploy-dock .combat-deploy-dock__controls.combat-troop-controls {
   min-width: 0;
 }
@@ -2225,10 +2173,6 @@
 .combat-area-cluster--row .birdseye-seat-gains .gain-persuasion-count {
   font-size: 0.62rem;
   font-weight: 700;
-}
-
-.combat-area-cluster--row .combat-area-cluster__seat-top .birdseye-seat-tech-panel {
-  display: none;
 }
 
 .combat-area-cluster--row .birdseye-seat__overlay-actions .birdseye-seat__utils {
@@ -2880,10 +2824,6 @@ button.birdseye-turn-history__cell {
   pointer-events: auto;
 }
 
-.combat-area-cluster-stack--idle .combat-area-cluster--row {
-  flex: 0 0 auto;
-}
-
 .birdseye-idle-band__fill {
   flex: 1 1 auto;
   min-height: 0;
@@ -2899,26 +2839,65 @@ button.birdseye-turn-history__cell {
   box-sizing: border-box;
 }
 
-.birdseye-idle-band__deploy {
-  min-height: 0;
-  max-height: 100%;
-  overflow: auto;
-}
-
-.birdseye-idle-band .birdseye-seat-tech-panel {
-  position: relative;
-  left: auto;
-  right: auto;
-  bottom: auto;
-  top: auto;
-  z-index: 1;
-  max-height: 100%;
-  overflow: auto;
-}
-
-.birdseye-idle-band .turn-gain-source-title--totals,
-.birdseye-idle-band__conflict,
-.birdseye-idle-band__name {
+.birdseye-idle-band .turn-gain-source-title--totals {
   display: none;
 }
 
+
+/* Desert Ambush: force one enemy unit to retreat — bottom of the opponent seat,
+   in the same controls row as the active seat's turn buttons. */
+.desert-ambush-seat-retreat {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.18rem;
+  width: 100%;
+  min-width: 0;
+  padding-top: 0.18rem;
+  border-top: 1px solid rgba(255, 248, 232, 0.28);
+  pointer-events: auto;
+}
+
+.desert-ambush-seat-retreat__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.desert-ambush-seat-retreat__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: rgba(255, 215, 0, 0.85);
+  color: #1a1408;
+  font-size: 0.72rem;
+}
+
+/* Same two-column icon+count row as the deploy dock. */
+.desert-ambush-seat-retreat__buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  gap: 0.25rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.desert-ambush-seat-retreat__buttons .troop-action-button {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.15rem;
+  height: 2.15rem;
+}
+
+.desert-ambush-seat-retreat__buttons .troop-action-button:only-child {
+  grid-column: 1 / -1;
+}

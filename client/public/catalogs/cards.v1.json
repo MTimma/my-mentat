@@ -1286,9 +1286,11 @@
       "riseOfIx": true,
       "image": "imperium_row/rise_of_ix/desert_ambush.avif",
       "effects": {
+        "play": [
+          "effect:card:imperium/desert-ambush:play:0"
+        ],
         "reveal": [
-          "effect:card:imperium/desert-ambush:reveal:0",
-          "effect:card:imperium/desert-ambush:reveal:1"
+          "effect:card:imperium/desert-ambush:reveal:0"
         ]
       },
       "authorIds": [

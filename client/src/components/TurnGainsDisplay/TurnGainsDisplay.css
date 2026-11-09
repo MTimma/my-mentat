@@ -19,9 +19,9 @@
   width: 100%;
 }
 
-.turn-gain-source-title--totals {
+/*.turn-gain-source-title--totals {
   color: var(--chrome-text-muted);
-}
+}*/
 
 .turn-gain-totals-row--pooled-reveal {
   flex-wrap: nowrap;
@@ -407,7 +407,7 @@
 .turn-gain-source-title {
   font-size: 0.68rem;
   font-weight: 600;
-  color: var(--chrome-text-muted);
+  /*color: var(--chrome-text-muted);*/
   font-family: var(--font-log);
   white-space: nowrap;
   overflow: hidden;
@@ -434,9 +434,9 @@
   white-space: normal;
 }
 
-.turn-gain-source-title__tech-name {
+/*.turn-gain-source-title__tech-name {
   color: var(--chrome-text);
-}
+}*/
 
 .turn-gain-source-flow {
   display: flex;
@@ -557,9 +557,9 @@
   color: rgba(239, 154, 154, 0.9);
 }
 
-.turn-gains-display .gain-item--reward {
+/*.turn-gains-display .gain-item--reward {
   color: rgba(200, 230, 201, 0.92);
-}
+}*/
 
 .turn-gain-resource-token {
   display: inline-flex;
@@ -582,12 +582,15 @@
   color: inherit;
 }
 
-.turn-gain-resource-token--cost .turn-gain-resource-amt {
+/*.turn-gain-resource-token--cost .turn-gain-resource-amt {
   color: var(--chrome-danger-text);
-}
+}*/
 
-.turn-gain-resource-token--reward .turn-gain-resource-amt {
+/*.turn-gain-resource-token--reward .turn-gain-resource-amt {
   color: var(--chrome-success);
+}*/
+.turn-gain-resource-amt {
+    padding-right: 8px;
 }
 
 .turn-gains-display .gain-multiplier {

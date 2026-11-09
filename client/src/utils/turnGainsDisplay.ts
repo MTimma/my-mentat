@@ -428,6 +428,18 @@ export function getEffectRetreatRemaining(turn: GameTurn | null | undefined): nu
   return Math.max(0, allowance - used)
 }
 
+/**
+ * Remaining Desert Ambush forced retreats: one per troop deployed this turn
+ * (troopsDeployedToConflict drops when one of your own troops retreats/undeploys,
+ * which clears the most recent unused charge).
+ */
+export function getDesertAmbushRetreatRemaining(turn: GameTurn | null | undefined): number {
+  if (!turn?.desertAmbushActive) return 0
+  const deployed = turn.troopsDeployedToConflict ?? 0
+  const used = turn.desertAmbushRetreatsUsed ?? 0
+  return Math.max(0, deployed - used)
+}
+
 /** Max duplicate icons before collapsing to one icon plus a count (e.g. 1 troop cube + 5). */
 export const MAX_REPEATED_GAIN_ICONS = 3
 

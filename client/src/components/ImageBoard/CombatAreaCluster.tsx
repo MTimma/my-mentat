@@ -22,10 +22,12 @@ import {
   BirdseyeDesktopControls,
   BirdseyeSeatGains,
   BirdseyeSeatPlayArea,
+  DesertAmbushSeatRetreat,
   TestOfHumanityChoice,
   type BirdseyeSeatActions,
   type BirdseyeSeatMode,
 } from './CombatSeatTurnChrome'
+import type { DesertAmbushRetreatActions } from './CombatRankStrip'
 import CombatDeployDock, { isCombatDeployDockVisible } from './CombatDeployDock'
 import { BirdseyeTurnHistoryGrid } from './BirdseyeTurnHistoryGrid'
 import './CombatSeatTurnChrome.css'
@@ -345,6 +347,8 @@ export interface CombatAreaClusterProps {
   onDesktopPlayAreaLayoutChange?: (layout: DesktopPlayAreaLayout) => void
   /** Live Test of Humanity prompts. Null when that effect is not waiting on opponents. */
   testOfHumanity?: TestOfHumanitySeatPrompt | null
+  /** Desert Ambush: force one enemy unit to retreat per troop deployed this turn. */
+  desertAmbush?: DesertAmbushRetreatActions
 }
 
 const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
@@ -377,6 +381,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
   desktopPlayAreaLayout: desktopPlayAreaLayoutProp,
   onDesktopPlayAreaLayoutChange,
   testOfHumanity = null,
+  desertAmbush,
 }) => {
   const [detailPlayerId, setDetailPlayerId] = useState<number | null>(null)
   const [internalPlayAreaLayout, setInternalPlayAreaLayout] = useState<DesktopPlayAreaLayout>(
@@ -466,6 +471,15 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
     const seatDeploy = showActiveActions || showDeployEdit
       ? { troopDeploy, dreadnoughtDeploy, specimenDeploy }
       : {}
+    const seatRetreat =
+      !isActive && desertAmbush ? (
+        <DesertAmbushSeatRetreat
+          player={player}
+          combatTroops={gameState?.combatTroops?.[player.id] ?? 0}
+          riseOfIx={riseOfIx}
+          desertAmbush={desertAmbush}
+        />
+      ) : null
 
     const quadrant = (
       <PlayerQuadrant
@@ -543,6 +557,7 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 revealPooledTotals={isRevealSeat}
                 onEditDeployment={isActive ? onEditDeployment : undefined}
               />
+              {seatRetreat}
               {humanityButtons}
             </div>
           </div>
@@ -635,9 +650,14 @@ const CombatAreaCluster: React.FC<CombatAreaClusterProps> = ({
                 deployEditFooter={deployEditFooter}
                 {...seatDeploy}
               />
-            ) : (
-              humanityButtons
-            )}
+            ) : seatRetreat || humanityButtons ? (
+              <div className="birdseye-seat__controls-row">
+                <div className="birdseye-seat__controls-stack">
+                  {seatRetreat}
+                  {humanityButtons}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

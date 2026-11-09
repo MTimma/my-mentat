@@ -1564,6 +1564,18 @@
       }
     },
     {
+      "id": "effect:card:imperium/desert-ambush:play:0",
+      "owner": {
+        "type": "card",
+        "id": "imperium/desert-ambush"
+      },
+      "slot": "play",
+      "index": 0,
+      "reward": {
+        "custom": "DESERT_AMBUSH"
+      }
+    },
+    {
       "id": "effect:card:imperium/desert-ambush:reveal:0",
       "owner": {
         "type": "card",
@@ -1574,18 +1586,6 @@
       "reward": {
         "persuasion": 1,
         "combat": 1
-      }
-    },
-    {
-      "id": "effect:card:imperium/desert-ambush:reveal:1",
-      "owner": {
-        "type": "card",
-        "id": "imperium/desert-ambush"
-      },
-      "slot": "reveal",
-      "index": 1,
-      "reward": {
-        "custom": "DESERT_AMBUSH"
       }
     },
     {

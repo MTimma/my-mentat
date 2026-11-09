@@ -37,6 +37,12 @@ describe('cardsRiseOfIx data', () => {
     expect(card?.agentIcons).toEqual([AgentIcon.LANDSRAAD, AgentIcon.CITY])
   })
 
+  it('desert ambush keeps the retreat in the Agent box and reveal is 1 persuasion + 1 sword', () => {
+    const card = RISE_OF_IX_IMPERIUM_DECK.find(c => c.name === 'Desert Ambush')
+    expect(card?.playEffect).toEqual([{ reward: { custom: 'DESERT_AMBUSH' } }])
+    expect(card?.revealEffect).toEqual([{ reward: { persuasion: 1, combat: 1 } }])
+  })
+
   it('guild_chief_administrator has SG, CITY, SPICE_TRADE icons', () => {
     const card = RISE_OF_IX_IMPERIUM_DECK.find(c => c.name === 'Guild Chief Administrator')
     expect(card?.agentIcons).toEqual([

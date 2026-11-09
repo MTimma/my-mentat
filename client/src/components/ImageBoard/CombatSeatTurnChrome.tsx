@@ -1,11 +1,13 @@
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { useLayoutEffect, useMemo, useState } from 'react'
 import type { Card, Gain, GameState, IntrigueCard, Player, PlayerColor } from '../../types/GameTypes'
 import type { TechTileId } from '../../data/techTiles'
 import TurnGainsDisplay from '../TurnGainsDisplay/TurnGainsDisplay'
 import PlayerTechModal from '../PlayerTechModal/PlayerTechModal'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import RevealCardsIcon from '../RevealCardsIcon/RevealCardsIcon'
+import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import CombatDeployDock from './CombatDeployDock'
+import type { DesertAmbushRetreatActions } from './CombatRankStrip'
 import type {
   CombatDreadnoughtDeployProps,
   CombatSpecimenDeployProps,
@@ -244,6 +246,70 @@ export function BirdseyeSeatDeployControls({
         className="birdseye-seat__deploy-dock"
         footer={footer}
       />
+    </div>
+  )
+}
+
+/**
+ * Desert Ambush: force one enemy unit to retreat. Sits in the opponent seat's
+ * turn-controls row (bottom of the play area) and reuses the deploy-button look.
+ */
+export function DesertAmbushSeatRetreat({
+  player,
+  combatTroops,
+  riseOfIx,
+  desertAmbush,
+}: {
+  player: Player
+  combatTroops: number
+  riseOfIx: boolean
+  desertAmbush: DesertAmbushRetreatActions
+}) {
+  const dreadnoughts = riseOfIx ? player.dreadnoughts?.conflict ?? 0 : 0
+  if (desertAmbush.remaining <= 0) return null
+  if (combatTroops <= 0 && dreadnoughts <= 0) return null
+  return (
+    <div
+      className="desert-ambush-seat-retreat"
+      role="group"
+      aria-label={`Desert Ambush: force ${player.leader.name} to retreat`}
+      onClick={stop}
+    >
+      <span className="desert-ambush-seat-retreat__title">
+        Desert Ambush
+        <span className="desert-ambush-seat-retreat__count" title="Forced retreats left">
+          {desertAmbush.remaining}
+        </span>
+      </span>
+      <div className="desert-ambush-seat-retreat__buttons">
+        {combatTroops > 0 ? (
+          <button
+            type="button"
+            className="troop-action-button troop-deploy-button"
+            onClick={() => desertAmbush.onRetreatTroop(player.id)}
+            title={`Force 1 troop of ${player.leader.name} to retreat`}
+            aria-label={`Force one troop of ${player.leader.name} to retreat`}
+          >
+            <img src="/icon/troop.png" alt="" className="troop-action-icon" />
+            <span className="troop-action-count">{combatTroops}</span>
+          </button>
+        ) : null}
+        {dreadnoughts > 0 ? (
+          <button
+            type="button"
+            className="troop-action-button troop-deploy-button"
+            onClick={() => desertAmbush.onRetreatDreadnought(player.id)}
+            title={`Force 1 dreadnought of ${player.leader.name} to retreat`}
+            aria-label={`Force one dreadnought of ${player.leader.name} to retreat`}
+          >
+            <DreadnoughtIcon
+              playerId={player.id}
+              className="troop-action-icon troop-action-icon--dreadnought"
+            />
+            <span className="troop-action-count">{dreadnoughts}</span>
+          </button>
+        ) : null}
+      </div>
     </div>
   )
 }

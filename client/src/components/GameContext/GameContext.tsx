@@ -145,6 +145,7 @@ import {
 import { isSoleTrashThisCardReward } from '../../utils/pendingRewardAutoApply'
 import { conflictInfluenceGainName, influenceGainName } from '../../utils/influenceDisplay'
 import { encodeEffectCardGainName } from '../../utils/turnGainsDisplay'
+import { getLivePlayerTurnNumber } from '../../utils/turnHistoryDisplay'
 import {
   applyDistinctChoiceExclusion,
   applyDistinctFactionExclusion,
@@ -371,6 +372,12 @@ export type GameAction =
       fromEffect?: boolean
       /** Immediate retreat from a choice (e.g. Master Tactician); does not consume effect allowance. */
       bypassAllowance?: boolean
+    }
+  | {
+      type: 'FORCE_ENEMY_RETREAT'
+      playerId: number
+      opponentId: number
+      unit: 'troop' | 'dreadnought'
     }
   | { type: 'PLAY_INTRIGUE'; cardId: number; playerId: number; targetPlayerId?: number }
   | { type: 'MOBILIZE_GARRISON'; playerId: number; count: number }
@@ -3376,6 +3383,7 @@ const SANDBOX_BLOCKED_PLAY_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
   'DEPLOY_SPECIMEN',
   'UNDEPLOY_SPECIMEN',
   'RETREAT_TROOP',
+  'FORCE_ENEMY_RETREAT',
   'PLAY_INTRIGUE',
   'MOBILIZE_GARRISON',
   'MOBILIZE_SECOND_WAVE',
@@ -4450,6 +4458,70 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       return afterRetreat
     }
+    case 'FORCE_ENEMY_RETREAT': {
+      const { playerId, opponentId, unit } = action
+      if (playerId !== state.activePlayerId) return state
+      const turn = state.currTurn
+      if (!turn || turn.playerId !== playerId || !turn.desertAmbushActive) return state
+      if (opponentId === playerId) return state
+      const remaining = Math.max(
+        0,
+        (turn.troopsDeployedToConflict ?? 0) - (turn.desertAmbushRetreatsUsed ?? 0)
+      )
+      if (remaining <= 0) return state
+
+      const opponent = state.players.find(p => p.id === opponentId)
+      if (!opponent) return state
+
+      let newState: GameState
+      if (unit === 'dreadnought') {
+        if (!isRiseOfIxEnabled(state) || (opponent.dreadnoughts?.conflict ?? 0) <= 0) {
+          return state
+        }
+        newState = {
+          ...state,
+          players: state.players.map(p =>
+            p.id === opponentId && p.dreadnoughts
+              ? {
+                  ...p,
+                  dreadnoughts: {
+                    ...p.dreadnoughts,
+                    conflict: p.dreadnoughts.conflict - 1,
+                    garrison: p.dreadnoughts.garrison + 1,
+                  },
+                }
+              : p
+          ),
+        }
+        newState = syncCombatStrengthAfterUnitDelta(
+          newState,
+          opponentId,
+          -dreadnoughtStrengthEach(opponent.leader)
+        )
+      } else {
+        if ((state.combatTroops[opponentId] ?? 0) <= 0) return state
+        newState = {
+          ...state,
+          combatTroops: {
+            ...state.combatTroops,
+            [opponentId]: (state.combatTroops[opponentId] ?? 0) - 1,
+          },
+          players: state.players.map(p =>
+            p.id === opponentId ? { ...p, troops: p.troops + 1 } : p
+          ),
+        }
+        newState = syncCombatStrengthAfterUnitDelta(newState, opponentId, -2)
+      }
+
+      return {
+        ...newState,
+        currTurn: {
+          ...turn,
+          desertAmbushRetreatsUsed: (turn.desertAmbushRetreatsUsed ?? 0) + 1,
+        },
+        canEndTurn: false,
+      }
+    }
     case 'START_COMBAT_PHASE': {
       const newState = {...state}
       newState.combatPasses = getAutoCombatPassPlayerIds(newState)
@@ -5504,6 +5576,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 }
               })
               break
+            case CustomEffect.DESERT_AMBUSH:
+              newState = applyDesertAmbush(newState, playerId)
+              break
             case CustomEffect.BOUNTY_INFILTRATION_BONUS:
               newState = applyBountyInfiltrationBonus(newState, playerId, {
                 type: GainSource.CARD,
@@ -6535,9 +6610,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
                 case CustomEffect.GUILD_BANKERS:
                   // Add as pending reward for user to activate
                   addPendingReward({ custom: effect.reward.custom }, { type: GainSource.CARD, id: card.id, name: card.name })
-                  break
-                case CustomEffect.DESERT_AMBUSH:
-                  revealState = applyDesertAmbush(revealState, playerId, card.id, card.name)
                   break
                 case CustomEffect.IMPERIAL_BASHAR_SWORDS:
                   revealState = applyImperialBasharSwords(
@@ -10168,19 +10240,16 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
             recordedEventsRef.current,
             action.turnIndex
           )
-          // Remember the turns after the fork so they can be replayed on top of the edit.
-          redoOriginalEventsRef.current = recordedEventsRef.current
-          redoPendingEventsRef.current = recordedEventsRef.current.slice(eventIndex + 1)
-          redoEditingRef.current = false
-          redoHeldHistoryRef.current = []
-          redoOriginalTurnRef.current = null
+          // Undo drops the turns after the target row. Rewriting a past turn and
+          // replaying the turns that follow it is the explicit edit flow
+          // (REDO_FROM_TURN / REDO_TURN_DEPLOYMENT).
+          clearRedoSession()
           recordedEventsRef.current = recordedEventsRef.current.slice(
             0,
             Math.max(0, eventIndex + 1)
           )
           const next = gameReducer(prev, action)
           if (next.sandboxSetup) {
-            clearRedoSession()
             recordedEventsRef.current = recordedEventsRef.current.filter(
               e => e.a.type !== 'SANDBOX_COMMIT_SETUP'
             )
@@ -10605,6 +10674,9 @@ function describeRedoConflict(
 ): RedoConflict {
   const action = entry.a
   const turnIndex = state.history.length
+  // The rejected event belongs to the turn in progress in `state` — the first
+  // turn after the replacement — so label it with that turn's number.
+  const turnNumber = getLivePlayerTurnNumber(state.history)
   if (action.type === 'PLAY_CARD') {
     const player = state.players.find(p => p.id === action.playerId)
     const hasCard = player?.deck.some(c => c.id === action.cardId) ?? false
@@ -10614,7 +10686,7 @@ function describeRedoConflict(
         eventIndex,
         reason: 'missing_card',
         cardId: action.cardId,
-        message: `Turn ${turnIndex + 1} is no longer valid - the required card is no longer available.`,
+        message: `Turn ${turnNumber} is no longer valid - the required card is no longer available.`,
       }
     }
   }
@@ -10623,14 +10695,14 @@ function describeRedoConflict(
       turnIndex,
       eventIndex,
       reason: 'occupied_space',
-      message: `Turn ${turnIndex + 1} is no longer valid - the board space is no longer available.`,
+      message: `Turn ${turnNumber} is no longer valid - the board space is no longer available.`,
     }
   }
   return {
     turnIndex,
     eventIndex,
     reason: 'invalid_action',
-    message: `Turn ${turnIndex + 1} is no longer valid (${action.type}).`,
+    message: `Turn ${turnNumber} is no longer valid (${action.type}).`,
   }
 }
 

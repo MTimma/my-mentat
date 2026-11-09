@@ -1160,23 +1160,12 @@ export function applyNegotiatedWithdrawal(
   return next
 }
 
-/** Desert Ambush: enemy retreats per troop deployed this turn. */
-export function applyDesertAmbush(
-  state: GameState,
-  _playerId: number,
-  _cardId: number,
-  _cardName: string
-): GameState {
-  const deployed = state.currTurn?.troopsDeployedToConflict ?? 0
-  if (deployed <= 0) return state
+/** Desert Ambush (agent): each troop deployed this turn may force one enemy unit to retreat. */
+export function applyDesertAmbush(state: GameState, playerId: number): GameState {
+  if (!state.currTurn || state.currTurn.playerId !== playerId) return state
   return {
     ...state,
-    currTurn: state.currTurn
-      ? {
-          ...state.currTurn,
-          effectRetreatAllowance: (state.currTurn.effectRetreatAllowance ?? 0) + deployed,
-        }
-      : state.currTurn,
+    currTurn: { ...state.currTurn, desertAmbushActive: true },
   }
 }
 

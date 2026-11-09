@@ -30,7 +30,11 @@ import {
   type DesktopPlayAreaLayout,
 } from './components/ImageBoard/CombatAreaCluster'
 import PlayFooterToolbar from './components/PlayFooterToolbar/PlayFooterToolbar'
-import { getEffectRetreatRemaining } from './utils/turnGainsDisplay'
+import type { DesertAmbushRetreatActions } from './components/ImageBoard/CombatRankStrip'
+import {
+  getDesertAmbushRetreatRemaining,
+  getEffectRetreatRemaining,
+} from './utils/turnGainsDisplay'
 import {
   buildBirdseyeGainsByPlayer,
   birdseyeTechCount,
@@ -1766,6 +1770,32 @@ const GameContent = ({
     [displayState]
   )
 
+  /** Desert Ambush agent effect: one optional enemy-unit retreat per troop deployed this turn. */
+  const desertAmbushRetreat = useMemo((): DesertAmbushRetreatActions | undefined => {
+    if (isViewingHistory || gameState.sandboxSetup || !activePlayer) return undefined
+    const turn = gameState.currTurn
+    if (!turn || turn.playerId !== activePlayer.id || !turn.desertAmbushActive) return undefined
+    return {
+      remaining: getDesertAmbushRetreatRemaining(turn),
+      onRetreatTroop: opponentId => {
+        dispatch({
+          type: 'FORCE_ENEMY_RETREAT',
+          playerId: activePlayer.id,
+          opponentId,
+          unit: 'troop',
+        })
+      },
+      onRetreatDreadnought: opponentId => {
+        dispatch({
+          type: 'FORCE_ENEMY_RETREAT',
+          playerId: activePlayer.id,
+          opponentId,
+          unit: 'dreadnought',
+        })
+      },
+    }
+  }, [activePlayer, dispatch, gameState.currTurn, gameState.sandboxSetup, isViewingHistory])
+
   const [birdseyeInteractionsHost, setBirdseyeInteractionsHost] = useState<HTMLDivElement | null>(
     null
   )
@@ -2187,6 +2217,7 @@ const GameContent = ({
           playAreaTopSlot={playAreaTopSlot}
           desktopPlayAreaLayout={desktopPlayAreaLayout}
           onDesktopPlayAreaLayoutChange={setDesktopPlayAreaLayout}
+          desertAmbush={desertAmbushRetreat}
           testOfHumanity={
             humanityPromptOpen
               ? {
@@ -2261,6 +2292,7 @@ const GameContent = ({
       desktopPlayAreaLayout,
       humanityPromptOpen,
       humanityDiscardOpponentId,
+      desertAmbushRetreat,
     ]
   )
 
@@ -2721,6 +2753,7 @@ const GameContent = ({
                 onOpponentDiscardCard={handleOpponentDiscardCard}
                 onOpponentDiscardCards={handleOpponentDiscardCards}
                 combatTroops={turnControlsState.combatTroops}
+                desertAmbush={isViewingHistory ? undefined : desertAmbushRetreat}
                 onVoiceSelectionStart={handleVoiceSelectionStart}
                 voiceSelectionActive={!isViewingHistory && Boolean(voiceSelectionRewardId)}
                 onMasterstrokeSelectionStart={handleMasterstrokeSelectionStart}

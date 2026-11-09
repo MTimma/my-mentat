@@ -647,7 +647,7 @@ export interface GameTurn {
   removableSpecimens?: number
   /** Total dreadnoughts sent to Conflict this turn. */
   dreadnoughtsDeployedToConflict?: number
-  /** Total troops sent to Conflict this turn (does not decrease on retreat). */
+  /** Total troops sent to Conflict this turn and still there (decreases on retreat/undeploy). */
   troopsDeployedToConflict?: number
   /** Total troops retreated from Conflict this turn. */
   troopsRetreatedFromConflict?: number
@@ -663,6 +663,10 @@ export interface GameTurn {
   effectRetreatAllowance?: number
   /** Troops already retreated via effect allowance this turn. */
   effectRetreatsUsed?: number
+  /** Desert Ambush (agent): each troop deployed this turn may force an enemy unit to retreat. */
+  desertAmbushActive?: boolean
+  /** Enemy units forced to retreat by Desert Ambush this turn. */
+  desertAmbushRetreatsUsed?: number
   /** Index into `GameState.gains` where this turn's gains begin (history scoping). */
   gainsStartIndex?: number
   persuasionCount?: number

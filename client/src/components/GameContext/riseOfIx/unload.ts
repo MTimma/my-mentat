@@ -32,7 +32,6 @@ import {
   type GainAttribution,
 } from './freighter'
 import {
-  applyDesertAmbush,
   applyFullScaleDreadSwords,
   applyImperialBasharSwords,
   applyIxianEngineerVp,
@@ -280,9 +279,6 @@ export function applyUnloadRevealEffects(
             })
             break
           }
-          case CustomEffect.DESERT_AMBUSH:
-            nextState = applyDesertAmbush(nextState, playerId, card.id, source.name)
-            break
           case CustomEffect.IMPERIAL_BASHAR_SWORDS:
             nextState = applyImperialBasharSwords(
               nextState,

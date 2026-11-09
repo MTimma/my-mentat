@@ -39,6 +39,7 @@ import { canPlayDiversion, canPlayStrongarm } from '../GameContext/riseOfIx/intr
 import PlayerTechModal from '../PlayerTechModal/PlayerTechModal'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
+import type { DesertAmbushRetreatActions } from '../ImageBoard/CombatRankStrip'
 import FreighterIcon, { freighterArrowDirectionFromCustom } from '../FreighterIcon/FreighterIcon'
 import { deferRecallOnlyFreighterChoices } from '../GameContext/riseOfIx/freighter'
 import {
@@ -122,6 +123,8 @@ interface TurnControlsProps {
   onOpponentDiscardCard?: (opponentId: number, cardId: number) => void
   onOpponentDiscardCards?: (opponentId: number, cardIds: number[]) => void
   combatTroops?: Record<number, number>
+  /** Desert Ambush: force one enemy unit to retreat per troop deployed this turn. */
+  desertAmbush?: DesertAmbushRetreatActions
   onVoiceSelectionStart?: (rewardId: string) => void
   voiceSelectionActive?: boolean
   onVoiceSelectionCancel?: () => void
@@ -187,6 +190,84 @@ function rewardNeedsInteractionHighlight(reward: Reward): boolean {
   return false
 }
 
+/** Desert Ambush: per-opponent buttons to force a deployed troop/dreadnought to retreat. */
+function DesertAmbushRetreatControls({
+  desertAmbush,
+  players,
+  combatTroops,
+  activePlayerId,
+  riseOfIx,
+}: {
+  desertAmbush?: DesertAmbushRetreatActions
+  players: Player[]
+  combatTroops: Record<number, number>
+  activePlayerId: number
+  riseOfIx: boolean
+}) {
+  if (!desertAmbush) return null
+  const canRetreat = desertAmbush.remaining > 0
+  const targets = players
+    .filter(player => player.id !== activePlayerId)
+    .map(player => ({
+      player,
+      troops: combatTroops[player.id] ?? 0,
+      dreadnoughts: riseOfIx ? player.dreadnoughts?.conflict ?? 0 : 0,
+    }))
+    .filter(target => target.troops > 0 || target.dreadnoughts > 0)
+  if (targets.length === 0) return null
+
+  return (
+    <div
+      className="desert-ambush-retreat"
+      role="group"
+      aria-label="Desert Ambush: force enemy units to retreat"
+    >
+      <span className="desert-ambush-retreat__title">
+        Desert Ambush
+        <span className="desert-ambush-retreat__count" title="Forced retreats left">
+          {desertAmbush.remaining}
+        </span>
+      </span>
+      {targets.map(({ player, troops, dreadnoughts }) => (
+        <span key={player.id} className="desert-ambush-retreat__row">
+          <span className={`desert-ambush-retreat__player desert-ambush-retreat__player--${player.color}`}>
+            {player.leader.name}
+          </span>
+          {troops > 0 ? (
+            <button
+              type="button"
+              className="desert-ambush-retreat__btn"
+              onClick={() => desertAmbush.onRetreatTroop(player.id)}
+              disabled={!canRetreat}
+              title={`Force 1 troop of ${player.leader.name} to retreat`}
+              aria-label={`Force one troop of ${player.leader.name} to retreat`}
+            >
+              <img src="/icon/troop.png" alt="" className="desert-ambush-retreat__icon" />
+              <span className="desert-ambush-retreat__value">{troops}</span>
+            </button>
+          ) : null}
+          {dreadnoughts > 0 ? (
+            <button
+              type="button"
+              className="desert-ambush-retreat__btn"
+              onClick={() => desertAmbush.onRetreatDreadnought(player.id)}
+              disabled={!canRetreat}
+              title={`Force 1 dreadnought of ${player.leader.name} to retreat`}
+              aria-label={`Force one dreadnought of ${player.leader.name} to retreat`}
+            >
+              <DreadnoughtIcon
+                playerId={player.id}
+                className="desert-ambush-retreat__icon desert-ambush-retreat__icon--dreadnought"
+              />
+              <span className="desert-ambush-retreat__value">{dreadnoughts}</span>
+            </button>
+          ) : null}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function TurnControls(
   {
   activePlayer,
@@ -219,6 +300,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
   onOpponentDiscardCard,
   onOpponentDiscardCards,
   combatTroops = {},
+  desertAmbush,
   onVoiceSelectionStart,
   voiceSelectionActive = false,
   onMasterstrokeSelectionStart,
@@ -3697,6 +3779,13 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                         )}
                       </div>
                     )}
+                    <DesertAmbushRetreatControls
+                      desertAmbush={desertAmbush}
+                      players={players}
+                      combatTroops={combatTroops}
+                      activePlayerId={activePlayer.id}
+                      riseOfIx={Boolean(gameState?.expansions?.riseOfIx)}
+                    />
                   </>
                 )}
               </div>
@@ -3799,6 +3888,13 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                     )}
                   </div>
                 </div>
+                <DesertAmbushRetreatControls
+                  desertAmbush={desertAmbush}
+                  players={players}
+                  combatTroops={combatTroops}
+                  activePlayerId={activePlayer.id}
+                  riseOfIx={Boolean(gameState?.expansions?.riseOfIx)}
+                />
               </div>
             </>
           )}

@@ -18,7 +18,6 @@ import { computeStrength } from '../../../utils/combatStrength'
 import { DEFAULT_DREADNOUGHTS } from '../../../utils/dreadnoughts'
 import {
   applyBountyInfiltrationBonus,
-  applyDesertAmbush,
   applyFullScaleDreadSwords,
   applyGuildAccordDiscount,
   applyImperialBasharSwords,
@@ -489,31 +488,131 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
   })
 
   describe('Desert Ambush', () => {
-    it('grants retreat allowance equal to troops deployed this turn', () => {
-      const s = applyDesertAmbush(
-        getRoiTestState({
-          stateOverrides: {
-            currTurn: { playerId: 0, type: TurnType.REVEAL, troopsDeployedToConflict: 2 },
-          },
-        }),
-        0,
-        1,
-        'Desert Ambush'
-      )
-      expect(s.currTurn?.effectRetreatAllowance).toBe(2)
-      expect(s.gains.some(g => g.type === RewardType.RETREAT)).toBe(false)
+    const setupDesertAmbushTurn = () => {
+      const card = cloneRoiCard('Desert Ambush')
+      card.id = 88110
+      let s = getRoiTestState({
+        players: 2,
+        playerOverrides: { deck: [card], handCount: 1, agents: 1 },
+        stateOverrides: {
+          combatTroops: { 0: 0, 1: 3 },
+          combatStrength: { 1: 6 },
+        },
+      })
+      s = withCardOnTop(s, 0, card)
+      s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+      // Imperial Basin: Spice Trade icon and a combat space (deploy up to 2 troops).
+      s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 4 })
+      return { card, s }
+    }
+
+    it('play effect arms one forced enemy retreat per troop deployed', () => {
+      let { s } = setupDesertAmbushTurn()
+      expect(s.currTurn?.desertAmbushActive).toBe(true)
+
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+      expect(s.currTurn?.troopsDeployedToConflict).toBe(2)
+      expect(s.currTurn?.desertAmbushRetreatsUsed ?? 0).toBe(0)
+
+      s = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'troop',
+      })
+      s = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'troop',
+      })
+
+      // Opponent 1 started with 3 troops: two were forced back to garrison.
+      expect(s.combatTroops[1]).toBe(1)
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(2)
+
+      // No troops left to deploy → no third forced retreat.
+      const exhausted = s
+      expect(
+        applyGameAction(s, {
+          type: 'FORCE_ENEMY_RETREAT',
+          playerId: 0,
+          opponentId: 1,
+          unit: 'troop',
+        })
+      ).toBe(exhausted)
     })
 
-    it('no retreat when zero troops deployed', () => {
-      const s = applyDesertAmbush(
-        getRoiTestState({
-          stateOverrides: { currTurn: { playerId: 0, type: TurnType.REVEAL } },
-        }),
-        0,
-        1,
-        'Desert Ambush'
-      )
-      expect(s.currTurn?.effectRetreatAllowance).toBeUndefined()
+    it('returning one of your own deployed troops clears the latest charge', () => {
+      let { s } = setupDesertAmbushTurn()
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+      s = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'troop',
+      })
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(1)
+
+      // Undeploy/retreat one of our own troops: the latest charge is cleared.
+      s = applyGameAction(s, { type: 'UNDEPLOY_TROOP', playerId: 0 })
+      expect(s.currTurn?.troopsDeployedToConflict).toBe(1)
+
+      const spent = s
+      expect(
+        applyGameAction(s, {
+          type: 'FORCE_ENEMY_RETREAT',
+          playerId: 0,
+          opponentId: 1,
+          unit: 'troop',
+        })
+      ).toBe(spent)
+    })
+
+    it('can force an enemy dreadnought to retreat instead of a troop', () => {
+      let { s } = setupDesertAmbushTurn()
+      s = {
+        ...s,
+        combatTroops: { 0: 0, 1: 0 },
+        combatStrength: { 1: 3 },
+        players: s.players.map(p =>
+          p.id === 1 && p.dreadnoughts
+            ? {
+                ...p,
+                dreadnoughts: { supply: 1, garrison: 0, conflict: 1, control: [] },
+              }
+            : p
+        ),
+      }
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+
+      s = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'dreadnought',
+      })
+
+      const opponent = s.players[1]
+      expect(opponent.dreadnoughts?.conflict).toBe(0)
+      expect(opponent.dreadnoughts?.garrison).toBe(1)
+      expect(s.combatStrength[1]).toBeUndefined()
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(1)
+    })
+
+    it('reveal grants only 1 persuasion and 1 sword (no Agent ability)', () => {
+      const card = cloneRoiCard('Desert Ambush')
+      card.id = 88111
+      let s = getRoiTestState({
+        playerOverrides: { deck: [card], handCount: 1 },
+      })
+      s = applyGameAction(s, { type: 'REVEAL_CARDS', playerId: 0, cardIds: [card.id] })
+
+      expect(s.players[0].persuasion).toBe(1)
+      expect(s.combatStrength[0]).toBe(1)
+      expect(s.currTurn?.desertAmbushActive).toBeUndefined()
     })
   })
 

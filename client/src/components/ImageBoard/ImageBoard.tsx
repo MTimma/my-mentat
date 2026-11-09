@@ -87,7 +87,7 @@ import CombatAreaCluster, {
   type CombatTroopDeployProps,
   type DesktopPlayAreaLayout,
 } from './CombatAreaCluster'
-import CombatRankStrip from './CombatRankStrip'
+import CombatRankStrip, { type DesertAmbushRetreatActions } from './CombatRankStrip'
 import IxBoardOverlay, { type IxBoardPlacement } from './IxBoardOverlay'
 import BeneTleilaxBoardOverlay, { type BeneTleilaxBoardPlacement } from './BeneTleilaxBoardOverlay'
 import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
@@ -223,6 +223,8 @@ interface ImageBoardProps {
   birdseyeInteractionsHostRef?: (el: HTMLDivElement | null) => void
   /** Live Test of Humanity prompts under other leaders. */
   testOfHumanity?: import('./CombatAreaCluster').TestOfHumanitySeatPrompt | null
+  /** Desert Ambush: force-retreat buttons in each opponent's play area. */
+  desertAmbush?: DesertAmbushRetreatActions
   /** Desktop: Imperium row sits above the board, board-width only. */
   imperiumRowSlot?: ReactNode
   /** Horizontal play-area: expansions / setup sit above the right column only. */
@@ -305,6 +307,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   birdseyeIsHistoryView = false,
   birdseyeInteractionsHostRef,
   testOfHumanity = null,
+  desertAmbush,
   imperiumRowSlot,
   playAreaTopSlot,
   desktopPlayAreaLayout,
@@ -650,6 +653,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         birdseyeIsHistoryView={birdseyeIsHistoryView}
         birdseyeInteractionsHostRef={birdseyeInteractionsHostRef}
         testOfHumanity={testOfHumanity}
+        desertAmbush={desertAmbush}
         troopDeploy={troopDeploy}
         dreadnoughtDeploy={dreadnoughtDeploy}
         specimenDeploy={specimenDeploy}

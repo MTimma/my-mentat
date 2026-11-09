@@ -103,7 +103,7 @@
   font-weight: 650;
   line-height: 1.25;
   opacity: 1;
-  color: var(--chrome-text);
+  /*color: var(--chrome-text);*/
 }
 
 .alt-gain-preview .turn-gain-source-flow,
