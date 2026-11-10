@@ -16,6 +16,7 @@ import {
 import { TechTileId } from '../../../data/techTiles'
 import { computeStrength } from '../../../utils/combatStrength'
 import { DEFAULT_DREADNOUGHTS } from '../../../utils/dreadnoughts'
+import { getDesertAmbushRetreatRemaining } from '../../../utils/turnGainsDisplay'
 import {
   applyBountyInfiltrationBonus,
   applyFullScaleDreadSwords,
@@ -571,7 +572,98 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
       ).toBe(spent)
     })
 
-    it('can force an enemy dreadnought to retreat instead of a troop', () => {
+    it('undeploying your troops refunds the charges so a redeploy can retreat again', () => {
+      let { s } = setupDesertAmbushTurn()
+
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+      s = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'troop',
+      })
+      s = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'troop',
+      })
+      expect(s.combatTroops[1]).toBe(1)
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(2)
+
+      // Take both deployed troops back: the charges refund and the forced retreats
+      // are undone — the enemy troops return to the Conflict.
+      s = applyGameAction(s, { type: 'UNDEPLOY_TROOP', playerId: 0 })
+      s = applyGameAction(s, { type: 'UNDEPLOY_TROOP', playerId: 0 })
+      expect(s.currTurn?.troopsDeployedToConflict).toBe(0)
+      expect(s.combatTroops[1]).toBe(3)
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(0)
+
+      // Redeploying re-arms the forced retreats.
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+      const retargeted = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'troop',
+      })
+      expect(retargeted).not.toBe(s)
+      expect(retargeted.combatTroops[1]).toBe(2)
+      expect(retargeted.currTurn?.desertAmbushRetreatsUsed).toBe(1)
+    })
+
+    it('taking back your deployed troops redeploys the enemy troops you forced to retreat', () => {
+      const card = cloneRoiCard('Desert Ambush')
+      card.id = 88112
+      let s = getRoiTestState({
+        players: 3,
+        playerOverrides: { deck: [card], handCount: 1, agents: 1 },
+        stateOverrides: {
+          combatTroops: { 0: 0, 1: 3, 2: 3 },
+          combatStrength: { 1: 6, 2: 6 },
+        },
+      })
+      s = withCardOnTop(s, 0, card)
+      s = applyGameAction(s, { type: 'PLAY_CARD', playerId: 0, cardId: card.id })
+      // Imperial Basin: Spice Trade icon and a combat space (deploy up to 2 troops).
+      s = applyGameAction(s, { type: 'PLACE_AGENT', playerId: 0, spaceId: 4 })
+      expect(s.currTurn?.desertAmbushActive).toBe(true)
+
+      // Deploy 2 troops → 2 Desert Ambush charges.
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+      expect(s.currTurn?.troopsDeployedToConflict).toBe(2)
+
+      // Force one enemy troop to retreat from each opponent.
+      s = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'troop',
+      })
+      s = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 2,
+        unit: 'troop',
+      })
+      expect(s.combatTroops[1]).toBe(2)
+      expect(s.combatTroops[2]).toBe(2)
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(2)
+
+      // Take both deployed troops back while still on the same turn: the forced
+      // retreats are undone and the enemy troops return to the Conflict.
+      s = applyGameAction(s, { type: 'UNDEPLOY_TROOP', playerId: 0 })
+      s = applyGameAction(s, { type: 'UNDEPLOY_TROOP', playerId: 0 })
+      expect(s.currTurn?.troopsDeployedToConflict).toBe(0)
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(0)
+      expect(s.combatTroops[1]).toBe(3)
+      expect(s.combatTroops[2]).toBe(3)
+    })
+
+    it('cannot force an enemy dreadnought to retreat (only troops)', () => {
       let { s } = setupDesertAmbushTurn()
       s = {
         ...s,
@@ -588,17 +680,67 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
       }
       s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
 
+      const guarded = s
+      expect(
+        applyGameAction(s, {
+          type: 'FORCE_ENEMY_RETREAT',
+          playerId: 0,
+          opponentId: 1,
+          unit: 'dreadnought',
+        })
+      ).toBe(guarded)
+
+      // Dreadnought untouched and no charge consumed.
+      expect(s.players[1].dreadnoughts?.conflict).toBe(1)
+      expect(s.players[1].dreadnoughts?.garrison).toBe(0)
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBeUndefined()
+    })
+
+    it('your deployed dreadnought arms a charge, but the opponent dreadnought cannot be forced to retreat', () => {
+      let { s } = setupDesertAmbushTurn()
+      // Both empires own a dreadnought: yours in the garrison, the enemy's in the conflict.
+      s = {
+        ...s,
+        combatTroops: { 0: 0, 1: 1 },
+        combatStrength: { 1: 5 },
+        players: s.players.map(p => {
+          if (p.id === 0) {
+            return { ...p, dreadnoughts: { supply: 1, garrison: 1, conflict: 0, control: [] } }
+          }
+          if (p.id === 1) {
+            return { ...p, dreadnoughts: { supply: 1, garrison: 0, conflict: 1, control: [] } }
+          }
+          return p
+        }),
+      }
+
+      // Deploying your own dreadnought counts as a deployed unit for Desert Ambush.
+      s = applyGameAction(s, { type: 'DEPLOY_DREADNOUGHT', playerId: 0 })
+      expect(s.players[0].dreadnoughts?.conflict).toBe(1)
+      expect(s.currTurn?.dreadnoughtsDeployedToConflict).toBe(1)
+      expect(getDesertAmbushRetreatRemaining(s.currTurn)).toBe(1)
+
+      // The enemy dreadnought is off-limits: the forced retreat is rejected untouched.
+      const guarded = s
+      expect(
+        applyGameAction(s, {
+          type: 'FORCE_ENEMY_RETREAT',
+          playerId: 0,
+          opponentId: 1,
+          unit: 'dreadnought',
+        })
+      ).toBe(guarded)
+      expect(s.players[1].dreadnoughts?.conflict).toBe(1)
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBeUndefined()
+
+      // The charge armed by the dreadnought is still spendable on the enemy troop.
       s = applyGameAction(s, {
         type: 'FORCE_ENEMY_RETREAT',
         playerId: 0,
         opponentId: 1,
-        unit: 'dreadnought',
+        unit: 'troop',
       })
-
-      const opponent = s.players[1]
-      expect(opponent.dreadnoughts?.conflict).toBe(0)
-      expect(opponent.dreadnoughts?.garrison).toBe(1)
-      expect(s.combatStrength[1]).toBeUndefined()
+      expect(s.combatTroops[1]).toBe(0)
       expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(1)
     })
 

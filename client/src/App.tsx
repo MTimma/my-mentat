@@ -1770,7 +1770,7 @@ const GameContent = ({
     [displayState]
   )
 
-  /** Desert Ambush agent effect: one optional enemy-unit retreat per troop deployed this turn. */
+  /** Desert Ambush agent effect: one optional enemy-troop retreat per troop or dreadnought deployed this turn. */
   const desertAmbushRetreat = useMemo((): DesertAmbushRetreatActions | undefined => {
     if (isViewingHistory || gameState.sandboxSetup || !activePlayer) return undefined
     const turn = gameState.currTurn

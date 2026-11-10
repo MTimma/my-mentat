@@ -429,13 +429,14 @@ export function getEffectRetreatRemaining(turn: GameTurn | null | undefined): nu
 }
 
 /**
- * Remaining Desert Ambush forced retreats: one per troop deployed this turn
- * (troopsDeployedToConflict drops when one of your own troops retreats/undeploys,
- * which clears the most recent unused charge).
+ * Remaining Desert Ambush forced retreats: one per troop or dreadnought deployed this turn
+ * (deploy counts drop when one of your own units retreats/undeploys, which refunds the
+ * matching charge so a later redeploy re-arms it).
  */
 export function getDesertAmbushRetreatRemaining(turn: GameTurn | null | undefined): number {
   if (!turn?.desertAmbushActive) return 0
-  const deployed = turn.troopsDeployedToConflict ?? 0
+  const deployed =
+    (turn.troopsDeployedToConflict ?? 0) + (turn.dreadnoughtsDeployedToConflict ?? 0)
   const used = turn.desertAmbushRetreatsUsed ?? 0
   return Math.max(0, deployed - used)
 }

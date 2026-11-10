@@ -51,9 +51,13 @@ export const riseOfIxImperiumManifest: RiseOfIxImperiumEntry[] = [
     name: 'Desert Ambush',
     qty: 1,
     cost: 3,
-    agentBox: 'each troop deployed this turn may force an enemy unit to retreat',
+    agentBox: 'each troop or dreadnought deployed this turn may force an enemy troop to retreat',
     reveal: '1 persuasion, 1 sword',
-    cornerCases: ['one forced retreat per troop deployed', 'own retreat removes a charge', 'troop or dreadnought target'],
+    cornerCases: [
+      'one forced retreat per unit deployed',
+      'own retreat/undeploy refunds a charge',
+      'dreadnought deploy arms a charge; enemy dreadnought is immune',
+    ],
   },
   {
     name: 'Embedded Agent',

@@ -222,12 +222,6 @@ function DesertAmbushRetreatControls({
       role="group"
       aria-label="Desert Ambush: force enemy units to retreat"
     >
-      <span className="desert-ambush-retreat__title">
-        Desert Ambush
-        <span className="desert-ambush-retreat__count" title="Forced retreats left">
-          {desertAmbush.remaining}
-        </span>
-      </span>
       {targets.map(({ player, troops, dreadnoughts }) => (
         <span key={player.id} className="desert-ambush-retreat__row">
           <span className={`desert-ambush-retreat__player desert-ambush-retreat__player--${player.color}`}>

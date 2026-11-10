@@ -275,12 +275,6 @@ export function DesertAmbushSeatRetreat({
       aria-label={`Desert Ambush: force ${player.leader.name} to retreat`}
       onClick={stop}
     >
-      <span className="desert-ambush-seat-retreat__title">
-        Desert Ambush
-        <span className="desert-ambush-seat-retreat__count" title="Forced retreats left">
-          {desertAmbush.remaining}
-        </span>
-      </span>
       <div className="desert-ambush-seat-retreat__buttons">
         {combatTroops > 0 ? (
           <button

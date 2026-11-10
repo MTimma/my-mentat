@@ -1375,6 +1375,13 @@ function syncDeployTurnStats(
     removableDreadnoughts != null
       ? Math.max(0, removableDreadnoughts)
       : currTurn.removableDreadnoughts ?? 0
+  // Desert Ambush charges are one per unit left deployed this turn: undeploying
+  // (or retreating) a unit refunds a used charge so a redeploy re-arms it. The
+  // refunded charges also undo the matching forced enemy retreats (LIFO).
+  const desertAmbushCharges = Math.min(
+    currTurn.desertAmbushRetreatsUsed ?? 0,
+    removable + dreadRemovable
+  )
   return {
     ...currTurn,
     removableTroops: removable,
@@ -1382,7 +1389,55 @@ function syncDeployTurnStats(
     troopsDeployedToConflict: removable,
     removableDreadnoughts: dreadRemovable,
     dreadnoughtsDeployedToConflict: dreadRemovable,
+    ...(currTurn.desertAmbushActive && currTurn.desertAmbushRetreatsUsed != null
+      ? {
+          desertAmbushRetreatsUsed: desertAmbushCharges,
+          desertAmbushRetreats: (currTurn.desertAmbushRetreats ?? []).slice(
+            0,
+            desertAmbushCharges
+          ),
+        }
+      : {}),
   }
+}
+
+/**
+ * Desert Ambush charges are refunded when the player undeploys/retreats the unit
+ * that armed them; the matching forced enemy retreats are undone (LIFO) so the
+ * enemy troop returns to the Conflict.
+ */
+function undoRefundedDesertAmbushRetreats(
+  state: GameState,
+  prevTurn: GameTurn | null | undefined,
+  nextTurn: GameTurn | null | undefined
+): GameState {
+  const prev = prevTurn?.desertAmbushRetreats ?? []
+  const next = nextTurn?.desertAmbushRetreats ?? []
+  if (next.length >= prev.length) return state
+  const undone = prev.slice(next.length)
+  let nextState = state
+  for (const { opponentId } of undone) {
+    nextState = {
+      ...nextState,
+      combatTroops: {
+        ...nextState.combatTroops,
+        [opponentId]: (nextState.combatTroops[opponentId] ?? 0) + 1,
+      },
+      players: nextState.players.map(p =>
+        p.id === opponentId ? { ...p, troops: p.troops - 1 } : p
+      ),
+    }
+  }
+  for (const { opponentId } of undone) {
+    nextState = syncCombatStrengthAfterUnitDelta(nextState, opponentId, 2)
+  }
+  return nextState
+}
+
+/** Desert Ambush charges: one per troop *or* dreadnought you deploy this turn. */
+function desertAmbushDeployPool(turn: GameTurn | null | undefined): number {
+  if (!turn) return 0
+  return (turn.troopsDeployedToConflict ?? 0) + (turn.dreadnoughtsDeployedToConflict ?? 0)
 }
 
 function appendTessiaPendingChoices(state: GameState, choices: PendingChoice[]): GameState {
@@ -4188,7 +4243,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       return syncCombatStrengthAfterUnitDelta(
-        checkAndApplyDiversion(revertMasterstrokeIfNeeded(newState, action.playerId), action.playerId),
+        checkAndApplyDiversion(
+          revertMasterstrokeIfNeeded(
+            undoRefundedDesertAmbushRetreats(newState, state.currTurn, currentTurn),
+            action.playerId
+          ),
+          action.playerId
+        ),
         action.playerId,
         -2
       )
@@ -4279,24 +4340,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       return checkAndApplyDiversion(
-        {
-          ...state,
-          currTurn: currentTurn,
-          combatStrength: newCombatStrength,
-          players: state.players.map(p =>
-            p.id === action.playerId && p.dreadnoughts
-              ? {
-                  ...p,
-                  combatValue: Math.max(0, (p.combatValue || 0) - each),
-                  dreadnoughts: {
-                    ...p.dreadnoughts,
-                    garrison: p.dreadnoughts.garrison + 1,
-                    conflict: p.dreadnoughts.conflict - 1,
-                  },
-                }
-              : p
-          ),
-        },
+        undoRefundedDesertAmbushRetreats(
+          {
+            ...state,
+            currTurn: currentTurn,
+            combatStrength: newCombatStrength,
+            players: state.players.map(p =>
+              p.id === action.playerId && p.dreadnoughts
+                ? {
+                    ...p,
+                    combatValue: Math.max(0, (p.combatValue || 0) - each),
+                    dreadnoughts: {
+                      ...p.dreadnoughts,
+                      garrison: p.dreadnoughts.garrison + 1,
+                      conflict: p.dreadnoughts.conflict - 1,
+                    },
+                  }
+                : p
+            ),
+          },
+          state.currTurn,
+          currentTurn
+        ),
         action.playerId
       )
     }
@@ -4384,7 +4449,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       return syncCombatStrengthAfterUnitDelta(
-        checkAndApplyDiversion(revertMasterstrokeIfNeeded(newState, action.playerId), action.playerId),
+        checkAndApplyDiversion(
+          revertMasterstrokeIfNeeded(
+            undoRefundedDesertAmbushRetreats(newState, state.currTurn, currentTurn),
+            action.playerId
+          ),
+          action.playerId
+        ),
         action.playerId,
         -2
       )
@@ -4451,7 +4522,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const afterRetreat = syncEffectRetreatGatedRewards(
-        revertMasterstrokeIfNeeded(newState, action.playerId)
+        revertMasterstrokeIfNeeded(
+          undoRefundedDesertAmbushRetreats(newState, state.currTurn, currentTurn),
+          action.playerId
+        )
       )
       if (afterRetreat.phase === GamePhase.COMBAT && afterRetreat.activePlayerId === action.playerId) {
         return finishCombatIntrigueAction(afterRetreat, action.playerId)
@@ -4464,60 +4538,38 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const turn = state.currTurn
       if (!turn || turn.playerId !== playerId || !turn.desertAmbushActive) return state
       if (opponentId === playerId) return state
+      // Desert Ambush ambushes cornered troops; an armored dreadnought cannot be forced back.
+      if (unit !== 'troop') return state
       const remaining = Math.max(
         0,
-        (turn.troopsDeployedToConflict ?? 0) - (turn.desertAmbushRetreatsUsed ?? 0)
+        desertAmbushDeployPool(turn) - (turn.desertAmbushRetreatsUsed ?? 0)
       )
       if (remaining <= 0) return state
 
       const opponent = state.players.find(p => p.id === opponentId)
       if (!opponent) return state
+      if ((state.combatTroops[opponentId] ?? 0) <= 0) return state
 
-      let newState: GameState
-      if (unit === 'dreadnought') {
-        if (!isRiseOfIxEnabled(state) || (opponent.dreadnoughts?.conflict ?? 0) <= 0) {
-          return state
-        }
-        newState = {
-          ...state,
-          players: state.players.map(p =>
-            p.id === opponentId && p.dreadnoughts
-              ? {
-                  ...p,
-                  dreadnoughts: {
-                    ...p.dreadnoughts,
-                    conflict: p.dreadnoughts.conflict - 1,
-                    garrison: p.dreadnoughts.garrison + 1,
-                  },
-                }
-              : p
-          ),
-        }
-        newState = syncCombatStrengthAfterUnitDelta(
-          newState,
-          opponentId,
-          -dreadnoughtStrengthEach(opponent.leader)
-        )
-      } else {
-        if ((state.combatTroops[opponentId] ?? 0) <= 0) return state
-        newState = {
-          ...state,
-          combatTroops: {
-            ...state.combatTroops,
-            [opponentId]: (state.combatTroops[opponentId] ?? 0) - 1,
-          },
-          players: state.players.map(p =>
-            p.id === opponentId ? { ...p, troops: p.troops + 1 } : p
-          ),
-        }
-        newState = syncCombatStrengthAfterUnitDelta(newState, opponentId, -2)
+      const newState = {
+        ...state,
+        combatTroops: {
+          ...state.combatTroops,
+          [opponentId]: (state.combatTroops[opponentId] ?? 0) - 1,
+        },
+        players: state.players.map(p =>
+          p.id === opponentId ? { ...p, troops: p.troops + 1 } : p
+        ),
       }
 
       return {
-        ...newState,
+        ...syncCombatStrengthAfterUnitDelta(newState, opponentId, -2),
         currTurn: {
           ...turn,
           desertAmbushRetreatsUsed: (turn.desertAmbushRetreatsUsed ?? 0) + 1,
+          desertAmbushRetreats: [
+            ...(turn.desertAmbushRetreats ?? []),
+            { opponentId },
+          ],
         },
         canEndTurn: false,
       }
