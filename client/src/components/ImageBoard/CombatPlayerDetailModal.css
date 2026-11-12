@@ -311,3 +311,9 @@ html:has(.game-container--play) .dialog-overlay.combat-player-detail-overlay--bo
   object-fit: cover;
   display: block;
 }
+
+/* No global gold focus ring on the modal's buttons. */
+.combat-player-detail-modal button:focus,
+.combat-player-detail-modal button:focus-visible {
+  outline: none;
+}

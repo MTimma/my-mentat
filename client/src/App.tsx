@@ -1775,8 +1775,16 @@ const GameContent = ({
     if (isViewingHistory || gameState.sandboxSetup || !activePlayer) return undefined
     const turn = gameState.currTurn
     if (!turn || turn.playerId !== activePlayer.id || !turn.desertAmbushActive) return undefined
+    const retreatsByOpponent: Record<number, { troops: number; dreadnoughts: number }> = {}
+    for (const { opponentId, unit } of turn.desertAmbushRetreats ?? []) {
+      const entry = retreatsByOpponent[opponentId] ?? { troops: 0, dreadnoughts: 0 }
+      if (unit === 'dreadnought') entry.dreadnoughts += 1
+      else entry.troops += 1
+      retreatsByOpponent[opponentId] = entry
+    }
     return {
       remaining: getDesertAmbushRetreatRemaining(turn),
+      retreatsByOpponent,
       onRetreatTroop: opponentId => {
         dispatch({
           type: 'FORCE_ENEMY_RETREAT',
@@ -1788,6 +1796,22 @@ const GameContent = ({
       onRetreatDreadnought: opponentId => {
         dispatch({
           type: 'FORCE_ENEMY_RETREAT',
+          playerId: activePlayer.id,
+          opponentId,
+          unit: 'dreadnought',
+        })
+      },
+      onUndoRetreatTroop: opponentId => {
+        dispatch({
+          type: 'UNDO_FORCE_ENEMY_RETREAT',
+          playerId: activePlayer.id,
+          opponentId,
+          unit: 'troop',
+        })
+      },
+      onUndoRetreatDreadnought: opponentId => {
+        dispatch({
+          type: 'UNDO_FORCE_ENEMY_RETREAT',
           playerId: activePlayer.id,
           opponentId,
           unit: 'dreadnought',

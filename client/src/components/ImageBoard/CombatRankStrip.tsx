@@ -6,10 +6,14 @@ import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import './CombatRankStrip.css'
 
 export interface DesertAmbushRetreatActions {
-  /** Enemy retreats still available this turn (one per troop deployed). */
+  /** Enemy retreats still available this turn (one per troop or dreadnought deployed). */
   remaining: number
+  /** Forced retreats already applied per opponent, split by unit type. */
+  retreatsByOpponent: Record<number, { troops: number; dreadnoughts: number }>
   onRetreatTroop: (playerId: number) => void
   onRetreatDreadnought: (playerId: number) => void
+  onUndoRetreatTroop: (playerId: number) => void
+  onUndoRetreatDreadnought: (playerId: number) => void
 }
 
 function RankStrength({ total }: { total: number }) {
@@ -143,13 +147,7 @@ const BoardRankBox: React.FC<{
     .join('; ')
   return (
     <div
-      className={[
-        'combat-rank-strip__chip',
-        'combat-rank-strip__chip--tied',
-        entries.some(entry => entry.player.id === activePlayerId)
-          ? 'combat-rank-strip__chip--active'
-          : '',
-      ]
+      className={['combat-rank-strip__chip', 'combat-rank-strip__chip--tied']
         .filter(Boolean)
         .join(' ')}
       title={`${place}. ${title}`}

@@ -128,6 +128,8 @@ describe('Combat rank strip wiring', () => {
     )
     expect(boxFn).not.toContain('combat-rank-strip__leader')
     expect(boxFn).toContain('combat-rank-strip__chip--tied')
+    expect(boxFn).not.toContain('combat-rank-strip__chip--active')
+    expect(boxFn).toContain('combat-rank-strip__member--active')
     expect(boxFn.indexOf('<RankForces')).toBeLessThan(boxFn.indexOf('<RankStrength'))
     const theme = readFileSync(resolve(root, 'theme-play-chrome.css'), 'utf8')
     expect(theme).toContain(`--player-marker-red: ${playerColorHex(PlayerColor.RED)}`)

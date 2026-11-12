@@ -5,8 +5,8 @@ import TurnGainsDisplay from '../TurnGainsDisplay/TurnGainsDisplay'
 import PlayerTechModal from '../PlayerTechModal/PlayerTechModal'
 import AgentIcon from '../AgentIcon/AgentIcon'
 import RevealCardsIcon from '../RevealCardsIcon/RevealCardsIcon'
-import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import CombatDeployDock from './CombatDeployDock'
+import CombatTroopControls from '../CombatTroopControls/CombatTroopControls'
 import type { DesertAmbushRetreatActions } from './CombatRankStrip'
 import type {
   CombatDreadnoughtDeployProps,
@@ -252,7 +252,8 @@ export function BirdseyeSeatDeployControls({
 
 /**
  * Desert Ambush: force one enemy unit to retreat. Sits in the opponent seat's
- * turn-controls row (bottom of the play area) and reuses the deploy-button look.
+ * turn-controls row (bottom of the play area) and reuses the deploy-button look:
+ * left red button returns a forced retreat, right button forces a new one.
  */
 export function DesertAmbushSeatRetreat({
   player,
@@ -266,8 +267,15 @@ export function DesertAmbushSeatRetreat({
   desertAmbush: DesertAmbushRetreatActions
 }) {
   const dreadnoughts = riseOfIx ? player.dreadnoughts?.conflict ?? 0 : 0
-  if (desertAmbush.remaining <= 0) return null
-  if (combatTroops <= 0 && dreadnoughts <= 0) return null
+  const retreated = desertAmbush.retreatsByOpponent[player.id] ?? {
+    troops: 0,
+    dreadnoughts: 0,
+  }
+  const showTroops =
+    (desertAmbush.remaining > 0 && combatTroops > 0) || retreated.troops > 0
+  const showDreadnoughts =
+    (desertAmbush.remaining > 0 && dreadnoughts > 0) || retreated.dreadnoughts > 0
+  if (!showTroops && !showDreadnoughts) return null
   return (
     <div
       className="desert-ambush-seat-retreat"
@@ -276,32 +284,32 @@ export function DesertAmbushSeatRetreat({
       onClick={stop}
     >
       <div className="desert-ambush-seat-retreat__buttons">
-        {combatTroops > 0 ? (
-          <button
-            type="button"
-            className="troop-action-button troop-deploy-button"
-            onClick={() => desertAmbush.onRetreatTroop(player.id)}
-            title={`Force 1 troop of ${player.leader.name} to retreat`}
-            aria-label={`Force one troop of ${player.leader.name} to retreat`}
-          >
-            <img src="/icon/troop.png" alt="" className="troop-action-icon" />
-            <span className="troop-action-count">{combatTroops}</span>
-          </button>
+        {showTroops ? (
+          <CombatTroopControls
+            canDeploy
+            deployableTroops={desertAmbush.remaining}
+            deployedThisTurn={retreated.troops}
+            garrisonTroops={combatTroops}
+            onDeploy={() => desertAmbush.onRetreatTroop(player.id)}
+            onUndeploy={() => desertAmbush.onUndoRetreatTroop(player.id)}
+            playerId={player.id}
+            playerColor={player.color}
+            className="desert-ambush-seat-retreat__controls"
+          />
         ) : null}
-        {dreadnoughts > 0 ? (
-          <button
-            type="button"
-            className="troop-action-button troop-deploy-button"
-            onClick={() => desertAmbush.onRetreatDreadnought(player.id)}
-            title={`Force 1 dreadnought of ${player.leader.name} to retreat`}
-            aria-label={`Force one dreadnought of ${player.leader.name} to retreat`}
-          >
-            <DreadnoughtIcon
-              playerId={player.id}
-              className="troop-action-icon troop-action-icon--dreadnought"
-            />
-            <span className="troop-action-count">{dreadnoughts}</span>
-          </button>
+        {showDreadnoughts ? (
+          <CombatTroopControls
+            variant="dreadnought"
+            canDeploy
+            deployableTroops={desertAmbush.remaining}
+            deployedThisTurn={retreated.dreadnoughts}
+            garrisonTroops={dreadnoughts}
+            onDeploy={() => desertAmbush.onRetreatDreadnought(player.id)}
+            onUndeploy={() => desertAmbush.onUndoRetreatDreadnought(player.id)}
+            playerId={player.id}
+            playerColor={player.color}
+            className="desert-ambush-seat-retreat__controls desert-ambush-seat-retreat__controls--dreadnought"
+          />
         ) : null}
       </div>
     </div>

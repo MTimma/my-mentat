@@ -667,8 +667,8 @@ export interface GameTurn {
   desertAmbushActive?: boolean
   /** Enemy units forced to retreat by Desert Ambush this turn. */
   desertAmbushRetreatsUsed?: number
-  /** Forced retreats in application order; refunded charges undo them LIFO (enemy troop returns to Conflict). */
-  desertAmbushRetreats?: { opponentId: number }[]
+  /** Forced retreats in application order; refunded charges undo them LIFO (enemy unit returns to Conflict). */
+  desertAmbushRetreats?: { opponentId: number; unit: 'troop' | 'dreadnought' }[]
   /** Index into `GameState.gains` where this turn's gains begin (history scoping). */
   gainsStartIndex?: number
   persuasionCount?: number

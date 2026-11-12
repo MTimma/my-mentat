@@ -663,7 +663,7 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
       expect(s.combatTroops[2]).toBe(3)
     })
 
-    it('cannot force an enemy dreadnought to retreat (only troops)', () => {
+    it('can force an enemy dreadnought to retreat', () => {
       let { s } = setupDesertAmbushTurn()
       s = {
         ...s,
@@ -680,23 +680,23 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
       }
       s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
 
-      const guarded = s
-      expect(
-        applyGameAction(s, {
-          type: 'FORCE_ENEMY_RETREAT',
-          playerId: 0,
-          opponentId: 1,
-          unit: 'dreadnought',
-        })
-      ).toBe(guarded)
+      s = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'dreadnought',
+      })
 
-      // Dreadnought untouched and no charge consumed.
-      expect(s.players[1].dreadnoughts?.conflict).toBe(1)
-      expect(s.players[1].dreadnoughts?.garrison).toBe(0)
-      expect(s.currTurn?.desertAmbushRetreatsUsed).toBeUndefined()
+      // The enemy dreadnought is pushed back to its garrison and the charge is spent.
+      expect(s.players[1].dreadnoughts?.conflict).toBe(0)
+      expect(s.players[1].dreadnoughts?.garrison).toBe(1)
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(1)
+      expect(s.currTurn?.desertAmbushRetreats).toEqual([
+        { opponentId: 1, unit: 'dreadnought' },
+      ])
     })
 
-    it('your deployed dreadnought arms a charge, but the opponent dreadnought cannot be forced to retreat', () => {
+    it('your deployed dreadnought arms a charge that can force the opponent dreadnought to retreat', () => {
       let { s } = setupDesertAmbushTurn()
       // Both empires own a dreadnought: yours in the garrison, the enemy's in the conflict.
       s = {
@@ -720,28 +720,50 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
       expect(s.currTurn?.dreadnoughtsDeployedToConflict).toBe(1)
       expect(getDesertAmbushRetreatRemaining(s.currTurn)).toBe(1)
 
-      // The enemy dreadnought is off-limits: the forced retreat is rejected untouched.
-      const guarded = s
+      // The enemy dreadnought is forced back to its garrison.
+      s = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'dreadnought',
+      })
+      expect(s.players[1].dreadnoughts?.conflict).toBe(0)
+      expect(s.players[1].dreadnoughts?.garrison).toBe(1)
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(1)
+
+      // The charge is spent: the enemy troop can no longer be forced back.
+      const spent = s
       expect(
         applyGameAction(s, {
           type: 'FORCE_ENEMY_RETREAT',
           playerId: 0,
           opponentId: 1,
-          unit: 'dreadnought',
+          unit: 'troop',
         })
-      ).toBe(guarded)
-      expect(s.players[1].dreadnoughts?.conflict).toBe(1)
-      expect(s.currTurn?.desertAmbushRetreatsUsed).toBeUndefined()
+      ).toBe(spent)
+    })
 
-      // The charge armed by the dreadnought is still spendable on the enemy troop.
+    it('undoing a forced retreat returns the enemy unit to the Conflict', () => {
+      let { s } = setupDesertAmbushTurn()
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
       s = applyGameAction(s, {
         type: 'FORCE_ENEMY_RETREAT',
         playerId: 0,
         opponentId: 1,
         unit: 'troop',
       })
-      expect(s.combatTroops[1]).toBe(0)
+      expect(s.combatTroops[1]).toBe(2)
       expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(1)
+
+      s = applyGameAction(s, {
+        type: 'UNDO_FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'troop',
+      })
+      expect(s.combatTroops[1]).toBe(3)
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(0)
+      expect(s.currTurn?.desertAmbushRetreats).toEqual([])
     })
 
     it('reveal grants only 1 persuasion and 1 sword (no Agent ability)', () => {

@@ -662,3 +662,19 @@
     height: 42px;
   }
 }
+
+/* No global gold focus ring or hover border on the setup modal's buttons. */
+.sandbox-player-editor-overlay {
+  --play-target-highlight: rgba(255, 248, 232, 0.55);
+}
+
+.sandbox-player-editor-overlay button:focus,
+.sandbox-player-editor-overlay button:focus-visible {
+  outline: none;
+}
+
+/* Keep the deck editor's own (non-gold) focus outline. */
+.sandbox-player-editor-overlay .sandbox-player-editor__deck-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 1px;
+}

@@ -128,17 +128,10 @@ const TechTileSelect: React.FC<TechTileSelectProps> = ({
     onCancel?.()
   }
 
-  const poolHint =
-    tilesForBoard === 0
-      ? 'All 18 tech tiles are with players — all board stacks stay empty.'
-      : allowedEmptyStacks === 0
-        ? `Click tiles to choose ${requiredFilledStacks} face-up stacks. Remaining tiles shuffle face-down.`
-        : `Click tiles to choose ${requiredFilledStacks} face-up stack${requiredFilledStacks === 1 ? '' : 's'}. Up to ${allowedEmptyStacks} stack${allowedEmptyStacks === 1 ? '' : 's'} may stay empty.`
-
   return (
     <PickerModalShell
       title="Select face-up tech tiles"
-      lead={poolHint}
+      lead=""
       countLabel={
         <>
           Selected {filledCount} / {TECH_STACK_COUNT}

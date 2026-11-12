@@ -39,6 +39,7 @@ import { canPlayDiversion, canPlayStrongarm } from '../GameContext/riseOfIx/intr
 import PlayerTechModal from '../PlayerTechModal/PlayerTechModal'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
+import CombatTroopControls from '../CombatTroopControls/CombatTroopControls'
 import type { DesertAmbushRetreatActions } from '../ImageBoard/CombatRankStrip'
 import FreighterIcon, { freighterArrowDirectionFromCustom } from '../FreighterIcon/FreighterIcon'
 import { deferRecallOnlyFreighterChoices } from '../GameContext/riseOfIx/freighter'
@@ -190,7 +191,7 @@ function rewardNeedsInteractionHighlight(reward: Reward): boolean {
   return false
 }
 
-/** Desert Ambush: per-opponent buttons to force a deployed troop/dreadnought to retreat. */
+/** Desert Ambush: per-opponent deploy-style controls to force a deployed troop/dreadnought to retreat. */
 function DesertAmbushRetreatControls({
   desertAmbush,
   players,
@@ -205,15 +206,26 @@ function DesertAmbushRetreatControls({
   riseOfIx: boolean
 }) {
   if (!desertAmbush) return null
-  const canRetreat = desertAmbush.remaining > 0
   const targets = players
     .filter(player => player.id !== activePlayerId)
-    .map(player => ({
-      player,
-      troops: combatTroops[player.id] ?? 0,
-      dreadnoughts: riseOfIx ? player.dreadnoughts?.conflict ?? 0 : 0,
-    }))
-    .filter(target => target.troops > 0 || target.dreadnoughts > 0)
+    .map(player => {
+      const retreated = desertAmbush.retreatsByOpponent[player.id] ?? {
+        troops: 0,
+        dreadnoughts: 0,
+      }
+      return {
+        player,
+        troops: combatTroops[player.id] ?? 0,
+        dreadnoughts: riseOfIx ? player.dreadnoughts?.conflict ?? 0 : 0,
+        retreated,
+      }
+    })
+    .filter(
+      target =>
+        (desertAmbush.remaining > 0 && (target.troops > 0 || target.dreadnoughts > 0)) ||
+        target.retreated.troops > 0 ||
+        target.retreated.dreadnoughts > 0
+    )
   if (targets.length === 0) return null
 
   return (
@@ -222,39 +234,37 @@ function DesertAmbushRetreatControls({
       role="group"
       aria-label="Desert Ambush: force enemy units to retreat"
     >
-      {targets.map(({ player, troops, dreadnoughts }) => (
+      {targets.map(({ player, troops, dreadnoughts, retreated }) => (
         <span key={player.id} className="desert-ambush-retreat__row">
           <span className={`desert-ambush-retreat__player desert-ambush-retreat__player--${player.color}`}>
             {player.leader.name}
           </span>
-          {troops > 0 ? (
-            <button
-              type="button"
-              className="desert-ambush-retreat__btn"
-              onClick={() => desertAmbush.onRetreatTroop(player.id)}
-              disabled={!canRetreat}
-              title={`Force 1 troop of ${player.leader.name} to retreat`}
-              aria-label={`Force one troop of ${player.leader.name} to retreat`}
-            >
-              <img src="/icon/troop.png" alt="" className="desert-ambush-retreat__icon" />
-              <span className="desert-ambush-retreat__value">{troops}</span>
-            </button>
+          {(desertAmbush.remaining > 0 && troops > 0) || retreated.troops > 0 ? (
+            <CombatTroopControls
+              canDeploy
+              deployableTroops={desertAmbush.remaining}
+              deployedThisTurn={retreated.troops}
+              garrisonTroops={troops}
+              onDeploy={() => desertAmbush.onRetreatTroop(player.id)}
+              onUndeploy={() => desertAmbush.onUndoRetreatTroop(player.id)}
+              playerId={player.id}
+              playerColor={player.color}
+              className="desert-ambush-retreat__controls"
+            />
           ) : null}
-          {dreadnoughts > 0 ? (
-            <button
-              type="button"
-              className="desert-ambush-retreat__btn"
-              onClick={() => desertAmbush.onRetreatDreadnought(player.id)}
-              disabled={!canRetreat}
-              title={`Force 1 dreadnought of ${player.leader.name} to retreat`}
-              aria-label={`Force one dreadnought of ${player.leader.name} to retreat`}
-            >
-              <DreadnoughtIcon
-                playerId={player.id}
-                className="desert-ambush-retreat__icon desert-ambush-retreat__icon--dreadnought"
-              />
-              <span className="desert-ambush-retreat__value">{dreadnoughts}</span>
-            </button>
+          {(desertAmbush.remaining > 0 && dreadnoughts > 0) || retreated.dreadnoughts > 0 ? (
+            <CombatTroopControls
+              variant="dreadnought"
+              canDeploy
+              deployableTroops={desertAmbush.remaining}
+              deployedThisTurn={retreated.dreadnoughts}
+              garrisonTroops={dreadnoughts}
+              onDeploy={() => desertAmbush.onRetreatDreadnought(player.id)}
+              onUndeploy={() => desertAmbush.onUndoRetreatDreadnought(player.id)}
+              playerId={player.id}
+              playerColor={player.color}
+              className="desert-ambush-retreat__controls desert-ambush-retreat__controls--dreadnought"
+            />
           ) : null}
         </span>
       ))}

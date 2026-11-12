@@ -4162,7 +4162,7 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   font-weight: 800;
   cursor: pointer;
 }
-/* Desert Ambush: force one enemy unit to retreat per troop deployed this turn. */
+/* Desert Ambush: force one enemy unit to retreat per troop or dreadnought deployed this turn. */
 .desert-ambush-retreat {
   display: flex;
   flex-wrap: wrap;
@@ -4173,30 +4173,6 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   border: 1px solid rgba(255, 215, 0, 0.55);
   border-radius: 8px;
   background: rgba(255, 215, 0, 0.12);
-}
-
-.desert-ambush-retreat__title {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.desert-ambush-retreat__count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 10px;
-  background: rgba(255, 215, 0, 0.85);
-  color: #1a1408;
-  font-size: 0.78rem;
-  font-weight: 900;
 }
 
 .desert-ambush-retreat__row {
@@ -4215,41 +4191,8 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   white-space: nowrap;
 }
 
-.desert-ambush-retreat__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 6px;
-  border: 1px solid rgba(255, 215, 0, 0.7);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.35);
-  color: inherit;
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.desert-ambush-retreat__btn:hover {
-  background: rgba(255, 215, 0, 0.28);
-}
-
-.desert-ambush-retreat__icon {
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
-}
-
-.desert-ambush-retreat__icon--dreadnought {
-  width: 16px;
-  height: 16px;
-}
-
-.desert-ambush-retreat__btn:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.desert-ambush-retreat__btn:disabled:hover {
-  background: rgba(0, 0, 0, 0.35);
+/* Deploy-style controls (left red return, right force retreat), one per unit type. */
+.desert-ambush-retreat__controls {
+  width: 92px;
+  flex: 0 0 auto;
 }
