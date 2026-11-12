@@ -15,6 +15,8 @@ export interface CombatTroopControlsProps {
   playerColor?: PlayerColor
   className?: string
   style?: React.CSSProperties
+  /** Enemy Desert Ambush: keep the numbers/actions but swap the icon + styling between the two buttons. */
+  swapButtons?: boolean
 }
 
 const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
@@ -29,6 +31,7 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
   playerColor,
   className,
   style,
+  swapButtons = false,
 }) => {
   const isDreadnought = variant === 'dreadnought'
   const isSpecimen = variant === 'specimen'
@@ -60,6 +63,68 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
     />
   )
 
+  const returnIcon = (
+    <img src="/icon/deploy.png" alt="" className="troop-action-icon troop-action-icon--deploy" />
+  )
+
+  const undeployButton = (
+    <button
+      type="button"
+      className="troop-action-button troop-undeploy-button"
+      onClick={onUndeploy}
+      disabled={!canDeploy || deployedThisTurn <= 0}
+      aria-label={`Return one ${unitLabel} from the Conflict. ${deployedThisTurn} deployed.`}
+      title={`${deployedThisTurn} in Conflict`}
+    >
+      {returnIcon}
+      <span className="troop-action-count">{deployedThisTurn}</span>
+    </button>
+  )
+
+  const deployButton = (
+    <button
+      type="button"
+      className="troop-action-button troop-deploy-button"
+      onClick={onDeploy}
+      disabled={!canDeploy || available <= 0}
+      aria-label={`Deploy one ${unitLabel} to the Conflict. ${available} available.`}
+      title={`${available} available`}
+    >
+      {sourceIcon}
+      <span className="troop-action-count">{available}</span>
+    </button>
+  )
+
+  // Desert Ambush (enemy seats): keep the numbers/actions but move the red return
+  // styling + icon to the left and the gold unit styling + icon to the right.
+  const forceRetreatButton = (
+    <button
+      type="button"
+      className="troop-action-button troop-undeploy-button"
+      onClick={onDeploy}
+      disabled={!canDeploy || available <= 0}
+      aria-label={`Force one ${unitLabel} to retreat. ${available} available.`}
+      title={`${available} available`}
+    >
+      {returnIcon}
+      <span className="troop-action-count">{available}</span>
+    </button>
+  )
+
+  const undoRetreatButton = (
+    <button
+      type="button"
+      className="troop-action-button troop-deploy-button"
+      onClick={onUndeploy}
+      disabled={!canDeploy || deployedThisTurn <= 0}
+      aria-label={`Return one ${unitLabel} to the Conflict. ${deployedThisTurn} retreated.`}
+      title={`${deployedThisTurn} retreated`}
+    >
+      {sourceIcon}
+      <span className="troop-action-count">{deployedThisTurn}</span>
+    </button>
+  )
+
   return (
     <div
       className={[
@@ -73,28 +138,8 @@ const CombatTroopControls: React.FC<CombatTroopControlsProps> = ({
       role="group"
       aria-label={`Deploy or undo deployment of ${unitLabel}s to the Conflict`}
     >
-      <button
-        type="button"
-        className="troop-action-button troop-undeploy-button"
-        onClick={onUndeploy}
-        disabled={!canDeploy || deployedThisTurn <= 0}
-        aria-label={`Return one ${unitLabel} from the Conflict. ${deployedThisTurn} deployed.`}
-        title={`${deployedThisTurn} in Conflict`}
-      >
-        <img src="/icon/deploy.png" alt="" className="troop-action-icon troop-action-icon--deploy" />
-        <span className="troop-action-count">{deployedThisTurn}</span>
-      </button>
-      <button
-        type="button"
-        className="troop-action-button troop-deploy-button"
-        onClick={onDeploy}
-        disabled={!canDeploy || available <= 0}
-        aria-label={`Deploy one ${unitLabel} to the Conflict. ${available} available.`}
-        title={`${available} available`}
-      >
-        {sourceIcon}
-        <span className="troop-action-count">{available}</span>
-      </button>
+      {swapButtons ? forceRetreatButton : undeployButton}
+      {swapButtons ? undoRetreatButton : deployButton}
     </div>
   )
 }

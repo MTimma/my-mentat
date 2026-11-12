@@ -287,6 +287,7 @@ export function DesertAmbushSeatRetreat({
         {showTroops ? (
           <CombatTroopControls
             canDeploy
+            swapButtons
             deployableTroops={desertAmbush.remaining}
             deployedThisTurn={retreated.troops}
             garrisonTroops={combatTroops}
@@ -301,6 +302,7 @@ export function DesertAmbushSeatRetreat({
           <CombatTroopControls
             variant="dreadnought"
             canDeploy
+            swapButtons
             deployableTroops={desertAmbush.remaining}
             deployedThisTurn={retreated.dreadnoughts}
             garrisonTroops={dreadnoughts}

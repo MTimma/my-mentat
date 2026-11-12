@@ -242,6 +242,7 @@ function DesertAmbushRetreatControls({
           {(desertAmbush.remaining > 0 && troops > 0) || retreated.troops > 0 ? (
             <CombatTroopControls
               canDeploy
+              swapButtons
               deployableTroops={desertAmbush.remaining}
               deployedThisTurn={retreated.troops}
               garrisonTroops={troops}
@@ -256,6 +257,7 @@ function DesertAmbushRetreatControls({
             <CombatTroopControls
               variant="dreadnought"
               canDeploy
+              swapButtons
               deployableTroops={desertAmbush.remaining}
               deployedThisTurn={retreated.dreadnoughts}
               garrisonTroops={dreadnoughts}
