@@ -35,7 +35,7 @@ import {
   isAcquireTechOnlyReward,
   isPlayAreaInlineTechOrSignetChoice,
 } from '../GameContext/riseOfIx/techTurnControlsUi'
-import { canPlayDiversion, canPlayStrongarm } from '../GameContext/riseOfIx/intrigue'
+import { canPlayStrongarm } from '../GameContext/riseOfIx/intrigue'
 import PlayerTechModal from '../PlayerTechModal/PlayerTechModal'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
@@ -1029,10 +1029,6 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
 
       if (intrigueCardHasCustom(card, CustomEffect.STRONGARM) && !canPlayStrongarm(gameState, activePlayer.id)) {
         return { playable: false, reason: 'Place an Agent on a faction board space first' }
-      }
-
-      if (intrigueCardHasCustom(card, CustomEffect.DIVERSION) && !canPlayDiversion(gameState, activePlayer.id)) {
-        return { playable: false, reason: 'Deploy at least 4 units in the Conflict' }
       }
 
       if (intrigueCardHasCustom(card, CustomEffect.POISON_SNOOPER)) {

@@ -401,26 +401,24 @@ describe('Rise of Ix intrigue cards', () => {
     expect(s.players[0].handCount).toBe(6)
   })
 
-  it('Diversion: cannot play with fewer than 4 units in the Conflict', () => {
+  it('Diversion: playable without deploys — arms the trigger for this turn', () => {
     const card = cardByName('Diversion')
-    const before = roiPlotState([makePlayer(0, { intrigueCount: 1, troops: 10 })], {
-      combatTroops: { 0: 3 },
-      combatStrength: { 0: 6 },
+    let s = roiPlotState([makePlayer(0, { intrigueCount: 1, troops: 10 })], {
       currTurn: {
         playerId: 0,
         type: TurnType.ACTION,
         canDeployTroops: true,
         troopLimit: 10,
-        removableTroops: 3,
       },
     })
-    const after = applyGameAction(before, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
-    expect(after).toBe(before)
-    expect(after.players[0].intrigueCount).toBe(1)
-    expect(after.currTurn?.diversionActive).toBeUndefined()
+    s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
+    expect(s.players[0].intrigueCount).toBe(0)
+    expect(s.currTurn?.diversionActive).toBe(true)
+    expect(s.currTurn?.diversionCardId).toBe(card.id)
+    expect(s.currTurn?.pendingChoices?.some(c => c.prompt.startsWith('Freighter'))).toBeFalsy()
   })
 
-  it('Diversion: playing after 4 units already deployed grants freighter choice', () => {
+  it('Diversion: playing after 4 units were deployed this turn grants the freighter choice', () => {
     const card = cardByName('Diversion')
     let s = roiPlotState([makePlayer(0, { intrigueCount: 1, troops: 10, freighterStep: 0 })], {
       combatTroops: { 0: 4 },
@@ -435,31 +433,36 @@ describe('Rise of Ix intrigue cards', () => {
       },
     })
     s = applyGameAction(s, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
-    expect(s.currTurn?.pendingChoices?.some(c => c.prompt.startsWith('Freighter'))).toBe(true)
     expect(s.currTurn?.diversionFreighterGranted).toBe(true)
-    expect(s.currTurn?.diversionFreighterStepBefore).toBe(0)
+    expect(s.currTurn?.diversionFreighterChoiceIds).toHaveLength(1)
+    expect(s.currTurn?.pendingChoices?.some(c => c.prompt.startsWith('Freighter'))).toBe(true)
   })
 
-  it('Diversion: deploy hook grants freighter when diversionActive and units reach 4', () => {
+  it('Diversion: the 4th unit deployed this turn grants the freighter choice', () => {
     const card = cardByName('Diversion')
     let s = roiPlotState([makePlayer(0, { intrigueCount: 1, troops: 10 })], {
       combatTroops: { 0: 3 },
+      combatStrength: { 0: 6 },
       currTurn: {
         playerId: 0,
         type: TurnType.ACTION,
         diversionActive: true,
+        diversionCardId: card.id,
         canDeployTroops: true,
         troopLimit: 10,
-        removableTroops: 0,
+        removableTroops: 3,
+        troopsDeployedToConflict: 3,
       },
     })
     s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(s.currTurn?.troopsDeployedToConflict).toBe(4)
+    expect(s.currTurn?.diversionFreighterGranted).toBe(true)
     expect(s.currTurn?.pendingChoices?.some(c => c.prompt.startsWith('Freighter'))).toBe(true)
-    expect(s.currTurn?.diversionFreighterStepBefore).toBe(0)
-    expect(s.intrigueDeck.some(c => c.id === card.id)).toBe(true)
   })
 
-  it('Diversion: undeploy below 4 units restores freighter step and clears pending choice', () => {
+  it('Diversion: undeploying below 4 units unwinds only its own grant and re-arms', () => {
+    const card = cardByName('Diversion')
+    const expedite = cardByName('Expedite')
     let s = roiPlotState([makePlayer(0, { intrigueCount: 1, troops: 10, freighterStep: 2 })], {
       combatTroops: { 0: 4 },
       combatStrength: { 0: 8 },
@@ -468,27 +471,86 @@ describe('Rise of Ix intrigue cards', () => {
         type: TurnType.ACTION,
         diversionActive: false,
         diversionFreighterGranted: true,
-        diversionFreighterStepBefore: 2,
+        diversionCardId: card.id,
         diversionFreighterChoiceIds: ['diversion-freighter-test'],
         canDeployTroops: true,
         troopLimit: 10,
         removableTroops: 4,
+        troopsDeployedToConflict: 4,
         pendingChoices: [
           {
             id: 'diversion-freighter-test',
             type: ChoiceType.FIXED_OPTIONS,
             prompt: 'Freighter (now at 2/3)',
-            source: { type: GainSource.INTRIGUE, id: 0, name: 'Diversion' },
+            source: { type: GainSource.INTRIGUE, id: card.id, name: 'Diversion' },
+            options: [],
+          },
+          {
+            id: 'expedite-freighter-test',
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Freighter (now at 2/3)',
+            source: { type: GainSource.INTRIGUE, id: expedite.id, name: 'Expedite' },
             options: [],
           },
         ],
       },
     })
     s = applyGameAction(s, { type: 'UNDEPLOY_TROOP', playerId: 0 })
-    expect(s.players[0].freighterStep).toBe(2)
     expect(s.currTurn?.diversionFreighterGranted).toBe(false)
     expect(s.currTurn?.diversionActive).toBe(true)
     expect(s.currTurn?.pendingChoices?.some(c => c.id === 'diversion-freighter-test')).toBe(false)
+    // Another source's freighter choice is left untouched.
+    expect(s.currTurn?.pendingChoices?.some(c => c.id === 'expedite-freighter-test')).toBe(true)
+    expect(s.players[0].freighterStep).toBe(2)
+  })
+
+  it('Diversion: undeploying after the advance reverts its step gain but keeps other freighters', () => {
+    const card = cardByName('Diversion')
+    const expedite = cardByName('Expedite')
+    let s = roiPlotState([makePlayer(0, { intrigueCount: 1, troops: 10, freighterStep: 3 })], {
+      combatTroops: { 0: 4 },
+      combatStrength: { 0: 8 },
+      gains: [
+        {
+          round: 1,
+          playerId: 0,
+          sourceId: card.id,
+          name: 'Diversion',
+          amount: 1,
+          type: RewardType.FREIGHTER,
+          source: GainSource.INTRIGUE,
+        },
+        {
+          round: 1,
+          playerId: 0,
+          sourceId: expedite.id,
+          name: 'Expedite',
+          amount: 1,
+          type: RewardType.FREIGHTER,
+          source: GainSource.INTRIGUE,
+        },
+      ],
+      currTurn: {
+        playerId: 0,
+        type: TurnType.ACTION,
+        diversionActive: false,
+        diversionFreighterGranted: true,
+        diversionCardId: card.id,
+        diversionFreighterChoiceIds: ['diversion-freighter-test'],
+        canDeployTroops: true,
+        troopLimit: 10,
+        removableTroops: 4,
+        troopsDeployedToConflict: 4,
+      },
+    })
+    s = applyGameAction(s, { type: 'UNDEPLOY_TROOP', playerId: 0 })
+    expect(s.players[0].freighterStep).toBe(2)
+    expect(s.gains.some(g => g.sourceId === card.id && g.amount === 1)).toBe(false)
+    expect(s.gains.some(g => g.name === 'Diversion revert' && g.amount === -1)).toBe(true)
+    // Expedite's advance is kept.
+    expect(s.gains.some(g => g.sourceId === expedite.id && g.amount === 1)).toBe(true)
+    expect(s.currTurn?.diversionActive).toBe(true)
+    expect(s.currTurn?.diversionFreighterGranted).toBe(false)
   })
 
   it('Expedite: spice for freighter choice', () => {

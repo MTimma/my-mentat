@@ -225,6 +225,8 @@ export interface IntrigueReq extends CardEffectReq {
   highCouncil?: boolean
   /** Rise of Ix — minimum troops + dreadnoughts (+ specimens) in the Conflict. */
   unitsInConflict?: number
+  /** Immortality — Counterattack: at least one opponent played a combat intrigue this Conflict. */
+  opponentPlayedCombatIntrigue?: boolean
 }
 
 export type PlayEffect = CardEffect<PlayReq> & {
@@ -312,6 +314,8 @@ export interface Reward {
   research?: number
   /** Immortality — advance the Tleilaxu (beetle) token N spaces. */
   tleilaxu?: number
+  /** Immortality — Harvest Cells: acquire the Tleilaxu row card, paying its normal specimen cost. */
+  tleilaxuAcquire?: { cardId: number }
   /** Immortality — Combat icon: may deploy troops this turn as if on a combat space. */
   combatDeploy?: boolean
   /**
@@ -651,12 +655,12 @@ export interface GameTurn {
   troopsDeployedToConflict?: number
   /** Total troops retreated from Conflict this turn. */
   troopsRetreatedFromConflict?: number
-  /** Diversion intrigue — grant freighter when 4+ units are in the Conflict this turn. */
+  /** Diversion intrigue — grant freighter when 4+ units are deployed to the Conflict this turn. */
   diversionActive?: boolean
-  /** Diversion — freighter reward was granted and may be reverted if units drop below 4. */
+  /** Diversion — freighter reward was granted and may be reverted if the deployed count drops below 4. */
   diversionFreighterGranted?: boolean
-  /** Diversion — freighter step before the Diversion grant (for revert). */
-  diversionFreighterStepBefore?: 0 | 1 | 2 | 3
+  /** Diversion — the card that armed the trigger (attributes its freighter gains/choices for revert). */
+  diversionCardId?: number
   /** Diversion — pending choice ids created by the Diversion freighter grant. */
   diversionFreighterChoiceIds?: string[]
   /** Max troops that may be retreated via card/leader effects (separate from deploy undo). */
@@ -860,6 +864,12 @@ export interface GameState {
   >
   /** Second Wave: player must deploy up to 2 garrison units to the Conflict */
   pendingSecondWave?: number | null
+  /** Immortality — Harvest Cells: played this Conflict; +2 specimen if 3+ troops were lost by conflict end. */
+  armedHarvestCells?: Record<number, boolean>
+  /** Immortality — troops lost from the Conflict during the current Conflict (Harvest Cells trigger). */
+  conflictTroopLosses?: Record<number, number>
+  /** Immortality — Counterattack: players who played a combat intrigue during the current Conflict. */
+  combatIntriguePlayersThisConflict?: number[]
   /** Labels a row in `history` (setup, round start, combat banner, conflict rewards, endgame). */
   historyEntryKind?: 'setup' | 'round-start' | 'combat' | 'conflict-rewards' | 'endgame'
   /** All intrigue cards revealed at endgame, keyed by player id. */
@@ -1159,7 +1169,6 @@ export enum CustomEffect {
   SCIENTIFIC_BREAKTHROUGH = 'SCIENTIFIC_BREAKTHROUGH',
   STUDY_MELANGE = 'STUDY_MELANGE',
   TLEILAXU_PUPPET = 'TLEILAXU_PUPPET',
-  COUNTERATTACK = 'COUNTERATTACK',
   ECONOMIC_POSITIONING_IMM = 'ECONOMIC_POSITIONING_IMM',
   HARVEST_CELLS = 'HARVEST_CELLS',
   SHADOWY_BARGAIN = 'SHADOWY_BARGAIN',

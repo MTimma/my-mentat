@@ -8,13 +8,14 @@ import {
   RewardType,
   TurnType,
   type GameState,
+  type GameTurn,
   type IntrigueCard,
   type PendingChoice,
   type Player,
   type Reward,
 } from '../../../types/GameTypes'
 import { countSpiceMustFlowCards } from '../../../utils/spiceMustFlow'
-import { getActiveDreadnoughtCount, unitsInConflictForPlayer } from '../../../utils/dreadnoughts'
+import { getActiveDreadnoughtCount } from '../../../utils/dreadnoughts'
 import { syncCombatStrengthForPlayer } from '../../../utils/dreadnoughtLifecycle'
 import { createGainInfluenceChoice } from '../../../utils/influenceChoices'
 import { influenceGainName } from '../../../utils/influenceDisplay'
@@ -236,6 +237,7 @@ export function applyRiseOfIxIntrigueCustomInEffect(
           ...(state.currTurn ?? { playerId, type: TurnType.ACTION }),
           diversionActive: true,
           diversionFreighterGranted: false,
+          diversionCardId: card.id,
         },
       }
     case CustomEffect.QUID_PRO_QUO:
@@ -284,14 +286,16 @@ export function enqueueStrongarmChoice(
 
 export function checkDiversionAfterDeployChange(state: GameState, playerId: number): GameState {
   if (!isRiseOfIxEnabled(state) || !state.currTurn) return state
-  const units = unitsInConflictForPlayer(state, playerId)
   const turn = state.currTurn
+  const deployed = diversionDeployedThisTurn(turn)
 
-  if (turn.diversionActive && !turn.diversionFreighterGranted && units >= 4) {
-    const player = state.players.find(p => p.id === playerId)
-    const stepBefore = (player?.freighterStep ?? 0) as 0 | 1 | 2 | 3
+  if (turn.diversionActive && !turn.diversionFreighterGranted && deployed >= 4) {
+    const source: GainAttribution = {
+      type: GainSource.INTRIGUE,
+      id: turn.diversionCardId ?? 0,
+      name: 'Diversion',
+    }
     const pendingBefore = new Set((turn.pendingChoices ?? []).map(c => c.id))
-    const source = { type: GainSource.INTRIGUE, id: 0, name: 'Diversion' }
     const pendingChoices = [...(turn.pendingChoices ?? [])]
     pushFreighterChoicesFromReward(state, 1, playerId, source, pendingChoices)
     const diversionFreighterChoiceIds = pendingChoices
@@ -303,7 +307,6 @@ export function checkDiversionAfterDeployChange(state: GameState, playerId: numb
         ...turn,
         diversionActive: false,
         diversionFreighterGranted: true,
-        diversionFreighterStepBefore: stepBefore,
         diversionFreighterChoiceIds,
         pendingChoices,
       },
@@ -311,34 +314,79 @@ export function checkDiversionAfterDeployChange(state: GameState, playerId: numb
     }
   }
 
-  if (turn.diversionFreighterGranted && units < 4) {
-    const player = state.players.find(p => p.id === playerId)
-    const stepBefore = turn.diversionFreighterStepBefore ?? (player?.freighterStep ?? 0)
-    const diversionChoiceIds = new Set(turn.diversionFreighterChoiceIds ?? [])
-    const players = state.players.map(p =>
-      p.id === playerId ? { ...p, freighterStep: stepBefore as 0 | 1 | 2 | 3 } : p
-    )
-    const gains = [...state.gains]
-    pushGain(gains, state, playerId, { type: GainSource.INTRIGUE, id: 0, name: 'Diversion revert' }, -1, RewardType.FREIGHTER)
-    const pendingChoices = (turn.pendingChoices ?? []).filter(
-      c => !diversionChoiceIds.has(c.id) && !c.prompt.startsWith('Freighter')
-    )
-    return {
-      ...state,
-      players,
-      gains,
-      currTurn: {
-        ...turn,
-        diversionFreighterGranted: false,
-        diversionActive: true,
-        diversionFreighterStepBefore: undefined,
-        diversionFreighterChoiceIds: undefined,
-        pendingChoices,
-      },
-    }
+  if (turn.diversionFreighterGranted && deployed < 4) {
+    return revertDiversionFreighterGrant(state, playerId)
   }
 
   return state
+}
+
+/** Units deployed to the Conflict this turn (troops + dreadnoughts + specimens still deployed). */
+function diversionDeployedThisTurn(turn: GameTurn): number {
+  return (
+    (turn.troopsDeployedToConflict ?? 0) +
+    (turn.dreadnoughtsDeployedToConflict ?? 0) +
+    (turn.removableSpecimens ?? 0)
+  )
+}
+
+/**
+ * Undeploying below 4 units unwinds only Diversion's own grant — its pending freighter
+ * choice and its own advance gain — then re-arms the trigger so deploying back to 4
+ * grants again (mirrors Baron's Masterstroke revert). Freighter rewards and choices from
+ * other sources (e.g. Expedite played after Diversion) are left untouched.
+ */
+function revertDiversionFreighterGrant(state: GameState, playerId: number): GameState {
+  const turn = state.currTurn
+  if (!turn) return state
+  const cardId = turn.diversionCardId ?? 0
+  const diversionChoiceIds = new Set(turn.diversionFreighterChoiceIds ?? [])
+  const isDiversionGain = (gain: Gain): boolean =>
+    gain.round === state.currentRound &&
+    gain.playerId === playerId &&
+    gain.type === RewardType.FREIGHTER &&
+    gain.source === GainSource.INTRIGUE &&
+    (cardId > 0 ? gain.sourceId === cardId : gain.name === 'Diversion')
+  const diversionGains = state.gains.filter(isDiversionGain)
+  const advanceGains = diversionGains.filter(gain => gain.amount > 0)
+  const choiceStillPending = (turn.pendingChoices ?? []).some(c => diversionChoiceIds.has(c.id))
+
+  // A resolved Recall already paid shipping-track rewards; unwinding those is out of scope,
+  // so keep the grant consumed (no re-arm).
+  if (!choiceStillPending && advanceGains.length === 0) {
+    return { ...state, currTurn: { ...turn, diversionActive: false } }
+  }
+
+  const stepDelta = advanceGains.reduce((sum, gain) => sum + gain.amount, 0)
+  const gains = state.gains.filter(gain => !advanceGains.includes(gain))
+  if (stepDelta > 0) {
+    pushGain(
+      gains,
+      state,
+      playerId,
+      { type: GainSource.INTRIGUE, id: cardId, name: 'Diversion revert' },
+      -stepDelta,
+      RewardType.FREIGHTER
+    )
+  }
+  const player = state.players.find(p => p.id === playerId)
+  const nextStep = Math.max(0, Math.min(3, (player?.freighterStep ?? 0) - stepDelta)) as 0 | 1 | 2 | 3
+  const pendingChoices = (turn.pendingChoices ?? []).filter(c => !diversionChoiceIds.has(c.id))
+
+  return {
+    ...state,
+    gains,
+    players: state.players.map(p =>
+      p.id === playerId ? { ...p, freighterStep: nextStep } : p
+    ),
+    currTurn: {
+      ...turn,
+      diversionActive: true,
+      diversionFreighterGranted: false,
+      diversionFreighterChoiceIds: undefined,
+      pendingChoices,
+    },
+  }
 }
 
 export function grantStrategicPushSolari(state: GameState, winnerId: number): GameState {
@@ -380,10 +428,6 @@ export function intrigueEffectNeedsDeferral(effect: { cost?: { discard?: number 
 
 export function canPlayStrongarm(state: GameState, playerId: number): boolean {
   return agentFactionsThisTurn(state, playerId).length > 0
-}
-
-export function canPlayDiversion(state: GameState, playerId: number): boolean {
-  return unitsInConflictForPlayer(state, playerId) >= 4
 }
 
 export function playerMeetsAdvancedWeaponryPlot(player: Player): boolean {

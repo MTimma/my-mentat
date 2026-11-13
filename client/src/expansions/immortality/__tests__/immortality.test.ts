@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GamePhase, NO_EXPANSIONS, AgentIcon, type Card, type GameState, type Player, type Reward } from '../../../types/GameTypes'
+import { ChoiceType, GamePhase, NO_EXPANSIONS, AgentIcon, type Card, type FixedOptionsChoice, type GameState, type Player, type Reward } from '../../../types/GameTypes'
 import { getBaseTestState, stubDeckCard } from '../../../components/GameContext/__tests__/_helpers'
 import { applyGameAction } from '../../../components/GameContext/GameContext'
 import { playRequirementSatisfied } from '../../../components/GameContext/requirements'
@@ -513,6 +513,219 @@ describe('Immortality — track rewards from cards', () => {
     ).toBe(0)
     expect(play('Economic Positioning', { solari: 10 }).players[0].victoryPoints).toBe(1)
     expect(play('Economic Positioning', { solari: 9 }).players[0].victoryPoints).toBe(0)
+  })
+
+  it('Counterattack plot line: deploys up to 2 troops from garrison', () => {
+    const card = IMMORTALITY_INTRIGUE_CARDS.find(c => c.name === 'Counterattack')!
+    let state = getBaseTestState({ intrigueCount: 1, troops: 5 }, { players: 2 })
+    state = {
+      ...state,
+      expansions: IMMORTALITY_EXPANSIONS,
+      phase: GamePhase.PLAYER_TURNS,
+      activePlayerId: 0,
+      currTurn: null,
+      intrigueDeck: [card],
+      combatTroops: {},
+      combatStrength: {},
+    }
+
+    state = applyGameAction(state, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
+    // The allowance must exist even though the turn object was created by the play itself.
+    expect(state.currTurn?.canDeployTroops).toBe(true)
+    state = applyGameAction(state, { type: 'DEPLOY_TROOP', playerId: 0 })
+    state = applyGameAction(state, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(state.combatTroops[0]).toBe(2)
+    expect(state.players[0].troops).toBe(3)
+
+    const capped = applyGameAction(state, { type: 'DEPLOY_TROOP', playerId: 0 })
+    expect(capped.combatTroops[0]).toBe(2)
+  })
+
+  it('Counterattack combat line: +4 only after an opponent played a combat intrigue', () => {
+    const counter = IMMORTALITY_INTRIGUE_CARDS.find(c => c.name === 'Counterattack')!
+    const vicious = IMMORTALITY_INTRIGUE_CARDS.find(c => c.name === 'Vicious Talents')!
+    let state = getBaseTestState(undefined, { players: 2 })
+    state = {
+      ...state,
+      expansions: IMMORTALITY_EXPANSIONS,
+      phase: GamePhase.COMBAT,
+      activePlayerId: 0,
+      firstPlayerMarker: 0,
+      currTurn: null,
+      intrigueDeck: [counter, vicious],
+      combatTroops: { 0: 3, 1: 2 },
+      combatStrength: { 0: 6, 1: 4 },
+      combatPasses: new Set(),
+      currentConflict: {
+        id: 99,
+        tier: 1,
+        name: 'Test Conflict',
+        rewards: { first: [], second: [], third: [] },
+      },
+    }
+
+    // No opponent has played a combat intrigue yet — the card is not playable.
+    const before = state
+    state = applyGameAction(state, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: counter.id })
+    expect(state).toBe(before)
+
+    // Opponent plays a combat intrigue first.
+    state = { ...state, activePlayerId: 1, currTurn: null }
+    state = applyGameAction(state, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 1, cardId: vicious.id })
+    expect(state.combatIntriguePlayersThisConflict).toEqual([1])
+    state = applyGameAction(state, { type: 'PASS_COMBAT', playerId: 1 })
+    expect(state.activePlayerId).toBe(0)
+
+    state = applyGameAction(state, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: counter.id })
+    expect(state.combatStrength[0]).toBe(10)
+  })
+
+  it('Gruesome Sacrifice records conflict troop losses', () => {
+    const gruesome = IMMORTALITY_INTRIGUE_CARDS.find(c => c.name === 'Gruesome Sacrifice')!
+    let state = getBaseTestState(undefined, { players: 2 })
+    state = {
+      ...state,
+      expansions: IMMORTALITY_EXPANSIONS,
+      phase: GamePhase.COMBAT,
+      activePlayerId: 0,
+      currTurn: null,
+      intrigueDeck: [gruesome],
+      combatTroops: { 0: 3, 1: 2 },
+      combatStrength: { 0: 6, 1: 4 },
+      combatPasses: new Set(),
+      currentConflict: {
+        id: 99,
+        tier: 1,
+        name: 'Test Conflict',
+        rewards: { first: [], second: [], third: [] },
+      },
+    }
+
+    state = applyGameAction(state, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: gruesome.id })
+    const confirm = state.currTurn?.pendingChoices?.[0]
+    expect(confirm).toBeDefined()
+    state = applyGameAction(state, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: confirm!.id,
+      optionIndex: 0,
+    })
+    expect(state.conflictTroopLosses?.[0]).toBe(2)
+  })
+
+  it('Harvest Cells: +2 specimen at resolution after 3+ conflict losses, none below', () => {
+    const card = IMMORTALITY_INTRIGUE_CARDS.find(c => c.name === 'Harvest Cells')!
+    const resolveWithLosses = (losses: number) => {
+      let state = getBaseTestState({ intrigueCount: 1, specimens: 0 }, { players: 4 })
+      state = {
+        ...state,
+        expansions: IMMORTALITY_EXPANSIONS,
+        phase: GamePhase.COMBAT,
+        activePlayerId: 0,
+        firstPlayerMarker: 0,
+        currTurn: null,
+        intrigueDeck: [card],
+        combatTroops: { 0: 4, 1: 1, 2: 1, 3: 1 },
+        combatStrength: { 0: 20, 1: 2, 2: 2, 3: 2 },
+        combatPasses: new Set(),
+        conflictTroopLosses: { 0: losses },
+        currentConflict: {
+          id: 99,
+          tier: 1,
+          name: 'Test Conflict',
+          rewards: { first: [], second: [], third: [] },
+        },
+      }
+      state = applyGameAction(state, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: card.id })
+      expect(state.armedHarvestCells?.[0]).toBe(true)
+      state = { ...state, phase: GamePhase.COMBAT_REWARDS }
+      state = applyGameAction(state, { type: 'RESOLVE_COMBAT' })
+      return state.players[0].specimens ?? 0
+    }
+
+    expect(resolveWithLosses(3)).toBe(2)
+    expect(resolveWithLosses(2)).toBe(0)
+  })
+
+  it('Harvest Cells: may acquire a Tleilaxu card at normal cost', () => {
+    const card = IMMORTALITY_INTRIGUE_CARDS.find(c => c.name === 'Harvest Cells')!
+    const rowCard = stubDeckCard(7777, { name: 'Test Tleilaxu', cost: 2 })
+    let state = getBaseTestState({ intrigueCount: 1, specimens: 5 }, { players: 2 })
+    state = {
+      ...state,
+      expansions: IMMORTALITY_EXPANSIONS,
+      phase: GamePhase.COMBAT,
+      activePlayerId: 0,
+      currTurn: null,
+      intrigueDeck: [card],
+      tleilaxuRow: [rowCard],
+      combatTroops: { 0: 3, 1: 2 },
+      combatStrength: { 0: 6, 1: 4 },
+      combatPasses: new Set(),
+      currentConflict: {
+        id: 99,
+        tier: 1,
+        name: 'Test Conflict',
+        rewards: { first: [], second: [], third: [] },
+      },
+    }
+
+    state = applyGameAction(state, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: card.id })
+    const acquireChoice = state.currTurn?.pendingChoices?.find(c =>
+      c.prompt.includes('Tleilaxu')
+    )
+    expect(acquireChoice).toBeDefined()
+    expect(acquireChoice?.type).toBe(ChoiceType.FIXED_OPTIONS)
+    const options = (acquireChoice as FixedOptionsChoice).options
+    expect(options).toHaveLength(2) // the row card + Skip
+
+    state = applyGameAction(state, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: acquireChoice!.id,
+      optionIndex: 0,
+    })
+    expect(state.players[0].specimens).toBe(3)
+    expect(state.players[0].discardPile.map(c => c.id)).toContain(7777)
+    expect(state.tleilaxuRow?.some(c => c.id === 7777)).toBe(false)
+  })
+
+  it('Harvest Cells: skipping the Tleilaxu acquire leaves resources untouched', () => {
+    const card = IMMORTALITY_INTRIGUE_CARDS.find(c => c.name === 'Harvest Cells')!
+    const rowCard = stubDeckCard(7778, { name: 'Test Tleilaxu', cost: 2 })
+    let state = getBaseTestState({ intrigueCount: 1, specimens: 5 }, { players: 2 })
+    state = {
+      ...state,
+      expansions: IMMORTALITY_EXPANSIONS,
+      phase: GamePhase.COMBAT,
+      activePlayerId: 0,
+      currTurn: null,
+      intrigueDeck: [card],
+      tleilaxuRow: [rowCard],
+      combatTroops: { 0: 3, 1: 2 },
+      combatStrength: { 0: 6, 1: 4 },
+      combatPasses: new Set(),
+      currentConflict: {
+        id: 99,
+        tier: 1,
+        name: 'Test Conflict',
+        rewards: { first: [], second: [], third: [] },
+      },
+    }
+
+    state = applyGameAction(state, { type: 'PLAY_COMBAT_INTRIGUE', playerId: 0, cardId: card.id })
+    const acquireChoice = state.currTurn?.pendingChoices?.find(c =>
+      c.prompt.includes('Tleilaxu')
+    )
+    expect(acquireChoice).toBeDefined()
+    state = applyGameAction(state, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: acquireChoice!.id,
+      optionIndex: 1,
+    })
+    expect(state.players[0].specimens).toBe(5)
+    expect(state.players[0].discardPile.map(c => c.id)).not.toContain(7778)
   })
 
   it('Experimentation advances research when its agent reward is claimed', () => {

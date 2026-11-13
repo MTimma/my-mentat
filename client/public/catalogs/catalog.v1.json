@@ -4830,12 +4830,10 @@
       },
       "slot": "play",
       "index": 0,
-      "requirement": {
-        "unitsInConflict": 4
-      },
       "reward": {
         "custom": "DIVERSION"
-      }
+      },
+      "phase": "player-turns"
     },
     {
       "id": "effect:intrigue:roi-115:play:0",
@@ -5201,7 +5199,7 @@
       "slot": "play",
       "index": 0,
       "reward": {
-        "custom": "COUNTERATTACK"
+        "deployTroops": 2
       },
       "phase": "player-turns"
     },
@@ -5213,8 +5211,11 @@
       },
       "slot": "play",
       "index": 1,
+      "requirement": {
+        "opponentPlayedCombatIntrigue": true
+      },
       "reward": {
-        "custom": "COUNTERATTACK"
+        "combat": 4
       },
       "phase": "combat"
     },
@@ -11472,7 +11473,6 @@
     "SCIENTIFIC_BREAKTHROUGH",
     "STUDY_MELANGE",
     "TLEILAXU_PUPPET",
-    "COUNTERATTACK",
     "ECONOMIC_POSITIONING_IMM",
     "HARVEST_CELLS",
     "SHADOWY_BARGAIN",

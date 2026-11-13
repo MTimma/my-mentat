@@ -766,6 +766,48 @@ describe('Rise of Ix imperium cards — pure effect helpers', () => {
       expect(s.currTurn?.desertAmbushRetreats).toEqual([])
     })
 
+    it('forcing a retreat does not lock the player out of ending the turn', () => {
+      let { s } = setupDesertAmbushTurn()
+      // Claim the board-space reward so the only remaining work is the optional retreat.
+      s = applyGameAction(s, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+      expect(s.canEndTurn).toBe(true)
+
+      s = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'troop',
+      })
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(1)
+      // The retreat is optional, so the turn can still be ended afterwards.
+      expect(s.canEndTurn).toBe(true)
+
+      const ended = applyGameAction(s, { type: 'END_TURN', playerId: 0 })
+      expect(ended).not.toBe(s)
+      expect(ended.activePlayerId).toBe(1)
+    })
+
+    it('undoing a forced retreat keeps the turn endable', () => {
+      let { s } = setupDesertAmbushTurn()
+      s = applyGameAction(s, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+      s = applyGameAction(s, { type: 'DEPLOY_TROOP', playerId: 0 })
+      s = applyGameAction(s, {
+        type: 'FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'troop',
+      })
+      s = applyGameAction(s, {
+        type: 'UNDO_FORCE_ENEMY_RETREAT',
+        playerId: 0,
+        opponentId: 1,
+        unit: 'troop',
+      })
+      expect(s.currTurn?.desertAmbushRetreatsUsed).toBe(0)
+      expect(s.canEndTurn).toBe(true)
+    })
+
     it('reveal grants only 1 persuasion and 1 sword (no Agent ability)', () => {
       const card = cloneRoiCard('Desert Ambush')
       card.id = 88111

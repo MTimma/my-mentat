@@ -166,6 +166,10 @@ export function intrigueRequirementSatisfied(
     if (req.unitsInConflict !== undefined) {
       if (unitsInConflictForPlayer(state, playerId) < req.unitsInConflict) return false
     }
+    if (req.opponentPlayedCombatIntrigue) {
+      const players = state.combatIntriguePlayersThisConflict ?? []
+      if (!players.some(id => id !== playerId)) return false
+    }
     if (!immortalityRequirementSatisfied(req, currCard, state, playerId)) return false
     return true
   }

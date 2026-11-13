@@ -189,8 +189,12 @@ export const IMMORTALITY_INTRIGUE_CARDS: IntrigueCard[] = [
     image: '/intrigue/immortality/counterattack.avif',
     agentIcons: [],
     playEffect: [
-      { phase: GamePhase.PLAYER_TURNS, reward: { custom: CustomEffect.COUNTERATTACK } },
-      { phase: GamePhase.COMBAT, reward: { custom: CustomEffect.COUNTERATTACK } },
+      { phase: GamePhase.PLAYER_TURNS, reward: { deployTroops: 2 } },
+      {
+        phase: GamePhase.COMBAT,
+        requirement: { opponentPlayedCombatIntrigue: true },
+        reward: { combat: 4 },
+      },
     ],
   },
   {
