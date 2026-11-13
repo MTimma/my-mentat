@@ -254,7 +254,6 @@ import {
   applyRiseOfIxIntrigueCustomInEffect,
   agentFactionsOnBoard,
   applyQuidProQuo,
-  canPlayDiversion,
   canPlayStrongarm,
   checkDiversionAfterDeployChange,
   enqueueStrongarmChoice,
@@ -1048,6 +1047,9 @@ function completeCombatTransition(
       pendingVictorSpiceThisCombat: {},
       pendingVictorSolariThisCombat: {},
       pendingDemandRespectReward: {},
+      conflictTroopLosses: {},
+      armedHarvestCells: {},
+      combatIntriguePlayersThisConflict: [],
     }
   }
   newState = {
@@ -1081,6 +1083,9 @@ function completeCombatTransition(
     pendingConflictRewardChoices: undefined,
     combatResolutionDeferred: undefined,
     conflictRewardResolveQueue: undefined,
+    conflictTroopLosses: {},
+    armedHarvestCells: {},
+    combatIntriguePlayersThisConflict: [],
   }
 }
 
@@ -2138,7 +2143,12 @@ function payTroopsInConflictCost(
   player: Player,
   playerId: number,
   count: number
-): { combatTroops: Record<number, number>; combatStrength: Record<number, number>; player: Player } | null {
+): {
+  combatTroops: Record<number, number>
+  combatStrength: Record<number, number>
+  conflictTroopLosses: Record<number, number>
+  player: Player
+} | null {
   const ct = state.combatTroops[playerId] ?? 0
   if (ct < count) return null
   const prevStrength = state.combatStrength[playerId] ?? player.combatValue ?? 0
@@ -2152,10 +2162,23 @@ function payTroopsInConflictCost(
   return {
     combatTroops: { ...state.combatTroops, [playerId]: ct - count },
     combatStrength,
+    conflictTroopLosses: recordConflictTroopLoss(state, playerId, count).conflictTroopLosses ?? {},
     player: {
       ...player,
       combatValue: nextStrength,
       troopSupply: (player.troopSupply ?? 0) + count,
+    },
+  }
+}
+
+/** Track troops lost from the Conflict during this Conflict (Harvest Cells; kept for history). */
+function recordConflictTroopLoss(state: GameState, playerId: number, count: number): GameState {
+  if (count <= 0) return state
+  return {
+    ...state,
+    conflictTroopLosses: {
+      ...(state.conflictTroopLosses ?? {}),
+      [playerId]: (state.conflictTroopLosses?.[playerId] ?? 0) + count,
     },
   }
 }
@@ -2243,6 +2266,8 @@ function handleIntrigueEffect(
     pendingVictorSolariThisCombat: { ...(state.pendingVictorSolariThisCombat || {}) },
     pendingDemandRespectReward: { ...(state.pendingDemandRespectReward || {}) },
     pendingSecondWave: state.pendingSecondWave ?? null,
+    armedHarvestCells: { ...(state.armedHarvestCells || {}) },
+    conflictTroopLosses: { ...(state.conflictTroopLosses || {}) },
   }
   let updatedPlayers = state.players.map(p => ({ ...p }))
   const playerIndex = updatedPlayers.findIndex(p => p.id === playerId)
@@ -2305,6 +2330,16 @@ function handleIntrigueEffect(
       const drawn = applyDrawCardsToPlayer(updatedPlayer, reward.drawCards)
       updatedPlayer = drawn
       if (drawn.drawn > 0) pushGain(drawn.drawn, RewardType.DRAW)
+    }
+    if (reward.deployTroops) {
+      // Deploy allowance may be granted before the turn object exists (e.g. Counterattack
+      // played as the first action of an Agent turn).
+      const baseTurn = newState.currTurn ?? { playerId, type: TurnType.ACTION }
+      newState = {
+        ...newState,
+        currTurn: applyDeployTroopsAllowance(baseTurn, reward.deployTroops, reward),
+      }
+      pushGain(reward.deployTroops, RewardType.DEPLOY)
     }
     if (reward.intrigueCards) {
       updatedPlayer.intrigueCount += reward.intrigueCards
@@ -2477,6 +2512,7 @@ function handleIntrigueEffect(
       newState.combatTroops = { ...newState.combatTroops, [playerId]: newCt }
       // Lost troops are removed from the Conflict but still return to supply (pieces are not destroyed).
       updatedPlayer.troopSupply = (updatedPlayer.troopSupply ?? 0) + 3
+      newState = recordConflictTroopLoss(newState, playerId, 3)
       updatedPlayer.victoryPoints += 1
       pushGain(1, RewardType.VICTORY_POINTS)
       return
@@ -2491,6 +2527,10 @@ function handleIntrigueEffect(
 
     // Immortality intrigue customs (endgame VP checks).
     if (custom && state.expansions?.immortality) {
+      if (custom === CustomEffect.HARVEST_CELLS) {
+        newState.armedHarvestCells[playerId] = true
+        return
+      }
       const researchLevel = geneLevelForNode(updatedPlayer.researchNodeId)
       if (custom === CustomEffect.STUDY_MELANGE) {
         if (updatedPlayer.spice >= 3 && researchLevel >= 2) {
@@ -2592,6 +2632,7 @@ function handleIntrigueEffect(
           ...newState,
           combatTroops: paid.combatTroops,
           combatStrength: paid.combatStrength,
+          conflictTroopLosses: paid.conflictTroopLosses,
         }
         updatedPlayer = paid.player
         pushGain(-c.troopsInConflict, RewardType.TROOPS)
@@ -2717,6 +2758,10 @@ function applyIntrigueCardPlay(
         ...updatedState.combatTroops,
         [playerId]: (updatedState.combatTroops[playerId] || 0) + 1,
         [tid]: Math.max(0, (updatedState.combatTroops[tid] || 0) - 1)
+      },
+      conflictTroopLosses: {
+        ...(updatedState.conflictTroopLosses ?? {}),
+        [tid]: (updatedState.conflictTroopLosses?.[tid] ?? 0) + 1,
       }
     }
   }
@@ -4572,8 +4617,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const afterRetreat = syncEffectRetreatGatedRewards(
-        revertMasterstrokeIfNeeded(
-          undoRefundedDesertAmbushRetreats(newState, state.currTurn, currentTurn),
+        checkAndApplyDiversion(
+          revertMasterstrokeIfNeeded(
+            undoRefundedDesertAmbushRetreats(newState, state.currTurn, currentTurn),
+            action.playerId
+          ),
           action.playerId
         )
       )
@@ -4636,7 +4684,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         newState = syncCombatStrengthAfterUnitDelta(newState, opponentId, -2)
       }
 
-      return {
+      const afterForceRetreat: GameState = {
         ...newState,
         currTurn: {
           ...turn,
@@ -4646,8 +4694,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             { opponentId, unit },
           ],
         },
-        canEndTurn: false,
       }
+      // Forcing a retreat is an optional Desert Ambush action: it must not lock the
+      // player out of ending the turn (recompute from the pending-work rules instead).
+      return { ...afterForceRetreat, canEndTurn: computeCanEndTurn(afterForceRetreat) }
     }
     case 'UNDO_FORCE_ENEMY_RETREAT': {
       const { playerId, opponentId, unit } = action
@@ -4673,19 +4723,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         forcedRetreatStrengthDelta(withUnit, opponentId, unit)
       )
 
-      return {
+      const afterUndoRetreat: GameState = {
         ...synced,
         currTurn: {
           ...turn,
           desertAmbushRetreatsUsed: Math.max(0, (turn.desertAmbushRetreatsUsed ?? 0) - 1),
           desertAmbushRetreats: nextRetreats,
         },
-        canEndTurn: false,
       }
+      return { ...afterUndoRetreat, canEndTurn: computeCanEndTurn(afterUndoRetreat) }
     }
     case 'START_COMBAT_PHASE': {
       const newState = {...state}
       newState.combatPasses = getAutoCombatPassPlayerIds(newState)
+      // Per-conflict intrigue bookkeeping (Counterattack / Harvest Cells).
+      newState.conflictTroopLosses = {}
+      newState.armedHarvestCells = {}
+      newState.combatIntriguePlayersThisConflict = []
 
       if(newState.combatPasses.size === newState.players.length) {
         const rewardsState = {
@@ -4832,6 +4886,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         })
       }
 
+      if (intrigueCardHasCustom(card, CustomEffect.HARVEST_CELLS) && state.expansions?.immortality) {
+        const row = (state.tleilaxuRow ?? []).filter(c => c.name !== RECLAIMED_FORCES_NAME)
+        const options: ChoiceOption[] = row
+          .filter(c => (player.specimens ?? 0) >= (c.cost ?? 0))
+          .map(c => ({
+            reward: { tleilaxuAcquire: { cardId: c.id } },
+            rewardLabel: `${c.name} (−${c.cost ?? 0} specimen)`,
+          }))
+        if (options.length > 0) {
+          options.push({ reward: {}, rewardLabel: 'Skip' })
+          pendingCombatChoices.push({
+            id: mintId(
+              state,
+              { type: GainSource.INTRIGUE, id: card.id },
+              'HARVEST-CELLS',
+              pendingCombatChoices.map(c => c.id)
+            ),
+            type: ChoiceType.FIXED_OPTIONS,
+            prompt: 'Harvest Cells: acquire a Tleilaxu card at normal cost?',
+            options,
+            source: { type: GainSource.INTRIGUE, id: card.id, name: card.name },
+          })
+        }
+      }
+
       card.playEffect?.forEach(effect => {
         if (!effect.reward) return
         if (effect.phase) {
@@ -4900,6 +4979,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...updatedState,
         // Playing intrigue breaks the pass chain — eligible players may act again (rules).
         combatPasses: getAutoCombatPassPlayerIds(updatedState),
+        // Counterattack: remember who played a combat intrigue this Conflict.
+        combatIntriguePlayersThisConflict: [
+          ...new Set([...(updatedState.combatIntriguePlayersThisConflict ?? []), playerId]),
+        ],
         players: updatedState.players.map(p =>
           p.id === playerId
             ? { ...p, intrigueCount: p.intrigueCount - 1 }
@@ -5080,6 +5163,37 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (placements.third !== null && placements.third.length > 0 && state.players.length === 4) {
         applyPlacementRewards(state.currentConflict.rewards.third ?? [], '3rd place', placements.third)
+      }
+
+      // Harvest Cells — +2 specimen when the player lost 3+ troops during this Conflict.
+      const armedHarvest = state.armedHarvestCells ?? {}
+      const armedHarvestIds = Object.keys(armedHarvest).map(Number).filter(id => armedHarvest[id])
+      if (armedHarvestIds.length > 0) {
+        const harvestCardId =
+          getIntrigueCardByCustom(CustomEffect.HARVEST_CELLS, state.expansions)?.id ?? 0
+        const harvestGains: Gain[] = [...(newState.gains || [])]
+        let harvestPlayers = newState.players
+        for (const id of armedHarvestIds) {
+          if ((state.conflictTroopLosses?.[id] ?? 0) < 3) continue
+          harvestGains.push({
+            round: state.currentRound,
+            playerId: id,
+            sourceId: harvestCardId,
+            name: 'Harvest Cells',
+            amount: 2,
+            type: RewardType.SPECIMEN,
+            source: GainSource.INTRIGUE,
+          })
+          harvestPlayers = harvestPlayers.map(p =>
+            p.id === id ? { ...p, specimens: (p.specimens ?? 0) + 2 } : p
+          )
+        }
+        newState = {
+          ...newState,
+          gains: harvestGains,
+          players: harvestPlayers,
+          armedHarvestCells: {},
+        }
       }
 
       // To the Victor… — +3 spice when the Conflict winner had played this combat intrigue
@@ -5333,9 +5447,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         if (!hasOccupied) return state
       }
       if (intrigueCardHasCustom(card, CustomEffect.STRONGARM) && !canPlayStrongarm(state, playerId)) {
-        return state
-      }
-      if (intrigueCardHasCustom(card, CustomEffect.DIVERSION) && !canPlayDiversion(state, playerId)) {
         return state
       }
 
@@ -8021,6 +8132,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           canEndTurn: false,
         }
       }
+
+      // Harvest Cells: optional Tleilaxu acquire at normal specimen cost.
+      if (reward.tleilaxuAcquire && state.expansions?.immortality) {
+        const newPending = (state.currTurn.pendingChoices || []).filter(
+          c => c.id !== action.choiceId
+        )
+        const newTurn = { ...state.currTurn, pendingChoices: newPending }
+        const acquired = handleAcquireTleilaxu(state, playerId, reward.tleilaxuAcquire.cardId)
+        const after = {
+          ...acquired,
+          currTurn: newTurn,
+          canEndTurn: newPending.length === 0,
+        }
+        if (state.phase === GamePhase.COMBAT) return finishCombatIntrigueAction(after, playerId)
+        if (state.phase === GamePhase.END_GAME) return afterEndgamePlayerAction(after)
+        return after
+      }
       
       // Check if this reward has an acquire effect
       if(reward.acquire) {
@@ -8170,7 +8298,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const updatedGains = [...state.gains]
       
       let followUpGainChoice: FixedOptionsChoice | null = null
-      let updatedCombatOverrides: Pick<GameState, 'combatTroops' | 'combatStrength'> | null = null
+      let updatedCombatOverrides: Pick<
+        GameState,
+        'combatTroops' | 'combatStrength' | 'conflictTroopLosses'
+      > | null = null
 
       if (choice && choice.type === ChoiceType.FIXED_OPTIONS) {
         const fixedChoice = choice as FixedOptionsChoice
@@ -8231,6 +8362,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             updatedCombatOverrides = {
               combatTroops: paid.combatTroops,
               combatStrength: paid.combatStrength,
+              conflictTroopLosses: paid.conflictTroopLosses,
             }
             Object.assign(updatedPlayer, paid.player)
             pushGain(-costToPay.troopsInConflict, RewardType.TROOPS)
@@ -9375,6 +9507,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ...state,
           combatTroops: newCombatTroops,
           combatStrength: newCombatStrength,
+          conflictTroopLosses: {
+            ...(state.conflictTroopLosses ?? {}),
+            [opponentId]: (state.conflictTroopLosses?.[opponentId] ?? 0) + 1,
+          },
           gains: [
             ...state.gains,
             {
@@ -10182,6 +10318,9 @@ function deepCopyGameState(state: GameState): GameState {
     combatStrength: { ...state.combatStrength },
     combatTroops: { ...state.combatTroops },
     combatSpecimens: { ...(state.combatSpecimens ?? {}) },
+    conflictTroopLosses: { ...(state.conflictTroopLosses ?? {}) },
+    armedHarvestCells: { ...(state.armedHarvestCells ?? {}) },
+    combatIntriguePlayersThisConflict: [...(state.combatIntriguePlayersThisConflict ?? [])],
     occupiedSpaces: Object.fromEntries(
       Object.entries(state.occupiedSpaces).map(([key, spaces]) => [key, [...spaces]])
     ),
