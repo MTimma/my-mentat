@@ -16,6 +16,7 @@ import {
   GainSource,
   RewardType,
   type CardSelectChoice,
+  type ChoiceOption,
   type CounterChoice,
   type Card,
   type Gain,
@@ -285,6 +286,10 @@ export function applyTechTileAcquireEffect(
       'Choose a faction for tech tile influence',
       []
     )
+    if (tileId === TechTileId.SHUTTLE_FLEET) {
+      // "Choose two" — the second pick excludes the faction chosen first.
+      choice.followUpDistinctInfluence = effect.influence
+    }
     const currTurn = next.currTurn
     if (currTurn?.playerId === playerId) {
       next = {
@@ -297,25 +302,6 @@ export function applyTechTileAcquireEffect(
       }
     } else {
       next = addPendingReward(next, { influence: effect.influence }, source)
-    }
-  }
-
-  if (tileId === TechTileId.SHUTTLE_FLEET && effect.influence?.chooseOne) {
-    const second = createGainInfluenceChoice(
-      effect.influence,
-      source,
-      'Choose a second faction for Shuttle Fleet influence',
-      []
-    )
-    const currTurn = next.currTurn
-    if (currTurn?.playerId === playerId) {
-      next = {
-        ...next,
-        currTurn: {
-          ...currTurn,
-          pendingChoices: [...(currTurn.pendingChoices ?? []), second],
-        },
-      }
     }
   }
 
@@ -682,10 +668,18 @@ export function applyRevealTechEffects(
         },
       }
     }
+  }
 
-    if (id === TechTileId.DISPOSAL_FACILITY && persuasion >= 6) {
-      next = addPendingReward(next, { trash: 1 }, source, true)
-    }
+  // Disposal Facility checks the *final* persuasion total (after every Reveal tile, e.g. Minimic
+  // Film's +1), so the result does not depend on the order the tiles were acquired.
+  if (playerOwnsTile(player, TechTileId.DISPOSAL_FACILITY) && persuasion >= 6) {
+    const tile = tileById(TechTileId.DISPOSAL_FACILITY)
+    next = addPendingReward(
+      next,
+      { trash: 1 },
+      { type: GainSource.TECH, id: 0, name: tile?.name ?? 'Disposal Facility' },
+      true
+    )
   }
 
   return { state: next, persuasionCount: persuasion, swordCount: swords, artilleryFired }
@@ -747,6 +741,30 @@ export function refreshArtillerySwords(state: GameState, playerId: number): Game
   }
 }
 
+/**
+ * Detonation Devices option for the conflict winner's dreadnought-control choice.
+ *
+ * The tile reads "+1 VP and return the dreadnought to supply, or take control normally",
+ * so it must be offered *alongside* the control-space options (mutually exclusive) rather
+ * than as a separate later choice — the mandatory control choice would otherwise consume
+ * the dreadnought before the tile could fire.
+ */
+export function detonationDevicesOption(
+  state: GameState,
+  playerId: number
+): ChoiceOption | undefined {
+  if (!state.expansions.riseOfIx) return undefined
+  const player = state.players.find(p => p.id === playerId)
+  if (!player || !playerOwnsTile(player, TechTileId.DETONATION_DEVICES)) return undefined
+  if (getDreadnoughtsInConflict(player) <= 0) return undefined
+  return {
+    // The +1 VP is applied together with the dreadnought return in
+    // `applyConflictChoiceReward`, so the two can never happen independently.
+    reward: { custom: CustomEffect.DETONATION_DEVICES },
+    rewardLabel: '+1 VP and return dreadnought to supply',
+  }
+}
+
 export function applyAfterConflictTechEffects(
   state: GameState,
   winnerIds: number[]
@@ -764,40 +782,6 @@ export function applyAfterConflictTechEffects(
       pushGain(gains, next, winnerId, source, 1, RewardType.WATER)
       next = updatePlayer({ ...next, gains }, winnerId, p => ({ ...p, water: p.water + 1 }))
     }
-
-    if (
-      playerOwnsTile(player, TechTileId.DETONATION_DEVICES) &&
-      getDreadnoughtsInConflict(player) > 0
-    ) {
-      const choiceId = nextSemanticId(
-        { type: GainSource.TECH, id: 0, name: 'Detonation Devices' },
-        'DETONATION',
-        (next.pendingConflictRewardChoices ?? []).map(c => c.id)
-      )
-      next = {
-        ...next,
-        pendingConflictRewardChoices: [
-          ...(next.pendingConflictRewardChoices ?? []),
-          {
-            id: choiceId,
-            playerId: winnerId,
-            placement: 'Detonation Devices',
-            conflictId: next.currentConflict.id,
-            conflictName: next.currentConflict.name,
-            options: [
-              {
-                label: '+1 VP and return dreadnought to supply',
-                reward: { victoryPoints: 1, custom: CustomEffect.DETONATION_DEVICES },
-              },
-              {
-                label: 'Take control space normally',
-                reward: {},
-              },
-            ],
-          },
-        ],
-      }
-    }
   }
   return next
 }
@@ -805,16 +789,9 @@ export function applyAfterConflictTechEffects(
 export function applyEndgameTechScoring(state: GameState): GameState {
   if (!state.expansions.riseOfIx) return state
 
-  let next = state
-  const chaumurkyOwners = new Set<number>()
-  const tiebreakerSpice = { ...(next.endgameTiebreakerSpice ?? {}) }
-
-  next.players.forEach(player => {
-    ;(player.tech ?? []).forEach(({ id }) => {
-      if (id === TechTileId.CHAUMURKY) chaumurkyOwners.add(player.id)
-    })
-  })
-
+  // Chaumurky ("win tiebreakers") is resolved by tile ownership in
+  // `utils/endgameResolution.ts`, not by inflating the spice tiebreaker.
+  const next = state
   const gains = [...next.gains]
   const players = next.players.map(p => {
     let vp = p.victoryPoints
@@ -861,13 +838,7 @@ export function applyEndgameTechScoring(state: GameState): GameState {
     return vp !== p.victoryPoints ? { ...p, victoryPoints: vp } : p
   })
 
-  if (chaumurkyOwners.size > 0) {
-    chaumurkyOwners.forEach(id => {
-      tiebreakerSpice[id] = (tiebreakerSpice[id] ?? 0) + 10_000
-    })
-  }
-
-  return { ...next, players, gains, endgameTiebreakerSpice: tiebreakerSpice }
+  return { ...next, players, gains }
 }
 
 export function applyTroopTransportsToFreighterReward(
@@ -1201,7 +1172,28 @@ function markTileActivated(
   tileId: TechTileId,
   opts: { remove?: boolean } = {}
 ): GameState {
-  return updatePlayer(state, playerId, p => {
+  let next = state
+  if (opts.remove) {
+    const tile = getTechTile(tileId)
+    if (tile) {
+      next = {
+        ...state,
+        gains: [
+          ...state.gains,
+          {
+            round: state.currentRound,
+            playerId,
+            sourceId: techTileGainSourceId(tileId),
+            name: tile.name,
+            amount: -1,
+            type: RewardType.TRASH,
+            source: GainSource.TECH,
+          },
+        ],
+      }
+    }
+  }
+  return updatePlayer(next, playerId, p => {
     if (opts.remove) {
       const tech = (p.tech ?? []).filter(t => t.id !== tileId)
       const techTrash = [...(p.techTrash ?? []), { id: tileId, faceUp: true }]
@@ -1337,47 +1329,6 @@ function discardToDraw(
   }))
 }
 
-function enqueueIntrigueCardChoice(
-  state: GameState,
-  playerId: number,
-  prompt: string,
-  cards: GameState['intrigueDeck'],
-  customEffect: CustomEffect,
-  data: Record<string, unknown>
-): GameState {
-  const source = techActivationSource(TechTileId.SONIC_SNOOPERS)
-  const choiceId = nextSemanticId(
-    source,
-    'SONIC-SNOOPERS',
-    (state.currTurn?.pendingChoices ?? []).map(c => c.id)
-  )
-  const choice: CardSelectChoice = {
-    id: choiceId,
-    type: ChoiceType.CARD_SELECT,
-    prompt,
-    piles: [],
-    cards: [...cards],
-    selectionCount: 1,
-    onResolve: (cardIds: number[]) => ({
-      type: 'CUSTOM_EFFECT',
-      playerId,
-      customEffect,
-      data: { ...data, cardId: cardIds[0] },
-    }),
-    source,
-  }
-  const currTurn = state.currTurn
-  if (!currTurn) return state
-  return {
-    ...state,
-    canEndTurn: false,
-    currTurn: {
-      ...currTurn,
-      pendingChoices: [...(currTurn.pendingChoices ?? []), choice],
-    },
-  }
-}
-
 export function applySonicSnoopers(
   state: GameState,
   playerId: number,
@@ -1393,7 +1344,7 @@ export function applySonicSnoopers(
         0,
         0,
         intrCount,
-        'Number of Intrigue cards to put at the bottom of the deck',
+        '',
       ),
       onResolve: (count: number) => ({
         type: 'CUSTOM_EFFECT',
@@ -1402,13 +1353,14 @@ export function applySonicSnoopers(
         data: { count },
       }),
     }
-    const turn = state.currTurn
-    if(!turn) return state
+    // Tech tiles can be activated as a free action before the turn object exists (same as
+    // Counterattack played first), so create a base ACTION turn instead of dropping the choice.
+    const turn = state.currTurn ?? { playerId, type: TurnType.ACTION }
     return {
       ...state,
       currTurn: {
         ...turn,
-        pendingChoices: [...(turn?.pendingChoices ?? []), countChoice],
+        pendingChoices: [...(turn.pendingChoices ?? []), countChoice],
       },
     }
   }
@@ -1417,14 +1369,11 @@ export function applySonicSnoopers(
   if (intrigueCount <= 0) return state
   const player = state.players.find(p => p.id === playerId)
   if (!player || player.intrigueCount < intrigueCount) return state
+  //noop
   const gains = [...state.gains]
   pushGain(gains, state, playerId, source, -intrigueCount, RewardType.INTRIGUE)
-  pushGain(gains, state, playerId, source, intrigueCount, RewardType.DRAW)
-  const next: GameState = {
-    ...state,
-    gains,
-  }
-  return next
+  pushGain(gains, state, playerId, source, intrigueCount, RewardType.INTRIGUE)
+  return { ...state, gains }
 }
 
 
@@ -1540,18 +1489,10 @@ export function handleActivateTech(state: GameState, action: ActivateTechAction)
       if (applied === state) return state
       return markTileActivated(applied, playerId, tileId, { remove: true })
     }
-    //TODO should ask for how many intrigues to discard
     case TechTileId.SONIC_SNOOPERS: {
+      // Trash the tile, then ask how many intrigue cards to cycle (single choice).
       const marked = markTileActivated(state, playerId, tileId, { remove: true })
-      if (marked.intrigueDeck.length === 0) return marked
-      return enqueueIntrigueCardChoice(
-        marked,
-        playerId,
-        'Sonic Snoopers: choose an intrigue card from the deck',
-        marked.intrigueDeck,
-        CustomEffect.SONIC_SNOOPERS,
-        {}
-      )
+      return applySonicSnoopers(marked, playerId)
     }
     default:
       return state

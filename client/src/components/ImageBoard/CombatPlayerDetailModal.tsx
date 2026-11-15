@@ -7,7 +7,6 @@ import AgentIcon from '../AgentIcon/AgentIcon'
 import TessiaLeaderOverlays from '../TessiaLeaderOverlays/TessiaLeaderOverlays'
 import CardPileGrid from '../CardPileGrid/CardPileGrid'
 import TechTileFlipBadge from '../TechTileFlipBadge/TechTileFlipBadge'
-import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import { BirdseyeLaneScrollbar, useScrollOverflowFades } from './CombatSeatTurnChrome'
 import { BoardScopedModal } from '../BoardScopedModal'
 import './CombatPlayerDetailModal.css'
@@ -193,7 +192,6 @@ const CombatPlayerDetailModal: React.FC<CombatPlayerDetailModalProps> = ({
                             <img
                               src={tile.image}
                               alt={name}
-                              title={withImageZoomHint(name)}
                               className="combat-player-detail-tech-tile__img"
                               draggable={false}
                               data-preview-src={tile.image}

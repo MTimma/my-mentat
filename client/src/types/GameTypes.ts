@@ -597,6 +597,11 @@ export interface FixedOptionsChoice extends PendingChoiceBase {
   deferInfluenceUntilCombatWin?: boolean
   /** Demand Respect — option cost, charged only when the Conflict win is confirmed. */
   pendingDemandRespectCost?: Cost
+  /**
+   * When set, resolving this choice enqueues a second influence pick over these factions,
+   * excluding the faction chosen here (e.g. Shuttle Fleet "choose two").
+   */
+  followUpDistinctInfluence?: InfluenceAmounts
 }
 
 export interface CounterChoice extends PendingChoiceBase {

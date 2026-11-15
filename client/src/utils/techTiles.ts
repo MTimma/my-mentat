@@ -16,6 +16,17 @@ export function playerOwnsTile(player: { tech?: Array<{ id: TechTileIdType }> },
   return (player.tech ?? []).some(t => t.id === id)
 }
 
+/**
+ * Whether the player may put acquired cards on top of their deck: Spaceport's passive (while
+ * owned) or a round-scoped intrigue modifier. Derived from ownership so it also holds for
+ * sandbox-seeded tiles that never went through `handleAcquireTech`.
+ */
+export function playerCanAcquireToTop(state: GameState, playerId: number): boolean {
+  if (state.acquireToTopThisRound?.[playerId]) return true
+  const player = state.players.find(p => p.id === playerId)
+  return player ? playerOwnsTile(player, TechTileId.SPACEPORT) : false
+}
+
 /** Face-up top tile id per stack (undefined when stack empty). */
 export function firstStackTops(state: GameState): Array<TechTileIdType | undefined> {
   const stacks = state.ixBoard?.stacks ?? [[], [], []]

@@ -1,5 +1,6 @@
 import type { GameState, IntrigueCard, Player } from '../types/GameTypes'
 import { GamePhase, IntrigueCardType } from '../types/GameTypes'
+import { TechTileId } from '../data/techTiles'
 import { getTotalVictoryPoints } from './influenceVictoryPoints'
 
 export interface EndgameApplyItem {
@@ -31,19 +32,27 @@ export function drawIntrigueCardsFromDeck(
   return { drawn, remaining }
 }
 
-/** Spice counted at endgame: held spice plus tiebreaker spice (intrigue, Chaumurky). */
+/** Spice counted at endgame: held spice plus tiebreaker spice (e.g. the Tiebreaker intrigue). */
 function endgameSpice(state: GameState, player: Player): number {
   return player.spice + (state.endgameTiebreakerSpice?.[player.id] || 0)
 }
 
+/** Chaumurky tech tile — its owner wins endgame tiebreakers. */
+function winsTiebreakers(player: Player): boolean {
+  return (player.tech ?? []).some(t => t.id === TechTileId.CHAUMURKY)
+}
+
 /**
  * Endgame standing. Negative when `a` ranks ahead of `b`.
- * Order: total VP, spice, Solari, water, garrison troops.
+ * Order: total VP, tiebreaker win (Chaumurky), spice, Solari, water, garrison troops.
  * Returns 0 when those all match (seat order is left to the caller).
  */
 export function compareEndgameStanding(state: GameState, a: Player, b: Player): number {
   const byVp = getTotalVictoryPoints(b, state) - getTotalVictoryPoints(a, state)
   if (byVp !== 0) return byVp
+  const aWins = winsTiebreakers(a)
+  const bWins = winsTiebreakers(b)
+  if (aWins !== bWins) return aWins ? -1 : 1
   const bySpice = endgameSpice(state, b) - endgameSpice(state, a)
   if (bySpice !== 0) return bySpice
   if (b.solari !== a.solari) return b.solari - a.solari

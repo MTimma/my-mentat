@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { BOARD_SPACES } from '../../../data/boardSpaces'
+import { GainSource, RewardType } from '../../../types/GameTypes'
 import { getRepeatedIconDisplay } from '../../../utils/turnGainsDisplay'
+import TurnGainsDisplay from '../TurnGainsDisplay'
 
 describe('Gain count labels', () => {
   const tsx = readFileSync(
@@ -17,6 +21,76 @@ describe('Gain count labels', () => {
 
   it('five troops render as one cube plus a count', () => {
     expect(getRepeatedIconDisplay(5)).toEqual({ iconCount: 1, showTotalMultiplier: true })
+  })
+
+  it('renders one intrigue icon with the count instead of repeating icons', () => {
+    const render = (amount: number) =>
+      renderToStaticMarkup(
+        React.createElement(TurnGainsDisplay, {
+          gains: [
+            {
+              round: 1,
+              playerId: 0,
+              sourceId: 0,
+              name: 'Sonic Snoopers',
+              amount,
+              type: RewardType.INTRIGUE,
+              source: GainSource.TECH,
+            },
+          ],
+          playerId: 0,
+        })
+      )
+
+    const multiple = render(5)
+    expect((multiple.match(/\/icon\/intrigue\.png/g) ?? []).length).toBe(1)
+    expect(multiple).toContain('turn-gain-resource-amt">5')
+
+    const single = render(1)
+    expect((single.match(/\/icon\/intrigue\.png/g) ?? []).length).toBe(1)
+    expect(single).not.toContain('turn-gain-resource-amt')
+  })
+
+  it('puts a self-trashed tech tile on its own line above the flow', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TurnGainsDisplay, {
+        gains: [
+          {
+            round: 1,
+            playerId: 0,
+            sourceId: 0,
+            name: 'Sonic Snoopers',
+            amount: -1,
+            type: RewardType.TRASH,
+            source: GainSource.TECH,
+          },
+          {
+            round: 1,
+            playerId: 0,
+            sourceId: 0,
+            name: 'Sonic Snoopers',
+            amount: -2,
+            type: RewardType.INTRIGUE,
+            source: GainSource.TECH,
+          },
+          {
+            round: 1,
+            playerId: 0,
+            sourceId: 0,
+            name: 'Sonic Snoopers',
+            amount: 2,
+            type: RewardType.INTRIGUE,
+            source: GainSource.TECH,
+          },
+        ],
+        playerId: 0,
+        inlineTrash: true,
+      })
+    )
+    expect(html).toContain('turn-gain-self-trash-row')
+    expect(html.indexOf('turn-gain-self-trash-row')).toBeLessThan(
+      html.indexOf('turn-gain-source-flow')
+    )
   })
 
   it('prints the count as a plain number, not ×N', () => {

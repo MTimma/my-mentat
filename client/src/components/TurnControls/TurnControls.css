@@ -3389,6 +3389,46 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   gap: 8px;
 }
 
+/* Stepper and its Confirm sit side by side. */
+.counter-choice-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.counter-choice-row .value-stepper {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+/* The global button:focus outline is gold; drop it for the counter controls. */
+.counter-choice-row .value-stepper__btn:focus,
+.counter-choice-row .value-stepper__btn:focus-visible {
+  outline: none;
+}
+
+/* Confirm mirrors the leader-setup modal's save/cancel buttons. */
+.effect-btn.counter-choice-confirm {
+  border: 1px solid var(--setup-modal-line, rgba(255, 248, 232, 0.28));
+  background: transparent;
+  color: var(--setup-modal-text, #fff8e8);
+  font-weight: 700;
+}
+
+.effect-btn.counter-choice-confirm:hover:not(:disabled),
+.effect-btn.counter-choice-confirm:focus,
+.effect-btn.counter-choice-confirm:focus-visible,
+.effect-btn.counter-choice-confirm:active {
+  outline: none;
+  box-shadow: none;
+  transform: none;
+  border-color: var(--setup-modal-line, rgba(255, 248, 232, 0.28));
+  background: var(--setup-modal-hover, rgba(255, 248, 232, 0.08));
+}
+
 .counter-choice-dialog__confirm {
   margin-top: 12px;
 }

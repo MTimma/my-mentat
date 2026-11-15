@@ -191,6 +191,14 @@ function rewardNeedsInteractionHighlight(reward: Reward): boolean {
   return false
 }
 
+/** Counters start at 1 (clamped to the choice's range) instead of its raw initial of 0. */
+function counterChoiceDefault(counterChoice: CounterChoice): number {
+  return Math.min(
+    counterChoice.max,
+    Math.max(1, counterChoice.min, counterChoice.initial)
+  )
+}
+
 /** Desert Ambush: per-opponent deploy-style controls to force a deployed troop/dreadnought to retreat. */
 function DesertAmbushRetreatControls({
   desertAmbush,
@@ -514,7 +522,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
 
   useEffect(() => {
     if (activeCountChoice) {
-      setCounterValue(activeCountChoice.initial)
+      setCounterValue(counterChoiceDefault(activeCountChoice))
     }
   }, [activeCountChoice])
 
@@ -1843,7 +1851,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
   }
 
   const getCounterDraft = (counterChoice: CounterChoice) =>
-    counterDrafts[counterChoice.id] ?? counterChoice.initial
+    counterDrafts[counterChoice.id] ?? counterChoiceDefault(counterChoice)
 
   const setCounterDraft = (choiceId: string, value: number) => {
     setCounterDrafts(prev => ({ ...prev, [choiceId]: value }))
@@ -2405,27 +2413,29 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                   className="card-effects-inline-choice card-effects-inline-choice--counter"
                 >
                   <div className="card-effects-inline-choice-title">{counterChoice.prompt}</div>
-                  <ValueStepper
-                    value={draft}
-                    onChange={value => setCounterDraft(counterChoice.id, value)}
-                    min={counterChoice.min}
-                    max={counterChoice.max}
-                    compact
-                    cluster
-                  />
-                  <button
-                    type="button"
-                    className="effect-btn effect-btn--compact choice counter-choice-confirm"
-                    disabled={counterChoice.disabled || selectionBlocked}
-                    onClick={() => resolveCounterChoice(counterChoice, draft)}
-                    title={
-                      selectionBlocked
-                        ? 'Finish the current selection before resolving other choices.'
-                        : undefined
-                    }
-                  >
-                    Confirm
-                  </button>
+                  <div className="counter-choice-row">
+                    <ValueStepper
+                      value={draft}
+                      onChange={value => setCounterDraft(counterChoice.id, value)}
+                      min={counterChoice.min}
+                      max={counterChoice.max}
+                      compact
+                      cluster
+                    />
+                    <button
+                      type="button"
+                      className="effect-btn effect-btn--compact choice counter-choice-confirm"
+                      disabled={counterChoice.disabled || selectionBlocked}
+                      onClick={() => resolveCounterChoice(counterChoice, draft)}
+                      title={
+                        selectionBlocked
+                          ? 'Finish the current selection before resolving other choices.'
+                          : undefined
+                      }
+                    >
+                      Confirm
+                    </button>
+                  </div>
                 </div>
               )
             }

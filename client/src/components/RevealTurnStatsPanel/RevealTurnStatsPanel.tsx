@@ -112,7 +112,7 @@ const RevealTurnStatsPanel = ({
       {stats.acquiredTechTiles.map(tile => {
         const acquireGains = getAcquireEffectGainsForTechTile(gains, tile.id)
         return (
-          <span key={tile.id} className="reveal-turn-acquired-card reveal-turn-acquired-tech" title={tile.image ? withImageZoomHint(tile.name) : tile.name}>
+          <span key={tile.id} className="reveal-turn-acquired-card reveal-turn-acquired-tech">
             {!hideAcquiredNames ? (
               <span className="reveal-turn-acquired-name">{tile.name}</span>
             ) : null}

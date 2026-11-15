@@ -1022,6 +1022,14 @@
   white-space: nowrap;
 }
 
+.birdseye-interactions-strip .counter-choice-row {
+  gap: 2px;
+}
+
+.birdseye-interactions-strip .effect-btn.counter-choice-confirm {
+  padding: 0 5px;
+}
+
 .birdseye-interactions-strip .effect-btn--compact .effect-resource-cost,
 .birdseye-interactions-strip .effect-btn--compact .effect-resource-cost-icon,
 .birdseye-interactions-strip .effect-token-icon,

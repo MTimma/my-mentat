@@ -13,7 +13,6 @@ import { tileById, canPlayerAffordTechTile } from '../../utils/techTiles'
 import { DEFAULT_PLAYER_COLORS, playerColorHex, playerMarkerHex } from '../../utils/playerColors'
 import BoardAgentFigure from '../AgentIcon/AgentIcon'
 import { BoardTrackerCube } from './BoardTracker'
-import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
 import './IxBoardOverlay.css'
 
@@ -109,7 +108,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
   const sandboxTechLabel = sandboxTechSetup
     ? requiredFilledStacks === 0
       ? 'All tech stacks empty'
-      : faceUpCount === requiredFilledStacks
+      : faceUpCount >= requiredFilledStacks
         ? 'Change tech tiles'
         : `Set tech tiles (${faceUpCount}/${requiredFilledStacks})`
     : ''
@@ -154,7 +153,7 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
       <div className="ix-board-overlay__layer">
         {showSandboxHint ? (
           <SandboxSetupHint
-            label="Pick 3 face-up tech tiles"
+            label={`Pick ${requiredFilledStacks} face-up tech tile${requiredFilledStacks === 1 ? '' : 's'}`}
             anchor="left"
             size="large"
             className="sandbox-setup-hint--tech-tiles"
@@ -216,7 +215,6 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
                 data-marker="tech-tile"
                 data-stack-index={slot.stackIndex}
                 style={slotStyle}
-                title={withImageZoomHint(sandboxTechLabel)}
                 aria-label={sandboxTechLabel}
                 onClick={sandboxTechSetup.onConfigure}
               >
@@ -241,7 +239,6 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
                 data-marker="tech-tile"
                 data-stack-index={slot.stackIndex}
                 style={slotStyle}
-                title="Empty stack"
               />
             )
           }
@@ -260,14 +257,6 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
             .filter(Boolean)
             .join(' ')
 
-          const title = hasAcquireReward
-            ? affordable
-              ? `Acquire ${tile.name} (${tile.cost} spice)`
-              : `View ${tile.name} — acquire reward active`
-            : affordable
-              ? `View ${tile.name} (${tile.cost} spice) — you can afford this`
-              : `View ${tile.name} (${tile.cost} spice) — need more spice`
-
           const ariaLabel = hasAcquireReward
             ? affordable
               ? `Acquire ${tile.name}`
@@ -284,7 +273,6 @@ const IxBoardOverlay: React.FC<IxBoardOverlayProps> = ({
               data-marker="tech-tile"
               data-stack-index={slot.stackIndex}
               style={slotStyle}
-              title={withImageZoomHint(title)}
               aria-label={ariaLabel}
               onClick={() => onTechTileAcquire?.(slot.stackIndex)}
             >

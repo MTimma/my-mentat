@@ -14,6 +14,7 @@ import {
   GainSource,
   GameState,
   RewardType,
+  type ChoiceOption,
   type PendingChoice,
 } from '../types/GameTypes'
 
@@ -354,7 +355,13 @@ export function buildDreadnoughtControlChoices(
   winnerId: number,
   conflictId: number,
   conflictName: string,
-  existingIds: string[]
+  existingIds: string[],
+  /**
+   * Extra options appended after the control-space options (e.g. Detonation Devices'
+   * "return the dreadnought to supply for +1 VP"). When no control space is available
+   * these still produce a choice, so the winner is never forced to keep the dreadnought.
+   */
+  extraOptions: ChoiceOption[] = []
 ): NonNullable<GameState['pendingConflictRewardChoices']> {
   const player = state.players.find(p => p.id === winnerId)
   if (!player?.dreadnoughts?.conflict) return []
@@ -370,7 +377,6 @@ export function buildDreadnoughtControlChoices(
     }
   }
   const availableSpaces = CONTROL_SPACES.filter(space => !occupiedSpaces.has(space))
-  if (availableSpaces.length === 0) return []
 
   const labelFor = (space: ControlMarkerType) => {
     switch (space) {
@@ -383,6 +389,18 @@ export function buildDreadnoughtControlChoices(
     }
   }
 
+  const options: ChoiceOption[] = [
+    ...availableSpaces.map(space => ({
+      reward: {
+        custom: CustomEffect.DREADNOUGHT_CONTROL,
+        dreadnoughtControlSpace: space,
+      },
+      rewardLabel: `Place dreadnought on ${labelFor(space)}`,
+    })),
+    ...extraOptions,
+  ]
+  if (options.length === 0) return []
+
   const id = `dreadnought-control-${conflictId}-${winnerId}`
   if (existingIds.includes(id)) return []
 
@@ -393,13 +411,7 @@ export function buildDreadnoughtControlChoices(
       placement: '1st place (dreadnought)',
       conflictId,
       conflictName,
-      options: availableSpaces.map(space => ({
-        reward: {
-          custom: CustomEffect.DREADNOUGHT_CONTROL,
-          dreadnoughtControlSpace: space,
-        },
-        rewardLabel: `Place dreadnought on ${labelFor(space)}`,
-      })),
+      options,
     },
   ]
 }

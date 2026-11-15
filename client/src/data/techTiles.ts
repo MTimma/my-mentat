@@ -135,7 +135,7 @@ export const TECH_TILES: TechTile[] = [
     name: 'Invasion Ships',
     cost: 5,
     image: techTileImage(TechTileId.INVASION_SHIPS),
-    timing: [TechTileTiming.AGENT_REVEAL_ONE_TIME],
+    timing: [TechTileTiming.AGENT_REVEAL_ONCE_PER_ROUND],
     acquireEffect: { troops: 4 },
     description: 'Agent (once per round): discard 1 → enemy agents do not block your agent this turn.',
     customEffect: CE.INVASION_SHIPS,

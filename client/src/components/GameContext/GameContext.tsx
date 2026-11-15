@@ -51,7 +51,7 @@ import {
   applyHoloprojectorsDiscard,
   applyInvasionShipsDiscard,
   applySonicSnoopers,
-  applySonicSnoopersReturn,
+  detonationDevicesOption,
   heighlinerDiscountForPlayer,
   markMandatoryDeploy,
   refreshArtillerySwords,
@@ -1794,6 +1794,22 @@ function applyConflictChoiceReward(
     })
   }
 
+  // Detonation Devices: return the winning dreadnought to supply and gain 1 VP. Both are applied
+  // here (not via the generic `reward.victoryPoints` block below) so they are atomic — the VP is
+  // only granted when the dreadnought is actually returned.
+  if (reward.custom === CustomEffect.DETONATION_DEVICES) {
+    const d = player.dreadnoughts
+    if (d && d.conflict > 0) {
+      player = {
+        ...player,
+        dreadnoughts: { ...d, conflict: d.conflict - 1, supply: d.supply + 1 },
+        victoryPoints: player.victoryPoints + 1,
+      }
+      pushGain(-1, RewardType.DREADNOUGHT)
+      pushGain(1, RewardType.VICTORY_POINTS)
+    }
+  }
+
   if (reward.intrigueCards) {
     player.intrigueCount += reward.intrigueCards
     pushGain(reward.intrigueCards, RewardType.INTRIGUE)
@@ -1927,19 +1943,6 @@ function applyChoiceReward(
           ? { ...newState.currTurn, pendingChoices }
           : { playerId, type: TurnType.ACTION, pendingChoices },
         canEndTurn: false,
-      }
-    }
-  }
-  if (reward.custom === CustomEffect.DETONATION_DEVICES && state.expansions?.riseOfIx) {
-    const d = player.dreadnoughts
-    if (d && d.conflict > 0) {
-      player = {
-        ...player,
-        dreadnoughts: {
-          ...d,
-          conflict: d.conflict - 1,
-          supply: d.supply + 1,
-        },
       }
     }
   }
@@ -4028,6 +4031,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           scheduledIntrigueOnReveal: { ...(newState.scheduledIntrigueOnReveal || {}), [playerId]: [] },
           activeIntrigueThisRound: { ...(newState.activeIntrigueThisRound || {}), [playerId]: [] },
         }
+        // Spaceport's passive is permanent while owned, but it shares the round-scoped
+        // `acquireToTopThisRound` flag cleared above — re-assert it for owners.
+        newState = syncSpaceportAcquireToTop(newState)
       }
 
       if (!newState.players.find(p => !p.revealed)) {
@@ -5144,13 +5150,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
         if (state.expansions?.riseOfIx) {
           for (const winnerId of placements.first) {
+            const detonation = detonationDevicesOption(newState, winnerId)
             pendingChoices.push(
               ...buildDreadnoughtControlChoices(
                 newState,
                 winnerId,
                 state.currentConflict.id,
                 state.currentConflict.name,
-                [...pendingChoices.map(c => c.id)]
+                [...pendingChoices.map(c => c.id)],
+                detonation ? [detonation] : []
               )
             )
           }
@@ -6998,6 +7006,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       swordCount = revealTech.swordCount
       const stateAfterRevealTech = revealTech.state
       const gainsAfterRevealTech = stateAfterRevealTech.gains
+      // Reveal-tile effects (e.g. Disposal Facility) enqueue pending rewards on the returned
+      // state; fold them into the turn's pending rewards so they are not dropped below.
+      for (const r of stateAfterRevealTech.pendingRewards) {
+        if (!pendingRewards.some(existing => existing.id === r.id)) {
+          pendingRewards.push(r)
+        }
+      }
 
       // Create or update the current turn
       const currentTurn = state.currTurn?.playerId === playerId 
@@ -8385,6 +8400,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             undefined,
             collectLiveIds(state)
           )
+        } else if (fixedChoice.followUpDistinctInfluence) {
+          // Shuttle Fleet "choose two": the second pick excludes the faction chosen first.
+          const chosenFaction = factionFromConflictChoiceReward(reward)
+          followUpGainChoice = createGainInfluenceChoice(
+            fixedChoice.followUpDistinctInfluence,
+            fixedChoice.source,
+            'Choose a second faction for Shuttle Fleet influence',
+            collectLiveIds(state),
+            chosenFaction ? [chosenFaction] : []
+          )
         } else if (reward.influence?.chooseOne) {
           followUpGainChoice = createGainInfluenceChoice(
             reward.influence,
@@ -8508,7 +8533,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const newState = {
         ...state,
         currTurn: newTurn,
-        canEndTurn: newPending.length === 0,
+        // Resolving a side-effect counter (e.g. Sonic Snoopers before play/reveal)
+        // must not unlock End Turn without an agent placement or a Reveal turn.
+        canEndTurn: computeCanEndTurn({ ...state, currTurn: newTurn }),
       }
 
       if (!counterChoice.onResolve) {

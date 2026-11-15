@@ -34,8 +34,9 @@
 
 .tech-tile-select-preview-slot {
   flex-shrink: 0;
-  width: 40px;
-  height: 58px;
+  width: 72px;
+  height: auto;
+  aspect-ratio: 400 / 259;
   border: 1px dashed #444;
   border-radius: 4px;
   display: flex;
@@ -192,8 +193,7 @@
   }
 
   .tech-tile-select-preview-slot {
-    width: 32px;
-    height: 45px;
+    width: 48px;
   }
 
   .imperium-select-cardsearch-wrapper .cards-grid.tech-tile-select-grid,

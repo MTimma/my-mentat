@@ -8,10 +8,16 @@ import {
   applyRevealTechEffects,
   applyRoundStartTech,
   applyTroopTransportsToFreighterReward,
+  detonationDevicesOption,
   handleAcquireTech,
   refreshArtillerySwords,
+  syncSpaceportAcquireToTop,
 } from '../riseOfIxReducer'
+import { buildDreadnoughtControlChoices } from '../../../utils/dreadnoughtLifecycle'
+import { compareEndgameStanding } from '../../../utils/endgameResolution'
 import {
+  ChoiceType,
+  CustomEffect,
   GamePhase,
   FactionType,
   GainSource,
@@ -248,6 +254,47 @@ describe('tech tiles reducer', () => {
     })
     const after = applyRoundStartTech(before)
     expect(after.players[0].handCount).toBe(4)
+  })
+
+  it('Shuttle Fleet: acquire offers two influence picks on different tracks', () => {
+    let s = roiState({
+      players: [makePlayer(0, { spice: 10, tech: [] }), makePlayer(1)],
+      currTurn: { playerId: 0, type: TurnType.ACTION },
+      ixBoard: {
+        stacks: [[TechTileId.SHUTTLE_FLEET, TechTileId.ARTILLERY], [TechTileId.WINDTRAPS], []],
+        nextFaceUpRevealed: {},
+      },
+    })
+    s = applyGameAction(s, {
+      type: 'ACQUIRE_TECH',
+      playerId: 0,
+      tileId: TechTileId.SHUTTLE_FLEET,
+      stackIndex: 0,
+      negotiatorsReturned: 0,
+      discount: 0,
+      nextFaceUpTileId: TechTileId.ARTILLERY,
+    })
+    const first = s.currTurn?.pendingChoices?.find(c => c.type === ChoiceType.FIXED_OPTIONS)
+    expect(first).toBeTruthy()
+    expect(first?.options).toHaveLength(4)
+
+    const emperorIndex = first!.options.findIndex(
+      o => o.reward.influence?.amounts[0]?.faction === FactionType.EMPEROR
+    )
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CHOICE',
+      playerId: 0,
+      choiceId: first!.id,
+      optionIndex: emperorIndex,
+    })
+    expect(s.factionInfluence[FactionType.EMPEROR][0]).toBe(1)
+
+    const second = s.currTurn?.pendingChoices?.find(c => c.type === ChoiceType.FIXED_OPTIONS)
+    expect(second).toBeTruthy()
+    expect(second?.options).toHaveLength(3)
+    expect(
+      second?.options.some(o => o.reward.influence?.amounts[0]?.faction === FactionType.EMPEROR)
+    ).toBe(false)
   })
 
   it('Shuttle Fleet fires solari:2 at Round Start', () => {
@@ -499,6 +546,18 @@ describe('tech tiles reducer', () => {
     expect(after.acquireToTopThisRound[0]).toBe(true)
   })
 
+  it('Spaceport: syncSpaceportAcquireToTop re-asserts the flag after the reveal-turn clear', () => {
+    const before = roiState({
+      players: [
+        makePlayer(0, { tech: [{ id: TechTileId.SPACEPORT, faceUp: true }] }),
+        makePlayer(1),
+      ],
+      acquireToTopThisRound: { 0: false },
+    })
+    const after = syncSpaceportAcquireToTop(before)
+    expect(after.acquireToTopThisRound[0]).toBe(true)
+  })
+
   it('Minimic Film adds persuasion on reveal when owned', () => {
     const before = roiState({
       players: [makePlayer(0, { tech: [{ id: TechTileId.MINIMIC_FILM, faceUp: true }] })],
@@ -523,7 +582,7 @@ describe('tech tiles reducer', () => {
     expect(after.players[0].water).toBe(3)
   })
 
-  it('Detonation Devices: pending OR choice after winning conflict with dreadnought', () => {
+  it('Detonation Devices: option is offered on the dreadnought-control choice', () => {
     const before = roiState({
       players: [
         makePlayer(0, {
@@ -532,9 +591,78 @@ describe('tech tiles reducer', () => {
         }),
       ],
     })
-    const after = applyAfterConflictTechEffects(before, [0])
-    expect(after.pendingConflictRewardChoices?.length).toBe(1)
-    expect(after.pendingConflictRewardChoices?.[0].options).toHaveLength(2)
+    const option = detonationDevicesOption(before, 0)
+    // The VP is applied atomically with the dreadnought return in the reducer, so the
+    // reward carries only the marker (no `victoryPoints` to double-count).
+    expect(option?.reward).toEqual({ custom: CustomEffect.DETONATION_DEVICES })
+
+    const choices = buildDreadnoughtControlChoices(
+      before,
+      0,
+      1,
+      'Test Conflict',
+      [],
+      option ? [option] : []
+    )
+    expect(choices).toHaveLength(1)
+    // Three control spaces plus the Detonation option.
+    expect(choices[0].options).toHaveLength(4)
+    expect(choices[0].options.at(-1)?.reward.custom).toBe(CustomEffect.DETONATION_DEVICES)
+  })
+
+  it('Detonation Devices: no option when the winner has no dreadnought in the conflict', () => {
+    const before = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.DETONATION_DEVICES, faceUp: true }],
+          dreadnoughts: { ...DEFAULT_DREADNOUGHTS, conflict: 0, supply: 2 },
+        }),
+      ],
+    })
+    expect(detonationDevicesOption(before, 0)).toBeUndefined()
+  })
+
+  it('Detonation Devices: end-to-end — choosing it returns the dreadnought and grants +1 VP', () => {
+    let s = roiState({
+      phase: GamePhase.COMBAT_REWARDS,
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.DETONATION_DEVICES, faceUp: true }],
+          dreadnoughts: { ...DEFAULT_DREADNOUGHTS, conflict: 1, supply: 0 },
+        }),
+        makePlayer(1),
+        makePlayer(2),
+        makePlayer(3),
+      ],
+      combatTroops: { 0: 1, 1: 0, 2: 0, 3: 0 },
+      combatStrength: { 0: 6, 1: 0, 2: 0, 3: 0 },
+    })
+    s = applyGameAction(s, { type: 'RESOLVE_COMBAT' })
+    const choice = (s.pendingConflictRewardChoices ?? []).find(c =>
+      c.id.startsWith('dreadnought-control')
+    )
+    expect(choice).toBeTruthy()
+    const detonationIndex = choice!.options.findIndex(
+      o => o.reward.custom === CustomEffect.DETONATION_DEVICES
+    )
+    expect(detonationIndex).toBeGreaterThanOrEqual(0)
+
+    s = applyGameAction(s, {
+      type: 'RESOLVE_CONFLICT_REWARD_CHOICE',
+      choiceId: choice!.id,
+      optionIndex: detonationIndex,
+    })
+    // Atomic: exactly one VP and exactly one dreadnought returned to supply.
+    expect(s.players[0].victoryPoints).toBe(1)
+    expect(s.players[0].dreadnoughts?.supply).toBe(1)
+    expect(s.players[0].dreadnoughts?.conflict).toBe(0)
+    expect(s.players[0].dreadnoughts?.control).toHaveLength(0)
+    expect(
+      s.gains.filter(g => g.type === RewardType.VICTORY_POINTS && g.amount === 1)
+    ).toHaveLength(1)
+    expect(
+      s.gains.filter(g => g.type === RewardType.DREADNOUGHT && g.amount === -1)
+    ).toHaveLength(1)
   })
 
   it('SELECT_CONFLICT applies round-start tech flip', () => {
@@ -578,6 +706,47 @@ describe('tech tiles reducer', () => {
     expect(withTooLittle.state.pendingRewards ?? []).toHaveLength(0)
   })
 
+  it('Disposal Facility: enqueues the trash reward through REVEAL_CARDS', () => {
+    const persuasionCard = (id: number) =>
+      stubDeckCard(id, { revealEffect: [{ reward: { persuasion: 2 } }] })
+    const cards = [persuasionCard(7001), persuasionCard(7002), persuasionCard(7003)]
+    let s = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.DISPOSAL_FACILITY, faceUp: true }],
+          deck: cards,
+          handCount: 3,
+        }),
+        makePlayer(1),
+      ],
+      currTurn: { playerId: 0, type: TurnType.ACTION },
+    })
+    s = applyGameAction(s, {
+      type: 'REVEAL_CARDS',
+      playerId: 0,
+      cardIds: cards.map(c => c.id),
+    })
+    expect(s.pendingRewards.some(r => r.reward.trash === 1)).toBe(true)
+  })
+
+  it('Disposal Facility: uses the final persuasion (Minimic Film acquired later still counts)', () => {
+    const before = roiState({
+      players: [
+        makePlayer(0, {
+          tech: [
+            { id: TechTileId.DISPOSAL_FACILITY, faceUp: true },
+            { id: TechTileId.MINIMIC_FILM, faceUp: true },
+          ],
+        }),
+      ],
+    })
+    const result = applyRevealTechEffects(before, 0, [], 5, 0)
+    expect(result.persuasionCount).toBe(6)
+    expect(result.state.pendingRewards).toContainEqual(
+      expect.objectContaining({ reward: { trash: 1 }, isTrash: true })
+    )
+  })
+
   it('Memocorders endgame: +1 VP when influence ≥ 3 on all four tracks', () => {
     const before = roiState({
       phase: GamePhase.END_GAME,
@@ -608,13 +777,21 @@ describe('tech tiles reducer', () => {
     expect(after.players[0].victoryPoints).toBe(4)
   })
 
-  it('Chaumurky endgame: boosts tiebreaker spice for owner', () => {
+  it('Chaumurky endgame: owner wins the VP tiebreaker without inflating spice', () => {
     const before = roiState({
       phase: GamePhase.END_GAME,
-      players: [makePlayer(0, { tech: [{ id: TechTileId.CHAUMURKY, faceUp: true }] })],
+      players: [
+        makePlayer(0, {
+          tech: [{ id: TechTileId.CHAUMURKY, faceUp: true }],
+          victoryPoints: 5,
+          spice: 0,
+        }),
+        makePlayer(1, { victoryPoints: 5, spice: 10 }),
+      ],
     })
     const after = applyEndgameTechScoring(before)
-    expect(after.endgameTiebreakerSpice?.[0]).toBeGreaterThanOrEqual(10_000)
+    expect(after.endgameTiebreakerSpice?.[0] ?? 0).toBe(0)
+    expect(compareEndgameStanding(after, after.players[0], after.players[1])).toBeLessThan(0)
   })
 
   it('Spy Satellites endgame: +1 VP per faction with ≤1 influence', () => {

@@ -787,6 +787,24 @@ function titleForGainGroup(gain: Gain, acquiredIds: Set<number>): string {
   )
 }
 
+/** Tech tile that trashed itself when activated (e.g. Sonic Snoopers, Spy Satellites). */
+export function isSelfTrashedTechTileGain(gain: Gain): boolean {
+  return (
+    gain.type === RewardType.TRASH &&
+    gain.source === GainSource.TECH &&
+    getTechTileByName(gain.name) != null
+  )
+}
+
+/** Tech tile that trashed itself when activated (e.g. Sonic Snoopers, Spy Satellites). */
+function selfTrashedTechTileName(group: TurnGainSourceGroup): string | undefined {
+  for (const gain of group.gains) {
+    if (!isSelfTrashedTechTileGain(gain)) continue
+    return getTechTileByName(gain.name)?.name
+  }
+  return undefined
+}
+
 function conflictPlayerKey(sourceId: number, playerId: number): string {
   return `${sourceId}:${playerId}`
 }
@@ -897,6 +915,11 @@ export function groupGainsBySource(gains: Gain[]): TurnGainSourceGroup[] {
       order.push(key)
       map.set(key, { key, title: groupTitle, gains: [gain] })
     }
+  }
+
+  for (const group of map.values()) {
+    const trashedTileName = selfTrashedTechTileName(group)
+    if (trashedTileName) group.title = trashedTileName
   }
 
   return order.map(key => map.get(key)!)
@@ -1103,7 +1126,14 @@ export function splitGainsByCostAndReward(gains: Gain[]): { costs: Gain[]; rewar
     if (gain.amount === 0) continue
     // Trashing a card is an effect (reward side), even though the gain amount is negative.
     // Trash is the effect itself, unless it was paid as an arrow cost.
-    if (gain.type === RewardType.TRASH && gain.amount < 0 && !gain.paidCost) {
+    // A tech tile trashing itself while activating is the activation's input, so keep it
+    // on the left of the arrow with the rest of the costs.
+    if (
+      gain.type === RewardType.TRASH &&
+      gain.amount < 0 &&
+      !gain.paidCost &&
+      !isSelfTrashedTechTileGain(gain)
+    ) {
       rewards.push({ ...gain, amount: Math.abs(gain.amount) })
       continue
     }

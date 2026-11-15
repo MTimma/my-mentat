@@ -4,7 +4,6 @@ import { getTechTile } from '../../data/techTiles'
 import type { PlayerTechTile } from '../../data/techTiles'
 import type { Player } from '../../types/GameTypes'
 import TechTileFlipBadge from '../TechTileFlipBadge/TechTileFlipBadge'
-import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './PlayerTechTiles.css'
 
 export interface PlayerTechTilesProps {
@@ -39,9 +38,6 @@ const PlayerTechTiles: React.FC<PlayerTechTilesProps> = ({
       {tiles.map((owned, index) => {
         const tile = getTechTile(owned.id)
         const activatable = activatableTileIds?.has(owned.id) ?? false
-        const title = tile
-          ? `${tile.name}${owned.faceUp ? '' : ' (used — flipped face-down)'}${activatable ? ' — click to activate' : ''}`
-          : owned.id
 
         const content =
           owned.faceUp && tile ? (
@@ -66,7 +62,6 @@ const PlayerTechTiles: React.FC<PlayerTechTilesProps> = ({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              title={withImageZoomHint(title)}
               disabled={!activatable}
               onClick={() => {
                 if (activatable) onTileClick(owned.id)
@@ -87,7 +82,6 @@ const PlayerTechTiles: React.FC<PlayerTechTilesProps> = ({
             ]
               .filter(Boolean)
               .join(' ')}
-            title={withImageZoomHint(title)}
           >
             {content}
           </span>

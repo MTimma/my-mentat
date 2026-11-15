@@ -8,6 +8,7 @@ import {
   isSandboxStackTopsValid,
   ixBoardTechTileIds,
   normalizeSandboxStackTops,
+  playerTechTileIds,
   requiredFilledStacks,
   sandboxBlockedTechIdsForPlayer,
   tilesAvailableForBoard,
@@ -51,11 +52,16 @@ describe('sandboxTechTiles', () => {
     expect(
       isSandboxStackTopsValid(players, [TechTileId.ARTILLERY, TechTileId.WINDTRAPS, null])
     ).toBe(true)
+    // Picking more face-up tiles than the minimum is allowed; the board just has to
+    // hold every remaining tile (checked by isSandboxIxBoardReady).
     expect(
       isSandboxStackTopsValid(players, [TechTileId.ARTILLERY, TechTileId.WINDTRAPS, TechTileId.FLAGSHIP])
-    ).toBe(false)
+    ).toBe(true)
     expect(
       isSandboxStackTopsValid(players, [TechTileId.CHAUMURKY, TechTileId.WINDTRAPS, null])
+    ).toBe(false)
+    expect(
+      isSandboxStackTopsValid(players, [TechTileId.ARTILLERY, TechTileId.ARTILLERY, null])
     ).toBe(false)
   })
 
@@ -75,6 +81,57 @@ describe('sandboxTechTiles', () => {
     expect(
       isSandboxIxBoardReady(players, buildIxBoardFromSandboxStackTops([null, null, null], allTiles))
     ).toBe(true)
+  })
+
+  it('marks the board ready when player tech leaves a partial last stack', () => {
+    const players = [
+      {
+        ...makePlayer(0),
+        tech: [
+          TechTileId.DISPOSAL_FACILITY,
+          TechTileId.SHUTTLE_FLEET,
+          TechTileId.SPACEPORT,
+          TechTileId.INVASION_SHIPS,
+          TechTileId.CHAUMURKY,
+          TechTileId.SONIC_SNOOPERS,
+          TechTileId.DETONATION_DEVICES,
+        ].map(id => ({ id, faceUp: true })),
+      },
+    ]
+
+    expect(tilesAvailableForBoard(players)).toBe(11)
+    const board = buildIxBoardFromSandboxStackTops(
+      [TechTileId.RESTRICTED_ORDINANCE, TechTileId.SPY_SATELLITES, TechTileId.TRAINING_DRONES],
+      playerTechTileIds(players),
+      () => 0
+    )
+    expect(board.stacks.map(stack => stack.length)).toEqual([6, 4, 1])
+    expect(isSandboxIxBoardReady(players, board)).toBe(true)
+  })
+
+  it('is not ready while tiles are still missing from the board', () => {
+    const players = [
+      {
+        ...makePlayer(0),
+        tech: [
+          TechTileId.DISPOSAL_FACILITY,
+          TechTileId.SHUTTLE_FLEET,
+          TechTileId.SPACEPORT,
+          TechTileId.INVASION_SHIPS,
+          TechTileId.CHAUMURKY,
+          TechTileId.SONIC_SNOOPERS,
+          TechTileId.DETONATION_DEVICES,
+        ].map(id => ({ id, faceUp: true })),
+      },
+    ]
+
+    // Only one face-up tile leaves 10 of the 11 remaining tiles off the board.
+    const board = buildIxBoardFromSandboxStackTops(
+      [TechTileId.RESTRICTED_ORDINANCE, null, null],
+      playerTechTileIds(players),
+      () => 0
+    )
+    expect(isSandboxIxBoardReady(players, board)).toBe(false)
   })
 
   it('allows confirm with unset slots treated as empty when pool rules match', () => {

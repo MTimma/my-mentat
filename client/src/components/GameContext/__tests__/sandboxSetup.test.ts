@@ -4,6 +4,7 @@ import { CONFLICTS } from '../../../data/conflicts'
 import { LEADERS, LEADER_NAMES, RISE_OF_IX_LEADERS, createUnassignedLeader, UNASSIGNED_LEADER_NAME } from '../../../data/leaders'
 import { TechTileId } from '../../../data/techTiles'
 import { buildIxBoardFromFaceUpTiles, buildIxBoardFromSandboxStackTops } from '../riseOfIxReducer'
+import { isSandboxIxBoardReady, sandboxTechSetupSummary } from '../../../utils/sandboxTechTiles'
 import {
   ControlMarkerType,
   FactionType,
@@ -818,6 +819,49 @@ describe('Sandbox setup turn', () => {
     const allIds = board.stacks.flat()
     expect(allIds).toHaveLength(12)
     expect(new Set(allIds).size).toBe(12)
+  })
+
+  it('SANDBOX_SET_IX_BOARD_TOP is ready when player tech leaves a partial last stack', () => {
+    // Regression: a player owning a non-multiple-of-6 number of tiles (7 here) leaves 11
+    // tiles for the board, which cannot fill whole stacks. Picking three face-up tiles
+    // must still satisfy the setup checklist instead of dead-ending the game.
+    let s = {
+      ...getSandboxSetupState(),
+      expansions: { ...NO_EXPANSIONS, riseOfIx: true },
+      players: [
+        makePlayer(0, {
+          tech: [
+            TechTileId.DISPOSAL_FACILITY,
+            TechTileId.SHUTTLE_FLEET,
+            TechTileId.SPACEPORT,
+            TechTileId.INVASION_SHIPS,
+            TechTileId.CHAUMURKY,
+            TechTileId.SONIC_SNOOPERS,
+            TechTileId.DETONATION_DEVICES,
+          ].map(id => ({ id, faceUp: true })),
+        }),
+        makePlayer(1),
+      ],
+    }
+
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_IX_BOARD_TOP',
+      stackTops: [TechTileId.TRAINING_DRONES, TechTileId.HOLTZMAN_ENGINE, TechTileId.HOLOPROJECTORS],
+    })
+    // A later player edit must not wipe a board that still covers every remaining tile.
+    s = applyGameAction(s, { type: 'SANDBOX_UPDATE_PLAYER', playerId: 1, patch: { tech: [] } })
+    s = applyGameAction(s, {
+      type: 'SANDBOX_SET_IX_BOARD_TOP',
+      stackTops: [TechTileId.RESTRICTED_ORDINANCE, TechTileId.SPY_SATELLITES, TechTileId.TRAINING_DRONES],
+    })
+
+    expect(sandboxTechSetupSummary(s.players)).toEqual({
+      tilesForBoard: 11,
+      requiredFilledStacks: 2,
+      allowedEmptyStacks: 1,
+    })
+    expect(s.ixBoard?.stacks.map(stack => stack.length)).toEqual([6, 4, 1])
+    expect(isSandboxIxBoardReady(s.players, s.ixBoard)).toBe(true)
   })
 
   it('buildIxBoardFromFaceUpTiles places remaining tiles face-down per stack', () => {

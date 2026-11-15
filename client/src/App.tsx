@@ -57,7 +57,7 @@ import { computeGraftAgentIcons, resolveGraftCards } from './expansions/immortal
 import TechAcquireModal from './components/TechAcquireModal/TechAcquireModal'
 import TechTileSelect from './components/TechTileSelect/TechTileSelect'
 import { TECH_TILES, getTechTile, type TechTileId } from './data/techTiles'
-import { effectiveTechCost } from './utils/techTiles'
+import { effectiveTechCost, playerCanAcquireToTop } from './utils/techTiles'
 import {
   isSandboxIxBoardReady,
   playerTechTileIds,
@@ -2365,7 +2365,7 @@ const GameContent = ({
               canAcquire={isViewingHistory ? false : gameState.canAcquireIR}
               canAcquireToTop={
                 !isViewingHistory &&
-                Boolean(activePlayer && gameState.acquireToTopThisRound?.[activePlayer.id])
+                Boolean(activePlayer && playerCanAcquireToTop(gameState, activePlayer.id))
               }
               cards={displayState.imperiumRow}
               alCount={displayState.arrakisLiaisonDeck.length}

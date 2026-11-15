@@ -1012,6 +1012,48 @@ describe('turnGainsDisplay', () => {
     expect(groups[0].gains).toHaveLength(2)
   })
 
+  it('groupGainsBySource titles a self-trashing tech tile by the tile name', () => {
+    const tileSourceId = techTileGainSourceId(TechTileId.SONIC_SNOOPERS)
+    const groups = groupGainsBySource([
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: 0,
+        round: 1,
+        name: 'Sonic Snoopers',
+        amount: -2,
+        type: RewardType.INTRIGUE,
+      },
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: tileSourceId,
+        round: 1,
+        name: 'Sonic Snoopers',
+        amount: -1,
+        type: RewardType.TRASH,
+      },
+      {
+        playerId: 0,
+        source: GainSource.TECH,
+        sourceId: 0,
+        round: 1,
+        name: 'Sonic Snoopers',
+        amount: 2,
+        type: RewardType.INTRIGUE,
+      },
+    ] as Parameters<typeof groupGainsBySource>[0])
+
+    expect(groups).toHaveLength(1)
+    expect(groups[0].title).toBe('Sonic Snoopers')
+
+    const { costs, rewards } = splitGainsByCostAndReward(groups[0].gains)
+    const trashGain = costs.find(gain => gain.type === RewardType.TRASH)
+    expect(trashGain).toBeDefined()
+    expect(discardedOrTrashedCardLabel(trashGain!)).toBe('Sonic Snoopers')
+    expect(rewards.every(gain => gain.type !== RewardType.TRASH)).toBe(true)
+  })
+
   it('groupGainsBySource merges two copies of the same revealed card', () => {
     const groups = groupGainsBySource([
       {

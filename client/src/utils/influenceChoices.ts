@@ -126,12 +126,16 @@ export function createGainInfluenceChoice(
   influence: InfluenceAmounts,
   source: FixedOptionsChoice['source'],
   prompt?: string,
-  existingIds: Iterable<string> = []
+  existingIds: Iterable<string> = [],
+  /** Factions to omit from the options (e.g. the first pick of a "choose two"). */
+  excludedFactions: FactionType[] = []
 ): FixedOptionsChoice {
   const gain = getInfluenceGainAmount(influence)
-  const factions = isAnyFactionInfluenceChoice(influence)
+  const allFactions = isAnyFactionInfluenceChoice(influence)
     ? ALL_FACTIONS
     : influence.amounts.map(entry => entry.faction)
+  const excluded = new Set(excludedFactions)
+  const factions = allFactions.filter(faction => !excluded.has(faction))
   return {
     id: nextSemanticId(source, 'INFLUENCE-GAIN', existingIds),
     type: ChoiceType.FIXED_OPTIONS,

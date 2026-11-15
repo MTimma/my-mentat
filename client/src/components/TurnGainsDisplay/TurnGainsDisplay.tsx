@@ -16,6 +16,7 @@ import {
   groupGainsForDisplay,
   INLINE_DISCARDS_GROUP_KEY,
   isRevealPooledRewardType,
+  isSelfTrashedTechTileGain,
   peelFreighterRecallsFromCosts,
   resolveFreighterMoveGroupTitle,
   splitGainsByCostAndReward,
@@ -124,7 +125,6 @@ const usesStackedRepeatIcons = (type: RewardType): boolean =>
   type === RewardType.CARD ||
   type === RewardType.DRAW ||
   type === RewardType.WATER ||
-  type === RewardType.INTRIGUE ||
   type === RewardType.DREADNOUGHT
 
 const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
@@ -374,7 +374,8 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     iconPath: string,
     amount: number,
     displayName: string,
-    side: 'cost' | 'reward'
+    side: 'cost' | 'reward',
+    hideAmountWhenOne = false
   ) => {
     const absAmount = Math.abs(amount)
     return (
@@ -384,7 +385,9 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
         aria-hidden="true"
       >
         {renderGainIcon(iconPath, displayName, 'turn-gain-resource-icon')}
-        <span className="turn-gain-resource-amt">{absAmount}</span>
+        {absAmount > 1 || !hideAmountWhenOne ? (
+          <span className="turn-gain-resource-amt">{absAmount}</span>
+        ) : null}
       </span>
     )
   }
@@ -508,6 +511,8 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
             <span className="gain-persuasion-diamond" />
             <span className="gain-persuasion-count">{isCost ? `−${absAmount}` : absAmount}</span>
           </span>
+        ) : iconPath && rewardType === RewardType.INTRIGUE ? (
+          renderResourceWithAmount(iconPath, gain.amount, displayName, side, true)
         ) : iconPath && usesStackedRepeatIcons(rewardType) && absAmount >= 2 ? (
           renderRepeatedIcons(iconPath, displayName, gain.amount)
         ) : iconPath && usesIconWithAmountLabel(rewardType) ? (
@@ -1064,12 +1069,19 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
           resolveCard?.(cardId, '')?.name
         )
         const isAcquireGroup = groupTitle === ACQUIRE_GROUP_TITLE
-        const { costs, rewards } = splitGainsByCostAndReward(group.gains)
+        const selfTrashGains = group.gains.filter(isSelfTrashedTechTileGain)
+        const flowGains =
+          selfTrashGains.length > 0
+            ? group.gains.filter(gain => !isSelfTrashedTechTileGain(gain))
+            : group.gains
+        const { costs, rewards } = splitGainsByCostAndReward(flowGains)
         const { paidCosts, freighterRecalls } = peelFreighterRecallsFromCosts(costs)
         const costContent = renderGainSide(paidCosts, 'cost', isAcquireGroup)
         const rewardContent = renderGainSide(rewards, 'reward', isAcquireGroup)
         const recallContent = renderGainSide(freighterRecalls, 'cost', isAcquireGroup)
-        if (!costContent && !rewardContent && !recallContent) return null
+        if (!costContent && !rewardContent && !recallContent && selfTrashGains.length === 0) {
+          return null
+        }
         const displayedTitle = compactConflictTitles
           ? compactBirdseyeGainTitle({ ...group, title: groupTitle })
           : groupTitle
@@ -1091,50 +1103,59 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
             {(showSourceTitles || revealPooledTotals) && displayedTitle && !isInlineDiscards
               ? renderSourceGroupTitle(group, displayedTitle)
               : null}
-            <div
-              className={[
-                'turn-gain-source-flow',
-                isInlineDiscards ? 'turn-gain-source-flow--inline-discards' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              title={isInlineDiscards ? 'Discarded cards' : displayedTitle ?? groupTitle}
-              aria-label={isInlineDiscards ? 'Discarded cards' : displayedTitle ?? groupTitle}
-            >
-              {isInlineDiscards ? (
-                costContent
-              ) : (
-                <>
-                  {techTile || showCopyCount || costContent ? (
-                    <div className="turn-gain-source-flow__before">
-                      {techTile ? (
-                        <TechTileFlipBadge
-                          image={techTile.image}
-                          alt={techTile.name}
-                          size="gain"
-                          className="turn-gain-source-flow__tech-badge"
-                        />
-                      ) : null}
-                      {showCopyCount ? (
-                        <span className="gain-multiplier">×{copyCount}</span>
-                      ) : null}
-                      {costContent}
-                      {costContent && (rewardContent || recallContent) ? (
-                        <span className="turn-gain-flow-arrow" aria-hidden="true">
-                          →
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {rewardContent || recallContent ? (
-                    <div className="turn-gain-source-flow__after">
-                      {rewardContent}
-                      {recallContent}
-                    </div>
-                  ) : null}
-                </>
-              )}
-            </div>
+            {selfTrashGains.length > 0 ? (
+              <div className="turn-gains-side turn-gains-side--trash-inline turn-gain-self-trash-row">
+                {aggregateResourceGains(selfTrashGains).map((gain, index) =>
+                  renderInlineTrashGain(gain, index)
+                )}
+              </div>
+            ) : null}
+            {costContent || rewardContent || recallContent || techTile || showCopyCount ? (
+              <div
+                className={[
+                  'turn-gain-source-flow',
+                  isInlineDiscards ? 'turn-gain-source-flow--inline-discards' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                title={isInlineDiscards ? 'Discarded cards' : displayedTitle ?? groupTitle}
+                aria-label={isInlineDiscards ? 'Discarded cards' : displayedTitle ?? groupTitle}
+              >
+                {isInlineDiscards ? (
+                  costContent
+                ) : (
+                  <>
+                    {techTile || showCopyCount || costContent ? (
+                      <div className="turn-gain-source-flow__before">
+                        {techTile ? (
+                          <TechTileFlipBadge
+                            image={techTile.image}
+                            alt={techTile.name}
+                            size="gain"
+                            className="turn-gain-source-flow__tech-badge"
+                          />
+                        ) : null}
+                        {showCopyCount ? (
+                          <span className="gain-multiplier">×{copyCount}</span>
+                        ) : null}
+                        {costContent}
+                        {costContent && (rewardContent || recallContent) ? (
+                          <span className="turn-gain-flow-arrow" aria-hidden="true">
+                            →
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    {rewardContent || recallContent ? (
+                      <div className="turn-gain-source-flow__after">
+                        {rewardContent}
+                        {recallContent}
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </div>
+            ) : null}
           </div>
         )
       })}

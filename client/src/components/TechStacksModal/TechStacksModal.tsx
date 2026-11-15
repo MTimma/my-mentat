@@ -7,7 +7,6 @@ import type { Player } from '../../types/GameTypes'
 import { effectiveTechCost } from '../../utils/techTiles'
 import { playerMarkerHex } from '../../utils/playerColors'
 import { BoardTrackerCube } from '../ImageBoard/BoardTracker'
-import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import './TechStacksModal.css'
 
 interface TechStacksModalProps {
@@ -115,7 +114,6 @@ const TechStacksModal: React.FC<TechStacksModalProps> = ({
                       className="tech-stacks-modal__tile-img"
                       src={tile.image}
                       alt={tile.name}
-                      title={withImageZoomHint(tile.description)}
                       draggable={false}
                       data-preview-src={tile.image}
                     />

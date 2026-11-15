@@ -9,7 +9,6 @@ import type { Player } from '../../types/GameTypes'
 import { filterBySearchTokens } from '../../utils/searchTokens'
 import { useVisualViewportOverlay } from '../../utils/useVisualViewportOverlay'
 import { PickerModalShell } from '../BoardScopedModal'
-import { withImageZoomHint } from '../AltImagePreview/imageZoomHint'
 import { usePlayBoardModalContext } from '../../context/PlayBoardModalContext'
 import './TechTileSelect.css'
 
@@ -160,7 +159,6 @@ const TechTileSelect: React.FC<TechTileSelectProps> = ({
                   key={`preview-${index}`}
                   type="button"
                   className={[
-                    'card-search-selection-preview-slot',
                     'tech-tile-select-preview-slot',
                     'tech-tile-select-preview-slot--button',
                     isNext ? 'tech-tile-select-preview-slot--active' : '',
@@ -171,13 +169,6 @@ const TechTileSelect: React.FC<TechTileSelectProps> = ({
                     .join(' ')}
                   disabled={top === undefined}
                   onClick={() => clearSlot(index)}
-                  title={
-                    tile
-                      ? withImageZoomHint(`Remove ${tile.name}`)
-                      : top === null
-                        ? 'Clear empty stack'
-                        : undefined
-                  }
                   aria-label={
                     tile
                       ? `Remove ${tile.name} from stack ${index + 1}`
@@ -226,7 +217,6 @@ const TechTileSelect: React.FC<TechTileSelectProps> = ({
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                title={withImageZoomHint(`${tile.name} (${tile.cost} spice) — ${tile.description}`)}
                 disabled={disabled}
                 onClick={() => handleTilePick(tile.id)}
               >

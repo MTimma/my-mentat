@@ -97,25 +97,23 @@ export function isSandboxStackTopsValid(
 }
 
 export function isSandboxIxBoardReady(players: Player[], ixBoard: GameState['ixBoard']): boolean {
-  const tilesForBoard = tilesAvailableForBoard(players)
-
-  if (tilesForBoard === 0) {
-    return (
-      ixBoard?.stacks?.length === TECH_STACK_COUNT &&
-      ixBoard.stacks.every(stack => stack.length === 0)
-    )
-  }
-
   if (!ixBoard || ixBoard.stacks.length !== TECH_STACK_COUNT) return false
 
   const stackTops = ixBoard.stacks.map(stack => (stack.length === 0 ? null : stack[0] ?? null))
   if (!isSandboxStackTopsValid(players, stackTops)) return false
 
-  const requiredFilled = requiredFilledStacks(tilesForBoard)
-  return ixBoard.stacks
-    .filter(stack => stack.length > 0)
-    .every(stack => stack.length === TECH_STACK_SIZE && stack.length > 0 && Boolean(stack[0]))
-    && ixBoard.stacks.filter(stack => stack.length > 0).length === requiredFilled
+  // Player-owned tech reduces how many tiles are left for the board, so the last
+  // filled stack can be shorter than the full pool size (and some stacks can be empty).
+  if (ixBoard.stacks.some(stack => stack.length > TECH_STACK_SIZE)) return false
+
+  const boardTileIds = ixBoardTechTileIds(ixBoard)
+  if (new Set(boardTileIds).size !== boardTileIds.length) return false
+
+  const owned = new Set(playerTechTileIds(players))
+  if (boardTileIds.some(id => owned.has(id))) return false
+
+  // Every tile that no player owns must sit on the board exactly once.
+  return boardTileIds.length === tilesAvailableForBoard(players)
 }
 
 export function sandboxTechSetupSummary(players: Player[]): {
