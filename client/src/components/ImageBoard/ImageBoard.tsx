@@ -218,6 +218,8 @@ interface ImageBoardProps {
   birdseyeGainsByPlayer?: import('./CombatAreaCluster').BirdseyeSeatGainsMap
   birdseyeTroopsDeployed?: number
   birdseyeDreadnoughtsDeployed?: number
+  /** Immortality — specimens deployed from the Axolotl tanks this turn. */
+  birdseyeSpecimensDeployed?: number
   birdseyeTroopsRetreated?: number
   birdseyeIsHistoryView?: boolean
   birdseyeInteractionsHostRef?: (el: HTMLDivElement | null) => void
@@ -303,6 +305,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   birdseyeGainsByPlayer,
   birdseyeTroopsDeployed = 0,
   birdseyeDreadnoughtsDeployed = 0,
+  birdseyeSpecimensDeployed = 0,
   birdseyeTroopsRetreated = 0,
   birdseyeIsHistoryView = false,
   birdseyeInteractionsHostRef,
@@ -649,6 +652,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
         birdseyeGainsByPlayer={birdseyeGainsByPlayer}
         birdseyeTroopsDeployed={birdseyeTroopsDeployed}
         birdseyeDreadnoughtsDeployed={birdseyeDreadnoughtsDeployed}
+        birdseyeSpecimensDeployed={birdseyeSpecimensDeployed}
         birdseyeTroopsRetreated={birdseyeTroopsRetreated}
         birdseyeIsHistoryView={birdseyeIsHistoryView}
         birdseyeInteractionsHostRef={birdseyeInteractionsHostRef}
@@ -688,6 +692,7 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const combatRankStripProps = {
     players,
     troops: combatTroops,
+    specimens: immortality ? (gameStateForMarkers.combatSpecimens ?? {}) : undefined,
     strength: combatStrength,
     activePlayerId: currentPlayer,
     riseOfIx,

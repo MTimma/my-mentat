@@ -665,23 +665,17 @@
           },
           {
             "type": "VP",
-            "amount": 0,
-            "choiceOptions": [
-              {
-                "type": "VP",
-                "amount": 1,
-                "cost": {
-                  "solari": 6
-                }
-              },
-              {
-                "type": "VP",
-                "amount": 1,
-                "cost": {
-                  "spice": 4
-                }
-              }
-            ]
+            "amount": 1,
+            "cost": {
+              "solari": 6
+            }
+          },
+          {
+            "type": "VP",
+            "amount": 1,
+            "cost": {
+              "spice": 4
+            }
           }
         ],
         "second": [

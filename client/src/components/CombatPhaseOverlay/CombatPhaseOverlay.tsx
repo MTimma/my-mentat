@@ -192,9 +192,12 @@ const CombatPhaseOverlay: React.FC<CombatPhaseOverlayProps> = ({
   const rankEntries = useMemo(() => {
     const troops = resolutionState?.combatTroops ?? {}
     const riseOfIx = Boolean(resolutionState?.expansions?.riseOfIx)
+    const immortality = Boolean(resolutionState?.expansions?.immortality)
+    const specimens = immortality ? (resolutionState?.combatSpecimens ?? {}) : undefined
     return [...buildCombatRankEntries({
       players,
       troops,
+      specimens,
       strength: combatStrength,
       riseOfIx,
     })].sort((a, b) => a.place - b.place || b.strength - a.strength)

@@ -29,11 +29,19 @@ describe('Rise of Ix conflict cards — data', () => {
     expect(skirmishV.rewards.first.some(r => r.type === RewardType.FREIGHTER)).toBe(true)
   })
 
-  it('Economy Supremacy tier 3 first place includes VP choice options', () => {
+  it('Economy Supremacy tier 3 first place grants 1 VP plus two optional VP purchases', () => {
     const econ = RISE_OF_IX_CONFLICTS.find(c => c.id === 921)!
     expect(econ.tier).toBe(3)
-    const vpChoice = econ.rewards.first.find(r => r.choiceOptions != null)
-    expect(vpChoice?.choiceOptions?.some(o => o.type === RewardType.TECH)).toBe(true)
+    const first = econ.rewards.first
+    expect(first.some(r => r.choiceOptions != null)).toBe(false)
+    expect(
+      first.filter(r => r.cost == null).reduce((total, r) => total + r.amount, 0)
+    ).toBe(1)
+    const purchases = first.filter(r => r.cost != null)
+    expect(purchases.map(r => r.cost)).toEqual([{ solari: 6 }, { spice: 4 }])
+    expect(
+      purchases.every(r => r.type === RewardType.VICTORY_POINTS && r.amount === 1)
+    ).toBe(true)
   })
 
   it('Trade Monopoly tier 2 grants 2 freighter on first place', () => {

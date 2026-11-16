@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { dreadnoughtDeployRoom, troopDeployRoom, type DeployEditSession } from '../deployEdit'
+import {
+  dreadnoughtDeployRoom,
+  specimenDeployRoom,
+  troopDeployRoom,
+  type DeployEditSession,
+} from '../deployEdit'
 
 const base: DeployEditSession = {
   historyIndex: 1,
@@ -12,6 +17,7 @@ const base: DeployEditSession = {
   theseLimit: 0,
   garrisonTroops: 5,
   garrisonDreadnoughts: 2,
+  tankSpecimens: 3,
 }
 
 describe('deploy rooms share the general pool', () => {
@@ -51,5 +57,17 @@ describe('deploy rooms share the general pool', () => {
     const edit = { ...base, troops: 0, dreadnoughts: 1, troopLimit: 2 }
     expect(troopDeployRoom(edit).deployable).toBe(1)
     expect(dreadnoughtDeployRoom(edit).deployable).toBe(1)
+  })
+
+  it('deploys specimens only while the tanks hold them', () => {
+    // limit 4 - troops 1 - dreads 1 - specimens 0 = 2 general slots; 3 in the tanks.
+    expect(specimenDeployRoom(base)).toEqual({ deployable: 2, garrisonLeft: 3 })
+
+    // Taking a deployed specimen back returns it to the tanks.
+    const reduced = { ...base, specimens: 1, tankSpecimens: 2 }
+    expect(specimenDeployRoom(reduced).garrisonLeft).toBe(1)
+
+    const fullTanks = { ...base, specimens: 3, tankSpecimens: 3 }
+    expect(specimenDeployRoom(fullTanks).deployable).toBe(0)
   })
 })

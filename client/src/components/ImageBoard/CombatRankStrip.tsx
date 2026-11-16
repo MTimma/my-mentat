@@ -60,6 +60,8 @@ function RankForces({
 export interface CombatRankStripProps {
   players: Player[]
   troops: Record<number, number>
+  /** Immortality — specimens in the conflict count as troops in the ranking. */
+  specimens?: Record<number, number>
   strength: Record<number, number>
   activePlayerId: number
   riseOfIx?: boolean
@@ -184,6 +186,7 @@ const BoardRankBox: React.FC<{
 const CombatRankStrip: React.FC<CombatRankStripProps> = ({
   players,
   troops,
+  specimens,
   strength,
   activePlayerId,
   riseOfIx = false,
@@ -191,8 +194,8 @@ const CombatRankStrip: React.FC<CombatRankStripProps> = ({
   style,
 }) => {
   const slots = useMemo(
-    () => buildCombatRankSlots({ players, troops, strength, riseOfIx }),
-    [players, troops, strength, riseOfIx]
+    () => buildCombatRankSlots({ players, troops, specimens, strength, riseOfIx }),
+    [players, troops, specimens, strength, riseOfIx]
   )
 
   // Slot data is place 4 → place 1. The column reads top → bottom, place 1 first.

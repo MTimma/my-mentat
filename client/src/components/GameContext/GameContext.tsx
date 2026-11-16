@@ -414,7 +414,7 @@ export type GameAction =
   | { type: 'OPPONENT_NO_CARD_ACK'; playerId: number; opponentId: number }
     | { type: 'UNDO_TO_TURN'; turnIndex: number }
     | { type: 'REDO_FROM_TURN'; turnIndex: number }
-    | { type: 'REDO_TURN_DEPLOYMENT'; turnIndex: number; playerId: number; troops: number; dreadnoughts: number }
+    | { type: 'REDO_TURN_DEPLOYMENT'; turnIndex: number; playerId: number; troops: number; dreadnoughts: number; specimens?: number }
     | { type: 'CANCEL_TURN_EDIT' }
     | { type: 'UNDO_TO_SETUP' }
     | { type: 'RESOLVE_REDO_CONFLICT'; choice: 'restore' | 'truncate' | 'backToEdit' }
@@ -637,6 +637,9 @@ function combatGainDedupeKey(gain: Gain): string {
     gain.name,
     gain.type,
     gain.amount,
+    // Distinct optional effects can produce identical gains (e.g. two pay-to-gain
+    // VP rewards); keep them as separate rows.
+    gain.effectId ?? '',
   ].join(':')
 }
 
@@ -955,6 +958,7 @@ function continueConflictRewardSeat(state: GameState, playerId: number): GameSta
         playerId: nextId,
         type: TurnType.ACTION,
         gainsStartIndex: state.gains.length,
+        optionalEffects: state.conflictRewardOptionalEffects?.[nextId],
       },
     }
   }
@@ -1081,6 +1085,7 @@ function completeCombatTransition(
     pendingSecondWave: null,
     combatRewardsResolvedConflictId: null,
     pendingConflictRewardChoices: undefined,
+    conflictRewardOptionalEffects: undefined,
     combatResolutionDeferred: undefined,
     conflictRewardResolveQueue: undefined,
     conflictTroopLosses: {},
@@ -1264,6 +1269,41 @@ function applyReward(state: GameState, reward: ConflictReward, placement: string
     }
 
   return newState
+}
+
+/**
+ * A costed conflict reward is an optional purchase (e.g. Economic Supremacy VP):
+ * offer it as an optional effect for the seat instead of granting it outright.
+ */
+function enqueueConflictOptionalEffect(
+  state: GameState,
+  reward: ConflictReward,
+  playerId: number,
+  placement: string
+): GameState {
+  if (!reward.cost) return state
+  const source = {
+    type: GainSource.CONFLICT,
+    id: state.currentConflict.id,
+    name: `${state.currentConflict.name} - ${placement}`,
+  }
+  const existing = state.conflictRewardOptionalEffects?.[playerId] ?? []
+  const liveIds = Object.values(state.conflictRewardOptionalEffects ?? {})
+    .flat()
+    .map(e => e.id)
+  const effect: OptionalEffect = {
+    id: nextSemanticId(source, 'EFFECT', liveIds),
+    cost: reward.cost,
+    reward: conflictRewardToReward(reward),
+    source,
+  }
+  return {
+    ...state,
+    conflictRewardOptionalEffects: {
+      ...state.conflictRewardOptionalEffects,
+      [playerId]: [...existing, effect],
+    },
+  }
 }
 
 /**
@@ -5136,7 +5176,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           playerIds,
           conflictId,
           state.currentConflict.name,
-          (current, reward, pl, ids) => applyReward(current, reward, pl, ids),
+          (current, reward, pl, ids) => {
+            // Costed rewards are optional purchases, not automatic gains.
+            if (reward.cost) {
+              return ids.reduce(
+                (acc, id) => enqueueConflictOptionalEffect(acc, reward, id, pl),
+                current
+              )
+            }
+            return applyReward(current, reward, pl, ids)
+          },
           deferConflictChoice,
           pendingChoices,
           pendingRewards
@@ -5338,6 +5387,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           playerId: queue[0],
           type: TurnType.ACTION,
           gainsStartIndex: newState.gains.length,
+          optionalEffects: newState.conflictRewardOptionalEffects?.[queue[0]],
         },
         phase: GamePhase.COMBAT_REWARDS,
       }
@@ -10491,7 +10541,14 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
         if (action.type === 'REDO_TURN_DEPLOYMENT') {
           // Rewrite one past turn's deployment and replay it plus the later turns,
           // keeping the rest of that turn intact.
-          if (action.turnIndex <= 0 || action.troops < 0 || action.dreadnoughts < 0) return prev
+          if (
+            action.turnIndex <= 0 ||
+            action.troops < 0 ||
+            action.dreadnoughts < 0 ||
+            (action.specimens != null && action.specimens < 0)
+          ) {
+            return prev
+          }
           if (!strictModeRecordCommittedRef.current) {
             const original = recordedEventsRef.current
             const split = splitLogForTurnEdit(gameInput.setup, original, action.turnIndex)
@@ -10507,7 +10564,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ gameInput, children,
               turnEvents,
               action.playerId,
               action.troops,
-              action.dreadnoughts
+              action.dreadnoughts,
+              action.specimens
             )
             const base = replayEvents(buildInitialState(gameInput.setup), split.kept).state
             const turned = replayPendingRedoEvents(base, rewritten)

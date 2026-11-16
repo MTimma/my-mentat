@@ -189,6 +189,22 @@ describe('birdseyeTroopDeployCounts', () => {
           },
         })
       )
-    ).toEqual({ deployed: 3, dreadnoughts: 1, retreated: 0 })
+    ).toEqual({ deployed: 3, dreadnoughts: 1, specimens: 0, retreated: 0 })
+  })
+
+  it('includes Immortality specimens deployed this turn', () => {
+    expect(
+      birdseyeTroopDeployCounts(
+        baseState({
+          currTurn: {
+            playerId: 1,
+            type: TurnType.ACTION,
+            removableTroops: 1,
+            removableSpecimens: 2,
+            troopsRetreatedFromConflict: 0,
+          },
+        })
+      )
+    ).toEqual({ deployed: 1, dreadnoughts: 0, specimens: 2, retreated: 0 })
   })
 })

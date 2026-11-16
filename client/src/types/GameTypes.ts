@@ -494,7 +494,11 @@ export interface IntrigueCardPlay {
 export interface ConflictReward {
   type: RewardType
   amount: number
-  /** Optional payment before receiving this reward (e.g. purchasable VP on Economy Supremacy). */
+  /**
+   * Optional payment for this reward. A costed conflict reward is never granted
+   * automatically — it is offered as an optional effect the player may pay for
+   * (e.g. Economic Supremacy's purchasable VP).
+   */
   cost?: Cost
   /** When set, player chooses one of these options instead of receiving this reward directly */
   choiceOptions?: ConflictReward[]
@@ -844,6 +848,12 @@ export interface GameState {
    * clockwise from firstPlayerMarker. Index 0 is the active seat.
    */
   conflictRewardResolveQueue?: number[]
+  /**
+   * Costed conflict rewards offered as optional effects, keyed by seat
+   * (e.g. Economic Supremacy's pay-6-Solari / pay-4-spice VP). Seeded into
+   * `currTurn.optionalEffects` when that seat becomes active.
+   */
+  conflictRewardOptionalEffects?: Record<number, OptionalEffect[]>
   // Stored when combat resolution is deferred for choices; used when completing the transition
   combatResolutionDeferred?: {
     mentatOwnerNextRound: number | null

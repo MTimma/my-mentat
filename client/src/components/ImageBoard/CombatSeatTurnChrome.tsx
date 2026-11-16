@@ -566,6 +566,7 @@ export function BirdseyeSeatGains({
   gains,
   troopsDeployed = 0,
   dreadnoughtsDeployed = 0,
+  specimensDeployed = 0,
   troopsRetreated = 0,
   showTotals = false,
   totalsOnly = false,
@@ -580,6 +581,8 @@ export function BirdseyeSeatGains({
   gains: Gain[]
   troopsDeployed?: number
   dreadnoughtsDeployed?: number
+  /** Immortality — specimens deployed from the Axolotl tanks this turn. */
+  specimensDeployed?: number
   troopsRetreated?: number
   showTotals?: boolean
   totalsOnly?: boolean
@@ -592,10 +595,14 @@ export function BirdseyeSeatGains({
 }) {
   const displayGains = excludeRetreatAllowanceGains(gains)
   const hasGains =
-    displayGains.length > 0 || troopsDeployed > 0 || dreadnoughtsDeployed > 0 || troopsRetreated > 0
+    displayGains.length > 0 ||
+    troopsDeployed > 0 ||
+    dreadnoughtsDeployed > 0 ||
+    specimensDeployed > 0 ||
+    troopsRetreated > 0
   const { scrollRef, overflowStart, overflowEnd, scrollable, thumb } = useScrollOverflowFades(
     hasGains,
-    `${displayGains.length}:${troopsDeployed}:${dreadnoughtsDeployed}:${troopsRetreated}`
+    `${displayGains.length}:${troopsDeployed}:${dreadnoughtsDeployed}:${specimensDeployed}:${troopsRetreated}`
   )
 
   if (!hasGains) return null
@@ -625,6 +632,7 @@ export function BirdseyeSeatGains({
           resolveCard={resolveCard}
           troopsDeployedToConflict={troopsDeployed}
           dreadnoughtsDeployedToConflict={dreadnoughtsDeployed}
+          specimensDeployedToConflict={specimensDeployed}
           troopsRetreatedFromConflict={troopsRetreated}
           className="birdseye-seat-gains__display"
           onEditDeployment={onEditDeployment}

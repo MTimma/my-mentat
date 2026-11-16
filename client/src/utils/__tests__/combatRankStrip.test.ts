@@ -70,6 +70,30 @@ describe('buildCombatRankEntries', () => {
     expect(entries).toEqual([])
   })
 
+  it('counts Immortality specimens as troops', () => {
+    const entries = buildCombatRankEntries({
+      players: [stubPlayer(0), stubPlayer(1)],
+      troops: { 0: 1, 1: 2 },
+      specimens: { 0: 1 },
+      strength: { 0: 4, 1: 4 },
+    })
+    expect(entries.map(e => e.player.id)).toEqual([0, 1])
+    expect(entries[0]?.troops).toBe(2)
+    expect(entries[1]?.troops).toBe(2)
+  })
+
+  it('includes specimen-only combatants', () => {
+    const entries = buildCombatRankEntries({
+      players: [stubPlayer(0), stubPlayer(1)],
+      troops: { 0: 0, 1: 0 },
+      specimens: { 0: 2 },
+      strength: { 0: 4, 1: 0 },
+    })
+    expect(entries.map(e => e.player.id)).toEqual([0])
+    expect(entries[0]?.troops).toBe(2)
+    expect(entries[0]?.place).toBe(1)
+  })
+
   it('drops tied players one reward place and orders by player id left to right', () => {
     const entries = buildCombatRankEntries({
       players: [stubPlayer(0), stubPlayer(1), stubPlayer(2)],

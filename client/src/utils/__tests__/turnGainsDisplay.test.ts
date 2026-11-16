@@ -24,6 +24,7 @@ import {
   getGainsForTurnState,
   getOtherPlayersGainsForTurnState,
   getDreadnoughtsDeployedToConflict,
+  getSpecimensDeployedToConflict,
   getTroopsDeployedToConflict,
   getTroopsRetreatedFromConflict,
   getEffectRetreatRemaining,
@@ -619,6 +620,19 @@ describe('turnGainsDisplay', () => {
         },
       } as Parameters<typeof getDreadnoughtsDeployedToConflict>[0])
     ).toBe(1)
+  })
+
+  it('getSpecimensDeployedToConflict uses specimens deployed from the tanks', () => {
+    expect(
+      getSpecimensDeployedToConflict({
+        currTurn: {
+          playerId: 0,
+          type: TurnType.ACTION,
+          removableTroops: 1,
+          removableSpecimens: 2,
+        },
+      } as Parameters<typeof getSpecimensDeployedToConflict>[0])
+    ).toBe(2)
   })
 
   it('getTroopsRetreatedFromConflict reads troopsRetreatedFromConflict from currTurn', () => {

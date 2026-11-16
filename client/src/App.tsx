@@ -119,6 +119,7 @@ import {
 import {
   dreadnoughtDeployRoom,
   seedDeployEdit,
+  specimenDeployRoom,
   troopDeployRoom,
   type DeployEditSession,
 } from './utils/deployEdit'
@@ -483,7 +484,11 @@ const GameContent = ({
   }
 
   // Deltas (not absolute counts) so rapid clicks can't act on a stale session.
-  const changeDeployEdit = (patch: { troopDelta?: number; dreadnoughtDelta?: number }) => {
+  const changeDeployEdit = (patch: {
+    troopDelta?: number
+    dreadnoughtDelta?: number
+    specimenDelta?: number
+  }) => {
     setDeployEdit(current => {
       if (!current) return current
       let next = current
@@ -504,6 +509,17 @@ const GameContent = ({
         }
         next = { ...next, dreadnoughts }
       }
+      if (patch.specimenDelta) {
+        const specimens = current.specimens + patch.specimenDelta
+        if (specimens < 0) return current
+        if (
+          specimens > current.specimens &&
+          specimenDeployRoom(current).deployable <= 0
+        ) {
+          return current
+        }
+        next = { ...next, specimens }
+      }
       return next
     })
   }
@@ -516,6 +532,7 @@ const GameContent = ({
       playerId: deployEdit.playerId,
       troops: deployEdit.troops,
       dreadnoughts: deployEdit.dreadnoughts,
+      specimens: deployEdit.specimens,
     })
     setDeployEdit(null)
   }
@@ -2147,23 +2164,33 @@ const GameContent = ({
                 }
           }
           specimenDeploy={
-            deployEdit ||
-            isViewingHistory ||
-            gameState.sandboxSetup ||
-            !activePlayer ||
-            !gameState.expansions?.immortality
-              ? undefined
-              : {
-                  canDeploy: Boolean(gameState.currTurn?.canDeployTroops),
-                  deployableSpecimens: Math.min(
-                    getRemainingDeploySlots(gameState),
-                    activePlayer.specimens ?? 0
-                  ),
-                  deployedThisTurn: gameState.currTurn?.removableSpecimens || 0,
-                  specimensInTanks: activePlayer.specimens ?? 0,
-                  onDeploy: () => handleDeploySpecimen(activePlayer.id),
-                  onUndeploy: () => handleUndeploySpecimen(activePlayer.id),
-                }
+            deployEdit
+              ? gameState.expansions?.immortality
+                ? {
+                    canDeploy: true,
+                    deployableSpecimens: specimenDeployRoom(deployEdit).deployable,
+                    deployedThisTurn: deployEdit.specimens,
+                    specimensInTanks: specimenDeployRoom(deployEdit).garrisonLeft,
+                    onDeploy: () => changeDeployEdit({ specimenDelta: 1 }),
+                    onUndeploy: () => changeDeployEdit({ specimenDelta: -1 }),
+                  }
+                : undefined
+              : isViewingHistory ||
+                  gameState.sandboxSetup ||
+                  !activePlayer ||
+                  !gameState.expansions?.immortality
+                ? undefined
+                : {
+                    canDeploy: Boolean(gameState.currTurn?.canDeployTroops),
+                    deployableSpecimens: Math.min(
+                      getRemainingDeploySlots(gameState),
+                      activePlayer.specimens ?? 0
+                    ),
+                    deployedThisTurn: gameState.currTurn?.removableSpecimens || 0,
+                    specimensInTanks: activePlayer.specimens ?? 0,
+                    onDeploy: () => handleDeploySpecimen(activePlayer.id),
+                    onUndeploy: () => handleUndeploySpecimen(activePlayer.id),
+                  }
           }
           onEditDeployment={deployEditSeed ? openDeployEdit : undefined}
           deployEditFooter={
@@ -2234,6 +2261,7 @@ const GameContent = ({
           birdseyeGainsByPlayer={birdseyeGainsByPlayer}
           birdseyeTroopsDeployed={birdseyeTroopCounts.deployed}
           birdseyeDreadnoughtsDeployed={birdseyeTroopCounts.dreadnoughts}
+          birdseyeSpecimensDeployed={birdseyeTroopCounts.specimens}
           birdseyeTroopsRetreated={birdseyeTroopCounts.retreated}
           birdseyeIsHistoryView={isViewingHistory}
           birdseyeInteractionsHostRef={setBirdseyeInteractionsHost}

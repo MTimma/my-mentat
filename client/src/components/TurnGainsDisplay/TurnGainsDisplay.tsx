@@ -46,6 +46,9 @@ import './TurnGainsDisplay.css'
 
 const TECH_GAIN_TITLE_PREFIX = 'Tech: '
 
+/** Immortality specimen icon, used for specimens deployed to the Conflict. */
+const SPECIMEN_ICON = 'icon/specimen.png'
+
 function techTileFromGroupTitle(title: string) {
   if (!title.startsWith(TECH_GAIN_TITLE_PREFIX)) return undefined
   return getTechTileByName(title.slice(TECH_GAIN_TITLE_PREFIX.length))
@@ -101,6 +104,8 @@ export interface TurnGainsDisplayProps {
   troopsDeployedToConflict?: number
   /** Dreadnoughts sent to the Conflict this turn (same Deployed row as troops). */
   dreadnoughtsDeployedToConflict?: number
+  /** Immortality — specimens deployed from the Axolotl tanks this turn (Deployed row). */
+  specimensDeployedToConflict?: number
   /** Troops retreated from the Conflict this turn. */
   troopsRetreatedFromConflict?: number
   /** Opponent discards: one thumbnail row, no card-name titles. */
@@ -139,6 +144,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   resolveCard,
   troopsDeployedToConflict = 0,
   dreadnoughtsDeployedToConflict = 0,
+  specimensDeployedToConflict = 0,
   troopsRetreatedFromConflict = 0,
   inlineDiscards = false,
   inlineTrash = false,
@@ -148,6 +154,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
 }) => {
   const deployedCount = Math.max(0, troopsDeployedToConflict)
   const dreadnoughtsDeployed = Math.max(0, dreadnoughtsDeployedToConflict)
+  const specimensDeployed = Math.max(0, specimensDeployedToConflict)
   const retreatedCount = Math.max(0, troopsRetreatedFromConflict)
   const totals = useMemo(() => {
     if (revealPooledTotals) {
@@ -180,6 +187,7 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     groups.length === 0 &&
     deployedCount === 0 &&
     dreadnoughtsDeployed === 0 &&
+    specimensDeployed === 0 &&
     retreatedCount === 0 &&
     !onEditDeployment
   ) {
@@ -655,11 +663,21 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
   }
 
   const renderDeployedUnits = () => {
-    if (deployedCount === 0 && dreadnoughtsDeployed === 0 && !onEditDeployment) return null
+    if (
+      deployedCount === 0 &&
+      dreadnoughtsDeployed === 0 &&
+      specimensDeployed === 0 &&
+      !onEditDeployment
+    ) {
+      return null
+    }
     const parts: string[] = []
     if (deployedCount > 0) parts.push(`${deployedCount} troop${deployedCount === 1 ? '' : 's'}`)
     if (dreadnoughtsDeployed > 0) {
       parts.push(`${dreadnoughtsDeployed} dreadnought${dreadnoughtsDeployed === 1 ? '' : 's'}`)
+    }
+    if (specimensDeployed > 0) {
+      parts.push(`${specimensDeployed} specimen${specimensDeployed === 1 ? '' : 's'}`)
     }
     const summary = parts.join(', ')
     return (
@@ -696,6 +714,13 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
                   dreadnoughtsDeployed,
                   'deployed',
                   renderDreadnoughtGainIcon('turn-gain-combat-icon')
+                )
+              : null}
+            {specimensDeployed > 0
+              ? renderCombatUnitToken(
+                  specimensDeployed,
+                  'deployed',
+                  renderGainIcon(SPECIMEN_ICON, 'Specimen', 'turn-gain-combat-icon')
                 )
               : null}
           </div>
@@ -1045,7 +1070,11 @@ const TurnGainsDisplay: React.FC<TurnGainsDisplayProps> = ({
     )
   }
 
-  const hasCombatSection = deployedCount > 0 || dreadnoughtsDeployed > 0 || retreatedCount > 0
+  const hasCombatSection =
+    deployedCount > 0 ||
+    dreadnoughtsDeployed > 0 ||
+    specimensDeployed > 0 ||
+    retreatedCount > 0
 
   return (
     <div

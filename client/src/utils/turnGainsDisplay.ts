@@ -401,6 +401,13 @@ export function getDreadnoughtsDeployedToConflict(turn: GameState): number {
   return Math.max(0, ct.removableDreadnoughts ?? ct.dreadnoughtsDeployedToConflict ?? 0)
 }
 
+/** Immortality — specimens deployed from the Axolotl tanks to the Conflict this turn. */
+export function getSpecimensDeployedToConflict(turn: GameState): number {
+  const ct = turn.currTurn
+  if (!ct) return 0
+  return Math.max(0, ct.removableSpecimens ?? 0)
+}
+
 /**
  * Troops retreated from the Conflict this turn.
  * Clamps corrupt totals from before deploy-limit enforcement (removable + retreated >> limit).

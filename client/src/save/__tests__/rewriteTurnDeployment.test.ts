@@ -37,4 +37,28 @@ describe('rewriteTurnDeployment', () => {
       next.map(event => `${event.a.type}:${'playerId' in event.a ? event.a.playerId : ''}`)
     ).toEqual(['DEPLOY_TROOP:1', 'END_TURN:0'])
   })
+
+  it('rewrites specimen deploys so they stay specimens', () => {
+    const turn = [
+      entry('DEPLOY_TROOP'),
+      entry('DEPLOY_SPECIMEN'),
+      entry('UNDEPLOY_SPECIMEN'),
+      entry('DEPLOY_SPECIMEN'),
+      entry('END_TURN'),
+    ]
+    // Two troops and one specimen left deployed: the click order is not kept.
+    const next = rewriteTurnDeployment(turn, 0, 2, 0, 1)
+    expect(next.map(event => event.a.type)).toEqual([
+      'DEPLOY_TROOP',
+      'DEPLOY_TROOP',
+      'DEPLOY_SPECIMEN',
+      'END_TURN',
+    ])
+  })
+
+  it('leaves specimen deploys alone when no specimen count is supplied', () => {
+    const turn = [entry('DEPLOY_SPECIMEN'), entry('DEPLOY_TROOP'), entry('END_TURN')]
+    const next = rewriteTurnDeployment(turn, 0, 0, 0)
+    expect(next.map(event => event.a.type)).toEqual(['DEPLOY_SPECIMEN', 'END_TURN'])
+  })
 })

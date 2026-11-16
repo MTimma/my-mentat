@@ -24,6 +24,8 @@ interface RevealTurnStatsPanelProps {
   hideRevealedCards?: boolean
   troopsDeployedToConflict?: number
   dreadnoughtsDeployedToConflict?: number
+  /** Immortality — specimens deployed from the Axolotl tanks this turn. */
+  specimensDeployedToConflict?: number
   troopsRetreatedFromConflict?: number
   resolveCard?: (cardId: number, name: string) => import('../../types/GameTypes').Card | undefined
 }
@@ -36,6 +38,7 @@ const RevealTurnStatsPanel = ({
   gains = [],
   troopsDeployedToConflict = 0,
   dreadnoughtsDeployedToConflict = 0,
+  specimensDeployedToConflict = 0,
   troopsRetreatedFromConflict = 0,
   resolveCard,
   hideRevealedCards = false,
@@ -158,6 +161,7 @@ const RevealTurnStatsPanel = ({
     totalsGains.length > 0 ||
     troopsDeployedToConflict > 0 ||
     dreadnoughtsDeployedToConflict > 0 ||
+    specimensDeployedToConflict > 0 ||
     troopsRetreatedFromConflict > 0 ? (
       <TurnGainsDisplay
         gains={totalsGains}
@@ -168,6 +172,7 @@ const RevealTurnStatsPanel = ({
         resolveCard={resolveCard}
         troopsDeployedToConflict={troopsDeployedToConflict}
         dreadnoughtsDeployedToConflict={dreadnoughtsDeployedToConflict}
+        specimensDeployedToConflict={specimensDeployedToConflict}
         troopsRetreatedFromConflict={troopsRetreatedFromConflict}
       />
     ) : null

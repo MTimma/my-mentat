@@ -27,6 +27,17 @@ type CombatRankArgs = {
   troops: Record<number, number>
   strength: Record<number, number>
   riseOfIx?: boolean
+  /** Immortality — specimens in the conflict fight and rank as troops. */
+  specimens?: Record<number, number>
+}
+
+/** Deployed units that count as troops: real troops plus Immortality specimens. */
+function troopUnits(
+  player: Player,
+  troops: CombatRankArgs['troops'],
+  specimens: CombatRankArgs['specimens']
+): number {
+  return (troops[player.id] ?? 0) + (specimens?.[player.id] ?? 0)
 }
 
 function emptySlots(): CombatRankSlot[] {
@@ -37,7 +48,7 @@ function emptySlots(): CombatRankSlot[] {
 }
 
 /**
- * In-combat players only (≥1 troop or dreadnought). Sorted strength ascending
+ * In-combat players only (≥1 troop/specimen or dreadnought). Sorted strength ascending
  * so the strongest sit in the higher slot. Ties drop one reward place
  * (1st→2nd, 2nd→3rd, 3rd→4th/none); lower player id comes first inside a tied group.
  */
@@ -46,9 +57,10 @@ export function buildCombatRankEntries({
   troops,
   strength,
   riseOfIx = false,
+  specimens,
 }: CombatRankArgs): CombatRankEntry[] {
   const inCombat = players.filter(player => {
-    const troopCount = troops[player.id] ?? 0
+    const troopCount = troopUnits(player, troops, specimens)
     const dreadCount = riseOfIx ? getDreadnoughtsInConflict(player) : 0
     return troopCount >= 1 || dreadCount >= 1
   })
@@ -68,7 +80,7 @@ export function buildCombatRankEntries({
     const s = strength[player.id] ?? 0
     return {
       player,
-      troops: troops[player.id] ?? 0,
+      troops: troopUnits(player, troops, specimens),
       dreadnoughts: riseOfIx ? getDreadnoughtsInConflict(player) : 0,
       strength: s,
       place: combatRewardPlace(s, fieldStrengths),

@@ -11,6 +11,8 @@ import {
 } from '../../../types/GameTypes'
 import { applyGameAction, applyRecordedAction } from '../GameContext'
 import { combatTroopsFor, continueAllConflictRewards, getBaseTestState, makePlayer } from './_helpers'
+import { buildBirdseyeGainsByPlayer } from '../../../utils/birdseyeTurnChrome'
+import { groupGainsForDisplay, splitGainsByCostAndReward } from '../../../utils/turnGainsDisplay'
 
 const ROI_EXPANSIONS = { ...NO_EXPANSIONS, riseOfIx: true, riseOfIxEpic: false }
 
@@ -75,11 +77,48 @@ describe('RoI conflict rewards — FREIGHTER & TECH', () => {
     expect(freighterConflictChoices(s)).toHaveLength(2)
   })
 
-  it('Economic Supremacy first place grants VP and defers the remaining choice', () => {
+  it('Economic Supremacy first place grants 1 VP and offers two optional VP purchases', () => {
     const s = resolveCombat(economySupremacy)
     expect(s.players[0].victoryPoints).toBe(1)
-    expect((s.pendingConflictRewardChoices ?? []).length).toBeGreaterThan(0)
+    expect(s.pendingConflictRewardChoices ?? []).toHaveLength(0)
+    const optional = s.currTurn?.optionalEffects ?? []
+    expect(optional).toHaveLength(2)
+    expect(optional.map(effect => effect.cost)).toEqual([{ solari: 6 }, { spice: 4 }])
+    expect(optional.every(effect => effect.reward.victoryPoints === 1)).toBe(true)
     expect(s.phase).toBe(GamePhase.COMBAT_REWARDS)
+  })
+
+  it('Economic Supremacy optional VP purchases are paid, not free', () => {
+    let s = resolveCombat(economySupremacy)
+    const [solariPurchase] = s.currTurn?.optionalEffects ?? []
+    expect(solariPurchase).toBeDefined()
+    s = applyGameAction(s, { type: 'PAY_COST', playerId: 0, effectId: solariPurchase.id })
+    expect(s.players[0].victoryPoints).toBe(2)
+    expect(s.players[0].solari).toBe(14)
+    expect(s.currTurn?.optionalEffects).toHaveLength(1)
+  })
+
+  it('Economic Supremacy paid VP keeps its cost and reward gains as one row', () => {
+    let s = resolveCombat(economySupremacy)
+    for (const effect of s.currTurn?.optionalEffects ?? []) {
+      s = applyGameAction(s, { type: 'PAY_COST', playerId: 0, effectId: effect.id })
+    }
+    expect(s.players[0].victoryPoints).toBe(3)
+
+    // The birdseye gains strip dedupes identical gains; the two paid VP rewards must
+    // survive alongside the automatic 1 VP so each shows as cost → reward.
+    const gains = buildBirdseyeGainsByPlayer(s)[0] ?? []
+    expect(gains.filter(gain => gain.type === RewardType.VICTORY_POINTS)).toHaveLength(3)
+
+    const rows = groupGainsForDisplay(gains).map(group => {
+      const { costs, rewards } = splitGainsByCostAndReward(group.gains)
+      return { costs: costs.map(c => c.type), rewards: rewards.map(r => r.type) }
+    })
+    expect(rows).toEqual([
+      { costs: [], rewards: [RewardType.VICTORY_POINTS] },
+      { costs: [RewardType.SOLARI], rewards: [RewardType.VICTORY_POINTS] },
+      { costs: [RewardType.SPICE], rewards: [RewardType.VICTORY_POINTS] },
+    ])
   })
 
   it('no freighter/tech handlers when riseOfIx false', () => {

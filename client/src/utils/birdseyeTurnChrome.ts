@@ -3,6 +3,7 @@ import {
   getGainsForTurnState,
   getOtherPlayersGainsForTurnState,
   getDreadnoughtsDeployedToConflict,
+  getSpecimensDeployedToConflict,
   getTroopsDeployedToConflict,
   getTroopsRetreatedFromConflict,
   isCombatHistoryEntry,
@@ -20,7 +21,8 @@ function pushGain(byPlayer: Record<number, Gain[]>, gain: Gain): void {
       existing.name === gain.name &&
       existing.type === gain.type &&
       existing.amount === gain.amount &&
-      existing.round === gain.round
+      existing.round === gain.round &&
+      existing.effectId === gain.effectId
   )
   if (duplicate) return
   list.push(gain)
@@ -63,14 +65,16 @@ export function buildBirdseyeGainsByPlayer(turn: GameState): Record<number, Gain
 export function birdseyeTroopDeployCounts(turn: GameState): {
   deployed: number
   dreadnoughts: number
+  specimens: number
   retreated: number
 } {
   if (isCombatHistoryEntry(turn) || isEndgameHistoryEntry(turn)) {
-    return { deployed: 0, dreadnoughts: 0, retreated: 0 }
+    return { deployed: 0, dreadnoughts: 0, specimens: 0, retreated: 0 }
   }
   return {
     deployed: getTroopsDeployedToConflict(turn),
     dreadnoughts: getDreadnoughtsDeployedToConflict(turn),
+    specimens: getSpecimensDeployedToConflict(turn),
     retreated: getTroopsRetreatedFromConflict(turn),
   }
 }

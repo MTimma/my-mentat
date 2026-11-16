@@ -35,14 +35,9 @@ export const RISE_OF_IX_CONFLICTS: ConflictCard[] = [
     rewards: {
       first: [
         { type: RewardType.VICTORY_POINTS, amount: 1 },
-        {
-          type: RewardType.VICTORY_POINTS,
-          amount: 0,
-          choiceOptions: [
-            { type: RewardType.VICTORY_POINTS, amount: 1, cost: { solari: 6 } },
-            { type: RewardType.VICTORY_POINTS, amount: 1, cost: { spice: 4 } },
-          ],
-        },
+        // Optional purchases (both may be taken): pay to gain 1 VP each.
+        { type: RewardType.VICTORY_POINTS, amount: 1, cost: { solari: 6 } },
+        { type: RewardType.VICTORY_POINTS, amount: 1, cost: { spice: 4 } },
       ],
       second: [{ type: RewardType.VICTORY_POINTS, amount: 1 }],
       third: [

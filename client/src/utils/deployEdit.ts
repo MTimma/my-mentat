@@ -16,6 +16,8 @@ export interface DeployEditSession {
   garrisonTroops: number
   /** Garrison plus dreadnoughts already deployed on this turn. */
   garrisonDreadnoughts: number
+  /** Axolotl tanks plus specimens already deployed on this turn. */
+  tankSpecimens: number
 }
 
 /** Seed the deploy-dock session from a past turn's committed deployment. */
@@ -25,7 +27,7 @@ export function seedDeployEdit(turn: GameState, historyIndex: number): DeployEdi
   const troops = Math.max(0, curr.removableTroops ?? 0)
   const dreadnoughts = Math.max(0, curr.removableDreadnoughts ?? 0)
   const specimens = Math.max(0, curr.removableSpecimens ?? 0)
-  if (!curr.canDeployTroops && troops === 0 && dreadnoughts === 0) return null
+  if (!curr.canDeployTroops && troops === 0 && dreadnoughts === 0 && specimens === 0) return null
   const player = turn.players.find(p => p.id === curr.playerId)
   if (!player) return null
   const theseTroops = Math.max(0, curr.removableTheseTroops ?? 0)
@@ -48,6 +50,7 @@ export function seedDeployEdit(turn: GameState, historyIndex: number): DeployEdi
     theseLimit: Math.max(curr.theseTroopsDeployLimit ?? 0, theseTroops),
     garrisonTroops: player.troops + troops,
     garrisonDreadnoughts: (player.dreadnoughts?.garrison ?? 0) + dreadnoughts,
+    tankSpecimens: (player.specimens ?? 0) + specimens,
   }
 }
 
@@ -80,6 +83,18 @@ export function dreadnoughtDeployRoom(edit: DeployEditSession): {
   garrisonLeft: number
 } {
   const garrisonLeft = Math.max(0, edit.garrisonDreadnoughts - edit.dreadnoughts)
+  return {
+    deployable: Math.max(0, Math.min(garrisonLeft, generalSlotsLeft(edit))),
+    garrisonLeft,
+  }
+}
+
+/** Specimens that can still be added, and the specimens left in the tanks. */
+export function specimenDeployRoom(edit: DeployEditSession): {
+  deployable: number
+  garrisonLeft: number
+} {
+  const garrisonLeft = Math.max(0, edit.tankSpecimens - edit.specimens)
   return {
     deployable: Math.max(0, Math.min(garrisonLeft, generalSlotsLeft(edit))),
     garrisonLeft,
