@@ -100,4 +100,15 @@ describe('Alt / Option card zoom', () => {
     expect(tsx).toContain("event.getModifierState('Alt')")
     expect(tsx).toContain('altDownRef')
   })
+
+  it('coalesces hover scans into one per animation frame', () => {
+    expect(tsx).toContain('pendingEvent')
+    expect(tsx).toContain('window.requestAnimationFrame(flush)')
+    expect(tsx).toContain('window.cancelAnimationFrame(frame)')
+  })
+
+  it('uses checkVisibility instead of walking every ancestor', () => {
+    expect(tsx).toContain('checkVisibility')
+    expect(tsx).toContain('checkVisibilityCSS: true')
+  })
 })

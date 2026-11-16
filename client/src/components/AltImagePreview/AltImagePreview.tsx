@@ -72,6 +72,12 @@ function isVisiblePreviewTarget(img: HTMLImageElement): boolean {
   const rect = img.getBoundingClientRect()
   if (rect.width <= 0 || rect.height <= 0) return false
 
+  // checkVisibility is O(1); the ancestor walk below forces a style read per
+  // ancestor and made the hover scan expensive on boards with many images.
+  if (typeof img.checkVisibility === 'function') {
+    return img.checkVisibility({ checkVisibilityCSS: true })
+  }
+
   let node: Element | null = img
   while (node && node !== document.body) {
     const style = window.getComputedStyle(node)
@@ -452,8 +458,7 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
   useEffect(() => {
     if (!isImageZoomHintEnabled()) return
 
-    const onMouseMove = (event: MouseEvent) => {
-      pointerRef.current = { x: event.clientX, y: event.clientY }
+    const processMove = (event: MouseEvent) => {
       const altActive = altHeld || event.altKey
       const img = findPreviewImageAtPoint(event.clientX, event.clientY, event.target)
       if (!img || altActive) {
@@ -498,13 +503,36 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
 
       applyPreview(event.clientX, event.clientY, event.target, false)
     }
+
+    // Coalesce mousemove into one scan per frame. The scan reads layout for
+    // every preview image, so running it per raw event janks the whole UI.
+    let frame = 0
+    let pendingEvent: MouseEvent | null = null
+    const flush = () => {
+      frame = 0
+      const event = pendingEvent
+      pendingEvent = null
+      if (event) processMove(event)
+    }
+    const onMouseMove = (event: MouseEvent) => {
+      pointerRef.current = { x: event.clientX, y: event.clientY }
+      pendingEvent = event
+      if (frame) return
+      frame = window.requestAnimationFrame(flush)
+    }
     const onMouseLeave = () => {
+      if (frame) {
+        window.cancelAnimationFrame(frame)
+        frame = 0
+      }
+      pendingEvent = null
       setPreview(null)
       clearZoomHint()
     }
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('mouseleave', onMouseLeave)
     return () => {
+      if (frame) window.cancelAnimationFrame(frame)
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('mouseleave', onMouseLeave)
       clearZoomHint()

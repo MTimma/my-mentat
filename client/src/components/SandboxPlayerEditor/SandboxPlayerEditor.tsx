@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import { Card, ControlMarkerType, Expansions, FactionType, Player, PlayerColor } from '../../types/GameTypes'
 import { applyLeaderStartingResourceDelta } from '../../data/leaderAbilities/beastSetup'
 import {
@@ -14,7 +14,7 @@ import DreadnoughtIcon from '../DreadnoughtIcon/DreadnoughtIcon'
 import FreighterIcon from '../FreighterIcon/FreighterIcon'
 import NegotiatorIcon from '../NegotiatorIcon/NegotiatorIcon'
 import { defaultDreadnoughtsForExpansions } from '../../utils/dreadnoughts'
-import { MAX_TROOPS_PER_PLAYER, seedTroopSupply } from '../../utils/troops'
+import { MAX_TROOPS_PER_PLAYER } from '../../utils/troops'
 import CardSearch from '../CardSearch/CardSearch'
 import ValueStepper from '../ValueStepper/ValueStepper'
 import { usePlayBoardModalPortal } from '../../hooks/usePlayBoardModalPortal'
@@ -168,6 +168,22 @@ function pickNumericDraft(player: Player): Record<NumericKey, number> {
   }
 }
 
+type ExtraKey = 'freighterStep' | 'negotiatorsOnIx' | 'specimens' | 'tleilaxuStep'
+
+function pickExtraDraft(player: Player): Record<ExtraKey, number> {
+  return {
+    freighterStep: player.freighterStep ?? 0,
+    negotiatorsOnIx: player.negotiatorsOnIx ?? 0,
+    specimens: player.specimens ?? 0,
+    tleilaxuStep: player.tleilaxuStep ?? 0,
+  }
+}
+
+/** Supply is the remainder of the 12 troop pieces not in play. */
+function troopSupplyFor(troops: number, negotiators: number, specimens: number): number {
+  return Math.max(0, MAX_TROOPS_PER_PLAYER - troops - negotiators - specimens)
+}
+
 type PileEditor = 'deck' | 'discard' | 'trash'
 
 const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
@@ -204,40 +220,34 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   const [selectedPileCards, setSelectedPileCards] = useState<Card[]>([])
   const [numericDraft, setNumericDraft] = useState(() => pickNumericDraft(player))
   const [influenceDraft, setInfluenceDraft] = useState(() => ({ ...playerInfluence }))
+  const [extraDraft, setExtraDraft] = useState(() => pickExtraDraft(player))
   const [dreadnoughtGarrisonDraft, setDreadnoughtGarrisonDraft] = useState(
     () => player.dreadnoughts?.garrison ?? 0
   )
   const { portalNode, scopedClass, waitForBoardTarget } = usePlayBoardModalPortal(true)
 
-  // Re-sync when opening for another player or when leader/resources change in game state.
+  // Re-sync only when the editor switches seats or the leader changes. Counter edits
+  // update the draft immediately and dispatch the game-state change in a transition,
+  // so syncing on every resource change would overwrite newer clicks with older state.
   useEffect(() => {
     setNumericDraft(pickNumericDraft(player))
-  }, [
-    player.id,
-    player.leader.name,
-    player.spice,
-    player.solari,
-    player.water,
-    player.troops,
-    player.victoryPoints,
-    player.agents,
-    player.handCount,
-    player.intrigueCount,
-  ])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only re-sync on seat/leader change
+  }, [player.id, player.leader.name])
 
   useEffect(() => {
     setInfluenceDraft({ ...playerInfluence })
-  }, [
-    player.id,
-    playerInfluence[FactionType.EMPEROR],
-    playerInfluence[FactionType.SPACING_GUILD],
-    playerInfluence[FactionType.BENE_GESSERIT],
-    playerInfluence[FactionType.FREMEN],
-  ])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only re-sync on seat change
+  }, [player.id])
+
+  useEffect(() => {
+    setExtraDraft(pickExtraDraft(player))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only re-sync on seat change
+  }, [player.id])
 
   useEffect(() => {
     setDreadnoughtGarrisonDraft(player.dreadnoughts?.garrison ?? 0)
-  }, [player.id, player.dreadnoughts?.garrison])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only re-sync on seat change
+  }, [player.id])
 
   useEffect(() => {
     nameFocusedRef.current = false
@@ -377,14 +387,21 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
     if (leader.name === player.leader.name) return
 
     if (usedLeaderNames.includes(leader.name)) {
-      onUpdate({ leader })
+      startTransition(() => onUpdate({ leader }))
       return
     }
 
     const { spice, solari, water, intrigueCount } = applyLeaderStartingResourceDelta(player, leader)
     setNumericDraft(prev => ({ ...prev, spice, solari, water, intrigueCount }))
-    onUpdate(
-      seedTessiaSnoopers({ ...player, leader, spice, solari, water, intrigueCount }, expansions.riseOfIx)
+    // Keep the leader change ordered after any pending counter transitions so its
+    // starting resources are not overwritten by an older counter value.
+    startTransition(() =>
+      onUpdate(
+        seedTessiaSnoopers(
+          { ...player, leader, spice, solari, water, intrigueCount },
+          expansions.riseOfIx
+        )
+      )
     )
   }
 
@@ -403,14 +420,18 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
 
   const adjustNumeric = (key: NumericKey, value: number) => {
     const next = Math.max(0, value)
+    // Update the visible value immediately; the game-state update (and the board
+    // re-render it triggers) runs as a transition so rapid clicks stay responsive.
     setNumericDraft(prev => ({ ...prev, [key]: next }))
-    if (next !== player[key]) {
-      const patch: Partial<Player> = { [key]: next }
-      if (key === 'troops') {
-        Object.assign(patch, seedTroopSupply({ ...player, troops: next }))
-      }
-      onUpdate(patch)
+    const patch: Partial<Player> = { [key]: next }
+    if (key === 'troops') {
+      patch.troopSupply = troopSupplyFor(
+        next,
+        extraDraft.negotiatorsOnIx,
+        extraDraft.specimens
+      )
     }
+    startTransition(() => onUpdate(patch))
   }
 
   const clampInfluence = (value: number) => Math.max(0, Math.min(MAX_INFLUENCE, value))
@@ -428,9 +449,30 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
   const adjustInfluence = (faction: FactionType, value: number) => {
     const next = clampInfluence(value)
     setInfluenceDraft(prev => ({ ...prev, [faction]: next }))
-    if (next !== (playerInfluence[faction] ?? 0)) {
-      onInfluenceUpdate(faction, next)
+    startTransition(() => onInfluenceUpdate(faction, next))
+  }
+
+  const adjustExtra = (key: ExtraKey, value: number) => {
+    const next = Math.max(0, value)
+    setExtraDraft(prev => ({ ...prev, [key]: next }))
+    const patch: Partial<Player> = {}
+    if (key === 'freighterStep') {
+      patch.freighterStep = Math.max(0, Math.min(3, next)) as 0 | 1 | 2 | 3
+    } else if (key === 'negotiatorsOnIx') {
+      patch.negotiatorsOnIx = next
+      patch.troopSupply = troopSupplyFor(numericDraft.troops, next, extraDraft.specimens)
+    } else if (key === 'specimens') {
+      const clamped = Math.min(MAX_TROOPS_PER_PLAYER, next)
+      patch.specimens = clamped
+      patch.troopSupply = troopSupplyFor(
+        numericDraft.troops,
+        extraDraft.negotiatorsOnIx,
+        clamped
+      )
+    } else {
+      patch.tleilaxuStep = clampTleilaxuStep(next)
     }
+    startTransition(() => onUpdate(patch))
   }
 
   const handleClose = () => {
@@ -491,7 +533,7 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
     const next = Math.max(0, Math.min(maxGarrison, value))
     const supply = Math.max(0, 2 - next - conflict - controlCount)
     setDreadnoughtGarrisonDraft(next)
-    if (next !== (player.dreadnoughts?.garrison ?? 0)) {
+    startTransition(() =>
       onUpdate({
         dreadnoughts: {
           ...base,
@@ -501,7 +543,7 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
           control: base.control ?? [],
         },
       })
-    }
+    )
   }
 
   const overlay = (
@@ -732,10 +774,8 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
                 compact
                 min={0}
                 max={3}
-                value={player.freighterStep ?? 0}
-                onChange={value =>
-                  onUpdate({ freighterStep: Math.max(0, Math.min(3, value)) as 0 | 1 | 2 | 3 })
-                }
+                value={extraDraft.freighterStep}
+                onChange={value => adjustExtra('freighterStep', value)}
                 icon={<FreighterIcon size="lg" title="Shipping track" />}
                 decreaseLabel="Decrease shipping track position"
                 increaseLabel="Increase shipping track position"
@@ -745,15 +785,8 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
               <ValueStepper
                 compact
                 max={12}
-                value={player.negotiatorsOnIx ?? 0}
-                onChange={value => {
-                  const next = Math.max(0, value)
-                  const seeded = seedTroopSupply({ ...player, negotiatorsOnIx: next })
-                  onUpdate({
-                    negotiatorsOnIx: next,
-                    troopSupply: seeded.troopSupply,
-                  })
-                }}
+                value={extraDraft.negotiatorsOnIx}
+                onChange={value => adjustExtra('negotiatorsOnIx', value)}
                 icon={<NegotiatorIcon playerId={player.id} color={player.color} size="md" />}
                 decreaseLabel="Decrease tech negotiators on Ix"
                 increaseLabel="Increase tech negotiators on Ix"
@@ -763,15 +796,8 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
               <ValueStepper
                 compact
                 max={MAX_TROOPS_PER_PLAYER}
-                value={player.specimens ?? 0}
-                onChange={value => {
-                  const next = Math.max(0, Math.min(MAX_TROOPS_PER_PLAYER, value))
-                  const seeded = seedTroopSupply({ ...player, specimens: next })
-                  onUpdate({
-                    specimens: next,
-                    troopSupply: seeded.troopSupply,
-                  })
-                }}
+                value={extraDraft.specimens}
+                onChange={value => adjustExtra('specimens', value)}
                 icon={<img src="/icon/specimen.png" alt="" aria-hidden="true" />}
                 decreaseLabel="Decrease specimens"
                 increaseLabel="Increase specimens"
@@ -781,8 +807,8 @@ const SandboxPlayerEditor: React.FC<SandboxPlayerEditorProps> = ({
               <ValueStepper
                 compact
                 max={TLEILAXU_TRACK_MAX_STEP}
-                value={player.tleilaxuStep ?? 0}
-                onChange={value => onUpdate({ tleilaxuStep: clampTleilaxuStep(value) })}
+                value={extraDraft.tleilaxuStep}
+                onChange={value => adjustExtra('tleilaxuStep', value)}
                 icon={<img src="/icon/tleilaxu.png" alt="" aria-hidden="true" />}
                 decreaseLabel="Decrease Tleilaxu track"
                 increaseLabel="Increase Tleilaxu track"
