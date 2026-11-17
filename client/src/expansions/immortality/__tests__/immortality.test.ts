@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ChoiceType, GamePhase, NO_EXPANSIONS, AgentIcon, type Card, type FixedOptionsChoice, type GameState, type Player, type Reward } from '../../../types/GameTypes'
+import { ChoiceType, GamePhase, NO_EXPANSIONS, AgentIcon, TurnType, type Card, type FixedOptionsChoice, type GameState, type Player, type Reward } from '../../../types/GameTypes'
 import { getBaseTestState, stubDeckCard } from '../../../components/GameContext/__tests__/_helpers'
 import { applyGameAction } from '../../../components/GameContext/GameContext'
 import { playRequirementSatisfied } from '../../../components/GameContext/requirements'
@@ -178,11 +178,16 @@ describe('Immortality — reducer actions', () => {
     return { id, name, image: '', agentIcons: [], cost, immortality: true, tleilaxu: true }
   }
 
+  function revealTurn(playerId = 0): GameState['currTurn'] {
+    return { playerId, type: TurnType.REVEAL, persuasionCount: 0 }
+  }
+
   it('ACQUIRE_TLEILAXU spends specimens, discards the card, and opens a refill slot', () => {
     const row = [tleilaxuCard(3001, 'Contaminator', 1), tleilaxuCard(3002, 'From the Tanks', 2)]
     let state = immortalityState({
       tleilaxuRow: row,
       tleilaxuRowDeck: [tleilaxuCard(3003, 'Ghola', 3)],
+      currTurn: revealTurn(),
     })
     state = { ...state, players: state.players.map(p => (p.id === 0 ? { ...p, specimens: 3 } : p)) }
 
@@ -195,7 +200,7 @@ describe('Immortality — reducer actions', () => {
 
   it('ACQUIRE_TLEILAXU keeps Reclaimed Forces in the row (permanent reserve)', () => {
     const row = [tleilaxuCard(3001, 'Reclaimed Forces', 3)]
-    let state = immortalityState({ tleilaxuRow: row, tleilaxuRowDeck: [] })
+    let state = immortalityState({ tleilaxuRow: row, tleilaxuRowDeck: [], currTurn: revealTurn() })
     state = {
       ...state,
       players: state.players.map(p =>
@@ -217,7 +222,7 @@ describe('Immortality — reducer actions', () => {
 
   it('before the first genetic marker, a Tleilaxu card goes to the discard pile', () => {
     const row = [tleilaxuCard(3002, 'From the Tanks', 2)]
-    let state = immortalityState({ tleilaxuRow: row })
+    let state = immortalityState({ tleilaxuRow: row, currTurn: revealTurn() })
     state = {
       ...state,
       players: state.players.map(p =>
@@ -236,7 +241,7 @@ describe('Immortality — reducer actions', () => {
 
   it('on r3 or later, the player can put the acquired Tleilaxu card on top of the draw pile', () => {
     const row = [tleilaxuCard(3002, 'From the Tanks', 2)]
-    let state = immortalityState({ tleilaxuRow: row })
+    let state = immortalityState({ tleilaxuRow: row, currTurn: revealTurn() })
     const hand = tleilaxuCard(1, 'Hand', 0)
     const draw = tleilaxuCard(2, 'Draw', 0)
     state = {
@@ -260,11 +265,30 @@ describe('Immortality — reducer actions', () => {
 
   it('ACQUIRE_TLEILAXU is rejected when specimens are insufficient', () => {
     const row = [tleilaxuCard(3002, 'From the Tanks', 2)]
-    let state = immortalityState({ tleilaxuRow: row })
+    let state = immortalityState({ tleilaxuRow: row, currTurn: revealTurn() })
     state = { ...state, players: state.players.map(p => (p.id === 0 ? { ...p, specimens: 1 } : p)) }
     const next = applyGameAction(state, { type: 'ACQUIRE_TLEILAXU', playerId: 0, cardId: 3002 })
     expect(next.players[0].specimens).toBe(1)
     expect(next.tleilaxuRow?.length).toBe(1)
+  })
+
+  it('ACQUIRE_TLEILAXU is rejected outside the Reveal turn', () => {
+    const row = [tleilaxuCard(3002, 'From the Tanks', 2)]
+    let state = immortalityState({
+      tleilaxuRow: row,
+      currTurn: { playerId: 0, type: TurnType.ACTION, cardId: 1, agentSpaceId: 0, agentIcon: AgentIcon.CITY },
+    })
+    state = { ...state, players: state.players.map(p => (p.id === 0 ? { ...p, specimens: 3 } : p)) }
+    const next = applyGameAction(state, { type: 'ACQUIRE_TLEILAXU', playerId: 0, cardId: 3002 })
+    expect(next).toBe(state)
+  })
+
+  it('ACQUIRE_TLEILAXU is rejected when it is not the active player\'s turn', () => {
+    const row = [tleilaxuCard(3002, 'From the Tanks', 2)]
+    let state = immortalityState({ tleilaxuRow: row, currTurn: revealTurn(1) })
+    state = { ...state, players: state.players.map(p => (p.id === 0 ? { ...p, specimens: 3 } : p)) }
+    const next = applyGameAction(state, { type: 'ACQUIRE_TLEILAXU', playerId: 0, cardId: 3002 })
+    expect(next).toBe(state)
   })
 
   it('SET_TLEILAXU_ROW picks the purchasable row from the pool', () => {

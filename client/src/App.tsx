@@ -2415,6 +2415,7 @@ const GameContent = ({
             />
             {gameState.expansions?.immortality ? (
               <ImmortalityRow
+                canAcquire={!isViewingHistory}
                 sandboxSetup={
                   inSandboxSetup
                     ? {

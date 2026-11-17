@@ -9942,7 +9942,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'SET_TLEILAXU_STEP':
       if (!state.expansions?.immortality) return state
       return setTleilaxuStep(state, action.playerId, action.step)
-    case 'ACQUIRE_TLEILAXU':
+    case 'ACQUIRE_TLEILAXU': {
+      // Tleilaxu Row cards may only be acquired during the player's Reveal turn.
+      if (state.currTurn?.type !== TurnType.REVEAL) return state
+      if (state.currTurn.playerId !== action.playerId) return state
       return handleAcquireTleilaxu(
         state,
         action.playerId,
@@ -9950,6 +9953,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         action.freeAcquire,
         action.acquireToTop
       )
+    }
     case 'SET_TLEILAXU_ROW':
       return handleSetTleilaxuRow(state, action.cardIds)
     case 'USE_FAMILY_ATOMICS':

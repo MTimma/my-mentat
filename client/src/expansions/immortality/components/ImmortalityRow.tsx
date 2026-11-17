@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { useGame } from '../../../components/GameContext/gameContextState'
 import { withImageZoomHint } from '../../../components/AltImagePreview/imageZoomHint'
-import type { Card } from '../../../types/GameTypes'
+import { TurnType, type Card } from '../../../types/GameTypes'
 import { buildTleilaxuPool } from '../../../catalog/runtime'
 import { hasFirstGeneticMarker, nextResearchNodes } from '../researchTrack'
 import BeneTleilaxBoardPanel from '../../../components/ImageBoard/BeneTleilaxBoardPanel'
@@ -17,13 +17,15 @@ interface ImmortalityRowProps {
     onConfigure: () => void
     requiredCount: number
   }
+  /** False while viewing history — the row is read-only. */
+  canAcquire?: boolean
 }
 
 /**
  * Immortality Tleilaxu shop: two purchasable slots + Reclaimed Forces reserve,
  * mounted to the right of the Imperium Row at the same height.
  */
-const ImmortalityRow: React.FC<ImmortalityRowProps> = ({ sandboxSetup }) => {
+const ImmortalityRow: React.FC<ImmortalityRowProps> = ({ sandboxSetup, canAcquire = true }) => {
   const { gameState, dispatch } = useGame()
   const [refillOpen, setRefillOpen] = useState(false)
   const [deckTopChoice, setDeckTopChoice] = useState<Card | null>(null)
@@ -47,15 +49,17 @@ const ImmortalityRow: React.FC<ImmortalityRowProps> = ({ sandboxSetup }) => {
       ? gameState.pendingResearchAdvance.playerId === activePlayer.id
       : false
 
-  const canAcquire = (card: Card): boolean => {
-    if (!activePlayer) return false
+  const isRevealTurn = gameState.currTurn?.type === TurnType.REVEAL
+
+  const canBuy = (card: Card): boolean => {
+    if (!activePlayer || !canAcquire || !isRevealTurn) return false
     return (card.cost ?? 0) <= specimens
   }
 
   const canPlaceOnDeck = activePlayer ? hasFirstGeneticMarker(activePlayer.researchNodeId) : false
 
   const acquire = (card: Card, acquireToTop?: boolean) => {
-    if (!activePlayer || !canAcquire(card)) return
+    if (!activePlayer || !canBuy(card)) return
     dispatch({
       type: 'ACQUIRE_TLEILAXU',
       playerId: activePlayer.id,
@@ -65,7 +69,7 @@ const ImmortalityRow: React.FC<ImmortalityRowProps> = ({ sandboxSetup }) => {
   }
 
   const requestAcquire = (card: Card) => {
-    if (!activePlayer || !canAcquire(card)) return
+    if (!activePlayer || !canBuy(card)) return
     if (card.name !== RECLAIMED_FORCES_NAME && canPlaceOnDeck) {
       setDeckTopChoice(card)
       return
@@ -141,13 +145,13 @@ const ImmortalityRow: React.FC<ImmortalityRowProps> = ({ sandboxSetup }) => {
             'imperium-card',
             'no-button',
             'immortality-row__card',
-            canAcquire(card) ? 'can-acquire' : '',
+            canBuy(card) ? 'can-acquire' : '',
           ]
             .filter(Boolean)
             .join(' ')}
           title={withImageZoomHint(`${card.name} — ${card.cost ?? 0} specimen`)}
           onClick={() => requestAcquire(card)}
-          disabled={!canAcquire(card)}
+          disabled={!canBuy(card)}
         >
           <img
             src={card.image}
@@ -203,7 +207,7 @@ const ImmortalityRow: React.FC<ImmortalityRowProps> = ({ sandboxSetup }) => {
                 'no-button',
                 'immortality-row__card',
                 'immortality-row__card--reserve',
-                canAcquire(reclaimedForces) ? 'can-acquire' : '',
+                canBuy(reclaimedForces) ? 'can-acquire' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
@@ -211,7 +215,7 @@ const ImmortalityRow: React.FC<ImmortalityRowProps> = ({ sandboxSetup }) => {
                 `${reclaimedForces.name} — ${reclaimedForces.cost ?? 0} specimen (permanent reserve)`
               )}
               onClick={() => acquire(reclaimedForces)}
-              disabled={!canAcquire(reclaimedForces)}
+              disabled={!canBuy(reclaimedForces)}
             >
               <img
                 src={reclaimedForces.image}
