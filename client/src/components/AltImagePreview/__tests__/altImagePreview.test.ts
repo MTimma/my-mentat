@@ -111,4 +111,13 @@ describe('Alt / Option card zoom', () => {
     expect(tsx).toContain('checkVisibility')
     expect(tsx).toContain('checkVisibilityCSS: true')
   })
+
+  it('does not show hover previews or tooltips above an open modal', () => {
+    expect(tsx).toContain('MODAL_DIALOG_SELECTOR')
+    expect(tsx).toContain('isBehindOpenModal')
+    expect(tsx).toContain('if (isBehindOpenModal(img)) return null')
+    expect(tsx).toContain('if (isBehindOpenModal(titleImg)) return null')
+    expect(tsx).toContain('if (isBehindOpenModal(gainEl)) return null')
+    expect(tsx).toContain('if (isBehindOpenModal(img)) {')
+  })
 })

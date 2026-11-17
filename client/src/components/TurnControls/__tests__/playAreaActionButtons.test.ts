@@ -181,4 +181,17 @@ describe('Play area action buttons', () => {
     expect(turnControls).toContain('techActivationRequiresDiscard')
     expect(app).toContain('turnControlsRef.current?.activateTech(playerId, tileId)')
   })
+
+  it('does not set native title tooltips while a selection modal is open', () => {
+    expect(turnControls).toContain("variant === 'compact' && (selectionActive || activeCardPreviewId !== null)")
+    expect(turnControls).not.toContain(
+      "'Finish the current selection before resolving other effects.'"
+    )
+    expect(turnControls).not.toContain(
+      "'Finish the current selection before resolving other choices.'"
+    )
+    expect(turnControls).not.toContain(
+      "'Finish the current selection before claiming rewards.'"
+    )
+  })
 })

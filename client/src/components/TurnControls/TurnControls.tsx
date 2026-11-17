@@ -2275,7 +2275,15 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 }
               }}
               disabled={disabled}
-              title={frameOnly ? ariaLabel : tooltip}
+              // A selection or card-effects modal is open: a native title tooltip on
+              // the footer chip would render above the modal.
+              title={
+                frameOnly
+                  ? ariaLabel
+                  : variant === 'compact' && (selectionActive || activeCardPreviewId !== null)
+                    ? undefined
+                    : tooltip
+              }
               aria-label={ariaLabel}
             >
               {frameOnly
@@ -2324,7 +2332,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 voiceSelectionActive ||
                 masterstrokeSelectionActive ||
                 influenceBoardSelectionActive
-                  ? 'Finish the current selection before resolving other effects.'
+                  ? undefined
                   : cannotAfford
                     ? 'Cannot afford this optional effect.'
                     : optionalAriaLabel
@@ -2386,13 +2394,6 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                   masterstrokeSelectionActive ||
                   influenceBoardSelectionActive
                 }
-                title={
-                  voiceSelectionActive ||
-                  masterstrokeSelectionActive ||
-                  influenceBoardSelectionActive
-                    ? 'Finish the current selection before resolving other choices.'
-                    : undefined
-                }
               >
                 {cardSelectChoice.prompt}
               </button>
@@ -2427,11 +2428,6 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                       className="effect-btn effect-btn--compact choice counter-choice-confirm"
                       disabled={counterChoice.disabled || selectionBlocked}
                       onClick={() => resolveCounterChoice(counterChoice, draft)}
-                      title={
-                        selectionBlocked
-                          ? 'Finish the current selection before resolving other choices.'
-                          : undefined
-                      }
                     >
                       Confirm
                     </button>
@@ -2445,11 +2441,6 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 className={`effect-btn effect-btn--${variant} choice`}
                 onClick={() => setActiveCountChoice(counterChoice)}
                 disabled={counterChoice.disabled || selectionBlocked}
-                title={
-                  selectionBlocked
-                    ? 'Finish the current selection before resolving other choices.'
-                    : undefined
-                }
               >
                 {counterChoice.prompt}
               </button>
@@ -2500,13 +2491,6 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                 voiceSelectionActive ||
                 masterstrokeSelectionActive ||
                 influenceBoardSelectionActive
-              }
-              title={
-                voiceSelectionActive ||
-                masterstrokeSelectionActive ||
-                influenceBoardSelectionActive
-                  ? 'Finish the current selection before resolving other choices.'
-                  : undefined
               }
             >
               {fixedChoice.prompt || 'Choose one'}
@@ -3491,7 +3475,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                   }
                   title={
                     voiceSelectionActive || masterstrokeSelectionActive
-                      ? 'Finish the current selection before claiming rewards.'
+                      ? undefined
                       : 'Apply non-interactive rewards; choices, trash, and target selections stay pending.'
                   }
                 >
@@ -3782,7 +3766,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                             }
                             title={
                               voiceSelectionActive || masterstrokeSelectionActive
-                                ? 'Finish the current selection before claiming rewards.'
+                                ? undefined
                                 : 'Apply non-interactive rewards; choices, trash, and target selections stay pending.'
                             }
                           >
@@ -3875,7 +3859,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
                         disabled={voiceSelectionActive || masterstrokeSelectionActive || simpleAutoApplyCount === 0}
                         title={
                           voiceSelectionActive || masterstrokeSelectionActive
-                            ? 'Finish the current selection before claiming rewards.'
+                            ? undefined
                             : 'Apply non-interactive rewards; choices, trash, and target selections stay pending.'
                         }
                       >

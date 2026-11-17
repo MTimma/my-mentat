@@ -34,6 +34,35 @@ type ZoomHintState = {
 const ZOOM_HINT_DELAY_MS = 400
 const TITLE_BACKUP_ATTR = 'data-zoom-title-backup'
 
+/** Modal surfaces that should hide hover previews for content behind them. */
+const MODAL_DIALOG_SELECTOR = [
+  '[role="dialog"]',
+  '[aria-modal="true"]',
+  '.modal-overlay',
+  '.dialog-overlay',
+  '.imperium-preview-overlay',
+  '.imperium-select-overlay',
+  '.combat-phase-overlay',
+  '.combat-results-overlay',
+  '.conflict-select-overlay',
+  '.card-selection-dialog-overlay',
+  '.card-selection-dialog-overlay-standalone',
+  '.tech-acquire-overlay',
+  '.tech-stacks-overlay',
+  '.sell-melange-popup',
+  '.sandbox-player-editor-overlay',
+  '.endgame-overlay',
+  '.player-overview-overlay',
+  '.player-tech-overlay',
+  '.leader-image-overlay',
+  '.masterstroke-faction-overlay',
+  '.combat-player-detail-overlay',
+  '.undo-confirm-overlay',
+  '.card-trashing-dialog-overlay',
+  '.selective-breeding-dialog-overlay',
+  '.immortality-modal',
+].join(', ')
+
 const GAIN_ZOOM_GROUP_SELECTOR = '.turn-gain-source-group, .turn-gain-totals-group'
 
 /** Acquired card / tech titles zoom to the full art, even when nested in a gain chip. */
@@ -89,6 +118,34 @@ function isVisiblePreviewTarget(img: HTMLImageElement): boolean {
 
 function pointInRect(x: number, y: number, rect: DOMRect): boolean {
   return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+}
+
+/** Topmost visible modal surface, or null when no modal is open. */
+function openModalDialog(): Element | null {
+  const dialogs = document.querySelectorAll(MODAL_DIALOG_SELECTOR)
+  let top: Element | null = null
+  let topZ = -Infinity
+  for (const dialog of dialogs) {
+    if (!(dialog instanceof HTMLElement)) continue
+    const style = window.getComputedStyle(dialog)
+    if (style.display === 'none' || style.visibility === 'hidden') continue
+    const z = Number.parseInt(style.zIndex, 10)
+    const zIndex = Number.isFinite(z) ? z : 0
+    if (zIndex >= topZ) {
+      top = dialog
+      topZ = zIndex
+    }
+  }
+  return top
+}
+
+/**
+ * True when `el` sits behind an open modal. Previews and tooltips for background
+ * content must not render above the modal that covers it.
+ */
+function isBehindOpenModal(el: Element): boolean {
+  const modal = openModalDialog()
+  return modal != null && !modal.contains(el)
 }
 
 function setAltPreviewHeld(held: boolean) {
@@ -334,6 +391,7 @@ function resolvePreview(
   const fromPoint = document.elementFromPoint(x, y)
   const titleImg = findCardTitlePreviewImage(target) ?? findCardTitlePreviewImage(fromPoint)
   if (titleImg) {
+    if (isBehindOpenModal(titleImg)) return null
     return {
       kind: 'image',
       src: titleImg.getAttribute('data-preview-src') ?? titleImg.src,
@@ -345,6 +403,7 @@ function resolvePreview(
 
   const gainEl = findGainZoomTarget(target) ?? findGainZoomTarget(fromPoint)
   if (gainEl) {
+    if (isBehindOpenModal(gainEl)) return null
     const rect = gainEl.getBoundingClientRect()
     return {
       kind: 'gains',
@@ -360,6 +419,7 @@ function resolvePreview(
 
   const img = findPreviewImageAtPoint(x, y, target ?? fromPoint)
   if (!img) return null
+  if (isBehindOpenModal(img)) return null
   return {
     kind: 'image',
     src: img.getAttribute('data-preview-src') ?? img.src,
@@ -464,6 +524,22 @@ export function AltImagePreviewProvider({ children }: { children: React.ReactNod
       if (!img || altActive) {
         if (hintHostRef.current) clearZoomHint()
         applyPreview(event.clientX, event.clientY, event.target, altActive)
+        return
+      }
+
+      // A modal is covering this image: keep its native tooltip from popping
+      // above the modal, and do not show the zoom hint or preview.
+      if (isBehindOpenModal(img)) {
+        if (hintHostRef.current) clearZoomHint()
+        const host = ensureZoomHintTitle(img)
+        suppressNativeTitle(host)
+        collectTitledAncestors(img).forEach(node => {
+          suppressNativeTitle(node)
+          if (!suppressedTitlesRef.current.includes(node)) {
+            suppressedTitlesRef.current.push(node)
+          }
+        })
+        applyPreview(event.clientX, event.clientY, event.target, false)
         return
       }
 
