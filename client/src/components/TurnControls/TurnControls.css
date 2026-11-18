@@ -1902,6 +1902,13 @@ button.turn-card-frame.turn-card-frame--active-intrigue:hover:not(:disabled) {
   width: 100%;
 }
 
+/* Effect buttons use the parchment "needs input" / choice highlight instead of
+   the global gold focus ring, which otherwise flashes on click. */
+.effect-btn:focus,
+.effect-btn:focus-visible {
+  outline: none;
+}
+
 .effect-btn--overlay {
   width: auto;
   min-height: 24px;

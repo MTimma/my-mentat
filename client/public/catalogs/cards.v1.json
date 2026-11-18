@@ -2565,9 +2565,7 @@
       "tleilaxu": true,
       "image": "tleilaxu_row/immortality/reclaimed_forces.avif",
       "effects": {
-        "play": [
-          "effect:card:imperium/reclaimed-forces:play:0"
-        ]
+        "acquire": "effect:card:imperium/reclaimed-forces:acquire:0"
       },
       "authorIds": [
         0
@@ -2757,7 +2755,8 @@
       "image": "tleilaxu_row/immortality/slig_farmer.avif",
       "effects": {
         "play": [
-          "effect:card:imperium/slig-farmer:play:0"
+          "effect:card:imperium/slig-farmer:play:0",
+          "effect:card:imperium/slig-farmer:play:1"
         ],
         "reveal": [
           "effect:card:imperium/slig-farmer:reveal:0"

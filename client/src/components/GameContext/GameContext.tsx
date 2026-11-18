@@ -262,6 +262,7 @@ import {
 } from './riseOfIx/intrigue'
 import { fireUnloadIfApplicable, withUnloadForNewlyTrashedCards } from './riseOfIx/unload'
 import { isMandatoryRecruitAndDeployEffect, applyImmediateTroopRecruit } from './riseOfIx/mandatoryDeploy'
+import { createTurnTriggers } from './turnTriggers'
 import {
   advanceResearch,
   advanceTleilaxuTrack,
@@ -3609,7 +3610,7 @@ const SANDBOX_BLOCKED_PLAY_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
   'RESOLVE_ENDGAME',
 ])
 
-function gameReducer(state: GameState, action: GameAction): GameState {
+function gameReducerInternal(state: GameState, action: GameAction): GameState {
   if (state.sandboxSetup && SANDBOX_BLOCKED_PLAY_ACTIONS.has(action.type)) {
     return state
   }
@@ -5990,8 +5991,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           }
         }
         
-        // trashThisCard is mandatory; pick-a-card trash is optional (enqueued in runPlayEffectsForCard)
-        if (effect.reward.trashThisCard) {
+        // trashThisCard is mandatory; pick-a-card trash is optional (enqueued in runPlayEffectsForCard).
+        // Scientific Breakthrough queues one atomic trash+VP reward instead.
+        if (
+          effect.reward.trashThisCard &&
+          effect.reward.custom !== CustomEffect.SCIENTIFIC_BREAKTHROUGH
+        ) {
           addPendingReward({ trashThisCard: true }, gainSource, true)
         }
       }
@@ -7865,13 +7870,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         e => e.id !== effect.id
       );
 
-      const paidState = {
-        ...state,
-        gains: newGains,
-        combatStrength: nextCombatStrength,
-        players: state.players.map(p => p.id===playerId? player: p),
-        currTurn: tempCurrTurn
-      }
+      const paidState = applyImmortalityTrackReward(
+        {
+          ...state,
+          gains: newGains,
+          combatStrength: nextCombatStrength,
+          players: state.players.map(p => p.id===playerId? player: p),
+          currTurn: tempCurrTurn
+        },
+        playerId,
+        reward,
+        source
+      )
       return unloadAfterPayCost
         ? withUnloadAfterCardRemoved(paidState, playerId, unloadAfterPayCost, 'trash')
         : paidState
@@ -7905,6 +7915,33 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           : pendingChoiceForSource?.type === ChoiceType.CARD_SELECT
             ? (pendingChoiceForSource as CardSelectChoice).source
             : undefined
+
+      // A choice option that includes a pick-a-card trash (e.g. Stitched Horror)
+      // becomes the same pending trash reward used by other cards.
+      if (reward.trash && !reward.trashThisCard) {
+        const rest: Reward = { ...reward }
+        delete rest.trash
+        const trashSource: GainAttribution = gainAttribution ?? {
+          type: GainSource.CARD,
+          id: 0,
+          name: 'Unknown',
+        }
+        const pendingReward: PendingReward = {
+          id: nextSemanticId(trashSource, 'REWARD', state.pendingRewards.map(r => r.id)),
+          source: trashSource,
+          reward: { ...rest, trash: 1 },
+          isTrash: true,
+        }
+        const newPending = (state.currTurn.pendingChoices || []).filter(
+          c => c.id !== action.choiceId
+        )
+        return {
+          ...state,
+          pendingRewards: [...state.pendingRewards, pendingReward],
+          currTurn: { ...state.currTurn, pendingChoices: newPending },
+          canEndTurn: false,
+        }
+      }
 
       if (
         reward.custom === CustomEffect.POISON_SNOOPER_DRAW ||
@@ -8205,10 +8242,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         )
         const newTurn = { ...state.currTurn, pendingChoices: newPending }
         const acquired = handleAcquireTleilaxu(state, playerId, reward.tleilaxuAcquire.cardId)
+        // Keep any choice the acquire effect queued (e.g. Reclaimed Forces).
+        const acquiredTurn = acquired.currTurn
+          ? {
+              ...acquired.currTurn,
+              pendingChoices: (acquired.currTurn.pendingChoices ?? []).filter(
+                c => c.id !== action.choiceId
+              ),
+            }
+          : newTurn
         const after = {
           ...acquired,
-          currTurn: newTurn,
-          canEndTurn: newPending.length === 0,
+          currTurn: acquiredTurn,
+          canEndTurn: (acquiredTurn.pendingChoices ?? []).length === 0,
         }
         if (state.phase === GamePhase.COMBAT) return finishCombatIntrigueAction(after, playerId)
         if (state.phase === GamePhase.END_GAME) return afterEndgamePlayerAction(after)
@@ -9084,6 +9130,51 @@ function gameReducer(state: GameState, action: GameAction): GameState {
             imperiumRowDeck: restDeck,
             helenaRemovedCard: { cardId: removedCard.id, playerId, card: removedCard }
           }
+        }
+        case CustomEffect.SLIG_FARMER: {
+          const player = state.players.find(p => p.id === playerId)
+          if (!player) return state
+          const cardId = typeof data?.cardId === 'number' ? data.cardId : undefined
+          const graftCards = resolveGraftCards(state, player)
+          const card =
+            graftCards.find(c => c.id === cardId) ??
+            player.playArea.find(c => c.id === cardId)
+          const partner = card ? getGraftPartner(graftCards, card) : undefined
+          const amount = partner?.agentIcons.length ?? 0
+          return applyChoiceReward(
+            state,
+            { solari: amount },
+            playerId,
+            { type: GainSource.CARD, id: cardId ?? 0, name: card?.name ?? 'Slig Farmer' }
+          )
+        }
+
+        case CustomEffect.SCIENTIFIC_BREAKTHROUGH: {
+          const cardId = typeof data?.cardId === 'number' ? data.cardId : 0
+          const player = state.players.find(p => p.id === playerId)
+          const card = player?.playArea.find(c => c.id === cardId)
+          const source = {
+            type: GainSource.CARD,
+            id: cardId,
+            name: card?.name ?? 'Scientific Breakthrough',
+          }
+          let next = applyChoiceReward(state, { victoryPoints: 1 }, playerId, source)
+          if (card) {
+            next = {
+              ...next,
+              players: next.players.map(p =>
+                p.id === playerId
+                  ? {
+                      ...p,
+                      playArea: p.playArea.filter(c => c.id !== cardId),
+                      trash: [...p.trash, card],
+                    }
+                  : p
+              ),
+              gains: [...next.gains, makeTrashGain(state, playerId, card, source)],
+            }
+          }
+          return next
         }
         default: {
           console.log("Custom effect not implemented: ", customEffect)
@@ -10103,6 +10194,20 @@ function gameReducer(state: GameState, action: GameAction): GameState {
   }
 }
 
+const TURN_TRIGGERS = createTurnTriggers({
+  applyInfluenceDeltaForPlayer,
+  withRecruitedTroopsDeployLimit,
+  appendTessiaPendingChoices,
+})
+
+function gameReducer(state: GameState, action: GameAction): GameState {
+  let next = gameReducerInternal(state, action)
+  for (const trigger of TURN_TRIGGERS) {
+    next = trigger(state, next)
+  }
+  return next
+}
+
 const RECLAIMED_FORCES_NAME = 'Reclaimed Forces'
 
 /**
@@ -10115,6 +10220,35 @@ const RECLAIMED_FORCES_NAME = 'Reclaimed Forces'
 function insertOnDrawPile(deck: Card[], handCount: number, card: Card): Card[] {
   const at = Math.max(0, Math.min(handCount, deck.length))
   return [...deck.slice(0, at), card, ...deck.slice(at)]
+}
+
+/** Apply a Tleilaxu card's acquire effect (declarative resources or a custom choice). */
+function applyTleilaxuAcquireEffect(state: GameState, playerId: number, card: Card): GameState {
+  const effect = card.acquireEffect
+  if (!effect) return state
+  const source = { type: GainSource.CARD, id: card.id, name: card.name }
+
+  if (effect.custom === CustomEffect.RECLAIMED_FORCES) {
+    const choice: FixedOptionsChoice = {
+      id: nextSemanticId(source, 'OR', (state.currTurn?.pendingChoices ?? []).map(c => c.id)),
+      type: ChoiceType.FIXED_OPTIONS,
+      prompt: 'Reclaimed Forces: choose +2 troops or +1 Tleilaxu',
+      options: [{ reward: { troops: 2 } }, { reward: { tleilaxu: 1 } }],
+      source,
+    }
+    return {
+      ...state,
+      currTurn: state.currTurn
+        ? {
+            ...state.currTurn,
+            pendingChoices: [...(state.currTurn.pendingChoices ?? []), choice],
+          }
+        : state.currTurn,
+      canEndTurn: false,
+    }
+  }
+
+  return applyChoiceReward(state, effect, playerId, source)
 }
 
 function handleAcquireTleilaxu(
@@ -10182,13 +10316,17 @@ function handleAcquireTleilaxu(
     pendingTleilaxuRowReplacement = { cardIndex: rowIndex }
   }
 
-  return {
-    ...state,
-    gains,
-    players: state.players.map(p => (p.id === playerId ? updatedPlayer : p)),
-    tleilaxuRow: nextRow,
-    pendingTleilaxuRowReplacement,
-  }
+  return applyTleilaxuAcquireEffect(
+    {
+      ...state,
+      gains,
+      players: state.players.map(p => (p.id === playerId ? updatedPlayer : p)),
+      tleilaxuRow: nextRow,
+      pendingTleilaxuRowReplacement,
+    },
+    playerId,
+    card
+  )
 }
 
 /**

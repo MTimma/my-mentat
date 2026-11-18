@@ -3291,12 +3291,12 @@
       }
     },
     {
-      "id": "effect:card:imperium/reclaimed-forces:play:0",
+      "id": "effect:card:imperium/reclaimed-forces:acquire:0",
       "owner": {
         "type": "card",
         "id": "imperium/reclaimed-forces"
       },
-      "slot": "play",
+      "slot": "acquire",
       "index": 0,
       "reward": {
         "custom": "RECLAIMED_FORCES"
@@ -3513,6 +3513,21 @@
       }
     },
     {
+      "id": "effect:card:imperium/slig-farmer:play:1",
+      "owner": {
+        "type": "card",
+        "id": "imperium/slig-farmer"
+      },
+      "slot": "play",
+      "index": 1,
+      "cost": {
+        "solari": 5
+      },
+      "reward": {
+        "tleilaxu": 1
+      }
+    },
+    {
       "id": "effect:card:imperium/slig-farmer:reveal:0",
       "owner": {
         "type": "card",
@@ -3671,8 +3686,7 @@
         "researchLevel": 1
       },
       "reward": {
-        "tleilaxu": 1,
-        "water": 1
+        "tleilaxu": 1
       }
     },
     {
@@ -3695,7 +3709,9 @@
       },
       "slot": "acquire",
       "index": 0,
-      "reward": {}
+      "reward": {
+        "tleilaxu": 1
+      }
     },
     {
       "id": "effect:card:imperium/corrino-genes:play:0",
@@ -3732,7 +3748,9 @@
       },
       "slot": "acquire",
       "index": 0,
-      "reward": {}
+      "reward": {
+        "solari": 2
+      }
     },
     {
       "id": "effect:card:imperium/contaminator:play:0",
@@ -8139,9 +8157,7 @@
       "tleilaxu": true,
       "image": "tleilaxu_row/immortality/reclaimed_forces.avif",
       "effects": {
-        "play": [
-          "effect:card:imperium/reclaimed-forces:play:0"
-        ]
+        "acquire": "effect:card:imperium/reclaimed-forces:acquire:0"
       },
       "authorIds": [
         0
@@ -8331,7 +8347,8 @@
       "image": "tleilaxu_row/immortality/slig_farmer.avif",
       "effects": {
         "play": [
-          "effect:card:imperium/slig-farmer:play:0"
+          "effect:card:imperium/slig-farmer:play:0",
+          "effect:card:imperium/slig-farmer:play:1"
         ],
         "reveal": [
           "effect:card:imperium/slig-farmer:reveal:0"

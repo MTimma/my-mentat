@@ -33,6 +33,17 @@ export const PLAY_EFFECT_TEXTS: Partial<Record<CustomEffect, string>> = {
     [CustomEffect.MACHINE_CULTURE]: "Endgame: +1 VP if you have 3 tech.",
     [CustomEffect.IXIAN_PROBE]: "Discard 2 cards, then draw 2 cards.",
     [CustomEffect.CULL]: "Pay 1 Solari to trash 1 card.",
+    // Immortality — Tleilaxu Row
+    [CustomEffect.RECLAIMED_FORCES]: "Choose +2 troops or +1 Tleilaxu.",
+    [CustomEffect.USURP_GRAFT]: "Graft to an Imperium Row card without acquiring it; trash that card at end of turn.",
+    [CustomEffect.TWISTED_MENTAT_RECALL]: "You may recall the Agent you sent this turn.",
+    [CustomEffect.BEGUILING_PHEROMONES]: "If you sent an Agent to a Faction space this turn: trash a grafted card and gain 1 influence with that Faction.",
+    [CustomEffect.STITCHED_HORROR]: "Choose two: +1 water, +1 troop, trash 1 card, +1 Tleilaxu.",
+    [CustomEffect.GHOLA_COPY]: "This card has the same Agent box as the other grafted card.",
+    [CustomEffect.SLIG_FARMER]: "+1 Solari for each Agent icon on the other grafted card.",
+    [CustomEffect.CHAIRDOG_RETURN]: "At the start of Reveal, return the other grafted card from play to your hand.",
+    [CustomEffect.GUILD_IMPERSONATOR]: "If you gain spice this turn: +1 Spacing Guild influence.",
+    [CustomEffect.SCIENTIFIC_BREAKTHROUGH]: "Trash this card for 1 VP.",
 }
 
 export const PLAY_EFFECT_DISABLED_TEXTS: Partial<Record<CustomEffect, string>> = {

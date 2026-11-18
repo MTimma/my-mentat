@@ -1,6 +1,8 @@
 import type {
   Card,
   CardEffect,
+  ChoiceOption,
+  FixedOptionsChoice,
   GameState,
   Gain,
   PendingChoice,
@@ -9,7 +11,8 @@ import type {
   Reward,
   SpaceProps,
 } from '../../types/GameTypes'
-import { CustomEffect, GainSource } from '../../types/GameTypes'
+import { ChoiceType, CustomEffect, GainSource } from '../../types/GameTypes'
+import { nextSemanticId } from '../../utils/semanticIds'
 import { getGraftPartner, resolveGraftCards } from './graft'
 
 export interface ImmortalityPlayContext {
@@ -51,12 +54,21 @@ export function applyImmortalityAutoCustom(
     case CustomEffect.USURP_GRAFT:
     case CustomEffect.GHOLA_COPY:
     case CustomEffect.BLANK_SLATE_ICONS:
-      return
+      // Handled by graft selection / icon computation — no pending reward.
+      return state
     case CustomEffect.TWISTED_MENTAT_RECALL:
       return {
         ...state,
         currTurn: state.currTurn
           ? { ...state.currTurn, canRecallPlacedAgent: true }
+          : state.currTurn,
+      }
+    case CustomEffect.GUILD_IMPERSONATOR:
+      // Arm the trigger; the reducer grants the influence on the first spice gain this turn.
+      return {
+        ...state,
+        currTurn: state.currTurn
+          ? { ...state.currTurn, guildImpersonatorSpiceInfluence: card.id }
           : state.currTurn,
       }
     default:
@@ -66,7 +78,7 @@ export function applyImmortalityAutoCustom(
 
 /** Queue pending rewards / choices for Immortality customs that need user input. */
 export function queueImmortalityPendingCustom(custom: CustomEffect, ctx: ImmortalityPlayContext): void {
-  const { card, currPlayer, state, playerId, space, pendingChoices, addPendingReward } = ctx
+  const { card, currPlayer, state, space, pendingChoices, addPendingReward } = ctx
   const source = { type: GainSource.CARD, id: card.id, name: card.name }
   const graftCards = resolveGraftCards(state, currPlayer)
   const partner = getGraftPartner(graftCards, card)
@@ -82,21 +94,38 @@ export function queueImmortalityPendingCustom(custom: CustomEffect, ctx: Immorta
       }
       break
     case CustomEffect.BEGUILING_PHEROMONES: {
+      // Only fires on a Faction board space with a graft partner. The trash is a
+      // normal pick-a-card reward so CLAIM_REWARD applies the influence too.
       const faction = space.influence?.faction
       if (faction && partner) {
         addPendingReward(
-          { trash: 1, influence: { faction, amount: 1 }, custom: CustomEffect.BEGUILING_PHEROMONES },
+          { trash: 1, influence: { amounts: [{ faction, amount: 1 }] } },
           source,
           true
         )
-      } else {
-        addPendingReward({ custom: CustomEffect.BEGUILING_PHEROMONES }, source)
       }
       break
     }
-    case CustomEffect.STITCHED_HORROR:
-      addPendingReward({ custom: CustomEffect.STITCHED_HORROR }, source)
+    case CustomEffect.STITCHED_HORROR: {
+      // "Choose two" of four — one option per unordered pair.
+      const options: ChoiceOption[] = [
+        { reward: { water: 1, troops: 1 } },
+        { reward: { water: 1, trash: 1 } },
+        { reward: { water: 1, tleilaxu: 1 } },
+        { reward: { troops: 1, trash: 1 } },
+        { reward: { troops: 1, tleilaxu: 1 } },
+        { reward: { trash: 1, tleilaxu: 1 } },
+      ]
+      const choice: FixedOptionsChoice = {
+        id: nextSemanticId(source, 'OR', pendingChoices.map(c => c.id)),
+        type: ChoiceType.FIXED_OPTIONS,
+        prompt: 'Stitched Horror: choose two',
+        options,
+        source,
+      }
+      pendingChoices.push(choice)
       break
+    }
     case CustomEffect.SLIG_FARMER:
       addPendingReward({ custom: CustomEffect.SLIG_FARMER }, source)
       break
@@ -105,9 +134,6 @@ export function queueImmortalityPendingCustom(custom: CustomEffect, ctx: Immorta
       break
     case CustomEffect.RECLAIMED_FORCES:
       addPendingReward({ custom: CustomEffect.RECLAIMED_FORCES }, source)
-      break
-    case CustomEffect.GUILD_IMPERSONATOR:
-      addPendingReward({ custom: CustomEffect.GUILD_IMPERSONATOR }, source)
       break
     case CustomEffect.ORGAN_MERCHANTS:
       addPendingReward({ cost: { specimen: 1 }, solari: 4, custom: CustomEffect.ORGAN_MERCHANTS }, source)
@@ -118,6 +144,14 @@ export function queueImmortalityPendingCustom(custom: CustomEffect, ctx: Immorta
     case CustomEffect.TLEILAXU_MASTER:
       addPendingReward({ custom: CustomEffect.TLEILAXU_MASTER }, source)
       break
+    case CustomEffect.SCIENTIFIC_BREAKTHROUGH:
+      // Trash and VP are one atomic reward so the card shows a single overlay.
+      addPendingReward(
+        { trashThisCard: true, victoryPoints: 1, custom: CustomEffect.SCIENTIFIC_BREAKTHROUGH },
+        source,
+        true
+      )
+      break
     case CustomEffect.IMPERIUM_CEREMONY:
     case CustomEffect.CLANDESTINE_MEETING:
     case CustomEffect.HIGH_PRIORITY_TRAVEL:
@@ -126,7 +160,6 @@ export function queueImmortalityPendingCustom(custom: CustomEffect, ctx: Immorta
     case CustomEffect.OCCUPATION_COMBAT:
     case CustomEffect.SHOW_OF_STRENGTH:
     case CustomEffect.STILLSUIT_MANUFACTURER:
-    case CustomEffect.SCIENTIFIC_BREAKTHROUGH:
       addPendingReward({ custom }, source)
       break
     default:

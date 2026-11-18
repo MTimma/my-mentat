@@ -479,8 +479,8 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
       cost: 3,
       immortality: true,
       tleilaxu: true,
-      // Never removed from the row; choose recruit 2 troops or advance Tleilaxu track.
-      playEffect: [{ reward: { custom: CustomEffect.RECLAIMED_FORCES } }],
+      // Never removed from the row; on acquire choose +2 troops or +1 Tleilaxu.
+      acquireEffect: { custom: CustomEffect.RECLAIMED_FORCES },
     },
   },
   {
@@ -600,8 +600,11 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
       immortality: true,
       tleilaxu: true,
       graft: true,
-      // 5 solari → beetle; +1 solari for each agent icon on other grafted card.
-      playEffect: [{ reward: { custom: CustomEffect.SLIG_FARMER } }],
+      // +1 solari for each agent icon on the other grafted card; may pay 5 solari → beetle.
+      playEffect: [
+        { reward: { custom: CustomEffect.SLIG_FARMER } },
+        { cost: { solari: 5 }, reward: { tleilaxu: 1 } },
+      ],
       revealEffect: [{ reward: { persuasion: 1 } }],
     },
   },
@@ -692,10 +695,10 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
       cost: 2,
       immortality: true,
       tleilaxu: true,
-      acquireEffect: {}, // +1 Beetle on acquire (custom acquire wiring in card task)
-      // If res lvl 1: +1 Tleilaxu (beetle) / +1 water.
+      acquireEffect: { tleilaxu: 1 }, // +1 Beetle on acquire
+      // If res lvl 1: +1 Tleilaxu (beetle).
       playEffect: [
-        { requirement: { researchLevel: 1 }, reward: { tleilaxu: 1, water: 1 } },
+        { requirement: { researchLevel: 1 }, reward: { tleilaxu: 1 } },
       ],
       revealEffect: [{ reward: { persuasion: 1 } }],
     },
@@ -710,7 +713,7 @@ const IMMORTALITY_TLEILAXU_TEMPLATES: Array<{ card: Omit<Card, 'id'>; qty: numbe
       cost: 1,
       immortality: true,
       tleilaxu: true,
-      acquireEffect: {}, // +2 solari on acquire
+      acquireEffect: { solari: 2 }, // +2 solari on acquire
       // If grafted: +1 Tleilaxu (beetle).
       playEffect: [{ requirement: { grafted: true }, reward: { tleilaxu: 1 } }],
       revealEffect: [{ reward: { persuasion: 1 } }],

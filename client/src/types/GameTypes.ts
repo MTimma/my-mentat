@@ -417,6 +417,11 @@ export interface Card {
     trash?: number,
     influence?: InfluenceAmounts,
     water?: number,
+    solari?: number,
+    /** Immortality — advance the Tleilaxu (beetle) track on acquire. */
+    tleilaxu?: number,
+    /** Immortality — acquire-time choice handled by the reducer (e.g. Reclaimed Forces). */
+    custom?: CustomEffect,
     /** Rise of Ix — acquire-time freighter icon(s). */
     freighter?: number
     /** Rise of Ix — commission dreadnought(s) on acquire. */
@@ -707,6 +712,8 @@ export interface GameTurn {
   }
   /** Twisted Mentat (Immortality graft) — may recall the agent just placed this turn. */
   canRecallPlacedAgent?: boolean
+  /** Guild Impersonator (Immortality graft) — card id waiting for this turn's first spice gain. */
+  guildImpersonatorSpiceInfluence?: number
   /** Weirding Way — player may take another Agent/Reveal turn before rotation. */
   extraTurnAllowed?: boolean
   /** Treachery — deploy allowance must be used before ending turn. */

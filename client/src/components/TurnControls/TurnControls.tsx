@@ -1348,6 +1348,7 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
       left.push(renderCostResource(cost.spice, 'spice'))
       left.push(renderCostResource(cost.water, 'water'))
       left.push(renderCostResource(cost.solari, 'solari'))
+      left.push(renderCostResource(cost.specimen, 'specimen'))
       if (cost.poolTroop) {
         left.push(
           <span key="pool-troop" className="effect-pool-troop" title={`Pay ${cost.poolTroop} troop(s) from pool`}>
@@ -1369,6 +1370,27 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     right.push(renderAmt(reward.spice,'spice'))
     right.push(renderWaterReward(reward.water))
     right.push(renderAmt(reward.solari,'solari'))
+    if (reward.specimen) {
+      right.push(
+        <React.Fragment key="specimen">
+          {renderIconValue('specimen', reward.specimen, 'Specimen', '+')}
+        </React.Fragment>
+      )
+    }
+    if (reward.research) {
+      right.push(
+        <React.Fragment key="research">
+          {renderIconValue('research', reward.research, 'Research', '+')}
+        </React.Fragment>
+      )
+    }
+    if (reward.tleilaxu) {
+      right.push(
+        <React.Fragment key="tleilaxu">
+          {renderIconValue('tleilaxu', reward.tleilaxu, 'Tleilaxu', '+')}
+        </React.Fragment>
+      )
+    }
     if(reward.persuasion) {
       right.push(
         <span key="persuasion" className="effect-icon-token" title={`Persuasion +${reward.persuasion}`}>
