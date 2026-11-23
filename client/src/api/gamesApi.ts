@@ -10,7 +10,7 @@ const SESSION_FETCH: RequestInit = { credentials: 'include' }
 /** GET `/games` row — metadata only; document is `GET /games/{id}`. */
 export interface GameDetail {
   id: number
-  owner_id: string
+  owner_id?: string
   name: string
   summary?: SaveSummary
   updated_at: string

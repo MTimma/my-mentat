@@ -13,6 +13,7 @@ const USER_ID: &str = "user_id";
 #[derive(sqlx::FromRow, serde::Serialize)]
 pub struct GameRow {
     id: i64,
+    #[serde(skip_serializing)]
     owner_id: String,
     name: String,
     summary: sqlx::types::Json<GameSummary>,
@@ -25,6 +26,7 @@ pub struct GameRow {
 #[derive(sqlx::FromRow, Serialize)]
 pub struct GameListEntry {
     id: i64,
+    #[serde(skip_serializing)]
     owner_id: String,
     name: String,
     summary: sqlx::types::Json<GameSummary>,
@@ -90,15 +92,12 @@ pub struct SaveGameQuery {
 }
 
 async fn require_user_id(session: &Session) -> ApiResult<String> {
-    session
-        .get::<String>(USER_ID)
-        .await?
-        .ok_or_else(|| {
-            ApiError::builder()
-                .status(StatusCode::UNAUTHORIZED)
-                .title("Please log in to save the game")
-                .build()
-        })
+    session.get::<String>(USER_ID).await?.ok_or_else(|| {
+        ApiError::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .title("Please log in to save the game")
+            .build()
+    })
 }
 
 async fn insert_owned_game(
