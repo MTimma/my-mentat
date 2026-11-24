@@ -52,7 +52,6 @@ import { getConflictPool, isConflictInDiscard } from './data/conflicts'
 import ConflictSelect from './components/ConflictSelect/ConflictSelect'
 import ImperiumRowSelect from './components/ImperiumRowSelect/ImperiumRowSelect'
 import ImmortalityRow from './expansions/immortality/components/ImmortalityRow'
-import ImperiumRowDiscardPile from './expansions/immortality/components/ImperiumRowDiscardPile'
 import { computeGraftAgentIcons, resolveGraftCards } from './expansions/immortality/graft'
 import TechAcquireModal from './components/TechAcquireModal/TechAcquireModal'
 import TechTileSelect from './components/TechTileSelect/TechTileSelect'
@@ -2388,7 +2387,6 @@ const GameContent = ({
             .join(' ')}
         >
           <div className="imperium-row-container__main">
-            <ImperiumRowDiscardPile cards={displayState.imperiumRowDiscard ?? []} />
             <ImperiumRow
               canAcquire={isViewingHistory ? false : gameState.canAcquireIR}
               canAcquireToTop={
