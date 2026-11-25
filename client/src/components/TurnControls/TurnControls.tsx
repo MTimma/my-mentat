@@ -964,6 +964,8 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     if (cost?.water && activePlayer.water < cost.water) return false
     if (cost?.solari && activePlayer.solari < cost.solari) return false
     if (cost?.troops && activePlayer.troops < cost.troops) return false
+    if (cost?.intrigue && activePlayer.intrigueCount < cost.intrigue) return false
+    if (cost?.intrigueBottom && activePlayer.intrigueCount < cost.intrigueBottom) return false
     if (cost?.troopsInConflict && (gameState.combatTroops[activePlayer.id] ?? 0) < cost.troopsInConflict) {
       return false
     }
@@ -1349,6 +1351,8 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
       left.push(renderCostResource(cost.water, 'water'))
       left.push(renderCostResource(cost.solari, 'solari'))
       left.push(renderCostResource(cost.specimen, 'specimen'))
+      left.push(renderCostResource(cost.intrigue, 'intrigue'))
+      left.push(renderCostResource(cost.intrigueBottom, 'intrigue'))
       if (cost.poolTroop) {
         left.push(
           <span key="pool-troop" className="effect-pool-troop" title={`Pay ${cost.poolTroop} troop(s) from pool`}>
@@ -2109,8 +2113,12 @@ const TurnControls = forwardRef<TurnControlsHandle, TurnControlsProps>(function 
     if (effect.cost?.solari) costParts.push(`${effect.cost.solari} solari`)
     if (effect.cost?.spice) costParts.push(`${effect.cost.spice} spice`)
     if (effect.cost?.water) costParts.push(`${effect.cost.water} water`)
+    if (effect.cost?.intrigue) costParts.push(`${effect.cost.intrigue} intrigue`)
+    if (effect.cost?.intrigueBottom) costParts.push(`${effect.cost.intrigueBottom} intrigue`)
     const rewardParts: string[] = []
     if (effect.reward.troops) rewardParts.push(`${effect.reward.troops} troops`)
+    if (effect.reward.drawCards) rewardParts.push(`draw ${effect.reward.drawCards}`)
+    if (effect.reward.intrigueCards) rewardParts.push(`${effect.reward.intrigueCards} intrigue`)
     if (effect.reward.deployTroops) {
       rewardParts.push(`deploy up to ${effect.reward.deployTroops} to the Conflict`)
     }

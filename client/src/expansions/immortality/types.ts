@@ -1,4 +1,4 @@
-import type { Reward } from '../../types/GameTypes'
+import type { Cost, Reward } from '../../types/GameTypes'
 
 /** Genetic-marker level a player's research token has reached (0 = none). */
 export type GeneLevel = 0 | 1 | 2
@@ -11,8 +11,17 @@ export type GeneLevel = 0 | 1 | 2
  */
 export interface ResearchNode {
   id: string
-  /** Bonus gained immediately on entering this node. */
+  /**
+   * Bonus gained on entering this node. When `cost` is set the bonus is an
+   * optional purchase: the player may pay to gain it, or skip it and keep the
+   * node. Entering the node itself is always free.
+   */
   bonus?: Reward
+  /**
+   * Optional cost for `bonus`. The player can always move onto the node; if they
+   * cannot (or choose not to) pay, they simply gain no bonus.
+   */
+  cost?: Cost
   /** Forward branch node ids (rightward). Empty ⇒ end of track. */
   next: string[]
   /**

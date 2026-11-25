@@ -257,6 +257,8 @@ export interface Cost {
   negotiator?: boolean
   /** Rise of Ix — place N intrigue cards on the bottom of the intrigue deck. */
   intrigueBottom?: number
+  /** Discard N intrigue cards (just lose them from hand; no deck manipulation). */
+  intrigue?: number
   /** Immortality — spend N specimens from the Axolotl tanks. */
   specimen?: number
   custom?: string

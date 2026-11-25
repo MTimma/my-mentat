@@ -2173,6 +2173,7 @@ function canAffordIntrigueCost(state: GameState, player: Player, cost: Cost): bo
   if (cost.troops && player.troops < cost.troops) return false// todo should be player.troops + conflict 
   if (cost.troopsInConflict && (state.combatTroops[player.id] ?? 0) < cost.troopsInConflict) return false
   if (cost.discard && player.handCount < cost.discard) return false
+  if (cost.intrigue && player.intrigueCount < cost.intrigue) return false
   if (cost.retreatTroops && (state.combatTroops[player.id] ?? 0) < cost.retreatTroops) return false
   if (cost.influence?.chooseOne && !canPayInfluenceCost(state, player.id, cost.influence)) return false
   return true
@@ -2649,7 +2650,8 @@ function handleIntrigueEffect(
         (c.troops && updatedPlayer.troops < c.troops) ||
         (c.troopsInConflict && (newState.combatTroops[playerId] ?? 0) < c.troopsInConflict) ||
         (c.retreatTroops && (newState.combatTroops[playerId] ?? 0) < c.retreatTroops) ||
-        (c.specimen && (updatedPlayer.specimens ?? 0) < c.specimen)
+        (c.specimen && (updatedPlayer.specimens ?? 0) < c.specimen) ||
+        (c.intrigue && updatedPlayer.intrigueCount < c.intrigue)
       ) {
         return
       }
@@ -2697,6 +2699,10 @@ function handleIntrigueEffect(
       if (c.specimen && newState.expansions?.immortality) {
         updatedPlayer.specimens = Math.max(0, (updatedPlayer.specimens ?? 0) - c.specimen)
         pushGain(-c.specimen, RewardType.SPECIMEN)
+      }
+      if (c.intrigue) {
+        updatedPlayer.intrigueCount = Math.max(0, updatedPlayer.intrigueCount - c.intrigue)
+        pushGain(-c.intrigue, RewardType.INTRIGUE)
       }
       if (effect.reward.custom === CustomEffect.QUID_PRO_QUO && state.expansions?.riseOfIx) {
         updatedPlayers[playerIndex] = updatedPlayer
@@ -7527,6 +7533,7 @@ function gameReducerInternal(state: GameState, action: GameAction): GameState {
         if(cost.solari && player.solari < cost.solari) return false;
         if(cost.troops && player.troops < cost.troops) return false;
         if(cost.specimen && (player.specimens ?? 0) < cost.specimen) return false;
+        if(cost.intrigue && player.intrigueCount < cost.intrigue) return false;
         if(cost.intrigueBottom && player.intrigueCount < cost.intrigueBottom) return false;
         if(cost.trash && !data?.trashedCardId) return false;
         if (reward.trash && !reward.trashThisCard && !cost?.trash && !data?.trashedCardId) return false;
@@ -7669,6 +7676,10 @@ function gameReducerInternal(state: GameState, action: GameAction): GameState {
       if(cost.solari) { player.solari -= cost.solari; pushCostGain(cost.solari, RewardType.SOLARI); }
       if(cost.troops) { player.troops -= cost.troops; pushCostGain(cost.troops, RewardType.TROOPS); }
       if(cost.specimen) { player.specimens = Math.max(0, (player.specimens ?? 0) - cost.specimen); pushCostGain(cost.specimen, RewardType.SPECIMEN); }
+      if(cost.intrigue) {
+        player.intrigueCount = Math.max(0, player.intrigueCount - cost.intrigue)
+        pushCostGain(cost.intrigue, RewardType.INTRIGUE)
+      }
       if(cost.intrigueBottom) {
         player.intrigueCount -= cost.intrigueBottom
         pushCostGain(cost.intrigueBottom, RewardType.INTRIGUE)

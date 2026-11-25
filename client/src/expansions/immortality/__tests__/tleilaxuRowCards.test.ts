@@ -334,7 +334,7 @@ describe('Tleilaxu Row — play effects', () => {
     let state = immortalityState({
       players: getBaseTestState().players.map(p => ({
         ...p,
-        researchNodeId: 'r6',
+        researchNodeId: 'r7a',
         deck: [card, ...p.deck],
         handCount: 1,
       })),

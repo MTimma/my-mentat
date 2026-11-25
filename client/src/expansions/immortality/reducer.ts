@@ -1,5 +1,6 @@
-import type { GameState, Player, Reward } from '../../types/GameTypes'
+import type { GameState, OptionalEffect, Player, Reward } from '../../types/GameTypes'
 import { GainSource, RewardType } from '../../types/GameTypes'
+import { nextSemanticId } from '../../utils/semanticIds'
 import {
   geneLevelForNode,
   isResearchComplete,
@@ -59,6 +60,41 @@ export function spendSpecimens(state: GameState, playerId: number, count: number
 }
 
 type ApplyReward = (state: GameState, reward: Reward, playerId: number, source?: { type: GainSource; id: number; name: string }) => GameState
+
+/**
+ * Grant a research node's bonus. A node with a `cost` is an optional purchase:
+ * the player still moves onto the node, but the bonus is offered as an optional
+ * effect they may pay for. Nodes without a cost grant their bonus immediately.
+ *
+ * If there is no active turn to attach the optional effect to, the costed bonus
+ * is simply not gained (the player could not have paid it anyway).
+ */
+function applyResearchNodeBonus(
+  state: GameState,
+  playerId: number,
+  nodeId: string,
+  applyReward: ApplyReward
+): GameState {
+  const node = researchNode(nodeId)
+  const bonus = node.bonus
+  if (!bonus) return state
+  if (!node.cost) {
+    return applyReward(state, bonus, playerId, IMMORTALITY_SOURCE.research)
+  }
+  if (!state.currTurn) return state
+
+  const existing = state.currTurn.optionalEffects ?? []
+  const effect: OptionalEffect = {
+    id: nextSemanticId(IMMORTALITY_SOURCE.research, 'EFFECT', existing.map(e => e.id)),
+    cost: node.cost,
+    reward: bonus,
+    source: IMMORTALITY_SOURCE.research,
+  }
+  return {
+    ...state,
+    currTurn: { ...state.currTurn, optionalEffects: [...existing, effect] },
+  }
+}
 
 /**
  * Advance the linear Tleilaxu track by `count`, applying each entered space's
@@ -132,8 +168,7 @@ export function advanceResearch(
     const targetId = options[0]
     next = withPlayer(next, playerId, p => ({ ...p, researchNodeId: targetId }))
     pushGain(next, playerId, 1, RewardType.RESEARCH, 'Research track')
-    const bonus = researchNode(targetId).bonus
-    if (bonus) next = applyReward(next, bonus, playerId, IMMORTALITY_SOURCE.research)
+    next = applyResearchNodeBonus(next, playerId, targetId, applyReward)
     remaining -= 1
   }
 
@@ -186,8 +221,7 @@ export function resolveResearchBranch(
 
   let next = withPlayer(state, playerId, p => ({ ...p, researchNodeId: chosenNodeId }))
   pushGain(next, playerId, 1, RewardType.RESEARCH, 'Research track')
-  const bonus = researchNode(chosenNodeId).bonus
-  if (bonus) next = applyReward(next, bonus, playerId, IMMORTALITY_SOURCE.research)
+  next = applyResearchNodeBonus(next, playerId, chosenNodeId, applyReward)
   next = { ...next, pendingResearchAdvance: null }
 
   const remaining = pending.remaining - 1

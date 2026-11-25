@@ -1,3 +1,4 @@
+import { FactionType } from '../../types/GameTypes'
 import type { GeneLevel, ResearchNode } from './types'
 
 /**
@@ -14,15 +15,43 @@ export const RESEARCH_START_NODE_ID = 'r0'
 export const RESEARCH_NODES: Record<string, ResearchNode> = {
   r0: { id: 'r0', next: ['r1'] },
   r1: { id: 'r1', bonus: { specimen: 1 }, next: ['r2a', 'r2b'] },
-  r2a: { id: 'r2a', bonus: { spice: 1 }, next: ['r3'] },
-  r2b: { id: 'r2b', bonus: { solari: 2 }, next: ['r3'] },
+  r2a: { id: 'r2a', bonus: { specimen: 1 }, next: ['r3a', 'r3b'] },
+  r2b: { id: 'r2b', bonus: { tleilaxu: 1 }, next: ['r3b', 'r3c'] },
   // First genetic marker.
-  r3: { id: 'r3', bonus: { specimen: 1 }, next: ['r4'], geneLevel: 1 },
-  r4: { id: 'r4', bonus: { drawCards: 1 }, next: ['r5a', 'r5b'], geneLevel: 1 },
-  r5a: { id: 'r5a', bonus: { tleilaxu: 1 }, next: ['r6'], geneLevel: 1 },
-  r5b: { id: 'r5b', bonus: { intrigueCards: 1 }, next: ['r6'], geneLevel: 1 },
+  r3a: { id: 'r3a', bonus: { tleilaxu: 1 }, next: ['r4a', 'r4b'], geneLevel: 1 },
+  r3b: { id: 'r3b', bonus: { specimen: 1 }, next: ['r4b', 'r4c'], geneLevel: 1 },
+  r3c: { id: 'r3c', bonus: { research: 1 }, next: ['r4c'], geneLevel: 1 },
+
+  
+  r4a: { id: 'r4a', bonus: { research: 1 }, next: ['r5a', 'r5b'], geneLevel: 1 },
+  r4b: { id: 'r4b', bonus: { specimen: 1 }, next: ['r5b', 'r5c'], geneLevel: 1 },
+  r4c: { id: 'r4c', bonus: { solari: 1 }, next: ['r5c'], geneLevel: 1 },
+  
+  r5a: { id: 'r5a', bonus: { spice: 1 }, next: ['r6a', 'r6b'], geneLevel: 1 },
+  r5b: { id: 'r5b', bonus: { tleilaxu: 1 }, next: ['r6b', 'r6c'], geneLevel: 1 },
+  r5c: {
+    id: 'r5c', bonus: {
+      influence: {
+        chooseOne: true,
+        amounts: [
+          { faction: FactionType.BENE_GESSERIT, amount: 1 },
+          { faction: FactionType.FREMEN, amount: 1 },
+          { faction: FactionType.SPACING_GUILD, amount: 1 },
+          { faction: FactionType.EMPEROR, amount: 1 }
+        ]
+      }
+    }, next: ['r6c'], geneLevel: 1
+  },
+  r6a: { id: 'r6a', bonus: { tleilaxu: 1 }, next: ['r7a', 'r7b'], geneLevel: 1 },
+  // Optional: discard 1 intrigue card for a draw + intrigue.
+  r6b: { id: 'r6b', bonus: { drawCards: 1, intrigueCards: 1 }, cost: { intrigue: 1 }, next: ['r7b', 'r7c'], geneLevel: 1 },
+  r6c: { id: 'r6c', bonus: { trash: 1, specimen: 1 }, next: ['r7c'], geneLevel: 1 },
+
   // Second genetic marker (end of track). After here, Research draws a card instead.
-  r6: { id: 'r6', bonus: { victoryPoints: 1 }, next: [], geneLevel: 2 },
+  r7a: { id: 'r7a', bonus: { spice: 2 }, next: [], geneLevel: 2 },
+  r7b: { id: 'r7b', bonus: { tleilaxu: 1 }, next: [], geneLevel: 2 },
+  // Optional: pay 7 solari for 2 Tleilaxu advances.
+  r7c: { id: 'r7c', bonus: { tleilaxu: 2 }, cost: { solari: 7 }, next: [], geneLevel: 2 },
 }
 
 export function researchNode(nodeId: string | undefined): ResearchNode {
@@ -44,8 +73,8 @@ export function isResearchComplete(nodeId: string | undefined): boolean {
   return geneLevelForNode(nodeId) >= 2
 }
 
-/** First genetic marker. Nodes from here forward (following `next`) have reached it. */
-export const FIRST_GENETIC_MARKER_NODE_ID = 'r3'
+/** First genetic marker column. Nodes at or after it carry `geneLevel >= 1`. */
+export const FIRST_GENETIC_MARKER_NODE_ID = 'r3a'
 
 /** True when the token is on `targetId` or on a node reached by moving forward from it. */
 export function isResearchAtOrAfter(nodeId: string | undefined, targetId: string): boolean {
@@ -63,5 +92,8 @@ export function isResearchAtOrAfter(nodeId: string | undefined, targetId: string
 }
 
 export function hasFirstGeneticMarker(nodeId: string | undefined): boolean {
-  return isResearchAtOrAfter(nodeId, FIRST_GENETIC_MARKER_NODE_ID)
+  // The first marker is a whole column (r3a/r3b/r3c), so a single `next`-walk
+  // from one node would miss sibling branches. `geneLevel` is set on every node
+  // at or after the marker, which makes it the reliable check.
+  return geneLevelForNode(nodeId) >= 1
 }
