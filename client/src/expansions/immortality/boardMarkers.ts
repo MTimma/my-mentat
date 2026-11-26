@@ -25,17 +25,24 @@ export interface ImmortalityPanelAnchors {
   /** Vertical lane offset for each player on the top Tleilaxu strip. */
   tleilaxuLaneY: number[]
   /**
-   * Added to the research cell’s y so cubes sharing a hex stay distinct.
-   * Index by sorted player id (0–3). Not an absolute row.
+   * Per-player offset (local %) added to a research cell so cubes sharing a hex
+   * stay distinct. Indexed by sorted player id (0–3); the four entries form the
+   * corners of a rectangle around the hex center.
    */
-  researchLaneY: number[]
+  researchLaneOffset: InnerPoint[]
 }
 
 const PANEL_ANCHORS: Partial<Record<BoardSetId, ImmortalityPanelAnchors>> = {
   imperium: {
     panelRect: { left: 2, top: 50, width: 30, height: 30 },
     tleilaxuLaneY: [9, 12, 15, 18],
-    researchLaneY: [-1.6, -0.5, 0.5, 1.6],
+    // Rectangle corners: top-left, top-right, bottom-left, bottom-right.
+    researchLaneOffset: [
+      { x: -1.7, y: -1.9 },
+      { x: 1.7, y: -1.9 },
+      { x: -1.7, y: 1.9 },
+      { x: 1.7, y: 1.9 },
+    ],
   },
 }
 
@@ -58,15 +65,29 @@ export const BENE_TLEILAX_BOARD_SRC = 'board/immortality/bene_tleilax_board.avif
  * sit on real hexes further right; double-check that mapping against the board.
  */
 export const RESEARCH_NODE_POSITIONS: Record<string, InnerPoint> = {
-  r0: { x: 18.2, y: 56.5 },
-  r1: { x: 25.3, y: 47.2 },
-  r2a: { x: 36.1, y: 39.2 },
-  r2b: { x: 36.3, y: 58.2 },
-  r3: { x: 47.3, y: 48.2 },
-  r4: { x: 58.2, y: 56.1 },
-  r5a: { x: 69.4, y: 47.0 },
-  r5b: { x: 69.4, y: 66.2 },
-  r6: { x: 92.3, y: 66.2 },
+  r0: { x: 4, y: 50 },
+  r1: { x: 14.5, y: 50 },
+  r2a: { x: 25, y: 39.2 },
+  r2b: { x: 25, y: 58.2 },
+  r3a: { x: 36.5, y: 30 },
+  r3b: { x: 36.5, y: 48.2 },
+  r3c: { x: 36.5, y: 65 },
+  r4a: { x: 47, y: 40 },
+  r4b: { x: 47, y: 58.2 },
+  r4c: { x: 47, y: 76.4 },
+  r5a: { x: 58.0, y: 30.0 },
+  r5b: { x: 58.0, y: 48.2 },
+  r5c: { x: 58.0, y: 65.0 },
+  r6a: { x: 69.4, y: 40.0 },
+  r6b: { x: 69.4, y: 55.0 },
+  r6c: { x: 69.4, y: 75.0 },
+  r7a: { x: 80.0, y: 30.0 },
+  r7b: { x: 80.0, y: 48.2 },
+  r7c: { x: 80.0, y: 65.0 },
+  r8a: { x: 92.0, y: 40.0 },
+  r8b: { x: 92.0, y: 55.0 },
+  r8c: { x: 92.0, y: 75.0 },
+  
 }
 
 /** Flat-top hex hit size, local % of the Bene Tleilax board. */
@@ -106,18 +127,40 @@ export const SPECIMEN_TANK_ANCHORS: InnerPoint[] = [
 ]
 
 const DEFAULT_TLEILAXU_LANES = [9, 12, 15, 18]
-const DEFAULT_RESEARCH_LANE_NUDGE = [-1.6, -0.5, 0.5, 1.6]
+
+/** Rectangle corners used when a board set has no research-lane anchors. */
+const DEFAULT_RESEARCH_LANE_OFFSET: InnerPoint[] = [
+  { x: -1.7, y: -1.9 },
+  { x: 1.7, y: -1.9 },
+  { x: -1.7, y: 1.9 },
+  { x: 1.7, y: 1.9 },
+]
+
+/**
+ * The start node (r0) sits against the left edge, so its lanes stack vertically
+ * with a wider gap instead of forming a rectangle.
+ */
+const RESEARCH_START_LANE_OFFSET: InnerPoint[] = [
+  { x: 0, y: -11.0 },
+  { x: 0, y: -2.5 },
+  { x: 0, y: 6.5 },
+  { x: 0, y: 15.0 },
+]
 
 export function researchTokenPosition(
   nodeId: string | undefined,
   playerLaneIndex = 0,
   boardSet: BoardSetId = 'imperium'
 ): InnerPoint {
-  const base = RESEARCH_NODE_POSITIONS[nodeId ?? 'r0'] ?? RESEARCH_NODE_POSITIONS.r0
+  const id = nodeId ?? 'r0'
+  const base = RESEARCH_NODE_POSITIONS[id] ?? RESEARCH_NODE_POSITIONS.r0
   const anchors = immortalityPanelAnchors(boardSet)
-  const nudge =
-    anchors?.researchLaneY[playerLaneIndex] ?? DEFAULT_RESEARCH_LANE_NUDGE[playerLaneIndex] ?? 0
-  return { x: base.x, y: base.y + nudge }
+  const offsets =
+    id === 'r0'
+      ? RESEARCH_START_LANE_OFFSET
+      : anchors?.researchLaneOffset ?? DEFAULT_RESEARCH_LANE_OFFSET
+  const offset = offsets[playerLaneIndex] ?? { x: 0, y: 0 }
+  return { x: base.x + offset.x, y: base.y + offset.y }
 }
 
 export function tleilaxuTokenPosition(
