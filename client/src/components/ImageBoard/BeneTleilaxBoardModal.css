@@ -7,11 +7,18 @@
   width: min(96vw, 920px);
   max-height: min(92vh, 720px);
   overflow: auto;
-  padding: clamp(8px, 1.5vw, 16px);
+  /* Bare board art: no frame, no fill. */
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .bene-tleilax-modal__panel .bene-tleilax-board--interactive {
   width: 100%;
-  max-width: 880px;
-  margin-inline: auto;
+  max-width: none;
+  margin-inline: 0;
 }

@@ -20,7 +20,6 @@ const BeneTleilaxBoardOverlay: React.FC<BeneTleilaxBoardOverlayProps> = ({
 }) => {
   const { gameState, dispatch } = useGame()
   const [modalOpen, setModalOpen] = useState(false)
-  const isDocked = placement === 'docked'
   const players = gameState.players
 
   const onResearchNodeSelect = (playerId: number, nodeId: string) => {
@@ -35,10 +34,7 @@ const BeneTleilaxBoardOverlay: React.FC<BeneTleilaxBoardOverlayProps> = ({
     <>
       <button
         type="button"
-        className={[
-          'bene-tleilax-board__open',
-          isDocked ? 'bene-tleilax-board__open--docked' : 'bene-tleilax-board__open--stacked',
-        ].join(' ')}
+        className={['bene-tleilax-board__open', `bene-tleilax-board__open--${placement}`].join(' ')}
         onClick={() => setModalOpen(true)}
         aria-label="Open Bene Tleilax board"
         title={withImageZoomHint('Click to open Bene Tleilax board')}

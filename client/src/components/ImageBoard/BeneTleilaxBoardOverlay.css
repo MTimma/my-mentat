@@ -10,6 +10,11 @@
   height: 100%;
 }
 
+.bene-tleilax-board--embedded {
+  width: 100%;
+  height: 100%;
+}
+
 .bene-tleilax-board--stacked {
   width: 100%;
   max-width: min(100%, 90vh);
@@ -36,6 +41,10 @@
 }
 
 .bene-tleilax-board__open--docked {
+  height: 100%;
+}
+
+.bene-tleilax-board__open--embedded {
   height: 100%;
 }
 

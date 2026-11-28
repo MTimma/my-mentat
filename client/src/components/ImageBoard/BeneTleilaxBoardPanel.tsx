@@ -19,7 +19,7 @@ function playerColor(player: Player): string {
   return playerMarkerHex(player)
 }
 
-export type BeneTleilaxBoardPlacement = 'docked' | 'stacked'
+export type BeneTleilaxBoardPlacement = 'docked' | 'stacked' | 'embedded'
 
 export interface BeneTleilaxBoardPanelProps {
   players: Player[]
@@ -83,7 +83,7 @@ const BeneTleilaxBoardPanel: React.FC<BeneTleilaxBoardPanelProps> = ({
     <div
       className={[
         'bene-tleilax-board',
-        placement === 'docked' ? 'bene-tleilax-board--docked' : 'bene-tleilax-board--stacked',
+        `bene-tleilax-board--${placement}`,
         interactive ? 'bene-tleilax-board--interactive' : '',
         choosing ? 'bene-tleilax-board--choice' : '',
         markerDebug ? 'bene-tleilax-board--marker-debug' : '',
@@ -141,7 +141,7 @@ const BeneTleilaxBoardPanel: React.FC<BeneTleilaxBoardPanelProps> = ({
         </div>
       ) : null}
 
-      {interactive && !choosing ? (
+      {/*{interactive && !choosing ? (
         <div className="bene-tleilax-board__hotspots" aria-hidden>
           {Object.entries(TLEILAXU_STEP_POSITIONS).map(([step, point]) => (
             <button
@@ -166,7 +166,7 @@ const BeneTleilaxBoardPanel: React.FC<BeneTleilaxBoardPanelProps> = ({
             />
           ))}
         </div>
-      ) : null}
+      ) : null}*/}
 
       <div className="bene-tleilax-board__markers" aria-hidden>
         {playersSorted.map((player, laneIndex) => {

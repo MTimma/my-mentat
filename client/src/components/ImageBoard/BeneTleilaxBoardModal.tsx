@@ -28,15 +28,7 @@ const BeneTleilaxBoardModal: React.FC<BeneTleilaxBoardModalProps> = ({
   onTleilaxuStepSelect,
 }) => (
   <BoardScopedModal isOpen={isOpen} onClose={onClose} closeOnOverlayClick overlayClassName="bene-tleilax-modal-overlay">
-    <BoardDialogPanel
-      className="bene-tleilax-modal__panel"
-      title="Bene Tleilax board"
-      titleId="bene-tleilax-modal-title"
-      lead="Click a track space to set the active player's position."
-      onClose={onClose}
-      showCancel
-      cancelLabel="Close"
-    >
+    <BoardDialogPanel className="bene-tleilax-modal__panel">
       <BeneTleilaxBoardPanel
         players={players}
         currentPlayerId={currentPlayerId}
