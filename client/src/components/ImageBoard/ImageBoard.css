@@ -123,7 +123,6 @@
 }
 
 .image-board__ix-dock,
-.image-board__immortality-dock,
 .image-board__expansion-dock-column {
   display: none;
 }
@@ -134,9 +133,11 @@
   gap: clamp(6px, 0.8vh, 10px);
 }
 
-.image-board__immortality-stack {
-  width: 100%;
-  margin-top: clamp(6px, 1vh, 12px);
+/* Bene Tleilax preview embedded on the board art (replaces the side dock). */
+.image-board__immortality-embed {
+  position: absolute;
+  z-index: 5;
+  pointer-events: auto;
 }
 
 /* Mobile: leader seats in one row just below the board (above turn controls in scroll order). */
@@ -384,26 +385,6 @@
   .image-board__expansion-dock-column--below-board
   .image-board__combat-area-dock {
   width: 100%;
-}
-
-.game-container--desktop-play .image-board__immortality-dock {
-  display: block;
-  flex: 0 0 auto;
-  width: 100%;
-  aspect-ratio: 1676 / 1184;
-  position: relative;
-}
-
-/* Leftover width feeds leader gains, not the Tleilax board. */
-.game-container--desktop-play.game-container--history-docked .image-board__immortality-dock {
-  max-width: clamp(220px, 32vmin, 420px);
-  align-self: flex-start;
-}
-
-.game-container--desktop-play.game-container--history-docked
-  .image-board__expansion-dock-column--below-board
-  .image-board__immortality-dock {
-  max-width: 100%;
 }
 
 .image-board__tech-stacks-btn {

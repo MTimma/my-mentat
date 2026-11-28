@@ -34,6 +34,26 @@ describe('troop supply pool', () => {
     expect(updated.troopSupply).toBe(0)
   })
 
+  it('recruitTroopsToGarrison fills the shortfall from specimens when the supply is empty', () => {
+    const player = makePlayer(0, { troops: 2, troopSupply: 0, specimens: 3 })
+    const { player: updated, recruited, specimensUsed } = recruitTroopsToGarrison(player, 2)
+    expect(recruited).toBe(2)
+    expect(specimensUsed).toBe(2)
+    expect(updated.troops).toBe(4)
+    expect(updated.specimens).toBe(1)
+    expect(updated.troopSupply).toBe(0)
+  })
+
+  it('recruitTroopsToGarrison uses supply before specimens', () => {
+    const player = makePlayer(0, { troops: 2, troopSupply: 1, specimens: 2 })
+    const { player: updated, recruited, specimensUsed } = recruitTroopsToGarrison(player, 3)
+    expect(recruited).toBe(3)
+    expect(specimensUsed).toBe(2)
+    expect(updated.troops).toBe(5)
+    expect(updated.specimens).toBe(0)
+    expect(updated.troopSupply).toBe(0)
+  })
+
   it('tech negotiators are placed from supply, not garrison', () => {
     const player = makePlayer(0, { troops: 4, troopSupply: 2, negotiatorsOnIx: 0 })
     const { player: updated, placed } = placeNegotiatorsFromSupply(player, 2)

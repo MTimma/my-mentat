@@ -26,22 +26,31 @@ export function seedTroopSupply(player: Player): Player {
   return { ...player, troopSupply: supply }
 }
 
-/** Recruit from supply into garrison; capped by remaining supply. */
+/**
+ * Recruit from supply into garrison.
+ *
+ * Immortality: once the supply is exhausted, specimens still in the Axolotl
+ * tanks may optionally be returned to the player's troops (a specimen is a
+ * troop piece), so any shortfall is filled from the tanks.
+ */
 export function recruitTroopsToGarrison(
   player: Player,
   amount: number
-): { player: Player; recruited: number } {
-  if (amount <= 0) return { player, recruited: 0 }
+): { player: Player; recruited: number; specimensUsed: number } {
+  if (amount <= 0) return { player, recruited: 0, specimensUsed: 0 }
   const supply = player.troopSupply ?? 0
-  const recruited = Math.min(amount, supply)
-  return {
-    player: {
-      ...player,
-      troopSupply: supply - recruited,
-      troops: player.troops + recruited,
-    },
-    recruited,
+  const fromSupply = Math.min(amount, supply)
+  const specimens = player.specimens ?? 0
+  const specimensUsed = Math.min(amount - fromSupply, specimens)
+  const recruited = fromSupply + specimensUsed
+  if (recruited === 0) return { player, recruited: 0, specimensUsed: 0 }
+  const next: Player = {
+    ...player,
+    troopSupply: supply - fromSupply,
+    troops: player.troops + recruited,
   }
+  if (specimensUsed > 0) next.specimens = specimens - specimensUsed
+  return { player: next, recruited, specimensUsed }
 }
 
 /** Place negotiators on Ix from supply (RoI only). */

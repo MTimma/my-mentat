@@ -118,7 +118,6 @@ import {
 import {
   dreadnoughtDeployRoom,
   seedDeployEdit,
-  specimenDeployRoom,
   troopDeployRoom,
   type DeployEditSession,
 } from './utils/deployEdit'
@@ -486,7 +485,6 @@ const GameContent = ({
   const changeDeployEdit = (patch: {
     troopDelta?: number
     dreadnoughtDelta?: number
-    specimenDelta?: number
   }) => {
     setDeployEdit(current => {
       if (!current) return current
@@ -507,17 +505,6 @@ const GameContent = ({
           return current
         }
         next = { ...next, dreadnoughts }
-      }
-      if (patch.specimenDelta) {
-        const specimens = current.specimens + patch.specimenDelta
-        if (specimens < 0) return current
-        if (
-          specimens > current.specimens &&
-          specimenDeployRoom(current).deployable <= 0
-        ) {
-          return current
-        }
-        next = { ...next, specimens }
       }
       return next
     })
@@ -672,14 +659,6 @@ const GameContent = ({
 
   const handleUndeployDreadnought = (playerId: number) => {
     dispatch({ type: 'UNDEPLOY_DREADNOUGHT', playerId })
-  }
-
-  const handleDeploySpecimen = (playerId: number) => {
-    dispatch({ type: 'DEPLOY_SPECIMEN', playerId })
-  }
-
-  const handleUndeploySpecimen = (playerId: number) => {
-    dispatch({ type: 'UNDEPLOY_SPECIMEN', playerId })
   }
 
   const handleEffectRetreatTroop = (playerId: number) => {
@@ -2162,35 +2141,6 @@ const GameContent = ({
                   onUndeploy: () => handleUndeployDreadnought(activePlayer.id),
                 }
           }
-          specimenDeploy={
-            deployEdit
-              ? gameState.expansions?.immortality
-                ? {
-                    canDeploy: true,
-                    deployableSpecimens: specimenDeployRoom(deployEdit).deployable,
-                    deployedThisTurn: deployEdit.specimens,
-                    specimensInTanks: specimenDeployRoom(deployEdit).garrisonLeft,
-                    onDeploy: () => changeDeployEdit({ specimenDelta: 1 }),
-                    onUndeploy: () => changeDeployEdit({ specimenDelta: -1 }),
-                  }
-                : undefined
-              : isViewingHistory ||
-                  gameState.sandboxSetup ||
-                  !activePlayer ||
-                  !gameState.expansions?.immortality
-                ? undefined
-                : {
-                    canDeploy: Boolean(gameState.currTurn?.canDeployTroops),
-                    deployableSpecimens: Math.min(
-                      getRemainingDeploySlots(gameState),
-                      activePlayer.specimens ?? 0
-                    ),
-                    deployedThisTurn: gameState.currTurn?.removableSpecimens || 0,
-                    specimensInTanks: activePlayer.specimens ?? 0,
-                    onDeploy: () => handleDeploySpecimen(activePlayer.id),
-                    onUndeploy: () => handleUndeploySpecimen(activePlayer.id),
-                  }
-          }
           onEditDeployment={deployEditSeed ? openDeployEdit : undefined}
           deployEditFooter={
             deployEdit ? (
@@ -2239,9 +2189,6 @@ const GameContent = ({
           }
           showBoardInfoTips={showBoardInfoTips}
           ixBoardPlacement="embedded"
-          immortalityBoardPlacement={
-            isDesktopPlayView && gameState.expansions?.immortality ? 'docked' : 'stacked'
-          }
           combatAreaPlacement={isDesktopPlayView ? 'dock' : 'below'}
           pendingAcquireTech={
             activePlayer && techAcquireSources.length > 0
@@ -2318,8 +2265,6 @@ const GameContent = ({
       handleUndeployTroop,
       handleAddDreadnought,
       handleUndeployDreadnought,
-      handleDeploySpecimen,
-      handleUndeploySpecimen,
       handleAcquireTechTile,
       techAcquireSources,
       handleTechTileAcquireClick,
@@ -2462,7 +2407,6 @@ const GameContent = ({
         'game-container',
         'game-container--play',
         isDesktopPlayView ? 'game-container--desktop-play' : '',
-        isDesktopPlayView && gameState.expansions?.immortality ? 'game-container--immortality-dock' : '',
         birdseyeMode === 'desktop6' ? 'game-container--birdseye-desktop' : '',
         isDockedHistoryLayout ? 'game-container--history-docked' : '',
         hideDockedHistory ? 'game-container--history-panel-hidden' : '',

@@ -132,6 +132,26 @@ export function advanceTleilaxuTrack(
 }
 
 /**
+ * Pull a `pendingResearchAdvance` set deeper in the reward chain (e.g. a node
+ * bonus that itself granted Research and stopped at a fork) out of the state so
+ * the caller can fold its advances into the ones it still owes.
+ */
+function takePendingResearchAdvance(
+  state: GameState,
+  playerId: number
+): { state: GameState; owed: number } {
+  const pending = state.pendingResearchAdvance
+  if (!pending || pending.playerId !== playerId) return { state, owed: 0 }
+  return { state: { ...state, pendingResearchAdvance: null }, owed: pending.remaining }
+}
+
+/** Advances already owed to this player at the fork they are sitting on. */
+function pendingResearchOwed(state: GameState, playerId: number): number {
+  const pending = state.pendingResearchAdvance
+  return pending && pending.playerId === playerId ? pending.remaining : 0
+}
+
+/**
  * Advance the research token by `count`. Moves automatically through single
  * branches (applying node bonuses); when a branch fork is reached, records a
  * `pendingResearchAdvance` for the UI to resolve via ADVANCE_RESEARCH. Once the
@@ -161,15 +181,24 @@ export function advanceResearch(
 
     const options = nextResearchNodes(nodeId)
     if (options.length > 1) {
-      // Defer to the UI to pick the branch; carry remaining advances.
-      return { ...next, pendingResearchAdvance: { playerId, remaining } }
+      // Defer to the UI to pick the branch; carry remaining advances, plus any
+      // decision this player already owes (several research rewards can land
+      // before the choice is made).
+      return {
+        ...next,
+        pendingResearchAdvance: { playerId, remaining: pendingResearchOwed(next, playerId) + remaining },
+      }
     }
 
     const targetId = options[0]
     next = withPlayer(next, playerId, p => ({ ...p, researchNodeId: targetId }))
     pushGain(next, playerId, 1, RewardType.RESEARCH, 'Research track')
     next = applyResearchNodeBonus(next, playerId, targetId, applyReward)
-    remaining -= 1
+    // A node bonus can itself grant Research (e.g. r4c) and stop at a fork;
+    // fold those owed advances back into this loop instead of dropping them.
+    const nested = takePendingResearchAdvance(next, playerId)
+    next = nested.state
+    remaining = remaining - 1 + nested.owed
   }
 
   return { ...next, pendingResearchAdvance: null }
@@ -220,11 +249,15 @@ export function resolveResearchBranch(
   if (!nextResearchNodes(player.researchNodeId).includes(chosenNodeId)) return state
 
   let next = withPlayer(state, playerId, p => ({ ...p, researchNodeId: chosenNodeId }))
+  next = { ...next, pendingResearchAdvance: null }
   pushGain(next, playerId, 1, RewardType.RESEARCH, 'Research track')
   next = applyResearchNodeBonus(next, playerId, chosenNodeId, applyReward)
-  next = { ...next, pendingResearchAdvance: null }
+  // The chosen node's bonus may grant more Research (r3a, r4c, r5a). Keep the
+  // advances it still owes instead of clearing them with this decision.
+  const nested = takePendingResearchAdvance(next, playerId)
+  next = nested.state
 
-  const remaining = pending.remaining - 1
+  const remaining = pending.remaining - 1 + nested.owed
   if (remaining > 0) {
     next = advanceResearch(next, playerId, remaining, applyReward)
   }

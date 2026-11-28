@@ -31,7 +31,7 @@ import {
   dreadnoughtControlPointsFor,
   shippingTrackAnchorsFor,
 } from '../../data/expansionBoardMarkers'
-import { isIxOverlaySpaceId } from '../../data/ixBoardAnchors'
+import { isIxOverlaySpaceId, layoutIxBoardOnStage } from '../../data/ixBoardAnchors'
 import { SpiceAmountBadge } from '../SpiceAmountBadge/SpiceAmountBadge'
 import {
   INFLUENCE_TRACKS,
@@ -89,7 +89,7 @@ import CombatAreaCluster, {
 } from './CombatAreaCluster'
 import CombatRankStrip, { type DesertAmbushRetreatActions } from './CombatRankStrip'
 import IxBoardOverlay, { type IxBoardPlacement } from './IxBoardOverlay'
-import BeneTleilaxBoardOverlay, { type BeneTleilaxBoardPlacement } from './BeneTleilaxBoardOverlay'
+import BeneTleilaxBoardOverlay from './BeneTleilaxBoardOverlay'
 import SandboxSetupHint from '../SandboxSetupHint/SandboxSetupHint'
 import { expansionOverlaysFor } from '../../expansions/registry'
 import { DEFAULT_PLAYER_COLORS, playerColorHex, playerMarkerHex } from '../../utils/playerColors'
@@ -205,8 +205,6 @@ interface ImageBoardProps {
   showBoardInfoTips?: boolean
   /** Desktop: Ix panel docked beside board; mobile: embedded on board art. */
   ixBoardPlacement?: IxBoardPlacement
-  /** Desktop: Bene Tleilax panel docked beside board; mobile: stacked below. */
-  immortalityBoardPlacement?: BeneTleilaxBoardPlacement
   /** Desktop: leader cluster on board; mobile: horizontal strip below the board; desktop dock: under Ix. */
   combatAreaPlacement?: 'overlay' | 'below' | 'dock'
   /** Rise of Ix — player may click a face-up tech tile on the Ix board to acquire. */
@@ -296,7 +294,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   influenceSelection,
   showBoardInfoTips = true,
   ixBoardPlacement = 'embedded',
-  immortalityBoardPlacement = 'stacked',
   combatAreaPlacement = 'overlay',
   pendingAcquireTech,
   onTechTileAcquire,
@@ -340,10 +337,9 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
   const shippingTrackAnchors = shippingTrackAnchorsFor(expansions)
   const dreadnoughtControlPoints = dreadnoughtControlPointsFor(expansions)
   const ixBoardDocked = riseOfIx && ixBoardPlacement === 'docked'
-  const immortalityBoardDocked = immortality && immortalityBoardPlacement === 'docked'
   const combatAreaDocked = combatAreaPlacement === 'dock'
   const combatAreaBelow = combatAreaPlacement === 'below'
-  const sidePanelDocked = ixBoardDocked || immortalityBoardDocked || combatAreaDocked
+  const sidePanelDocked = ixBoardDocked || combatAreaDocked
   const showSandboxSetupHints = Boolean(showBoardInfoTips && sandboxSetup)
   const sandboxImperiumRequiredCount = 5
   const showImperiumRowSandboxHint = Boolean(
@@ -574,7 +570,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     'image-board',
     sidePanelDocked ? 'image-board--with-side-dock' : '',
     ixBoardDocked ? 'image-board--with-ix-dock' : '',
-    immortalityBoardDocked ? 'image-board--with-immortality-dock' : '',
     agentPlacedThisTurn && !agentRecallActive ? 'image-board--agent-placed' : '',
     hotspotDebug ? 'image-board--hotspot-debug' : '',
     markerDebug ? 'image-board--marker-debug' : '',
@@ -625,12 +620,24 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
     ) : null
 
   const beneTleilaxBoardOverlay = immortality ? (
-    <BeneTleilaxBoardOverlay
-      currentPlayerId={currentPlayer}
-      placement={immortalityBoardDocked ? 'docked' : 'stacked'}
-      markerDebug={markerDebug}
-    />
+    <BeneTleilaxBoardOverlay currentPlayerId={currentPlayer} placement="embedded" markerDebug={markerDebug} />
   ) : null
+
+  /**
+   * Bene Tleilax preview sits on the board art (not the side dock).
+   * - Immortality only: reuse the Rise of Ix panel slot.
+   * - With Rise of Ix: tuck it just below the "Board decks & discards" button.
+   */
+  const beneTleilaxEmbedRect = (() => {
+    const aspect = 1676 / 1184
+    if (!riseOfIx) {
+      const ix = layoutIxBoardOnStage()
+      return { left: ix.left, top: ix.top, width: ix.width, height: ix.width / aspect }
+    }
+    const anchor = stagePoint(BOARD_DECKS_BUTTON_ANCHOR.x, BOARD_DECKS_BUTTON_ANCHOR.y)
+    const width = 16
+    return { left: anchor.x - width / 2, top: anchor.y + 1.5, width, height: width / aspect }
+  })()
 
   const combatAreaCluster =
     showCombatArea ? (
@@ -751,6 +758,16 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
               style={percentToStyle(layoutInnerRectPercent(overlay.rect))}
             />
           ))}
+
+          {immortality ? (
+            <div
+              className="image-board__immortality-embed"
+              style={percentToStyle(beneTleilaxEmbedRect)}
+              aria-label="Bene Tleilax board"
+            >
+              {beneTleilaxBoardOverlay}
+            </div>
+          ) : null}
 
           <div className="image-board__overlay">
           <button
@@ -1643,11 +1660,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
                 {combatAreaCluster}
               </div>
             ) : null}
-            {immortalityBoardDocked ? (
-              <div className="image-board__immortality-dock" aria-label="Bene Tleilax board">
-                {beneTleilaxBoardOverlay}
-              </div>
-            ) : null}
           </aside>
         </div>
       ) : (
@@ -1665,9 +1677,6 @@ const ImageBoard: React.FC<ImageBoardProps> = ({
               ) : null}
               {combatAreaCluster}
             </div>
-          ) : null}
-          {immortality && !immortalityBoardDocked ? (
-            <div className="image-board__immortality-stack">{beneTleilaxBoardOverlay}</div>
           ) : null}
         </>
       )}

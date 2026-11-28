@@ -2240,16 +2240,6 @@ body:has(.game-container--play) {
     );
   }
 
-  .game-container--desktop-play.game-container--immortality-dock:not(.game-container--history-docked) .play-board-column {
-    width: min(
-      100%,
-      calc(
-        var(--play-board-max-edge, 72vh) + clamp(220px, 32vmin, 420px) + clamp(160px, 22vmin, 300px) +
-          24px
-      )
-    );
-  }
-
   .game-container--desktop-play.game-container--history-docked .play-board-column {
     width: 100%;
     max-width: 100%;

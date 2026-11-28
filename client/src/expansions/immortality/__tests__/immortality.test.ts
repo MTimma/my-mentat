@@ -49,6 +49,14 @@ function applyPrimitiveReward(state: GameState, reward: Reward, playerId: number
   }
 }
 
+/** Reward applier that recurses into track advances — mirrors `applyChoiceReward`. */
+function applyNestedTrackReward(state: GameState, reward: Reward, playerId: number): GameState {
+  let next = applyPrimitiveReward(state, reward, playerId)
+  if (reward.tleilaxu) next = advanceTleilaxuTrack(next, playerId, reward.tleilaxu, applyNestedTrackReward)
+  if (reward.research) next = advanceResearch(next, playerId, reward.research, applyNestedTrackReward)
+  return next
+}
+
 function immortalityState(overrides?: Partial<GameState>): GameState {
   const base = getBaseTestState({ specimens: 0, tleilaxuStep: 0, researchNodeId: RESEARCH_START_NODE_ID })
   return {
@@ -59,6 +67,15 @@ function immortalityState(overrides?: Partial<GameState>): GameState {
     tleilaxuTrackBonusClaimed: false,
     pendingResearchAdvance: null,
     ...overrides,
+  }
+}
+
+/** Immortality state with player 0's research token parked on `nodeId`. */
+function atResearchNode(nodeId: string): GameState {
+  const base = immortalityState()
+  return {
+    ...base,
+    players: base.players.map(p => (p.id === 0 ? { ...p, researchNodeId: nodeId } : p)),
   }
 }
 
@@ -123,17 +140,17 @@ describe('Immortality — research track', () => {
   })
 
   it('reports gene level reached', () => {
-    expect(playerGeneLevel({ researchNodeId: 'r3a' } as never)).toBe(1)
-    expect(playerGeneLevel({ researchNodeId: 'r7a' } as never)).toBe(2)
+    expect(playerGeneLevel({ researchNodeId: 'r4a' } as never)).toBe(1)
+    expect(playerGeneLevel({ researchNodeId: 'r8a' } as never)).toBe(2)
     expect(playerGeneLevel({ researchNodeId: RESEARCH_START_NODE_ID } as never)).toBe(0)
   })
 
   it('draws a card once the track is complete (gene unlock 2)', () => {
     let state = immortalityState()
-    state = { ...state, players: state.players.map(p => (p.id === 0 ? { ...p, researchNodeId: 'r7a' } : p)) }
+    state = { ...state, players: state.players.map(p => (p.id === 0 ? { ...p, researchNodeId: 'r8a' } : p)) }
     const before = state.players[0].handCount
     state = advanceResearch(state, 0, 1, applyPrimitiveReward)
-    expect(state.players[0].researchNodeId).toBe('r7a') // stays at end
+    expect(state.players[0].researchNodeId).toBe('r8a') // stays at end
     expect(state.players[0].handCount).toBe(before + 1)
   })
 
@@ -143,18 +160,18 @@ describe('Immortality — research track', () => {
       ...base,
       currTurn: { playerId: 0, type: TurnType.ACTION },
       players: base.players.map(p =>
-        p.id === 0 ? { ...p, researchNodeId: 'r5a' } : p
+        p.id === 0 ? { ...p, researchNodeId: 'r6b' } : p
       ),
     }
     const handBefore = state.players[0].handCount
     const intrigueBefore = state.players[0].intrigueCount
 
-    // r5a forks to r6a/r6b; choose the costed r6b node.
+    // r6b forks to r7b/r7c; choose the costed r7b node.
     state = advanceResearch(state, 0, 1, applyPrimitiveReward)
     expect(state.pendingResearchAdvance).toEqual({ playerId: 0, remaining: 1 })
-    state = resolveResearchBranch(state, 0, 'r6b', applyPrimitiveReward)
+    state = resolveResearchBranch(state, 0, 'r7b', applyPrimitiveReward)
 
-    expect(state.players[0].researchNodeId).toBe('r6b')
+    expect(state.players[0].researchNodeId).toBe('r7b')
     // The bonus is not granted up front; it is offered as an optional purchase.
     expect(state.players[0].handCount).toBe(handBefore)
     expect(state.players[0].intrigueCount).toBe(intrigueBefore)
@@ -198,6 +215,41 @@ describe('Immortality — research track', () => {
     const state = immortalityState()
     const next = setResearchNode(state, 0, 'r99')
     expect(next.players[0].researchNodeId).toBe(RESEARCH_START_NODE_ID)
+  })
+
+  it('keeps the branch choice when the chosen node grants another Research', () => {
+    let state = atResearchNode('r2a')
+    state = advanceResearch(state, 0, 1, applyNestedTrackReward)
+    // r2a forks to r3a/r3b.
+    expect(state.pendingResearchAdvance).toEqual({ playerId: 0, remaining: 1 })
+
+    state = resolveResearchBranch(state, 0, 'r3a', applyNestedTrackReward)
+    expect(state.players[0].researchNodeId).toBe('r3a')
+    // r3a's bonus is +1 Research, so the token must stop at the r4a/r4b fork
+    // instead of the choice being swallowed.
+    expect(state.pendingResearchAdvance).toEqual({ playerId: 0, remaining: 1 })
+
+    state = resolveResearchBranch(state, 0, 'r4a', applyNestedTrackReward)
+    expect(state.players[0].researchNodeId).toBe('r4a')
+    expect(state.pendingResearchAdvance).toBeNull()
+  })
+
+  it('chains a node bonus through a single-branch node', () => {
+    let state = atResearchNode('r3c')
+    state = advanceResearch(state, 0, 1, applyNestedTrackReward)
+    expect(state.pendingResearchAdvance).toEqual({ playerId: 0, remaining: 1 }) // r4b/r4c
+
+    // r4c's bonus is +1 Research and it only leads to r5c.
+    state = resolveResearchBranch(state, 0, 'r4c', applyNestedTrackReward)
+    expect(state.players[0].researchNodeId).toBe('r5c')
+    expect(state.pendingResearchAdvance).toBeNull()
+  })
+
+  it('accumulates advances when several research rewards arrive on a fork', () => {
+    let state = atResearchNode('r2a')
+    state = advanceResearch(state, 0, 1, applyNestedTrackReward)
+    state = advanceResearch(state, 0, 1, applyNestedTrackReward)
+    expect(state.pendingResearchAdvance).toEqual({ playerId: 0, remaining: 2 })
   })
 })
 
@@ -373,7 +425,7 @@ describe('Immortality — requirement gates', () => {
   it('gates a researchLevel effect on gene level', () => {
     const base = immortalityState()
     const atZero = { ...base, players: base.players.map(p => (p.id === 0 ? { ...p, researchNodeId: 'r0' } : p)) }
-    const atGene1 = { ...base, players: base.players.map(p => (p.id === 0 ? { ...p, researchNodeId: 'r3a' } : p)) }
+    const atGene1 = { ...base, players: base.players.map(p => (p.id === 0 ? { ...p, researchNodeId: 'r4a' } : p)) }
     const effect = { requirement: { researchLevel: 1 }, reward: { spice: 1 } }
     expect(playRequirementSatisfied(effect, card, atZero, 0)).toBe(false)
     expect(playRequirementSatisfied(effect, card, atGene1, 0)).toBe(true)
@@ -555,13 +607,13 @@ describe('Immortality — track rewards from cards', () => {
       return applyGameAction(state, { type: 'PLAY_INTRIGUE', playerId: 0, cardId: card.id })
     }
 
-    expect(play('Study Melange', { spice: 3, researchNodeId: 'r7a' }).players[0].victoryPoints).toBe(1)
-    expect(play('Study Melange', { spice: 2, researchNodeId: 'r7a' }).players[0].victoryPoints).toBe(0)
+    expect(play('Study Melange', { spice: 3, researchNodeId: 'r8a' }).players[0].victoryPoints).toBe(1)
+    expect(play('Study Melange', { spice: 2, researchNodeId: 'r8a' }).players[0].victoryPoints).toBe(0)
     expect(
-      play('Tleilaxu Puppet', { hasHighCouncilSeat: true, researchNodeId: 'r7a' }).players[0].victoryPoints
+      play('Tleilaxu Puppet', { hasHighCouncilSeat: true, researchNodeId: 'r8a' }).players[0].victoryPoints
     ).toBe(1)
     expect(
-      play('Tleilaxu Puppet', { hasHighCouncilSeat: false, researchNodeId: 'r7a' }).players[0].victoryPoints
+      play('Tleilaxu Puppet', { hasHighCouncilSeat: false, researchNodeId: 'r8a' }).players[0].victoryPoints
     ).toBe(0)
     expect(play('Economic Positioning', { solari: 10 }).players[0].victoryPoints).toBe(1)
     expect(play('Economic Positioning', { solari: 9 }).players[0].victoryPoints).toBe(0)
@@ -797,6 +849,36 @@ describe('Immortality — track rewards from cards', () => {
     expect(state.players[0].researchNodeId).toBe('r1')
     expect(state.players[0].specimens).toBe(1)
     expect(state.players[0].water).toBe(3)
+  })
+
+  it('keeps chaining research rewards gained in one placement until the track needs a choice', () => {
+    const card = buildStartingDeck(OFFICIAL_BASE_IMMORTALITY_PACK).find(c => c.name === 'Experimentation')!
+    let state = getBaseTestState({
+      deck: [card],
+      agents: 2,
+      water: 3,
+      researchNodeId: 'r2a',
+      tleilaxuStep: 0,
+    })
+    state = { ...state, expansions: IMMORTALITY_EXPANSIONS }
+    state = applyGameAction(state, { type: 'PLAY_CARD', playerId: 0, cardId: card.id, deckIndex: 0 })
+    // Research Station also grants +1 Research (Experimentation's agent box is +1 Research).
+    state = applyGameAction(state, { type: 'PLACE_AGENT', playerId: 0, spaceId: 3 })
+    expect(state.pendingRewards.filter(r => r.reward.research === 1)).toHaveLength(2)
+
+    state = applyGameAction(state, { type: 'CLAIM_ALL_REWARDS', playerId: 0 })
+    // r2a forks to r3a/r3b: both rewards are owed at the fork, not just one.
+    expect(state.players[0].researchNodeId).toBe('r2a')
+    expect(state.pendingResearchAdvance).toEqual({ playerId: 0, remaining: 2 })
+
+    state = applyGameAction(state, { type: 'ADVANCE_RESEARCH', playerId: 0, nodeId: 'r3a' })
+    // r3a's +1 Research must stop at the r4a/r4b fork and keep the other advance.
+    expect(state.players[0].researchNodeId).toBe('r3a')
+    expect(state.pendingResearchAdvance).toEqual({ playerId: 0, remaining: 2 })
+
+    state = applyGameAction(state, { type: 'ADVANCE_RESEARCH', playerId: 0, nodeId: 'r4a' })
+    expect(state.players[0].researchNodeId).toBe('r4a')
+    expect(state.pendingResearchAdvance).toEqual({ playerId: 0, remaining: 1 })
   })
 
   it('Experimentation reveal grants a specimen when claimed', () => {
